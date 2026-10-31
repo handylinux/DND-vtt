@@ -117,6 +117,26 @@ describe("readDdbCharacter: the character", () => {
     assert.equal(readDdbCharacter(wren({ modifiers: { class: [mod("half-proficiency", "ability-checks", null)] } }), ids)!.stats.jack, true);
   });
 
+  test("Jack of All Trades: the plain half proficiency on ability checks, from a reached feature, with no restriction", () => {
+    const jack = (extra: J = {}) => mod("half-proficiency", "ability-checks", null, extra);
+    const bard = (level: number, mods: J[]) =>
+      readDdbCharacter(
+        wren({
+          classes: [{ level, definition: { name: "Bard", spellCastingAbilityId: 6 }, subclassDefinition: null, classFeatures: [{ definition: { id: 777, name: "Jack of All Trades", requiredLevel: 2 } }] }],
+          modifiers: { race: [], class: mods, background: [], feat: [], item: [], condition: [] },
+        }),
+        ids,
+      )!.stats.jack;
+    assert.equal(bard(2, [jack({ componentId: 777 })]), true, "level 2 has it");
+    assert.equal(bard(1, [jack({ componentId: 777 })]), false, "a level 1 bard's list holds the feature, but not yet");
+    assert.equal(bard(5, [jack({ componentId: 777, restriction: "" })]), true, "an empty restriction is none");
+    assert.equal(bard(5, [jack({ componentId: 777, restriction: null })]), true);
+    assert.equal(bard(5, [jack({ componentId: 777, restriction: "while you are holding an instrument" })]), false, "a conditional half proficiency is not the sheet's Jack");
+    assert.equal(bard(5, [mod("half-proficiency", "initiative", null, { componentId: 777 })]), false, "the 2014 initiative half is not an ability-check half");
+    assert.equal(bard(5, [mod("half-proficiency-round-up", "strength-ability-checks", null)]), false, "Remarkable Athlete is not Jack");
+    assert.equal(bard(5, [mod("half-proficiency", "stealth", null)]), false, "one skill's half is not Jack");
+  });
+
   test("adjustments: every save from Charisma's modifier (min 1) and an attuned item, Passive Perception, spell attacks only from an equipped item", () => {
     assert.deepEqual(fill.stats.adjust, { allSaves: 1 + 1, passive: 5 });
   });
