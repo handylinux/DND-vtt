@@ -57,6 +57,7 @@ export function AbilityMenu(props: AbilityMenuProps) {
 function rowItem(row: AbilityRow, props: AbilityMenuProps): MenuItem {
   const busy = props.busy.has(row.rowKey);
   const options = row.capability !== null && hasRollModeMenu(row.capability);
+  // While nothing may roll, a row's description is why, so a reader on it hears what the line under the title says, and no shortcut it would not take.
   const hint = options ? rollModeHint(row.capability!) : undefined;
   return {
     id: row.id,
@@ -65,7 +66,7 @@ function rowItem(row: AbilityRow, props: AbilityMenuProps): MenuItem {
     disabled: props.blocked !== null || busy,
     busy,
     label: row.name,
-    ...(hint ? { description: hint, keys: { aria: "ContextMenu Shift+F10" } } : {}),
+    ...(props.blocked !== null ? { description: props.blocked } : hint ? { description: hint, keys: { aria: "ContextMenu Shift+F10" } } : {}),
     content: <RowWords row={row} busy={busy} />,
     // A save's or a skill's level on the row's own border, as the Dice panel's cells draw it (D-261031-106).
     style: proficiencyBox(row.level, theme.color.surface),

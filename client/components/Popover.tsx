@@ -276,10 +276,9 @@ export type PopoverProps = {
   stepBack?(reason: "escape" | "back"): boolean;
   /**
    * Names what it shows. A change places the box again for its new
-   * content, from its top, as an ability's list swapped for one roll's
-   * options or its rows in the loading line's place
-   * (docs/design-v1-stat-block-rolls.md 5.1). Content that only changes
-   * inside it scrolls instead, so nothing under a finger moves.
+   * content, from its top, as an ability's rows in its loading line's
+   * place (docs/design-v1-stat-block-rolls.md 4.6). Content that only
+   * changes inside it scrolls instead, so nothing under a finger moves.
    */
   contentKey?: string;
   children: ReactNode;

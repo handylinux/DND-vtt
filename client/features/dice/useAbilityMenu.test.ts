@@ -358,10 +358,12 @@ describe("the list as it draws (4.2 and 4.6)", async () => {
     assert.doesNotMatch(html, /data-ability-blocked|Hold a roll/, "no foot line, no blocked line");
   });
 
-  test("blocked: every row disabled and still drawn, one line under the title says why", () => {
+  test("blocked: every row disabled and still drawn, one line under the title says why, and each row's description says it too, with no shortcut", () => {
     const html = draw({ rows, blocked: "Rolls are not sent from a preview." });
     assert.match(html, /data-roll-mode-title[^>]*>Dexterity<\/div><div data-ability-blocked=""[^>]*>Rolls are not sent from a preview\.<\/div>/);
     assert.equal((html.match(/aria-disabled="true"/g) ?? []).length, 4);
+    assert.equal((html.match(/<span id="[^"]+" hidden="">Rolls are not sent from a preview\.<\/span>/g) ?? []).length, 4);
+    assert.doesNotMatch(html, /aria-keyshortcuts|Hold, right-click/);
   });
 
   test("a busy row waits with its mark after the bonus, disabled", () => {
@@ -401,9 +403,8 @@ describe("the box's own attributes, as a grid spreads them", async () => {
   });
 });
 
-test("the popover is placed again for each roll's options, and once the rows take the loading line's place, but not as rows change inside it", () => {
-  const rows = { loading: false, failed: false };
-  const keys = [abilityContent(null, { loading: true, failed: false }), abilityContent(null, rows), abilityContent("save", rows), abilityContent("check", rows), abilityContent(null, { loading: false, failed: true })];
+test("the popover is placed again once the rows take the loading line's place, and never for a roll's options, which take the rows' box", () => {
+  const keys = [abilityContent({ loading: true, failed: false }), abilityContent({ loading: false, failed: false }), abilityContent({ loading: false, failed: true })];
   assert.equal(new Set(keys).size, keys.length);
-  assert.equal(abilityContent(null, rows), abilityContent(null, { ...rows }), "the same list, the same box");
+  assert.equal(abilityContent.length, 1, "it reads nothing of the options view");
 });

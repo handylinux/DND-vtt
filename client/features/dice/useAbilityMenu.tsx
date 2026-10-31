@@ -327,7 +327,7 @@ export function useAbilityMenu(options: UseAbilityMenuOptions): AbilityMenuBindi
         <span hidden id={descriptionId}>
           {boxDescription(ability)}
         </span>
-        <Popover handle={handle} side="above" flip bound={rollModeBound} stepBack={(reason) => ctl.stepBack(reason)} contentKey={abilityContent(shown?.capability ? shown.id : null, loaded)}>
+        <Popover handle={handle} side="above" flip bound={rollModeBound} stepBack={(reason) => ctl.stepBack(reason)} contentKey={abilityContent(loaded)}>
           {shown?.capability ? (
             <RollModeMenuBody name={shown.title} title={shown.title} capability={shown.capability} dm={dm} onPick={(override) => ctl.pickChoice(override)} />
           ) : (
@@ -409,12 +409,12 @@ export function sendAbilityRow(deps: SendDeps, row: AbilityRow, override?: RollM
 }
 
 /**
- * What the ability's popover shows, as its `contentKey`: one roll's
- * options, or the list's rows, its loading line or its failure. Each
- * change places the box again, so the options are not drawn in the list's
- * box, nor the rows in the loading line's (5.1, 4.6).
+ * What the ability's popover shows, as its `contentKey`: its rows, its
+ * loading line or its failure, so the rows are never drawn in the loading
+ * line's box (4.6). A roll's options take the rows' box as it stands: a
+ * box placed again for them would leave the held finger outside it, and
+ * its lift would land on the page behind, closing everything (5.1).
  */
-export function abilityContent(options: string | null, loaded: { loading: boolean; failed: boolean }): string {
-  if (options !== null) return `options:${options}`;
+export function abilityContent(loaded: { loading: boolean; failed: boolean }): string {
   return loaded.failed ? "failed" : loaded.loading ? "loading" : "rows";
 }
