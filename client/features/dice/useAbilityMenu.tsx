@@ -327,7 +327,7 @@ export function useAbilityMenu(options: UseAbilityMenuOptions): AbilityMenuBindi
         <span hidden id={descriptionId}>
           {boxDescription(ability)}
         </span>
-        <Popover handle={handle} side="above" flip bound={rollModeBound} stepBack={(reason) => ctl.stepBack(reason)}>
+        <Popover handle={handle} side="above" flip bound={rollModeBound} stepBack={(reason) => ctl.stepBack(reason)} contentKey={abilityContent(shown?.capability ? shown.id : null, loaded)}>
           {shown?.capability ? (
             <RollModeMenuBody name={shown.title} title={shown.title} capability={shown.capability} dm={dm} onPick={(override) => ctl.pickChoice(override)} />
           ) : (
@@ -406,4 +406,15 @@ export function sendAbilityRow(deps: SendDeps, row: AbilityRow, override?: RollM
     if (initiative && row.entryId) deps.watch(sent, row.entryId);
     deps.onSent(override ? { tag: sent, override } : { tag: sent });
   } else if (failed !== null) deps.onUnsent(failed);
+}
+
+/**
+ * What the ability's popover shows, as its `contentKey`: one roll's
+ * options, or the list's rows, its loading line or its failure. Each
+ * change places the box again, so the options are not drawn in the list's
+ * box, nor the rows in the loading line's (5.1, 4.6).
+ */
+export function abilityContent(options: string | null, loaded: { loading: boolean; failed: boolean }): string {
+  if (options !== null) return `options:${options}`;
+  return loaded.failed ? "failed" : loaded.loading ? "loading" : "rows";
 }

@@ -274,6 +274,14 @@ export type PopoverProps = {
    * entry. An Escape it kept open touches no history.
    */
   stepBack?(reason: "escape" | "back"): boolean;
+  /**
+   * Names what it shows. A change places the box again for its new
+   * content, from its top, as an ability's list swapped for one roll's
+   * options or its rows in the loading line's place
+   * (docs/design-v1-stat-block-rolls.md 5.1). Content that only changes
+   * inside it scrolls instead, so nothing under a finger moves.
+   */
+  contentKey?: string;
   children: ReactNode;
 };
 
@@ -394,6 +402,14 @@ function OpenPopover(props: PopoverProps) {
 
   // A consumer's render may carry a new bound or rise region: placed again only if the frame changed.
   useLayoutEffect(() => place(false));
+  const shownKey = useRef(props.contentKey);
+  useLayoutEffect(() => {
+    if (shownKey.current === props.contentKey) return;
+    shownKey.current = props.contentKey;
+    const box = latest.current.handle.box.current;
+    if (box) box.scrollTop = 0;
+    place(true);
+  }, [props.contentKey, place]);
   // Its content's height changed with the title, so it is placed again.
   const tightOnce = useRef(tight);
   useLayoutEffect(() => {

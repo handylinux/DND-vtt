@@ -9,7 +9,7 @@ import { describe, test } from "node:test";
  * (abilityMenu.testing.ts).
  */
 
-const { BOX, sendAbilityRow } = await import("./useAbilityMenu.tsx");
+const { abilityContent, BOX, sendAbilityRow } = await import("./useAbilityMenu.tsx");
 const { harness, row } = await import("./abilityMenu.testing.ts");
 
 describe("presses on the box (3.3)", () => {
@@ -399,4 +399,11 @@ describe("the box's own attributes, as a grid spreads them", async () => {
     assert.match(html, /-webkit-touch-callout:none;-webkit-user-select:none;user-select:none/);
     assert.doesNotMatch(html, /role="menu"|aria-controls/, "closed");
   });
+});
+
+test("the popover is placed again for each roll's options, and once the rows take the loading line's place, but not as rows change inside it", () => {
+  const rows = { loading: false, failed: false };
+  const keys = [abilityContent(null, { loading: true, failed: false }), abilityContent(null, rows), abilityContent("save", rows), abilityContent("check", rows), abilityContent(null, { loading: false, failed: true })];
+  assert.equal(new Set(keys).size, keys.length);
+  assert.equal(abilityContent(null, rows), abilityContent(null, { ...rows }), "the same list, the same box");
 });
