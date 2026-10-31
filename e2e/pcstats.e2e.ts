@@ -360,7 +360,7 @@ describe("raccoon-vtt pc stat blocks", { timeout: 600_000 }, () => {
     await view.getByText("Stealth +9").waitFor();
     // FL-15 (D-261030-588): the Dex box is outlined whole, no line lists proficiencies, and Stealth's +9 shows its expertise.
     await view.locator("[data-ability-grid] > [data-save-proficient]").first().waitFor();
-    assert.deepEqual(await view.locator("[data-ability-grid] > [data-save-proficient] dt").allTextContents(), ["DEX"]);
+    assert.deepEqual(await view.locator("[data-ability-grid] > [data-save-proficient]").locator("dt, [data-ability-abbr]").allTextContents(), ["DEX"]);
     assert.equal(await view.locator("p").filter({ hasText: /^(Proficiencies|Expertise)\b/ }).count(), 0, "no line lists proficiencies");
     await view.getByText("Initiative").waitFor();
     // The Dex box of the six across: its score, its modifier, and its save, which a screen reader hears as proficient (docs/design-v1-dice-ui.md 6.1).

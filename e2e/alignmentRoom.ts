@@ -19,7 +19,7 @@ import { trapPreset } from "../shared/srd/traps.ts";
 import { barControl, ConsoleWatch, dragCells, expandBar, multiSelect, OpSocket, openSceneGroup, openSideTab, pagePoint, pickOption, pickTool, pressOption, reopenRoom, ROOT, sceneGroup, sceneGroupFold, Shots, sideTabName, SocketWatch, startServer, tapCell, touchSwipe, untilReady, waitFor, wholeInReach, type Server } from "./harness.ts";
 import { DEFAULT_SNAPSHOT_BUDGET } from "../server/rooms/budgets.ts";
 import { INTER_FILES } from "../client/lib/interFont.ts";
-import { alignmentLines, headerLines, headerPlaces, leadLines, LIMIT_PX, measureAlignment, menuWordLines, pillLines, popoverScrollbarLines, proficiencyHeightLines, proficiencyLines, saveOutlineLines, toastLaneLines, toastsUnderCards, type HeaderPlace, type PillPoint } from "./helpers/alignment.ts";
+import { alignmentLines, headerLines, headerPlaces, leadLines, LIMIT_PX, measureAlignment, menuWordLines, pillLines, popoverScrollbarLines, proficiencyHeightLines, proficiencyLines, rollingGridLines, rollRowLines, saveOutlineLines, toastLaneLines, toastsUnderCards, type HeaderPlace, type PillPoint } from "./helpers/alignment.ts";
 import { measureSpacing, spacingLines, type SpacingFinding } from "./helpers/spacing.ts";
 import { moreMenuFixture } from "./helpers/menuFixture.ts";
 
@@ -3903,7 +3903,8 @@ async function noMarks(sweep: Sweep, page: Page, screen: string, root: Locator, 
 async function saveOutlines(sweep: Sweep, page: Page, screen: string, root: Locator, want: readonly string[]): Promise<void> {
   const grid = root.locator("[data-ability-grid]").first();
   await grid.waitFor();
-  const outlined = (await grid.locator(":scope > [data-save-proficient] dt").allTextContents()).map((t) => t.trim().toUpperCase());
+  // A rolling grid's boxes carry the abbreviation in a data-marked span, a text grid's in a dt (docs/design-v1-stat-block-rolls.md 3.1).
+  const outlined = (await grid.locator(":scope > [data-save-proficient] :is(dt, [data-ability-abbr])").allTextContents()).map((t) => t.trim().toUpperCase());
   assert.deepEqual(outlined, want, `fl15: ${sweep.at} ${screen} outlines the boxes of its proficient saves`);
   await sweep.add(page, `fl15-${screen}`, await saveOutlineLines(page, root, `${sweep.at} fl15-${screen}`, want.length > 0));
 }
@@ -4430,6 +4431,35 @@ export function proficiencyTests(): void {
         assert.match(await lines("border"), /words stand 1\.\d\d px from where a plain box's do/, "a border moves the words in");
         assert.match(await lines("none-here"), /no outlined ability box/, "a check that finds nothing to check fails");
       }
+      // sbr: the same grid while it rolls (docs/design-v1-stat-block-rolls.md 3.1), its boxes buttons whose three lines carry data attributes and whose spoken words are the label.
+      const rolling = (key: string, style: string, opts: { label: string; marked?: boolean; bold?: boolean }) =>
+        `<button type="button" aria-label="${opts.label}" ${opts.marked ? "data-save-proficient" : ""} style="display:block;width:100%;text-align:left;font:inherit;color:inherit;border:0;padding:4px 8px;border-radius:6px;background:#2a2a32;line-height:1.2;${style}"><span data-ability-abbr style="display:block;font-size:11px;font-weight:700;color:#a7a5ad">${key}</span><span data-ability-score style="display:block;white-space:nowrap"><strong style="font-size:16px">10</strong> <span style="color:#a7a5ad">+0</span></span><span data-ability-save style="display:block;font-size:13px;white-space:nowrap${opts.bold ? ";font-weight:700" : ""}"><span style="color:#a7a5ad">Save </span>+4</span></button>`;
+      const rollingGrid = (id: string, dex: string) => `<div id="${id}" style="width:330px;margin:0 0 24px"><div data-ability-grid role="group" aria-label="Abilities" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px">${rolling("STR", "", { label: "Strength 10, +0, save +0" })}${dex}${rolling("CON", "", { label: "Constitution 10, +0, save +0" })}</div></div>`;
+      const SAID = "Dexterity 10, +0, save +4, proficient";
+      const UNSAID = "Dexterity 10, +0, save +4";
+      const rollingCases: [string, string][] = [
+        ["r-good", rolling("DEX", OUTLINE, { label: SAID, marked: true })],
+        ["r-missing", rolling("DEX", "", { label: SAID, marked: true })],
+        ["r-unspoken", rolling("DEX", OUTLINE, { label: UNSAID, marked: true })],
+        ["r-unmarked", rolling("DEX", OUTLINE, { label: SAID })],
+        ["r-outside", rolling("DEX", "box-shadow:0 0 0 1px currentColor", { label: SAID, marked: true })],
+        ["r-accent", rolling("DEX", "box-shadow:inset 0 0 0 1px #f7df00", { label: SAID, marked: true })],
+        ["r-bold", rolling("DEX", OUTLINE, { label: SAID, marked: true, bold: true })],
+        ["r-border", rolling("DEX", "border:1px solid currentColor", { label: SAID, marked: true })],
+      ];
+      for (const scale of SCALES) {
+        await page.setContent(`<meta name="viewport" content="width=device-width, initial-scale=1">${INTER_FACE}<div style="background:#1f1f25;color:#f1efe9;font-family:Inter;padding:24px;zoom:${scale}">${rollingCases.map(([id, dex]) => rollingGrid(id, dex)).join("")}</div>`);
+        const lines = async (id: string) => (await saveOutlineLines(page, page.locator(`#${id}`), id)).join("\n");
+        assert.equal(await lines("r-good"), "", `sbr: a rolling box whose label ends ", proficient" with a 1 px inside line passes at ${scale}`);
+        assert.match(await lines("r-missing"), /hears its save as proficient, but it has no outline/, "sbr: a label that says proficient needs the outline");
+        assert.match(await lines("r-unspoken"), /does not hear its save as proficient/, "sbr: an outline whose label lacks ', proficient' fails");
+        assert.match(await lines("r-unmarked"), /data-save-proficient does not match what a screen reader hears/, "sbr: the mark follows the label");
+        assert.match(await lines("r-outside"), /not a 1 px line inside the box/);
+        assert.match(await lines("r-accent"), /not a 1 px line inside the box in its text's color/);
+        assert.match(await lines("r-bold"), /its save is set in weight 700/);
+        assert.match(await lines("r-border"), /words stand 1\.\d\d px from where a plain box's do/, "sbr: a border moves a rolling box's words in");
+        assert.match(await lines("r-none"), /no outlined ability box/, "sbr: a rolling check that finds nothing to check fails");
+      }
     } finally {
       await page.close();
     }
@@ -4506,6 +4536,161 @@ export function proficiencyTests(): void {
         console.log(`${sweep.at}: measured ${[...sweep.seen].join(", ")}`);
       });
     }
+  }
+}
+
+/** Lane B's marker for the result line under a rolling grid (docs/design-v1-stat-block-rolls.md 8). */
+const BLOCK_RESULT = "[data-block-result]";
+
+/** The block of a token's panel, open: the token selected by a tap on its cell, as proficiencyToken opens it. */
+async function openTokenBlock(page: Page, name: string, at: { x: number; y: number }): Promise<Locator> {
+  await closeSheets(page);
+  await escapeAll(page);
+  await page.getByRole("button", { name: "Fit the map to the screen", exact: true }).click();
+  const bar = await selectToken(page, name, at);
+  assert.ok(bar, `sbr: ${name}'s token bar opens`);
+  await expandBar(bar);
+  const panel = await openPanel(page, "Token");
+  const fold = panel.getByRole("button", { name: "Stat block", exact: true });
+  await fold.waitFor();
+  if ((await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
+  await panel.locator("[data-ability-grid]").first().waitFor();
+  return panel;
+}
+
+type BlockRollsAt = {
+  /** The ability whose list opens, such as "Dexterity". */
+  ability: string;
+  /** The row to hold for its options, such as "Dexterity save". */
+  row: RegExp;
+  /** Whether the list holds a row marked proficient or expert, so the marked rows' heights are read. */
+  marked: boolean;
+  /** A row that rolls on a tap, for the result line, or null where this viewer's taps ask or write the tracker. */
+  roll: RegExp | null;
+};
+
+/**
+ * The stat block rolls' screens in `root` (docs/design-v1-stat-block-rolls.md 9),
+ * all required: the grid closed, its list open, one roll's options in the
+ * same popover, and the result line after a roll. A rolling grid that is
+ * not there, a list that does not open and a result that does not land are
+ * lines, so a block that stopped rolling fails the sweep.
+ */
+async function blockRollScreens(sweep: Sweep, page: Page, screen: string, root: Locator, at: BlockRollsAt): Promise<void> {
+  const where = `${sweep.at} sbr-${screen}`;
+  const grid = root.locator("[data-ability-grid]").first();
+  await grid.waitFor();
+  await grid.scrollIntoViewIfNeeded();
+  await root.first().evaluate(async (node) => {
+    await (node as unknown as { ownerDocument: { fonts: { ready: Promise<unknown> } } }).ownerDocument.fonts.ready;
+  });
+  await sweep.measure(page, `sbr-${screen}-closed`, root);
+  await sweep.add(page, `sbr-${screen}-closed`, await rollingGridLines(grid, where));
+  await sweep.add(page, `sbr-${screen}-closed`, await saveOutlineLines(page, root, where, false));
+
+  const box = grid.getByRole("button", { name: new RegExp(`^${at.ability} `) });
+  const menu = page.getByRole("menu", { name: `${at.ability} rolls` });
+  const popover = page.locator("[data-rvtt-popover]").filter({ has: menu });
+  await box.click();
+  await menu.waitFor();
+  await sweep.measure(page, `sbr-${screen}-list`, popover);
+  await sweep.add(page, `sbr-${screen}-list`, await rollRowLines(popover, `${where}-list`));
+  if (at.marked) await sweep.add(page, `sbr-${screen}-list`, await proficiencyHeightLines(popover, `${where}-list`, true));
+  // The open box wears FL-17's ring while its list is open (useRollModeMenu.tsx markRollModeSource).
+  const ring = await box.evaluate((el) => (el as unknown as { style: { boxShadow: string } }).style.boxShadow);
+  if (!/0px 0px 0px 2px|0 0 0 2px/.test(ring)) await sweep.add(page, `sbr-${screen}-list`, [`${where}-list: ${at.ability}'s box wears no ring while its list is open: "${ring}"`]);
+
+  // A key swap to the roll's options, in the same popover.
+  const row = menu.getByRole("menuitem", { name: at.row });
+  await row.first().focus();
+  await page.keyboard.press("Shift+F10");
+  const options = page.getByRole("menu", { name: new RegExp(`^Roll options for ${at.row.source.replace(/^\^/, "")}`) });
+  await options.waitFor();
+  const optionsPopover = page.locator("[data-rvtt-popover]").filter({ has: options });
+  await sweep.measure(page, `sbr-${screen}-options`, optionsPopover);
+  await sweep.add(page, `sbr-${screen}-options`, await rollRowLines(optionsPopover, `${where}-options`));
+  // Escape steps back to the list, and the second closes it on the box (5.3).
+  await page.keyboard.press("Escape");
+  await menu.waitFor();
+  await page.keyboard.press("Escape");
+  await menu.waitFor({ state: "detached" });
+
+  if (!at.roll) return;
+  const before = await grid.boundingBox();
+  await box.click();
+  await menu.waitFor();
+  await menu.getByRole("menuitem", { name: at.roll }).first().click();
+  await menu.waitFor({ state: "detached" });
+  const result = root.locator(BLOCK_RESULT);
+  await result.first().waitFor();
+  await waitFor(`${screen}'s result line to settle`, async () => ((await result.first().getAttribute("aria-busy")) === "true" ? null : true), 15_000);
+  await sweep.measure(page, `sbr-${screen}-result`, result);
+  const after = await grid.boundingBox();
+  if (before && after && (Math.abs(before.height - after.height) > 0.5 || Math.abs(before.width - after.width) > 0.5)) {
+    await sweep.add(page, `sbr-${screen}-result`, [`${where}-result: the grid went from ${before.width} x ${before.height} to ${after.width} x ${after.height} px after a roll`]);
+  }
+  const g = await grid.boundingBox();
+  const r = await result.first().boundingBox();
+  if (g && r && (r.y < g.y + g.height || Math.abs(r.x - g.x) > 0.5 || Math.abs(r.width - g.width) > 0.5)) {
+    await sweep.add(page, `sbr-${screen}-result`, [`${where}-result: the line at ${JSON.stringify(r)} is not under the grid at ${JSON.stringify(g)}, at its width`]);
+  }
+}
+
+/**
+ * The stat block rolls' alignment roots (docs/design-v1-stat-block-rolls.md 9),
+ * run by proficiency.e2e.ts after the FL-7 fixtures it makes: the PC's sheet
+ * in the token panel and on the character page, a monster's block, a
+ * companion's and Wild Shape's creature block, at the sweep's six sizes and
+ * the tablet at 100% and 130%, and the two landscape sizes at 130% alone
+ * (D-261031-054). A 320 x 568 box must stay 44 px wide at 130%.
+ */
+export function blockRollTests(): void {
+  const AT: [Size, number][] = [];
+  for (const name of ["1440x900", "390x844", "360x740", "320x568", "820x1180"]) for (const scale of SCALES) AT.push([SIZES.find((s) => s.name === name)!, scale]);
+  AT.push([SIZES.find((s) => s.name === "844x390")!, 1.3], [COMBAT_SMALL, 1.3]);
+  for (const [size, scale] of AT) {
+    test(`sbr-al-${size.name}-${scale}. the ability boxes' closed grid, list, options and result line are aligned at ${size.width} x ${size.height} at ${scale * 100}%`, async () => {
+      const sweep = new Sweep(`sbr-${size.name}-${scale}`);
+      try {
+        const shot = (on: Page, what: string) => shots.take(on, `sbr-${size.name}-${Math.round(scale * 100)}-${what}`);
+        await resetThorn();
+        const page = await dmPageFor(size);
+        page.setDefaultTimeout(10_000);
+        await openAt(page, size, scale);
+        await openAt(pat, size, scale);
+        pat.setDefaultTimeout(10_000);
+        // The DM's taps for a creature a player plays ask that player, so those blocks show the list and the options, not a roll.
+        const thorn = await openTokenBlock(page, "Thorn", { x: 5, y: 5 });
+        await blockRollScreens(sweep, page, "pc-token", thorn.locator("[data-pc-stats]"), { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: null });
+        const monster = await openTokenBlock(page, "FL7 Monster", FL7_MONSTER_AT);
+        await blockRollScreens(sweep, page, "monster", monster, { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: /^Dexterity save/ });
+        await shot(page, "monster");
+        const companion = await openTokenBlock(page, "FL7 Companion", FL7_COMPANION_AT);
+        await blockRollScreens(sweep, page, "companion", companion, { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: null });
+
+        const sheet = await thornsPage(pat);
+        const fold = sheet.getByRole("button", { name: "Stat block", exact: true });
+        if ((await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
+        await blockRollScreens(sweep, pat, "pc-sheet", sheet.locator("[data-pc-stats]"), { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: /^Dexterity save/ });
+        // The longest list, Wisdom's seven rows, which scrolls inside its box on the smallest screens.
+        await blockRollScreens(sweep, pat, "pc-sheet-long", sheet.locator("[data-pc-stats]"), { ability: "Wisdom", row: /^Wisdom save/, marked: true, roll: /^Perception/ });
+        await shot(pat, "pc-sheet");
+
+        await ops.send({ t: "character.update", characterId: run.ids.thornChar, patch: { actor: { srdId: "wolf", wildShape: true } } });
+        try {
+          await sheet.locator("[data-shape-numbers]").waitFor();
+          await blockRollScreens(sweep, pat, "wild-shape", sheet, { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: /^Dexterity save/ });
+          await shot(pat, "wild-shape");
+        } finally {
+          await ops.send({ t: "character.update", characterId: run.ids.thornChar, patch: { actor: { srdId: null } } });
+          await sheet.locator("[data-pc-stats]").waitFor();
+        }
+        console.log(`${sweep.at}: measured ${[...sweep.seen].join(", ")}`);
+      } finally {
+        sweep.tally();
+      }
+      assert.deepEqual(sweep.lines, [], `sbr: ${sweep.lines.length} lines out of line at ${sweep.at}:\n${sweep.lines.join("\n")}`);
+    });
   }
 }
 

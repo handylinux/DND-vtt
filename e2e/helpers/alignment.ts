@@ -577,8 +577,13 @@ const OUTLINE_PIXEL_BOXES = 2;
 
 /**
  * FL-15's outlined ability boxes (D-261030-588) in `root`'s six-ability
- * grids (client/features/monsters/AbilityGrid.tsx). A box is outlined
- * exactly when a screen reader hears its save as proficient, and its
+ * grids (client/features/monsters/AbilityGrid.tsx), in either form
+ * (docs/design-v1-stat-block-rolls.md 3.1): a text grid's `dt` and `dd`
+ * parts, or a rolling grid's buttons, whose three lines carry
+ * `data-ability-abbr`, `data-ability-score` and `data-ability-save`. A box
+ * is outlined exactly when a screen reader hears its save as proficient,
+ * which the helper reads where it is (D-261031-168): a text box's hidden
+ * ", proficient" span, a rolling box's `aria-label`, and its
  * outline is a 1 px line in the box's own text color, never the accent's,
  * drawn inside its rounded edge. No save number is bold, and an outlined
  * box's words stand where a plain box's do.
@@ -601,6 +606,7 @@ export async function saveOutlineLines(page: Page, root: Locator, screen: string
       querySelector(selector: string): El | null;
       querySelectorAll(selector: string): ArrayLike<El>;
       hasAttribute(name: string): boolean;
+      getAttribute(name: string): string | null;
       getBoundingClientRect(): Rect;
       appendChild(node: El): void;
       remove(): void;
@@ -618,12 +624,15 @@ export async function saveOutlineLines(page: Page, root: Locator, screen: string
     const accent = css(probe).color;
     probe.remove();
     const boxes = grids.flatMap((grid) => Array.from(grid.children));
-    const name = (box: El) => box.querySelector("dt")?.textContent?.trim() ?? "?";
+    const rolls = (box: El) => box.hasAttribute("data-ability-abbr") || box.querySelector("[data-ability-abbr]") !== null;
+    const name = (box: El) => (rolls(box) ? box.querySelector("[data-ability-abbr]") : box.querySelector("dt"))?.textContent?.trim() ?? "?";
+    const PARTS = "dt, dd, [data-ability-abbr], [data-ability-score], [data-ability-save]";
     let outlined = 0;
     for (const box of boxes) {
       const style = css(box);
       const drawn = style.boxShadow !== "none";
-      const spoken = /, proficient/.test(box.textContent ?? "");
+      // A rolling box is one button named by its label, with no hidden span inside, so the label is what is heard.
+      const spoken = rolls(box) ? /, proficient$/.test(box.getAttribute("aria-label") ?? "") : /, proficient/.test(box.textContent ?? "");
       if (box.hasAttribute("data-save-proficient") !== spoken) lines.push(`${name(box)}: data-save-proficient does not match what a screen reader hears`);
       if (drawn !== spoken) lines.push(`${name(box)}: ${drawn ? "outlined, but a screen reader does not hear its save as proficient" : "a screen reader hears its save as proficient, but it has no outline"}`);
       if (drawn) {
@@ -634,14 +643,14 @@ export async function saveOutlineLines(page: Page, root: Locator, screen: string
         if (style.color !== text) lines.push(`${name(box)}: the outline's color ${style.color} is not the text's ${text}`);
         if (style.color === accent) lines.push(`${name(box)}: the outline takes the accent's color`);
       }
-      const saves = Array.from(box.querySelectorAll("dd"));
+      const saves = Array.from(box.querySelectorAll(rolls(box) ? "[data-ability-save]" : "dd"));
       const save = saves[saves.length - 1];
       if (save && Number(css(save).fontWeight) > 400) lines.push(`${name(box)}: its save is set in weight ${css(save).fontWeight}, so two signs show one fact`);
     }
     // Taking no room: an outlined box's words stand where a plain box's do, from its top left corner.
     const offsets = (box: El) => {
       const b = box.getBoundingClientRect();
-      return Array.from(box.querySelectorAll("dt, dd")).map((part) => {
+      return Array.from(box.querySelectorAll(PARTS)).map((part) => {
         const r = part.getBoundingClientRect();
         return [r.top - b.top, r.left - b.left];
       });
@@ -705,7 +714,7 @@ export async function saveOutlineLines(page: Page, root: Locator, screen: string
       const o = (y * w + x) * 4;
       return Math.max(...[0, 1, 2].map((c) => Math.abs(shown.data[o + c]! - plain.data[o + c]!))) > 16;
     };
-    const label = `box ${i + 1} (${(await box.locator("dt").textContent())?.trim()})`;
+    const label = `box ${i + 1} (${(await box.locator("dt, [data-ability-abbr]").first().textContent())?.trim()})`;
     // The browser draws a box on whole device pixels, its edges rounded.
     const edge = { l: Math.round((at.left - x) * dpr), t: Math.round((at.top - y) * dpr), r: Math.round((at.left + at.width - x) * dpr), b: Math.round((at.top + at.height - y) * dpr) };
     const width = at.zoom * dpr;
@@ -1884,3 +1893,176 @@ export async function leadLines(group: Locator, words: readonly string[], screen
   ];
 }
 
+
+/** Lane B's marker for the corner mark inside a rolling box (docs/design-v1-stat-block-rolls.md 3.1): its `data-ability-mark`, else the box's one `aria-hidden` svg. */
+export const ABILITY_MARK = '[data-ability-mark], svg[aria-hidden="true"]';
+
+/** The shape of a node the rolling grid's checks read in the page, as the page's DOM has it. */
+type RollEl = {
+  children: ArrayLike<RollEl>;
+  parentElement: RollEl | null;
+  tagName: string;
+  firstChild: unknown;
+  textContent: string | null;
+  innerHTML: string;
+  className: string;
+  style: Record<string, string> & { cssText: string };
+  getAttribute(name: string): string | null;
+  hasAttribute(name: string): boolean;
+  setAttribute(name: string, value: string): void;
+  querySelector(selector: string): RollEl | null;
+  querySelectorAll(selector: string): ArrayLike<RollEl>;
+  getBoundingClientRect(): { left: number; top: number; right: number; bottom: number; width: number; height: number };
+  insertAdjacentElement(where: string, el: RollEl): void;
+  appendChild(el: RollEl): RollEl;
+  remove(): void;
+  ownerDocument: {
+    createElement(tag: string): RollEl;
+    createRange(): { selectNodeContents(n: unknown): void; getBoundingClientRect(): { left: number; right: number } };
+    defaultView: { getComputedStyle(el: RollEl): Record<string, string> };
+  };
+};
+
+/**
+ * A rolling six-ability grid at rest (docs/design-v1-stat-block-rolls.md 3 and 9).
+ *
+ * - It is a `role="group"` of six buttons, each named by its own label, and
+ *   no button holds a hidden ", proficient" span.
+ * - **No geometry change**: a text grid of the same words, built beside it
+ *   from the buttons' own computed type and spacing, has boxes of the same
+ *   size, and every line of every box stands where the text box's line does.
+ * - **Size**: a box is at least 44 px tall and wide. Its height is FL-15's,
+ *   within 2 px of 56 CSS px at the page's zoom.
+ * - **The corner mark** lies inside its box's first line, 6 px from the
+ *   box's top and right edges, and clear of the abbreviation's words.
+ * - **Rings**: the box's focus ring (2 px out and 2 px more) and FL-17's
+ *   accent ring (2 px out) fit inside every ancestor that clips.
+ *
+ * The check is strict: a grid that is not there is a line.
+ */
+export async function rollingGridLines(grid: Locator, screen: string): Promise<string[]> {
+  if ((await grid.count()) === 0) return [`${screen}: no ability grid to read`];
+  const lines = await grid.first().evaluate((node, mark) => {
+    const grid = node as unknown as RollEl;
+    const out: string[] = [];
+    const doc = grid.ownerDocument;
+    const css = (el: RollEl) => doc.defaultView.getComputedStyle(el);
+    const zoom = (grid as unknown as { currentCSSZoom?: number }).currentCSSZoom ?? 1;
+    if (grid.getAttribute("role") !== "group") out.push(`its grid is role ${grid.getAttribute("role")}, not a group`);
+    const boxes = Array.from(grid.children);
+    if (boxes.length !== 6 || boxes.some((b) => b.tagName !== "BUTTON")) return [`${out.join(", ")}${out.length ? ", " : ""}its grid holds ${boxes.length} children, ${boxes.map((b) => b.tagName.toLowerCase()).join(" ")}, not six buttons`];
+
+    const abbr = (b: RollEl) => b.querySelector("[data-ability-abbr]");
+    const name = (b: RollEl) => abbr(b)?.textContent?.trim() ?? "?";
+    for (const b of boxes) {
+      const label = b.getAttribute("aria-label") ?? "";
+      if (!label) out.push(`${name(b)}: no aria-label`);
+      if (b.hasAttribute("data-save-proficient") !== /, proficient$/.test(label)) out.push(`${name(b)}: data-save-proficient does not match its label "${label}"`);
+      if (/, proficient/.test(b.textContent ?? "")) out.push(`${name(b)}: a hidden ", proficient" stays inside the button`);
+      for (const part of ["data-ability-abbr", "data-ability-score", "data-ability-save"]) if (!b.querySelector(`[${part}]`)) out.push(`${name(b)}: no ${part}`);
+      const r = b.getBoundingClientRect();
+      if (r.height / zoom < 44 || r.width / zoom < 44) out.push(`${name(b)}: ${(r.width / zoom).toFixed(1)} x ${(r.height / zoom).toFixed(1)} px, under 44 px`);
+      if (Math.abs(r.height / zoom - 56) > 6) out.push(`${name(b)}: ${(r.height / zoom).toFixed(1)} px tall, not FL-15's about 56`);
+    }
+
+    // The same words as a text grid, in the buttons' own type, laid beside the grid.
+    const text = doc.createElement("dl");
+    const g = css(grid);
+    text.style.cssText = `margin:0;display:grid;grid-template-columns:${g.gridTemplateColumns};gap:${g.rowGap} ${g.columnGap}`;
+    const typed = (from: RollEl, tag: string) => {
+      const el = doc.createElement(tag);
+      const c = css(from);
+      el.style.cssText = `margin:0;font-size:${c.fontSize};font-weight:${c.fontWeight};letter-spacing:${c.letterSpacing};text-transform:${c.textTransform};color:${c.color};white-space:${c.whiteSpace};line-height:${c.lineHeight}`;
+      el.innerHTML = from.innerHTML;
+      return el;
+    };
+    for (const b of boxes) {
+      const c = css(b);
+      const box = doc.createElement("div");
+      box.style.cssText = `padding:${c.paddingTop} ${c.paddingRight} ${c.paddingBottom} ${c.paddingLeft};border-radius:${c.borderTopLeftRadius};background:${c.backgroundColor};line-height:${c.lineHeight};font-size:${c.fontSize};box-shadow:${c.boxShadow}`;
+      for (const [sel, tag] of [["[data-ability-abbr]", "dt"], ["[data-ability-score]", "dd"], ["[data-ability-save]", "dd"]] as const) {
+        const from = b.querySelector(sel);
+        if (from) box.appendChild(typed(from, tag));
+      }
+      text.appendChild(box);
+    }
+    // The corner mark is not part of a text grid's words.
+    for (const m of Array.from(text.querySelectorAll("svg"))) m.remove();
+    grid.insertAdjacentElement("afterend", text);
+    try {
+      const textBoxes = Array.from(text.children);
+      boxes.forEach((b, i) => {
+        const t = textBoxes[i]!;
+        const br = b.getBoundingClientRect();
+        const tr = t.getBoundingClientRect();
+        if (Math.abs(br.width - tr.width) > 0.5 || Math.abs(br.height - tr.height) > 0.5) out.push(`${name(b)}: ${br.width.toFixed(2)} x ${br.height.toFixed(2)} px rolling, ${tr.width.toFixed(2)} x ${tr.height.toFixed(2)} px as text`);
+        const bParts = ["[data-ability-abbr]", "[data-ability-score]", "[data-ability-save]"].map((s) => b.querySelector(s));
+        const tParts = Array.from(t.children);
+        bParts.forEach((p, j) => {
+          const q = tParts[j];
+          if (!p || !q) return;
+          const pr = p.getBoundingClientRect();
+          const qr = q.getBoundingClientRect();
+          const dy = pr.top - br.top - (qr.top - tr.top);
+          const dx = pr.left - br.left - (qr.left - tr.left);
+          if (Math.abs(dy) > 0.5 || Math.abs(dx) > 0.5) out.push(`${name(b)}: line ${j + 1} stands ${dx.toFixed(2)}, ${dy.toFixed(2)} px from where a text box's does`);
+        });
+      });
+    } finally {
+      text.remove();
+    }
+
+    // The corner mark: inside the first line, 6 px from the top and right, and clear of the abbreviation's words.
+    for (const b of boxes) {
+      const m = b.querySelector(mark);
+      if (!m) {
+        out.push(`${name(b)}: no corner mark`);
+        continue;
+      }
+      const br = b.getBoundingClientRect();
+      const mr = m.getBoundingClientRect();
+      const line = abbr(b)!.getBoundingClientRect();
+      if (mr.top < line.top - 1 || mr.bottom > line.bottom + 1) out.push(`${name(b)}: its corner mark ${mr.top.toFixed(1)} to ${mr.bottom.toFixed(1)} is not inside its first line ${line.top.toFixed(1)} to ${line.bottom.toFixed(1)}`);
+      if (Math.abs(mr.top - br.top - 6 * zoom) > 1 || Math.abs(br.right - mr.right - 6 * zoom) > 1) out.push(`${name(b)}: its corner mark stands ${(mr.top - br.top).toFixed(1)} px from the top and ${(br.right - mr.right).toFixed(1)} px from the right, not 6`);
+      const range = doc.createRange();
+      range.selectNodeContents(abbr(b)!.firstChild ?? abbr(b)!);
+      if (range.getBoundingClientRect().right > mr.left - 1) out.push(`${name(b)}: its corner mark is not clear of the abbreviation`);
+    }
+
+    // Rings: an open box wears FL-17's 2 px, a focused one the global ring, 2 px out and 2 px more. Neither is cut by a clipping ancestor.
+    for (const b of boxes) {
+      const ring = 4 * zoom;
+      const br = b.getBoundingClientRect();
+      for (let up = b.parentElement; up; up = up.parentElement) {
+        const c = css(up);
+        if ([c.overflowX, c.overflowY, c.overflow].every((v) => v === "visible")) continue;
+        const ur = up.getBoundingClientRect();
+        // A scroller cuts what scrolls out of it, which is no cut ring: only its sides, which a box never scrolls past, count.
+        if (br.left - ring < ur.left - 0.5 || br.right + ring > ur.right + 0.5) out.push(`${name(b)}: ${up.tagName.toLowerCase()} clips its ring at the side`);
+      }
+    }
+    return out;
+  }, ABILITY_MARK);
+  return lines.map((line) => `${screen}: ${line}`);
+}
+
+/**
+ * The open list's and options' rows (docs/design-v1-stat-block-rolls.md 9):
+ * none runs wider than its box, which would cut a name or a bonus, and a
+ * bonus stands at the row's end. A row whose words and tag do not fit wraps
+ * the tag under the name, never the bonus.
+ */
+export async function rollRowLines(popover: Locator, screen: string): Promise<string[]> {
+  if ((await popover.count()) === 0) return [`${screen}: no list to read`];
+  const lines = await popover.first().evaluate((node) => {
+    type R = { querySelectorAll(s: string): ArrayLike<R>; getBoundingClientRect(): { left: number; right: number; top: number; bottom: number }; scrollWidth: number; clientWidth: number; innerText: string; getAttribute(n: string): string | null };
+    const out: string[] = [];
+    const rows = Array.from((node as unknown as R).querySelectorAll('[role="menuitem"]'));
+    for (const row of rows) {
+      const name = row.innerText.split("\n")[0]?.trim() ?? "?";
+      if (row.scrollWidth > row.clientWidth + 1) out.push(`"${name}" runs ${row.scrollWidth - row.clientWidth} px past its row`);
+    }
+    return out;
+  });
+  return lines.map((line) => `${screen}: ${line}`);
+}

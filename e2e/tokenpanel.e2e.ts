@@ -556,7 +556,7 @@ panelFile(null, () => {
           if (folded) await fold.click();
           const outlined = panel.locator("[data-ability-grid] > [data-save-proficient]");
           await outlined.first().waitFor();
-          assert.deepEqual(await outlined.locator("dt").allTextContents(), ["DEX", "WIS"]);
+          assert.deepEqual(await outlined.locator("dt, [data-ability-abbr]").allTextContents(), ["DEX", "WIS"]);
           const looks = await outlined.first().evaluate((el) => {
             const css = (el as unknown as { ownerDocument: { defaultView: { getComputedStyle(n: unknown): { boxShadow: string; color: string } } } }).ownerDocument.defaultView.getComputedStyle(el);
             return { shadow: css.boxShadow, color: css.color };
