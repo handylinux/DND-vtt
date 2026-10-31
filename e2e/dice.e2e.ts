@@ -1433,7 +1433,8 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
       await focusStill(damage);
       await player.keyboard.press("ContextMenu");
       const menu = rollMenu(player, /^Roll options for Longsword damage/);
-      assert.deepEqual(await menu.getByRole("menuitem").allInnerTexts(), ["Roll secretly", "Roll normally"], "no d20 choice for damage");
+      // No Roll normally either, with nothing pressed in the panel: a tap already rolls it so (D-261031-078).
+      assert.deepEqual(await menu.getByRole("menuitem").allInnerTexts(), ["Roll secretly"], "no d20 choice for damage");
       const before = diceLines(playerSocket.state?.log).length;
       await menu.getByRole("menuitem", { name: "Roll secretly" }).click();
       const line = await waitFor("the damage", () => diceLines(playerSocket.state?.log).slice(before).at(-1)?.data ?? null);

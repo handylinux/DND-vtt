@@ -98,6 +98,7 @@ import { useCastTracker } from "./cast/alerts.ts";
 import { phaseOf } from "./cast/cast.ts";
 import { acceptsRollMode, type RollModeCapability, type RollModeOverride } from "./rollMode.ts";
 import { useRollModeMenu } from "./useRollModeMenu.tsx";
+import { useRollPresses } from "./useDicePanel.ts";
 import { useActOnce, useInitiativeChanged, useRollBlocked, useRollOption, useRowResult, useWatchInitiative } from "./useRollOption.ts";
 
 /** The roll mode row (Roller.tsx) and the sticky result line, which a token's Roll lands the panel by (docs/design-v1-dice-pass.md 8), found from the Dice panel's root (DicePanel.tsx). */
@@ -749,10 +750,11 @@ function Grid(props: { label: string; note?: string; children: ReactNode }) {
  * until its line lands. Its result shows in the panel's newest-roll line at the top (the project owner,
  * 2026-10-17: "it should just be in the header"), so a row never grows when a roll lands.
  */
-function OptionCell(props: { text: string; level?: Proficiency | undefined; tag?: string | undefined; name: string; row: string; disabled: string | null; onTap(override?: RollModeOverride): void; mode?: RollModeCapability; source?: string; valid?(): boolean; pressed?: boolean; grow?: boolean; fill?: boolean; nowrap?: boolean }) {
+function OptionCell(props: { text: string; level?: Proficiency | undefined; tag?: string | undefined; name: string; title?: string; row: string; disabled: string | null; onTap(override?: RollModeOverride): void; mode?: RollModeCapability; source?: string; valid?(): boolean; pressed?: boolean; grow?: boolean; fill?: boolean; nowrap?: boolean }) {
   const { waiting } = useRowResult(props.row);
   const dm = useRoomView((s) => s.you?.role === "dm");
-  const menu = useRollModeMenu({ source: props.source ?? JSON.stringify([props.row, props.name, props.text, props.tag]), name: props.name, capability: props.mode ?? { d20: false, visibility: "creature" }, disabled: waiting || props.disabled !== null, dm, valid: props.valid, onTap: () => props.onTap(), onRoll: props.onTap });
+  const manual = useRollPresses();
+  const menu = useRollModeMenu({ source: props.source ?? JSON.stringify([props.row, props.name, props.text, props.tag]), name: props.name, title: props.title, capability: props.mode ? { ...props.mode, manual } : { d20: false, visibility: "creature" }, disabled: waiting || props.disabled !== null, dm, valid: props.valid, onTap: () => props.onTap(), onRoll: props.onTap });
   const { tooltipHold: _hold, ...events } = menu.buttonProps;
   return (
     <>
@@ -1169,7 +1171,7 @@ function NamedRow(props: { ctx: Ctx; named: NamedRoll }) {
           />
         ) : null}
         {named.dice ? (
-          <OptionCell text="Roll" mode={{ d20: acceptsRollMode(named.dice), visibility: "selectable" }} source={JSON.stringify([diceRow, ctx.creature, named.dice, slot])} name={`${named.name}, ${named.dice}`} row={diceRow} disabled={ctx.blocked} fill onTap={(override) => option.rolls([namedRoll(named.dice!, named.name, ctx.creature)], diceRow, override)} />
+          <OptionCell text="Roll" mode={{ d20: acceptsRollMode(named.dice), visibility: "selectable" }} source={JSON.stringify([diceRow, ctx.creature, named.dice, slot])} name={`${named.name}, ${named.dice}`} title={`${named.name} ${named.dice}`} row={diceRow} disabled={ctx.blocked} fill onTap={(override) => option.rolls([namedRoll(named.dice!, named.name, ctx.creature)], diceRow, override)} />
         ) : null}
         {rechargeUse ? (
           <OptionCell

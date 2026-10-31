@@ -314,7 +314,7 @@ describe("raccoon-vtt a player's save spell", { timeout: 600_000 }, () => {
     await shots.take(pat, "savespell-block");
   });
 
-  test("dpf1-s1. the block's Roll 8d6 Fire and ask offers Secret and Normal only, for the damage alone, and opening and closing it by ContextMenu sends nothing (docs/design-v1-roll-mode-menu.md 1)", async () => {
+  test("dpf1-s1. the block's Roll 8d6 Fire and ask offers Secret only, for the damage alone, and opening and closing it by ContextMenu sends nothing (docs/design-v1-roll-mode-menu.md 1)", async () => {
     const dice = sheet(pat, "Dice");
     const block = dice.getByRole("group", { name: "Ask for saves: Fireball" });
     const send = block.getByRole("button", { name: "Roll 8d6 Fire and ask" });
@@ -326,7 +326,8 @@ describe("raccoon-vtt a player's save spell", { timeout: 600_000 }, () => {
     await pat.keyboard.press("ContextMenu");
     const menu = pat.getByRole("menu", { name: "Roll options for Roll 8d6 Fire and ask" });
     await menu.waitFor();
-    assert.deepEqual(await menu.getByRole("menuitem").allInnerTexts(), ["Roll secretly", "Roll normally"], "damage takes no Advantage or Disadvantage");
+    // No Roll normally, with nothing pressed in the panel: a tap already rolls it so (D-261031-078).
+    assert.deepEqual(await menu.getByRole("menuitem").allInnerTexts(), ["Roll secretly"], "damage takes no Advantage or Disadvantage");
     await shots.take(pat, "dpf1-s1-cast-damage-menu");
     await pat.keyboard.press("Escape");
     await menu.waitFor({ state: "detached" });

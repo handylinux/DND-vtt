@@ -171,7 +171,7 @@ test("one-roll group damage uses safe public labels and preserves the fixed cast
   assert.equal(invocation.to, "all");
   assert.match(invocation.rolls[0]!.label!, /^Trap damage/);
   const html = drawPage(page);
-  assert.match(html, /Hold, right-click or Shift\+F10 for Secret or Normal/);
+  assert.match(html, /Hold, right-click or Shift\+F10 for Secret\./);
   assert.doesNotMatch(html, /type="submit"/);
 });
 

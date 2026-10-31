@@ -484,7 +484,7 @@ test("actual single-creature rolls register menus without changing proficiency n
     assert.match(button, /aria-haspopup="menu"/);
     assert.match(button, /aria-keyshortcuts="ContextMenu Shift\+F10"/);
   }
-  assert.match(html, /Hold, right-click or Shift\+F10 for Secret or Normal/);
+  assert.match(html, /Hold, right-click or Shift\+F10 for Secret\./);
   const ask = /<button[^>]*aria-label="Dexterity save[^>]*>/.exec(render(DM, false))?.[0];
   assert.ok(ask); assert.doesNotMatch(ask, /aria-haspopup|aria-keyshortcuts/);
   const unknown = render(P1, false, false, {}, true, "");

@@ -4,12 +4,14 @@ import { usePopover } from "../../components/Popover.tsx";
 import { theme } from "../../lib/theme.ts";
 import { RollModeMenu } from "./RollModeMenu.tsx";
 import { attachConsumedTouch, RollPress } from "./rollPress.ts";
-import { hasRollModeMenu, rollModeHint, rollModeItems, type RollModeCapability, type RollModeOverride } from "./rollMode.ts";
+import { hasRollModeMenu, rollModeHint, rollModeItems, rollModeTitle, type RollModeCapability, type RollModeOverride } from "./rollMode.ts";
 
 export type UseRollModeMenuOptions = {
   /** Include every input that can change the roll or its route. Stable primitives work best. */
   source: string;
   name: string;
+  /** The menu's visible title where the source's own words say too little, such as Again's "Again: 1d20+5". By default those words, or `name` (rollModeTitle). */
+  title?: string;
   capability: RollModeCapability;
   /** Only cases where the base tap did nothing, such as native disabled or busy. Ordinary taps call onTap when not disabled and the press allows them. */
   disabled?: boolean;
@@ -103,10 +105,8 @@ export function useRollModeMenu(options: UseRollModeMenuOptions): RollModeMenuBi
     clearTouch();
     current.current.close("anchor");
   }, [source, enabled, capabilityKey]);
-  useLayoutEffect(() => {
-    if (!handle.open) return;
-    return raiseRollModeHosts(handle.anchor.current);
-  }, [handle.open]);
+  // The source stays marked while its menu is open, so the roll a finger hid is still plain to see (D-261031-079).
+  useLayoutEffect(() => (handle.open ? markRollModeSource(handle.anchor.current) : undefined), [handle.open, handle.anchor]);
   useEffect(() => {
     if (!enabled) return;
     const down = (e: PointerEvent) => {
@@ -186,7 +186,7 @@ export function useRollModeMenu(options: UseRollModeMenuOptions): RollModeMenuBi
   });
   return {
     buttonProps, describe, open: handle.open, pressStyle: enabled ? { WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" } : {},
-    menu: <>{enabled && hint ? <span hidden id={hintId}>{hint}</span> : null}{enabled ? <RollModeMenu handle={handle} name={options.name} capability={options.capability} dm={options.dm} onPick={(override) => {
+    menu: <>{enabled && hint ? <span hidden id={hintId}>{hint}</span> : null}{enabled ? <RollModeMenu handle={handle} name={options.name} title={handle.open ? options.title ?? rollModeTitle(handle.anchor.current?.innerText ?? "", options.name) : ""} capability={options.capability} dm={options.dm} onPick={(override) => {
       const at = latest.current;
       if (openedSource.current !== at.source) return;
       if (!rollModeItems(at.capability, at.dm).some((item) => item.id === override && !item.disabled)) return;
@@ -200,15 +200,18 @@ export function useRollModeMenu(options: UseRollModeMenuOptions): RollModeMenuBi
   };
 }
 
-/** Keep higher overlays above the menu and leave later host updates alone. */
-export function raiseRollModeHosts(anchor: HTMLElement | null): () => void {
-  const hosts: { node: HTMLElement; before: string; painted: string }[] = [];
-  for (let node = anchor?.parentElement; node && node !== document.body; node = node.parentElement) {
-    const style = getComputedStyle(node);
-    if (style.position === "static" || style.zIndex !== "auto" && Number(style.zIndex) >= theme.z.popover) continue;
-    const before = node.style.zIndex;
-    node.style.zIndex = String(theme.z.popover);
-    hosts.push({ node, before, painted: node.style.zIndex });
-  }
-  return () => { for (const host of hosts) if (host.node.style.zIndex === host.painted) host.node.style.zIndex = host.before; };
+/**
+ * The open menu's mark on its source: an accent ring just outside the
+ * button's border, clear of a proficiency border or a focus outline on it.
+ * Like the held press's inset ring, it is paint only, and the restore puts
+ * back only the value it wrote, so a render meanwhile keeps its own.
+ */
+export function markRollModeSource(node: HTMLElement | null): () => void {
+  if (!node) return () => undefined;
+  const before = node.style.boxShadow;
+  node.style.boxShadow = [before, `0 0 0 2px ${theme.color.accent}`].filter(Boolean).join(", ");
+  const painted = node.style.boxShadow;
+  return () => {
+    if (node.style.boxShadow === painted) node.style.boxShadow = before;
+  };
 }

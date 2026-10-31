@@ -6,6 +6,7 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
 const { useRollModeMenu } = await import("./useRollModeMenu.tsx");
 const { RollModeMenu } = await import("./RollModeMenu.tsx");
+const { theme } = await import("../../lib/theme.ts");
 import type { PopoverHandle } from "../../components/Popover.tsx";
 import type { UseRollModeMenuOptions } from "./useRollModeMenu.tsx";
 
@@ -25,7 +26,7 @@ test("eligible source retains its name, description, role and dimensions without
   assert.match(html, /aria-describedby="proficiency-help [^"]+"/);
   assert.match(html, /aria-keyshortcuts="ContextMenu Shift\+F10"/);
   assert.match(html, /aria-haspopup="menu" aria-expanded="false"/);
-  assert.match(html, /Hold, right-click or Shift\+F10 for Advantage, Disadvantage or Normal/);
+  assert.match(html, /Hold, right-click or Shift\+F10 for Advantage or Disadvantage\./);
   assert.doesNotMatch(html, /min-width|padding|tooltipHold/);
   // iOS Safari reads only the prefixed property, so a long press would select the button's words without it.
   assert.match(html, /-webkit-touch-callout:none;-webkit-user-select:none;user-select:none/);
@@ -36,10 +37,15 @@ test("excluded and disabled sources receive no menu attributes or hint", () => {
     assert.match(html, /aria-describedby="proficiency-help"/);
   }
 });
-test("menu actions render in order with visible fixed and repeat explanations", () => {
+test("menu actions render in order, titles alone, with fixed and repeat explanations as their descriptions", () => {
   const handle = { open: true, kind: "menu", contentId: "roll-menu", anchor: { current: null }, box: { current: null }, how: { by: "key", from: "first" } } as unknown as PopoverHandle;
-  const html = renderToStaticMarkup(createElement(RollModeMenu, { handle, name: "Longbow", capability: { d20: true, visibility: "repeat", repeat: true }, dm: true, onPick() {} }));
+  const html = renderToStaticMarkup(createElement(RollModeMenu, { handle, name: "Longbow", title: "Again: 1d20+5", capability: { d20: true, visibility: "repeat", repeat: true }, dm: true, onPick() {} }));
   assert.match(html, /data-roll-mode-menu=""/);
+  assert.match(html, /<div data-roll-mode-title="" aria-hidden="true"[^>]*>Again: 1d20\+5<\/div><div role="menu"/, "the title stands over the rows, hidden from a screen reader, which hears the menu's label");
+  const look = /<div data-roll-mode-title="" aria-hidden="true" style="([^"]*)"/.exec(html)?.[1] ?? "";
+  assert.doesNotMatch(look, /text-transform|letter-spacing/, "the title keeps the button's own case");
+  assert.ok(look.includes(`font-weight:${theme.weight.bold};`) && look.includes(`color:${theme.color.textMuted};`), `bolder than the rows and muted, so it reads as their title: ${look}`);
+  assert.match(look, /-webkit-line-clamp:2;.*overflow:hidden/);
   assert.match(html, /role="menu"[^>]*aria-label="Roll options for Longbow"/);
   assert.equal((html.match(/role="menuitem"/g) ?? []).length, 4);
   assert.doesNotMatch(html, /menuitemradio|aria-checked|touch-action:none/);
@@ -48,24 +54,41 @@ test("menu actions render in order with visible fixed and repeat explanations", 
   assert.match(html, /aria-disabled="true"/);
 });
 
-test("each capability's rendered help names its choice and keeps fixed reasons beside it", () => {
+/** Each menu item's accessible description, by the hidden text its aria-describedby names, and any words the menu shows besides its items. */
+function described(html: string): { descriptions: (string | null)[]; shown: string[] } {
+  const text = (raw: string) => raw.replaceAll("&#x27;", "'");
+  const hidden = new Map([...html.matchAll(/<span id="([^"]+)" hidden="">([^<]*)<\/span>/g)].map((m) => [m[1]!, text(m[2]!)]));
+  const descriptions = [...html.matchAll(/<[^>]*role="menuitem"[^>]*>/g)].map(([tag]) => {
+    const id = /aria-describedby="([^"]+)"/.exec(tag)?.[1];
+    return id ? hidden.get(id) ?? `(no ${id})` : null;
+  });
+  return { descriptions, shown: [...html.matchAll(/<p[^>]*>([^<]+)<\/p>/g)].map((m) => text(m[1]!)) };
+}
+
+test("each capability's menu shows no help of its own, offers Normal only where a tap would roll otherwise, and each choice's description names it, with a fixed reason and a note for every choice (D-261031-078, D-261031-080)", () => {
   const handle = { open: true, kind: "menu", contentId: "roll-menu", anchor: { current: null }, box: { current: null }, how: { by: "key", from: "first" } } as unknown as PopoverHandle;
-  for (const dm of [false, true]) for (const visibility of ["selectable", "request", "creature", "repeat"] as const) for (const d20 of [false, true]) for (const damage of [false, true]) for (const repeat of [false, true]) for (const batch of [false, true]) {
-    const capability = { d20, damage, visibility, repeat, batch };
-    const html = renderToStaticMarkup(createElement(RollModeMenu, { handle, name: "Test", capability, dm, onPick() {} }));
-    const lines = [...html.matchAll(/<p[^>]*>([^<]+)<\/p>/g)].map((match) => match[1]!.replaceAll("&#x27;", "'"));
+  for (const dm of [false, true]) for (const visibility of ["selectable", "request", "creature", "repeat"] as const) for (const d20 of [false, true]) for (const damage of [false, true]) for (const repeat of [false, true]) for (const batch of [false, true]) for (const manual of [{}, { mode: true }, { secret: true }]) {
+    const capability = { d20, damage, visibility, repeat, batch, manual };
+    const html = renderToStaticMarkup(createElement(RollModeMenu, { handle, name: "Test", title: "Test", capability, dm, onPick() {} }));
+    const { descriptions, shown } = described(html);
     if ((!d20 || damage) && visibility !== "selectable") {
-      assert.deepEqual(lines, [], "ineligible controls have no help for missing choices");
+      assert.equal(html, "", "ineligible controls have no menu");
       continue;
     }
+    assert.deepEqual(shown, [], `no visible help: ${JSON.stringify(capability)}`);
     const secret = visibility === "selectable" ? dm ? "hide the dice from players." : "you and the DM see the result." : {
       request: "request answers keep the request's visibility.", creature: "this roll's visibility is set by the creature.", repeat: "this repeat keeps its recorded visibility.",
     }[visibility];
-    assert.deepEqual(lines, [
-      `Roll secretly: ${secret}`,
-      repeat ? "Roll normally: ignores the recorded mode and keeps the formula and visibility." : "Roll normally: ignores Adv, Dis and Secret pressed for this roll. Conditions and usual visibility still apply.",
+    const every = [
       ...(repeat ? ["All repeat choices: use the recorded formula. Current effects are not rebuilt."] : []),
       ...(batch ? ["All choices: apply to server rolls only. Players choose their own modes."] : []),
+    ];
+    const own = (words?: string) => [words, ...every].filter(Boolean).join(" ") || null;
+    const normal = repeat || (d20 && !damage && "mode" in manual) || (visibility === "selectable" && "secret" in manual);
+    assert.deepEqual(descriptions, [
+      ...(d20 && !damage ? [own(), own()] : []),
+      own(`Roll secretly: ${secret}`),
+      ...(normal ? [own(repeat ? "Roll normally: ignores the recorded mode and keeps the formula and visibility." : "Roll normally: ignores Adv, Dis and Secret pressed for this roll. Conditions and usual visibility still apply.")] : []),
     ], JSON.stringify(capability));
     assert.doesNotMatch(html, /manual modes/i);
     assert.equal(/aria-disabled="true"/.test(html), visibility !== "selectable");
@@ -194,21 +217,23 @@ test("containing scrolls preserve an open menu while its source remains visible"
   } finally { Object.assign(globalThis, previous); }
 });
 
-test("host raising preserves higher overlays and restores only the inline values it wrote", async () => {
-  const { raiseRollModeHosts } = await import("./useRollModeMenu.tsx");
-  const previous = { document: globalThis.document, getComputedStyle: globalThis.getComputedStyle };
-  type Host = { parentElement: Host | null; style: { zIndex: string }; computed: { position: string; zIndex: string } };
-  const body = { parentElement: null, style: { zIndex: "" }, computed: { position: "relative", zIndex: "auto" } };
-  const hosts: Host[] = [];
-  for (const zIndex of ["auto", "-1", "0", "20", "21", "22", "25"]) hosts.push({ parentElement: hosts.at(-1) ?? body, style: { zIndex: zIndex === "auto" ? "" : zIndex }, computed: { position: "relative", zIndex } });
-  const plain = { parentElement: hosts.at(-1)!, style: { zIndex: "" }, computed: { position: "static", zIndex: "auto" } };
-  Object.assign(globalThis, { document: { body }, getComputedStyle: (node: Host) => node.computed });
-  try {
-    const restore = raiseRollModeHosts({ parentElement: plain } as unknown as HTMLElement);
-    assert.deepEqual(hosts.map((host) => host.style.zIndex), ["21", "21", "21", "21", "21", "22", "25"]);
-    assert.equal(plain.style.zIndex, ""); assert.equal(body.style.zIndex, "");
-    hosts[1]!.style.zIndex = "30";
-    restore();
-    assert.deepEqual(hosts.map((host) => host.style.zIndex), ["", "30", "0", "20", "21", "22", "25"]);
-  } finally { Object.assign(globalThis, previous); }
+test("the open menu's ring goes on its source outside its border and comes off as it closes, putting back only what it wrote (D-261031-079)", async () => {
+  const { markRollModeSource } = await import("./useRollModeMenu.tsx");
+  const { theme } = await import("../../lib/theme.ts");
+  const ring = `0 0 0 2px ${theme.color.accent}`;
+  const button = { style: { boxShadow: "" } };
+  let clear = markRollModeSource(button as unknown as HTMLElement);
+  assert.equal(button.style.boxShadow, ring);
+  clear();
+  assert.equal(button.style.boxShadow, "", "closed: the ring is gone");
+  const framed = { style: { boxShadow: "inset 0 -2px 0 gold" } };
+  clear = markRollModeSource(framed as unknown as HTMLElement);
+  assert.equal(framed.style.boxShadow, `inset 0 -2px 0 gold, ${ring}`, "beside a proficiency frame's own shadow");
+  clear();
+  assert.equal(framed.style.boxShadow, "inset 0 -2px 0 gold");
+  clear = markRollModeSource(framed as unknown as HTMLElement);
+  framed.style.boxShadow = "inset 0 -2px 0 silver";
+  clear();
+  assert.equal(framed.style.boxShadow, "inset 0 -2px 0 silver", "a render's new value while open stays");
+  markRollModeSource(null)();
 });

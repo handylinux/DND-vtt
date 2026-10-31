@@ -204,28 +204,31 @@ function rollMenu(page: Page, name: string | RegExp): Locator {
 
 type Item = { title: string; disabled: boolean };
 
+/*
+ * Roll normally shows only where it rolls otherwise than a tap
+ * (D-261031-078): on a repeat, and where the tap would take a press of the
+ * panel's or a typed mode word. These lists are the menus with none.
+ */
 const D20: Item[] = [
   { title: "Roll with Advantage", disabled: false },
   { title: "Roll with Disadvantage", disabled: false },
   { title: "Roll secretly", disabled: false },
-  { title: "Roll normally", disabled: false },
 ];
 /** A d20 roll whose visibility the route fixes: a request's answer, a death save, an Again. */
 const D20_FIXED: Item[] = [
   { title: "Roll with Advantage", disabled: false },
   { title: "Roll with Disadvantage", disabled: false },
   { title: "Roll secretly", disabled: true },
-  { title: "Roll normally", disabled: false },
 ];
-const PLAIN: Item[] = [
-  { title: "Roll secretly", disabled: false },
-  { title: "Roll normally", disabled: false },
-];
+const PLAIN: Item[] = [{ title: "Roll secretly", disabled: false }];
+const withNormal = (items: Item[]): Item[] => [...items, { title: "Roll normally", disabled: false }];
 
 const HINT = {
-  d20: "Hold, right-click or Shift+F10 for Advantage, Disadvantage, Secret or Normal.",
-  fixed: "Hold, right-click or Shift+F10 for Advantage, Disadvantage or Normal.",
-  plain: "Hold, right-click or Shift+F10 for Secret or Normal.",
+  d20: "Hold, right-click or Shift+F10 for Advantage, Disadvantage or Secret.",
+  fixed: "Hold, right-click or Shift+F10 for Advantage or Disadvantage.",
+  plain: "Hold, right-click or Shift+F10 for Secret.",
+  d20Normal: "Hold, right-click or Shift+F10 for Advantage, Disadvantage, Secret or Normal.",
+  fixedNormal: "Hold, right-click or Shift+F10 for Advantage, Disadvantage or Normal.",
 } as const;
 
 const NORMAL_HELP = "Roll normally: ignores Adv, Dis and Secret pressed for this roll. Conditions and usual visibility still apply.";
@@ -235,9 +238,40 @@ async function itemsOf(menu: Locator): Promise<Item[]> {
   return menu.getByRole("menuitem").evaluateAll((els) => els.map((el) => ({ title: (el as unknown as { innerText: string }).innerText.trim(), disabled: el.getAttribute("aria-disabled") === "true" })));
 }
 
-/** The visible help above the menu's rows (RollModeMenu.tsx). */
-function helpOf(page: Page, menu: Locator): Promise<string[]> {
-  return page.locator("div[data-roll-mode-menu]").filter({ has: menu }).locator("p").allInnerTexts();
+/**
+ * The menu's explanations, from its choices' accessible descriptions
+ * (rollMode.ts rollModeItems): each line once, a note for every choice
+ * ("All choices: ...") last. The menu shows none of them (D-261031-080).
+ */
+async function helpOf(page: Page, menu: Locator): Promise<string[]> {
+  const shown = await page.locator("div[data-roll-mode-menu]").filter({ has: menu }).locator("p").count();
+  assert.equal(shown, 0, "the menu shows no help of its own");
+  const descriptions = await menu.getByRole("menuitem").evaluateAll((els) => els.map((el) => {
+    const doc = (el as unknown as { ownerDocument: { getElementById(id: string): { textContent: string | null } | null } }).ownerDocument;
+    return (el.getAttribute("aria-describedby") ?? "").split(" ").filter(Boolean).map((id: string) => doc.getElementById(id)?.textContent ?? "").join(" ");
+  }));
+  const lines = [...new Set(descriptions.flatMap((d) => d.split(/ (?=All (?:repeat )?choices:)/)).filter(Boolean))];
+  return [...lines.filter((l) => !l.startsWith("All ")), ...lines.filter((l) => l.startsWith("All "))];
+}
+
+/** The words at the top of the open menu that name its roll (RollModeMenu.tsx). */
+async function titleOf(page: Page, menu: Locator): Promise<string> {
+  return (await page.locator("div[data-roll-mode-menu]").filter({ has: menu }).locator("[data-roll-mode-title]").first().innerText()).trim();
+}
+
+/**
+ * Whether `button` wears the open menu's ring (useRollModeMenu.tsx
+ * markRollModeSource), an accent shadow 2 px out with no inset, unlike the
+ * held press's. Null where the button has gone, as a card that closes with
+ * its roll.
+ */
+async function ringed(button: Locator): Promise<boolean | null> {
+  try {
+    const shadow = await button.evaluate((el) => (el as unknown as { style: { boxShadow: string } }).style.boxShadow, undefined, { timeout: 1_000 });
+    return /(^|, )0 0 0 2px /.test(shadow);
+  } catch {
+    return null;
+  }
 }
 
 /** What a button's description reads: each id in aria-describedby, by its text. */
@@ -255,8 +289,9 @@ async function modes(scope: Locator): Promise<{ adv: boolean; dis: boolean; secr
   return { adv: await pressed(/^Advantage$/), dis: await pressed(/^Disadvantage$/), secret: await pressed(/^(Hide from players|Only the DM sees it)$/) };
 }
 
-async function pressMode(scope: Locator, name: "Advantage" | "Disadvantage"): Promise<void> {
-  const button = scope.getByRole("group", { name: "For the next roll" }).getByRole("button", { name, exact: true });
+async function pressMode(scope: Locator, name: "Advantage" | "Disadvantage" | "Secret"): Promise<void> {
+  const group = scope.getByRole("group", { name: "For the next roll" });
+  const button = name === "Secret" ? group.getByRole("button", { name: /^(Hide from players|Only the DM sees it)$/ }) : group.getByRole("button", { name, exact: true });
   const was = await button.getAttribute("aria-pressed");
   await button.click();
   await waitFor(`${name} switched`, async () => ((await button.getAttribute("aria-pressed")) !== was ? true : null));
@@ -377,24 +412,26 @@ type Family = {
   menu: RegExp;
   items: Item[];
   hint: string;
-  /** Help above the rows, as each line reads. */
+  /** Its choices' explanations, as each line reads (helpOf). */
   help?: string[];
+  /** A panel toggle pressed before it opens, which brings Roll normally into its menu (D-261031-078). */
+  press?: "Advantage" | "Secret";
   pick: string;
   sends: { t: string; mode: string | null; cancelled?: boolean; to: string | null };
 };
 
 /** Thorn's controls as Pat rolls them: his own creature, so every roll starts public. */
 function patFamilies(): Family[] {
-  const player = ["Roll secretly: you and the DM see the result.", NORMAL_HELP];
+  const player = ["Roll secretly: you and the DM see the result."];
   return [
     { what: "a save", button: (s) => s.getByRole("button", { name: /^Wisdom save/ }), menu: /^Roll options for Wisdom save/, items: D20, hint: HINT.d20, help: player, pick: "Roll with Disadvantage", sends: { t: "dice.roll", mode: "dis", to: "all" } },
     { what: "an ability check", button: (s) => s.getByRole("button", { name: /^Strength check/ }), menu: /^Roll options for Strength check/, items: D20, hint: HINT.d20, pick: "Roll secretly", sends: { t: "dice.roll", mode: null, to: "dm" } },
-    { what: "a skill", button: (s) => s.getByRole("button", { name: /^Athletics check/ }), menu: /^Roll options for Athletics check, proficient/, items: D20, hint: HINT.d20, pick: "Roll normally", sends: { t: "dice.roll", mode: null, to: "all" } },
+    { what: "a skill", button: (s) => s.getByRole("button", { name: /^Athletics check/ }), menu: /^Roll options for Athletics check, proficient/, items: D20, hint: HINT.d20, press: "Advantage", pick: "Roll normally", sends: { t: "dice.roll", mode: null, to: "all" } },
     { what: "Initiative", button: (s) => s.getByRole("button", { name: /^Initiative/ }), menu: /^Roll options for Initiative/, items: D20, hint: HINT.d20, pick: "Roll with Advantage", sends: { t: "dice.roll", mode: "adv", to: "all" } },
     { what: "an attack", button: (s) => s.getByRole("button", { name: "Longsword", exact: true }), menu: /^Roll options for Longsword$/, items: D20, hint: HINT.d20, pick: "Roll with Advantage", sends: { t: "dice.roll", mode: "adv", to: "all" } },
     // A natural 20 on the attack before it presses Critical Hit, which the damage's name then carries.
     { what: "its damage", button: (s) => s.getByRole("button", { name: /^Longsword damage(, .+)?$/ }), menu: /^Roll options for Longsword damage(, .+)?$/, items: PLAIN, hint: HINT.plain, pick: "Roll secretly", sends: { t: "dice.roll", mode: null, to: "dm" } },
-    { what: "a heal", button: (s) => s.getByRole("button", { name: "Cure Wounds healing", exact: true }), menu: /^Roll options for Cure Wounds healing$/, items: PLAIN, hint: HINT.plain, pick: "Roll normally", sends: { t: "dice.roll", mode: null, to: "all" } },
+    { what: "a heal", button: (s) => s.getByRole("button", { name: "Cure Wounds healing", exact: true }), menu: /^Roll options for Cure Wounds healing$/, items: PLAIN, hint: HINT.plain, press: "Secret", pick: "Roll normally", sends: { t: "dice.roll", mode: null, to: "all" } },
     { what: "a plain d20", button: (s) => s.getByRole("button", { name: "Luck, 1d20", exact: true }), menu: /^Roll options for Luck, 1d20$/, items: D20, hint: HINT.d20, pick: "Roll with Disadvantage", sends: { t: "dice.roll", mode: "dis", to: "all" } },
     { what: "a plain d8", button: (s) => s.getByRole("button", { name: "Bardic Inspiration, 1d8", exact: true }), menu: /^Roll options for Bardic Inspiration, 1d8$/, items: PLAIN, hint: HINT.plain, pick: "Roll secretly", sends: { t: "dice.roll", mode: null, to: "dm" } },
   ];
@@ -406,7 +443,7 @@ const DEATH_SAVE: Family = {
   menu: /^Roll options for Death Save/,
   items: D20_FIXED,
   hint: HINT.fixed,
-  help: ["Roll secretly: this roll's visibility is set by the creature.", NORMAL_HELP],
+  help: ["Roll secretly: this roll's visibility is set by the creature."],
   pick: "Roll with Advantage",
   sends: { t: "actor.deathRoll", mode: "adv", to: null },
 };
@@ -416,8 +453,8 @@ function againFamilies(formula: string): Family[] {
   const help = ["Roll secretly: this repeat keeps its recorded visibility.", "Roll normally: ignores the recorded mode and keeps the formula and visibility.", "All repeat choices: use the recorded formula. Current effects are not rebuilt."];
   const escaped = formula.replace(/[+]/g, "\\+");
   return [
-    { what: "the sticky line's Again", button: (s) => s.locator("[data-dice-last]").getByRole("button", { name: "Again", exact: true }), menu: /^Roll options for Again$/, items: D20_FIXED, hint: HINT.fixed, help, pick: "Roll with Disadvantage", sends: { t: "dice.roll", mode: "dis", to: "all" } },
-    { what: "Recent rolls' Again", button: (s) => s.locator("[data-dice-recent]").getByRole("button", { name: new RegExp(`^Roll again: ${escaped}`) }).first(), menu: /^Roll options for Again$/, items: D20_FIXED, hint: HINT.fixed, help, pick: "Roll with Advantage", sends: { t: "dice.roll", mode: "adv", to: "all" } },
+    { what: "the sticky line's Again", button: (s) => s.locator("[data-dice-last]").getByRole("button", { name: "Again", exact: true }), menu: /^Roll options for Again$/, items: withNormal(D20_FIXED), hint: HINT.fixedNormal, help, pick: "Roll with Disadvantage", sends: { t: "dice.roll", mode: "dis", to: "all" } },
+    { what: "Recent rolls' Again", button: (s) => s.locator("[data-dice-recent]").getByRole("button", { name: new RegExp(`^Roll again: ${escaped}`) }).first(), menu: /^Roll options for Again$/, items: withNormal(D20_FIXED), hint: HINT.fixedNormal, help, pick: "Roll with Advantage", sends: { t: "dice.roll", mode: "adv", to: "all" } },
   ];
 }
 
@@ -442,6 +479,9 @@ async function opened(page: Page, button: Locator, family: Family): Promise<Loca
   }
   assert.deepEqual(await itemsOf(menu), family.items, `${family.what}'s menu`);
   if (family.help) assert.deepEqual(await helpOf(page, menu), family.help, `${family.what}'s help`);
+  // Both signs of the roll it opened on (D-261031-079): its words at the menu's top, and a ring on its button.
+  assert.ok((await titleOf(page, menu)).length > 0, `${family.what}'s menu names its roll`);
+  assert.equal(await ringed(button), true, `${family.what} is marked while its menu is open`);
   assert.equal(await button.getAttribute("aria-expanded"), "true", `${family.what} says it is open`);
   assert.equal(await button.getAttribute("aria-controls"), await menu.getAttribute("id"), `${family.what} controls its menu`);
   return menu;
@@ -472,6 +512,7 @@ async function pickFrom(page: Page, sent: OpsSent, button: Locator, family: Fami
   const got = sentMode(op);
   assert.deepEqual({ ...got, cancelled: got.cancelled }, { cancelled: false, ...family.sends }, `${family.what}: ${family.pick}`);
   await menu.waitFor({ state: "detached" });
+  assert.notEqual(await ringed(button), true, `${family.what}'s ring went with its menu`);
   return op;
 }
 
@@ -490,6 +531,123 @@ async function closeMenus(page: Page): Promise<void> {
 async function setDying(on: boolean): Promise<void> {
   await ops.send({ t: "actor.hp", target: { characterId: run.thornChar }, change: { kind: on ? "damage" : "heal", amount: 30 } });
   await waitFor(`Thorn ${on ? "dying" : "up again"}`, () => ((dmSocket.state?.characters[run.thornChar]?.actor.life === "dying") === on ? true : null));
+}
+
+type Box = { left: number; top: number; right: number; bottom: number };
+
+/**
+ * FL-17: the open menu as `button`'s page draws it, whole and on its
+ * button. Each choice lies inside the box, and a press at its middle lands
+ * on it, which a scroller clipping the box or a surface drawn over it
+ * would take. The box shows its roll's name over its choices' titles and
+ * nothing else (D-261031-079, D-261031-080), lies on the screen, and
+ * stands within 10 px of its button, which wears its ring, without
+ * covering it. With `whole` false, where neither side of the button has room for every
+ * choice, as at 320 x 568 at 130% with the button mid-screen, the box may
+ * scroll its choices: those it shows still take a press.
+ */
+function menuFaults(button: Locator, at: string, title: string, whole = true): Promise<string[]> {
+  return button.evaluate((el, [at, title, whole]) => {
+    type R = { left: number; top: number; right: number; bottom: number };
+    type E = { getBoundingClientRect(): R; contains(n: unknown): boolean; querySelectorAll(s: string): ArrayLike<E>; innerText: string; textContent: string | null; tagName: string };
+    const doc = (el as unknown as { ownerDocument: { querySelector(s: string): E | null; elementFromPoint(x: number, y: number): E | null; defaultView: { innerWidth: number; innerHeight: number } } }).ownerDocument;
+    const box = doc.querySelector("[data-rvtt-popover]");
+    if (!box) return [`${at}: no menu open`];
+    const faults: string[] = [];
+    const b = box.getBoundingClientRect();
+    const shown = (r: R) => [r.left, r.top, r.right, r.bottom].map(Math.round).join(",");
+    const { innerWidth: w, innerHeight: h } = doc.defaultView;
+    if (b.left < -0.5 || b.top < -0.5 || b.right > w + 0.5 || b.bottom > h + 0.5) faults.push(`${at}: the box ${shown(b)} runs off the ${w} x ${h} screen`);
+    const items = Array.from(box.querySelectorAll('[role="menuitem"]'));
+    for (const item of items) {
+      const r = item.getBoundingClientRect();
+      const name = item.innerText.trim();
+      const past = r.top < b.top - 0.5 || r.bottom > b.bottom + 0.5;
+      if (past && whole) faults.push(`${at}: "${name}" at ${shown(r)} lies past the box ${shown(b)}`);
+      if (past) continue;
+      const hit = doc.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+      if (!item.contains(hit)) faults.push(`${at}: a press at "${name}"'s middle lands on ${hit ? `${hit.tagName} "${(hit.textContent ?? "").trim().slice(0, 30)}"` : "nothing"}`);
+    }
+    const words = box.innerText.split("\n").map((line) => line.trim()).filter((line) => line && (whole || line !== "Scroll for more"));
+    const titles = [title, ...items.map((item) => item.innerText.trim())];
+    if (JSON.stringify(words) !== JSON.stringify(titles)) faults.push(`${at}: the box shows ${JSON.stringify(words)}, not its roll's name over its choices ${JSON.stringify(titles)}`);
+    const shadow = (el as unknown as { style: { boxShadow: string } }).style.boxShadow;
+    if (!/(^|, )0 0 0 2px /.test(shadow)) faults.push(`${at}: the button wears no ring while its menu is open: "${shadow}"`);
+    const s = (el as unknown as E).getBoundingClientRect();
+    const gap = b.bottom <= s.top + 0.5 ? s.top - b.bottom : b.top >= s.bottom - 0.5 ? b.top - s.bottom : null;
+    if (gap === null) faults.push(`${at}: the box ${shown(b)} covers its button ${shown(s)}`);
+    else if (gap > 10) faults.push(`${at}: the box ${shown(b)} stands ${Math.round(gap)} px off its button ${shown(s)}`);
+    return faults;
+  }, [at, title, whole] as const);
+}
+
+/**
+ * Scrolls the panel around `button` so the button shows just under the
+ * panel's top, as when the panel is scrolled down to a roll low in it, or
+ * in its middle, as far as the panel scrolls, and clear of a sticky
+ * header. Hands back the button's middle and the panel's box.
+ */
+function settleIn(button: Locator, at: "top" | "middle"): Promise<{ x: number; y: number; panel: Box }> {
+  return button.evaluate((el, at) => {
+    type R = { left: number; top: number; right: number; bottom: number; height: number };
+    type E = { getBoundingClientRect(): R; contains(n: unknown): boolean; parentElement: E | null; scrollTop: number; offsetHeight: number };
+    const doc = (el as unknown as { ownerDocument: { elementFromPoint(x: number, y: number): unknown; defaultView: { getComputedStyle(e: E): { overflowY: string } } } }).ownerDocument;
+    const button = el as unknown as E;
+    let panel = button.parentElement;
+    while (panel && !/(auto|scroll)/.test(doc.defaultView.getComputedStyle(panel).overflowY)) panel = panel.parentElement;
+    if (!panel) throw new Error("the button has no panel that scrolls");
+    const p = panel.getBoundingClientRect();
+    const zoom = p.height / panel.offsetHeight;
+    const b = button.getBoundingClientRect();
+    panel.scrollTop += (at === "top" ? b.top - (p.top + 4) : b.top + b.height / 2 - (p.top + p.height / 2)) / zoom;
+    const middle = () => {
+      const r = button.getBoundingClientRect();
+      return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
+    };
+    // A sticky header over the panel's top covers what scrolls under it, so the button comes down until a press at its middle lands on it.
+    for (let i = 0; i < 40 && !button.contains(doc.elementFromPoint(middle().x, middle().y)); i++) panel.scrollTop -= 8;
+    const { left, top, right, bottom } = panel.getBoundingClientRect();
+    return { ...middle(), panel: { left, top, right, bottom } };
+  }, at);
+}
+
+/**
+ * A spot for a finger on the panel around `button`: 4 px in from the
+ * panel's left edge, in the middle of the longest stretch there that the
+ * open menu and the button leave clear, and near that stretch's top for a
+ * long drag down. Whether the button shows in the panel comes back too.
+ */
+function freeSpot(button: Locator): Promise<{ at: TouchAt; high: TouchAt; inView: boolean; height: number }> {
+  return button.evaluate((el) => {
+    type R = { left: number; top: number; right: number; bottom: number };
+    type E = { getBoundingClientRect(): R; parentElement: E | null };
+    const doc = (el as unknown as { ownerDocument: { querySelector(s: string): E | null; defaultView: { getComputedStyle(e: E): { overflowY: string } } } }).ownerDocument;
+    let panel = (el as unknown as E).parentElement;
+    while (panel && !/(auto|scroll)/.test(doc.defaultView.getComputedStyle(panel).overflowY)) panel = panel.parentElement;
+    if (!panel) throw new Error("the button has no panel that scrolls");
+    const p = panel.getBoundingClientRect();
+    const b = (el as unknown as E).getBoundingClientRect();
+    const x = p.left + 4;
+    let free: [number, number][] = [[p.top + 8, p.bottom - 8]];
+    for (const r of [b, doc.querySelector("[data-rvtt-popover]")?.getBoundingClientRect()]) {
+      if (!r || r.left > x || r.right < x) continue;
+      free = free.flatMap(([from, to]): [number, number][] => [[from, Math.min(to, r.top - 6)], [Math.max(from, r.bottom + 6), to]]).filter(([from, to]) => to > from);
+    }
+    const [from, to] = free.sort((m, n) => n[1] - n[0] - (m[1] - m[0]))[0] ?? [p.top + 8, p.top + 8];
+    return { at: { x: Math.round(x), y: Math.round((from + to) / 2) }, high: { x: Math.round(x), y: Math.round(Math.min(from + 10, to)) }, inView: b.bottom > p.top && b.top < p.bottom && b.right > p.left && b.left < p.right, height: p.bottom - p.top };
+  });
+}
+
+/** A finger set on `at` and drawn `dy` px down (up if negative) in eight moves, then lifted. Whether `menu` was still open as the finger lifted comes back. */
+async function dragPanel(cdp: CDPSession, at: TouchAt, dy: number, menu: Locator): Promise<boolean> {
+  const touches = new Touches(cdp);
+  await touches.start([at]);
+  for (let i = 1; i <= 8; i++) await touches.move([{ x: at.x, y: at.y + (dy * i) / 8 }], 30);
+  await sleep(150);
+  const open = await menu.isVisible().catch(() => false);
+  await touches.end([], 30);
+  await sleep(300);
+  return open;
 }
 
 describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
@@ -569,7 +727,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
     assert.deepEqual(before, { adv: false, dis: true, secret: false });
     await sheet.getByLabel("Dice formula", { exact: true }).fill("1d20+3");
     const roll = sheet.getByRole("button", { name: "Roll", exact: true });
-    const family: Family = { what: "the formula's Roll", button: () => roll, menu: /^Roll options for Dice formula$/, items: D20, hint: HINT.d20, help: ["Roll secretly: you and the DM see the result.", NORMAL_HELP], pick: "Roll with Advantage", sends: { t: "dice.roll", mode: "adv", to: "all" } };
+    const family: Family = { what: "the formula's Roll", button: () => roll, menu: /^Roll options for Dice formula$/, items: withNormal(D20), hint: HINT.d20Normal, help: ["Roll secretly: you and the DM see the result.", NORMAL_HELP], pick: "Roll with Advantage", sends: { t: "dice.roll", mode: "adv", to: "all" } };
     await sourceAria(roll, family);
     const from = patSent.ops.length;
     const at = await middle(roll);
@@ -800,19 +958,19 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
     for (const family of patFamilies()) {
       const button = family.button(sheet);
       await sourceAria(button, family);
-      // A skill's Normal clears a manual press for this roll only.
-      if (family.pick === "Roll normally" && family.items === D20) await pressMode(sheet, "Advantage");
+      // Normal clears a manual press for this roll only, and shows only while a press would apply.
+      if (family.press) await pressMode(sheet, family.press);
       const before = await modes(sheet);
       const from = patSent.ops.length;
       await hold(patCdp, button);
-      const menu = await opened(pat, button, family);
+      const menu = await opened(pat, button, family.press ? { ...family, items: withNormal(family.items), help: family.help ? [...family.help, NORMAL_HELP] : undefined } : family);
       await noRoll(patSent, from, `holding ${family.what}`);
       await menu.getByRole("menuitem", { name: family.pick }).tap();
       const op = await oneRoll(patSent, from, `${family.pick} on ${family.what}`);
       assert.deepEqual(sentMode(op), { cancelled: false, ...family.sends }, `${family.what}: ${family.pick}`);
       await menu.waitFor({ state: "detached" });
       assert.deepEqual(await modes(sheet), before, `${family.what}'s pick changed no mode`);
-      if (before.adv) await pressMode(sheet, "Advantage");
+      if (family.press) await pressMode(sheet, family.press);
     }
   });
 
@@ -883,7 +1041,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       menu: /^Roll options for Dexterity save, answers the DM's request/,
       items: D20_FIXED,
       hint: HINT.fixed,
-      help: ["Roll secretly: request answers keep the request's visibility.", NORMAL_HELP],
+      help: ["Roll secretly: request answers keep the request's visibility."],
       pick: "Roll with Advantage",
       sends: { t: "roll.dice", mode: "adv", to: null },
     };
@@ -923,7 +1081,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
     await ask.click();
     assert.equal(await ask.getAttribute("aria-checked"), "false");
 
-    const dmHelp = ["Roll secretly: hide the dice from players.", NORMAL_HELP];
+    const dmHelp = ["Roll secretly: hide the dice from players."];
     for (const family of patFamilies()) {
       const button = family.button(panel);
       const f = { ...family, help: family.help ? dmHelp : undefined };
@@ -949,13 +1107,14 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       assert.ok(await isFocused(button), `Escape returns focus to ${f.what}`);
       await noRoll(dmSent, from, `opening and closing ${f.what}`);
 
+      // With nothing pressed in the panel, a tap already rolls normally, so Roll secretly is the last choice (D-261031-078).
       await dm.keyboard.press("Shift+F10");
       await opened(dm, button, f);
       await dm.keyboard.press("End");
-      assert.equal(await focusedName(dm), "div menuitem Roll normally");
+      assert.equal(await focusedName(dm), "div menuitem Roll secretly");
       await dm.keyboard.press("Enter");
-      const op = await oneRoll(dmSent, from, `Roll normally on ${f.what}`);
-      assert.deepEqual(sentMode(op), { t: "dice.roll", mode: null, cancelled: false, to: "all" }, `${f.what}: Roll normally`);
+      const op = await oneRoll(dmSent, from, `Roll secretly on ${f.what}`);
+      assert.deepEqual(sentMode(op), { t: "dice.roll", mode: null, cancelled: false, to: "dm" }, `${f.what}: Roll secretly`);
       await menu.waitFor({ state: "detached" });
       assert.ok(await isFocused(button), `the pick returns focus to ${f.what}: ${await focusedName(dm)}`);
 
@@ -995,7 +1154,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
     await again.focus();
     await dm.keyboard.press("Shift+F10");
     const menu = rollMenu(dm, /^Roll options for Again$/);
-    assert.deepEqual(await itemsOf(menu), D20_FIXED);
+    assert.deepEqual(await itemsOf(menu), withNormal(D20_FIXED), "a repeat offers Normal, since its tap repeats the recorded mode");
     assert.equal(await focusedName(dm), "div menuitem Roll with Advantage");
     await dm.keyboard.press("End");
     await dm.keyboard.press("ArrowUp");
@@ -1038,7 +1197,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
     let from = dmSent.ops.length;
     await save.click({ button: "right" });
     const menu = rollMenu(dm, /^Roll options for Dexterity save/);
-    assert.deepEqual(await itemsOf(menu), D20);
+    assert.deepEqual(await itemsOf(menu), withNormal(D20), "the Secret turned off is a press a tap would take, so Normal shows");
     await menu.getByRole("menuitem", { name: "Roll normally" }).click();
     assert.deepEqual(sentMode(await oneRoll(dmSent, from, "Normal on the goblin's save")), { t: "dice.roll", mode: null, cancelled: false, to: "dm" }, "Normal uses the monster's default, secret");
     assert.equal(await secret.getAttribute("aria-pressed"), "false", "and leaves the panel's Secret off");
@@ -1101,7 +1260,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
     const first = randomUUID();
     await ops.send({ t: "roll.ask", request: { id: first, test: { kind: "save", choices: [{ ability: "dex" }] }, dcShown: false, resultShown: true, targets: [{ characterId: run.thornChar }] } });
     await waitFor("the ask on Pat's page", () => patSocket.state?.rolls[first]);
-    const fixed = (what: string, menu: RegExp, pick: string, mode: string | null): Family => ({ what, button: () => pat.locator("x"), menu, items: D20_FIXED, hint: HINT.fixed, help: ["Roll secretly: request answers keep the request's visibility.", NORMAL_HELP], pick, sends: { t: "roll.dice", mode, to: null } });
+    const fixed = (what: string, menu: RegExp, pick: string, mode: string | null): Family => ({ what, button: () => pat.locator("x"), menu, items: D20_FIXED, hint: HINT.fixed, help: ["Roll secretly: request answers keep the request's visibility."], pick, sends: { t: "roll.dice", mode, to: null } });
     const card = pat.getByRole("dialog", { name: "The DM asks for a roll" });
     if (!(await card.isVisible())) await pat.getByRole("button", { name: /^Roll asked/ }).first().tap();
     const roll = card.getByRole("button", { name: "Roll +1 for Thorn", exact: true });
@@ -1117,7 +1276,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
     const dmRoll = live.getByRole("button", { name: /^Roll \+6 for Thorn$/ });
     // The card's own fold, never the Roll: a roll with a menu says aria-expanded too.
     if (!(await dmRoll.isVisible())) await live.locator('button[aria-expanded="false"]:not([aria-haspopup])').first().click();
-    op = await pickFrom(dm, dmSent, dmRoll, fixed("the DM's live request card", /^Roll options for Roll \+6 for Thorn$/, "Roll normally", null), "right");
+    op = await pickFrom(dm, dmSent, dmRoll, fixed("the DM's live request card", /^Roll options for Roll \+6 for Thorn$/, "Roll with Advantage", "adv"), "right");
     assert.equal(op.rollId, second);
     assert.equal(op.unanswered, true, "the DM's roll still only lands on an unanswered row");
     await waitFor("the DM's answer", () => (dmSocket.state?.rolls[second]?.targets[0]?.total !== undefined ? true : null));
@@ -1133,11 +1292,11 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       const value = (entryId: string) => dmSocket.state?.encounter?.entries.find((e) => e.id === entryId)?.value ?? null;
       await openSideTab(dm, "Initiative");
       const tracker = dm.getByRole("tabpanel", { name: sideTabName("Initiative") });
-      const creature = ["Roll secretly: this roll's visibility is set by the creature.", NORMAL_HELP];
+      const creature = ["Roll secretly: this roll's visibility is set by the creature."];
       // The goblin's own Roll, beside its value box or in its options.
       const rowRoll = tracker.getByRole("button", { name: /^Roll [+−-]\d+ Initiative for Goblin$/ }).first();
       if (!(await rowRoll.isVisible())) await tracker.getByRole("button", { name: "Goblin options" }).click();
-      let op = await pickFrom(dm, dmSent, rowRoll, { what: "the goblin's row Roll", button: () => rowRoll, menu: /^Roll options for Roll [+−-]\d+ Initiative for Goblin$/, items: D20, hint: HINT.d20, help: ["Roll secretly: hide the dice from players.", NORMAL_HELP], pick: "Roll with Advantage", sends: { t: "dice.roll", mode: "adv", to: "dm" } }, "right");
+      let op = await pickFrom(dm, dmSent, rowRoll, { what: "the goblin's row Roll", button: () => rowRoll, menu: /^Roll options for Roll [+−-]\d+ Initiative for Goblin$/, items: D20, hint: HINT.d20, help: ["Roll secretly: hide the dice from players."], pick: "Roll with Advantage", sends: { t: "dice.roll", mode: "adv", to: "dm" } }, "right");
       const line = await waitFor("the goblin's initiative line", () => dmSocket.state?.log.find((e) => e.data?.type === "dice" && e.data.tag === op.tag)?.data ?? null);
       const total = line.type === "dice" ? line.rolls[0]!.total : null;
       await waitFor(`the goblin's row set to ${total}`, () => (value("e-goblin") === total ? true : null));
@@ -1156,9 +1315,19 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       const reroll = tracker.getByRole("checkbox", { name: "Re-roll monsters that have a value" });
       if (!(await reroll.isChecked())) await reroll.check();
       const auto = tracker.getByRole("button", { name: /^Auto Initiative \(\d+\)/ });
-      op = await pickFrom(dm, dmSent, auto, { what: "Auto Initiative", button: () => auto, menu: /^Roll options for Initiative$/, items: D20_FIXED, hint: HINT.fixed, help: creature, pick: "Roll normally", sends: { t: "dice.roll", mode: null, to: "dm" } }, "right");
-      assert.ok(op.rolls!.every((r) => r.mode === undefined), "Normal on every die of the plan");
-      // Normal is no news, and the tracker already says the dice are the DM's: the settled results read as before DP-F1, with no badge, "Normal" or "Secret".
+      // Its menu has no Roll normally, which its tap already does (D-261031-078): the tap rolls them so.
+      const autoFamily: Family = { what: "Auto Initiative", button: () => auto, menu: /^Roll options for Initiative$/, items: D20_FIXED, hint: HINT.fixed, help: creature, pick: "", sends: { t: "dice.roll", mode: null, to: "dm" } };
+      await sourceAria(auto, autoFamily);
+      await auto.click({ button: "right" });
+      const autoMenu = await opened(dm, auto, autoFamily);
+      await dm.keyboard.press("Escape");
+      await autoMenu.waitFor({ state: "detached" });
+      let from = dmSent.ops.length;
+      await auto.click();
+      op = await oneRoll(dmSent, from, "Auto Initiative's tap");
+      assert.deepEqual(sentMode(op), { t: "dice.roll", mode: null, cancelled: false, to: "dm" });
+      assert.ok(op.rolls!.every((r) => r.mode === undefined), "a plain tap on every die of the plan");
+      // A plain roll is no news, and the tracker already says the dice are the DM's: the settled results read as before DP-F1, with no badge, "Normal" or "Secret".
       const plain = await waitFor("Auto's settled results", async () => {
         const text = (await results.innerText().catch(() => "")) ?? "";
         return /Total|\d/.test(text) && !/\bDis\b/.test(text) ? text : null;
@@ -1177,7 +1346,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       })();
       const mine = pTracker.getByRole("button", { name: /^Roll [+−-]\d+ Initiative for Thorn$/ }).first();
       if (!(await mine.isVisible())) await pTracker.getByRole("button", { name: "Thorn options" }).tap();
-      await pickFrom(pat, patSent, mine, { what: "Pat's row Roll", button: () => mine, menu: /^Roll options for Roll [+−-]\d+ Initiative for Thorn$/, items: D20, hint: HINT.d20, help: ["Roll secretly: you and the DM see the result.", NORMAL_HELP], pick: "Roll with Disadvantage", sends: { t: "dice.roll", mode: "dis", to: "all" } }, "hold");
+      await pickFrom(pat, patSent, mine, { what: "Pat's row Roll", button: () => mine, menu: /^Roll options for Roll [+−-]\d+ Initiative for Thorn$/, items: D20, hint: HINT.d20, help: ["Roll secretly: you and the DM see the result."], pick: "Roll with Disadvantage", sends: { t: "dice.roll", mode: "dis", to: "all" } }, "hold");
       await waitFor("Thorn's row set", () => (value("e-thorn") !== null ? true : null));
       await shots.take(pat, "dpf1-21-pat-tracker");
       await pat.keyboard.press("Escape");
@@ -1190,7 +1359,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
   test("dpf1-22. HP's Death Save Roll in the DM's token window and Pat's token bar: Secret shown off for the creature, Advantage sends the death roll", async () => {
     await setDying(true);
     try {
-      const death: Family = { what: "HP's Death Save Roll", button: () => dm.locator("x"), menu: /^Roll options for Death Save$/, items: D20_FIXED, hint: HINT.fixed, help: ["Roll secretly: this roll's visibility is set by the creature.", NORMAL_HELP], pick: "Roll with Advantage", sends: { t: "actor.deathRoll", mode: "adv", to: null } };
+      const death: Family = { what: "HP's Death Save Roll", button: () => dm.locator("x"), menu: /^Roll options for Death Save$/, items: D20_FIXED, hint: HINT.fixed, help: ["Roll secretly: this roll's visibility is set by the creature."], pick: "Roll with Advantage", sends: { t: "actor.deathRoll", mode: "adv", to: null } };
       await dm.keyboard.press("Escape");
       await tapCell(dm, BOUNDS, run.thorn);
       const bar = dm.getByRole("dialog", { name: "Thorn actions" });
@@ -1256,7 +1425,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
   test("dpf1-23. a fight's cards: Thorn's turn death save, the goblin's concentration and its save-ends each open a menu with Secret shown off, and the recharge card and Uses' recharge have none", async () => {
     await ops.send({ t: "encounter.start", entries: [{ id: "e-thorn", tokenId: run.thorn.id, value: 20 }, { id: "e-goblin", tokenId: run.goblin.id, value: 15 }, { id: "e-dragon", tokenId: run.dragon.id, value: 10 }] });
     await waitFor("the fight", () => (dmSocket.state?.encounter?.entries.length === 3 ? true : null));
-    const creature = ["Roll secretly: this roll's visibility is set by the creature.", NORMAL_HELP];
+    const creature = ["Roll secretly: this roll's visibility is set by the creature."];
     // Taken off after: a failed save leaves the goblin Frightened, and each later end of its turn would bring a save-ends card of its own.
     const hex = randomUUID();
     const fear = randomUUID();
@@ -1350,7 +1519,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       await panel.getByText(/^Discard the .*\?$/).waitFor({ state: "detached" });
     };
     const buttonsOf = async (scope: Locator) => JSON.stringify(await scope.getByRole("button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label") ?? (e as unknown as { innerText: string }).innerText)));
-    const batch = ["Roll secretly: hide the dice from players.", NORMAL_HELP, "All choices: apply to server rolls only. Players choose their own modes."];
+    const batch = ["Roll secretly: hide the dice from players.", "All choices: apply to server rolls only. Players choose their own modes."];
     await selectGoblins();
     await openSideTab(dm, "Dice");
     const group = dmDice().locator('section[aria-label="Group rolls"]');
@@ -1378,7 +1547,8 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       await waitFor(`the panel's Secret ${on ? "on" : "off"}`, async () => (((await secret.getAttribute("aria-pressed")) === "true") === on ? true : null));
     };
     await setSecret(false);
-    await pickFrom(dm, dmSent, attack, { what: "the shared attack, secretly", button: () => attack, menu: /^Roll options for Scimitar for 2$/, items: D20, hint: HINT.d20, pick: "Roll secretly", sends: { t: "dice.roll", mode: null, to: "dm" } }, "right");
+    // The panel's Secret off for monsters, whose rolls start secret, is a press a tap would take: Normal shows (D-261031-078).
+    await pickFrom(dm, dmSent, attack, { what: "the shared attack, secretly", button: () => attack, menu: /^Roll options for Scimitar for 2$/, items: withNormal(D20), hint: HINT.d20Normal, pick: "Roll secretly", sends: { t: "dice.roll", mode: null, to: "dm" } }, "right");
     const named = await resultLine(group, /^\d+ (hit|miss|Critical Hit)\b.*Secret/);
     assert.ok(named.hasDetail, `the secret results name Secret: ${JSON.stringify(named)}`);
     await setSecret(true);
@@ -1386,7 +1556,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
     assert.ok(!Array.isArray(plain) && plain.visible && !plain.hasDetail && /^\d+ (hit|miss|Critical Hit), \d+ (hit|miss|Critical Hit)$/.test(plain.readable), `the results stay in view with the panel's Secret on: ${JSON.stringify(plain)}`);
     const hits = group.getByRole("button", { name: /^Roll damage for \d+ hits?$/ });
     // A natural 1 misses whatever the AC, so both may miss: then there is no damage to roll.
-    if (await hits.isVisible().catch(() => false)) await pickFrom(dm, dmSent, hits, { what: "the hits' damage", button: () => hits, menu: /^Roll options for Roll damage for \d+ hits?$/, items: PLAIN, hint: HINT.plain, pick: "Roll normally", sends: { t: "dice.roll", mode: null, to: "dm" } }, "right");
+    if (await hits.isVisible().catch(() => false)) await pickFrom(dm, dmSent, hits, { what: "the hits' damage", button: () => hits, menu: /^Roll options for Roll damage for \d+ hits?$/, items: PLAIN, hint: HINT.plain, pick: "Roll secretly", sends: { t: "dice.roll", mode: null, to: "dm" } }, "right");
 
     op = await pickFrom(dm, dmSent, group.getByRole("button", { name: "DEX save for 2", exact: true }), { what: "a save for both", button: () => group, menu: /^Roll options for DEX save for 2$/, items: D20, hint: HINT.d20, help: batch, pick: "Roll with Advantage", sends: { t: "dice.roll", mode: "adv", to: "dm" } }, "right");
     assert.ok(op.rolls!.length === 2 && op.rolls!.every((r) => r.mode === "adv"), `both goblins' saves rolled with Advantage: ${JSON.stringify(op.rolls)}`);
@@ -1413,7 +1583,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       await shots.take(dm, "dpf1-24-no-main-roll");
       throw new Error(`no Roll 2 saves: ${await buttonsOf(panel)}`);
     }
-    await pickFrom(dm, dmSent, main, { what: "the group save page's Roll", button: () => main, menu: /^Roll options for Roll 2 saves$/, items: D20, hint: HINT.d20, help: batch, pick: "Roll normally", sends: { t: "dice.roll", mode: null, to: "dm" } }, "key");
+    await pickFrom(dm, dmSent, main, { what: "the group save page's Roll", button: () => main, menu: /^Roll options for Roll 2 saves$/, items: D20, hint: HINT.d20, help: batch, pick: "Roll secretly", sends: { t: "dice.roll", mode: null, to: "dm" } }, "key");
     await discardPage();
     await dm.keyboard.press("Escape");
   });
@@ -1786,7 +1956,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
     const ash = randomUUID();
     const asks: string[] = [];
     const cookieOf = async (context: BrowserContext) => (await context.cookies(server.origin)).map((c) => `${c.name}=${c.value}`).join("; ");
-    const help = ["Roll secretly: request answers keep the request's visibility.", NORMAL_HELP];
+    const help = ["Roll secretly: request answers keep the request's visibility."];
     /** Asks a DEX save of Thorn and `sibling`, and waits until `page`'s state has it. */
     const ask = async (sibling: string, socket: SocketWatch) => {
       const id = randomUUID();
@@ -1835,7 +2005,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       const dmRoll = live.getByRole("button", { name: /^Roll \+1 for Thorn$/ });
       // The card's own fold, never the Roll: a roll with a menu says aria-expanded too.
       if (!(await dmRoll.isVisible())) await live.locator('button[aria-expanded="false"]:not([aria-haspopup])').first().click();
-      const dmFamily: Family = { what: "the DM's live request card", button: () => dmRoll, menu: /^Roll options for Roll \+1 for Thorn$/, items: D20_FIXED, hint: HINT.fixed, help, pick: "Roll normally", sends: { t: "roll.dice", mode: null, to: null } };
+      const dmFamily: Family = { what: "the DM's live request card", button: () => dmRoll, menu: /^Roll options for Roll \+1 for Thorn$/, items: D20_FIXED, hint: HINT.fixed, help, pick: "Roll with Advantage", sends: { t: "roll.dice", mode: "adv", to: null } };
       await middle(dmRoll);
       let from = dmSent.ops.length;
       await dmRoll.click({ button: "right" });
@@ -1939,6 +2109,154 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       await dm.goto(`${server.origin}/r/${run.roomId}`);
       await dm.getByRole("status", { name: "Connected" }).first().waitFor();
     }
+  });
+
+  test("fl17-1. on a phone at 390 x 844 and at 320 x 568 at 130%, a roll's menu over its scrolled panel shows every choice whole beside its button, a finger scrolling the panel keeps it open on the button, a tap off it closes it, it closes once the button leaves the panel's view, and a page moving under it still draws it whole: Dice, HP's death save in a token's bar, and the Initiative row", async () => {
+    const faults: string[] = [];
+    try {
+      for (const [size, scale] of [[{ width: 390, height: 844 }, 1], [{ width: 320, height: 568 }, 1.3]] as const) {
+        const at = `${size.width} x ${size.height} at ${scale * 100}%`;
+        const tag = `${size.width}-${Math.round(scale * 100)}`;
+        const context = await browser.newContext({ viewport: size, deviceScaleFactor: 2, isMobile: true, hasTouch: true, reducedMotion: "reduce" });
+        try {
+          await diceFoldsOpen(context);
+          await context.addCookies(await patContext.cookies(server.origin));
+          await context.addInitScript((s) => localStorage.setItem("rvtt.uiScale", String(s)), scale);
+          const page = await context.newPage();
+          const cdp = await context.newCDPSession(page);
+          // No hold, scroll or tap here picks a choice or rolls.
+          const sent = new OpsSent();
+          sent.attach(page);
+          const load = async () => {
+            await page.goto(`${server.origin}/r/${run.roomId}`);
+            await page.getByRole("status", { name: "Connected" }).first().waitFor();
+            await page.locator(".konvajs-content").first().waitFor();
+          };
+          const menu = page.getByRole("menu", { name: /^Roll options for / });
+          const isOpen = () => menu.isVisible().catch(() => false);
+          /** Settles `button` at `end` of its panel, holds it, and checks the menu it opens. */
+          const openOn = async (what: string, button: Locator, place: "top" | "middle", title: string) => {
+            await button.waitFor();
+            let where = await settleIn(button, place);
+            // Until the panel and the button are still, so no scroll cancels the hold.
+            let last = "";
+            await waitFor(`${what}'s button to settle`, async () => {
+              await sleep(150);
+              const now = JSON.stringify(await button.boundingBox());
+              const still = now === last;
+              last = now;
+              return still || null;
+            });
+            where = { ...where, ...(await button.evaluate((el) => {
+              const r = (el as unknown as { getBoundingClientRect(): Box }).getBoundingClientRect();
+              return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
+            })) };
+            const touches = new Touches(cdp);
+            await touches.start([where]);
+            await sleep(HELD_MS);
+            await touches.end([], 16);
+            await menu.waitFor({ timeout: 3_000 }).catch(() => undefined);
+            await sleep(150);
+            await shots.take(page, `fl17-1-${tag}-${what}`);
+            faults.push(...(await menuFaults(button, `${at}, ${what}`, title)));
+            return where;
+          };
+          /** Escape closes an open menu. With none open it would close the sheet under it. */
+          const shut = async () => {
+            if (!(await isOpen())) return;
+            await page.keyboard.press("Escape");
+            await menu.waitFor({ state: "detached" });
+          };
+          /**
+           * A finger on the panel's edge, clear of the menu and its button,
+           * scrolls the panel 48 px so the button moves down and stays in
+           * view: the menu stays open on it, drawn whole where there is room
+           * for it. A tap on the panel's edge then closes it. Opened again, a
+           * scroll the same way by the panel's height takes the button out
+           * of the panel's view, which closes it.
+           */
+          const scrolls = async (what: string, button: Locator, place: "top" | "middle", title: string) => {
+            const spot = await freeSpot(button);
+            const before = await scrollTopAround(button);
+            const during = await dragPanel(cdp, spot.at, 48, menu);
+            const scrolled = (await scrollTopAround(button)) - before;
+            if (!during) faults.push(`${at}, ${what}: a finger scrolling the panel closed the menu while its button stayed in view`);
+            if (Math.abs(scrolled) < 8) faults.push(`${at}, ${what}: the finger's drag scrolled the panel only ${scrolled} px`);
+            if (await isOpen()) {
+              faults.push(...(await menuFaults(button, `${at}, ${what}, after the panel scrolled`, title, scale === 1)));
+              await shots.take(page, `fl17-1-${tag}-${what}-scrolled`);
+              // A tap first stops any fling the drag left, with no click (harness.ts untilTapsClick).
+              await sleep(1_500);
+              const tap = new Touches(cdp);
+              await tap.start([(await freeSpot(button)).at]);
+              await tap.end([], 60);
+              if (!(await menu.waitFor({ state: "detached", timeout: 2_000 }).then(() => true, () => false))) faults.push(`${at}, ${what}: a tap off the menu left it open`);
+              if ((await ringed(button)) === true) faults.push(`${at}, ${what}: the ring stayed after a tap closed the menu`);
+            }
+            await shut();
+            await openOn(`${what}-again`, button, place, title);
+            const again = await freeSpot(button);
+            await dragPanel(cdp, again.high, again.height, menu);
+            const left = !(await freeSpot(button)).inView;
+            const open = await isOpen();
+            if (left && open) faults.push(`${at}, ${what}: the menu stayed open once its button left the panel's view`);
+            if (left && (await ringed(button)) === true) faults.push(`${at}, ${what}: the ring stayed after the menu closed as its button left view`);
+            if (!left && !open) faults.push(`${at}, ${what}: the menu closed while its button stayed in view`);
+            if (what === "dice" && !left) faults.push(`${at}, ${what}: the long scroll left the button in view`);
+            await shut();
+          };
+
+          await load();
+          const sheet = await openDiceSheet(page);
+          await sheet.getByRole("region", { name: "Rolls for Thorn" }).waitFor();
+          const luck = sheet.getByRole("button", { name: "Luck, 1d20", exact: true });
+          await openOn("dice", luck, "top", "Luck 1d20");
+          await scrolls("dice", luck, "top", "Luck 1d20");
+          // FL-14's back swipe moves the page under the sheet's header with a transform, which makes the page the box of anything fixed inside it.
+          const movingPage = sheet.locator("[data-pane-body]").locator("xpath=..");
+          await movingPage.evaluate((el) => Object.assign((el as unknown as { style: Record<string, string> }).style, { willChange: "transform", transform: "translateX(0px)" }));
+          await openOn("dice-moving-page", luck, "top", "Luck 1d20");
+          await shut();
+          await movingPage.evaluate((el) => Object.assign((el as unknown as { style: Record<string, string> }).style, { willChange: "", transform: "" }));
+
+          await setDying(true);
+          await load();
+          await tapCell(page, BOUNDS, run.thorn);
+          const bar = page.getByRole("dialog", { name: "Thorn actions" });
+          await bar.waitFor();
+          const death = await barControl(bar, "Roll a Death Save");
+          await openOn("hp", death, "middle", "Death Save");
+          await scrolls("hp", death, "middle", "Death Save");
+          await setDying(false);
+
+          await ops.send({ t: "encounter.start", entries: [{ id: "e-thorn", tokenId: run.thorn.id, value: null }, { id: "e-goblin", tokenId: run.goblin.id, value: 15 }, { id: "e-dragon", tokenId: run.dragon.id, value: 3 }] });
+          await waitFor("the fight", () => (dmSocket.state?.encounter?.entries.length === 3 ? true : null));
+          await load();
+          await page.getByRole("button", { name: /^Initiative, round/ }).first().tap();
+          await page.locator("[data-round-header]").first().waitFor();
+          const rows = page.locator("[data-round-section]").first();
+          const mine = rows.getByRole("button", { name: /^Roll [+−-]\d+ Initiative for Thorn$/ }).first();
+          if (!(await mine.isVisible())) await rows.getByRole("button", { name: "Thorn options" }).tap();
+          await openOn("initiative", mine, "top", "Roll +1 Initiative for Thorn");
+          await shut();
+          await ops.send({ t: "encounter.end" });
+          await waitFor("the fight over", () => (dmSocket.state?.encounter ? null : true));
+          if (sent.rolls(0).length > 0) faults.push(`${at}: the gestures sent ${JSON.stringify(sent.rolls(0))}`);
+        } finally {
+          await context.close();
+        }
+      }
+    } finally {
+      const target = { characterId: run.thornChar };
+      // A fight a failed step left running, which the server may have ended already.
+      if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" }).catch((err: Error) => {
+        if (!/gone/.test(err.message)) throw err;
+      });
+      if (dmSocket.state?.characters[run.thornChar]?.actor.life !== "alive") await ops.send({ t: "actor.life", target, life: "alive" });
+      await ops.send({ t: "actor.hp", target, change: { kind: "set", cur: 30 } });
+      await waitFor("Thorn up and whole", () => (dmSocket.state?.characters[run.thornChar]?.actor.life === "alive" && dmSocket.state.characters[run.thornChar]!.actor.hp.cur === 30 ? true : null));
+    }
+    assert.deepEqual(faults, [], "the menu over a scrolled panel");
   });
 
   test("dpf1-13. nothing went wrong in the browsers", () => {

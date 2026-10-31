@@ -275,7 +275,7 @@ test("cast damage menu keeps panel state, disables d20 damage modes and uses ord
     assert.deepEqual({ ...choices.getState(), last: null }, initial);
   }
   const fire = render({ picked: "c:thorn-c", selected: ["g1"], cast: { spell: "Fireball", roll: "fb", sent: "fresh", opened: 1 } });
-  assert.match(fire, /Hold, right-click or Shift\+F10 for Secret or Normal/);
+  assert.match(fire, /Hold, right-click or Shift\+F10 for Secret\./);
   const hold = render({ picked: "c:thorn-c", selected: ["g1"], cast: { spell: "Hold Person", roll: "hp", sent: "fresh", opened: 1 } });
   const ask = /<button[^>]*>Ask the DM<\/button>/.exec(hold)?.[0];
   assert.ok(ask);

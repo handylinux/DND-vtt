@@ -294,6 +294,21 @@ export function useDicePanel(): DicePanelApi {
   return useMemo(() => ({ ...actions, adv, dis, secret }), [actions, adv, dis, secret]);
 }
 
+/**
+ * The panel's presses that an ordinary panel roll takes and Roll normally
+ * drops (rollMode.ts RollPresses): Adv or Dis, and a Secret pressed away
+ * from where it starts. A roll menu offers Roll normally only while one
+ * stands (D-261031-078).
+ */
+export function useRollPresses(): { mode: boolean; secret: boolean } {
+  const store = useScoped(diceChoicesSlot);
+  const start = useRoomView((s) => secretStartIn(s, []));
+  const key = useRoomView(panelKeyIn);
+  const mode = useStore(store, (s) => s.adv || s.dis);
+  const secret = useStore(store, (s) => secretNow(s, key, start) !== start);
+  return useMemo(() => ({ mode, secret }), [mode, secret]);
+}
+
 /** The newest panel roll, for the sticky line (8.2). */
 export function useLastRoll(): LastRoll | null {
   const store = useScoped(diceChoicesSlot);

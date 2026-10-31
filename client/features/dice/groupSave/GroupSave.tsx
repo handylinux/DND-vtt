@@ -35,7 +35,7 @@ import { creatureKey, holderTarget, markOnRoll, rechargeUseOf, signedText, targe
 import { presetFor } from "../presets.ts";
 import { marksTest } from "../proficiencyPresentation.ts";
 import { useRollSender } from "../send.ts";
-import { useDicePanel, type PanelRoll } from "../useDicePanel.ts";
+import { useDicePanel, useRollPresses, type PanelRoll } from "../useDicePanel.ts";
 import { useDiceView } from "../useDiceView.ts";
 import { SrdLoadFailed } from "../../monsters/SrdLoadFailed.tsx";
 import { useReceipt, type ReceiptState } from "../useReceipt.ts";
@@ -188,6 +188,7 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
   const actions = useRoomActions();
   const ui = useRoomUi();
   const panel = useDicePanel();
+  const presses = useRollPresses();
   const sender = useRollSender();
   const blocked = useRollBlocked();
   const [error, setError] = useState<string | null>(null);
@@ -723,7 +724,7 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
           {outcome}
           {rowList}
           {page.test.kind !== "none" ? (
-            <GroupRollButton source={JSON.stringify([rollContext, rows.map((r) => [r, stateOf(shown, r)]), serverRolls(rows), panel.adv, panel.dis, panel.secret])} name={rollWords(shown)} capability={{ d20: hasServerRoll, visibility: hasServerRoll ? "selectable" : "request", batch: true }} valid={() => pageRef.current.phase === "setup" && !offScene} variant="primary" busy={loading} disabled={blocked !== null || offScene || rows.length === 0 || tooMany || bound !== null} onRoll={(override) => startRoll(undefined, override)}>
+            <GroupRollButton source={JSON.stringify([rollContext, rows.map((r) => [r, stateOf(shown, r)]), serverRolls(rows), panel.adv, panel.dis, panel.secret])} name={rollWords(shown)} capability={{ d20: hasServerRoll, visibility: hasServerRoll ? "selectable" : "request", batch: true, manual: presses }} valid={() => pageRef.current.phase === "setup" && !offScene} variant="primary" busy={loading} disabled={blocked !== null || offScene || rows.length === 0 || tooMany || bound !== null} onRoll={(override) => startRoll(undefined, override)}>
               {bound ?? (loading ? "Loading the stat blocks…" : rollWords(shown))}
             </GroupRollButton>
           ) : null}

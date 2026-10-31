@@ -25,7 +25,7 @@ import { foldKind, useDiceFolds } from "../diceFolds.ts";
 import { creatureKey, damageRolls, markSendSeen } from "../options.ts";
 import { useOption, useOptionStore, type CastBlock } from "../optionState.ts";
 import { throwHooksSlot } from "../throw/hooks.ts";
-import { useDicePanel } from "../useDicePanel.ts";
+import { useDicePanel, useRollPresses } from "../useDicePanel.ts";
 import { useReceipt } from "../useReceipt.ts";
 import {
   areaPresetOf,
@@ -265,6 +265,7 @@ function CastBlockView(props: Parameters<typeof RowCast>[0] & { spec: CastBlock 
   const view = dice.view;
   const env = useCastEnv();
   const panel = useDicePanel();
+  const presses = useRollPresses();
   const store = useOptionStore();
   const room = useRoomStore();
   const ui = useRoomUi();
@@ -296,7 +297,7 @@ function CastBlockView(props: Parameters<typeof RowCast>[0] & { spec: CastBlock 
   const rollMenu = useRollModeMenu({
     source: JSON.stringify([spec, slot, rolls, targets, template ? templateSource : null, sceneId, props.riders ? [...props.riders] : [], sentPhase, panel.adv, panel.dis, panel.secret]),
     name: words.first,
-    capability: { d20: false, visibility: rolls.length > 0 ? "selectable" : "request", damage: true },
+    capability: { d20: false, visibility: rolls.length > 0 ? "selectable" : "request", damage: true, manual: presses },
     dm: you.role === "dm", disabled: reason !== null || sentPhase === "sending",
     valid: () => room.getState().connection === "open" && room.getState().sceneId === sceneId && room.getState().view === view && JSON.stringify(room.getState().local.selectedIds) === JSON.stringify(selected) && store.getState().cast === spec && ask() !== null && reason === null,
     fallbackFocus: () => props.opener?.current ?? group.current?.querySelector("button") ?? null,

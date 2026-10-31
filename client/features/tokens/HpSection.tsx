@@ -22,7 +22,7 @@ import { defenseSummaryText } from "../dice/damageSummaryLines.ts";
 import { DamageSummary } from "../dice/DamageSummary.tsx";
 import { resultWords, type HpChip } from "../dice/options.ts";
 import { returnedRollMode, RollResultLine } from "../rolls/card.ts";
-import { useDicePanel } from "../dice/useDicePanel.ts";
+import { useDicePanel, useRollPresses } from "../dice/useDicePanel.ts";
 import { useRollModeMenu } from "../dice/useRollModeMenu.tsx";
 import type { RollModeOverride } from "../dice/rollMode.ts";
 import { presetFor } from "../dice/presets.ts";
@@ -648,6 +648,7 @@ function DeathRoll(props: { target: ActorTarget; children: ReactNode }) {
   const room = useRoomStore();
   const fallback = useRef<HTMLElement | null>(null);
   const panel = useDicePanel();
+  const presses = useRollPresses();
   const dm = useRoomView((s) => s.you?.role === "dm");
   const option = useRollOption();
   const waits = useDeathSaveWaits(target);
@@ -668,7 +669,7 @@ function DeathRoll(props: { target: ActorTarget; children: ReactNode }) {
   };
   const menu = useRollModeMenu({
     source: JSON.stringify([target, dice && actorOf(dice.view, target), dice && openRecord(dice.view.encounter, actorOf(dice.view, target), "deathSave"), waits, blocked, panel.adv, panel.dis, panel.secret]), name: "Death Save",
-    capability: { d20: true, visibility: "creature" }, dm,
+    capability: { d20: true, visibility: "creature", manual: presses }, dm,
     disabled: waiting || !!blocked || !dice, valid,
     fallbackFocus: () => fallback.current,
     onTap: () => roll(), onRoll: roll,

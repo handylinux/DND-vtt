@@ -18,7 +18,7 @@ import { creatureRolls, srdNeeds } from "../dice/creature.ts";
 import { creatureKey, signedText } from "../dice/options.ts";
 import { useOptionStore } from "../dice/optionState.ts";
 import { useRollModeMenu } from "../dice/useRollModeMenu.tsx";
-import { useDicePanel } from "../dice/useDicePanel.ts";
+import { useDicePanel, useRollPresses } from "../dice/useDicePanel.ts";
 import type { RollModeOverride } from "../dice/rollMode.ts";
 import { presetFor } from "../dice/presets.ts";
 import { useDiceView } from "../dice/useDiceView.ts";
@@ -733,6 +733,7 @@ function InitiativeRoll(props: { entry: InitEntry; creature: ActorTarget; name: 
   const fallback = useRef<HTMLElement | null>(null);
   const dm = useRoomView((s) => s.you?.role === "dm");
   const panel = useDicePanel();
+  const presses = useRollPresses();
   const creatures = useMemo(() => [creature], [creature]);
   const { dice, failed } = useDiceView(creatures);
   const option = useRollOption();
@@ -778,7 +779,7 @@ function InitiativeRoll(props: { entry: InitEntry; creature: ActorTarget; name: 
   const menu = useRollModeMenu({
     source: JSON.stringify([entry, creature, numbers, dice && numbers && presetFor(dice, creature, INITIATIVE, { rolls: numbers }), dice && startsSecret(dice.view, dm, [creature]), panel.adv, panel.dis, panel.secret]),
     name: `${text} Initiative for ${props.name}`,
-    capability: { d20: numbers?.initBonus !== null && !!numbers, visibility: numbers?.initBonus === null ? "creature" : "selectable" }, dm,
+    capability: { d20: numbers?.initBonus !== null && !!numbers, visibility: numbers?.initBonus === null ? "creature" : "selectable", manual: presses }, dm,
     disabled: waiting || loading || !!reason, valid,
     fallbackFocus: () => fallback.current,
     onTap: () => roll(), onRoll: roll,

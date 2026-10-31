@@ -385,11 +385,11 @@ test("one-roll group menus register actual server dice and leave ask-only opener
   assert.doesNotMatch(/<button[^>]*aria-label="DEX save for 2"[^>]*>/.exec(askOnly)?.[0] ?? "", /aria-haspopup/, "players' ask-only save has no menu");
   const attack = /<button[^>]*aria-label="Rapier for 2"[^>]*>/.exec(askOnly)?.[0];
   assert.match(attack ?? "", /aria-haspopup="menu"/);
-  assert.match(askOnly, /Hold, right-click or Shift\+F10 for Advantage, Disadvantage, Secret or Normal/);
+  assert.match(askOnly, /Hold, right-click or Shift\+F10 for Advantage, Disadvantage or Secret\./);
   sentAttack(s);
   const hits = render(s, ["ta", "tb"]);
   assert.match(/<button[^>]*aria-label="Roll damage for 2 hits"[^>]*>/.exec(hits)?.[0] ?? "", /aria-haspopup="menu"/);
-  assert.match(hits, /Hold, right-click or Shift\+F10 for Secret or Normal/);
+  assert.match(hits, /Hold, right-click or Shift\+F10 for Secret\./);
   assert.doesNotMatch(hits, /tooltipHold=/);
 });
 

@@ -16,7 +16,7 @@ import { ScrollStrip } from "../../components/ScrollStrip.tsx";
 import { useUnsavedInput } from "../../lib/sheetSwipe.ts";
 import { theme } from "../../lib/theme.ts";
 import { useRoomView } from "../../state/view.ts";
-import { answerVerdict, headerRoll, modeRepeat, readHistory, readingOf, rollsOf, rollVerdict, stepHistory, withHistory, writeHistory, type HeaderRoll } from "./logic.ts";
+import { answerVerdict, askedRoll, headerRoll, modeRepeat, readHistory, readingOf, rollsOf, rollVerdict, stepHistory, withHistory, writeHistory, type HeaderRoll } from "./logic.ts";
 import { acceptsRollMode, effectiveRollMode, type RollModeOverride } from "./rollMode.ts";
 import { useRollModeMenu } from "./useRollModeMenu.tsx";
 import { critical } from "./options.ts";
@@ -24,7 +24,7 @@ import { marksTest, rollTarget, rollTest } from "./proficiencyPresentation.ts";
 import { FACE_CHIP, faceChips } from "./RecentRolls.tsx";
 import { Tray } from "./throw/Tray.tsx";
 import { useThrows, useThrowView } from "./throw/useThrows.ts";
-import { againOf, useDicePanel, useLastRoll } from "./useDicePanel.ts";
+import { againOf, useDicePanel, useLastRoll, useRollPresses } from "./useDicePanel.ts";
 import { useRollBlocked } from "./useRollOption.ts";
 import { useProficiency } from "./useProficiency.ts";
 import { useReceipt } from "./useReceipt.ts";
@@ -144,7 +144,8 @@ export function LastResult(props: { onOpen(lineId: string): void }) {
   const again = againOf(last);
   const blocked = useRollBlocked();
   const dm = useRoomView((s) => s.you?.role === "dm");
-  const repeat = useRollModeMenu({ source: JSON.stringify([tag, again, blocked]), name: "Again", capability: { d20: !!again && modeRepeat(rolls, "normal", again.to) !== null, visibility: "repeat", repeat: true }, disabled: waiting, valid: () => blocked === null, dm,
+  const asked = first ? askedRoll(first)?.formula : undefined;
+  const repeat = useRollModeMenu({ source: JSON.stringify([tag, again, blocked]), name: "Again", title: asked ? `Again: ${asked}` : undefined, capability: { d20: !!again && modeRepeat(rolls, "normal", again.to) !== null, visibility: "repeat", repeat: true }, disabled: waiting, valid: () => blocked === null, dm,
     onTap: () => { if (again) panel.again(again.rolls, again.to, throws.origin()); },
     onRoll: (override) => { if (!again) return; const inputs = modeRepeat(rolls, override, again.to); if (inputs) panel.again(inputs, again.to, throws.origin()); },
   });
@@ -373,7 +374,10 @@ export function Roller() {
   };
 
   const parsedMode = parseRollText(text);
-  const menu = useRollModeMenu({ source: JSON.stringify([text, selectedIds, panel.adv, panel.dis, panel.secret]), name: "Dice formula", capability: { d20: parsedMode.ok && acceptsRollMode(formatFormula(parsedMode.formula)), visibility: parsedMode.ok ? "selectable" : "creature" }, disabled: busy || blocked !== null || text.trim() === "", dm, onTap: () => roll(), onRoll: roll });
+  const presses = useRollPresses();
+  // A typed "adv" or "dis" is a manual choice, which Roll normally drops as it does a pressed one.
+  const typed = parsedMode.ok && parsedMode.sources.length > 0;
+  const menu = useRollModeMenu({ source: JSON.stringify([text, selectedIds, panel.adv, panel.dis, panel.secret]), name: "Dice formula", title: text.trim() || undefined, capability: { d20: parsedMode.ok && acceptsRollMode(formatFormula(parsedMode.formula)), visibility: parsedMode.ok ? "selectable" : "creature", manual: { mode: presses.mode || typed, secret: presses.secret } }, disabled: busy || blocked !== null || text.trim() === "", dm, onTap: () => roll(), onRoll: roll });
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();

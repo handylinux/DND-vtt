@@ -23,7 +23,7 @@ import { severalKey, useDiceFolds } from "../diceFolds.ts";
 import { rollsOf } from "../logic.ts";
 import { cutLabel, damageRolls, withExtra } from "../options.ts";
 import { presetFor } from "../presets.ts";
-import { secretStartIn, useDicePanel, type PanelRoll } from "../useDicePanel.ts";
+import { secretStartIn, useDicePanel, useRollPresses, type PanelRoll } from "../useDicePanel.ts";
 import { loadedSrdRolls, useDiceView } from "../useDiceView.ts";
 import { useReceipt, useReceipts, type ReceiptState } from "../useReceipt.ts";
 import { useRollBlocked } from "../useRollOption.ts";
@@ -52,6 +52,7 @@ import type { RollModeOverride, RollModeCapability } from "../rollMode.ts";
 export function GroupOptions(props: { tokenIds: readonly string[] }) {
   const view = useRoomView((s) => s.view);
   const panel = useDicePanel();
+  const presses = useRollPresses();
   const start = useStartGroupSave();
   const blocked = useRollBlocked();
   const { fold } = useDiceFolds();
@@ -103,7 +104,7 @@ export function GroupOptions(props: { tokenIds: readonly string[] }) {
     const source = JSON.stringify([props.tokenIds, dc, test, rows.map((row) => [row, dice && d20 ? presetFor(dice, row.target, d20) : null]), secretStartIn(room.getState(), creatures), panel.adv, panel.dis, panel.secret]);
     return {
       source,
-      capability: { d20: server, visibility: server ? "selectable" : "request", batch: true },
+      capability: { d20: server, visibility: server ? "selectable" : "request", batch: true, manual: presses },
       valid: () => !blocked && room.getState().connection === "open" && JSON.stringify(room.getState().local.selectedIds) === JSON.stringify(props.tokenIds),
       onRoll: (override) => quick(test, override),
     };
@@ -361,6 +362,7 @@ export function attackSummary(name: string, state: SharedAttackState | undefined
  */
 function SharedAttack(props: { name: string; each: Attacker[]; dice: DiceView; blocked: string | null }) {
   const panel = useDicePanel();
+  const presses = useRollPresses();
   const room = useRoomStore();
   const store = useSharedAttacksStore();
   const state = useStore(store, (s) => s.byName[props.name] ?? NO_ATTACK);
@@ -405,7 +407,7 @@ function SharedAttack(props: { name: string; each: Attacker[]; dice: DiceView; b
     <div style={{ display: "grid", gap: theme.space(1), borderTop: `${theme.line.border}px solid ${theme.color.border}`, paddingTop: theme.space(1) }}>
       <div style={{ display: "flex", gap: theme.space(2), alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 auto", display: "grid" }}>
-          <Cell text={`${props.name} for ${n}`} name={`${props.name} for ${n}`} disabled={props.blocked} busy={receipt?.state === "sending"} onTap={attack} mode={{ source: `${source}|attack`, capability: { d20: true, visibility: "selectable" }, valid, onRoll: attack }} />
+          <Cell text={`${props.name} for ${n}`} name={`${props.name} for ${n}`} disabled={props.blocked} busy={receipt?.state === "sending"} onTap={attack} mode={{ source: `${source}|attack`, capability: { d20: true, visibility: "selectable", manual: presses }, valid, onRoll: attack }} />
         </div>
         <NumberField label="Target's AC" value={state.ac ?? undefined} min={1} max={50} nullable placeholder="AC" onCommit={(ac) => set({ ac })} width={72} />
       </div>
@@ -413,7 +415,7 @@ function SharedAttack(props: { name: string; each: Attacker[]; dice: DiceView; b
         <Note><RollResultLine text={plainResults} expanded={detailedResults} missing={missingModes} /></Note>
       ) : null}
       {hits.length > 0 ? (
-        <Cell text={`Roll damage for ${hits.length} hit${hits.length === 1 ? "" : "s"}`} name={`Roll damage for ${hits.length} hit${hits.length === 1 ? "" : "s"}`} disabled={props.blocked} busy={damage?.state === "sending"} onTap={rollDamage} mode={{ source: `${source}|damage`, capability: { d20: false, visibility: "selectable", damage: true }, valid: () => valid() && damage?.state !== "sending", onRoll: rollDamage }} />
+        <Cell text={`Roll damage for ${hits.length} hit${hits.length === 1 ? "" : "s"}`} name={`Roll damage for ${hits.length} hit${hits.length === 1 ? "" : "s"}`} disabled={props.blocked} busy={damage?.state === "sending"} onTap={rollDamage} mode={{ source: `${source}|damage`, capability: { d20: false, visibility: "selectable", damage: true, manual: presses }, valid: () => valid() && damage?.state !== "sending", onRoll: rollDamage }} />
       ) : null}
       {total !== null ? <Note><RollResultLine text={`${total} damage. Every HP entry offers it as a chip.`} expanded={`${total} damage${secretDamage && !panel.secret ? ", Secret" : ""}. Every HP entry offers it as a chip.`} missing=" Secret" /></Note> : null}
     </div>

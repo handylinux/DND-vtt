@@ -43,7 +43,7 @@ for (const route of ["auto", "row", "selection"] as const) test(`one-roll ${rout
     }));
     if (route !== "selection") {
       assert.match(html, /aria-haspopup="menu"/);
-      assert.match(html, /Hold, right-click or Shift\+F10 for Advantage, Disadvantage or Normal/);
+      assert.match(html, /Hold, right-click or Shift\+F10 for Advantage or Disadvantage\./);
     }
     assert.ok(roll);
     roll(override);
