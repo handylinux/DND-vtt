@@ -78,6 +78,8 @@ When you type on a phone, whatever you are typing in rises to sit just above the
 
 ![The DM's panel list on a phone, grouped under In play and Prepare, each panel led by its icon.](dm-guide/screen-phone.webp)
 
+![This device on a phone, Sheet handle: the choice Ringed tail in a menu, and under it a preview of the handle at the top of a sheet.](dm-guide/sheet-handle.webp)
+
 **The toolbar** holds eleven tools. On a computer, each one has a key:
 
 - **Select** (`V`), **Ruler** (`R`), **Area** (`A`), **Fog** (`F`), **Draw** (`D`) and **Ping** (`P`).
@@ -875,6 +877,8 @@ Under the quick dice sits the **Next roll** row. **Adv** and **Dis** are joined 
 
 **One roll, another way.** Sometimes you want a single roll with Advantage, or a single roll in secret, without touching Next roll. Hold any roll button for half a second, right-click it with a mouse, or focus it and press `Shift+F10` or the `ContextMenu` key, and a short menu offers **Roll with Advantage**, **Roll with Disadvantage** and **Roll secretly**. Nothing rolls until you pick, and your pick rolls once, for that roll alone. The menu names the roll at its top in the button's own words, such as "Perception +4", and the button keeps an accent ring while the menu is open, so you can tell which roll you opened even with your finger still over it. The Adv, Dis and Secret you pressed under Next roll stay exactly as they were, waiting for your next ordinary roll. A plain tap, or `Enter` on the focused button, still rolls as it always did, so the menu is a shortcut and Next roll stays the way to do the same thing in plain sight. The line under Next roll reminds everyone: "Hold or right-click a roll button for one-roll options. Keyboard: Shift+F10."
 
+![The Dice panel's one-roll menu, opened by a right-click on the Goblin Boss's Scimitar Attack: the title Attack over Roll with Advantage, Roll with Disadvantage and Roll secretly, with the Attack button ringed beside Damage and Critical.](dm-guide/dice-roll-menu.webp)
+
 - **Roll with Advantage** and **Roll with Disadvantage** replace any Advantage or Disadvantage you pressed or typed for this roll, and keep a Secret you pressed. The creature's own still count: a Restrained monster's Dexterity save picked with Advantage cancels to a normal roll, and the result says so.
 - **Roll secretly** hides the dice from players, as Secret does, and keeps an Adv or Dis you pressed. A player who picks it still sees their own roll, and so do you.
 - **Roll normally** sets aside what you pressed or typed, and keeps the creature's effects and the roll's usual visibility, so a monster's roll stays secret even if you had turned Secret off. It appears only when a plain tap would roll some other way: while Adv, Dis or Secret is pressed under Next roll, when you have typed a mode word such as "adv" into the formula, and on **Again**, which otherwise repeats the mode it was rolled with. The rest of the time a tap already rolls normally, so the menu doesn't offer the same thing twice.
@@ -1084,6 +1088,8 @@ Sometimes the mistake only shows after you apply: the DC should have been 15, no
 3. Change what was wrong. A new **DC** judges the rolled totals again, while a **Fail**, **Pass** or **Skip** you chose yourself stays as you set it. To roll instead, press **Roll saves again** for every row, or a row's own **Roll again** for a monster or **Ask again** for a player's creature. Rows that passed can roll again too. The damage's **Roll again** rolls the damage afresh.
 4. Read each row's new result.
 5. Press **Apply** again.
+
+![The group save for a Fireball after Undo: "Outcome undone. Change the DC, roll again, or apply again." above the rows that were applied, each with its roll, its fail or pass and its damage, and Apply at the foot.](dm-guide/group-save-reopened.webp)
 
 Reopening the page never rolls or sends anything by itself. The first rolls stay in the Log with the DC they were made against, and a fresh request reaches the player as "Fireball: save again", in the spell's public name and never a hidden trap's. The page keeps the creatures it applied to, each as the creature it was then, so if a token has since been given to a different character, that row is left out. To change the test, the targets or where the save comes from, press **Start over**, which asks before it replaces the results. The second Apply is a step of its own, so undoing it reopens the page as it was before that second Apply, not the first.
 
@@ -1451,7 +1457,7 @@ The **Characters** panel lists the party. A character belongs to the room rather
 - To put a character on the scene you are viewing, open it, press **Place a token**, and tap the map.
 - Tap a character to open its page. It reads like the Token panel: the picture, name, level and size, the quick numbers and **Place a token**, then the stat block, then **Combat** and **Companions**, open, and **Notes**, **Image**, **Stats** and **Played by**, folded until you need them. Your device remembers which ones you open. At the foot of the page, **Delete Thorn** (after a trash can) deletes the character with its tokens, its companions and its place in a fight. The line above it says what will go, and it takes a second tap ("Tap again to delete"). The chevron before the character's name at the top of the panel (**Back to Characters**) returns to the list. A player who plays a single character goes straight to its page, until they go back to the list. The list then stays until they leave the room or reload the page.
 
-![Thorn's page in the Characters panel: his picture, level and quick numbers, Place a token in a row under them, then his stat block with its scores, skills and weapons.](dm-guide/pc-stats.webp)
+![Thorn's page in the Characters panel: his picture, level and quick numbers, Place a token in a row under them, then his stat block, where the boxes for Strength and Constitution, his proficient saves, are outlined, with his skills and weapons.](dm-guide/pc-stats.webp)
 
 **Stat blocks.** A character can have a stat block of its own: its level, ability scores, save and skill proficiencies, spellcasting, defenses, and its weapons, spells and other rolls, with riders such as Sneak Attack. As in a monster's, an outlined ability box is a saving throw the character is proficient in. A stat block makes the rest of the app smarter about that character. The Dice panel offers its rolls, roll requests know its bonuses, and the group save knows its resistances and Evasion. The block stays between you and the character's own players: only you and those players see it, and only you and they get **Add a stat block**, **Edit**, **Take a shape** and **End the shape**. Other players and the table display never see it. Folded, the **Stat block** row says what it holds, such as "Level 5, PB +3", or "Wild Shape: Brown Bear" while the character is in a shape.
 
@@ -1558,6 +1564,8 @@ The **Log** keeps everything said and done at the table: chat, whispers, rolls, 
 **Reading back.** Press **Show older** at the top of the Log to bring in the lines before the ones you see. The line you were reading stays where it was, and the older ones go in above it. Keep pressing to go further back, until the Log says "This is the start of the log." To keep a phone quick, the Log holds at most 500 lines at once. Once you go back further than that, the newest lines give way and two buttons appear under the list: **Show newer** reads forward again from where you are, and **Back to latest** returns you to the live Log with the message field ready. Sending a message also takes you back to the latest. Your players read back the same way, and see only what their own Log may show.
 
 **Saving a session.** **Export** at the top of the Log lists your evenings at the table, the newest first, with the time each began and ended and how many lines it holds. A gap of more than 4 hours starts a new evening. The newest 25 show first, and **Older sessions**, under them, adds 25 more. **Everything** saves the whole Log. Each evening's **Export** saves a Markdown file you can open in any text editor or notes app. On a phone it opens the share sheet, so you can save it to Files or send it on. A very long file, over 8 MiB, says "This file is large. Use Download to save it." **Download** then saves it through your browser, which asks the server for it again. Opening the list, each Older sessions and each export or download count toward 10 an hour for each person.
+
+![The Log's Export list over the map: a Markdown file of the log, the evening with the time it began and ended and its line count, and Everything, each with its own Export button.](dm-guide/log-export.webp)
 
 **What a backup carries.** **Download a backup**, in Room settings, saves the whole room to take to another server, but only the Log's newest lines go with it. Export the evenings you want to keep before you move a room. On your own server, its nightly backups keep the whole Log.
 
