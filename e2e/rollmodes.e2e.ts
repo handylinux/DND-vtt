@@ -639,13 +639,16 @@ function freeSpot(button: Locator): Promise<{ at: TouchAt; high: TouchAt; inView
 }
 
 /**
- * Gives the panel around `button` room to settle it in the panel's middle
- * with 64 px of scroll above, which a font's metrics may leave it without:
- * on Linux the token bar's whole content showed at 390 x 844, so a finger
- * scrolled it 0 px. Pads the panel itself, not what React draws in it.
+ * Gives the panel around `button` room to settle it at `at` (settleIn) with
+ * at least 96 px of scroll on each side, which a font's metrics may leave
+ * it without: on Linux the token bar's whole content showed at 390 x 844,
+ * so a finger scrolled it 0 px. Pads the panel itself, not what React
+ * draws in it. A panel sized by its content grows with a pad a moment
+ * later, until it reaches its greatest height, so this pads, waits and
+ * measures again until two measures in a row need nothing more.
  */
-function roomToScroll(button: Locator): Promise<void> {
-  return button.evaluate((el) => {
+async function roomToScroll(button: Locator, at: "top" | "middle"): Promise<void> {
+  const step = (pad: boolean) => button.evaluate((el, { at, pad }) => {
     type R = { top: number; bottom: number; height: number };
     type E = { getBoundingClientRect(): R; parentElement: E | null; scrollTop: number; scrollHeight: number; clientHeight: number; offsetHeight: number; style: Record<string, string> };
     const view = (el as unknown as { ownerDocument: { defaultView: { getComputedStyle(e: E): { overflowY: string; paddingTop: string; paddingBottom: string } } } }).ownerDocument.defaultView;
@@ -655,14 +658,57 @@ function roomToScroll(button: Locator): Promise<void> {
     const p = panel.getBoundingClientRect();
     const b = (el as unknown as E).getBoundingClientRect();
     const zoom = p.height / panel.offsetHeight;
+    const top = (b.top - p.top) / zoom + panel.scrollTop;
     const center = ((b.top + b.bottom) / 2 - p.top) / zoom + panel.scrollTop;
-    const half = panel.clientHeight / 2;
-    const top = Math.max(0, half + 64 - center);
-    const below = Math.max(0, center + top - half - (panel.scrollHeight + top - panel.clientHeight));
-    const style = view.getComputedStyle(panel);
-    panel.style.paddingTop = `${parseFloat(style.paddingTop) + top}px`;
-    panel.style.paddingBottom = `${parseFloat(style.paddingBottom) + below}px`;
+    // The scroll that settles the button where settleIn puts it.
+    const want = at === "top" ? top - 4 : center - panel.clientHeight / 2;
+    const above = Math.max(0, Math.ceil(96 - want));
+    const below = Math.max(0, Math.ceil(want + above + 96 - (panel.scrollHeight + above - panel.clientHeight)));
+    if (pad && (above > 0 || below > 0)) {
+      const style = view.getComputedStyle(panel);
+      panel.style.paddingTop = `${parseFloat(style.paddingTop) + above}px`;
+      panel.style.paddingBottom = `${parseFloat(style.paddingBottom) + below}px`;
+    }
+    return above + below;
+  }, { at, pad });
+  let quiet = 0;
+  for (let i = 0; i < 30 && quiet < 2; i++) {
+    quiet = (await step(true)) === 0 ? quiet + 1 : 0;
+    await sleep(200);
+  }
+  if ((await step(false)) > 0) throw new Error("setup: the panel never kept room to scroll around the button");
+}
+
+/** The panel around `button`: its scroll, and how far it can scroll up and down from there, in its own px. */
+function scrollRoom(button: Locator): Promise<{ now: number; up: number; down: number }> {
+  return button.evaluate((el) => {
+    type E = { parentElement: E | null; scrollTop: number; scrollHeight: number; clientHeight: number };
+    const view = (el as unknown as { ownerDocument: { defaultView: { getComputedStyle(e: E): { overflowY: string } } } }).ownerDocument.defaultView;
+    let panel = (el as unknown as E).parentElement;
+    while (panel && !/(auto|scroll)/.test(view.getComputedStyle(panel).overflowY)) panel = panel.parentElement;
+    if (!panel) throw new Error("the button has no panel that scrolls");
+    return { now: panel.scrollTop, up: panel.scrollTop, down: panel.scrollHeight - panel.clientHeight - panel.scrollTop };
   });
+}
+
+/**
+ * Settles `button` at `at` and waits until the panel's scroll holds there,
+ * settling it again if anything moved it, then checks that a finger can
+ * scroll the panel at least 56 px either way. A setup that cannot is a
+ * setup fault, never the menu's.
+ */
+async function settleWithRoom(button: Locator, at: "top" | "middle", label: string): Promise<void> {
+  let last = -1;
+  for (let i = 0; i < 20; i++) {
+    await settleIn(button, at);
+    await sleep(150);
+    const { now } = await scrollRoom(button);
+    if (now === last) break;
+    last = now;
+  }
+  const room = await scrollRoom(button);
+  if (room.now !== last) throw new Error(`setup: ${label}: the panel's scroll never held at the button (${last}, then ${room.now})`);
+  if (room.up < 56 || room.down < 56) throw new Error(`setup: ${label}: the panel scrolls only ${room.up} px up and ${room.down} px down from the button, under 56`);
 }
 
 /** A finger set on `at` and drawn `dy` px down (up if negative) in eight moves, then lifted. Whether `menu` was still open as the finger lifted comes back. */
@@ -2164,6 +2210,8 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
           /** Settles `button` at `end` of its panel, holds it, and checks the menu it opens. */
           const openOn = async (what: string, button: Locator, place: "top" | "middle", title: string) => {
             await button.waitFor();
+            // Dice and HP are scrolled under the open menu next, so their panels must hold a scroll with room both ways.
+            if (what !== "initiative") await settleWithRoom(button, place, `${at}, ${what}`);
             let where = await settleIn(button, place);
             // Until the panel and the button are still, so no scroll cancels the hold.
             let last = "";
@@ -2238,7 +2286,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
           await sheet.getByRole("region", { name: "Rolls for Thorn" }).waitFor();
           const luck = sheet.getByRole("button", { name: "Luck, 1d20", exact: true });
           await luck.waitFor();
-          await roomToScroll(luck);
+          await roomToScroll(luck, "top");
           await openOn("dice", luck, "top", "Luck 1d20");
           await scrolls("dice", luck, "top", "Luck 1d20");
           // FL-14's back swipe moves the page under the sheet's header with a transform, which makes the page the box of anything fixed inside it.
@@ -2254,7 +2302,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
           const bar = page.getByRole("dialog", { name: "Thorn actions" });
           await bar.waitFor();
           const death = await barControl(bar, "Roll a Death Save");
-          await roomToScroll(death);
+          await roomToScroll(death, "middle");
           await openOn("hp", death, "middle", "Death Save");
           await scrolls("hp", death, "middle", "Death Save");
           await setDying(false);
