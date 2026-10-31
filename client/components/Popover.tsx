@@ -59,15 +59,20 @@ export type { PopoverSide, Rect } from "./popoverPlace.ts";
  * Non-modal: no scrim, no inert room, no focus trap, so the map and every
  * control outside keep working. One popover is open in the room at a
  * time, whoever owns it. A press outside closes it as the press starts
- * and goes on to its target, while a press on the map only closes it,
+ * and goes on to its target, and a touch outside as it lifts, unless the
+ * browser took it for a scroll, while a press on the map only closes it,
  * once the press ends as one pointer, so a pinch keeps it open. Focus
  * goes in only when a key opened it. Escape, Tab, Shift+Tab, Android's
  * Back, focus moving away and its anchor leaving close it.
  *
- * The box stands at `theme.z.popover` in its stacking context. While it
- * is open, the consumer raises the element that holds it (the options
- * row, the toolbar, the side panel) to `theme.z.popover` too (7.6), so it
- * stands over notices and toasts.
+ * The box is drawn in the browser's top layer, a manual popover
+ * (showInTopLayer), so no scroller, transform or stacking context around
+ * its anchor clips or covers it. In the page it stays right after its
+ * anchor. The box also stands at `theme.z.popover` in its stacking
+ * context, and while it is open the consumer raises the element that
+ * holds it (the options row, the toolbar, the side panel) to
+ * `theme.z.popover` too (7.6), which keeps it over notices and toasts in
+ * a browser with no popovers.
  */
 
 export type PopoverKind = "dialog" | "menu";
@@ -254,6 +259,8 @@ export type PopoverProps = {
   margin?: number;
   /** Below this the popover rises into `rise`: a tool popover's title and one 44 px row. */
   minHeight?: number;
+  /** Opens on the other side of its anchor where its content does not fit on `side` and the other side has more room (popoverPlace.ts). */
+  flip?: boolean;
   /** Drawn in the section label's look, and a dialog's name unless `label` gives another. */
   title?: string;
   /** A dialog's name where it draws no title, or where its name says more than its title: ⋯'s "More" is "More Area options". */
@@ -344,6 +351,7 @@ function OpenPopover(props: PopoverProps) {
         margin,
         minHeight: p.minHeight ?? 0,
         content: { width: natural.width / scale, height: natural.height / scale },
+        flip: p.flip,
       });
       Object.assign(box.style, { maxWidth: "", minWidth: "", left: `${at.left}px`, top: `${at.top}px`, width: `${at.width}px`, height: `${at.height}px` });
       box.scrollTop = scrolled;
@@ -361,6 +369,7 @@ function OpenPopover(props: PopoverProps) {
 
   useLayoutEffect(() => {
     const h = latest.current.handle;
+    showInTopLayer(h.box.current);
     h.focusInside.current = (from) => {
       const box = h.box.current;
       if (menuFocus.current) menuFocus.current(from);
@@ -481,6 +490,7 @@ function OpenPopover(props: PopoverProps) {
       <div
         ref={handle.box}
         data-rvtt-popover=""
+        popover="manual"
         id={dialog ? handle.contentId : undefined}
         role={dialog ? "dialog" : undefined}
         aria-labelledby={dialog && props.title && !props.label ? titleId : undefined}
@@ -490,7 +500,12 @@ function OpenPopover(props: PopoverProps) {
         onKeyDown={onKeyDown}
         onScroll={updateMore}
         style={{
+          // Drawn and measured from its first layout, before showInTopLayer, over the browser's own look for a popover (centered, closed until shown). place sets its left and top.
+          display: "block",
           position: "fixed",
+          right: "auto",
+          bottom: "auto",
+          margin: 0,
           zIndex: theme.z.popover,
           boxSizing: "border-box",
           overflowY: "auto",
@@ -519,11 +534,12 @@ function OpenPopover(props: PopoverProps) {
 }
 
 /**
- * The room's window listeners for the map press rule (popoverRules.ts
- * pressStep), added the first time a popover opens in the room and kept
- * until the room goes, so a press that began with a popover open is
- * followed to its end even after the popover closed. Capture, so they run
- * before the map's own handlers: the map reads the press as suppressed
+ * The room's window listeners for the map press rule and the outside
+ * touch rule (popoverRules.ts pressStep and outsideTouchStep), added the
+ * first time a popover opens in the room and kept until the room goes,
+ * so a press that began with a popover open is followed to its end even
+ * after the popover closed. Capture, so they run before the map's own
+ * handlers: the map reads the press as suppressed
  * (PopoverRoom.suppressesTool) from its first event.
  */
 function attachRoom(room: PopoverRoom): void {
@@ -531,10 +547,13 @@ function attachRoom(room: PopoverRoom): void {
   const down = (e: PointerEvent) => {
     const entry = room.current();
     const where: PressWhere = entry ? entry.where(e.target) : isMapTarget(e.target) ? "map" : "elsewhere";
-    const step = room.press({ type: "down", pointerId: e.pointerId, where, open: entry !== null, pan: room.pans(e) });
+    const touch = e.pointerType === "touch";
+    const step = room.press({ type: "down", pointerId: e.pointerId, where, open: entry !== null, pan: room.pans(e), touch });
     if (step.close === "now") entry?.close("press");
+    room.outsideTouch({ type: "down", pointerId: e.pointerId, where, touch, key: entry?.key ?? null });
   };
   const end = (e: PointerEvent) => {
+    room.outsideTouch({ type: e.type === "pointerup" ? "up" : "cancel", pointerId: e.pointerId, taken: e.type === "pointercancel" && e.isTrusted });
     const step = room.press({ type: e.type === "pointerup" ? "up" : "cancel", pointerId: e.pointerId });
     if (step.close === "end") room.current()?.close("map");
     // The map's handlers for this last event run after this listener and still read the press as suppressed. The map settles it as its last pointer lifts (canvas/Stage.tsx), and this covers a press whose map went away meanwhile.
@@ -548,6 +567,22 @@ function attachRoom(room: PopoverRoom): void {
     window.removeEventListener("pointerup", end, true);
     window.removeEventListener("pointercancel", end, true);
   });
+}
+
+/**
+ * Moves the box into the browser's top layer as a manual popover, which
+ * no ancestor's overflow, transform, containment or stacking context
+ * clips or covers, such as a sheet around the page a back swipe moves
+ * (FL-17). The browser leaves a manual popover's Escape and outside
+ * presses to the page, so the rules here stay its own, and the box keeps
+ * its place in the page, so Tab order, the accessibility tree and an
+ * inert room behind a modal stay as they were. Its inherited interface
+ * size (CSS zoom) stays too. A browser with no popovers keeps the box
+ * fixed where the page draws it.
+ */
+export function showInTopLayer(box: HTMLElement | null): void {
+  if (!box || typeof box.showPopover !== "function" || !box.isConnected || box.matches(":popover-open")) return;
+  box.showPopover();
 }
 
 function resolve(rect: Rect | (() => Rect)): Rect {

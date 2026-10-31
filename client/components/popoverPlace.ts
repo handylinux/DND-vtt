@@ -9,7 +9,9 @@
  * may grow into a taller rise region, up to that region's edge: a popover
  * above the tool options on a short phone in a fight rises over the top
  * bars rather than open with no room. Past the room it has, its content
- * scrolls. The rule is cardPlace's clamping (features/movement/anchor.ts),
+ * scrolls. A popover that may flip opens on the other side where its
+ * content does not fit on its own side and the other side has more room.
+ * The rule is cardPlace's clamping (features/movement/anchor.ts),
  * rewritten for an anchor in the page rather than a point on the map.
  */
 
@@ -31,6 +33,8 @@ export type PlaceInput = {
   /** The content's natural size, the box's padding and border included, wrapped at the widest the bound allows. */
   content: { width: number; height: number };
   minHeight: number;
+  /** Opens on the other side where the content does not fit on `side` and the other side has more room: a roll's menu near the screen's top opens below it. */
+  flip?: boolean;
 };
 
 export type Place = {
@@ -45,7 +49,7 @@ export type Place = {
 };
 
 export function popoverPlace(input: PlaceInput): Place {
-  const { anchor, bound, rise, side, gap, margin, content } = input;
+  const { anchor, bound, rise, gap, margin, content } = input;
   const widest = Math.max(0, bound.right - bound.left - 2 * margin);
   const width = Math.min(Math.max(content.width, anchor.right - anchor.left), widest);
 
@@ -53,6 +57,9 @@ export function popoverPlace(input: PlaceInput): Place {
   let left = Math.min(anchor.left, bound.right - margin - width);
   left = Math.max(left, bound.left + margin);
 
+  const roomOn = (s: PopoverSide) => (s === "above" ? anchor.top - gap - (bound.top + margin) : bound.bottom - margin - (anchor.bottom + gap));
+  const other: PopoverSide = input.side === "above" ? "below" : "above";
+  const side = input.flip && content.height > roomOn(input.side) && roomOn(other) > roomOn(input.side) ? other : input.side;
   const edge = side === "above" ? anchor.top - gap : anchor.bottom + gap;
   const inBound = side === "above" ? edge - (bound.top + margin) : bound.bottom - margin - edge;
   const inRise = rise ? (side === "above" ? edge - rise.top : rise.bottom - edge) : -Infinity;

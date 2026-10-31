@@ -16,10 +16,13 @@ import {
   openFocus,
   openingStop,
   popoverSlot,
+  outsideTouchStep,
   pressStep,
   tabOut,
   type CloseReason,
   type MapPress,
+  type OutsideEvent,
+  type OutsideTouch,
   type PopoverEntry,
   type PressEvent,
 } from "./popoverRules.ts";
@@ -126,6 +129,18 @@ describe("where a popover stands", () => {
     assert.equal(needsPlace(frame, { ...frame, rise: rect(0, 0, 390, 760) }), true, "a rise region came");
     // Content is no input of the frame: a choice that adds a line inside moves nothing.
     assert.equal(Object.keys(frame).includes("content"), false);
+  });
+
+  /* FL-17: a roll's menu, the whole window its bound, at 320 x 568 at 130% (246 x 437 in the chrome's own px), its four rows 202 px tall. */
+  test("one that may flip opens on the other side where its content fits only there, or where the other side has more room", () => {
+    const menu = (anchorTop: number, over: Partial<PlaceInput> = {}) => popoverPlace(above({ anchor: rect(17, anchorTop, 229, anchorTop + 44), bound: rect(0, 0, 246, 437), content: { width: 212, height: 202 }, flip: true, ...over }));
+    assert.deepEqual(menu(300), { left: 17, top: 92, width: 212, height: 202, scrolls: false, rose: false }, "room above: above, as without flip");
+    assert.deepEqual(menu(150), { left: 17, top: 200, width: 212, height: 202, scrolls: false, rose: false }, "a roll near the top: below it, whole");
+    assert.deepEqual(menu(150, { flip: false }), { left: 17, top: 8, width: 212, height: 136, scrolls: true, rose: false }, "without flip it keeps above and scrolls");
+    const middle = menu(190);
+    assert.deepEqual([middle.top, middle.height, middle.scrolls], [240, 189, true], "room for it on neither side: the roomier, below, and it scrolls");
+    assert.equal(menu(200).top, 8, "the roomier side above");
+    assert.equal(popoverPlace(above({ side: "below", anchor: rect(17, 380, 229, 424), bound: rect(0, 0, 246, 437), content: { width: 212, height: 202 }, flip: true })).top, 380 - 6 - 202, "from below it flips above");
   });
 
   test("measured rectangles are taken in the chrome's own px", () => {
@@ -371,6 +386,11 @@ describe("a press while a popover is open", () => {
     assert.deepEqual(run([down(1, { where: "anchor" }), up(1)]).closes, [], "the anchor's own click closes it");
   });
 
+  test("a touch elsewhere is the outside touch rule's, so the map press rule does not close it at once", () => {
+    assert.deepEqual(run([down(1, { where: "elsewhere", touch: true }), up(1)]), { closes: [], suppressed: [false, false], state: null });
+    assert.deepEqual(run([down(1, { where: "elsewhere", touch: false }), up(1)]).closes, ["now"], "a mouse's or a pen's");
+  });
+
   test("with nothing open, the map is the tool's", () => {
     assert.deepEqual(run([down(1, { open: false }), up(1)]), { closes: [], suppressed: [false, false], state: null });
   });
@@ -416,6 +436,95 @@ describe("a press while a popover is open", () => {
     assert.equal(isMapTarget(at(false)), false);
     assert.equal(isMapTarget(null), false);
   });
+});
+
+/* FL-17: a finger outside the open popover may start a scroll of the panel under it. */
+describe("a touch outside the open popover and its anchor", () => {
+  const down = (pointerId: number, over: Partial<Extract<OutsideEvent, { type: "down" }>> = {}): OutsideEvent => ({ type: "down", pointerId, where: "elsewhere", touch: true, key: "roll", ...over });
+  const up = (pointerId: number): OutsideEvent => ({ type: "up", pointerId, taken: false });
+  const cancel = (pointerId: number, taken: boolean): OutsideEvent => ({ type: "cancel", pointerId, taken });
+
+  function run(events: readonly OutsideEvent[]): { closes: string[]; state: OutsideTouch } {
+    let state: OutsideTouch = null;
+    const closes: string[] = [];
+    for (const e of events) {
+      const step = outsideTouchStep(state, e);
+      state = step.state;
+      if (step.close !== null) closes.push(step.close);
+    }
+    return { closes, state };
+  }
+
+  test("lifted as a tap, it closes the popover open as it began", () => {
+    assert.deepEqual(run([down(1), up(1)]), { closes: ["roll"], state: null });
+  });
+
+  test("taken by the browser for a scroll or a zoom, it leaves the popover open", () => {
+    assert.deepEqual(run([down(1), cancel(1, true)]), { closes: [], state: null });
+    assert.deepEqual(run([down(1), cancel(1, true), up(1)]).closes, [], "an up after the browser's cancel is no tap");
+  });
+
+  test("taken by a swipe of the page's own, a sheet's or a back swipe, it closes the popover as a tap does", () => {
+    assert.deepEqual(run([down(1), cancel(1, false), up(1)]).closes, ["roll"]);
+  });
+
+  test("a second finger makes it a pinch, which leaves the popover open", () => {
+    assert.deepEqual(run([down(1), down(2, { where: "map", touch: true }), up(2), up(1)]).closes, []);
+    assert.deepEqual(run([down(1), down(2), up(1), up(2), down(3), up(3)]).closes, ["roll"], "the next touch is judged afresh");
+  });
+
+  test("a mouse's or a pen's press, one inside or on the anchor or the map, and one with nothing open are not its", () => {
+    for (const over of [{ touch: false }, { where: "inside" as const }, { where: "anchor" as const }, { where: "map" as const }, { key: null }]) {
+      assert.deepEqual(run([down(1, over), up(1)]), { closes: [], state: null }, JSON.stringify(over));
+    }
+  });
+
+  test("the room closes the popover the touch began over, and never one opened since", () => {
+    const room = new RoomScope().get(popoverSlot);
+    const closes: string[] = [];
+    room.open(entry("roll", closes, room));
+    room.outsideTouch(down(1));
+    room.outsideTouch(up(1));
+    assert.deepEqual(closes, ["roll:press"]);
+    room.open(entry("roll", closes, room));
+    room.outsideTouch(down(2));
+    // A hold on another roll's button opens its menu while the finger is down.
+    room.open(entry("other", closes, room));
+    room.outsideTouch(up(2));
+    assert.deepEqual(closes, ["roll:press", "roll:replaced"]);
+    assert.equal(room.current()?.key, "other");
+  });
+});
+
+test("the box goes to the top layer once, as a manual popover, and a browser without popovers keeps it where it is", async () => {
+  const { showInTopLayer } = await import("./Popover.tsx");
+  let shown = 0;
+  let open = false;
+  const box = { isConnected: true, showPopover() { shown++; open = true; }, matches: (selector: string) => selector === ":popover-open" && open };
+  showInTopLayer(box as unknown as HTMLElement);
+  showInTopLayer(box as unknown as HTMLElement);
+  assert.equal(shown, 1);
+  showInTopLayer({ isConnected: true, matches: () => false } as unknown as HTMLElement);
+  showInTopLayer({ ...box, isConnected: false } as unknown as HTMLElement);
+  showInTopLayer(null);
+  assert.equal(shown, 1);
+});
+
+test("the open box is a manual popover, laid out before it is shown, at no inset or margin of the browser's own", async () => {
+  const { createElement } = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { RoomScopeProvider } = await import("../state/scope.ts");
+  const { Popover, usePopover } = await import("./Popover.tsx");
+  const scope = new RoomScope();
+  try {
+    function Open() {
+      const handle = usePopover({ kind: "menu" });
+      return createElement(Popover, { handle: { ...handle, open: true }, side: "above", bound: rect(0, 0, 390, 844), children: "Rows" });
+    }
+    const html = renderToStaticMarkup(createElement(RoomScopeProvider, { scope, children: createElement(Open) }));
+    assert.match(html, /<div[^>]*data-rvtt-popover=""[^>]*popover="manual"/);
+    assert.match(html, /style="display:block;position:fixed;right:auto;bottom:auto;margin:0;/);
+  } finally { scope.dispose(); }
 });
 
 test("natural measurement keeps a focused popover at its placed position", async () => {
