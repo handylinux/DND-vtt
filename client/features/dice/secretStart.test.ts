@@ -77,3 +77,41 @@ describe("Secret follows the DM's selection (LP7-DICE-8)", () => {
     assert.equal(panelKeyIn({ ...dm, you: { memberId: "p1", role: "player" } }), "");
   });
 });
+
+describe("a roll menu reads Secret against its roll's own creatures (FL17-ASTRA-01)", () => {
+  const view = room({ tokens: { goblin: token("goblin") } });
+  const state = { view, you: { memberId: "dm1", role: "dm" as const }, local: { ...INITIAL_LOCAL, selectedIds: [] as string[] } };
+
+  test("a DM who pressed Secret on and off with nothing selected: a goblin's Normal differs from its tap, the free formula's does not", async () => {
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { RoomProvider } = await import("../../state/view.ts");
+    const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
+    const { diceChoicesSlot, useRollPresses } = await import("./useDicePanel.ts");
+    const scope = new RoomScope();
+    const choices = scope.get(diceChoicesSlot);
+    // Pressed on, then off, for the panel's own key: off for whatever rolls next.
+    choices.setState({ secret: false, secretFor: panelKeyIn(state) });
+    choices.getInitialState = choices.getState;
+    const store = createStore(() => ({ ...state, roomId: "r1", connection: "open", sceneId: "s1" }));
+    const seen: Record<string, { mode: boolean; secret: boolean }> = {};
+    function Probe() {
+      seen.goblin = useRollPresses([{ tokenId: "goblin" }]);
+      seen.formula = useRollPresses();
+      return null;
+    }
+    renderToStaticMarkup(createElement(RoomProvider, {
+      store: store as never, actions: { dispatch: () => 1 } as never, ui: {} as never, assets: { url: () => "" } as never,
+      children: createElement(RoomScopeProvider, { scope, children: createElement(Probe) }),
+    }));
+    assert.deepEqual(seen.goblin, { mode: false, secret: true }, "the goblin's Secret starts pressed, and the panel's is off");
+    assert.deepEqual(seen.formula, { mode: false, secret: false });
+
+    // As the panel rolls them, a tap and Roll normally go to different readers for the goblin.
+    const sent: ClientOp[] = [];
+    const panel = createDicePanel({ store: choices, sender: { dispatch: (op: ClientOp) => sent.push(op), connected: () => true, receipts: new ReceiptTracker() }, secretStart: (creatures) => secretStartIn(state, creatures), panelKey: () => panelKeyIn(state) });
+    panel.roll([{ formula: "1d20+2", creature: { tokenId: "goblin" } }], { override: "normal" });
+    panel.roll([{ formula: "1d20+2", creature: { tokenId: "goblin" } }]);
+    assert.deepEqual(sent.map((op) => (op as OpOf<"dice.roll">).to), ["dm", "all"]);
+  });
+});

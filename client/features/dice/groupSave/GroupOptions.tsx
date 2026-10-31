@@ -52,13 +52,14 @@ import type { RollModeOverride, RollModeCapability } from "../rollMode.ts";
 export function GroupOptions(props: { tokenIds: readonly string[] }) {
   const view = useRoomView((s) => s.view);
   const panel = useDicePanel();
-  const presses = useRollPresses();
   const start = useStartGroupSave();
   const blocked = useRollBlocked();
   const { fold } = useDiceFolds();
   const [dc, setDc] = useState<number | null>(null);
   const [pending, setPending] = useState<StartInput | null>(null);
   const creatures = useMemo<ActorTarget[]>(() => props.tokenIds.map((tokenId) => ({ tokenId })), [props.tokenIds]);
+  // A quick save's Secret starts from these creatures (quickRollNow), as the panel's take reads it.
+  const presses = useRollPresses(creatures);
   const { dice, loading } = useDiceView(creatures);
   const shared = useMemo(() => (dice ? sharedAttacksOf(dice, creatures) : []), [dice, creatures]);
   const slot = useScoped(sharedAttacksSlot);
@@ -362,7 +363,8 @@ export function attackSummary(name: string, state: SharedAttackState | undefined
  */
 function SharedAttack(props: { name: string; each: Attacker[]; dice: DiceView; blocked: string | null }) {
   const panel = useDicePanel();
-  const presses = useRollPresses();
+  // Its attack and damage rolls are each attacker's, whose Secret start the panel reads as it rolls.
+  const presses = useRollPresses(props.each.map((e) => e.creature));
   const room = useRoomStore();
   const store = useSharedAttacksStore();
   const state = useStore(store, (s) => s.byName[props.name] ?? NO_ATTACK);

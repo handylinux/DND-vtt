@@ -733,8 +733,8 @@ function InitiativeRoll(props: { entry: InitEntry; creature: ActorTarget; name: 
   const fallback = useRef<HTMLElement | null>(null);
   const dm = useRoomView((s) => s.you?.role === "dm");
   const panel = useDicePanel();
-  const presses = useRollPresses();
   const creatures = useMemo(() => [creature], [creature]);
+  const presses = useRollPresses(creatures);
   const { dice, failed } = useDiceView(creatures);
   const option = useRollOption();
   const options = useOptionStore();

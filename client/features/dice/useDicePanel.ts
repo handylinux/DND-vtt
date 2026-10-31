@@ -297,12 +297,14 @@ export function useDicePanel(): DicePanelApi {
 /**
  * The panel's presses that an ordinary panel roll takes and Roll normally
  * drops (rollMode.ts RollPresses): Adv or Dis, and a Secret pressed away
- * from where it starts. A roll menu offers Roll normally only while one
- * stands (D-261031-078).
+ * from where it starts for this roll. `creatures` are the roll's own, as
+ * the button passes them to the panel, since Secret starts from them
+ * there (createDicePanel's roll), and with none from the DM's selection.
+ * A roll menu offers Roll normally only while one stands (D-261031-078).
  */
-export function useRollPresses(): { mode: boolean; secret: boolean } {
+export function useRollPresses(creatures: readonly ActorTarget[] = []): { mode: boolean; secret: boolean } {
   const store = useScoped(diceChoicesSlot);
-  const start = useRoomView((s) => secretStartIn(s, []));
+  const start = useRoomView((s) => secretStartIn(s, creatures));
   const key = useRoomView(panelKeyIn);
   const mode = useStore(store, (s) => s.adv || s.dis);
   const secret = useStore(store, (s) => secretNow(s, key, start) !== start);

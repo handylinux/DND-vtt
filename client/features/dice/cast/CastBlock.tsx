@@ -265,7 +265,8 @@ function CastBlockView(props: Parameters<typeof RowCast>[0] & { spec: CastBlock 
   const view = dice.view;
   const env = useCastEnv();
   const panel = useDicePanel();
-  const presses = useRollPresses();
+  // Its damage rolls are the caster's (damageRolls, fillRolls), whose Secret start the panel reads as it rolls.
+  const presses = useRollPresses([spec.creature]);
   const store = useOptionStore();
   const room = useRoomStore();
   const ui = useRoomUi();

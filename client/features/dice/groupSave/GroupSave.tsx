@@ -724,7 +724,7 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
           {outcome}
           {rowList}
           {page.test.kind !== "none" ? (
-            <GroupRollButton source={JSON.stringify([rollContext, rows.map((r) => [r, stateOf(shown, r)]), serverRolls(rows), panel.adv, panel.dis, panel.secret])} name={rollWords(shown)} capability={{ d20: hasServerRoll, visibility: hasServerRoll ? "selectable" : "request", batch: true, manual: presses }} valid={() => pageRef.current.phase === "setup" && !offScene} variant="primary" busy={loading} disabled={blocked !== null || offScene || rows.length === 0 || tooMany || bound !== null} onRoll={(override) => startRoll(undefined, override)}>
+            <GroupRollButton source={JSON.stringify([rollContext, rows.map((r) => [r, stateOf(shown, r)]), serverRolls(rows), panel.adv, panel.dis, panel.secret])} name={rollWords(shown)} capability={{ d20: hasServerRoll, visibility: hasServerRoll ? "selectable" : "request", batch: true, manual: { mode: presses.mode } }} valid={() => pageRef.current.phase === "setup" && !offScene} variant="primary" busy={loading} disabled={blocked !== null || offScene || rows.length === 0 || tooMany || bound !== null} onRoll={(override) => startRoll(undefined, override)}>
               {bound ?? (loading ? "Loading the stat blocks…" : rollWords(shown))}
             </GroupRollButton>
           ) : null}

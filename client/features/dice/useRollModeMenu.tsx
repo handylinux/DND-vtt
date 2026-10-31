@@ -1,6 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { usePopover } from "../../components/Popover.tsx";
+import { scrolledAway, usePopover } from "../../components/Popover.tsx";
 import { theme } from "../../lib/theme.ts";
 import { RollModeMenu } from "./RollModeMenu.tsx";
 import { attachConsumedTouch, RollPress } from "./rollPress.ts";
@@ -33,22 +33,17 @@ export type RollModeMenuBinding = {
   pressStyle: CSSProperties;
 };
 
-/** Browser scroll anchoring may move the panel as results land. Keep an open menu while its source is still in view. */
-export function handleRollModeScroll(input: { target: EventTarget | null; anchor: HTMLElement | null; open: boolean; cancel(): void; close(): void }): void {
+/**
+ * A scroll that moves the source cancels a press on it. An open menu stays
+ * while its source is in view, as browser scroll anchoring may move the
+ * panel as results land, and Popover closes it once the source leaves
+ * (scrolledAway).
+ */
+export function handleRollModeScroll(input: { target: EventTarget | null; anchor: HTMLElement | null; open: boolean; cancel(): void }): void {
   const { target, anchor } = input;
   if (!anchor || !(target === document || target instanceof Element && target.contains(anchor))) return;
-  if (input.open) {
-    const source = anchor.getBoundingClientRect();
-    const viewport = { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
-    const container = target instanceof Element ? target.getBoundingClientRect() : viewport;
-    const left = Math.max(source.left, container.left, viewport.left);
-    const top = Math.max(source.top, container.top, viewport.top);
-    const right = Math.min(source.right, container.right, viewport.right);
-    const bottom = Math.min(source.bottom, container.bottom, viewport.bottom);
-    if (left < right && top < bottom) return;
-  }
+  if (input.open && !scrolledAway(target, anchor)) return;
   input.cancel();
-  input.close();
 }
 
 export function useRollModeMenu(options: UseRollModeMenuOptions): RollModeMenuBinding {
@@ -107,6 +102,8 @@ export function useRollModeMenu(options: UseRollModeMenuOptions): RollModeMenuBi
   }, [source, enabled, capabilityKey]);
   // The source stays marked while its menu is open, so the roll a finger hid is still plain to see (D-261031-079).
   useLayoutEffect(() => (handle.open ? markRollModeSource(handle.anchor.current) : undefined), [handle.open, handle.anchor]);
+  // In a browser with no popovers the menu is drawn where the page draws it, so the elements that hold it rise over the bars, notices and toasts there, as before FL-17 (D-261031-088).
+  useLayoutEffect(() => (handle.open ? raiseRollModeHosts(handle.anchor.current, handle.box.current) : undefined), [handle.open, handle.anchor, handle.box]);
   useEffect(() => {
     if (!enabled) return;
     const down = (e: PointerEvent) => {
@@ -118,7 +115,7 @@ export function useRollModeMenu(options: UseRollModeMenuOptions): RollModeMenuBi
     const move = (e: PointerEvent) => { machine.current?.move({ id: e.pointerId, x: e.clientX, y: e.clientY }); if (machine.current?.activeId === null) clearTouch(); };
     const end = (e: PointerEvent) => { if (machine.current?.activeId === e.pointerId) { e.type === "pointerup" ? machine.current.up(e.pointerId) : machine.current.cancel(); clearTouch(); } };
     const cancel = () => { machine.current?.cancel(); clearTouch(); };
-    const scroll = (e: Event) => handleRollModeScroll({ target: e.target, anchor: current.current.anchor.current, open: openedSource.current !== null, cancel, close: () => current.current.close("anchor") });
+    const scroll = (e: Event) => handleRollModeScroll({ target: e.target, anchor: current.current.anchor.current, open: openedSource.current !== null, cancel });
     const key = () => { machine.current?.key(); clearTouch(); };
     const blur = () => { cancel(); current.current.close("anchor"); };
     const hidden = () => { if (document.hidden) { cancel(); current.current.close("anchor"); } };
@@ -213,5 +210,27 @@ export function markRollModeSource(node: HTMLElement | null): () => void {
   const painted = node.style.boxShadow;
   return () => {
     if (node.style.boxShadow === painted) node.style.boxShadow = before;
+  };
+}
+
+/**
+ * Where the menu's box is not in the top layer, a browser with no popovers
+ * (showInTopLayer), raises each positioned element that holds its anchor
+ * to the popover's level, leaving one already at or above it, so overlays
+ * drawn higher still stand over the menu. Puts back only the inline
+ * values it wrote. With popovers it does nothing.
+ */
+export function raiseRollModeHosts(anchor: HTMLElement | null, box: HTMLElement | null): () => void {
+  if (box && typeof box.showPopover === "function") return () => undefined;
+  const hosts: { node: HTMLElement; before: string; painted: string }[] = [];
+  for (let node = anchor?.parentElement; node && node !== document.body; node = node.parentElement) {
+    const style = getComputedStyle(node);
+    if (style.position === "static" || (style.zIndex !== "auto" && Number(style.zIndex) >= theme.z.popover)) continue;
+    const before = node.style.zIndex;
+    node.style.zIndex = String(theme.z.popover);
+    hosts.push({ node, before, painted: node.style.zIndex });
+  }
+  return () => {
+    for (const host of hosts) if (host.node.style.zIndex === host.painted) host.node.style.zIndex = host.before;
   };
 }

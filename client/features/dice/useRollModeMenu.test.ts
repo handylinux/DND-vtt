@@ -163,8 +163,9 @@ test("an explicit mouse context event stays a pointer opening even for Ctrl+clic
   } finally { Object.assign(globalThis, previous); }
 });
 
-test("containing scrolls preserve an open menu while its source remains visible", async () => {
+test("containing scrolls keep an open menu while its source remains visible, and close it through Popover once the source leaves (scrolledAway)", async () => {
   const { handleRollModeScroll } = await import("./useRollModeMenu.tsx");
+  const { scrolledAway } = await import("../../components/Popover.tsx");
   const previous = { document: globalThis.document, window: globalThis.window, Element: globalThis.Element };
   class ScrollElement {
     rect = { left: 10, right: 110, top: 20, bottom: 120 };
@@ -178,7 +179,11 @@ test("containing scrolls preserve an open menu while its source remains visible"
   Object.assign(globalThis, { document: {}, window: { innerWidth: 300, innerHeight: 200 }, Element: ScrollElement });
   try {
     let cancelled = 0, closed = 0;
-    const scroll = (target: unknown, open = true) => handleRollModeScroll({ target: target as EventTarget, anchor: source as unknown as HTMLElement, open, cancel: () => { cancelled++; }, close: () => { closed++; } });
+    // As the page runs them: the open menu's Popover closes it once its source scrolled away, and the roll's own listener cancels a press.
+    const scroll = (target: unknown, open = true) => {
+      if (open && scrolledAway(target as EventTarget, source as unknown as Element)) closed++;
+      handleRollModeScroll({ target: target as EventTarget, anchor: source as unknown as HTMLElement, open, cancel: () => { cancelled++; } });
+    };
     scroll(scroller);
     assert.deepEqual([cancelled, closed], [0, 0], "a browser adjustment must not dismiss a visible source or release its consumed finger");
     source.rect.top = 15; source.rect.bottom = 59;
@@ -189,17 +194,19 @@ test("containing scrolls preserve an open menu while its source remains visible"
     assert.deepEqual([cancelled, closed], [1, 1], "no overlap at the container edge closes the menu");
     source.rect = { left: 30, right: 74, top: 40, bottom: 84 };
     scroll(scroller, false);
-    assert.deepEqual([cancelled, closed], [2, 2], "any containing scroll still cancels a pending hold");
+    assert.deepEqual([cancelled, closed], [2, 1], "any containing scroll still cancels a pending hold");
     scroll(new ScrollElement(), false);
-    assert.deepEqual([cancelled, closed], [2, 2], "menu scrolling and unrelated scrolling do not dismiss the source");
+    assert.deepEqual([cancelled, closed], [2, 1], "menu scrolling and unrelated scrolling do not dismiss the source");
+    scroll(new ScrollElement());
+    assert.deepEqual([cancelled, closed], [2, 1], "a scroll of an element that does not hold the source leaves the menu");
     scroll(document);
-    assert.deepEqual([cancelled, closed], [2, 2], "a visible source survives a document scroll too");
+    assert.deepEqual([cancelled, closed], [2, 1], "a visible source survives a document scroll too");
     source.rect.top = 200; source.rect.bottom = 244;
     scroll(document);
-    assert.deepEqual([cancelled, closed], [3, 3], "a source below the viewport closes the menu");
+    assert.deepEqual([cancelled, closed], [3, 2], "a source below the viewport closes the menu");
     scroller.rect = { left: 10, right: 110, top: 180, bottom: 280 };
     scroll(scroller);
-    assert.deepEqual([cancelled, closed], [4, 4], "a nested scroller cannot keep an offscreen source alive");
+    assert.deepEqual([cancelled, closed], [4, 3], "a nested scroller cannot keep an offscreen source alive");
     scroller.rect = { left: 10, right: 110, top: 20, bottom: 120 };
     for (const rect of [
       { left: 110, right: 154, top: 40, bottom: 84 },
@@ -214,6 +221,28 @@ test("containing scrolls preserve an open menu while its source remains visible"
     source.rect = { left: 30, right: 74, top: 119.5, bottom: 163.5 };
     const before = closed; scroll(scroller);
     assert.equal(closed, before, "fractional overlap at an interface scale still counts as visible");
+  } finally { Object.assign(globalThis, previous); }
+});
+
+test("without popovers the menu's holders rise as before, keeping higher overlays and putting back only what they wrote, and with popovers nothing rises (D-261031-088)", async () => {
+  const { raiseRollModeHosts } = await import("./useRollModeMenu.tsx");
+  const previous = { document: globalThis.document, getComputedStyle: globalThis.getComputedStyle };
+  type Host = { parentElement: Host | null; style: { zIndex: string }; computed: { position: string; zIndex: string } };
+  const body = { parentElement: null, style: { zIndex: "" }, computed: { position: "relative", zIndex: "auto" } };
+  const hosts: Host[] = [];
+  for (const zIndex of ["auto", "-1", "0", "20", "21", "22", "25"]) hosts.push({ parentElement: hosts.at(-1) ?? body, style: { zIndex: zIndex === "auto" ? "" : zIndex }, computed: { position: "relative", zIndex } });
+  const plain = { parentElement: hosts.at(-1)!, style: { zIndex: "" }, computed: { position: "static", zIndex: "auto" } };
+  Object.assign(globalThis, { document: { body }, getComputedStyle: (node: Host) => node.computed });
+  try {
+    const anchor = { parentElement: plain } as unknown as HTMLElement;
+    raiseRollModeHosts(anchor, { showPopover() {} } as unknown as HTMLElement)();
+    assert.deepEqual(hosts.map((host) => host.style.zIndex), ["", "-1", "0", "20", "21", "22", "25"], "in the top layer nothing rises");
+    const restore = raiseRollModeHosts(anchor, {} as HTMLElement);
+    assert.deepEqual(hosts.map((host) => host.style.zIndex), ["21", "21", "21", "21", "21", "22", "25"]);
+    assert.equal(plain.style.zIndex, ""); assert.equal(body.style.zIndex, "");
+    hosts[1]!.style.zIndex = "30";
+    restore();
+    assert.deepEqual(hosts.map((host) => host.style.zIndex), ["", "30", "0", "20", "21", "22", "25"]);
   } finally { Object.assign(globalThis, previous); }
 });
 

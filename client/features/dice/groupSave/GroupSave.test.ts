@@ -41,8 +41,12 @@ function damagePage(damage: string): Page {
   const test = { kind: "none" } as const;
   return { ...newPage({ id: "damage", sceneId: "s1", source: { kind: "selection", tokenIds: ["g1"] }, test, dc: null, secret: false, spell: false, switches: { dcShown: true, resultShown: true }, outcome: { damage, conditions: ["prone"] } }), rows: groupRows(DICE, ["g1"], test, false) };
 }
-function drawPage(page: Page, lines: import("#shared/model.ts").LogEntry[] = [], connection = "open", reopen: SaveReopen | null = null): string {
+function drawPage(page: Page, lines: import("#shared/model.ts").LogEntry[] = [], connection = "open", reopen: SaveReopen | null = null, choices: Partial<import("../useDicePanel.ts").DiceState> = {}): string {
   const scope = new RoomScope();
+  const panel = scope.get(panelModule.diceChoicesSlot);
+  panel.setState(choices);
+  // A server render reads a store's initial state.
+  panel.getInitialState = panel.getState;
   const saves = scope.get(groupSaveSlot);
   const tags = [...new Set(lines.flatMap((line) => line.data?.type === "dice" && line.data.tag ? [line.data.tag] : []))];
   if (tags.length > 0) {
@@ -322,6 +326,24 @@ test("group main, row and damage sources ignore unrelated room and row state", (
   }
 });
 
+
+test("the page's Roll offers Normal for the panel's Adv or Dis only, since its roll keeps the page's own Secret (FL17-ASTRA-02)", async () => {
+  const { offersNormal } = await import("../rollMode.ts");
+  // The guard rolls on the server, so the page's Roll takes a one-roll menu.
+  const served: Page = { ...PAGE, secret: false, source: { kind: "selection", tokenIds: ["g1"] }, states: { "token:g1": { way: "server", typedBonus: 4 } } };
+  const main = (choices: Partial<import("../useDicePanel.ts").DiceState>, page: Page = served) => {
+    menuBindings = [];
+    drawPage(page, [], "open", null, choices);
+    const found = menuBindings.filter((b) => b.capability.batch === true && b.capability.visibility === "selectable");
+    assert.equal(found.length, 1, JSON.stringify(menuBindings.map((b) => b.name)));
+    return found[0]!.capability;
+  };
+  // The DM's selection is the guard, a monster, so the panel's Secret starts pressed.
+  assert.equal(offersNormal(main({ secret: false, secretFor: "g1" })), false, "the panel's Secret pressed off");
+  assert.equal(offersNormal(main({ secret: false, secretFor: "g1" }, { ...served, secret: true })), false, "the page's Secret on and the panel's off");
+  assert.equal(offersNormal(main({})), false, "nothing pressed");
+  assert.equal(offersNormal(main({ adv: true })), true, "Adv pressed, which the page's roll takes");
+});
 
 test("offline damage retains its enabled base tap and guards only menu picks", () => {
   menuBindings = [];

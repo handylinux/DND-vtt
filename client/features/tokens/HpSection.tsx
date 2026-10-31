@@ -669,7 +669,7 @@ function DeathRoll(props: { target: ActorTarget; children: ReactNode }) {
   };
   const menu = useRollModeMenu({
     source: JSON.stringify([target, dice && actorOf(dice.view, target), dice && openRecord(dice.view.encounter, actorOf(dice.view, target), "deathSave"), waits, blocked, panel.adv, panel.dis, panel.secret]), name: "Death Save",
-    capability: { d20: true, visibility: "creature", manual: presses }, dm,
+    capability: { d20: true, visibility: "creature", manual: { mode: presses.mode } }, dm,
     disabled: waiting || !!blocked || !dice, valid,
     fallbackFocus: () => fallback.current,
     onTap: () => roll(), onRoll: roll,
