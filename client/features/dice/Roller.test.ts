@@ -7,7 +7,7 @@ import { projectState } from "#shared/project.ts";
 import { DM, P1, room } from "#shared/testutil.ts";
 import { theme } from "../../lib/theme.ts";
 import { diceChoicesSlot } from "./useDicePanel.ts";
-import { receiptsSlot } from "./useReceipt.ts";
+import { ReceiptTracker, receiptsSlot } from "./useReceipt.ts";
 
 /*
  * The roller's part of the dice pass (docs/design-v1-dice-pass.md 4, 7.4
@@ -173,4 +173,53 @@ test("offline sticky Again reaches the existing connection error handler", () =>
   click({ detail: 1 });
   assert.ok(choices.getState().last && "error" in choices.getState().last!);
   assert.equal((choices.getState().last as { error: string }).error, "Rolling needs a connection.");
+});
+
+describe("one announcer per roll: the sticky line yields to the surface that sent the roll (docs/design-v1-stat-block-rolls.md 8)", () => {
+  // Real only once the tracker holds claims. On the contract's stubs a claim changes nothing.
+  const real = (() => {
+    const probe = new ReceiptTracker();
+    probe.claimVoice("x");
+    return !probe.maySpeak("x", false);
+  })();
+
+  function sticky(settle: (tracker: ReceiptTracker) => void, before?: (tracker: ReceiptTracker) => void): string {
+    const scope = new RoomScope();
+    const choices = scope.get(diceChoicesSlot);
+    choices.setState({ last: { tag: "B", rolls: [{ formula: "1d20+5" }], to: "all" } });
+    choices.getInitialState = choices.getState;
+    const tracker = scope.get(receiptsSlot);
+    const log = [{ id: "1:0", at: "", kind: "event", data: { type: "dice", tag: "B", by: "dm1", to: "all", rolls: [{ formula: "1d20+5", faces: [10], total: 15, label: "Dexterity save" }] } }];
+    tracker.env = { lookup: () => Promise.resolve({ parts: [] }), log: () => log as never };
+    before?.(tracker);
+    settle(tracker);
+    return inRoom(DM, [createElement(LastResult, { key: "last", onOpen() {} })], scope);
+  }
+  const taken = (t: ReceiptTracker) => t.answer("B", 0, "taken");
+  const refused = (t: ReceiptTracker) => t.answer("B", 0, "refused", { code: "forbidden", message: "Nope.", text: "Nope." });
+
+  test("a block's roll shows in the line and the line says nothing", { skip: !real }, () => {
+    const markup = sticky(taken, (t) => void t.claimVoice("B"));
+    assert.match(markup, />15</, "the result still shows");
+    assert.match(markup, /aria-live="polite"[^>]*><\/span>/, "its live region stays empty");
+  });
+
+  test("a block's refused roll shows in the line with no alert role", { skip: !real }, () => {
+    const markup = sticky(refused, (t) => void t.claimVoice("B"));
+    assert.match(markup, /<span style="color:[^"]*">Nope\.<\/span>/);
+    assert.doesNotMatch(markup, /role="alert"/);
+  });
+
+  test("a claim released before anyone said the roll lets the line say it once", { skip: !real }, () => {
+    const markup = sticky(taken, (t) => t.claimVoice("B")());
+    assert.match(markup, /aria-live="polite"[^>]*>Rolled 15/);
+    const refusal = sticky(refused, (t) => t.claimVoice("B")());
+    assert.match(refusal, /role="alert"[^>]*>Nope\./);
+  });
+
+  test("a panel roll nobody claims is said by the line as before", () => {
+    const markup = sticky(taken);
+    assert.match(markup, /aria-live="polite"[^>]*>Rolled 15/);
+    assert.match(sticky(refused), /role="alert"[^>]*>Nope\./);
+  });
 });

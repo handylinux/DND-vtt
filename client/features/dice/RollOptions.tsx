@@ -113,7 +113,8 @@ const DICE_LAST = "[data-dice-last]";
  * these are, then its groups, each folding (docs/design-v1-dice-pass.md 5
  * and 6). Every button is 44 px and rolls on the server at once, shows busy
  * until its line lands, and its result shows in the panel's sticky line.
- * The stat block views stay text.
+ * A stat block's six ability boxes roll through this panel's path too
+ * (docs/design-v1-stat-block-rolls.md), and the rest of its views stay text.
  */
 export function RollOptions(_props: PanelProps) {
   const role = useRoomView((s) => s.you?.role ?? null);

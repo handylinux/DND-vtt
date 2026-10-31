@@ -159,7 +159,7 @@ export function CharacterPage(props: { character: Character; close: PanelClose; 
         );
       case "statBlock":
         // The one fold the page shares with the token panel: the `own` relation's, as every viewer of the page plays or runs the character.
-        return <PcStatBlock key={id} character={character} fold={fold("statBlock")} />;
+        return <PcStatBlock key={id} character={character} from={{ characterId: character.id }} fold={fold("statBlock")} />;
       case "combat":
         return (
           <Group key={id} label="Combat" icon="combat" {...fold("page.combat")} summary={combatSummary({ hp: hpWords, effects, reactionUsed: spent })} holds="sections">

@@ -4,6 +4,7 @@ import { statsDefenses, pcActorNumbers, pcDerived, sortedRolls } from "#shared/r
 import { ABILITY_NAMES, SKILLS } from "#shared/rules/skills.ts";
 import { signed } from "#shared/statBlock.ts";
 import { theme } from "../../lib/theme.ts";
+import type { BlockRoller } from "../dice/blockRolls.ts";
 import { AbilityGrid } from "../monsters/AbilityGrid.tsx";
 import { defenseLinesOf, rollReading, rollTitle } from "./reading.ts";
 
@@ -12,11 +13,11 @@ import { defenseLinesOf, rollReading, rollTitle } from "./reading.ts";
  * 7.3), in the stat block view's type: the level and proficiency, the six
  * abilities with their saves, the skills that differ from the plain
  * modifier, initiative and Passive Perception, spellcasting, defenses, and
- * one line per roll. React text, never Markdown, so a later tap to roll can
- * turn its numbers into buttons. Nothing in it rolls: rolls are made in the
- * Dice panel.
+ * one line per roll. React text, never Markdown. Only its six ability boxes
+ * roll, and only with `roll` (docs/design-v1-stat-block-rolls.md). The rest
+ * of the rolls are made in the Dice panel.
  */
-export function PcStatsView(props: { character: Pick<Character, "stats" | "level"> }) {
+export function PcStatsView(props: { character: Pick<Character, "stats" | "level">; roll?: BlockRoller | null | undefined }) {
   const stats = props.character.stats;
   if (!stats) return null;
   const level = props.character.level;
@@ -31,7 +32,7 @@ export function PcStatsView(props: { character: Pick<Character, "stats" | "level
       <p style={LINE}>
         <strong>Level {level ?? "not set"}</strong>, PB {signed(d.pb)}
       </p>
-      <AbilityGrid abilities={ABILITY_KEYS.map((a) => ({ key: a, score: String(stats.abilities[a]), mod: signed(d.mods[a]), save: signed(d.saves[a].total), proficient: stats.saves.includes(a) }))} />
+      <AbilityGrid abilities={ABILITY_KEYS.map((a) => ({ key: a, score: String(stats.abilities[a]), mod: signed(d.mods[a]), save: signed(d.saves[a].total), proficient: stats.saves.includes(a) }))} roll={props.roll} />
       {skills.length > 0 ? <Labeled label="Skills">{skills.map((s) => `${SKILLS[s].name} ${signed(d.skills[s].total)}`).join(", ")}</Labeled> : null}
       {stats.jack ? <Labeled label="Jack of All Trades">{`${signed(Math.floor(d.pb / 2))} to skills with neither`}</Labeled> : null}
       <p style={LINE}>

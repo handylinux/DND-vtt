@@ -27,7 +27,7 @@ import { useThrows, useThrowView } from "./throw/useThrows.ts";
 import { againOf, useDicePanel, useLastRoll, useRollPresses } from "./useDicePanel.ts";
 import { useRollBlocked } from "./useRollOption.ts";
 import { useProficiency } from "./useProficiency.ts";
-import { useReceipt } from "./useReceipt.ts";
+import { useReceipt, useReceiptVoice, type ReceiptState } from "./useReceipt.ts";
 
 /**
  * The top of the Dice panel (docs/design-v1-dice.md 8.2): the newest panel
@@ -85,7 +85,7 @@ function longHintFits(field: HTMLInputElement): boolean {
 }
 
 /** The header line's verdict: an answer's pass or fail as its player reads it, else a dice line's against its DC or AC. */
-function shownVerdict(roll: DiceRoll, data: LogEntry["data"]): string | null {
+export function shownVerdict(roll: DiceRoll, data: LogEntry["data"]): string | null {
   return data?.type === "roll" ? answerVerdict(roll, data.result) : rollVerdict(roll, data?.type === "dice" ? data : {});
 }
 
@@ -104,6 +104,35 @@ export function spokenVerdict(roll: DiceRoll, data: LogEntry["data"]): string | 
 export function spokenResult(head: HeaderRoll, verdict: string | null, level?: Proficiency, secret = false): string {
   const label = head.label ? `: ${labelText(head.label)}${level ? spokenProficiency(level) : ""}` : "";
   return `Rolled ${head.total}${head.sums ? ` (${head.sums})` : ""}${verdict ? `, ${verdict}` : ""}${label}${head.dice[0] && effectiveRollMode(head.dice[0], secret) ? `, ${effectiveRollMode(head.dice[0], secret)}` : ""}.`;
+}
+
+/**
+ * What a settled receipt holds for a result line: its first roll, the
+ * header roll, the proficiency mark of its label and the words a live region
+ * says. The sticky line and a stat block's result line (BlockResult.tsx)
+ * both read their roll through it, so the two show one roll alike.
+ */
+export function useCommittedRoll(receipt: ReceiptState | null) {
+  const committed = receipt?.state === "committed" ? receipt : null;
+  const rolls = useMemo(() => (committed ? rollsOf(committed.lines) : []), [committed]);
+  const first = rolls[0];
+  const head = useMemo(() => headerRoll(rolls), [rolls]);
+  const firstLine = committed?.lines[0]?.id ?? null;
+  const data = committed?.lines[0]?.data;
+  const levelOf = useProficiency();
+  // The label is the first roll's own unless several damage types share it, which is no test.
+  const target = first ? rollTarget(first) : null;
+  const test = first && head?.label !== undefined && head.label === first.label ? rollTest(first) : null;
+  const level = target && marksTest(test) ? levelOf(target, test) : undefined;
+  const secret = data?.type === "dice" && data.to === "dm";
+  // A polite live region says each result once, from the render that first holds it, so it is said as it lands on the server even while the dice still fly.
+  const said = first && head ? spokenResult(head, spokenVerdict(first, data), level, secret) : "";
+  return { rolls, first, head, data, firstLine, level, secret, said };
+}
+
+/** A result's total in heading type, as the sticky line and a stat block's line draw it. */
+export function ResultTotal(props: { total: number }) {
+  return <span style={{ flex: "none", fontSize: theme.font.heading, fontWeight: theme.weight.bold, fontVariantNumeric: "tabular-nums" }}>{props.total.toLocaleString("en-US")}</span>;
 }
 
 /**
@@ -128,19 +157,10 @@ export function LastResult(props: { onOpen(lineId: string): void }) {
   const holding = tag !== null && thrown.held === tag;
   const receipt = useReceipt(tag);
   const waiting = receipt !== null && (receipt.state === "sending" || receipt.state === "checking");
-  const committed = receipt?.state === "committed" ? receipt : null;
-  const rolls = useMemo(() => (committed ? rollsOf(committed.lines) : []), [committed]);
-  const first = rolls[0];
-  const head = useMemo(() => headerRoll(rolls), [rolls]);
-  const firstLine = committed?.lines[0]?.id ?? null;
-  const data = committed?.lines[0]?.data;
-  const levelOf = useProficiency();
-  // The label is the first roll's own unless several damage types share it, which is no test.
-  const target = first ? rollTarget(first) : null;
-  const test = first && head?.label !== undefined && head.label === first.label ? rollTest(first) : null;
-  const level = target && marksTest(test) ? levelOf(target, test) : undefined;
-  // A polite live region says each result once, from the render that first holds it, so it is said as it lands on the server even while the dice still fly.
-  const said = first && head ? spokenResult(head, spokenVerdict(first, data), level, data?.type === "dice" && data.to === "dm") : "";
+  const { rolls, first, head, data, firstLine, level, said: spoken } = useCommittedRoll(receipt);
+  // Only the surface that may say a roll puts it in a live region or gives its refusal an alert: a roll sent from a stat block is said there (docs/design-v1-stat-block-rolls.md 8).
+  const speaks = useReceiptVoice(tag, false);
+  const said = speaks ? spoken : "";
   const again = againOf(last);
   const blocked = useRollBlocked();
   const dm = useRoomView((s) => s.you?.role === "dm");
@@ -156,7 +176,7 @@ export function LastResult(props: { onOpen(lineId: string): void }) {
   else if (!receipt || waiting) body = <Loading text={ROLLING} active={waiting} live={false} />;
   // The dice are in the air: the line stays as it was, "Rolling…" only where the wait was long enough to say it, so at once.
   else if (receipt.state === "committed" && holding) body = <Loading text={ROLLING} active={thrown.rolling} delay={0} live={false} />;
-  else if (receipt.state === "refused") body = <span role="alert" style={{ color: theme.color.dangerText }}>{receipt.text || receipt.message}</span>;
+  else if (receipt.state === "refused") body = <span {...(speaks ? { role: "alert" } : {})} style={{ color: theme.color.dangerText }}>{receipt.text || receipt.message}</span>;
   else if (receipt.state === "unknown") body = <span style={{ color: theme.color.textMuted }}>This may have happened. Check the log.</span>;
   else if (!first || !head) body = <span style={{ color: theme.color.textMuted }}>Rolled. Its result is no longer in the log.</span>;
   else {
@@ -170,7 +190,7 @@ export function LastResult(props: { onOpen(lineId: string): void }) {
         aria-description={effectiveRollMode(first, data?.type === "dice" && data.to === "dm") || undefined}
         style={{ all: "unset", cursor: "pointer", display: "flex", alignItems: "center", gap: theme.space(2), minWidth: 0, flex: 1, minHeight: LAST_LINE_PX, overflow: "hidden", whiteSpace: "nowrap" }}
       >
-        <span style={{ flex: "none", fontSize: theme.font.heading, fontWeight: theme.weight.bold, fontVariantNumeric: "tabular-nums" }}>{head.total.toLocaleString("en-US")}</span>
+        <ResultTotal total={head.total} />
         <ResultRest sum={head.sums} label={label} level={level} dice={head.dice} more={head.more} verdict={verdict} />
       </button>
     );
@@ -247,11 +267,12 @@ function LineStart(props: { reverse?: boolean; dice?: boolean }) {
  * way in turn, and none is ever cut through a glyph: "and 3 more", then the
  * dice, whole chips at a time, with "+2" for those it drops, then the label
  * to its "…". After those, each goes whole: "+2", the verdict, and last a
- * critical hit's sum. The total and Again stay. Each step is a box inside
+ * critical hit's sum. The total and Again stay. A `mode` ("with Advantage")
+ * goes before all of them, whole, so it never costs a line. Each step is a box inside
  * the last, so a part gives up nothing while one before it in turn still
  * has room (docs/design-v1-dice-ui.md 4.1).
  */
-function ResultRest(props: { sum: string | null; label: string | undefined; level?: Proficiency | undefined; dice: readonly DiceRoll[]; more: number; verdict: string | null }) {
+export function ResultRest(props: { sum: string | null; label: string | undefined; level?: Proficiency | undefined; dice: readonly DiceRoll[]; more: number; verdict: string | null; mode?: string | undefined }) {
   // A damage of several types shows every part's dice, each part keyed apart since each restarts its chips' keys.
   const chips = useMemo(() => {
     const parts = props.dice.map((roll) => faceChips(roll));
@@ -276,7 +297,7 @@ function ResultRest(props: { sum: string | null; label: string | undefined; leve
     <span style={dropsWhole()}>
       <LineStart />
       {props.sum ? <span style={{ flex: "none", ...muted, fontVariantNumeric: "tabular-nums" }}>{`(${props.sum})`}</span> : null}
-      <span style={dropsWhole(true)}>
+      <span style={{ ...dropsWhole(true), ...(props.mode ? { flex: "0 1 auto" } : {}) }}>
         <LineStart reverse />
         {props.verdict ? <span style={{ flex: "none", ...muted }}>{props.verdict}</span> : null}
         {dropped > 0 ? (
@@ -285,7 +306,7 @@ function ResultRest(props: { sum: string | null; label: string | undefined; leve
           </span>
         ) : null}
         {/* Grows only to its own width, so the parts after it sit beside it rather than at the line's end. */}
-        <span style={{ flex: "1 1 0", minWidth: 0, maxWidth: "max-content", display: "flex", alignItems: "center", gap: theme.space(2), overflow: "hidden" }}>
+        <span style={{ flex: props.mode ? "1 1 auto" : "1 1 0", minWidth: 0, maxWidth: "max-content", display: "flex", alignItems: "center", gap: theme.space(2), overflow: "hidden" }}>
           {/* A marked label is framed from inside, since every box around it cuts what reaches past its words (D-261030-527). */}
           {props.label ? (
             <span {...markedBy(props.level, "frame")} style={{ flex: "0 10 auto", minWidth: 0, fontSize: theme.font.body14, overflow: "hidden", textOverflow: "ellipsis", ...proficiencyFrame(props.level) }}>
@@ -305,6 +326,12 @@ function ResultRest(props: { sum: string | null; label: string | undefined; leve
           ) : null}
         </span>
       </span>
+      {/* A stat block's mode words (BlockResult.tsx) follow everything as one part. The line is one row tall, so where they do not fit beside the rest they wrap out of sight first, whole. A description keeps them for a reader. */}
+      {props.mode ? (
+        <span aria-hidden="true" data-result-mode="" style={{ flex: "none", ...muted }}>
+          {props.mode}
+        </span>
+      ) : null}
     </span>
   );
 }

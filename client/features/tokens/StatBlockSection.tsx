@@ -13,6 +13,8 @@ import { blockLines, viewOf } from "../monsters/draft.ts";
 import { useOpenEditor } from "../monsters/EditorHost.tsx";
 import { monsterImage } from "../monsters/images.ts";
 import { MonsterPicker } from "../monsters/MonsterPicker.tsx";
+import { useBlockRoller } from "../monsters/AbilityGrid.tsx";
+import type { BlockRoller } from "../dice/blockRolls.ts";
 import { StatBlockView, useSrdMonsters } from "../monsters/StatBlockView.tsx";
 import { attachPatch, DETACH_PATCH, OWNER_DETACH_PATCH, statBlockFoldable, statBlockShown, tokenStatBlock } from "../monsters/statBlockLink.ts";
 import { ownsCharacter, type TokenAccess } from "./access.ts";
@@ -73,6 +75,8 @@ export function StatBlockSection(props: {
   // A player character's token shows its character's own stat block (docs/design-v1-pc-stats.md 7.3).
   const pc = useRoomView((s) => ("ref" in token.actor ? s.view?.characters[token.actor.ref] : undefined));
   const you = useRoomView((s) => s.you);
+  // The creature behind this token, whose rolls the block's ability boxes make where the viewer may (docs/design-v1-stat-block-rolls.md 2).
+  const roll = useBlockRoller({ tokenId: token.id });
   const keeper: Keeper | null = token.companion ? { id: token.companion.of, name: keeperName ?? "its character" } : null;
   const { folds, slot } = usePanelFolds();
   const preview = usePreview() !== null;
@@ -113,7 +117,7 @@ export function StatBlockSection(props: {
   if ("ref" in token.actor) {
     return (
       <div ref={ref} data-stat-block="" style={{ scrollMarginTop: theme.space(2), overflowWrap: "anywhere" }}>
-        {pc ? <PcStatBlock character={pc} fold={{ open, onToggle: toggle, foldRef: focusRef }} /> : <Group label="Stat block" icon="statBlock" />}
+        {pc ? <PcStatBlock character={pc} from={{ tokenId: token.id }} fold={{ open, onToggle: toggle, foldRef: focusRef }} /> : <Group label="Stat block" icon="statBlock" />}
       </div>
     );
   }
@@ -158,7 +162,7 @@ export function StatBlockSection(props: {
         <Group label="Stat block" icon="statBlock" open={open} onToggle={toggle} foldRef={focusRef} summary={linkedBlockSummary(link, srd.list)}>
           {link.kind === "room" ? (
             <>
-              <StatBlockView view={viewOf(link.monster)} source="room" />
+              <StatBlockView view={viewOf(link.monster)} source="room" roll={roll} />
               {keeper ? (
                 <Note>{`${whose(keeper.name)} players do not see this block: it is one of this room's own monsters. Change it to an SRD block or one of ${whose(keeper.name)} for them to read one.`}</Note>
               ) : null}
@@ -183,10 +187,11 @@ export function StatBlockSection(props: {
                 </>
               }
               onCopy={copySrd}
+              roll={roll}
             />
           ) : link.kind === "block" ? (
             <>
-              <StatBlockView view={viewOf(link.block)} source={link.block.fromSrd ? "srd" : "room"} credit={link.block.fromSrd !== undefined} />
+              <StatBlockView view={viewOf(link.block)} source={link.block.fromSrd ? "srd" : "room"} credit={link.block.fromSrd !== undefined} roll={roll} />
               <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space(2) }}>
                 {keeper ? (
                   <SmallButton grow onClick={() => editBlock(link.block, keeper)}>
@@ -247,14 +252,14 @@ export function StatBlockSection(props: {
 }
 
 /** An SRD monster's block. The SRD chunk loads only here, once the section is open on this device. */
-function SrdBlock(props: { srdId: string; copy: string | null; buttons: ReactNode; onCopy(monster: SrdMonster): void }) {
+function SrdBlock(props: { srdId: string; copy: string | null; buttons: ReactNode; onCopy(monster: SrdMonster): void; roll: BlockRoller | null }) {
   const { monsters, failed } = useSrdMonsters();
   const monster = monsters?.find((m) => m.srdId === props.srdId);
   if (failed) return <SrdLoadFailed what="The stat block" inline />;
   if (!monsters) return <Loading text="Loading the stat block…" />;
   return (
     <>
-      {monster ? <StatBlockView view={monster} source="srd" credit /> : <Note>This token names an SRD monster this app does not have.</Note>}
+      {monster ? <StatBlockView view={monster} source="srd" credit roll={props.roll} /> : <Note>This token names an SRD monster this app does not have.</Note>}
       {props.copy !== null ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space(2) }}>
           {monster ? (

@@ -156,3 +156,120 @@ test("fl15: every SRD stat block draws its own Markdown and outlines the saves t
     if (monster.srdId === "adult-white-dragon") assert.deepEqual(outlined(markup), ["DEX", "WIS"]);
   }
 });
+
+/*
+ * The grid while its boxes roll (docs/design-v1-stat-block-rolls.md 3): a
+ * group of six buttons that look as the text boxes do. A grid with no
+ * creature to roll for stays the `<dl>` FL-15 drew.
+ */
+
+const BOXES = [
+  { key: "str", score: "16", mod: "+3", save: "+6", proficient: true },
+  { key: "dex", score: "8", mod: "−1", save: "−1", proficient: false },
+  { key: "con", score: "12", mod: "+1", save: "+1", proficient: false },
+  { key: "int", score: "10", mod: "+0", save: "+0", proficient: false },
+  { key: "wis", score: "14", mod: "+2", save: "+5", proficient: true },
+  { key: "cha", score: "9", mod: "−1", save: "−1", proficient: false },
+] as const;
+const ROLLER = { creature: { tokenId: "t1" }, tokenId: "t1", name: "Thorn", played: true };
+
+function rolling(abilities: readonly (typeof BOXES)[number][] = BOXES): string {
+  return renderToStaticMarkup(createElement(AbilityGrid, { abilities: abilities as never, roll: ROLLER }));
+}
+
+/** Each button's opening tag and its inside, in order. */
+function buttonsOf(markup: string): { tag: string; inner: string }[] {
+  return [...markup.matchAll(/<button([^>]*)>(.*?)<\/button>/g)].map((m) => ({ tag: m[1]!, inner: m[2]! }));
+}
+
+test("sbr: a grid with no creature to roll for is byte for byte the list FL-15 drew", () => {
+  const text = renderToStaticMarkup(createElement(AbilityGrid, { abilities: BOXES.slice(0, 2) as never }));
+  const c = theme.color;
+  const hidden = "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap";
+  const dt = `<dt style="font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:${c.textMuted}">`;
+  const box = (extra: string) => `style="padding:4px 8px;border-radius:6px;background:${c.surfaceRaised};line-height:1.2${extra}"`;
+  const expected =
+    `<dl data-ability-grid="" style="margin:0;display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:4px">` +
+    `<div data-save-proficient="" ${box(";box-shadow:inset 0 0 0 1px currentColor")}>${dt}<abbr title="Strength" style="text-decoration:none">STR</abbr></dt><dd style="margin:0;white-space:nowrap"><strong style="font-size:16px">16</strong> <span style="color:${c.textMuted}">+3</span></dd><dd style="margin:0;font-size:13px;white-space:nowrap"><span style="color:${c.textMuted}">Save </span>+6<span style="${hidden}">, proficient</span></dd></div>` +
+    `<div ${box("")}>${dt}<abbr title="Dexterity" style="text-decoration:none">DEX</abbr></dt><dd style="margin:0;white-space:nowrap"><strong style="font-size:16px">8</strong> <span style="color:${c.textMuted}">−1</span></dd><dd style="margin:0;font-size:13px;white-space:nowrap"><span style="color:${c.textMuted}">Save </span>−1</dd></div></dl>`;
+  assert.equal(text, expected);
+  assert.equal(renderToStaticMarkup(createElement(AbilityGrid, { abilities: BOXES.slice(0, 2) as never, roll: null })), expected, "a null roller is no roller");
+});
+
+test("sbr: a rolling grid is a group of six buttons, one box each, with no list inside it", () => {
+  const markup = rolling();
+  assert.match(markup, /^<div><div data-ability-grid="" role="group" aria-label="Abilities" style="margin:0;display:grid;grid-template-columns:repeat\(3, minmax\(0, 1fr\)\);gap:4px">/);
+  assert.doesNotMatch(markup, /<dl|<dt|<dd/);
+  assert.equal(buttonsOf(markup).length, 6);
+  assert.deepEqual(
+    buttonsOf(markup).map((b) => /data-ability-abbr=""[^>]*>(\w+)</.exec(b.inner)![1]),
+    ["STR", "DEX", "CON", "INT", "WIS", "CHA"],
+  );
+});
+
+test("sbr: each box keeps the text box's look and puts its three lines in marked spans", () => {
+  const [str, dex] = buttonsOf(rolling());
+  const c = theme.color;
+  for (const b of [str!, dex!]) {
+    assert.match(b.tag, /type="button"/);
+    assert.match(b.tag, new RegExp(`padding:4px 8px;border-radius:${theme.radius.sm}px;background:${c.surfaceRaised};line-height:1.2`), "FL-15's padding, radius, fill and leading");
+    assert.match(b.tag, /display:block/);
+    assert.match(b.tag, /width:100%/);
+    assert.match(b.tag, /text-align:left/);
+    assert.match(b.tag, /font:inherit/);
+    assert.match(b.tag, /cursor:pointer/);
+    assert.match(b.tag, /border:0/);
+    assert.match(b.inner, /data-ability-abbr=""[^>]*>\w+<\/span><span data-ability-score=""[^>]*><strong style="font-size:16px">\d+<\/strong> <span[^>]*>[+−]\d+<\/span><\/span><span data-ability-save=""[^>]*><span[^>]*>Save <\/span>[+−]\d+<\/span>/);
+  }
+  assert.match(str!.tag, /box-shadow:inset 0 0 0 1px currentColor/, "the proficient save's outline is the box's own shadow");
+  assert.match(str!.tag, /data-save-proficient=""/);
+  assert.doesNotMatch(dex!.tag, /data-save-proficient|box-shadow/);
+});
+
+test("sbr: a box is named by its printed words, once, and says it opens a menu", () => {
+  const named = buttonsOf(rolling()).map((b) => /aria-label="([^"]*)"/.exec(b.tag)![1]);
+  assert.deepEqual(named, [
+    "Strength 16, +3, save +6, proficient",
+    "Dexterity 8, −1, save −1",
+    "Constitution 12, +1, save +1",
+    "Intelligence 10, +0, save +0",
+    "Wisdom 14, +2, save +5, proficient",
+    "Charisma 9, −1, save −1",
+  ]);
+  for (const b of buttonsOf(rolling())) {
+    assert.match(b.tag, /aria-haspopup="menu"/);
+    assert.match(b.tag, /aria-expanded="false"/);
+    assert.match(b.tag, /aria-describedby=/);
+    assert.doesNotMatch(b.inner, /proficient|visually/, "no hidden span inside a button: its label says it");
+  }
+});
+
+test("sbr: each box has its corner mark, hidden from a reader, out of the way of a press, and 6 px in", () => {
+  for (const b of buttonsOf(rolling())) {
+    const mark = /<span data-ability-mark="" aria-hidden="true" style="([^"]*)"><svg[^>]*aria-hidden/.exec(b.inner);
+    assert.ok(mark, "a mark in the box");
+    assert.match(mark[1]!, /position:absolute;top:6px;right:6px/);
+    assert.match(mark[1]!, /pointer-events:none/);
+    assert.match(b.tag, /position:relative/, "the box holds the mark's position");
+  }
+});
+
+test("sbr: a rolling box's words and numbers are the text box's, so the grid says the same thing either way", () => {
+  const words = (m: string) => m.replace(/<span hidden[^>]*>.*?<\/span>/g, "").replace(/<[^>]*>/g, "").replace(/, proficient/g, "").replace(/\s+/g, "");
+  const text = renderToStaticMarkup(createElement(AbilityGrid, { abilities: BOXES as never }));
+  assert.equal(words(rolling()), words(text));
+});
+
+test("sbr: the views pass the roller to their grid, and without one stay text", () => {
+  const stats: PcStats = { abilities: { str: 10, dex: 16, con: 12, int: 10, wis: 14, cha: 10 }, saves: ["dex"], skills: {}, adjust: {}, defenses: {}, rolls: [] };
+  const pc = (roll?: typeof ROLLER) => renderToStaticMarkup(createElement(PcStatsView, { character: { stats, level: 5 }, ...(roll ? { roll } : {}) }));
+  assert.equal(buttonsOf(pc(ROLLER)).length, 6);
+  assert.equal(buttonsOf(pc()).length, 0);
+  assert.match(pc(), /<dl data-ability-grid=""/);
+  const block = statBlockOf(customMonster("scout"));
+  const view = monsterView(block);
+  const monster = (roll?: typeof ROLLER) => renderToStaticMarkup(createElement(StatBlockView, { view, source: "room", ...(roll ? { roll } : {}) }));
+  assert.equal(buttonsOf(monster(ROLLER)).length, 6);
+  assert.equal(buttonsOf(monster()).length, 0);
+  assert.equal(outlined(monster()).length, outlined(monster()).length);
+});
