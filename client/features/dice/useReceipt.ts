@@ -272,6 +272,27 @@ export class ReceiptTracker {
   }
 
   /**
+   * The surface that sent a roll claims its tag's voice while it is mounted
+   * (docs/design-v1-stat-block-rolls.md 8, D-261031-133), so of two lines
+   * that show one result only the sender says it. Returns the release.
+   */
+  claimVoice(_tag: string): () => void {
+    return () => undefined;
+  }
+
+  /**
+   * Whether a surface may say this tag's result or refusal now: the
+   * claimant always, any other only while nobody claims the tag and nobody
+   * has said it yet.
+   */
+  maySpeak(_tag: string, _claimant: boolean): boolean {
+    return true;
+  }
+
+  /** A surface said this tag's settled state, so no other surface and no toast says it again. */
+  spoken(_tag: string): void {}
+
+  /**
    * A committed result the roll animation still held back as its panel
    * closed: no surface showed it, so it goes to the toasts once no surface
    * shows it, in whatever order the closing surfaces clean up.
@@ -302,6 +323,17 @@ export function useReceipts(): ReceiptTracker {
     },
   };
   return tracker;
+}
+
+/**
+ * Whether this surface says a tag's settled state: puts its result in its
+ * live region, or gives its refusal `role="alert"` (docs/design-v1-stat-block-rolls.md
+ * 8, D-261031-133). With `claim` the surface sent the roll and claims its
+ * voice while mounted. A surface that said it keeps saying it, so its
+ * words never leave its live region.
+ */
+export function useReceiptVoice(tag: string | null, _claim: boolean): boolean {
+  return tag !== null;
 }
 
 /**

@@ -55,6 +55,9 @@ export function againOf(last: LastRoll | null): Extract<LastRoll, { rolls: DiceR
   return last !== null && "rolls" in last ? last : null;
 }
 
+/** "none": a roll that takes, reads and changes none of the panel's one-roll choices (D-261031-113). */
+export type PanelChoices = "none";
+
 export type DiceState = {
   adv: boolean;
   dis: boolean;
@@ -110,8 +113,15 @@ export type DicePanelApi = {
    * result when `to` is absent. A supplied `to` keeps its fixed envelope.
    * `parts` hears how many batches the roll went in, before it returns, so
    * an ask for saves can name the roll whole (docs/design-v1-player-save-spell.md 5.3).
+   *
+   * `choices: "none"` is a roll from outside the panel, a stat block's
+   * (docs/design-v1-stat-block-rolls.md 7): it never takes, reads or gives
+   * back Adv, Dis or Secret, goes under the roll's own start, and still
+   * becomes the sticky line when it goes. Then a roll that does not go
+   * leaves the sticky line as it was. `onFail` hears the words of a roll
+   * that did not go, once.
    */
-  roll(rolls: PanelRoll[], opts?: { override?: RollModeOverride; dc?: number; ac?: number; to?: "all" | "dm"; tag?: string; origin?: ThrowOrigin; parts?(n: number): void }): string | null;
+  roll(rolls: PanelRoll[], opts?: { override?: RollModeOverride; dc?: number; ac?: number; to?: "all" | "dm"; tag?: string; origin?: ThrowOrigin; parts?(n: number): void; choices?: PanelChoices; onFail?(words: string): void }): string | null;
   /** A chip's tap. Adv and Dis are never pressed together. */
   press(choice: "adv" | "dis" | "secret"): void;
   /** Again: rolls exactly what was rolled, under its own visibility, taking no choice. */

@@ -1,4 +1,4 @@
-import { Fragment, useId, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
+import { Fragment, useId, useLayoutEffect, useRef, type CSSProperties, type DOMAttributes, type KeyboardEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { effectiveZoom } from "../features/device/layout.ts";
 import { theme } from "../lib/theme.ts";
@@ -53,7 +53,22 @@ export type MenuItem = {
   note?: string;
   /** The shortcut it does, from state/shortcuts.ts useKeyHint: `title` its hover title with the key, "Fog (F)", and `aria` its `aria-keyshortcuts`. */
   keys?: { title: string; aria: string };
+  /** Drawn in place of `title`, which still names it for typeahead, such as a roll's name, tags and bonus (docs/design-v1-stat-block-rolls.md 4.2). */
+  content?: ReactNode;
+  /** Merged over the row's own look, such as a proficiency border. */
+  style?: CSSProperties;
+  /** Data attributes for the item, such as its proficiency mark. */
+  data?: Readonly<Record<`data-${string}`, string>>;
+  /** Its accessible name (`aria-label`) where its drawn words say less. */
+  label?: string;
+  /** `aria-busy`: its action waits, and it picks nothing meanwhile. */
+  busy?: boolean;
+  /** A press binding's handlers (useRollPressBinding). Never an `onClick`: Menu's own click is the one pick (4.7). */
+  events?: MenuItemEvents;
 };
+
+/** The handlers an item's press binding adds. A click stays Menu's pick, which the binding's window capture listener gates. */
+export type MenuItemEvents = Partial<Pick<DOMAttributes<HTMLDivElement>, "onPointerDown" | "onTouchStart" | "onTouchEnd" | "onTouchCancel" | "onLostPointerCapture" | "onContextMenu" | "onKeyDown">>;
 
 export type MenuSection = {
   key: string;

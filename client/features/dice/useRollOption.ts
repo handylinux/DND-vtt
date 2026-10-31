@@ -14,7 +14,7 @@ import { asInitiative, asSave, d20Roll, initiativeOp, routedTest, routeOf, targe
 import { logSeq, remembered, rowTag, useOption, useOptionStore, type OptionState } from "./optionState.ts";
 import { useReceipt, useReceipts, type ReceiptState, type ReceiptTracker } from "./useReceipt.ts";
 import { NEEDS_CONNECTION, sendRoll, useRollSender } from "./send.ts";
-import { diceChoicesSlot, useDicePanel, type PanelRoll } from "./useDicePanel.ts";
+import { diceChoicesSlot, useDicePanel, type PanelChoices, type PanelRoll } from "./useDicePanel.ts";
 import { resolveRollMode, type RollModeOverride } from "./rollMode.ts";
 import { rechargeRollOp } from "../combat/logic.ts";
 import { throwHooksSlot } from "./throw/hooks.ts";
@@ -88,6 +88,10 @@ export function useRollOption(surface?: "dice") {
         /** The token a DM's Ask names, when the creature is on the map. */
         tokenId?: string;
         critOn?: 18 | 19;
+        /** "none": the Dice panel's Adv, Dis and Secret are neither taken nor read, on either route (useDicePanel's roll). */
+        choices?: PanelChoices;
+        /** The words of a roll or answer that did not go, such as "Rolling needs a connection.". */
+        onFail?(words: string): void;
       }): string | "asked" | null {
         const state = room.getState().view;
         if (!state || ("tokenId" in input.creature ? !state.tokens[input.creature.tokenId] : !state.characters[input.creature.characterId])) return null;

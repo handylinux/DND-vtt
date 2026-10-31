@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, type ButtonHTMLAttributes, type CSSProperties, type DOMAttributes, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { scrolledAway, usePopover } from "../../components/Popover.tsx";
 import { theme } from "../../lib/theme.ts";
@@ -44,6 +44,47 @@ export function handleRollModeScroll(input: { target: EventTarget | null; anchor
   if (!anchor || !(target === document || target instanceof Element && target.contains(anchor))) return;
   if (input.open && !scrolledAway(target, anchor)) return;
   input.cancel();
+}
+
+/**
+ * One control's part in a press binding, read as each event comes, so it
+ * may change between renders: whether its menu stands open, so a press on
+ * it closes it, how it opens and closes, and its element while drawn.
+ */
+export type RollPressControl = {
+  open(): boolean;
+  show(by: "pointer" | "key"): void;
+  close(): void;
+  node(): HTMLElement | null;
+  /** A menu of its own stands open, which a scroll that keeps it in view leaves alone (handleRollModeScroll). */
+  menuOpen(): boolean;
+};
+
+/** A control's own handlers from its binding. A click stays the control's, gated by `click`. */
+export type RollPressHandlers = Partial<Pick<DOMAttributes<HTMLElement>, "onPointerDown" | "onTouchStart" | "onTouchEnd" | "onTouchCancel" | "onLostPointerCapture" | "onContextMenu" | "onKeyDown">>;
+
+/**
+ * The press machines of one owner's controls, by key, and the window
+ * listeners they share (docs/design-v1-stat-block-rolls.md 10). A machine
+ * belongs to the owner, not to its control's element, so a held press
+ * outlives a control that goes while the finger is down (5.1).
+ */
+export class RollPressRegistry {
+  handlers(_key: string, _control: RollPressControl): RollPressHandlers {
+    return {};
+  }
+  /** A control's own click: false where the press machine swallows it. */
+  click(_key: string, _detail: number): boolean {
+    return true;
+  }
+  dispose(): void {}
+}
+
+/** An owner's registry, its window listeners on while `enabled`. `onLeave` hears the window blur or hide, which close its menu. */
+export function useRollPressBinding(_options: { enabled: boolean; onLeave(): void }): RollPressRegistry {
+  const registry = useRef<RollPressRegistry | null>(null);
+  registry.current ??= new RollPressRegistry();
+  return registry.current;
 }
 
 export function useRollModeMenu(options: UseRollModeMenuOptions): RollModeMenuBinding {

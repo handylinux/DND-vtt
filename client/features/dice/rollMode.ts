@@ -3,7 +3,13 @@ import { advantageFields, applyMode, parseFormula, type AdvantageSource } from "
 /** An invocation value. Never store this in panel choices or card chips. */
 export type RollModeOverride = "adv" | "dis" | "secret" | "normal";
 export type RollVisibility = "selectable" | "request" | "creature" | "repeat";
-export type RollModeCapability = { d20: boolean; visibility: RollVisibility; damage?: boolean; batch?: boolean; repeat?: boolean; manual?: RollPresses };
+/**
+ * `secretByDefault`: an ordinary tap here is secret already, as a DM's free
+ * roll for a creature no player plays (startsSecret), and nothing presses
+ * Secret away from that, so Roll secretly would send just what the tap
+ * sends and is left out (D-261031-131).
+ */
+export type RollModeCapability = { d20: boolean; visibility: RollVisibility; damage?: boolean; batch?: boolean; repeat?: boolean; manual?: RollPresses; secretByDefault?: boolean };
 /** The manual choices an ordinary tap here would apply, which Roll normally drops: an Adv or Dis pressed or typed (`mode`), and a Secret pressed away from where it starts (`secret`). */
 export type RollPresses = { mode?: boolean; secret?: boolean };
 export const NORMAL_HELP = "Roll normally: ignores Adv, Dis and Secret pressed for this roll. Conditions and usual visibility still apply.";

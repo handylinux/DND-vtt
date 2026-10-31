@@ -266,6 +266,14 @@ export type PopoverProps = {
   title?: string;
   /** A dialog's name where it draws no title, or where its name says more than its title: ⋯'s "More" is "More Area options". */
   label?: string;
+  /**
+   * Asked before Escape or Back closes it: true keeps it open, as a roll's
+   * options inside an ability's list step back to the list
+   * (docs/design-v1-stat-block-rolls.md 5.3). A Back it kept open
+   * registers the popover anew, since that Back used up its history
+   * entry. An Escape it kept open touches no history.
+   */
+  stepBack?(reason: "escape" | "back"): boolean;
   children: ReactNode;
 };
 
