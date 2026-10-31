@@ -96,7 +96,7 @@ function diceTerms(f: Formula): DiceTerm[] {
   return f.filter((t): t is DiceTerm => t.kind === "dice");
 }
 
-type Modifier = { type: string; subType: string; value: number | null; statId: AbilityKey | null; restriction: string | null };
+type Modifier = { type: string; subType: string; value: number | null; statId: AbilityKey | null; restriction: string | null; jackFeature: boolean };
 
 /**
  * The ids of class and subclass features the character has not reached. D&D Beyond lists a
@@ -121,6 +121,19 @@ function lockedFeatureIds(data: Obj): Set<number> {
   return locked;
 }
 
+/** The ids of the class features named Jack of All Trades. A locked one's modifiers are dropped before they are asked about. */
+function jackFeatureIds(data: Obj): Set<number> {
+  const ids = new Set<number>();
+  for (const raw of arr(data.classes, MAX.classes)) {
+    for (const f of arr(obj(raw)?.classFeatures, MAX.features)) {
+      const fdef = obj(obj(f)?.definition);
+      const id = num(fdef?.id);
+      if (id !== null && name(fdef?.name, 60)?.toLowerCase() === "jack of all trades") ids.add(id);
+    }
+  }
+  return ids;
+}
+
 /**
  * Every modifier that applies: the race's, class's, background's, feat's
  * and condition's, and an item's only while its item is equipped, and
@@ -129,6 +142,7 @@ function lockedFeatureIds(data: Obj): Set<number> {
 function modifiersOf(data: Obj): Modifier[] {
   const groups = obj(data.modifiers) ?? {};
   const locked = lockedFeatureIds(data);
+  const jackIds = jackFeatureIds(data);
   const equipped = new Map<number, { attuned: boolean }>();
   for (const raw of arr(data.inventory, MAX.inventory)) {
     const item = obj(raw);
@@ -145,7 +159,7 @@ function modifiersOf(data: Obj): Modifier[] {
         const holder = equipped.get(num(m.componentId) ?? -1);
         if (!holder || (m.requiresAttunement === true && !holder.attuned)) continue;
       }
-      out.push({ type: m.type, subType: m.subType, value: num(m.fixedValue) ?? num(m.value), statId: abilityOf(m.statId), restriction: typeof m.restriction === "string" ? m.restriction.trim() : null });
+      out.push({ type: m.type, subType: m.subType, value: num(m.fixedValue) ?? num(m.value), statId: abilityOf(m.statId), restriction: typeof m.restriction === "string" ? m.restriction.trim() : null, jackFeature: group === "class" && jackIds.has(num(m.componentId) ?? -1) });
     }
   }
   return out;
@@ -167,13 +181,16 @@ function has(mods: readonly Modifier[], type: string, subType: string): boolean 
 }
 
 /**
- * Jack of All Trades is the plain half-proficiency on ability checks. D&D Beyond
- * also sends a restriction text on a half proficiency that holds only in some
- * case, and the other importers skip those, since the sheet's one yes cannot say when.
+ * Jack of All Trades is the half proficiency on ability checks. From the bard's own
+ * Jack of All Trades feature it counts whatever its restriction says, since the 2024
+ * wording ("a skill proficiency you lack") may be sent there. From any other source it
+ * counts only with no restriction, as the other importers read it, since a conditional
+ * half proficiency cannot be shown as the sheet's one yes.
  */
 function hasJack(mods: readonly Modifier[]): boolean {
-  return mods.some((m) => m.type === "half-proficiency" && m.subType === "ability-checks" && (m.restriction ?? "") === "");
+  return mods.some((m) => m.type === "half-proficiency" && m.subType === "ability-checks" && (m.jackFeature || (m.restriction ?? "") === ""));
 }
+
 
 /** Each ability's value in a list of `{ id, value }`, the shape of the sheet's scores, their bonuses and their overrides. */
 function byAbility(list: unknown): Partial<Record<AbilityKey, number>> {

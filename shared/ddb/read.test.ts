@@ -131,7 +131,9 @@ describe("readDdbCharacter: the character", () => {
     assert.equal(bard(1, [jack({ componentId: 777 })]), false, "a level 1 bard's list holds the feature, but not yet");
     assert.equal(bard(5, [jack({ componentId: 777, restriction: "" })]), true, "an empty restriction is none");
     assert.equal(bard(5, [jack({ componentId: 777, restriction: null })]), true);
-    assert.equal(bard(5, [jack({ componentId: 777, restriction: "while you are holding an instrument" })]), false, "a conditional half proficiency is not the sheet's Jack");
+    assert.equal(bard(5, [jack({ componentId: 777, restriction: "to a skill proficiency you lack" })]), true, "the Jack feature counts with any restriction text, as the 2024 wording may sit there");
+    assert.equal(bard(5, [jack({ componentId: 888, restriction: "while you are holding an instrument" })]), false, "a restricted half proficiency from another feature is not the sheet's Jack");
+    assert.equal(bard(5, [jack({ componentId: 888 })]), true, "an unrestricted one from any source is");
     assert.equal(bard(5, [mod("half-proficiency", "initiative", null, { componentId: 777 })]), false, "the 2014 initiative half is not an ability-check half");
     assert.equal(bard(5, [mod("half-proficiency-round-up", "strength-ability-checks", null)]), false, "Remarkable Athlete is not Jack");
     assert.equal(bard(5, [mod("half-proficiency", "stealth", null)]), false, "one skill's half is not Jack");
