@@ -201,6 +201,10 @@ describe("raccoon-vtt shortcut sheet on a desktop and an Android phone", { timeo
     // dpf1: a phone's hold and a reader's double-tap and hold open a roll's one-roll options, and its keys are listed too.
     const pointer = await inputs(sheet, "Mouse and touch");
     for (const row of ["Hold a roll button", "Double-tap and hold a roll button with a screen reader"]) assert.ok(pointer.includes(row), `${row} in ${pointer.join(", ")}`);
+    // sbr: the stat block's ability boxes and their rolls (docs/design-v1-stat-block-rolls.md 13).
+    for (const row of ["Tap, click, hold or right-click an ability box in a stat block", "Hold or right-click a roll in an ability's rolls"]) assert.ok(pointer.includes(row), `sbr-sheet: ${row} in ${pointer.join(", ")}`);
+    const fields = await inputs(sheet, "Token and character fields");
+    assert.deepEqual(fields.slice(2, 7), ["Enter, Space, Down, ContextMenu, Shift+F10", "Up", "ContextMenu, Shift+F10", "Escape", "Up, Down, Home, End"], `sbr-sheet: the ability keys follow the field keys: ${fields.join(" | ")}`);
     assert.deepEqual((await inputs(sheet, "Dice")).slice(-2), ["ContextMenu, Shift+F10", "Up, Down, Home, End"]);
     assert.deepEqual(await inputs(sheet, "Initiative"), ["Enter", "Escape", "ContextMenu, Shift+F10", "Up, Down, Home, End"], "only the DM types several values");
     assert.deepEqual(await inputs(sheet, "Handout viewer"), ["+, -", "0", "Arrow keys", "Page Down, Page Up", "Space, Shift+Space", "Home, End"]);

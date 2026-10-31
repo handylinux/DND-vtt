@@ -618,6 +618,8 @@ On any device. A token that carries others, such as a rider's mount or a holder 
 | Tap a standee again | Pick the one behind it, in isometric | everyone |
 | Hold a roll button | Open its one-roll options after half a second, without rolling. Tap a choice to roll once that way | everyone |
 | Double-tap and hold a roll button with a screen reader | Open its one-roll options. A plain double-tap still rolls | everyone |
+| Tap, click, hold or right-click an ability box in a stat block | Open its rolls: the check, the save, its skills, and Initiative under Dexterity. Tap one to roll it | everyone, where you may roll for the creature |
+| Hold or right-click a roll in an ability's rolls | Show its one-roll options in their place, without rolling | everyone, in an ability's rolls |
 | Double click or tap on Undo or Redo | Take back or restore one step. A second tap in the same double-click sequence never takes the following step | everyone |
 | Swipe right in a panel | Go back, as the panel's Back does: to the list of panels, or from a page inside a panel, such as Members, to the panel. Not from something that can still scroll left or drags sideways itself, or from the screen's left edge | everyone, where panels open as sheets, as on a phone |
 
@@ -731,6 +733,11 @@ Where the action bar opens as a window: on a screen 600 px or wider, or a phone 
 | --- | --- | --- |
 | Enter | Save the field and leave it | everyone, in a one-line field |
 | Escape | Drop what you typed and leave the field | everyone, in a one-line field |
+| Enter, Space, Down, ContextMenu, Shift+F10 | Open its rolls, the first one focused | everyone, on a focused ability box |
+| Up | Open its rolls, the last one focused | everyone, on a focused ability box |
+| ContextMenu, Shift+F10 | Show its one-roll options, the first choice focused. Enter and Space still roll as before | everyone, on a roll in an ability's rolls |
+| Escape | From a roll's options, go back to the ability's rolls. From the rolls, close them back on the box | everyone, in an ability's rolls |
+| Up, Down, Home, End | Move through the rolls or the choices | everyone, in an ability's rolls |
 | ContextMenu, Shift+F10 | Open the roll's one-roll options, the first choice focused. Enter and Space still roll as before | everyone, on a focused Death Save Roll in HP |
 | Up, Down, Home, End | Move through the choices. Enter or Space rolls once that way, Escape closes them back on the roll button, and Tab closes them and moves on | everyone, in roll options |
 

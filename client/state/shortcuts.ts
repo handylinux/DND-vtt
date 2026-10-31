@@ -900,6 +900,23 @@ export const BEHAVIORS: readonly Behavior[] = [
   },
   { id: "rollOptionsHold", input: "Hold a roll button", does: "Open its one-roll options after half a second, without rolling. Tap a choice to roll once that way", roles: EVERYONE, device: "pointer" },
   { id: "rollOptionsReader", input: "Double-tap and hold a roll button with a screen reader", does: "Open its one-roll options. A plain double-tap still rolls", roles: EVERYONE, device: "pointer" },
+  // A stat block's ability boxes and the rolls they open (docs/design-v1-stat-block-rolls.md 3.3 and 5.1): features/dice/useAbilityMenu.tsx. Their keys are under Token and character fields.
+  {
+    id: "abilityBoxOpen",
+    input: "Tap, click, hold or right-click an ability box in a stat block",
+    does: "Open its rolls: the check, the save, its skills, and Initiative under Dexterity. Tap one to roll it",
+    roles: EVERYONE,
+    when: "where you may roll for the creature",
+    device: "pointer",
+  },
+  {
+    id: "abilityRollHold",
+    input: "Hold or right-click a roll in an ability's rolls",
+    does: "Show its one-roll options in their place, without rolling",
+    roles: EVERYONE,
+    when: "in an ability's rolls",
+    device: "pointer",
+  },
   // The fight's cards have no surface of their own: features/encounter/CardRoll.tsx for concentration, save-ends and death-save cards.
   {
     id: "cardRollOptions",
@@ -1145,6 +1162,44 @@ export const BEHAVIORS: readonly Behavior[] = [
   // The token's and characters' one-line fields: features/tokens/ui.tsx TextField and NumberField.
   { id: "fieldEnter", input: "Enter", does: "Save the field and leave it", roles: EVERYONE, when: "in a one-line field", device: "keys", surface: "Token and character fields" },
   { id: "fieldEscape", input: "Escape", does: "Drop what you typed and leave the field", roles: EVERYONE, when: "in a one-line field", device: "keys", surface: "Token and character fields" },
+  // A stat block's ability boxes and their rolls: features/dice/useAbilityMenu.tsx, with the shared Menu's keys (components/Menu.tsx).
+  {
+    id: "abilityBoxKeys",
+    input: "Enter, Space, Down, ContextMenu, Shift+F10",
+    does: "Open its rolls, the first one focused",
+    roles: EVERYONE,
+    when: "on a focused ability box",
+    device: "keys",
+    surface: "Token and character fields",
+  },
+  { id: "abilityBoxKeyUp", input: "Up", does: "Open its rolls, the last one focused", roles: EVERYONE, when: "on a focused ability box", device: "keys", surface: "Token and character fields" },
+  {
+    id: "abilityRollOptions",
+    input: "ContextMenu, Shift+F10",
+    does: "Show its one-roll options, the first choice focused. Enter and Space still roll as before",
+    roles: EVERYONE,
+    when: "on a roll in an ability's rolls",
+    device: "keys",
+    surface: "Token and character fields",
+  },
+  {
+    id: "abilityRollsEscape",
+    input: "Escape",
+    does: "From a roll's options, go back to the ability's rolls. From the rolls, close them back on the box",
+    roles: EVERYONE,
+    when: "in an ability's rolls",
+    device: "keys",
+    surface: "Token and character fields",
+  },
+  {
+    id: "abilityRollsKeys",
+    input: "Up, Down, Home, End",
+    does: "Move through the rolls or the choices",
+    roles: EVERYONE,
+    when: "in an ability's rolls",
+    device: "keys",
+    surface: "Token and character fields",
+  },
   // HP's Death Save Roll, in the token's bar and panel and the character sheet: features/tokens/HpSection.tsx.
   {
     id: "fieldRollOptions",

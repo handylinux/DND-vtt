@@ -582,8 +582,9 @@ describe("the sheet's rows beside the keys", () => {
       if (b.surface !== undefined) assert.equal(b.device, "keys", `${b.id}: a surface lists only its keys`);
       // The drags of attached tokens (docs/design-v1-attach.md 4.6), which move a group or a mount, and the tap again on a standee, which picks one no plain tap reaches (docs/design-v1-isometric-view.md 6.2).
       // A roll button's hold, which opens its one-roll options where a tap rolls (docs/design-v1-roll-mode-menu.md 7).
+      // An ability box's tap and a roll's hold in its list, which open rolls and options a tap on a roll would not (docs/design-v1-stat-block-rolls.md 3.3 and 5.1).
       // The swipe back in a panel, a gesture with no mark of its own on screen (lib/backSwipe.ts).
-      if (b.device === "pointer") assert.match(b.input, /^(Drag .*(carries|carried|mount)|Tap a standee again$|Double click or tap on Undo or Redo$|Hold a roll button$|Double-tap and hold a roll button with a screen reader$|Swipe right in a panel$)/, b.id);
+      if (b.device === "pointer") assert.match(b.input, /^(Drag .*(carries|carried|mount)|Tap a standee again$|Double click or tap on Undo or Redo$|Hold a roll button$|Double-tap and hold a roll button with a screen reader$|Tap, click, hold or right-click an ability box in a stat block$|Hold or right-click a roll in an ability's rolls$|Swipe right in a panel$)/, b.id);
       if (b.device !== "mouse") continue;
       // A mouse row names a key, or a button other than the left one, or the trackpad's pinch, which arrives as Ctrl and the wheel.
       assert.match(b.input, /^(Shift|Ctrl|Space|Right-click|Drag with the right or middle button)/, b.id);
@@ -616,6 +617,8 @@ describe("the sheet's rows beside the keys", () => {
       "Tap a standee again",
       "Hold a roll button",
       "Double-tap and hold a roll button with a screen reader",
+      "Tap, click, hold or right-click an ability box in a stat block",
+      "Hold or right-click a roll in an ability's rolls",
       "Double click or tap on Undo or Redo",
       "Swipe right in a panel",
     ]);
@@ -647,7 +650,8 @@ describe("the sheet's rows beside the keys", () => {
       }
     }
     // One wording for every place, so the sheet says the same thing wherever a roll offers them.
-    const rows = BEHAVIORS.filter((b) => b.input === "ContextMenu, Shift+F10" || (b.input === "Up, Down, Home, End" && !!b.when?.endsWith("roll options")));
+    // An ability's rolls have their own wording and their own test below.
+    const rows = BEHAVIORS.filter((b) => !b.id.startsWith("ability") && (b.input === "ContextMenu, Shift+F10" || (b.input === "Up, Down, Home, End" && !!b.when?.endsWith("roll options"))));
     assert.equal(rows.length, 10);
     assert.equal(new Set(rows.filter((b) => b.input === "ContextMenu, Shift+F10").map((b) => b.does)).size, 1);
     assert.equal(new Set(rows.filter((b) => b.input !== "ContextMenu, Shift+F10").map((b) => b.does)).size, 1);
@@ -658,6 +662,39 @@ describe("the sheet's rows beside the keys", () => {
     assert.match(row("rollOptionsHold").does, /half a second, without rolling/);
     assert.match(row("rollOptionsReader").does, /A plain double-tap still rolls$/);
     assert.match(row("rollOptionsRight").does, /Right-click it again to close them$/);
+  });
+
+  test("a stat block's ability boxes and their rolls: the pointer rows on every device, the keys under Token and character fields before HP's roll keys, the same for the DM and players (docs/design-v1-stat-block-rolls.md 13)", () => {
+    const row = (id: string) => BEHAVIORS.find((b) => b.id === id)!;
+    for (const role of ROLES) {
+      for (const device of [DESKTOP, IPHONE, ANDROID]) {
+        const pointer = inputs(role, device, POINTER_SECTION);
+        assert.ok(pointer.includes("Tap, click, hold or right-click an ability box in a stat block") && pointer.includes("Hold or right-click a roll in an ability's rolls"), `${role} ${JSON.stringify(device)}: pointer rows`);
+        assert.ok(!inputs(role, device, MOUSE_SECTION).some((i) => /ability/.test(i)), "the right-click is part of the pointer rows, not a mouse row");
+        assert.deepEqual(
+          section(role, device, "Token and character fields")!.rows.filter((r) => r.id.startsWith("ability")).map((r) => [r.input, r.when]),
+          [
+            ["Enter, Space, Down, ContextMenu, Shift+F10", "on a focused ability box"],
+            ["Up", "on a focused ability box"],
+            ["ContextMenu, Shift+F10", "on a roll in an ability's rolls"],
+            ["Escape", "in an ability's rolls"],
+            ["Up, Down, Home, End", "in an ability's rolls"],
+          ],
+          `${role} ${JSON.stringify(device)}: keys`,
+        );
+      }
+    }
+    assert.equal(row("abilityBoxOpen").does, "Open its rolls: the check, the save, its skills, and Initiative under Dexterity. Tap one to roll it");
+    assert.equal(row("abilityRollHold").does, "Show its one-roll options in their place, without rolling");
+    assert.equal(row("abilityBoxKeys").does, "Open its rolls, the first one focused");
+    assert.equal(row("abilityBoxKeyUp").does, "Open its rolls, the last one focused");
+    assert.equal(row("abilityRollOptions").does, "Show its one-roll options, the first choice focused. Enter and Space still roll as before");
+    assert.equal(row("abilityRollsEscape").does, "From a roll's options, go back to the ability's rolls. From the rolls, close them back on the box");
+    assert.equal(row("abilityRollsKeys").does, "Move through the rolls or the choices");
+    // No new surface (D-261031-125): they sit in an existing section.
+    for (const id of ["abilityBoxKeys", "abilityBoxKeyUp", "abilityRollOptions", "abilityRollsEscape", "abilityRollsKeys"]) assert.equal(row(id).surface, "Token and character fields", id);
+    // The keys the box names in aria-keyshortcuts-style words match the registry's: ContextMenu and Shift+F10 open it, as they open a roll's options.
+    assert.deepEqual(row("abilityRollOptions").input.split(", "), ["ContextMenu", "Shift+F10"]);
   });
 
   test("the sections come in order, Keys, the mouse, the drags, Android, then each surface, and an empty one is left out", () => {
