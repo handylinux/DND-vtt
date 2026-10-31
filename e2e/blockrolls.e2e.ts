@@ -167,8 +167,9 @@ const patWire = new Wire();
 async function oneRoll(sent: OpsSent, from: number, what: string): Promise<Op> {
   await waitFor(`${what} sent`, () => sent.rolls(from).length > 0 || null);
   await sleep(300);
+  // A held wire makes the store resend one roll, so rolls are counted by tag.
   const rolls = sent.rolls(from);
-  assert.equal(rolls.length, 1, `${what} sent one roll: ${JSON.stringify(rolls)}`);
+  assert.equal(new Set(rolls.map((r) => r.tag ?? JSON.stringify(r))).size, 1, `${what} sent one roll: ${JSON.stringify(rolls)}`);
   const op = rolls[0]!;
   const socket = sent === dmSent ? dmSocket : sent === patSent ? patSocket : null;
   if (socket && op.t === "dice.roll") await waitFor(`${what} landed`, () => socket.state?.log.some((e) => e.data?.type === "dice" && e.data.tag === op.tag) || null);
@@ -311,9 +312,10 @@ async function patSheet(): Promise<Locator> {
     await sheet.waitFor();
   }
   await sheet.locator("[data-creature-heading]").filter({ hasText: "Thorn" }).waitFor();
+  // A shaped character shows the creature's own block, with no [data-pc-stats] around its grid.
   const fold = sheet.getByRole("button", { name: "Stat block", exact: true });
-  if ((await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
-  await sheet.locator("[data-pc-stats] [data-ability-grid]").waitFor();
+  if ((await fold.count()) > 0 && (await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
+  await sheet.locator("[data-ability-grid]").first().waitFor();
   return sheet;
 }
 
@@ -344,6 +346,11 @@ async function closeLists(page: Page): Promise<void> {
     await page.keyboard.press("Escape");
     await sleep(100);
   }
+}
+
+/** The page's place in its history: the Navigation API's index of the current entry, which a Back lowers (history.length never falls). */
+function historyIndex(page: Page): Promise<number> {
+  return page.evaluate(() => (globalThis as unknown as { navigation: { currentEntry: { index: number } } }).navigation.currentEntry.index);
 }
 
 /** The log entry for a roll's tag, in a socket's state. */
@@ -413,7 +420,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await ops.send({ t: "character.create", character: { id: run.thornChar, name: "Thorn", size: "medium", ownerIds: [run.patId], actor: actor(), level: 5, stats: THORN_STATS } });
     await ops.send({ t: "character.create", character: { id: run.loneChar, name: "Lone", size: "medium", ownerIds: [], actor: actor(), level: 3, stats: THORN_STATS } });
     await ops.send(tokenOp(run.thorn.id, { kind: "pc", name: "Thorn", x: run.thorn.x, y: run.thorn.y, disposition: "ally", actor: { ref: run.thornChar } }));
-    await ops.send(tokenOp(run.goblin.id, { kind: "monster", name: "Goblin", x: run.goblin.x, y: run.goblin.y, disposition: "hostile", actor: { inline: actor({ srdId: "goblin-warrior" }) } }));
+    await ops.send(tokenOp(run.goblin.id, { kind: "monster", name: "Goblin", x: run.goblin.x, y: run.goblin.y, disposition: "hostile", actor: { inline: actor({ srdId: "goblin-warrior", initScore: 12 }) } }));
     await ops.send(tokenOp(run.wolf.id, { kind: "npc", name: "Wolf", x: run.wolf.x, y: run.wolf.y, disposition: "ally", companion: { of: run.thornChar, turn: "shared" }, actor: { inline: actor({ srdId: "wolf" }) } }));
     await pat.goto(`${server.origin}/r/${run.roomId}`);
     await waitFor("Thorn on Pat's page", () => patSocket.state?.tokens[run.thorn.id]);
@@ -596,7 +603,8 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
   });
 
   test("sbr-4b. Android's Back through the page's real history at 390 x 844: options, Back to the list, Back closed, then Back closes the sheet and the room stays. With no sheet under it, two Backs leave no entry of ours behind", async () => {
-    const room = `${server.origin}/r/${run.roomId}`;
+    // The URL keeps the room id's dash.
+    const room = `${server.origin}/r/${run.roomId.slice(0, 4)}-${run.roomId.slice(4)}`;
     const sheet = await patSheet();
     const box = boxOf(sheet.locator("[data-pc-stats]"), "Dexterity");
     const list = listOf(pat, "Dexterity");
@@ -623,7 +631,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await dm.keyboard.press("Escape");
     const panel = await dmPanel("Goblin", run.goblin);
     const dmBox = boxOf(panel, "Dexterity");
-    const before = await dm.evaluate(() => (globalThis as unknown as { history: { length: number } }).history.length);
+    const before = await historyIndex(dm);
     await dmBox.click();
     const dmList = listOf(dm, "Dexterity");
     await dmList.waitFor();
@@ -634,7 +642,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await dm.goBack();
     await dmList.waitFor({ state: "detached" });
     assert.ok(dm.url().startsWith(room), `two Backs leave the room as it was: ${dm.url()}`);
-    assert.equal(await dm.evaluate(() => (globalThis as unknown as { history: { length: number } }).history.length), before, "and no entry of ours behind");
+    assert.equal(await historyIndex(dm), before, "and no entry of ours behind");
   });
 
   test("sbr-5. a right-click and Shift+F10 on the box and on a row: the list, then the options, never the browser's menu", async () => {
@@ -787,30 +795,33 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
   });
 
   test("sbr-9. Wild Shape as a wolf and Polymorph: the box prints the wolf's save and the list rolls the shaped one, and Polymorph rolls the wolf's own", async () => {
-    await ops.send({ t: "character.update", characterId: run.thornChar, patch: { actor: { srdId: "wolf", wildShape: true } } });
-    const sheet = await patSheet();
-    await sheet.locator("[data-shape-numbers]").waitFor();
-    const grid = gridOf(sheet);
-    const wolfBox = (await boxOf(sheet, "Wisdom").getAttribute("aria-label")) ?? "";
-    // Thorn's Wis save is +6 (proficient), the wolf's printed Wis is +1: the box prints the wolf, the list the druid's.
-    assert.match(wolfBox, /save \+1/, `the box prints the wolf's save: ${wolfBox}`);
-    await boxOf(sheet, "Wisdom").tap();
-    const list = listOf(pat, "Wisdom");
-    const names = await rowNames(list);
-    assert.ok(names.some((n) => /^Wisdom save \+6/.test(n)), `the list rolls "Rolls now": ${names.join(" | ")}`);
-    await closeLists(pat);
-    assert.equal(await grid.getAttribute("role"), "group");
-    await shots.take(pat, "sbr-9-wild-shape");
-    // Polymorph: the creature's own numbers, the wolf's.
-    await ops.send({ t: "character.update", characterId: run.thornChar, patch: { actor: { srdId: "wolf" } } });
-    await sheet.getByText(/^In the shape of Wolf\./).waitFor();
-    await boxOf(sheet, "Wisdom").tap();
-    const polymorphed = await rowNames(listOf(pat, "Wisdom"));
-    assert.ok(polymorphed.some((n) => /^Wisdom save \+1/.test(n)), `Polymorph rolls the wolf's own: ${polymorphed.join(" | ")}`);
-    await closeLists(pat);
+    try {
+      await ops.send({ t: "character.update", characterId: run.thornChar, patch: { actor: { srdId: "wolf", wildShape: true } } });
+      const sheet = await patSheet();
+      await sheet.locator("[data-shape-numbers]").waitFor();
+      const grid = gridOf(sheet);
+      const wolfBox = (await boxOf(sheet, "Wisdom").getAttribute("aria-label")) ?? "";
+      // Thorn's Wis save is +6 (proficient), the wolf's printed Wis is +1: the box prints the wolf, the list the druid's.
+      assert.match(wolfBox, /save \+1/, `the box prints the wolf's save: ${wolfBox}`);
+      await boxOf(sheet, "Wisdom").tap();
+      const list = listOf(pat, "Wisdom");
+      const names = await rowNames(list);
+      assert.ok(names.some((n) => /^Wisdom save \+6/.test(n)), `the list rolls "Rolls now": ${names.join(" | ")}`);
+      await closeLists(pat);
+      assert.equal(await grid.getAttribute("role"), "group");
+      await shots.take(pat, "sbr-9-wild-shape");
+      // Polymorph: the creature's own numbers, the wolf's.
+      await ops.send({ t: "character.update", characterId: run.thornChar, patch: { actor: { srdId: "wolf" } } });
+      await sheet.getByText(/^In the shape of Wolf\./).waitFor();
+      await boxOf(sheet, "Wisdom").tap();
+      const polymorphed = await rowNames(listOf(pat, "Wisdom"));
+      assert.ok(polymorphed.some((n) => /^Wisdom save \+1/.test(n)), `Polymorph rolls the wolf's own: ${polymorphed.join(" | ")}`);
+      await closeLists(pat);
+  } finally {
+    // Thorn must not stay shaped for the steps after this one.
     await ops.send({ t: "character.update", characterId: run.thornChar, patch: { actor: { srdId: null } } });
-    await sheet.locator("[data-pc-stats]").waitFor();
     await closeSheets(pat);
+  }
   });
 
   test("sbr-10. the Monsters panel, a character's companion blocks list and the DM's page for a character off the scene stay text: no button, no mark", async () => {
@@ -842,14 +853,19 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await openSideTab(dm, "Characters");
     const characters = dm.getByRole("tabpanel", { name: sideTabName("Characters") });
     const opener = characters.locator(`[data-opener="character:${run.thornChar}"]`);
-    if ((await opener.count()) > 0) await opener.click();
+    const heading = characters.locator("[data-creature-heading]").filter({ hasText: "Thorn" });
+    await heading.or(opener).first().waitFor();
+    if ((await heading.count()) === 0) await opener.click();
+    await heading.waitFor();
+    const companions = characters.getByRole("button", { name: "Companions", exact: true });
+    if ((await companions.getAttribute("aria-expanded")) === "false") await companions.click();
     await characters.getByRole("button", { name: /^Stat blocks \(/ }).click();
     await characters.getByRole("button", { name: /Moth Spirit/ }).first().click();
-    await text(characters.locator("[data-stat-block]").last(), "the companion blocks list");
+    await text(characters, "the companion blocks list");
     // A character with no token on the scene: text for the DM, then boxes once a token stands there.
-    const back = characters.getByRole("button", { name: /^Back/ }).first();
-    if (await back.isVisible().catch(() => false)) await back.click();
-    await characters.locator(`[data-opener="character:${run.loneChar}"]`).click();
+    const loneOpener = characters.locator(`[data-opener="character:${run.loneChar}"]`);
+    for (let i = 0; i < 3 && !(await loneOpener.isVisible().catch(() => false)); i++) await dm.getByRole("button", { name: /^Back to / }).first().click();
+    await loneOpener.click();
     const lone = characters.locator("[data-pc-stats]");
     await lone.waitFor();
     const fold = characters.getByRole("button", { name: "Stat block", exact: true });
@@ -867,16 +883,18 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     const sheet = await patSheet();
     const view = sheet.locator("[data-pc-stats]");
     const from = patSent.ops.length;
+    // The page's socket logs each failed reconnect while it is offline.
+    consoles.pat.allow = [/ERR_INTERNET_DISCONNECTED/];
     await patContext.setOffline(true);
     try {
       await waitFor("Pat's page to see it is offline", async () => ((await pat.getByRole("status", { name: "Connected" }).count()) === 0 ? true : null), 20_000).catch(() => undefined);
       await boxOf(view, "Dexterity").tap();
       const list = listOf(pat, "Dexterity");
       await list.waitFor();
-      await list.getByText("Rolling needs a connection.").waitFor();
+      await pat.locator("[data-ability-blocked]").filter({ hasText: "Rolling needs a connection." }).waitFor();
       const rows = list.getByRole("menuitem");
       for (let i = 0; i < (await rows.count()); i++) assert.equal(await rows.nth(i).getAttribute("aria-disabled"), "true", `row ${i} is disabled`);
-      await rows.first().tap();
+      await rows.first().tap({ force: true });
       await noRoll(patSent, from, "a tap on a disabled row");
       assert.ok(await list.isVisible(), "a disabled row closes nothing");
       await closeLists(pat);
@@ -884,6 +902,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await patContext.setOffline(false);
     }
     await pat.getByRole("status", { name: "Connected" }).first().waitFor({ timeout: 30_000 });
+    consoles.pat.allow = [];
     await closeSheets(pat);
     // A preview as Pat: the DM's Viewing as dialog holds Pat's own page, whose rolls are not sent.
     await dm.keyboard.press("Escape");
@@ -891,9 +910,10 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await dm.getByRole("button", { name: "View", exact: true }).click();
     const preview = dm.getByRole("dialog", { name: "Viewing as Pat" });
     await preview.waitFor();
-    await preview.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).click();
-    await preview.getByRole("region", { name: "Panels" }).getByRole("button", { name: /^Characters/ }).click();
-    const pane = preview.locator('dialog[data-rvtt-sheet][aria-label="Characters"]').or(preview.getByRole("tabpanel", { name: sideTabName("Characters") }));
+    await openSideTab(preview, "Characters");
+    const pane = preview.getByRole("tabpanel", { name: sideTabName("Characters") });
+    await pane.locator("[data-creature-heading]").or(pane.locator(`[data-opener="character:${run.thornChar}"]`)).first().waitFor();
+    if ((await pane.locator("[data-creature-heading]").count()) === 0) await pane.locator(`[data-opener="character:${run.thornChar}"]`).click();
     const fold = pane.getByRole("button", { name: "Stat block", exact: true });
     await fold.waitFor();
     if ((await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
@@ -901,11 +921,11 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await boxOf(pane, "Dexterity").click();
     const list = listOf(dm, "Dexterity");
     await list.waitFor();
-    await list.getByText("Rolls are not sent from a preview.").waitFor();
-    await list.getByRole("menuitem").first().click();
+    await dm.locator("[data-ability-blocked]").filter({ hasText: "Rolls are not sent from a preview." }).waitFor();
+    await list.getByRole("menuitem").first().click({ force: true });
     await noRoll(dmSent, dmFrom, "a tap in a preview");
     await dm.keyboard.press("Escape");
-    await preview.getByRole("button", { name: /^(Close|Stop viewing)/ }).first().click();
+    await preview.getByRole("button", { name: "Exit", exact: true }).click();
   });
 
   test("sbr-12. a block folded before a roll lands, with the Dice panel closed: one own-roll toast, and the Dice panel opened after it announces nothing more. (A refused roll is the phase 2 step sbr-12r.)", async () => {
@@ -919,7 +939,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await fold.click();
     patWire.release();
     await oneRoll(patSent, from, "Strength check from a block folded before it lands");
-    const toasts = pat.getByRole("status").filter({ hasText: /Strength/ });
+    const toasts = pat.locator('[role="status"]:not([data-block-result]):not([data-block-result] *)').filter({ hasText: /Strength/ });
     await toasts.first().waitFor({ timeout: 5_000 });
     assert.equal(await toasts.count(), 1, "one own-roll toast");
     await closeSheets(pat);
@@ -931,13 +951,14 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     const open = await patSheet();
     const again = open.getByRole("button", { name: "Stat block", exact: true });
     if ((await again.getAttribute("aria-expanded")) !== "true") await again.click();
-    const before = await pat.getByRole("status").filter({ hasText: /Strength/ }).count();
+    const toastsNow = () => pat.locator('[role="status"]:not([data-block-result]):not([data-block-result] *)').filter({ hasText: /Strength/ }).count();
+    const before = await toastsNow();
     const next = patSent.ops.length;
     await boxOf(open, "Strength").tap();
     await listOf(pat, "Strength").getByRole("menuitem", { name: /^Strength check/ }).tap();
     await oneRoll(patSent, next, "Strength check with the block kept open");
     await sleep(500);
-    assert.equal(await pat.getByRole("status").filter({ hasText: /Strength/ }).count(), before, "no toast while the block shows it");
+    assert.equal(await toastsNow(), before, "no toast while the block shows it");
     await closeSheets(pat);
   });
 
@@ -979,7 +1000,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await list.waitFor();
       assert.equal(await save.getAttribute("aria-busy"), "true", "the waiting row is busy");
       assert.equal(await save.getAttribute("aria-disabled"), "true");
-      await save.tap().catch(() => undefined);
+      await save.tap({ force: true, timeout: 2_000 }).catch(() => undefined);
       await closeSheets(pat);
       const dice = await openDiceSheet(pat);
       const cell = dice.getByRole("button", { name: /^Wisdom save/ });
@@ -988,7 +1009,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       patWire.release();
     }
     await oneRoll(patSent, from, "the Wisdom save");
-    assert.equal(patSent.rolls(from).length, 1, "one roll");
+    assert.equal(new Set(patSent.rolls(from).map((r) => r.tag)).size, 1, "one roll, however often the store resent it");
     await closeSheets(pat);
   });
 
@@ -1003,7 +1024,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await hold(patCdp, save);
     await options.waitFor();
     const advantage = options.getByRole("menuitem", { name: "Roll with Advantage" });
-    await liftClick(advantage);
+    // Chrome sends its own click after a still hold's lift, which the hold swallows.
     await noRoll(patSent, from, "the hold's own click");
     assert.ok(await options.isVisible());
     await readerClick(advantage);
@@ -1027,10 +1048,19 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
 
   test("sbr-16. the Dice panel open beside the block: both lines show each roll, one polite announcement for a success, and folded before it lands the Dice panel's line says it once", async () => {
     await dm.keyboard.press("Escape");
-    await openSideTab(dm, "Dice");
-    const dice = dm.getByRole("tabpanel", { name: sideTabName("Dice") });
     const panel = await dmPanel("Goblin", run.goblin);
-    await openSideTab(dm, "Dice");
+    // Two panels puts the Dice panel under the Token panel, so both lines are mounted at once.
+    const tabs = dm.getByRole("tablist", { name: "Panels" });
+    const bar = dm.locator("[data-pane-bar]");
+    if ((await bar.count()) === 0) {
+      await tabs.locator('[role="tab"][aria-haspopup="menu"]').click();
+      await dm.getByRole("menu", { name: "More panels" }).getByRole("menuitemcheckbox", { name: "Two panels" }).click();
+      await dm.getByRole("menu", { name: "More panels" }).waitFor({ state: "detached" });
+    }
+    await bar.getByRole("button", { name: / below$/ }).click();
+    await dm.getByRole("menu", { name: "Panel below" }).getByRole("menuitemradio", { name: sideTabName("Dice") }).click();
+    const dice = dm.getByRole("group", { name: "Dice below", exact: true });
+    await dice.waitFor();
     const announced = async (scope: Locator) => scope.locator('[role="status"][aria-live="polite"], [role="alert"]').allInnerTexts().then((t) => t.filter((x) => x.trim() !== ""));
     const view = panel;
     const from = dmSent.ops.length;
@@ -1055,6 +1085,9 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     const spoken = (await announced(dice.locator("[data-dice-last]"))).filter((t) => /Acrobatics/.test(t));
     assert.equal(spoken.length, 1, `the Dice panel's line says it once: ${JSON.stringify(spoken)}`);
     assert.equal(await dice.locator('[data-dice-last] [role="alert"]').count(), 0, "and raises no alert");
+    // Back to one panel for the steps after this one.
+    await dm.getByRole("button", { name: "Close Dice", exact: true }).click();
+    await bar.waitFor({ state: "detached" });
   });
 
   test("sbr-17. the DM's options on a monster's row offer Advantage and Disadvantage only, and on Thorn's companion's row Secret too", async () => {
@@ -1069,8 +1102,9 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await closeLists(dm);
     const wolf = await dmPanel("Wolf", run.wolf);
     await boxOf(wolf, "Dexterity").click();
-    await hold2(dm, listOf(dm, "Dexterity").getByRole("menuitem", { name: /^Dexterity save/ }));
-    const titles = (await choiceTitles(optionsOf(dm, /^Roll options for Dexterity save/))).map((c) => c.title);
+    // Pat plays the wolf, so with Ask on its Save asks and has no options: Initiative never asks.
+    await hold2(dm, listOf(dm, "Dexterity").getByRole("menuitem", { name: /^Initiative/ }));
+    const titles = (await choiceTitles(optionsOf(dm, /^Roll options for Initiative/))).map((c) => c.title);
     assert.ok(titles.includes("Roll secretly"), `the companion's options keep Secret: ${titles.join(", ")}`);
     await closeLists(dm);
   });
@@ -1106,19 +1140,31 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await pat.getByRole("status", { name: "Connected" }).first().waitFor();
       const small = await patSheet();
       const smallView = small.locator("[data-pc-stats]");
+      // A plain roll first: the line's height with no mode words.
+      await boxOf(smallView, "Strength").tap();
+      await listOf(pat, "Strength").getByRole("menuitem", { name: /^Strength check/ }).tap();
+      const shortLine = resultOf(smallView).first();
+      await shortLine.locator("[aria-description]").waitFor();
+      const plainHeight = (await shortLine.boundingBox())!.height;
       await boxOf(smallView, "Strength").tap();
       await hold(patCdp, listOf(pat, "Strength").getByRole("menuitem", { name: /^Strength check/ }));
       from = patSent.ops.length;
       await optionsOf(pat, /^Roll options for Strength check/).getByRole("menuitem", { name: "Roll with Advantage" }).tap();
       op = await oneRoll(patSent, from, "Advantage at 320 x 568");
-      const shortLine = resultOf(smallView).first();
-      await shortLine.waitFor();
-      const describedBy = await shortLine.evaluate((el) => {
-        const doc = (el as unknown as { ownerDocument: { getElementById(id: string): { textContent: string | null } | null } }).ownerDocument;
-        return (el.getAttribute("aria-describedby") ?? "").split(" ").filter(Boolean).map((id: string) => doc.getElementById(id)?.textContent ?? "").join(" ") + " " + (el.getAttribute("aria-label") ?? "");
-      });
+      await shortLine.locator("[data-result-mode]").waitFor({ state: "attached" });
+      // The line's description sits on its body (BlockResult.tsx aria-description).
+      const describedBy = (await shortLine.locator("[aria-description]").first().getAttribute("aria-description")) ?? "";
       assert.match(describedBy, /Advantage/, "the description keeps the mode");
-      assert.doesNotMatch(await shortLine.innerText(), /with Advantage/, "the short line drops the words");
+      // The words give way whole and first: clipped out of the one-row line, which keeps its height.
+      const geometry = await shortLine.evaluate((el) => {
+        type R = { left: number; right: number; top: number; bottom: number };
+        const mode = el.querySelector("[data-result-mode]") as unknown as { getBoundingClientRect(): R; closest(s: string): { getBoundingClientRect(): R } | null };
+        const body = mode.closest("[aria-description]")!.getBoundingClientRect();
+        const m = mode.getBoundingClientRect();
+        return { clipped: m.right > body.right + 0.5 || m.left >= body.right - 0.5 || m.top >= body.bottom - 0.5 || m.bottom > body.bottom + 0.5, mode: m, body };
+      });
+      assert.ok(geometry.clipped, `the short line drops the words: ${JSON.stringify(geometry)}`);
+      assert.ok(Math.abs((await shortLine.boundingBox())!.height - plainHeight) <= 1, "and the line keeps its height, no extra line");
       await pat.setViewportSize(PHONE);
       await pat.evaluate(() => localStorage.setItem("rvtt.uiScale", "1"));
       await reopenRoom(pat);
