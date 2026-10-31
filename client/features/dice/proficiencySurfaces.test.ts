@@ -37,20 +37,38 @@ function namesOf(s: RoomState): LogNames {
   return { characters: s.characters, tokens: s.tokens, members: s.members, handouts: s.handouts, encounter: s.encounter };
 }
 
-function render(s: RoomState, body: ReactNode, folded: readonly string[] = []): string {
+function render(s: RoomState, body: ReactNode, folded: readonly string[] = [], framed = false): string {
   const scope = new RoomScope();
   for (const key of DICE_FOLD_KEYS) scope.get(diceFoldsSlot).tap(key, !folded.includes(key), false);
   const store = createStore(() => ({ view: s, you: DM, sceneId: "s1", roomId: "r1", connection: "open", local: { selectedIds: [], multi: false } }));
-  return withoutFrames(renderToStaticMarkup(createElement(RoomProvider, { store: store as never, actions: { dispatch: () => 1 } as never, ui: {} as never, assets: { url: () => "" } as never, children: createElement(RoomScopeProvider, { scope, children: body }) })));
+  const markup = renderToStaticMarkup(createElement(RoomProvider, { store: store as never, actions: { dispatch: () => 1 } as never, ui: {} as never, assets: { url: () => "" } as never, children: createElement(RoomScopeProvider, { scope, children: body }) }));
+  // A test that reads the frames themselves asks for the markup as drawn.
+  return framed ? markup : withoutFrames(markup);
 }
 
-function options(s: RoomState, folded: readonly string[] = []): string {
+function options(s: RoomState, folded: readonly string[] = [], framed = false): string {
   const dice: DiceView = { you: DM, view: s, srd: { monsters: null, rolls: null } };
   const creature = { characterId: "hero" };
-  return render(s, createElement(OptionsList, { dice, creature, tokenId: undefined, rolls: creatureRolls(dice, creature)!, name: "Hero" }), folded);
+  return render(s, createElement(OptionsList, { dice, creature, tokenId: undefined, rolls: creatureRolls(dice, creature)!, name: "Hero" }), folded, framed);
 }
 
 const marks = (html: string) => [...html.matchAll(/<span data-proficiency-label="" data-proficiency-level="(\w+)"[^>]*>(.*?)<\/span>/g)].map((m) => `${m[1]}:${m[2]!.replace(/<[^>]*>/g, "")}`);
+/** The folded lines' markup: each element with an id ending "-summary", to its matching close. */
+function summaries(html: string): string[] {
+  const out: string[] = [];
+  for (const start of html.matchAll(/<span id="[^"]+-summary"[^>]*>/g)) {
+    let depth = 1;
+    let at = start.index + start[0].length;
+    for (const tag of html.slice(at).matchAll(/<(\/?)span\b[^>]*>/g)) {
+      depth += tag[1] ? -1 : 1;
+      if (depth === 0) {
+        out.push(html.slice(at, at + tag.index));
+        break;
+      }
+    }
+  }
+  return out;
+}
 const text = (html: string) => html.replace(/<[^>]*>/g, "").replaceAll("&#x27;", "'");
 const levelOf = (s: RoomState) => (creature: { characterId?: string; tokenId?: string }, test: { kind: string; ability?: string; skill?: string }) =>
   "characterId" in creature && creature.characterId === "hero" && s.characters.hero ? (test.kind === "save" ? (test.ability === "dex" ? "prof" : "none") : test.skill === "stealth" ? "expert" : test.skill === "perception" ? "prof" : "none") : "none";
@@ -78,6 +96,25 @@ test("fl7: folded save and skill lines keep foldSummary's words, cut only betwee
   assert.ok(all.includes("prof:Dex") && all.includes("expert:Stealth") && all.includes("prof:Perception"));
   // A test with no proficiency still says so, as every place that names a test does (FL12-OPUS-3).
   assert.ok(all.includes("none:Str") && all.includes("none:Cha"), all.join(", "));
+});
+
+test("fl18: a folded save or skill line draws no frame and still says each level to a screen reader (D-261031-290)", () => {
+  const html = options(state(), ["pc.saves", "pc.skills"], true);
+  const lines = summaries(html);
+  assert.equal(lines.length, 2, "both folded lines found");
+  const joined = lines.join("");
+  assert.doesNotMatch(joined, /data-proficiency-mark="|data-proficiency-form|box-shadow/, "no frame or tint in a preview");
+  assert.ok(joined.includes('data-proficiency-marker="prof"') && joined.includes('data-proficiency-marker="expert"'), "the hidden markers stay");
+  assert.ok(joined.includes('aria-label="Proficient"') && joined.includes('aria-label="Expertise"'));
+  assert.match(text(joined), /Dex \+3/);
+  assert.match(options(state(), [], true), /data-proficiency-mark="expert"/, "the roll buttons, opened, still draw their frame");
+});
+
+test("fl18: a bard with Jack of All Trades folds a Skills line of the skills it trains, not all eighteen (D-261031-291)", () => {
+  const s = state();
+  s.characters.hero!.stats = { ...structuredClone(EMPTY_PC_STATS), jack: true, skills: { deception: "expert", persuasion: "prof" } };
+  const html = options(s, ["pc.skills"]);
+  assert.match(text(summaries(html)[0] ?? ""), /^Deception \+\d+, Persuasion \+\d+…$/);
 });
 
 test("fl7: Recent rolls marks the label after the creature, and never says a player's own character twice (FL7-R1-11)", () => {

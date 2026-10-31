@@ -15,7 +15,7 @@ import { Chip } from "../../components/Chip.tsx";
 import { Input } from "../../components/Field.tsx";
 import { Loading } from "../../components/Loading.tsx";
 import { Group, Help, sectionLabelLook } from "../../components/Panel.tsx";
-import { markedBy, ProficiencyLabel, ProficiencyUnit, proficiencyBox, spokenProficiency } from "../../components/ProficiencyMark.tsx";
+import { markedBy, ProficiencyLabel, proficiencyBox, spokenProficiency } from "../../components/ProficiencyMark.tsx";
 import { ScrollStrip } from "../../components/ScrollStrip.tsx";
 import { Switch } from "../../components/Switch.tsx";
 import { WholeParts } from "../../components/WholeParts.tsx";
@@ -35,7 +35,7 @@ import { useOpenPcStats } from "../pcstats/open.ts";
 import { d20Text, parseBonus, requestRollSource } from "../rolls/card.ts";
 import { editsPcStats } from "../tokens/access.ts";
 import { Note, SmallButton } from "../tokens/ui.tsx";
-import { creatureBlock, creatureProficiency, creatureRolls, type CreatureRolls, type DiceView } from "./creature.ts";
+import { creatureBlock, creatureLevelsKnown, creatureProficiency, creatureRolls, type CreatureRolls, type DiceView } from "./creature.ts";
 import { CreatureCard, DICE_CARD } from "./CreatureCard.tsx";
 import { creatureLook } from "./creatureLook.ts";
 import { foldKey, foldKind, useDiceFolds, type CreatureGroup } from "./diceFolds.ts";
@@ -471,22 +471,22 @@ function CardBody(props: Shown) {
   );
 }
 
-/** A folded line whose saves and skills carry their marks, cut only between whole parts. Nothing to say leaves no line. */
+/**
+ * A folded line whose saves and skills name their level to a screen reader and draw nothing (D-261031-290):
+ * a frame belongs where dice roll, and this line only previews. Cut only between whole parts. Nothing to say leaves no line.
+ */
 function markedSummary(ctx: Ctx, parts: readonly SummaryPart[]): ReactNode {
   if (parts.length === 0) return "";
-  // null for a part that names no test, which carries no level at all.
-  const levels = parts.map((part) => (marksTest(part.test) ? creatureProficiency(ctx.dice, ctx.creature, part.test) : null));
-  // A framed part takes the comma after it, which would otherwise touch its frame, from the next part's join: the words stay the same, and a cut after it still reads ", …".
-  const takes = parts.map((_, i) => (levels[i] === "prof" || levels[i] === "expert") && (parts[i + 1]?.join.startsWith(",") ?? false));
   return (
     <WholeParts
       words={parts.map((part) => part.join + part.lead + part.name + part.rest).join("")}
-      parts={parts.map((part, i) => ({
-        join: i > 0 && takes[i - 1] ? part.join.slice(1) : part.join,
+      parts={parts.map((part) => ({
+        join: part.join,
         node: (
           <>
             {part.lead}
-            <SummaryUnit level={levels[i] ?? null} name={part.name} rest={part.rest + (takes[i] ? "," : "")} />
+            <SummaryName level={marksTest(part.test) ? creatureProficiency(ctx.dice, ctx.creature, part.test) : null} name={part.name} />
+            {part.rest}
           </>
         ),
       }))}
@@ -494,16 +494,10 @@ function markedSummary(ctx: Ctx, parts: readonly SummaryPart[]): ReactNode {
   );
 }
 
-/** A folded line's part, "Athletics +6,": a marked one is framed with its bonus and the comma after it, and a test with no proficiency still names its level. */
-function SummaryUnit(props: { level: Proficiency | null; name: string; rest: string }) {
-  if (props.level === null) return <>{props.name}{props.rest}</>;
-  if (props.level === "none") return <><ProficiencyLabel level="none">{props.name}</ProficiencyLabel>{props.rest}</>;
-  return (
-    <ProficiencyUnit level={props.level}>
-      <ProficiencyLabel level={props.level} bare>{props.name}</ProficiencyLabel>
-      {props.rest}
-    </ProficiencyUnit>
-  );
+/** A folded line's part name: plain text, with the hidden marker that says "Proficient" or "Expertise" to a screen reader, and none for a part that names no test. */
+function SummaryName(props: { level: Proficiency | null; name: string }) {
+  if (props.level === null) return <>{props.name}</>;
+  return <ProficiencyLabel level={props.level} bare>{props.name}</ProficiencyLabel>;
 }
 
 /**
@@ -526,6 +520,7 @@ function OptionGroups(props: Shown) {
   openForAsks(folds, kind, asks);
   const groupFold = (group: CreatureGroup) => fold(foldKey(kind, group));
   const numbers = rolls.numbers;
+  const levelsKnown = creatureLevelsKnown(dice, creature);
   const typed = parseBonus(useOption((s) => s.bonus[ctx.key] ?? ""));
   const named = rolls.named.filter((r) => r.section !== "spells");
   const spells = rolls.named.filter((r) => r.section === "spells");
@@ -577,7 +572,15 @@ function OptionGroups(props: Shown) {
           foldSummaryParts(
             {
               group: "skills",
-              skills: numbers ? SKILL_KEYS.map((s) => ({ key: s, name: SKILLS[s].name, bonus: bonusFor(numbers, { kind: "check", ability: SKILLS[s].ability, skill: s }) ?? 0, check: bonusFor(numbers, { kind: "check", ability: SKILLS[s].ability }) ?? 0 })) : [],
+              skills: numbers
+                ? SKILL_KEYS.map((s) => ({
+                    key: s,
+                    name: SKILLS[s].name,
+                    bonus: bonusFor(numbers, { kind: "check", ability: SKILLS[s].ability, skill: s }) ?? 0,
+                    check: bonusFor(numbers, { kind: "check", ability: SKILLS[s].ability }) ?? 0,
+                    ...(levelsKnown ? { level: creatureProficiency(dice, creature, { kind: "check", ability: SKILLS[s].ability, skill: s }) } : {}),
+                  }))
+                : [],
             },
             asks.skills,
           ),

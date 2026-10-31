@@ -161,6 +161,15 @@ export function creatureProficiency(dice: DiceView, creature: ActorTarget, test:
 }
 
 /**
+ * Whether a creature's proficiency levels are its own record rather than read back from a block's numbers: a character with a stat block this viewer reads, out of any shape.
+ * A monster's block lists only the skills it trains, so its levels add nothing to that listing.
+ */
+export function creatureLevelsKnown(dice: DiceView, creature: ActorTarget): boolean {
+  const found = find(dice.view, creature);
+  return !!found?.character && readsCharacter(dice, found.character) && found.character.stats !== undefined && found.actor.srdId === undefined && !found.actor.wildShape;
+}
+
+/**
  * A creature's rolls, or null while a chunk it needs loads or when it is
  * gone. Its numbers are doc 1's creatureNumbers, the server's own rule, so
  * the bonus shown is the one rolled. Its named rolls, its block's defenses

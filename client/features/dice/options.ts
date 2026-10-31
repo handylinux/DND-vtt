@@ -10,6 +10,7 @@ import { ABILITY_KEYS, SKILL_KEYS, type SkillKey, type CharacterId, type CritRul
 import { findEntryFor } from "#shared/rules/durations.ts";
 import type { RollPreset } from "#shared/rules/rollReminders.ts";
 import { ABILITY_ABBR, ABILITY_NAMES, SKILLS } from "#shared/rules/skills.ts";
+import type { Proficiency } from "#shared/rules/proficiency.ts";
 import { critSums, effectName } from "#shared/logText.ts";
 import { damageSummary, type DamageSummaryLines } from "./damageSummaryLines.ts";
 import type { PanelRoll } from "./useDicePanel.ts";
@@ -661,8 +662,8 @@ const ABILITY_WORD: Record<string, string> = Object.fromEntries(ABILITY_KEYS.map
 export type FoldSummaryInput =
   /** Saves and checks: the shared notes, then the six saves, or none for a creature whose numbers this viewer lacks. */
   | { group: "saves"; note: string; saves: Readonly<Record<string, number>> | null }
-  /** Skills: each with its bonus and its ability's plain check, and its key where its name is to carry a mark. */
-  | { group: "skills"; skills: readonly { name: string; bonus: number; check: number; key?: SkillKey }[] }
+  /** Skills: each with its bonus and its ability's plain check, and its key where its name is to carry a mark. A `level` is the creature's own record (a character's): the line lists the skills it trains, Jack of All Trades or not. */
+  | { group: "skills"; skills: readonly { name: string; bonus: number; check: number; key?: SkillKey; level?: Proficiency }[] }
   /** Traits and the action groups: their rows. */
   | { group: "rows"; rows: readonly { name: string; used?: boolean }[] }
   | { group: "spells"; dc?: number | undefined; attack?: number | undefined; count: number };
@@ -708,10 +709,10 @@ export function foldSummaryParts(input: FoldSummaryInput, waiting?: GroupWaiting
       break;
     }
     case "skills":
-      // A skill above its ability's check is one the creature is trained in, or better: the rest read as the check does.
+      // Without a record of levels, a skill above its ability's check is one the creature is trained in, or better: the rest read as the check does. With one, Jack of All Trades would lift every skill above its check.
       kinds.push({
         lead: "",
-        items: input.skills.filter((s) => s.bonus > s.check).map((s) => ({ name: s.name, rest: ` ${signedText(s.bonus)}`, test: s.key ? { kind: "check", ability: SKILLS[s.key].ability, skill: s.key } : null })),
+        items: input.skills.filter((s) => (s.level !== undefined ? s.level === "prof" || s.level === "expert" : s.bonus > s.check)).map((s) => ({ name: s.name, rest: ` ${signedText(s.bonus)}`, test: s.key ? { kind: "check", ability: SKILLS[s.key].ability, skill: s.key } : null })),
       });
       break;
     case "rows":

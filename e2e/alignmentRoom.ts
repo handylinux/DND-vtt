@@ -3862,6 +3862,23 @@ async function proficiencyScreen(sweep: Sweep, page: Page, screen: string, root:
 }
 
 /**
+ * A folded line only previews (D-261031-290): `root` is measured by the
+ * sweep and draws no frame or tint, while its names keep their level and
+ * the unseen picture a screen reader hears.
+ */
+async function plainPreview(sweep: Sweep, page: Page, screen: string, root: Locator): Promise<void> {
+  await root.locator("[data-proficiency-label]").first().waitFor({ state: "attached" });
+  // Not sweep.measure: its proficiency checks demand a drawn mark on every proficient name, which is what a preview must not have.
+  const shown = root.filter({ visible: true });
+  await sweep.add(page, `fl18-${screen}`, [...alignmentLines(await measureAlignment(shown), `${sweep.at} fl18-${screen}`), ...spacingLines(await measureSpacing(shown), `${sweep.at} fl18-${screen}`)]);
+  assert.equal(await root.locator("[data-proficiency-mark]").count(), 0, `fl18: ${sweep.at} ${screen} frames a name in a preview`);
+  const styled = await root.locator("[data-proficiency-label]").evaluateAll((all) => all.filter((n) => (n as unknown as { style: { boxShadow: string } }).style.boxShadow !== "").length);
+  assert.equal(styled, 0, `fl18: ${sweep.at} ${screen} draws a border on a name`);
+  assert.ok((await root.locator('[data-proficiency-level="prof"], [data-proficiency-level="expert"]').count()) > 0, `fl18: ${sweep.at} ${screen} keeps the level on its names`);
+  assert.ok((await root.locator("[data-proficiency-marker]").count()) > 0, `fl18: ${sweep.at} ${screen} keeps the unseen level for a screen reader`);
+}
+
+/**
  * A text surface that is not a roll (D-261030-539): `root` is measured by
  * the sweep and holds no frame, no tint and no unseen proficiency picture,
  * and no line that lists proficiencies, which FL-15 took out (D-261030-588).
@@ -3990,7 +4007,7 @@ async function proficiencyOptions(sweep: Sweep, page: Page, host: Locator, kind:
     const cut = await summary.getAttribute("data-summary-cut");
     // Or its first part alone is too long, and the summary's own ellipsis cuts it.
     if (cut !== null && !((await summary.locator("[data-summary-more]").isVisible()) || (await summary.evaluate((node) => (node as unknown as { scrollWidth: number; clientWidth: number }).scrollWidth > (node as unknown as { clientWidth: number }).clientWidth)))) await sweep.add(page, `fl7-${kind}-${screen}-folded`, [`${sweep.at} fl7-${kind}-${screen}-folded: a cut ${name} line does not end with "…"`]);
-    await proficiencyScreen(sweep, page, `${kind}-${screen}-folded`, summary, summary, true);
+    await plainPreview(sweep, page, `${kind}-${screen}-folded`, summary);
     if (kind !== "companion") {
       await fold.scrollIntoViewIfNeeded();
       await shot(page, `${kind}-${screen}-folded`);

@@ -526,6 +526,19 @@ describe("the folds' lines and openings (docs/design-v1-dice-pass.md 6)", () => 
     assert.equal(foldSummary({ group: "skills", skills: [{ name: "Acrobatics", bonus: 1, check: 1 }] }), "", "none trained, no line");
   });
 
+  test("Skills: where levels are known, only proficient and expert skills, however Jack of All Trades lifts the rest (FL-18)", () => {
+    // A bard with Jack of All Trades: every skill is above its check, but only two are trained.
+    const skills = [
+      { name: "Athletics", bonus: 2, check: 1, level: "none" as const },
+      { name: "Deception", bonus: 7, check: 3, level: "expert" as const },
+      { name: "Insight", bonus: 4, check: 3, level: "none" as const },
+      { name: "Persuasion", bonus: 5, check: 3, level: "prof" as const },
+    ];
+    assert.equal(foldSummary({ group: "skills", skills }), "Deception +7, Persuasion +5");
+    assert.equal(foldSummary({ group: "skills", skills: skills.map(({ level: _level, ...rest }) => rest) }), "Athletics +2, Deception +7, Insight +4, Persuasion +5", "a monster has no levels: the bonus rule lists them");
+    assert.equal(foldSummary({ group: "skills", skills: [{ name: "Arcana", bonus: 2, check: 1, level: "none" }] }), "", "none trained, no line");
+  });
+
   test("an action group names its rows, a used recharge as used, and Spells counts them after the DC and the attack", () => {
     assert.equal(foldSummary({ group: "rows", rows: [{ name: "Rend" }, { name: "Acid Breath", used: true }, { name: "Tail", used: false }] }), "Rend, Acid Breath (used), Tail");
     assert.equal(foldSummary({ group: "spells", dc: 14, attack: 6, count: 13 }), "DC 14 · +6 to hit · 13 spells");
