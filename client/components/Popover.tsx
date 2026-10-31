@@ -23,7 +23,7 @@ import { theme } from "../lib/theme.ts";
 import { useScoped } from "../state/scope.ts";
 import { isTextField } from "../state/shortcuts.ts";
 import { sectionLabelLook } from "./Panel.tsx";
-import { chromeRect, clipToVisible, needsPlace, popoverPlace, type PlaceFrame, type PopoverSide, type Rect } from "./popoverPlace.ts";
+import { anchorInView, chromeRect, clipToVisible, needsPlace, popoverPlace, type PlaceFrame, type PopoverSide, type Rect } from "./popoverPlace.ts";
 import {
   closesAfterTab,
   escapeCloses,
@@ -63,7 +63,8 @@ export type { PopoverSide, Rect } from "./popoverPlace.ts";
  * browser took it for a scroll, while a press on the map only closes it,
  * once the press ends as one pointer, so a pinch keeps it open. Focus
  * goes in only when a key opened it. Escape, Tab, Shift+Tab, Android's
- * Back, focus moving away and its anchor leaving close it.
+ * Back, focus moving away, its anchor leaving and a scroll that takes its
+ * anchor out of view (scrolledAway) close it.
  *
  * The box is drawn in the browser's top layer, a manual popover
  * (showInTopLayer), so no scroller, transform or stacking context around
@@ -433,6 +434,10 @@ function OpenPopover(props: PopoverProps) {
     follower.current = followField(box, theme.space(2));
     const onScroll = (e: Event) => {
       if (e.target instanceof Node && box.contains(e.target)) return;
+      if (scrolledAway(e.target, h.anchor.current)) {
+        h.close("gone");
+        return;
+      }
       place(false);
     };
 
@@ -548,9 +553,10 @@ function attachRoom(room: PopoverRoom): void {
     const entry = room.current();
     const where: PressWhere = entry ? entry.where(e.target) : isMapTarget(e.target) ? "map" : "elsewhere";
     const touch = e.pointerType === "touch";
-    const step = room.press({ type: "down", pointerId: e.pointerId, where, open: entry !== null, pan: room.pans(e), touch });
+    // The outside touch rule first: each rule reads whether the other already follows a finger of this gesture.
+    room.outsideTouch({ type: "down", pointerId: e.pointerId, where, touch, key: entry?.key ?? null, primary: e.isPrimary });
+    const step = room.press({ type: "down", pointerId: e.pointerId, where, open: entry !== null, pan: room.pans(e), touch, primary: e.isPrimary });
     if (step.close === "now") entry?.close("press");
-    room.outsideTouch({ type: "down", pointerId: e.pointerId, where, touch, key: entry?.key ?? null });
   };
   const end = (e: PointerEvent) => {
     room.outsideTouch({ type: e.type === "pointerup" ? "up" : "cancel", pointerId: e.pointerId, taken: e.type === "pointercancel" && e.isTrusted });
@@ -567,6 +573,18 @@ function attachRoom(room: PopoverRoom): void {
     window.removeEventListener("pointerup", end, true);
     window.removeEventListener("pointercancel", end, true);
   });
+}
+
+/**
+ * Whether a scroll took the anchor out of view: the scrolled element, or
+ * the page, holds it, and it no longer meets that element's visible box
+ * and the window (anchorInView). Its popover then closes, since in the
+ * top layer nothing around the anchor clips it with it.
+ */
+export function scrolledAway(target: EventTarget | null, anchor: Element | null): boolean {
+  if (!anchor || !(target === document || (target instanceof Element && target.contains(anchor)))) return false;
+  const viewport = { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+  return !anchorInView(anchor.getBoundingClientRect(), target instanceof Element ? target.getBoundingClientRect() : viewport, viewport);
 }
 
 /**

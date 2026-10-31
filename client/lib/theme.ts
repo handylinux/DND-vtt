@@ -162,8 +162,10 @@ export const theme = {
     paneOverBars: 17,
     notices: 20,
     /**
-     * An open popover or menu and the element that holds it (docs/design-v1-tool-options.md 7.6): over
-     * notices and toasts, under the fight's alerts opened over the screen, a player's roll card and dialogs.
+     * An open popover or menu and the element that holds it, in a browser with no popovers
+     * (docs/design-v1-tool-options.md 7.6): over notices and toasts, under the fight's alerts opened
+     * over the screen, a player's roll card and dialogs. With popovers its box stands in the top layer
+     * over all of these, and only a modal dialog opened after it stands above it (FL-17).
      */
     popover: 21,
     /** The top bar while it holds the fight's alerts opened over the screen: over the notices, which would hide the alerts' buttons. */

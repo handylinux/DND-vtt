@@ -185,8 +185,14 @@ export type PressWhere = "inside" | "anchor" | "map" | "elsewhere";
 export type MapPress = { readonly pointers: readonly number[]; readonly close: boolean } | null;
 
 export type PressEvent =
-  /** `pan` is a mouse press that moves the map whatever the tool: the right or middle button, or the left with Space held. `touch` is a finger's. */
-  | { readonly type: "down"; readonly pointerId: number; readonly where: PressWhere; readonly open: boolean; readonly pan: boolean; readonly touch?: boolean }
+  /**
+   * `pan` is a mouse press that moves the map whatever the tool: the right
+   * or middle button, or the left with Space held. `touch` is a finger's,
+   * and `primary` the first finger down (PointerEvent.isPrimary). `others`
+   * is another finger of the same gesture that the outside touch rule
+   * already follows (PopoverRoom fills it in).
+   */
+  | { readonly type: "down"; readonly pointerId: number; readonly where: PressWhere; readonly open: boolean; readonly pan: boolean; readonly touch?: boolean; readonly primary?: boolean; readonly others?: boolean }
   | { readonly type: "up" | "cancel"; readonly pointerId: number }
   | { readonly type: "wheel" };
 
@@ -207,19 +213,23 @@ export type PressStep = {
  * event, and the popover
  * closes only once the press ends as one pointer. A second touch before
  * the first lifts makes it a pinch or a two-finger pan, which leaves the
- * popover open for that whole gesture, also after one finger lifts first.
+ * popover open for that whole gesture, also after one finger lifts first,
+ * and so does a finger on the map beside one outside it, in either order.
  * A drag that pans the map whatever the tool (pan) and the wheel never
  * close it, and the map handles them as usual. A pointer cancelled by
- * the browser ends the press without closing.
+ * the browser ends the press without closing. A first finger down starts
+ * afresh, so a press whose end never reached the room is dropped.
  */
 export function pressStep(state: MapPress, e: PressEvent): PressStep {
   if (e.type === "wheel") return { state, close: null, suppress: false };
   if (e.type === "down") {
-    if (state !== null) return { state: { pointers: [...state.pointers, e.pointerId], close: false }, close: null, suppress: true };
+    const fresh = e.touch === true && e.primary === true;
+    const before = fresh ? null : state;
+    if (before !== null) return { state: { pointers: [...before.pointers, e.pointerId], close: false }, close: null, suppress: true };
     if (!e.open || e.where === "inside" || e.where === "anchor") return { state: null, close: null, suppress: false };
     if (e.where === "elsewhere") return { state: null, close: e.touch ? null : "now", suppress: false };
     if (e.pan) return { state: null, close: null, suppress: false };
-    return { state: { pointers: [e.pointerId], close: true }, close: null, suppress: true };
+    return { state: { pointers: [e.pointerId], close: fresh || e.others !== true }, close: null, suppress: true };
   }
   if (state === null || !state.pointers.includes(e.pointerId)) return { state, close: null, suppress: state !== null };
   const pointers = state.pointers.filter((id) => id !== e.pointerId);
@@ -235,8 +245,8 @@ export function pressStep(state: MapPress, e: PressEvent): PressStep {
 export type OutsideTouch = { readonly key: string; readonly pointers: readonly number[]; readonly close: boolean } | null;
 
 export type OutsideEvent =
-  /** `key` is the open popover's, null with none open. */
-  | { readonly type: "down"; readonly pointerId: number; readonly where: PressWhere; readonly touch: boolean; readonly key: string | null }
+  /** `key` is the open popover's, null with none open. `primary` and `others` as for the map press rule (PressEvent). */
+  | { readonly type: "down"; readonly pointerId: number; readonly where: PressWhere; readonly touch: boolean; readonly key: string | null; readonly primary?: boolean; readonly others?: boolean }
   /** `taken` is a cancel of the browser's own, as it takes the touch for a scroll or a zoom. A swipe of the page's own cancels with an event of its own (lib/sheetSwipe.ts takePress), so it is not. */
   | { readonly type: "up" | "cancel"; readonly pointerId: number; readonly taken: boolean };
 
@@ -247,16 +257,21 @@ export type OutsideEvent =
  * a tap, it closes the popover, before the tap's click reaches its
  * target. Taken by the browser for a scroll or a zoom, it leaves the
  * popover open, so a roll's menu stays on its button while the panel
- * scrolls (the menu closes once its button leaves the panel's view). A
- * second finger makes it a pinch, which leaves the popover open too. A
- * swipe of the page's own that takes the touch, a sheet's or a page's
- * back, ends it as a tap would. `close` is the key of the popover to
- * close, which the caller closes only if it is still the open one.
+ * scrolls (Popover closes it once its anchor scrolls out of view). A
+ * second finger makes it a pinch, which leaves the popover open too, also
+ * one on the map, in either order. A swipe of the page's own that takes
+ * the touch, a sheet's or a page's back, ends it as a tap would. A first
+ * finger down starts afresh, so a touch whose end never reached the room,
+ * as a swipe may keep it, cannot keep outside touches from closing for
+ * good. `close` is the key of the popover to close, which the caller
+ * closes only if it is still the open one.
  */
 export function outsideTouchStep(state: OutsideTouch, e: OutsideEvent): { state: OutsideTouch; close: string | null } {
   if (e.type === "down") {
-    if (state !== null) return { state: { ...state, pointers: [...state.pointers, e.pointerId], close: false }, close: null };
-    return { state: e.touch && e.where === "elsewhere" && e.key !== null ? { key: e.key, pointers: [e.pointerId], close: true } : null, close: null };
+    const fresh = e.touch && e.primary === true;
+    const before = fresh ? null : state;
+    if (before !== null) return { state: { ...before, pointers: [...before.pointers, e.pointerId], close: false }, close: null };
+    return { state: e.touch && e.where === "elsewhere" && e.key !== null ? { key: e.key, pointers: [e.pointerId], close: fresh || e.others !== true } : null, close: null };
   }
   if (state === null || !state.pointers.includes(e.pointerId)) return { state, close: null };
   const pointers = state.pointers.filter((id) => id !== e.pointerId);
@@ -329,15 +344,16 @@ export class PopoverRoom {
   /** Runs one pointer event through the map press rule. The caller closes the popover as the step says. */
   press(e: PressEvent): PressStep {
     if (e.type === "down" && this.#press === null) this.#ending = false;
-    const step = pressStep(this.#press, e);
-    if (this.#press !== null && step.state === null) this.#ending = true;
+    const step = pressStep(this.#press, e.type === "down" ? { ...e, others: this.#outside !== null } : e);
+    // Only an end lifts a press's last pointer. A first finger that drops a press whose end was lost is no end.
+    if (e.type !== "down" && this.#press !== null && step.state === null) this.#ending = true;
     this.#press = step.state;
     return step;
   }
 
   /** Runs one pointer event through the outside touch rule, and closes the popover it names if that is still the open one. */
   outsideTouch(e: OutsideEvent): void {
-    const step = outsideTouchStep(this.#outside, e);
+    const step = outsideTouchStep(this.#outside, e.type === "down" ? { ...e, others: this.#press !== null } : e);
     this.#outside = step.state;
     if (step.close !== null && this.#open?.key === step.close) this.#open.close("press");
   }

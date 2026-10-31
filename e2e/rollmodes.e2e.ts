@@ -638,6 +638,33 @@ function freeSpot(button: Locator): Promise<{ at: TouchAt; high: TouchAt; inView
   });
 }
 
+/**
+ * Gives the panel around `button` room to settle it in the panel's middle
+ * with 64 px of scroll above, which a font's metrics may leave it without:
+ * on Linux the token bar's whole content showed at 390 x 844, so a finger
+ * scrolled it 0 px. Pads the panel itself, not what React draws in it.
+ */
+function roomToScroll(button: Locator): Promise<void> {
+  return button.evaluate((el) => {
+    type R = { top: number; bottom: number; height: number };
+    type E = { getBoundingClientRect(): R; parentElement: E | null; scrollTop: number; scrollHeight: number; clientHeight: number; offsetHeight: number; style: Record<string, string> };
+    const view = (el as unknown as { ownerDocument: { defaultView: { getComputedStyle(e: E): { overflowY: string; paddingTop: string; paddingBottom: string } } } }).ownerDocument.defaultView;
+    let panel = (el as unknown as E).parentElement;
+    while (panel && !/(auto|scroll)/.test(view.getComputedStyle(panel).overflowY)) panel = panel.parentElement;
+    if (!panel) throw new Error("the button has no panel that scrolls");
+    const p = panel.getBoundingClientRect();
+    const b = (el as unknown as E).getBoundingClientRect();
+    const zoom = p.height / panel.offsetHeight;
+    const center = ((b.top + b.bottom) / 2 - p.top) / zoom + panel.scrollTop;
+    const half = panel.clientHeight / 2;
+    const top = Math.max(0, half + 64 - center);
+    const below = Math.max(0, center + top - half - (panel.scrollHeight + top - panel.clientHeight));
+    const style = view.getComputedStyle(panel);
+    panel.style.paddingTop = `${parseFloat(style.paddingTop) + top}px`;
+    panel.style.paddingBottom = `${parseFloat(style.paddingBottom) + below}px`;
+  });
+}
+
 /** A finger set on `at` and drawn `dy` px down (up if negative) in eight moves, then lifted. Whether `menu` was still open as the finger lifted comes back. */
 async function dragPanel(cdp: CDPSession, at: TouchAt, dy: number, menu: Locator): Promise<boolean> {
   const touches = new Touches(cdp);
@@ -2210,6 +2237,8 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
           const sheet = await openDiceSheet(page);
           await sheet.getByRole("region", { name: "Rolls for Thorn" }).waitFor();
           const luck = sheet.getByRole("button", { name: "Luck, 1d20", exact: true });
+          await luck.waitFor();
+          await roomToScroll(luck);
           await openOn("dice", luck, "top", "Luck 1d20");
           await scrolls("dice", luck, "top", "Luck 1d20");
           // FL-14's back swipe moves the page under the sheet's header with a transform, which makes the page the box of anything fixed inside it.
@@ -2225,6 +2254,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
           const bar = page.getByRole("dialog", { name: "Thorn actions" });
           await bar.waitFor();
           const death = await barControl(bar, "Roll a Death Save");
+          await roomToScroll(death);
           await openOn("hp", death, "middle", "Death Save");
           await scrolls("hp", death, "middle", "Death Save");
           await setDying(false);
@@ -2257,6 +2287,55 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       await waitFor("Thorn up and whole", () => (dmSocket.state?.characters[run.thornChar]?.actor.life === "alive" && dmSocket.state.characters[run.thornChar]!.actor.hp.cur === 30 ? true : null));
     }
     assert.deepEqual(faults, [], "the menu over a scrolled panel");
+  });
+
+  test("fl17-2. any pop-up, not only a roll's menu: on a phone, a roll card's Ask to change it menu stays open while a finger scrolls the card and closes once its button leaves the card's view (FL17-OPUS-01)", async () => {
+    // Thorn's row first, over five more of Pat's creatures, so the card scrolls up past it. A drag down would be the card's own swipe, which folds it.
+    const kin = Array.from({ length: 5 }, () => randomUUID());
+    const id = randomUUID();
+    const context = await browser.newContext({ viewport: PHONE, deviceScaleFactor: 2, isMobile: true, hasTouch: true, reducedMotion: "reduce" });
+    const faults: string[] = [];
+    try {
+      for (const [i, characterId] of kin.entries()) await ops.send({ t: "character.create", character: { id: characterId, name: `Kin ${i + 1}`, size: "medium", ownerIds: [run.patId], actor: actor(), level: 3, stats: THORN_STATS } });
+      await context.addCookies(await patContext.cookies(server.origin));
+      const page = await context.newPage();
+      const cdp = await context.newCDPSession(page);
+      await page.goto(`${server.origin}/r/${run.roomId}`);
+      await page.getByRole("status", { name: "Connected" }).first().waitFor();
+      await page.locator(".konvajs-content").first().waitFor();
+      await ops.send({ t: "roll.ask", request: { id, test: { kind: "save", choices: [{ ability: "dex" }] }, dcShown: false, resultShown: true, targets: [{ characterId: run.thornChar }, ...kin.map((characterId) => ({ characterId }))] } });
+      const card = page.getByRole("dialog", { name: "The DM asks for a roll" });
+      await card.getByRole("button", { name: /^Roll [+−-]\d+ for Thorn$/ }).tap();
+      await waitFor("Thorn's answer", () => (dmSocket.state?.rolls[id]?.targets.find((t) => t.characterId === run.thornChar)?.total !== undefined ? true : null));
+      const ask = card.getByRole("button", { name: "Ask the DM to change Thorn's answer" });
+      const menu = page.getByRole("menu", { name: "Ask the DM to change Thorn's answer" });
+      await ask.waitFor();
+      await settleIn(ask, "middle");
+      await sleep(300);
+      await ask.tap();
+      await menu.waitFor();
+      const spot = await freeSpot(ask);
+      const before = await scrollTopAround(ask);
+      const during = await dragPanel(cdp, spot.at, -48, menu);
+      const scrolled = (await scrollTopAround(ask)) - before;
+      if (Math.abs(scrolled) < 8) faults.push(`setup: the finger's drag scrolled the card only ${scrolled} px`);
+      if (!during || !(await menu.isVisible())) faults.push("a finger scrolling the card closed the menu while its button stayed in view");
+      if (!(await menu.isVisible())) {
+        await ask.tap();
+        await menu.waitFor();
+      }
+      const again = await freeSpot(ask);
+      await dragPanel(cdp, again.at, -0.8 * again.height, menu);
+      const left = !(await freeSpot(ask)).inView;
+      if (!left) faults.push("setup: the long scroll left the button in the card's view");
+      if (left && (await menu.isVisible())) faults.push("the menu stayed open, over the map, once its button left the card's view");
+      await shots.take(page, "fl17-2-ask-menu-scrolled-away");
+    } finally {
+      await ops.send({ t: "roll.close", rollIds: [id] }).catch(() => undefined);
+      for (const characterId of kin) await ops.send({ t: "character.delete", characterId }).catch(() => undefined);
+      await context.close();
+    }
+    assert.deepEqual(faults, [], "a pop-up over a scrolled card");
   });
 
   test("dpf1-13. nothing went wrong in the browsers", () => {

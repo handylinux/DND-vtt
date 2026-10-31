@@ -103,3 +103,17 @@ export function clipToVisible(rect: Rect, visible: { top: number; bottom: number
 export function chromeRect(r: { left: number; top: number; right: number; bottom: number }, scale: number): Rect {
   return { left: r.left / scale, top: r.top / scale, right: r.right / scale, bottom: r.bottom / scale };
 }
+
+/**
+ * Whether an anchor still shows in what scrolled and in the window: its
+ * box meets both. A popover whose anchor scrolled out of either closes,
+ * since in the top layer nothing around the anchor clips it any more
+ * (Popover.tsx, FL-17).
+ */
+export function anchorInView(anchor: Rect, scroller: Rect, viewport: Rect): boolean {
+  const left = Math.max(anchor.left, scroller.left, viewport.left);
+  const top = Math.max(anchor.top, scroller.top, viewport.top);
+  const right = Math.min(anchor.right, scroller.right, viewport.right);
+  const bottom = Math.min(anchor.bottom, scroller.bottom, viewport.bottom);
+  return left < right && top < bottom;
+}

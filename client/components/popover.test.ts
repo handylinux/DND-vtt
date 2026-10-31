@@ -4,7 +4,7 @@ import { describe, test } from "node:test";
 import { mousePans } from "../lib/gestures.ts";
 import { RoomScope } from "../state/scope.ts";
 import { visibleSpan } from "../lib/keyboardInset.ts";
-import { chromeRect, clipToVisible, needsPlace, popoverPlace, type PlaceInput, type Rect } from "./popoverPlace.ts";
+import { anchorInView, chromeRect, clipToVisible, needsPlace, popoverPlace, type PlaceInput, type Rect } from "./popoverPlace.ts";
 import {
   closesAfterTab,
   dismissedBy,
@@ -479,6 +479,50 @@ describe("a touch outside the open popover and its anchor", () => {
     }
   });
 
+  test("a first finger down starts afresh, so a touch whose end never reached the room cannot keep outside touches from closing (FL17-OPUS-02)", () => {
+    assert.deepEqual(run([down(1, { primary: true }), down(2, { primary: true }), up(2)]), { closes: ["roll"], state: null });
+    assert.deepEqual(run([down(1, { primary: true }), down(2), up(2), up(1)]).closes, [], "a second finger of the same touch is still a pinch");
+    const room = new RoomScope().get(popoverSlot);
+    const closes: string[] = [];
+    room.open(entry("roll", closes, room));
+    // A swipe kept this finger's up from the room.
+    room.outsideTouch(down(1, { primary: true }));
+    room.outsideTouch(down(2, { primary: true }));
+    room.outsideTouch(up(2));
+    assert.deepEqual(closes, ["roll:press"]);
+    // The map press rule as well: a press on the map whose end was lost is dropped by the next first finger.
+    assert.equal(pressStep({ pointers: [1], close: true }, { type: "down", pointerId: 2, where: "map", open: true, pan: false, touch: true, primary: true }).state?.close, true);
+    assert.equal(pressStep({ pointers: [1], close: true }, { type: "down", pointerId: 2, where: "map", open: true, pan: false, touch: true, primary: false }).state?.close, false, "a second finger of the same press");
+  });
+
+  /** One gesture through the room as Popover.tsx attachRoom runs it: the outside touch rule first on a down, then the map press rule. */
+  function gesture(steps: readonly { type: "down" | "up"; pointerId: number; where?: "map" | "elsewhere"; primary?: boolean }[]): string[] {
+    const room = new RoomScope().get(popoverSlot);
+    const closes: string[] = [];
+    room.open(entry("roll", closes, room));
+    for (const e of steps) {
+      if (e.type === "down") {
+        const where = e.where ?? "elsewhere";
+        room.outsideTouch({ type: "down", pointerId: e.pointerId, where, touch: true, key: room.current()?.key ?? null, primary: e.primary ?? false });
+        const step = room.press({ type: "down", pointerId: e.pointerId, where, open: room.current() !== null, pan: false, touch: true, primary: e.primary ?? false });
+        if (step.close === "now") room.current()?.close("press");
+      } else {
+        room.outsideTouch({ type: "up", pointerId: e.pointerId, taken: false });
+        if (room.press({ type: "up", pointerId: e.pointerId }).close === "end") room.current()?.close("map");
+      }
+    }
+    return closes;
+  }
+
+  test("a finger outside and one on the map, in either order, are a pinch that leaves it open (FL17-OPUS-03)", () => {
+    assert.deepEqual(gesture([{ type: "down", pointerId: 1, primary: true }, { type: "down", pointerId: 2, where: "map" }, { type: "up", pointerId: 2 }, { type: "up", pointerId: 1 }]), [], "outside, then the map");
+    assert.deepEqual(gesture([{ type: "down", pointerId: 1, primary: true }, { type: "down", pointerId: 2, where: "map" }, { type: "up", pointerId: 1 }, { type: "up", pointerId: 2 }]), [], "outside, then the map, the first finger lifting first");
+    assert.deepEqual(gesture([{ type: "down", pointerId: 1, where: "map", primary: true }, { type: "down", pointerId: 2 }, { type: "up", pointerId: 2 }, { type: "up", pointerId: 1 }]), [], "the map, then outside");
+    assert.deepEqual(gesture([{ type: "down", pointerId: 1, where: "map", primary: true }, { type: "down", pointerId: 2 }, { type: "up", pointerId: 1 }, { type: "up", pointerId: 2 }]), [], "the map, then outside, the first finger lifting first");
+    assert.deepEqual(gesture([{ type: "down", pointerId: 1, primary: true }, { type: "up", pointerId: 1 }]), ["roll:press"], "one finger outside is a tap");
+    assert.deepEqual(gesture([{ type: "down", pointerId: 1, where: "map", primary: true }, { type: "up", pointerId: 1 }]), ["roll:map"], "one finger on the map is a tap");
+  });
+
   test("the room closes the popover the touch began over, and never one opened since", () => {
     const room = new RoomScope().get(popoverSlot);
     const closes: string[] = [];
@@ -494,6 +538,19 @@ describe("a touch outside the open popover and its anchor", () => {
     assert.deepEqual(closes, ["roll:press", "roll:replaced"]);
     assert.equal(room.current()?.key, "other");
   });
+});
+
+test("an anchor stays in view while it meets both what scrolled and the window, and leaves it at any edge (FL17-OPUS-01)", () => {
+  const scroller = { left: 0, top: 100, right: 390, bottom: 700 };
+  const viewport = { left: 0, top: 0, right: 390, bottom: 844 };
+  const at = (top: number, bottom: number, left = 20, right = 120) => anchorInView({ left, top, right, bottom }, scroller, viewport);
+  assert.equal(at(300, 344), true);
+  assert.equal(at(80, 101), true, "a sliver still shows");
+  assert.equal(at(56, 100), false, "scrolled up past the scroller's top, though still in the window");
+  assert.equal(at(700, 744), false, "scrolled down past its bottom");
+  assert.equal(at(300, 344, 390, 450), false, "scrolled sideways out");
+  assert.equal(anchorInView({ left: 20, top: 860, right: 120, bottom: 900 }, { ...scroller, bottom: 1000 }, viewport), false, "below the window, though inside a taller scroller");
+  assert.equal(at(300, 300), false, "no area");
 });
 
 test("the box goes to the top layer once, as a manual popover, and a browser without popovers keeps it where it is", async () => {
