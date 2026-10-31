@@ -529,3 +529,57 @@ test("group quick-roll and shared-attack sources depend on selected roll inputs 
   assert.notEqual(after.get("DEX save for 2"), before.get("DEX save for 2"));
   assert.notEqual(after.get("Rapier for 2"), before.get("Rapier for 2"));
 });
+
+/*
+ * FL17-ASTRA-04: the hit damage rolls only the recorded hits, so its menu
+ * reads Secret against the hitters, not every attacker. A monster no
+ * player plays starts Secret pressed, a player's creature in the open.
+ */
+test("a shared attack's hit damage judges Secret by its hits' creatures, also once the selection has changed, and its attack by every attacker", async () => {
+  const { offersNormal } = await import("../rollMode.ts");
+  const { diceChoicesSlot, panelKeyIn } = panelModule;
+  const state = table();
+  state.characters.d = { ...character("d", { name: "Grik", ownerIds: [], level: 5 }), stats: STATS };
+  state.tokens.td = token("td", { kind: "pc", name: "Grik", ownerIds: [], actor: { ref: "d" } });
+  const view = projectState(state, DM, { sceneId: "s1" }) as unknown as RoomState;
+  const dice: DiceView = { you: DM, view, srd: { monsters: null, rolls: null } };
+  const rapier = sharedAttacksOf(dice, [{ tokenId: "td" }, { tokenId: "ta" }]).find((a) => a.name === "Rapier");
+  assert.ok(rapier, "Grik and Thorn share the Rapier");
+  // Grik's 9 misses AC 12, Thorn's 20 hits.
+  const log: LogEntry[] = [{ id: "7:0", at: "2026-10-23T20:00:00.000Z", kind: "event", data: { type: "dice", tag: TAG, by: "dm1", to: "dm", ac: 12, rolls: [
+    { formula: "1d20+7", faces: [2], total: 9, label: "Rapier", tokenId: "td" },
+    { formula: "1d20+7", faces: [13], total: 20, label: "Rapier", tokenId: "ta" },
+  ] } }];
+  const capabilities = (selectedIds: string[]) => {
+    const scope = new RoomScope();
+    const tracker = scope.get(receiptsSlot);
+    tracker.env = { lookup: async () => ({ parts: [] }), log: () => log };
+    tracker.sending(TAG, 0);
+    tracker.answer(TAG, 0, "taken");
+    const slot = scope.get(sharedAttacksSlot).store;
+    slot.setState({ byName: { Rapier: { ac: 12, acSent: 12, sent: { tag: TAG, each: rapier.each, ac: 12 }, damageTag: null } } });
+    slot.getInitialState = slot.getState;
+    // Secret pressed on for this selection.
+    const choices = scope.get(diceChoicesSlot);
+    choices.setState({ secret: true, secretFor: panelKeyIn({ you: DM, local: { selectedIds } } as never) });
+    choices.getInitialState = choices.getState;
+    menuSources = [];
+    const store = createStore(() => ({ view: { ...view, log }, roomId: "r1", connection: "open", you: DM, sceneId: "s1", local: { selectedIds, multi: false } }));
+    renderToStaticMarkup(createElement(RoomProvider, {
+      store: store as never, actions: { dispatch: () => 1 } as never, ui: {} as never, assets: { url: () => "" } as never,
+      children: createElement(RoomScopeProvider, { scope, children: createElement(GroupOptions, { tokenIds: selectedIds }) }),
+    }));
+    const of = (name: string) => (menuSources as unknown as { name: string; capability: import("../rollMode.ts").RollModeCapability }[]).find((m) => m.name === name)?.capability;
+    return { attack: of("Rapier for 2"), damage: of("Roll damage for 1 hit") };
+  };
+  // Grik is a monster, so Secret starts pressed for the attack: pressed on is no change, and its menu offers no Normal.
+  const both = capabilities(["td", "ta"]);
+  assert.ok(both.attack && both.damage);
+  assert.equal(offersNormal(both.attack), false, "the attack's Secret is where it starts for Grik and Thorn");
+  // Thorn's damage alone starts in the open, so the pressed Secret sends it to the DM and Normal would send it to everyone.
+  assert.equal(offersNormal(both.damage), true, "Thorn's hit damage: Secret pressed away from its start");
+  // Bree and Grik selected now, Thorn's hit kept: the damage still rolls for Thorn.
+  const changed = capabilities(["tb", "td"]);
+  assert.ok(changed.damage);
+  assert.equal(offersNormal(changed.damage), true, "Thorn's kept hit, judged by Thorn, not by the new selection");
+});

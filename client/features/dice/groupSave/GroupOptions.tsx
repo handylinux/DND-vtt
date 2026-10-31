@@ -363,7 +363,7 @@ export function attackSummary(name: string, state: SharedAttackState | undefined
  */
 function SharedAttack(props: { name: string; each: Attacker[]; dice: DiceView; blocked: string | null }) {
   const panel = useDicePanel();
-  // Its attack and damage rolls are each attacker's, whose Secret start the panel reads as it rolls.
+  // The attack rolls for every attacker, whose Secret start the panel reads as it rolls.
   const presses = useRollPresses(props.each.map((e) => e.creature));
   const room = useRoomStore();
   const store = useSharedAttacksStore();
@@ -372,6 +372,8 @@ function SharedAttack(props: { name: string; each: Attacker[]; dice: DiceView; b
   const receipt = useReceipt(state.sent?.tag ?? null);
   const damage = useReceipt(state.damageTag);
   const { results, hits } = hitsOf(state, receipt);
+  // The damage rolls only for the recorded hits, whichever creatures are selected now (FL17-ASTRA-04).
+  const damagePresses = useRollPresses(hits.map(({ each }) => each.creature));
   const n = props.each.length;
   const attack = (override?: RollModeOverride) => {
     const rolls: PanelRoll[] = props.each.map(({ creature, named }) => {
@@ -417,7 +419,7 @@ function SharedAttack(props: { name: string; each: Attacker[]; dice: DiceView; b
         <Note><RollResultLine text={plainResults} expanded={detailedResults} missing={missingModes} /></Note>
       ) : null}
       {hits.length > 0 ? (
-        <Cell text={`Roll damage for ${hits.length} hit${hits.length === 1 ? "" : "s"}`} name={`Roll damage for ${hits.length} hit${hits.length === 1 ? "" : "s"}`} disabled={props.blocked} busy={damage?.state === "sending"} onTap={rollDamage} mode={{ source: `${source}|damage`, capability: { d20: false, visibility: "selectable", damage: true, manual: presses }, valid: () => valid() && damage?.state !== "sending", onRoll: rollDamage }} />
+        <Cell text={`Roll damage for ${hits.length} hit${hits.length === 1 ? "" : "s"}`} name={`Roll damage for ${hits.length} hit${hits.length === 1 ? "" : "s"}`} disabled={props.blocked} busy={damage?.state === "sending"} onTap={rollDamage} mode={{ source: `${source}|damage`, capability: { d20: false, visibility: "selectable", damage: true, manual: damagePresses }, valid: () => valid() && damage?.state !== "sending", onRoll: rollDamage }} />
       ) : null}
       {total !== null ? <Note><RollResultLine text={`${total} damage. Every HP entry offers it as a chip.`} expanded={`${total} damage${secretDamage && !panel.secret ? ", Secret" : ""}. Every HP entry offers it as a chip.`} missing=" Secret" /></Note> : null}
     </div>
