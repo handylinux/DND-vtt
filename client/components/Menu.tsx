@@ -51,8 +51,8 @@ export type MenuItem = {
   disabled?: boolean;
   /** Muted words at a row's end, such as "on top". Hidden from screen readers, since its description says it. */
   note?: string;
-  /** The shortcut it does, from state/shortcuts.ts useKeyHint: `title` its hover title with the key, "Fog (F)", and `aria` its `aria-keyshortcuts`. */
-  keys?: { title: string; aria: string };
+  /** The shortcut it does, from state/shortcuts.ts useKeyHint: `title` its hover title with the key, "Fog (F)", and `aria` its `aria-keyshortcuts`. A roll's options keys have no hover title. */
+  keys?: { title?: string; aria: string };
   /** Drawn in place of `title`, which still names it for typeahead, such as a roll's name, tags and bonus (docs/design-v1-stat-block-rolls.md 4.2). */
   content?: ReactNode;
   /** Merged over the row's own look, such as a proficiency border. */

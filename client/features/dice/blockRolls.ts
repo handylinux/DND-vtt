@@ -1,10 +1,20 @@
-import type { D20Test } from "#shared/dice/bonus.ts";
+import { bonusFor, type D20Test } from "#shared/dice/bonus.ts";
+import { startsSecret } from "#shared/dice/secret.ts";
 import type { AbilityKey, CharacterId, RoomState, SkillKey, TokenId } from "#shared/model.ts";
+import { playersTypeTotals } from "#shared/permissions.ts";
+import { playersToken } from "#shared/project.ts";
 import type { ActorTarget } from "#shared/protocol.ts";
 import type { Proficiency } from "#shared/rules/proficiency.ts";
 import type { RollPreset } from "#shared/rules/rollReminders.ts";
+import { ABILITY_NAMES, SKILLS, skillsOf } from "#shared/rules/skills.ts";
+import { displayName } from "../../lib/scene.ts";
 import type { You } from "../../state/types.ts";
-import type { CreatureRolls, DiceView } from "./creature.ts";
+import { requestRollSource } from "../rolls/card.ts";
+import { ownsCharacter } from "../tokens/access.ts";
+import { creatureProficiency, type CreatureRolls, type DiceView } from "./creature.ts";
+import { creatureKey, initiativeRow, initiativeTag, playerCreatures, presetLine, presetTag, routedTest, routeOf, scoreOf, signedText, testLabel } from "./options.ts";
+import { presetFor } from "./presets.ts";
+import { marksTest } from "./proficiencyPresentation.ts";
 import type { RollModeCapability } from "./rollMode.ts";
 
 /**
@@ -24,8 +34,33 @@ export type BlockFrom = { tokenId: TokenId } | { characterId: CharacterId };
 export type BlockRoller = { creature: ActorTarget; tokenId?: TokenId; name: string; played: boolean };
 
 /** Who rolls from a block, or null where its boxes stay text (section 2). */
-export function blockRoller(_view: RoomState, _you: You, _sceneId: string | null, _from: BlockFrom): BlockRoller | null {
-  return null;
+export function blockRoller(view: RoomState, you: You, sceneId: string | null, from: BlockFrom): BlockRoller | null {
+  const dm = you.role === "dm";
+  const onScene = (t: RoomState["tokens"][string]) => t.sceneId === sceneId;
+  if ("characterId" in from) {
+    const character = view.characters[from.characterId];
+    if (!character) return null;
+    // The token the Dice panel picks for it: its first on the viewer's scene (playerCreatures).
+    const token = Object.values(view.tokens).find((t) => onScene(t) && "ref" in t.actor && t.actor.ref === character.id);
+    if (dm ? token === undefined : !ownsCharacter(you.memberId, character)) return null;
+    return characterRoller(view, dm, character, token);
+  }
+  const token = view.tokens[from.tokenId];
+  if (!token || token.kind === "object") return null;
+  if ("ref" in token.actor) {
+    const character = view.characters[token.actor.ref];
+    // The DM rolls for a character through a token on the scene in view. A player rolls for their own character wherever its token stands, and never with numbers they do not hold.
+    if (!character || (dm ? !onScene(token) : !ownsCharacter(you.memberId, character))) return null;
+    return characterRoller(view, dm, character, token);
+  }
+  if (dm ? !onScene(token) : !playerCreatures(view, you.memberId, sceneId, displayName).some((o) => "tokenId" in o.creature && o.creature.tokenId === token.id)) return null;
+  return { creature: { tokenId: token.id }, tokenId: token.id, name: displayName(token), played: dm && playersToken(view, token) };
+}
+
+/** A character's roller, its token the one on the viewer's scene, played as the Dice panel's card reads it (RollOptions useCtx). */
+function characterRoller(view: RoomState, dm: boolean, character: RoomState["characters"][string], token: RoomState["tokens"][string] | undefined): BlockRoller {
+  const played = dm && (token ? playersToken(view, token) : character.ownerIds.some((id) => view.members[id]?.kind === "player"));
+  return { creature: { characterId: character.id }, ...(token ? { tokenId: token.id } : {}), name: character.name, played };
 }
 
 /** The tests in the Dice panel's exact shapes, so their row keys match its cells' (section 7). */
@@ -94,6 +129,114 @@ export type AbilityRowsInput = {
 };
 
 /** An ability's rows in order (4.1), or none while its creature has no numbers. */
-export function abilityRows(_ability: AbilityKey, _input: AbilityRowsInput): AbilityRow[] {
-  return [];
+export function abilityRows(ability: AbilityKey, input: AbilityRowsInput): AbilityRow[] {
+  const { dice, rolls, roller } = input;
+  const numbers = rolls.numbers;
+  if (!numbers) return [];
+  const state = dice.view;
+  const dm = dice.you.role === "dm";
+  const { creature } = roller;
+  const key = creatureKey(state, creature);
+  const presetOf = (test: D20Test) => presetFor(dice, creature, test, { rolls });
+  // A DM's free roll for a creature no player plays starts secret, so Roll secretly would repeat the tap (D-261031-131).
+  const secretTap = startsSecret(state, dm, [creature]);
+  const tests: { id: string; kind: AbilityRow["kind"]; test: Extract<D20Test, { kind: "save" | "check" }>; words: string }[] = [
+    { id: "check", kind: "check", test: checkTest(ability), words: "Check" },
+    { id: "save", kind: "save", test: saveTest(ability), words: "Save" },
+    ...skillsOf(ability).map((skill) => ({ id: skill, kind: "skill" as const, test: skillTest(ability, skill), words: SKILLS[skill].name })),
+  ];
+  const out: AbilityRow[] = tests.map(({ id, kind, test, words }) => {
+    const route = routeOf({ state, creature, test, dm, played: roller.played, ask: input.ask });
+    const preset = presetOf(routedTest(route, test));
+    const bonus = bonusFor(numbers, test) ?? 0;
+    const level = marksTest(test) ? creatureProficiency(dice, creature, test) : undefined;
+    const title = kind === "skill" ? `${words} ${signedText(bonus)}` : `${ABILITY_NAMES[ability]} ${kind} ${signedText(bonus)}`;
+    const how = route.kind === "answer" ? "answers the DM's request" : route.kind === "ask" ? `asks ${roller.name}` : "";
+    const rowKey = `${key}|${JSON.stringify(test)}`;
+    const sourceRoute = route.kind === "answer" ? [route.kind, requestRollSource(route.request, route.target), route.choice] : route;
+    return {
+      id,
+      kind,
+      test,
+      words,
+      bonus,
+      bonusText: signedText(bonus),
+      // The whole preset tag on each row, since no group label carries the shared parts here (D-261031-135).
+      tag: [route.kind === "answer" ? "Asked" : route.kind === "ask" ? "Asks" : "", presetTag(preset)].filter(Boolean).join(" "),
+      ...(level !== undefined ? { level } : {}),
+      route: route.kind,
+      // An ask has no one-roll options (docs/design-v1-roll-mode-menu.md 4). An answer keeps the request's visibility, so Secret stays with its reason (D-261031-169).
+      capability: route.kind === "ask" ? null : route.kind === "answer" ? { d20: true, visibility: "request" } : { d20: true, visibility: "selectable", ...(secretTap ? { secretByDefault: true } : {}) },
+      rowKey,
+      source: JSON.stringify([rowKey, sourceRoute, test, bonus, preset, creature, input.ask]),
+      name: [`${title}${spoken(level)}`, how, presetLine(preset)].filter(Boolean).join(", "),
+      title,
+      label: testLabel(test),
+      preset,
+    };
+  });
+  if (ability === "dex" && rolls.initBonus !== null) out.push(...initiativeRows(input, key, secretTap, rolls.initBonus, presetOf({ kind: "initiative" })));
+  return out;
+}
+
+/** What a row's name adds for its mark, as ProficiencyMark's spokenProficiency words it, kept here so this file needs no React. */
+function spoken(level: Proficiency | undefined): string {
+  return level === "expert" ? ", expertise" : level === "prof" ? ", proficient" : "";
+}
+
+/**
+ * Initiative under Dexterity (4.3): one roll, or in a room that uses
+ * scores, for a monster with a row, the score that sets the row without
+ * dice and then the roll, as the Dice panel's "Score 12" and "Roll instead"
+ * (InitiativeCell).
+ */
+function initiativeRows(input: AbilityRowsInput, key: string, secretTap: boolean, bonus: number, preset: RollPreset): AbilityRow[] {
+  const state = input.dice.view;
+  const dm = input.dice.you.role === "dm";
+  const { creature } = input.roller;
+  const entry = initiativeRow(state, creature);
+  // A score set without a roll is a typed value to the server, which a player's room may have off (shared/permissions.ts playersTypeTotals).
+  const score = entry && (dm || playersTypeTotals(state.meta.settings)) ? scoreOf(state, creature) : null;
+  const scored = score !== null && entry !== undefined;
+  const rowKey = `${key}|initiative`;
+  const title = `${scored ? "Roll initiative" : "Initiative"} ${signedText(bonus)}`;
+  const does = scored ? "replaces the score" : entry ? (entry.value === null ? "sets its row" : `replaces ${entry.value}`) : "";
+  const roll: AbilityRow = {
+    id: "initiative",
+    kind: "initiative",
+    test: { kind: "initiative" },
+    words: scored ? "Roll initiative" : "Initiative",
+    bonus,
+    bonusText: signedText(bonus),
+    tag: scored ? ["replaces the score", initiativeTag(null, preset)].filter(Boolean).join(" · ") : initiativeTag(entry ?? null, preset),
+    route: "roll",
+    capability: { d20: true, visibility: "selectable", ...(secretTap ? { secretByDefault: true } : {}) },
+    rowKey,
+    source: JSON.stringify([rowKey, entry, bonus, preset, creature]),
+    name: [title, does, presetLine(preset)].filter(Boolean).join(", "),
+    title,
+    label: "Initiative",
+    preset,
+    ...(entry ? { entryId: entry.id } : {}),
+  };
+  if (!scored) return [roll];
+  const scoreRow: AbilityRow = {
+    id: "score",
+    kind: "score",
+    test: null,
+    words: "Initiative score",
+    bonus: score,
+    bonusText: String(score),
+    tag: "",
+    route: "score",
+    capability: null,
+    rowKey: `${key}|initiative-score`,
+    source: JSON.stringify([rowKey, entry, score]),
+    name: `Initiative score ${score}, sets its row`,
+    title: `Initiative score ${score}`,
+    label: "Initiative",
+    preset,
+    entryId: entry.id,
+  };
+  return [scoreRow, roll];
 }
