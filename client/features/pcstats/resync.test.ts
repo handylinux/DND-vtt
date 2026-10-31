@@ -92,6 +92,13 @@ describe("a field's words", () => {
 });
 
 describe("the review's lines (3.3)", () => {
+  test("a re-sync that turns Jack of All Trades on or off says so", () => {
+    const jackFill = (jack: boolean): PcFill => ({ ...fillOf({}), stats: { ...fillOf({}).stats, jack } });
+    const lines = (p: SyncPlan) => p.items.filter((i) => i.section === "changes").map((i) => changeLine(i, blocks(p), false));
+    assert.deepEqual(lines(plan(synced(jackFill(false)), jackFill(true))), ["Jack of All Trades: Yes, now no"]);
+    assert.deepEqual(lines(plan(synced(jackFill(true)), jackFill(false))), ["Jack of All Trades: No, now yes"]);
+  });
+
   test("changes from D&D Beyond: a field, a roll added, updated and removed, and a first sync without now", () => {
     const first = synced(fillOf({ abilities: { ...empty().abilities, wis: 16 }, rolls: [shillelagh({ id: "r1" }), sling({ id: "r2" })] }));
     const p = plan(first, fillOf({ abilities: { ...empty().abilities, wis: 18 }, rolls: [shillelagh({ id: "r3", dice: [{ formula: "1d10", mod: true, type: "bludgeoning" }] }), { id: "r4", name: "Moonbeam", kind: "spell", ability: "spell", level: 2, save: { ability: "con" }, dice: [{ formula: "2d10", type: "radiant" }] }] }));

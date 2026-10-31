@@ -101,6 +101,25 @@ describe("the derived numbers (docs/design-v1-pc-stats.md 3.3)", () => {
     assert.equal(pcDerived({ ...block, alert: undefined }, 5).initiative.total, 2 + 1 + 1);
   });
 
+  test("Jack of All Trades at levels 1, 4, 5, 9 and 17: half the bonus on skills with neither, passives included, never initiative or a plain check", () => {
+    const abilities = { str: 10, dex: 14, con: 10, int: 12, wis: 14, cha: 16 };
+    for (const [level, pb] of [[1, 2], [4, 2], [5, 3], [9, 4], [17, 6]] as const) {
+      const half = Math.floor(pb / 2);
+      const block = stats({ abilities, skills: { insight: "prof", stealth: "expert" }, jack: true });
+      const plain = stats({ abilities, skills: { insight: "prof", stealth: "expert" } });
+      const d = pcDerived(block, level);
+      assert.equal(d.pb, pb);
+      assert.equal(d.skills.perception.total, 2 + half, `Perception at ${level}`);
+      assert.equal(d.skills.investigation.total, 1 + half, `Investigation at ${level}`);
+      assert.equal(d.skills.insight.total, 2 + pb, "proficient is unchanged");
+      assert.equal(d.skills.stealth.total, 2 + 2 * pb, "expertise is unchanged");
+      assert.equal(d.passive.total, 10 + 2 + half, "Passive Perception reads the skill");
+      assert.equal(d.initiative.total, pcDerived(plain, level).initiative.total, "initiative is not a skill");
+      for (const a of ["str", "dex", "con", "int", "wis", "cha"] as const) assert.equal(d.checks[a].total, pcDerived(plain, level).checks[a].total, `${a} check`);
+      assert.equal(pcActorNumbers(block, level).passivePerception, 10 + 2 + half, "the actor's Passive Perception");
+    }
+  });
+
   test("Passive Perception is 10 and the Perception skill, then its own adjustment", () => {
     const block = stats({ abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 14, cha: 10 }, skills: { perception: "prof" }, adjust: { passive: -3 } });
     const d = pcDerived(block, 5);
