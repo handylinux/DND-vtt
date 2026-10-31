@@ -415,7 +415,7 @@ function OpenPopover(props: PopoverProps) {
       if (!popoverTakesEscape(e.target, { box, anchor: h.anchor.current })) return;
       // Used, so the room's Escape, the map panes and the shortcuts, which all skip a used key, leave it alone.
       e.preventDefault();
-      h.close("escape");
+      if (backStep("escape", latest.current.stepBack) === "close") h.close("escape");
     };
     const onFocusIn = (e: FocusEvent) => {
       const at = focusAt(e.target, box, h.anchor.current);
@@ -474,7 +474,13 @@ function OpenPopover(props: PopoverProps) {
     };
   }, [place, updateMore]);
 
-  useBackClose(true, () => latest.current.handle.close("back"));
+  // Keyed, so a Back that only stepped back registers it anew: the back closer dropped this registration and its history entry before it asked (D-261031-162).
+  const [backKey, setBackKey] = useState(0);
+  useBackClose(`popover:${backKey}`, () => {
+    const step = backStep("back", latest.current.stepBack);
+    if (step === "close") latest.current.handle.close("back");
+    else if (step === "renew") setBackKey((key) => key + 1);
+  });
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "Tab" || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
@@ -544,6 +550,17 @@ function OpenPopover(props: PopoverProps) {
       </div>
     </PopoverContext.Provider>
   );
+}
+
+/**
+ * What Escape or Back does to an open popover (docs/design-v1-stat-block-rolls.md
+ * 5.3): it closes, unless its step back keeps it open. A Back kept open
+ * renews its registration, since the Back used up its history entry. An
+ * Escape kept open stays as it is, so no history moves for it (D-261031-170).
+ */
+export function backStep(reason: "escape" | "back", stepBack: PopoverProps["stepBack"]): "close" | "stay" | "renew" {
+  if (!stepBack?.(reason)) return "close";
+  return reason === "back" ? "renew" : "stay";
 }
 
 /**

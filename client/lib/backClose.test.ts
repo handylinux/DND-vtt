@@ -1,3 +1,4 @@
+import "../components/testing/register.ts";
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { BackCloser, isOverlayEntry, sameEntryBehind, withoutMark, type HistoryLike } from "./backClose.ts";
@@ -284,6 +285,101 @@ describe("Back closes what floats over the room", () => {
     unregister();
     history.flush();
     assert.equal((history.state as { page: string }).page, "home");
+    assert.equal(history.queued.length, 0);
+  });
+});
+
+describe("a popover that steps back on Back (docs/design-v1-stat-block-rolls.md 5.3)", async () => {
+  const { backStep } = await import("../components/Popover.tsx");
+
+  /**
+   * Popover's Back registration as React runs it: keyed on a count that a
+   * Back its step back kept open raises, so the next render registers anew
+   * (D-261031-162). `steps` is how many Backs it keeps open: one, from a
+   * roll's options to the ability's list.
+   */
+  function steppingPopover(closer: BackCloser, steps: number) {
+    let key = 0;
+    let open = true;
+    let left = steps;
+    const stepBack = () => (left > 0 ? (left--, true) : false);
+    let registered: { key: number; unregister(): void } | null = null;
+    const render = () => {
+      const want = open ? key : null;
+      if (registered?.key === want) return;
+      registered?.unregister();
+      registered = want === null ? null : {
+        key: want,
+        unregister: closer.open(() => {
+          const step = backStep("back", stepBack);
+          if (step === "close") open = false;
+          else if (step === "renew") key++;
+        }),
+      };
+    };
+    render();
+    return {
+      render,
+      get open() {
+        return open;
+      },
+      /** Escape as the popover's listener takes it: no registration changes. */
+      escape: () => backStep("escape", stepBack),
+    };
+  }
+
+  test("alone: Back goes from the options to the list, the next Back closes it, and no entry of ours is left behind", () => {
+    const { history, closer } = setup();
+    const popover = steppingPopover(closer, 1);
+    assert.ok(isOverlayEntry(history.state));
+    history.userBack();
+    history.flush();
+    popover.render();
+    assert.equal(popover.open, true, "back on the list");
+    assert.ok(isOverlayEntry(history.state), "registered anew, so the next Back closes the list and not the room");
+    history.userBack();
+    history.flush();
+    popover.render();
+    history.flush();
+    assert.equal(popover.open, false);
+    assert.equal(history.index, 0);
+    assert.equal(isOverlayEntry(history.state), false, "the next Back leaves as it did before the list opened");
+  });
+
+  test("above a sheet: options, list, closed, then the third Back closes the sheet and the room is still the page", () => {
+    const { history, closer } = setup();
+    let sheet = true;
+    let unregisterSheet: (() => void) | null = closer.open(() => {
+      sheet = false;
+      unregisterSheet?.();
+      unregisterSheet = null;
+    });
+    const popover = steppingPopover(closer, 1);
+    const back = () => {
+      history.userBack();
+      history.flush();
+      popover.render();
+      history.flush();
+    };
+    back();
+    assert.deepEqual([popover.open, sheet], [true, true]);
+    back();
+    assert.deepEqual([popover.open, sheet], [false, true], "the list closed, its sheet still open");
+    assert.ok(isOverlayEntry(history.state), "the sheet keeps an entry");
+    back();
+    assert.deepEqual([popover.open, sheet], [false, false]);
+    assert.equal(history.index, 0);
+    assert.deepEqual(history.state, { page: "room" }, "still the room");
+  });
+
+  test("an Escape kept open touches no history: no push, no step back, the same entry on top (D-261031-170)", () => {
+    const { history, closer } = setup();
+    const popover = steppingPopover(closer, 1);
+    const before = { entries: [...history.entries], index: history.index, state: history.state };
+    assert.equal(popover.escape(), "stay");
+    popover.render();
+    history.flush();
+    assert.deepEqual({ entries: [...history.entries], index: history.index, state: history.state }, before);
     assert.equal(history.queued.length, 0);
   });
 });

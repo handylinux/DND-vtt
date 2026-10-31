@@ -161,7 +161,8 @@ export function Menu(props: {
    * falls to the page between the item going and the anchor taking it.
    */
   const pick = (id: string) => {
-    if (items.find((item) => item.id === id)?.disabled === true) return;
+    const it = items.find((item) => item.id === id);
+    if (it?.disabled === true || it?.busy === true) return;
     flushSync(() => props.onPick(id));
     handle.close("pick");
   };
@@ -194,8 +195,11 @@ export function Menu(props: {
     const described = it.description ? `${ids}-${it.id}` : undefined;
     const look = buttonLook("quiet", { pressed: checked, disabled });
     return (
+      // A binding's handlers go first, so Menu's own click below stays the one pick (docs/design-v1-stat-block-rolls.md 4.7).
       <div
         key={it.id}
+        {...it.data}
+        {...it.events}
         ref={(node) => {
           if (node) nodes.current.set(it.id, node);
           else nodes.current.delete(it.id);
@@ -203,23 +207,25 @@ export function Menu(props: {
         role={checkbox ? "menuitemcheckbox" : it.kind === "action" ? "menuitem" : "menuitemradio"}
         aria-checked={it.kind === "action" ? undefined : checked}
         aria-disabled={disabled || undefined}
+        aria-busy={it.busy || undefined}
+        aria-label={it.label}
         aria-describedby={described}
         aria-keyshortcuts={it.keys?.aria}
         title={it.keys?.title}
         tabIndex={-1}
         onClick={() => pick(it.id)}
-        style={tiles ? { ...TILE, ...look } : { ...ROW, ...look, ...(disabled ? { cursor: "default" } : null) }}
+        style={tiles ? { ...TILE, ...look, ...it.style } : { ...ROW, ...look, ...(disabled || it.busy ? { cursor: "default" } : null), ...it.style }}
       >
         {tiles ? (
           <>
             {it.glyph ? <span aria-hidden style={{ display: "grid", placeItems: "center" }}>{it.glyph}</span> : null}
-            <span>{it.title}</span>
+            {it.content ?? <span>{it.title}</span>}
           </>
         ) : (
           <>
             {it.glyph ? <span aria-hidden style={{ display: "grid", placeItems: "center", flex: "none" }}>{it.glyph}</span> : null}
             {/* Unlike anywhere, break-word preserves the intrinsic word width while keeping a name longer than the cap inside the menu. */}
-            <span style={{ flex: "1 1 auto", minWidth: 0, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal" }}>{it.title}</span>
+            {it.content ?? <span style={{ flex: "1 1 auto", minWidth: 0, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal" }}>{it.title}</span>}
             {it.note ? (
               <span aria-hidden style={{ flex: "none", color: theme.color.textMuted, fontSize: theme.font.small, fontWeight: theme.weight.regular }}>
                 {it.note}

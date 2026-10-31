@@ -739,3 +739,26 @@ describe("focus stays inside the popover's scroll boundary", () => {
     assert.deepEqual(f.outer, { scrollTop: 278, scrollLeft: 30 });
   });
 });
+
+describe("a popover that steps back before it closes (docs/design-v1-stat-block-rolls.md 5.3)", async () => {
+  await import("./testing/register.ts");
+  const { backStep } = await import("./Popover.tsx");
+
+  test("with no step back, or one that declines, Escape and Back close it as before", () => {
+    for (const reason of ["escape", "back"] as const) {
+      assert.equal(backStep(reason, undefined), "close");
+      assert.equal(backStep(reason, () => false), "close");
+    }
+  });
+
+  test("a step back keeps it open, and only a Back renews its registration, since only a Back used up its history entry (D-261031-170)", () => {
+    const told: string[] = [];
+    const stepBack = (reason: "escape" | "back") => {
+      told.push(reason);
+      return true;
+    };
+    assert.equal(backStep("escape", stepBack), "stay");
+    assert.equal(backStep("back", stepBack), "renew");
+    assert.deepEqual(told, ["escape", "back"], "the step back is told which it was");
+  });
+});
