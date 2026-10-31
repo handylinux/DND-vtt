@@ -105,8 +105,8 @@ export function useRollOption(surface?: "dice") {
         if (route.kind === "answer") {
           if (input.override === "secret") return null;
           const preset = input.presetOf ? input.presetOf(routedTest(route, input.test)) : input.preset;
-          // The taken choices belong to this tap, as a panel roll's do, and come back if nothing went.
-          const taken = input.override ? panel.peek() : panel.take();
+          // The taken choices belong to this tap, as a panel roll's do, and come back if nothing went. A stat block's takes none.
+          const taken = input.choices === "none" ? { sources: [], secret: false, restore() {} } : input.override ? panel.peek() : panel.take();
           const tag = uuidv7();
           const extra = preset.extra.join("").replace(/^\+/, "");
           const n = sendRoll(
@@ -126,12 +126,13 @@ export function useRollOption(surface?: "dice") {
           );
           if (n === null) {
             taken.restore();
+            input.onFail?.(NEEDS_CONNECTION);
             return null;
           }
           panel.noted(tag, input.label, origin());
           return remember(input.row, tag);
         }
-        return remember(input.row, panel.roll([asInitiative(asSave(d20Roll(input.creature, input.bonus, input.preset, input.label, input.critOn), input.test), input.test)], { origin: origin(), override: input.override }));
+        return remember(input.row, panel.roll([asInitiative(asSave(d20Roll(input.creature, input.bonus, input.preset, input.label, input.critOn), input.test), input.test)], { origin: origin(), override: input.override, ...(input.choices ? { choices: input.choices } : {}), ...(input.onFail ? { onFail: input.onFail } : {}) }));
       },
       /**
        * A death save, counted by the server from the state then (4.3).

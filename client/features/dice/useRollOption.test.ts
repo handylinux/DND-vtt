@@ -23,12 +23,12 @@ const { useRollOption } = await import("./useRollOption.ts");
 type Api = ReturnType<typeof useRollOption>;
 
 /** The hook's sends, captured from one render: its functions read the room's store and scope when called, not when drawn. */
-function probe(): { api: Api; sent: ClientOp[]; scope: InstanceType<typeof RoomScope>; view: ReturnType<typeof room> } {
+function probe(connection = "open"): { api: Api; sent: ClientOp[]; scope: InstanceType<typeof RoomScope>; view: ReturnType<typeof room> } {
   const view = room({
     characters: { bree: character("bree", { name: "Bree", ownerIds: ["p1"] }) },
     tokens: { drag: token("drag", { kind: "monster", name: "Dragon" }), bt: token("bt", { kind: "pc", name: "Bree", ownerIds: ["p1"], actor: { ref: "bree" } }) },
   });
-  const store = createStore(() => ({ view, roomId: "r1", connection: "open", you: DM, sceneId: "s1", local: { selectedIds: ["drag"], multi: false } }));
+  const store = createStore(() => ({ view, roomId: "r1", connection, you: DM, sceneId: "s1", local: { selectedIds: ["drag"], multi: false } }));
   const sent: ClientOp[] = [];
   const scope = new RoomScope();
   let api: Api | null = null;
@@ -125,4 +125,55 @@ test("free d20 and plain-roll overrides reach the panel without taking its choic
   api.rolls([{ formula: "1d6" }], "plain", "secret");
   assert.equal(sent[1]?.t === "dice.roll" && sent[1].to, "dm");
   assert.equal(choices.getState().adv, true); assert.equal(choices.getState().version, 17);
+});
+
+describe("a stat block's d20, which takes no panel choices (docs/design-v1-stat-block-rolls.md 7)", () => {
+  const request = { id: "q1", rev: 0, at: "2026-10-30T12:00:00Z", test: { kind: "save" as const, choices: [{ ability: "dex" as const }] }, dcShown: false, resultShown: false, targets: [{ tokenId: "drag" }] };
+  const input = { creature: { tokenId: "drag" }, test: { kind: "save" as const, ability: "dex" as const }, bonus: 4, preset: { ...NONE, sources: [{ kind: "dis" as const, from: "restrained" }] }, label: "Dexterity save", row: "t:drag|save", played: false, ask: false, choices: "none" as const };
+
+  test("an answer sends only the preset's sources and the pick's, and the panel's Adv and Secret stand", () => {
+    const { api, sent, scope, view } = probe();
+    view.rolls.q1 = request;
+    const choices = scope.get(diceChoicesSlot);
+    choices.setState({ adv: true, secret: true, version: 31 });
+    assert.ok(api.d20(input));
+    assert.equal(sent[0]?.t === "roll.dice" && sent[0].mode, "dis", "Restrained alone: the Adv pressed in the panel never reaches it");
+    assert.equal(sent[0]?.t === "roll.dice" && sent[0].cancelled, undefined);
+    assert.ok(api.d20({ ...input, override: "adv" }));
+    assert.equal(sent[1]?.t === "roll.dice" && sent[1].cancelled, true, "the pick meets Restrained");
+    assert.deepEqual([choices.getState().adv, choices.getState().secret, choices.getState().version], [true, true, 31]);
+    assert.deepEqual(choices.getState().last, { tag: (sent[1] as { tag: string }).tag, once: true, label: "Dexterity save" }, "the answer is the newest line, with no Again");
+  });
+
+  test("a free roll goes under its own start with the panel's choices untouched", () => {
+    const { api, sent, scope } = probe();
+    const choices = scope.get(diceChoicesSlot);
+    choices.setState({ adv: true, secret: false, secretFor: "drag", version: 41 });
+    assert.ok(api.d20(input));
+    assert.equal(sent[0]?.t === "dice.roll" && sent[0].to, "dm", "a DM's monster roll is secret, whatever was pressed off for it");
+    assert.equal(sent[0]?.t === "dice.roll" && sent[0].rolls[0]?.mode, "dis");
+    assert.equal(choices.getState().version, 41);
+  });
+
+  test("an answer or a roll that does not go tells the caller why, once, and the newest line stays", () => {
+    for (const answer of [true, false]) {
+      const { api, sent, scope, view } = probe("closed");
+      if (answer) view.rolls.q1 = request;
+      const choices = scope.get(diceChoicesSlot);
+      choices.setState({ last: { tag: "older", once: true, label: "Strength check" } });
+      const heard: string[] = [];
+      assert.equal(api.d20({ ...input, onFail: (w) => heard.push(w) }), null);
+      assert.deepEqual(heard, ["Rolling needs a connection."], answer ? "the answer route" : "the free route");
+      assert.equal(sent.length, 0);
+      assert.deepEqual(choices.getState().last, { tag: "older", once: true, label: "Strength check" });
+    }
+  });
+
+  test("a null for anything else is no failure: a creature gone, a missing bonus", () => {
+    const { api } = probe();
+    const heard: string[] = [];
+    assert.equal(api.d20({ ...input, creature: { tokenId: "gone" }, onFail: (w) => heard.push(w) }), null);
+    assert.equal(api.d20({ ...input, bonus: null, onFail: (w) => heard.push(w) }), null);
+    assert.deepEqual(heard, []);
+  });
 });

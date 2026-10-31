@@ -64,3 +64,21 @@ test("returned fields describe the effective result", () => {
   assert.equal(effectiveRollMode({ formula: "1d20" }), "Normal");
   assert.equal(effectiveRollMode({ formula: "1d6" }, true), "Secret");
 });
+
+test("where a tap is secret already, the menu and its shortcut words leave Secret out, and every other capability keeps FL-17's items (D-261031-131)", () => {
+  const ids = (capability: Parameters<typeof rollModeItems>[0]) => rollModeItems(capability, true).map((i) => i.id);
+  assert.deepEqual(ids({ d20: true, visibility: "selectable", secretByDefault: true }), ["adv", "dis"], "a DM's free roll for a monster: Advantage and Disadvantage only");
+  assert.equal(rollModeHint({ d20: true, visibility: "selectable", secretByDefault: true }), "Hold, right-click or Shift+F10 for Advantage or Disadvantage.");
+  assert.equal(hasRollModeMenu({ d20: false, visibility: "selectable", secretByDefault: true }), false, "a roll with no d20 has nothing left to offer");
+  assert.deepEqual(ids({ d20: false, visibility: "selectable", secretByDefault: true }), []);
+  assert.equal(rollModeHint({ d20: false, visibility: "selectable", secretByDefault: true }), undefined);
+  // An answer keeps the request's visibility, so its disabled Secret still says why (D-261031-169).
+  const answer = rollModeItems({ d20: true, visibility: "request", secretByDefault: true }, true);
+  assert.deepEqual(answer.map((i) => [i.id, i.disabled === true]), [["adv", false], ["dis", false], ["secret", true]]);
+  assert.equal(answer[2]?.description, FIXED_VISIBILITY.request);
+  for (const visibility of ["selectable", "request", "creature", "repeat"] as const) for (const d20 of [false, true]) for (const manual of [{}, { mode: true }, { secret: true }]) {
+    const capability = { d20, visibility, manual };
+    assert.deepEqual(rollModeItems({ ...capability, secretByDefault: false }, true), rollModeItems(capability, true), `false is the same as absent: ${JSON.stringify(capability)}`);
+    assert.equal(rollModeHint({ ...capability, secretByDefault: false }), rollModeHint(capability));
+  }
+});

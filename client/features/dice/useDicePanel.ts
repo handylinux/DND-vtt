@@ -212,23 +212,27 @@ export function createDicePanel(deps: {
     },
     roll(rolls, opts = {}) {
       const panel = opts.to === undefined;
+      // A stat block's roll leaves the panel's choices as they stand (D-261031-113), and its failure to its caller (D-261031-164).
+      const own = opts.choices === "none";
       const baseline = secretStart(rolls.flatMap((r) => r.creature ? [r.creature] : []));
       const state = store.getState();
-      const taken = panel && !opts.override ? take(store, baseline, panelKey()) : null;
-      const manual = taken?.sources ?? (panel && opts.override ? [...(state.adv ? [{ kind: "adv" as const, from: "pressed" }] : []), ...(state.dis ? [{ kind: "dis" as const, from: "pressed" }] : [])] : []);
-      const ordinary = (taken?.secret ?? secretNow(state, panelKey(), baseline)) ? "dm" : "all";
+      const taken = panel && !own && !opts.override ? take(store, baseline, panelKey()) : null;
+      const manual = taken?.sources ?? (panel && !own && opts.override ? [...(state.adv ? [{ kind: "adv" as const, from: "pressed" }] : []), ...(state.dis ? [{ kind: "dis" as const, from: "pressed" }] : [])] : []);
+      const ordinary = (own ? baseline : (taken?.secret ?? secretNow(state, panelKey(), baseline))) ? "dm" : "all";
       const to = opts.to ?? rollModeTo(ordinary, baseline ? "dm" : "all", opts.override);
+      const failed = (error: string) => {
+        taken?.restore();
+        if (panel && !own) fail(error);
+        opts.onFail?.(error);
+        return null;
+      };
       const inputs: DiceRollInput[] = [];
       for (const roll of rolls) {
         const { sources = [], modeEligible, ...rest } = roll;
         const resolved = overrideRollSources(sources, manual, opts.override);
         // A roll with no d20, such as damage, never gets a source: a typed one there is refused, the panel's left out.
         if (!acceptsRollMode(roll.formula) || modeEligible === false) {
-          if (advantageFields(sources).mode && (!opts.override || opts.override === "secret")) {
-            taken?.restore();
-            if (panel) fail(FORMULA_ERRORS.mode);
-            return null;
-          }
+          if (advantageFields(sources).mode && (!opts.override || opts.override === "secret")) return failed(FORMULA_ERRORS.mode);
           inputs.push(rest);
           continue;
         }
@@ -236,11 +240,7 @@ export function createDicePanel(deps: {
       }
       const envelope = { to, ...(opts.dc !== undefined ? { dc: opts.dc } : {}), ...(opts.ac !== undefined ? { ac: opts.ac } : {}) };
       const sent = send(sender, inputs, envelope, () => taken?.restore(), opts.tag);
-      if (!sent.ok) {
-        taken?.restore();
-        if (panel) fail(sent.error);
-        return null;
-      }
+      if (!sent.ok) return failed(sent.error);
       if (panel) store.setState({ last: { tag: sent.tag, rolls: inputs, ...envelope } });
       thrown(sent.tag, opts.origin);
       opts.parts?.(sent.parts);

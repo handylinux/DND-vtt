@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import { compareLogIds } from "#shared/keys.ts";
 import type { LogEntry } from "#shared/model.ts";
 import { api, type ReceiptLookup } from "../../lib/api.ts";
@@ -79,6 +79,10 @@ type Entry = {
    * goes to the toasts, whatever the closing surfaces say.
    */
   unseen: boolean;
+  /** Mounted surfaces that sent it and so say it (claimVoice). */
+  claims: number;
+  /** A surface or the toast said its settled state (D-261031-133). */
+  said: boolean;
 };
 
 export type ReceiptEnv = {
@@ -113,7 +117,7 @@ export class ReceiptTracker {
   #entry(tag: string): Entry {
     let entry = this.#entries.get(tag);
     if (!entry) {
-      entry = { parts: new Map(), watchers: 0, looked: false, looking: null, announced: false, unseen: false };
+      entry = { parts: new Map(), watchers: 0, looked: false, looking: null, announced: false, unseen: false, claims: 0, said: false };
       this.#entries.set(tag, entry);
     }
     return entry;
@@ -255,11 +259,13 @@ export class ReceiptTracker {
   unannounced(): { tag: string; state: Exclude<ReceiptState, { state: "sending" | "checking" }> }[] {
     const out: { tag: string; state: Exclude<ReceiptState, { state: "sending" | "checking" }> }[] = [];
     for (const [tag, entry] of this.#entries) {
-      if (entry.announced || entry.watchers > 0) continue;
+      if (entry.announced || entry.said || entry.watchers > 0) continue;
       const state = this.state(tag);
       if (!state || state.state === "sending" || state.state === "checking") continue;
       entry.announced = true;
       entry.unseen = false;
+      // The toast is this tag's one voice, so a surface mounted after it shows the result silent (D-261031-166).
+      entry.said = true;
       out.push({ tag, state });
     }
     return out;
@@ -276,8 +282,18 @@ export class ReceiptTracker {
    * (docs/design-v1-stat-block-rolls.md 8, D-261031-133), so of two lines
    * that show one result only the sender says it. Returns the release.
    */
-  claimVoice(_tag: string): () => void {
-    return () => undefined;
+  claimVoice(tag: string): () => void {
+    const entry = this.#entry(tag);
+    entry.claims++;
+    this.#changed();
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      entry.claims--;
+      // A surface that shows the tag unclaimed may say it now, if nobody did.
+      this.#changed();
+    };
   }
 
   /**
@@ -285,12 +301,16 @@ export class ReceiptTracker {
    * claimant always, any other only while nobody claims the tag and nobody
    * has said it yet.
    */
-  maySpeak(_tag: string, _claimant: boolean): boolean {
-    return true;
+  maySpeak(tag: string, claimant: boolean): boolean {
+    if (claimant) return true;
+    const entry = this.#entries.get(tag);
+    return !entry || (entry.claims === 0 && !entry.said);
   }
 
   /** A surface said this tag's settled state, so no other surface and no toast says it again. */
-  spoken(_tag: string): void {}
+  spoken(tag: string): void {
+    this.#entry(tag).said = true;
+  }
 
   /**
    * A committed result the roll animation still held back as its panel
@@ -302,6 +322,8 @@ export class ReceiptTracker {
     if (!entry) return;
     entry.unseen = true;
     entry.announced = false;
+    // Held back, it was shown nowhere, so nobody said it either.
+    entry.said = false;
     this.#changed();
   }
 }
@@ -332,8 +354,21 @@ export function useReceipts(): ReceiptTracker {
  * voice while mounted. A surface that said it keeps saying it, so its
  * words never leave its live region.
  */
-export function useReceiptVoice(tag: string | null, _claim: boolean): boolean {
-  return tag !== null;
+export function useReceiptVoice(tag: string | null, claim: boolean): boolean {
+  const tracker = useReceipts();
+  useSyncExternalStore(tracker.subscribe, tracker.version, tracker.version);
+  const said = useRef<string | null>(null);
+  // Before paint, so a result that lands right after the send finds the claim made.
+  useLayoutEffect(() => (tag !== null && claim ? tracker.claimVoice(tag) : undefined), [tracker, tag, claim]);
+  const state = tag === null ? null : tracker.state(tag);
+  const settled = state !== null && state.state !== "sending" && state.state !== "checking";
+  const speaks = tag !== null && (said.current === tag || tracker.maySpeak(tag, claim));
+  useEffect(() => {
+    if (tag === null || !speaks || !settled || said.current === tag) return;
+    said.current = tag;
+    tracker.spoken(tag);
+  });
+  return speaks;
 }
 
 /**

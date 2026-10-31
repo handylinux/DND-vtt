@@ -290,6 +290,17 @@ describe("a roll that cannot go (docs/design-v1-dice.md 4.5 and 11)", () => {
     assert.equal(choices.getState().adv, true);
   });
 
+  test("a stat block's roll, which takes no choices, offline or from a preview, sends nothing, leaves the newest line and the choices, and tells its caller why", () => {
+    for (const sender of [{ connected: () => false }, { dispatch: () => null }]) {
+      const { choices, panel } = panelWith(sender);
+      choices.setState({ last: { tag: "older", once: true, label: "Dexterity save" } });
+      const heard: string[] = [];
+      assert.equal(panel.roll([{ formula: "1d20+3", creature: { tokenId: "goblin" } }], { choices: "none", onFail: (w) => heard.push(w) }), null);
+      assert.deepEqual(heard, ["Rolling needs a connection."]);
+      assert.deepEqual(choices.getState(), { adv: true, dis: false, secret: null, version: 3, last: { tag: "older", once: true, label: "Dexterity save" } });
+    }
+  });
+
   test("a typed mode on a roll with no d20 is refused before sending, and the panel's choices never reach one", () => {
     const sent: ClientOp[] = [];
     const { choices, panel } = panelWith({

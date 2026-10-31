@@ -27,7 +27,17 @@ export function acceptsRollMode(formula: string): boolean {
 }
 
 export function hasRollModeMenu(capability: RollModeCapability): boolean {
-  return (capability.d20 && !capability.damage) || capability.visibility === "selectable";
+  return (capability.d20 && !capability.damage) || (capability.visibility === "selectable" && offersSecret(capability));
+}
+
+/**
+ * Whether Roll secretly is a choice here: a selectable visibility whose tap
+ * is not secret already (`secretByDefault`), or a fixed one, whose Secret
+ * stays disabled with its reason. A request's answer keeps that reason
+ * even for a DM's monster (D-261031-169).
+ */
+function offersSecret(capability: RollModeCapability): boolean {
+  return capability.visibility !== "selectable" || !capability.secretByDefault;
 }
 
 /**
@@ -70,14 +80,14 @@ export function rollModeItems(capability: RollModeCapability, dm: boolean): Roll
   const describe = (own?: string) => [own ?? "", ...every].filter(Boolean).join(" ") || undefined;
   const items: RollModeItem[] = [];
   if (capability.d20 && !capability.damage) items.push({ id: "adv", title: "Roll with Advantage", kind: "action", description: describe() }, { id: "dis", title: "Roll with Disadvantage", kind: "action", description: describe() });
-  items.push({ id: "secret", title: "Roll secretly", kind: "action", disabled: capability.visibility !== "selectable", description: describe(capability.visibility === "selectable" ? dm ? "Roll secretly: hide the dice from players." : "Roll secretly: you and the DM see the result." : FIXED_VISIBILITY[capability.visibility]) });
+  if (offersSecret(capability)) items.push({ id: "secret", title: "Roll secretly", kind: "action", disabled: capability.visibility !== "selectable", description: describe(capability.visibility === "selectable" ? dm ? "Roll secretly: hide the dice from players." : "Roll secretly: you and the DM see the result." : FIXED_VISIBILITY[capability.visibility]) });
   if (offersNormal(capability)) items.push({ id: "normal", title: "Roll normally", kind: "action", description: describe(capability.repeat ? "Roll normally: ignores the recorded mode and keeps the formula and visibility." : NORMAL_HELP) });
   return items;
 }
 
 export function rollModeHint(capability: RollModeCapability): string | undefined {
   if (!hasRollModeMenu(capability)) return undefined;
-  const choices = [...(capability.d20 && !capability.damage ? ["Advantage", "Disadvantage"] : []), ...(capability.visibility === "selectable" ? ["Secret"] : []), ...(offersNormal(capability) ? ["Normal"] : [])];
+  const choices = [...(capability.d20 && !capability.damage ? ["Advantage", "Disadvantage"] : []), ...(capability.visibility === "selectable" && offersSecret(capability) ? ["Secret"] : []), ...(offersNormal(capability) ? ["Normal"] : [])];
   const last = choices.pop();
   return `Hold, right-click or Shift+F10 for ${choices.length > 0 ? `${choices.join(", ")} or ${last}` : last}.`;
 }
