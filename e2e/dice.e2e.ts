@@ -357,6 +357,16 @@ function stageHook(page: Page): Promise<StageHook | null> {
 }
 
 /**
+ * The face the stage's die landed on, once it has drawn its landing frame.
+ * The result shows on a 1 s timer and the stage reads its landing on the
+ * first animation frame past 1 s, which a slow frame can bring well after
+ * the total (TRH1-FLAKE), so a read at the total can find nothing yet.
+ */
+function landedFace(page: Page): Promise<string> {
+  return waitFor("the die's landing frame", async () => (await stageHook(page))?.landed ?? null, 3_000);
+}
+
+/**
  * Waits out a throw: its total in the header line, and the dice and their
  * scrim gone, so the header line is measured or pictured as it stays.
  */
@@ -1258,7 +1268,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
     assert.ok(land >= 900 && land <= 1_100, `the total showed ${Math.round(land)} ms after the dice`);
     const chip = await player.locator("[data-dice-last] [data-face]").first().textContent();
     assert.equal(chip, String(line.rolls[0]!.faces[0]));
-    assert.equal((await stageHook(player))?.landed, chip, "the die landed on the face its chip shows");
+    assert.equal(await landedFace(player), chip, "the die landed on the face its chip shows");
     // By 2.5 s the dice are gone, and the frame count stands still: no loop runs.
     await waitFor("2.5 s after the throw", () => js<boolean>(player, `return performance.now() - ${w.canvasAt} > 2_500 || null;`));
     const rest = (await stageHook(player))!;
@@ -1871,7 +1881,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
     assert.ok(w.canvasGoneAt === null || w.canvasGoneAt >= w.totalAt!, "the dice stayed until the total showed");
     const chip = await header.locator("[data-face]").first().textContent();
     assert.equal(chip, String(line.rolls[0]!.faces[0]));
-    assert.equal((await stageHook(player))?.landed, chip, "the die landed on the face its chip shows");
+    assert.equal(await landedFace(player), chip, "the die landed on the face its chip shows");
     await settled(player);
     const after = await headerWatched(player);
     assert.ok(after.maxDrift <= 1, `the DEX box moved ${after.maxDrift} px`);
