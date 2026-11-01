@@ -142,8 +142,9 @@ export type NameGrid = { squares?: number; hexes?: HexCellPx };
  *
  * The same counts are read three ways, as squares and as hexes on each
  * orientation, each by the span its own lattice gives (a hex map is as
- * wide as its columns plus the half hex its odd rows stand out, and as
- * tall as its rows' spacing plus the first hex's overhang). Their shapes
+ * wide as its columns plus the half hex its odd rows stand out, when it
+ * has an odd row, and as tall as its rows' spacing plus the first hex's
+ * overhang). Their shapes
  * differ by about 13%, so one reading agrees in practice, and a scene
  * takes the one for its own grid. A hex span must be the art's exact edge:
  * the scene's first hex stands at the image's corner, so a looser span
@@ -163,8 +164,8 @@ export function nameGrid(name: string | undefined, width: number, height: number
     return Math.round(byWidth * 100) / 100;
   };
   const squares = fit(cols, rows);
-  const onRows = fit(cols + 0.5, 2 * HEX_R + (rows - 1) * HEX_S);
-  const onColumns = fit(2 * HEX_R + (cols - 1) * HEX_S, rows + 0.5);
+  const onRows = fit(rows > 1 ? cols + 0.5 : cols, 2 * HEX_R + (rows - 1) * HEX_S);
+  const onColumns = fit(2 * HEX_R + (cols - 1) * HEX_S, cols > 1 ? rows + 0.5 : rows);
   return {
     ...(squares === undefined ? {} : { squares }),
     ...(onRows === undefined && onColumns === undefined ? {} : { hexes: { ...(onRows === undefined ? {} : { rows: onRows }), ...(onColumns === undefined ? {} : { columns: onColumns }) } }),

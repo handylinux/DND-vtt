@@ -44,3 +44,15 @@ test("a hex reading needs both axes within 2%, and the art's exact edge", () => 
   assert.deepEqual(nameGrid("tavern.jpg", 1435, 869), {});
   assert.deepEqual(nameGrid(undefined, 1435, 869), {});
 });
+
+test("a single hex row or column has no odd row to stand out by half a hex", () => {
+  // 30 x 1 hexes of 70 px on rows: 2100 wide, one hex (2 x 40.41) tall. Columns the other way about.
+  assert.deepEqual(hexPx("row_30x1.png", 2100, 81), { rows: 70 });
+  assert.deepEqual(hexPx("row_20x1.png", 1400, 81), { rows: 70 });
+  assert.deepEqual(hexPx("column_1x30.png", 81, 2100), { columns: 70 });
+  assert.deepEqual(hexPx("column_1x20.png", 81, 1400), { columns: 70 });
+  // One hex is 70 across its flats and 80.83 across its corners, either way up.
+  assert.deepEqual(hexPx("one_1x1.png", 70, 81), { rows: 70 });
+  assert.deepEqual(hexPx("one_1x1.png", 81, 70), { columns: 70 });
+  assert.deepEqual(nameGrid("row_20x1.png", 1435, 81), {}, "a single row with an odd row's half hex is not its span");
+});
