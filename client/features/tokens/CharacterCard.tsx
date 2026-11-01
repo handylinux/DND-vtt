@@ -18,6 +18,7 @@ import { useAnyPending } from "../encounter/hooks.ts";
 import { ReactionSection, reactionFor } from "../encounter/ReactionSection.tsx";
 import { ImageField, type ImageRef } from "../images/ImageField.tsx";
 import { placeOnGround } from "../movement/ground.ts";
+import { useBlockRoller } from "../monsters/AbilityGrid.tsx";
 import { PcStatBlock } from "../pcstats/PcStatBlock.tsx";
 import { currentStageCamera } from "../scenes/stageCamera.ts";
 import { characterAccess } from "./access.ts";
@@ -76,6 +77,8 @@ export function CharacterPage(props: { character: Character; close: PanelClose; 
     [you, character],
   );
   const self = useMemo(() => ({ characterId: character.id }), [character.id]);
+  // The page's stat block rolls for the character itself (docs/design-v1-stat-block-rolls.md 2).
+  const blockRoll = useBlockRoller(self);
   // Each a yes or no, so the page draws again only when one changes, not on every change to the room.
   const reaction = useRoomView((s) => (s.view ? reactionFor(s.view, s.you, self) !== null : false));
   const spent = useRoomView((s) => (s.view ? reactionSpent(s.view, self) : false));
@@ -159,7 +162,7 @@ export function CharacterPage(props: { character: Character; close: PanelClose; 
         );
       case "statBlock":
         // The one fold the page shares with the token panel: the `own` relation's, as every viewer of the page plays or runs the character.
-        return <PcStatBlock key={id} character={character} from={{ characterId: character.id }} fold={fold("statBlock")} />;
+        return <PcStatBlock key={id} character={character} roll={blockRoll} fold={fold("statBlock")} />;
       case "combat":
         return (
           <Group key={id} label="Combat" icon="combat" {...fold("page.combat")} summary={combatSummary({ hp: hpWords, effects, reactionUsed: spent })} holds="sections">

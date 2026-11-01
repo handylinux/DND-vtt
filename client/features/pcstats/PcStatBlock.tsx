@@ -10,7 +10,6 @@ import { theme } from "../../lib/theme.ts";
 import { useRoomActions, useRoomView } from "../../state/view.ts";
 import { editsPcStats } from "../tokens/access.ts";
 import { SrdLoadFailed } from "../monsters/SrdLoadFailed.tsx";
-import { useBlockRoller } from "../monsters/AbilityGrid.tsx";
 import { StatBlockView } from "../monsters/StatBlockView.tsx";
 import { pcBlockSummary, takeShapeWords } from "../tokens/creatureKind.ts";
 import { useSrdList } from "../tokens/StatSummary.tsx";
@@ -18,7 +17,7 @@ import { saveUnitsOf } from "../tokens/statSummary.ts";
 import { Note, SmallButton } from "../tokens/ui.tsx";
 import { useOpenPcStats, useOpenResync } from "./open.ts";
 import { lastSyncedLine, resyncNumber } from "./resync.ts";
-import type { BlockFrom, BlockRoller } from "../dice/blockRolls.ts";
+import type { BlockRoller } from "../dice/blockRolls.ts";
 import { ddbCharacterId } from "#shared/ddb/link.ts";
 import { PcStatsView } from "./PcStatsView.tsx";
 import { END_SHAPE, shapeNote } from "./shape.ts";
@@ -43,11 +42,11 @@ import { ShapePicker } from "./ShapePicker.tsx";
 export function PcStatBlock(props: {
   character: Character;
   fold: { open: boolean; onToggle(): void; foldRef?: Ref<HTMLButtonElement> };
-  /** The mount it stands in: its token's panel or the character's page (docs/design-v1-stat-block-rolls.md 2), which decides whose rolls its boxes make. */
-  from: BlockFrom;
+  /** Whom its boxes roll for, from the mount it stands in: its token's panel or the character's page (docs/design-v1-stat-block-rolls.md 2). The mount computes it once. */
+  roll: BlockRoller | null;
 }) {
   const { character, fold } = props;
-  const roll = useBlockRoller(props.from);
+  const { roll } = props;
   const openStats = useOpenPcStats();
   const openSync = useOpenResync();
   const you = useRoomView((s) => s.you);
