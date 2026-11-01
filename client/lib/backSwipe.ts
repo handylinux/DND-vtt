@@ -683,45 +683,108 @@ export function useBackSwipe(surface: RefObject<HTMLElement | null>, options: Ba
 const PRESSABLE = "button, a[href], [role='button'], [role='link'], [role='menuitem']";
 /** A page that comes this soon after a press keeps the picture that press took. */
 const PICTURE_MS = 1000;
+/**
+ * The most elements a press copies. A copy runs in the press's own task,
+ * before its handler, and costs about 3 microseconds an element on a slow
+ * phone (Chromium at 6x CPU slowdown): a 40-block Journal page of about
+ * 1,000 elements takes 2 to 3 ms, a full Initiative list of 60,000 takes
+ * 100 to 400 ms. Past the budget a press copies nothing, and a page it
+ * opens shows the plain panel under it on a swipe back.
+ */
+export const PICTURE_BUDGET = 2000;
 
 /** A copy of a page's content as a press found it, and how far its body was scrolled. */
 export type PagePicture = { node: DocumentFragment; top: number };
+
+/** The parts of an element the budget count reads, so it runs over a fake tree in tests. */
+export type CountedNode = { readonly children: ArrayLike<CountedNode> };
+
+/** Whether `root` holds at most `budget` elements below it. Stops counting once past it, so a long list costs no more than a short one. */
+export function withinBudget(root: CountedNode, budget: number): boolean {
+  let left = budget;
+  const walk = (node: CountedNode): boolean => {
+    const children = node.children;
+    for (let i = 0; i < children.length; i++) {
+      if (--left < 0 || !walk(children[i]!)) return false;
+    }
+    return true;
+  };
+  return walk(root);
+}
+
+/**
+ * Which picture lies under each page inside a panel. A press keeps its
+ * picture for a page that comes within PICTURE_MS. A page shown again, as
+ * Cancel on a form returns to the page that opened it, keeps the picture
+ * it had, since the press that returned took a picture of the form, and
+ * the pages opened from it since are dropped. The first page drops them all.
+ */
+export class PagePictures {
+  private pressed: (PagePicture & { at: number }) | null = null;
+  private readonly under = new Map<string, PagePicture>();
+  private shown: string | null;
+
+  constructor(page: string | null) {
+    this.shown = page;
+  }
+
+  /** A press on a control in the body, with the page as it found it, or null where it copied nothing. */
+  press(at: number, picture: PagePicture | null): void {
+    this.pressed = picture ? { ...picture, at } : null;
+  }
+
+  /** The panel shows `page` now. */
+  show(page: string | null, now: number): void {
+    if (page === this.shown) return;
+    this.shown = page;
+    const p = this.pressed;
+    this.pressed = null;
+    if (page === null) {
+      this.under.clear();
+      return;
+    }
+    if (this.under.has(page)) {
+      // A Map keeps its order of entry, so the pages after this one are those opened from it since.
+      let later = false;
+      for (const key of [...this.under.keys()]) {
+        if (later) this.under.delete(key);
+        else if (key === page) later = true;
+      }
+      return;
+    }
+    if (p && now - p.at < PICTURE_MS) this.under.set(page, { node: p.node, top: p.top });
+  }
+
+  /** The picture under the page shown now. */
+  current(): PagePicture | null {
+    return this.shown === null ? null : (this.under.get(this.shown) ?? null);
+  }
+}
 
 /**
  * The pictures under a panel's pages inside it (subpages), for a swipe
  * back to show what Back leads to. Entering a page inside a panel replaces
  * the page it was opened from, so a press on a control in the body copies
  * the page as it stands, in the capture phase, before the press's own
- * handler changes it. A page that comes within PICTURE_MS keeps that copy
- * as what lies under it, until the panel is back on its first page. A page
- * opened from outside the panel has none. Returns the picture under the
- * page shown now.
+ * handler changes it (PagePictures). A page opened from outside the panel
+ * has none. Returns the picture under the page shown now.
  */
 export function usePagePictures(body: RefObject<HTMLElement | null>, page: string | null): () => PagePicture | null {
-  const pressed = useRef<(PagePicture & { at: number }) | null>(null);
-  const under = useRef(new Map<string, PagePicture>());
-  const shown = useRef(page);
+  const pictures = useRef<PagePictures | null>(null);
+  pictures.current ??= new PagePictures(page);
   useEffect(() => {
     const el = body.current;
     if (!el) return;
     const onClick = (e: MouseEvent) => {
       const control = e.target instanceof Element ? e.target.closest(PRESSABLE) : null;
       if (!control || !el.contains(control)) return;
-      pressed.current = { ...capturePagePicture(el), at: performance.now() };
+      pictures.current!.press(performance.now(), withinBudget(el, PICTURE_BUDGET) ? capturePagePicture(el) : null);
     };
     el.addEventListener("click", onClick, true);
     return () => el.removeEventListener("click", onClick, true);
   }, [body]);
-  useLayoutEffect(() => {
-    const was = shown.current;
-    shown.current = page;
-    if (was === page) return;
-    const p = pressed.current;
-    pressed.current = null;
-    if (page === null) under.current.clear();
-    else if (p && performance.now() - p.at < PICTURE_MS) under.current.set(page, { node: p.node, top: p.top });
-  }, [page]);
-  return useCallback(() => (shown.current === null ? null : (under.current.get(shown.current) ?? null)), []);
+  useLayoutEffect(() => pictures.current!.show(page, performance.now()), [page]);
+  return useCallback(() => pictures.current!.current(), []);
 }
 
 /** Capture before the navigation handler replaces this page and its current control state. */

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { TAP_SLOP_PX } from "./gestures.ts";
 import { REPEAT_DELAY_MS } from "./holdRepeat.ts";
-import { backDistance, backEnd, BackSession, BackSwipe, EDGE_ZONE_PX, inEdgeZone, ownsSideways, capturePagePicture, copyPageNode, pictureCopy, SIDEWAYS_ATTR, stillFollowed, type BackHost, type BackMove, type BackStart, type SidewaysNode, type SidewaysStyle } from "./backSwipe.ts";
+import { backDistance, backEnd, BackSession, BackSwipe, EDGE_ZONE_PX, inEdgeZone, ownsSideways, capturePagePicture, copyPageNode, PagePictures, PICTURE_BUDGET, pictureCopy, SIDEWAYS_ATTR, stillFollowed, withinBudget, type BackHost, type CountedNode, type BackMove, type BackStart, type SidewaysNode, type SidewaysStyle } from "./backSwipe.ts";
 import { FLICK_SPEED, SLIDE_MS, UNSAVED_FOLLOW } from "./sheetSwipe.ts";
 
 function start(over: Partial<BackStart> = {}): BackStart {
@@ -801,4 +801,53 @@ test("capturing a page before navigation and drawing it both retain current sele
   assert.deepEqual((captured.node as unknown as InstanceType<typeof Picture>).querySelectorAll("select").map((select) => select.options.map((o) => o.selected)), expected);
   const shown = pictureCopy(captured) as unknown as InstanceType<typeof Picture>;
   assert.deepEqual(shown.querySelectorAll("select").map((select) => select.options.map((o) => o.selected)), expected);
+});
+
+describe("fu43c. the pictures under pages inside a panel", () => {
+  const picture = (name: string) => ({ node: name as unknown as DocumentFragment, top: 0 });
+
+  test("Cancel on a form returns to the page that opened it with the picture it had, and the form opened again takes a new one (FL14-SOL-2)", () => {
+    // Characters, a character, Add a companion, Cancel.
+    const p = new PagePictures(null);
+    p.press(0, picture("list"));
+    p.show("thorn", 10);
+    assert.equal(p.current()?.node, picture("list").node);
+    p.press(100, picture("thorn"));
+    p.show("companion", 110);
+    assert.equal(p.current()?.node, picture("thorn").node);
+    p.press(200, picture("companion form"));
+    p.show("thorn", 210);
+    assert.equal(p.current()?.node, picture("list").node, "the character's page kept the list under it");
+    p.press(300, picture("thorn again"));
+    p.show("companion", 310);
+    assert.equal(p.current()?.node, picture("thorn again").node, "the form opened again shows the page as the new press found it");
+    p.show(null, 400);
+    assert.equal(p.current(), null);
+    p.show("thorn", 410);
+    assert.equal(p.current(), null, "the first page dropped every picture");
+  });
+
+  test("a page that comes late, or after a press that copied nothing, has no picture", () => {
+    const p = new PagePictures(null);
+    p.press(0, picture("list"));
+    p.show("thorn", 1000);
+    assert.equal(p.current(), null, "too late");
+    p.press(1100, null);
+    p.show("companion", 1110);
+    assert.equal(p.current(), null, "a press past the budget");
+  });
+
+  test("withinBudget counts every element below the root and stops once past the budget", () => {
+    let read = 0;
+    const node = (children: unknown[]): CountedNode => ({ get children() { read++; return children as CountedNode[]; } });
+    const leaf = () => node([]);
+    const tree = node([node([leaf(), leaf()]), leaf(), node([leaf()])]);
+    assert.equal(withinBudget(tree, 6), true, "six elements");
+    assert.equal(withinBudget(tree, 5), false);
+    const long = node(Array.from({ length: 10_000 }, leaf));
+    read = 0;
+    assert.equal(withinBudget(long, PICTURE_BUDGET), false);
+    assert.ok(read <= PICTURE_BUDGET + 2, `read ${read} nodes`);
+    assert.ok(PICTURE_BUDGET <= 2_000, "swipe.e2e.ts fu43c-b fills a body with 20,000 elements, ten times the budget");
+  });
 });

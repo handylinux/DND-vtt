@@ -2155,7 +2155,7 @@ describe("raccoon-vtt: swipe a phone's bottom sheet", { timeout: 1_500_000 }, ()
     }
   });
 
-  test("fu41-b-clone. measure capture copies on a long Journal page and a full Initiative list", { skip: process.env.FU41_CLONE_MEASURE !== "1", timeout: 180_000 }, async () => {
+  test("fu41-b-clone. measure capture copies on a long Journal page and a full Initiative list", { skip: "replaced by fu43c-clone, which knows the copy budget", timeout: 180_000 }, async () => {
     const pageId = randomUUID();
     const records: { action: string; clones: number; ms: number; elements: number }[] = [];
     const measure = async (action: string, press: () => Promise<unknown>) => {
@@ -2305,6 +2305,130 @@ describe("raccoon-vtt: swipe a phone's bottom sheet", { timeout: 1_500_000 }, ()
     await list.waitFor();
     assert.equal(await sheetOf(dm, "Log").count(), 0, "FL-14: the sideways sheet stayed after its back swipe");
     await list.getByRole("button", { name: "Close Panels" }).click();
+  });
+
+  test("fu43c-a. Cancel on Add a companion goes back to Thorn's page, and a swipe back from it still shows the list of characters under it (FL14-SOL-2)", async () => {
+    await setUp(dm, { width: 375, height: 667, scale: 1 });
+    const sheet = await openPanel(dm, "Characters");
+    await steadyRect(sheet);
+    const back = sheet.getByRole("button", { name: "Back to Characters" });
+    if (await back.count()) await back.click();
+    await sheet.getByRole("button", { name: "New character", exact: true }).waitFor();
+    await sheet.getByRole("button", { name: /Thorn/ }).first().click();
+    const add = sheet.getByRole("button", { name: /^Add a companion/ }).first();
+    await add.scrollIntoViewIfNeeded();
+    await add.click();
+    const cancel = sheet.getByRole("button", { name: "Cancel", exact: true });
+    await cancel.scrollIntoViewIfNeeded();
+    await cancel.click();
+    await add.waitFor();
+    const f = new Finger(dmCdp, dm);
+    await f.down(await leftBodyPoint(sheet));
+    await f.drag(0, { dx: 8 + (await rectOf(sheet)).width / 2 - 30 });
+    const under = sheet.locator("[inert]");
+    assert.equal(await under.count(), 1, "FL14-SOL-2: nothing showed under Thorn's page");
+    const words = (await under.textContent()) ?? "";
+    assert.ok(words.includes("New character"), `FL14-SOL-2: the list of characters did not show under Thorn's page: ${words.slice(0, 200)}`);
+    assert.ok(!words.includes("Add and place"), "FL14-SOL-2: the companion form showed under Thorn's page");
+    await shots.take(dm, "fu43c-a-nested-return");
+    await f.drag(0, { dx: 50 });
+    await f.up();
+    await sheet.getByRole("button", { name: "New character", exact: true }).waitFor();
+    await sheet.getByRole("button", { name: "Close Characters" }).click();
+  });
+
+  test("fu43c-b. a press on a panel past the copy budget copies nothing, and a page opened from it shows the plain panel under it (FL14-OPUS-10)", async () => {
+    await setUp(dm, { width: 375, height: 667, scale: 1 });
+    const sheet = await openPanel(dm, "Menu");
+    await steadyRect(sheet);
+    // Filler at the body's foot, as a long list would be, ten times backSwipe.ts PICTURE_BUDGET. The client's DOM types keep that module out of the e2e files.
+    await sheet.locator("[data-pane-body]").evaluate((body, count) => {
+      (body as unknown as { insertAdjacentHTML(at: string, html: string): void }).insertAdjacentHTML("beforeend", `<div data-fu43c-filler>${"<span></span>".repeat(count)}</div>`);
+    }, 20_000);
+    await sheet.getByRole("button", { name: /^Members/ }).first().click();
+    await sheet.getByRole("heading", { name: "Members" }).waitFor();
+    await dm.evaluate(() => {
+      for (const el of Array.from((globalThis as unknown as { document: { querySelectorAll(s: string): ArrayLike<{ remove(): void }> } }).document.querySelectorAll("[data-fu43c-filler]"))) el.remove();
+    });
+    const f = new Finger(dmCdp, dm);
+    await f.down(await leftBodyPoint(sheet));
+    await f.drag(0, { dx: 8 + (await rectOf(sheet)).width / 2 - 30 });
+    const under = sheet.locator("[inert]");
+    assert.equal(await under.count(), 1, "FL14-OPUS-10: the swipe drew nothing under Members");
+    assert.equal(((await under.textContent()) ?? "").trim(), "", "FL14-OPUS-10: a press past the budget still copied the Menu");
+    await f.drag(0, { dx: 50 });
+    await f.up();
+    await waitFor("Menu's first page", async () => ((await sheet.getByRole("heading", { name: "Members" }).count()) === 0 ? true : null), 3_000);
+    await sheet.getByRole("button", { name: "Close Menu" }).click();
+  });
+
+  test("fu43c-clone. measure capture copies on a long Journal page and a full Initiative list, with the copy budget", { skip: process.env.FU41_CLONE_MEASURE !== "1", timeout: 180_000 }, async () => {
+    const pageId = randomUUID();
+    const records: { action: string; clones: number; ms: number; elements: number }[] = [];
+    const measure = async (action: string, press: () => Promise<unknown>) => {
+      const elements = await dm.locator("dialog[data-rvtt-sheet][open] [data-pane-body]").first().evaluate((el) => (el as unknown as { querySelectorAll(s: string): ArrayLike<unknown> }).querySelectorAll("*").length);
+      await dm.evaluate(() => {
+        type ProbeNode = { parentElement: { closest(s: string): unknown } | null };
+        type Probe = { Node: { prototype: { cloneNode(this: ProbeNode, deep?: boolean): unknown } }; fu43cSample?: { clones: number; ms: number }; fu43cRestore?: () => void };
+        const w = globalThis as unknown as Probe;
+        const original = w.Node.prototype.cloneNode;
+        w.fu43cSample = { clones: 0, ms: 0 };
+        w.Node.prototype.cloneNode = function(deep) {
+          const start = performance.now();
+          const result = original.call(this, deep);
+          const elapsed = performance.now() - start;
+          if (w.fu43cSample && this.parentElement?.closest("[data-pane-body]")) {
+            w.fu43cSample.clones++;
+            w.fu43cSample.ms += elapsed;
+          }
+          return result;
+        };
+        w.fu43cRestore = () => { w.Node.prototype.cloneNode = original; };
+      });
+      try {
+        await press();
+        const sample = await dm.evaluate(() => (globalThis as unknown as { fu43cSample: { clones: number; ms: number } }).fu43cSample);
+        records.push({ action, elements, ...sample });
+        return sample;
+      } finally {
+        await dm.evaluate(() => (globalThis as unknown as { fu43cRestore(): void }).fu43cRestore());
+      }
+    };
+    await setUp(dm, { width: 390, height: 844, scale: 1 });
+    await dmCdp.send("Emulation.setCPUThrottlingRate", { rate: 6 });
+    let created = false;
+    try {
+      const text = Array.from({ length: 8 }, (_, i) => `- Row ${i}: **A long journal entry** with a [reference](https://example.com).`).join("\n");
+      await ops.send({ t: "journal.create", page: { id: pageId, title: "FU43C clone measurement", access: "dm", blocks: Array.from({ length: 40 }, (_, i) => ({ id: `fu43cblkx${String(i).padStart(3, "0")}`, text, ...(i === 0 ? { secret: true as const } : {}) })) } });
+      created = true;
+      let sheet = await openPanel(dm, "Journal");
+      const back = sheet.getByRole("button", { name: /^Back to Journal/ });
+      if (await back.count()) await back.click();
+      await measure("journal.list.open", () => sheet.getByRole("button", { name: /^FU43C clone measurement/ }).click());
+      await sheet.getByRole("button", { name: "Reveal", exact: true }).waitFor();
+      const reveal = await measure("journal.long.reveal", () => sheet.getByRole("button", { name: "Reveal", exact: true }).click());
+      assert.ok(reveal.clones > 0, "a 40-block page within the budget was not copied");
+      await sheet.getByRole("button", { name: "Hide", exact: true }).waitFor();
+      await sheet.getByRole("button", { name: "Close Journal" }).click();
+      const entries = Array.from({ length: LIMITS.encounterRows }, (_, i) => ({ id: randomUUID(), label: `FU43C row ${i + 1}`, value: 10 }));
+      if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
+      await ops.send({ t: "encounter.start", entries: entries.slice(0, 100) });
+      for (let i = 100; i < entries.length; i += 100) await ops.send({ t: "encounter.add", entries: entries.slice(i, i + 100) });
+      await waitFor("the full Initiative list", () => dmSocket.state?.encounter?.entries.length === LIMITS.encounterRows || null);
+      sheet = await openPanel(dm, "Initiative");
+      await waitFor("every rendered Initiative row", async () => await sheet.locator("[data-entry-row]").count() === LIMITS.encounterRows || null, 60_000);
+      const options = sheet.getByRole("button", { name: "FU43C row 1 options", exact: true });
+      const rowOptions = await measure("initiative.full.rowOptions", () => options.click());
+      assert.equal(rowOptions.clones, 0, "a full Initiative list past the budget was copied");
+      await options.click();
+      await measure("initiative.full.typeValues.keyboard", () => sheet.getByRole("button", { name: "Type several values", exact: true }).press("Enter"));
+      console.log(`fu43c-clone ${JSON.stringify({ cpu: "Chromium CDP 6x CPU slowdown", viewport: "390x844", scale: 1, journalBlocks: 40, initiativeRows: LIMITS.encounterRows, records })}`);
+      await sheet.getByRole("button", { name: "Close Initiative" }).click();
+    } finally {
+      await dmCdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+      if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
+      if (created) await ops.send({ t: "journal.delete", pageId });
+    }
   });
 });
 
