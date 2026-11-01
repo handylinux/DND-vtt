@@ -41,6 +41,14 @@ describe("SRD notice", () => {
     ]);
   });
 
+  test("each subheading stands over a block of its own, which AboutPanel's tight margin under an h4 needs", () => {
+    // AboutPanel draws an h4 with -space(1) under it, to sit close over its first block: a subheading last, or straight over another heading, would close up on what follows.
+    const loneHeadings = (blocks: ReturnType<typeof parseMarkdown>) =>
+      blocks.filter((b, i) => b.kind === "heading" && b.level > 1 && (blocks[i + 1] === undefined || blocks[i + 1]!.kind === "heading")).map((b) => (b.kind === "heading" ? plainText(b.inline) : ""));
+    assert.deepEqual(loneHeadings(parseMarkdown(NOTICE)), []);
+    assert.deepEqual(loneHeadings(parseMarkdown("# Notice\n\n## Changes\n\n## More\n\nText.\n\n## Last\n")), ["Changes", "Last"], "the check finds a doubled and a trailing subheading");
+  });
+
   test("says fifth edition, never the trademark", () => {
     assert.match(NOTICE, /compatible with fifth edition/);
     assert.doesNotMatch(NOTICE, /D\s*&\s*D|Dungeons\s*(?:&|and)\s*Dragons/i);
