@@ -358,6 +358,13 @@ describe("the list as it draws (4.2 and 4.6)", async () => {
     assert.doesNotMatch(html, /data-ability-blocked|Hold a roll/, "no foot line, no blocked line");
   });
 
+  test("a row's name, tag and bonus stand on the row's middle, not on the name's baseline, so the tag's smaller type sits centered too", () => {
+    const html = draw({ rows });
+    const group = /<span style="([^"]*)"><span>Save<\/span><span[^>]*>Asked Dis<\/span>/.exec(html)?.[1] ?? "";
+    assert.match(group, /align-items:center/, group);
+    assert.doesNotMatch(html, /align-items:baseline/);
+  });
+
   test("blocked: every row disabled and still drawn, one line under the title says why, and each row's description says it too, with no shortcut", () => {
     const html = draw({ rows, blocked: "Rolls are not sent from a preview." });
     assert.match(html, /data-roll-mode-title[^>]*>Dexterity<\/div><div data-ability-blocked=""[^>]*>Rolls are not sent from a preview\.<\/div>/);

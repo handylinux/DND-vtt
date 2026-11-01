@@ -80,7 +80,8 @@ function RowWords(props: { row: AbilityRow; busy: boolean }) {
   const { row } = props;
   return (
     <span aria-hidden style={{ flex: "1 1 auto", minWidth: 0, display: "flex", alignItems: "center", gap: theme.space(2) }}>
-      <span style={{ flex: "1 1 auto", minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "baseline", columnGap: theme.space(1), rowGap: 0 }}>
+      {/* Centered, not on the name's baseline: the tag's smaller type would then sit off the row's middle. */}
+      <span style={{ flex: "1 1 auto", minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: theme.space(1), rowGap: 0 }}>
         <span>{row.words}</span>
         {row.tag ? <span style={{ fontSize: theme.font.tiny, fontWeight: theme.weight.strong, color: theme.color.textMuted }}>{row.tag}</span> : null}
       </span>
