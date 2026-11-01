@@ -4,6 +4,7 @@ import { emptyStatBlock } from "#shared/statBlock.ts";
 import { Button } from "../../components/Button.tsx";
 import { Dialog } from "../../components/Dialog.tsx";
 import { Empty } from "../../components/Empty.tsx";
+import { Held } from "../../components/Held.tsx";
 import { Help, SectionLabel } from "../../components/Panel.tsx";
 import { Row, RowChevron, RowList } from "../../components/Row.tsx";
 import { Segmented } from "../../components/Segmented.tsx";
@@ -216,7 +217,7 @@ export function AttachBlockDialog(props: {
  * to set and what that does to its current HP. Temporary HP, conditions,
  * effects, death saves and the Reaction always stay.
  */
-function NumbersStep(props: {
+export function NumbersStep(props: {
   token: Token;
   actor: Partial<Actor> | undefined;
   block: string;
@@ -242,12 +243,11 @@ function NumbersStep(props: {
     ...(current !== undefined ? [{ value: "keep" as const, label: `Keep ${current}` }] : []),
   ];
   return (
-    <fieldset disabled={props.frozen} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(3), fontSize: theme.font.body14, border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+    <Held held={props.frozen} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(3), fontSize: theme.font.body14 }}>
       <Segmented<"use" | "keep">
         label="Numbers"
         value={props.use ? "use" : "keep"}
         wrap
-        disabled={props.frozen}
         options={[
           { value: "use", label: `Use ${whose(props.block)} numbers` },
           { value: "keep", label: `Keep ${whose(token.name)} numbers` },
@@ -274,11 +274,10 @@ function NumbersStep(props: {
             label="Max HP"
             value={props.hp.kind}
             options={hpOptions}
-            disabled={props.frozen}
             onChange={(kind) => props.onHp(kind === "typed" ? { kind, value: props.hp.kind === "typed" ? props.hp.value : null } : { kind })}
           />
           {props.hp.kind === "typed" ? (
-            <NumberField label="Max HP" value={props.hp.value ?? undefined} min={1} max={100_000} nullable disabled={props.frozen} onCommit={(value) => props.onHp({ kind: "typed", value })} />
+            <NumberField label="Max HP" value={props.hp.value ?? undefined} min={1} max={100_000} nullable onCommit={(value) => props.onHp({ kind: "typed", value })} />
           ) : null}
           {numbers.hpLine ? <Help style={{ overflowWrap: "anywhere" }}>{numbers.hpLine}</Help> : <Help>Type the maximum this casting gives it.</Help>}
           <Help>Temporary HP, conditions and effects stay.</Help>
@@ -286,7 +285,7 @@ function NumbersStep(props: {
       ) : (
         <Help style={{ overflowWrap: "anywhere" }}>{`Only the stat block is attached. ${token.name} keeps its AC, HP, Speeds, senses and Initiative.`}</Help>
       )}
-    </fieldset>
+    </Held>
   );
 }
 
