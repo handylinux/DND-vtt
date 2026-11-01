@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { Held } from "../../components/Held.tsx";
 import { Help } from "../../components/Panel.tsx";
 import { idle } from "../../lib/idle.ts";
 import { theme } from "../../lib/theme.ts";
@@ -89,7 +90,7 @@ export function DiceSetPicker() {
 
   const previews = drawn && on && !lowPower;
   return (
-    <fieldset disabled={!on} style={{ margin: 0, padding: 0, border: "none", minWidth: 0 }}>
+    <Held held={!on}>
       <legend style={{ padding: 0, fontSize: theme.font.input, fontWeight: theme.weight.strong, color: on ? theme.color.text : theme.color.textDisabled }}>Dice</legend>
       {/*
        * One column under the legend, as RadioCards stands its cards (docs/design/design-v1-spacing-pass.md S2): the help space(1) under it and the
@@ -133,6 +134,6 @@ export function DiceSetPicker() {
           })}
         </div>
       </div>
-    </fieldset>
+    </Held>
   );
 }
