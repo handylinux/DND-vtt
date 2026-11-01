@@ -644,16 +644,6 @@ step makes an open page reload. Until it reloads, an old DM page applies a
 group save as before, once, but untracked: its page stays locked, and Undo
 takes the outcome back without ever opening that page again.
 
-The update that moves a square scene's trip wires onto half cells saves rooms
-at snapshot version 32, which the builds before it cannot read. Back up first.
-Rooms and backups from before it take the new version as they load: a trip
-wire on a square scene whose ends were imported off cell corners and edge
-midpoints moves to the nearest half cells. The change step is unchanged (op
-version 35). There is no database table migration and no manual conversion of
-rooms. Going back means restoring the backup taken just before the update, and
-only that backup works, since a build before this update refuses a room saved
-after it. Every room loses what changed after that backup.
-
 Compose rebuilds the image and replaces only the containers that changed. On
 the way down the app closes every WebSocket with code 1012, finishes each
 room's current write and saves a snapshot, so phones reconnect on their own
