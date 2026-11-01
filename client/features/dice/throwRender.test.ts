@@ -21,6 +21,7 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const { RoomProvider } = await import("../../state/view.ts");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
 const { LastResult } = await import("./Roller.tsx");
+const { Tray } = await import("./throw/Tray.tsx");
 const { throwsSlot } = await import("./throw/useThrows.ts");
 
 const TAG = "tag-attack";
@@ -33,7 +34,7 @@ const LINE: LogEntry = {
   data: { type: "dice", tag: TAG, by: "p1", to: "all", rolls: [{ formula: "1d20+4", faces: [19], total: 23, label: "Longsword", critOn: 19, characterId: "thorn" }] },
 };
 
-function render(throwing: boolean): string {
+function render(throwing: boolean, trays?: "block"): string {
   const view = room({}) as unknown as RoomState;
   const scope = new RoomScope();
   const log: LogEntry[] = [LINE];
@@ -48,9 +49,11 @@ function render(throwing: boolean): string {
   store.bind({ clock: new FakeClock(), idle: (cb) => (cb(), () => undefined), tracker, loader: { loaded: () => module, state: () => "ready", subscribe: () => () => undefined }, hidden: () => false });
   store.setInputs({ on: throwing });
   const host = store.mount({ kinds: () => ["d20"] });
-  host.attach({ parent: null, measure: () => ({ width: 356, height: 200, zoom: 1, from: null }) });
+  const block = store.mount({ surface: "block", kinds: () => ["d20", "d4"] });
+  const thrower = trays === "block" ? block : host;
+  thrower.attach({ parent: null, measure: () => ({ width: 356, height: 200, zoom: 1, from: null }) });
   tracker.sending(TAG, 0);
-  store.register(TAG, { surface: "dice", element: null, tapAt: 0 });
+  store.register(TAG, thrower.origin());
   tracker.answer(TAG, 0, "taken");
   assert.equal(store.held(TAG), throwing);
   const roomStore = createStore(() => ({ view: { ...view, log }, roomId: "r1", connection: "open", you: P1, sceneId: "s1", local: { selectedIds: [], multi: false } }));
@@ -60,7 +63,10 @@ function render(throwing: boolean): string {
       actions: { dispatch: () => 1 } as never,
       ui: {} as never,
       assets: { url: () => "" } as never,
-      children: createElement(RoomScopeProvider, { scope, children: createElement(LastResult, { onOpen() {} }) }),
+      children: createElement(RoomScopeProvider, {
+        scope,
+        children: trays === "block" ? [createElement("section", { key: "dice", "data-in": "dice" }, createElement(Tray, { host })), createElement("section", { key: "block", "data-in": "block" }, createElement(Tray, { host: block }))] : createElement(LastResult, { onOpen() {} }),
+      }),
     }),
   );
 }
@@ -83,6 +89,16 @@ describe("the header line during a throw", () => {
     assert.ok(again, "Again is there");
     assert.doesNotMatch(again, /aria-busy|disabled/);
     assert.match(markup, /<div aria-hidden="true" data-dice-tray=""[^>]*pointer-events:none/);
+  });
+
+  test("only the tray of the host that rolled draws the scrim, and the scrim covers the pane's side padding", () => {
+    const markup = render(true, "block");
+    const dice = /<section data-in="dice">(.*?)<\/section>/.exec(markup)?.[1] ?? "";
+    const block = /<section data-in="block">(.*?)<\/section>/.exec(markup)?.[1] ?? "";
+    assert.match(dice, /data-dice-tray/);
+    assert.doesNotMatch(dice, /opacity:0\.92/, "the Dice panel's tray stays empty for a block roll");
+    assert.match(block, /opacity:0\.92/, "the scrim");
+    assert.match(block, /box-shadow:calc\(-1 \* var\(--pane-pad-x, 0px\)\) 0 0 [^,]+, var\(--pane-pad-x, 0px\) 0 0 /, "paneSides");
   });
 
   test("with the dice off, the same commit shows its total at once", () => {

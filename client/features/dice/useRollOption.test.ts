@@ -8,6 +8,8 @@ import { projectState } from "#shared/project.ts";
 import type { RoomState } from "#shared/model.ts";
 import { optionSlot } from "./optionState.ts";
 import { diceChoicesSlot } from "./useDicePanel.ts";
+import { throwHooksSlot } from "./throw/hooks.ts";
+import type { ThrowOrigin } from "./throw/store.ts";
 
 /*
  * What the Dice panel's rows send through useRollOption
@@ -170,6 +172,28 @@ describe("a stat block's d20, which takes no panel choices (docs/design/design-v
       assert.equal(sent.length, 0);
       assert.deepEqual(choices.getState().last, { tag: "older", once: true, label: "Strength check" });
     }
+  });
+
+  test("its origin, the block's host and box, goes with the free roll and with an answer, so the dice leave the box (docs/design/design-v1-token-roll-header.md 4.1)", () => {
+    const box = { name: "DEX box" } as unknown as Element;
+    const origin: ThrowOrigin = { surface: "block", host: 7, element: box, tapAt: 120 };
+    for (const answer of [false, true]) {
+      const { api, scope, view } = probe();
+      if (answer) view.rolls.q1 = request;
+      const registered: [string, ThrowOrigin][] = [];
+      scope.get(throwHooksSlot).current = { register: (tag, o) => registered.push([tag, o]), origin: () => ({ surface: "dice", element: null, tapAt: 0 }) };
+      const tag = api.d20({ ...input, origin });
+      assert.ok(typeof tag === "string" && tag !== "asked");
+      assert.deepEqual(registered, [[tag, origin]], answer ? "the answer, through noted" : "the free roll, through roll");
+    }
+  });
+
+  test("without one, a surface that is not the Dice panel throws nothing", () => {
+    const { api, scope } = probe();
+    const registered: string[] = [];
+    scope.get(throwHooksSlot).current = { register: (tag) => registered.push(tag), origin: () => ({ surface: "dice", element: null, tapAt: 0 }) };
+    assert.ok(api.d20(input));
+    assert.deepEqual(registered, []);
   });
 
   test("a null for anything else is no failure: a creature gone, a missing bonus", () => {

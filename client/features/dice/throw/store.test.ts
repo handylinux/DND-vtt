@@ -11,7 +11,7 @@ import { createDicePanel, type DiceState } from "../useDicePanel.ts";
 import { ReceiptTracker, type ReceiptState } from "../useReceipt.ts";
 import type { DieKind } from "./layout.ts";
 import type { LoadState } from "./probe.ts";
-import { DISPOSE_MS, GONE_MS, LAND_MS, LATE_MS, PAINT_MS, ThrowStore, type PanelHost, type Stage, type StagedThrow, type StageEvents, type StageModule, type ThrowHost, type ThrowOrigin, type TrayHost } from "./store.ts";
+import { DISPOSE_MS, GONE_MS, LAND_MS, LATE_MS, PAINT_MS, PRESS_MS, RESIZE_SLOP_PX, ThrowStore, type PanelHost, type Stage, type StagedThrow, type StageEvents, type StageModule, type ThrowHost, type ThrowOrigin, type TrayGeometry, type TrayHost } from "./store.ts";
 
 /**
  * The throw's store (docs/design/design-v1-roll-animation.md 3 to 7), with a fake
@@ -94,8 +94,9 @@ class FakeStage implements Stage {
   playing: { tag: string; at: number; reduced: boolean } | null = null;
   disposed = false;
   warmups: Warmup[] = [];
-  /** The set each warm-up was asked for. */
+  /** The set each warm-up was asked for, and its dice. */
   warmSets: string[] = [];
+  warmKinds: (readonly DieKind[])[] = [];
   /** A play that throws, as a texture drawn with no 2D context does. */
   failPlay = false;
   /** How long a play's setup blocks the page: the clock moves on, and no timer fires meanwhile. */
@@ -111,11 +112,12 @@ class FakeStage implements Stage {
     this.events = events;
   }
 
-  warm(_kinds: readonly DieKind[], set: string): Promise<void> {
+  warm(kinds: readonly DieKind[], set: string): Promise<void> {
     assert.equal(this.playing, null, "never warmed over a throw on screen");
     const w = new Warmup();
     this.warmups.push(w);
     this.warmSets.push(set);
+    this.warmKinds.push(kinds);
     return w.promise;
   }
 
@@ -522,6 +524,354 @@ describe("the throw's store", () => {
   });
 });
 
+/** A tray of its own for each host, named by where its canvas hangs. */
+const trayIn = (parent: string, measure: () => TrayGeometry | null = () => GEOMETRY): TrayHost => ({ parent, measure });
+const BLOCK = { surface: "block", kinds: (): DieKind[] => ["d20", "d4"] } as const;
+/** An element where a test needs one: the store only compares and hands them on. */
+const element = (name: string) => ({ name }) as unknown as Element;
+
+describe("the throw's hosts (docs/design/design-v1-token-roll-header.md 4.2)", () => {
+  /** The dice ready, the Dice panel open with its tray, and a stat block's panel open with its own. */
+  function hosts() {
+    const h = harness();
+    h.ready();
+    const dice = h.host();
+    const block = h.store.mount(BLOCK);
+    const detach = block.attach(trayIn("block"));
+    return { h, dice, block, detach };
+  }
+
+  test("a block roll throws in its own host's tray alone, and the shown throw names that host", () => {
+    const { h, dice, block } = hosts();
+    assert.notEqual(block.id, dice.id);
+    const tag = h.tap(block.origin(element("DEX")));
+    h.commit(tag);
+    assert.equal(h.stage()!.plays.at(-1)?.parent, "block");
+    assert.equal(h.store.view().shown?.host, block.id);
+    assert.equal(h.store.held(tag), true);
+  });
+
+  test("a Dice panel roll with a block host mounted throws in the Dice panel, with or without its host named", () => {
+    const { h, dice } = hosts();
+    for (const origin of [dice.origin(), {}]) {
+      const tag = h.tap(origin);
+      h.commit(tag);
+      assert.equal(h.stage()!.plays.at(-1)?.parent, null, "the Dice panel's tray");
+      assert.equal(h.store.view().shown?.host, dice.id);
+    }
+  });
+
+  test("a block roll whose host is hidden, unmounted, or mounted again since the tap never throws", () => {
+    const { h, block } = hosts();
+    const hidden = h.tap(block.origin());
+    block.shown(false);
+    h.commit(hidden);
+    assert.equal(h.store.held(hidden), false, "hidden");
+    block.shown(true);
+    const shownAgain = h.tap(block.origin());
+    block.shown(false);
+    block.shown(true);
+    h.commit(shownAgain);
+    assert.equal(h.store.held(shownAgain), false, "hidden and shown again before the answer");
+    const remounted = h.tap(block.origin());
+    block.unmount();
+    block.mount();
+    h.commit(remounted);
+    assert.equal(h.store.held(remounted), false, "mounted again");
+    const gone = h.tap(block.origin());
+    block.unmount();
+    h.commit(gone);
+    assert.equal(h.store.held(gone), false, "unmounted");
+    assert.equal(h.stage()!.plays.length, 0);
+    block.mount();
+    const live = h.tap(block.origin());
+    h.commit(live);
+    assert.equal(h.store.held(live), true, "a tap under this mount throws");
+  });
+
+  test("the Dice panel closing during a block's throw leaves it, and the block's own unmount sends its held result to the toasts", () => {
+    const { h, dice, block } = hosts();
+    const tag = h.tap(block.origin());
+    h.commit(tag);
+    dice.unmount();
+    assert.equal(h.store.held(tag), true, "the Dice panel's unmount leaves another host's throw");
+    assert.ok(h.store.view().shown);
+    assert.deepEqual(h.tracker.unseenTags, []);
+    block.unmount();
+    assert.equal(h.store.held(tag), false);
+    assert.equal(h.store.view().shown, null);
+    assert.deepEqual(h.tracker.unseenTags, [tag], "never seen, so the toast says it");
+  });
+
+  test("a host's tray detaching or its pane hiding ends only that host's throw, unseen", () => {
+    for (const how of ["detach", "hide"] as const) {
+      const { h, dice, block, detach } = hosts();
+      const own = h.tap(dice.origin());
+      h.commit(own);
+      const away = how === "detach" ? detach : () => block.shown(false);
+      away();
+      assert.equal(h.store.held(own), true, `${how}: the Dice panel's throw goes on`);
+      assert.deepEqual(h.tracker.unseenTags, [], how);
+      const back = how === "detach" ? block.attach(trayIn("block")) : (block.shown(true), () => block.shown(false));
+      const thrown = h.tap(block.origin());
+      h.commit(thrown);
+      assert.equal(h.store.view().shown?.host, block.id, how);
+      back();
+      assert.equal(h.store.held(thrown), false, how);
+      assert.deepEqual(h.tracker.unseenTags, [thrown], `${how}: its own result was never seen`);
+    }
+  });
+
+  test("a result let go just before its host goes, never painted, goes to the toasts, and another host's never does", () => {
+    const { h, dice, block } = hosts();
+    const tag = h.tap(block.origin());
+    h.commit(tag);
+    // The block's panel sees the key, and the Escape closes the Dice panel's sheet in the same event.
+    block.keyDown();
+    dice.unmount();
+    assert.deepEqual(h.tracker.unseenTags, [], "another host's result");
+    block.unmount();
+    assert.deepEqual(h.tracker.unseenTags, [tag], "its own, before it painted");
+  });
+
+  test("each host's origin reads its own last press, and a block's takes its box", () => {
+    const { h, dice, block } = hosts();
+    const box = element("DEX box");
+    const row = element("Check row");
+    const roll = element("Roll");
+    block.pointerDown(row);
+    assert.equal(block.origin().element, row);
+    assert.equal(dice.origin().element, null, "a press in the token panel is never a Dice panel origin");
+    assert.equal(h.store.origin().element, null, "nor the Dice panel's by default");
+    dice.keyDown(roll);
+    assert.equal(h.store.origin().element, roll);
+    assert.equal(h.store.origin(block.id).element, row);
+    assert.equal(block.origin(box).element, box, "the box, given");
+    assert.deepEqual({ surface: block.origin().surface, host: block.origin().host }, { surface: "block", host: block.id });
+    h.clock.advance(PRESS_MS);
+    assert.equal(block.origin().element, null, "a press long ago is no origin");
+  });
+
+  test("a stat block's host alone warms the dice, d20 and d4, and the renderer goes 30 s after the last host goes", () => {
+    const h = harness();
+    h.loader.finish(h.module);
+    const block = h.store.mount(BLOCK);
+    h.idle.runAll();
+    const stage = h.stage()!;
+    assert.deepEqual(stage.warmKinds, [["d20", "d4"]]);
+    stage.warmups[0]!.finish(true);
+    const dice = h.store.mount(h.panel);
+    block.unmount();
+    h.clock.advance(DISPOSE_MS);
+    assert.equal(stage.disposed, false, "never while another host is mounted");
+    const again = h.store.mount(BLOCK);
+    dice.unmount();
+    h.clock.advance(DISPOSE_MS - 1);
+    again.unmount();
+    h.clock.advance(DISPOSE_MS - 1);
+    assert.equal(stage.disposed, false);
+    h.clock.advance(1);
+    assert.equal(stage.disposed, true, "30 s after the last host went");
+  });
+
+  test("reduced motion draws a block's dice once at rest, in its tray, with the result at once", () => {
+    const { h, block } = hosts();
+    h.store.setInputs({ reducedMotion: true });
+    const tag = h.tap(block.origin());
+    h.commit(tag);
+    assert.equal(h.store.held(tag), false);
+    assert.deepEqual({ reduced: h.stage()!.plays[0]?.reduced, parent: h.stage()!.plays[0]?.parent }, { reduced: true, parent: "block" });
+    assert.equal(h.store.view().shown?.host, block.id);
+  });
+
+  test("the pane's size keeps a baseline: a report on it, or the host's own change, is no resize, and any other ends the throw", () => {
+    const { h, block } = hosts();
+    block.observed({ width: 341, height: 500 });
+    const tag = h.tap(block.origin());
+    h.commit(tag);
+    block.observed({ width: 341, height: 500 + RESIZE_SLOP_PX });
+    assert.equal(h.store.held(tag), true, "within the slop");
+    // The header line goes in and the sheet grows: the host records it before the observer reports.
+    block.baseline({ width: 341, height: 544 });
+    block.observed({ width: 341, height: 544 });
+    assert.equal(h.store.held(tag), true, "the host's own growth");
+    block.observed({ width: 341, height: 600 });
+    assert.equal(h.store.held(tag), false, "a drag or the keyboard");
+    const next = h.tap(block.origin());
+    h.commit(next);
+    block.observed({ width: 341, height: 600 });
+    assert.equal(h.store.held(next), true, "the new size is the baseline");
+    block.observed({ width: 341.6, height: 600 });
+    assert.equal(h.store.held(next), false, "a width change too");
+    const fresh = h.store.mount(BLOCK);
+    fresh.attach(trayIn("fresh"));
+    const first = h.tap(fresh.origin());
+    h.commit(first);
+    fresh.observed({ width: 200, height: 300 });
+    assert.equal(h.store.held(first), true, "the first report is the baseline");
+  });
+
+  test("the DM's secret roll reaches a player's device as a line it never tapped, and throws nothing there", () => {
+    const { h } = hosts();
+    h.tracker.set("dm-secret", { state: "committed", lines: [line("dm-secret", [D20])] });
+    assert.equal(h.stage()!.plays.length, 0);
+  });
+});
+
+/**
+ * A host's tray mounting after its roll's answer (D-261101-099), with a
+ * sender that answers inside the send, through the panel's actions and the
+ * real receipt tracker. The dev room's server answers on a timer, but a
+ * sender may answer at once, and the first roll of a panel draws its tray
+ * only with the header line, after the answer.
+ */
+describe("a roll whose tray comes after its answer", () => {
+  function setup(surface: "dice" | "block") {
+    const clock = new FakeClock();
+    const idle = new FakeIdle();
+    const log: LogEntry[] = [];
+    const tracker = new ReceiptTracker();
+    tracker.env = { lookup: async () => ({ parts: [] }), log: () => log };
+    let n = 0;
+    const sender: RollSender = {
+      // The answer comes inside the send: its line lands, then its ack.
+      dispatch: (op, opts) => {
+        const tag = (op as { tag: string }).tag;
+        log.push(line(tag, [{ formula: "1d20+4", faces: [12], total: 16, characterId: "thorn" }]));
+        opts?.onAnswer?.("taken");
+        return ++n;
+      },
+      connected: () => true,
+      receipts: tracker,
+    };
+    const loader = new FakeLoader();
+    let stage: FakeStage | null = null;
+    const store = new ThrowStore();
+    store.bind({ clock, idle: idle.idle, tracker, loader, hidden: () => false });
+    loader.finish({ createStage: (events) => (stage = new FakeStage(clock, events)) });
+    const host = store.mount(surface === "block" ? BLOCK : { kinds: () => ["d20"] });
+    idle.runAll();
+    stage!.warmups[0]!.finish(true);
+    const choices = createStore<DiceState>(() => ({ adv: false, dis: false, secret: null, version: 0, last: null }));
+    const panel = createDicePanel({ store: choices, sender, secretStart: () => false, registerThrow: (tag, origin) => store.register(tag, origin) });
+    const box = element("DEX box");
+    /** A stat block's pick: its host holds before it sends, as the header line will settle the scroll. */
+    const pick = () => {
+      if (surface === "block") host.hold();
+      return panel.roll([{ formula: "1d20+4", label: "Dexterity check", creature: { characterId: "thorn" } }], { origin: surface === "block" ? host.origin(box) : host.origin(), choices: "none" })!;
+    };
+    return { store, host, pick, clock, stage: () => stage!, tracker };
+  }
+
+  test("a block's first roll, committed inside the send, waits through its tray's attach and throws at the release, landing 1 s after the answer", () => {
+    const h = setup("block");
+    const tag = h.pick();
+    assert.equal(h.tracker.state(tag)?.state, "committed", "answered inside the send");
+    assert.equal(h.stage().plays.length, 0);
+    h.clock.advance(16);
+    h.host.attach(trayIn("block"));
+    assert.equal(h.stage().plays.length, 0, "held: the attach decides nothing while the header settles");
+    h.clock.advance(4);
+    h.host.release();
+    assert.equal(h.stage().plays.length, 1);
+    assert.equal(h.stage().plays[0]!.elapsed, 20, "the stage is told how long ago the answer came");
+    assert.equal(h.stage().plays[0]!.geometry.from !== undefined, true);
+    assert.equal(h.store.view().shown?.startedAt, 0, "the tray's marks count from the answer");
+    assert.equal(h.store.held(tag), true);
+    h.clock.advance(LAND_MS - 20 - 1);
+    assert.equal(h.store.held(tag), true);
+    h.clock.advance(1);
+    assert.equal(h.store.held(tag), false, "landed at t0 + 1,000 ms");
+    h.clock.advance(GONE_MS - LAND_MS);
+    assert.equal(h.store.view().shown, null, "gone at t0 + 2,100 ms");
+  });
+
+  test("a held host's later roll waits for its release too, with its tray already there", () => {
+    const h = setup("block");
+    h.host.attach(trayIn("block"));
+    h.host.release();
+    const tag = h.pick();
+    assert.equal(h.stage().plays.length, 0, "held until the header's layout effect");
+    h.host.release();
+    assert.equal(h.stage().plays.length, 1);
+    assert.equal(h.store.held(tag), true);
+  });
+
+  test("released 1 s or more after the answer, the result shows at once and nothing is thrown", () => {
+    const h = setup("block");
+    h.host.attach(trayIn("block"));
+    const tag = h.pick();
+    h.clock.advance(LAND_MS);
+    h.host.release();
+    assert.equal(h.stage().plays.length, 0);
+    assert.equal(h.store.held(tag), false);
+  });
+
+  test("the Dice panel's first roll waits for its sticky line's tray, which decides it as it attaches", () => {
+    const h = setup("dice");
+    const tag = h.pick();
+    assert.equal(h.stage().plays.length, 0);
+    h.clock.advance(10);
+    h.host.attach(trayIn("dice"));
+    assert.equal(h.stage().plays.length, 1);
+    assert.equal(h.stage().plays[0]!.parent, "dice");
+    assert.equal(h.store.held(tag), true);
+    h.clock.advance(LAND_MS - 10);
+    assert.equal(h.store.held(tag), false, "landed 1 s after the answer");
+  });
+
+  test("a roll still waiting as its host hides or goes never throws", () => {
+    for (const how of ["hide", "unmount"] as const) {
+      const h = setup("block");
+      h.host.attach(trayIn("block"));
+      const tag = h.pick();
+      if (how === "hide") {
+        h.host.shown(false);
+        h.host.shown(true);
+      } else {
+        h.host.unmount();
+        h.host.mount();
+      }
+      h.host.release();
+      assert.equal(h.stage().plays.length, 0, how);
+      assert.equal(h.store.held(tag), false, how);
+    }
+  });
+});
+
+describe("a committed roll waiting for its host, with answers that come later", () => {
+  test("past its tap's 3 s it is dropped at the release, even within 1 s of its answer", () => {
+    for (const late of [false, true]) {
+      const h = harness();
+      h.ready();
+      const block = h.store.mount(BLOCK);
+      block.attach(trayIn("block"));
+      block.hold();
+      const tag = h.tap(block.origin());
+      h.clock.advance(2_500);
+      h.commit(tag);
+      h.clock.advance(late ? 501 : 499);
+      block.release();
+      assert.equal(h.store.held(tag), !late, late ? "dropped" : "within its tap's 3 s and its answer's 1 s");
+    }
+  });
+
+  test("a waiting roll throws only if no newer tap is on its way", () => {
+    const h = harness();
+    h.ready();
+    const block = h.store.mount(BLOCK);
+    block.attach(trayIn("block"));
+    block.hold();
+    const first = h.tap(block.origin());
+    h.commit(first);
+    const second = h.tap(h.host().origin());
+    block.release();
+    assert.equal(h.store.held(first), false, "the Dice panel's newer roll would end it at once");
+    h.commit(second);
+    assert.equal(h.store.held(second), true);
+  });
+});
+
 /**
  * Every way a Dice panel control rolls, through the panel's own actions
  * (createDicePanel) and the real receipt tracker: each that carries the
@@ -719,17 +1069,20 @@ describe("every way a panel control rolls", () => {
 });
 
 describe("the throw's store, randomized", () => {
-  test("2,000 random sequences keep its promises", (t) => {
+  test("3,000 random sequences keep its promises", (t) => {
     // A stage that throws as it plays logs its error, which would flood the output here.
     t.mock.method(console, "warn", () => undefined);
-    for (let seed = 1; seed <= 2_000; seed++) run(seed);
+    for (let seed = 1; seed <= 3_000; seed++) run(seed);
   });
 });
 
 /**
- * One random sequence of taps, answers, refusals, unknowns, chunk loads,
- * warm-ups, context losses and restores, panel taps and keys, mounts,
- * closes and resizes, page hides and shows, setting changes and clock
+ * One random sequence of taps from the Dice panel, two stat blocks' panels
+ * and elsewhere, answers, refusals, unknowns, chunk loads, warm-ups,
+ * context losses and restores, taps and keys, hosts mounting, hiding,
+ * unmounting and mounting again (a block's often as a new host, as a new
+ * key makes one), trays attaching before and after an answer, holds and
+ * releases, resizes, page hides and shows, setting changes and clock
  * steps, with the invariants checked after every step. The model beside
  * the store knows only what the test did, never the store's own state.
  */
@@ -737,18 +1090,33 @@ function run(seed: number): void {
   const r = rng(seed);
   const h = harness();
   const { store, clock, tracker } = h;
-  /** The Dice panel's host, mounted and unmounted as the panel opens and closes. */
-  const dice = store.host(h.panel);
   /** What the sequence did, for a failure's message. */
   const trace: string[] = [];
   const did = (what: string) => trace.push(`${clock.now()} ${what}`);
-  const at = (what: string) => `seed ${seed}, ${what}, after: ${trace.slice(-10).join("; ")}`;
+  const at = (what: string) => `seed ${seed}, ${what}, after: ${trace.slice(-12).join("; ")}`;
 
-  type Tap = { tag: string; mount: number | null; tapAt: number; panel: boolean; checked: boolean; settled: boolean };
+  let short = false;
+  type HostModel = { name: string; surface: "dice" | "block"; handle: ThrowHost; mounted: boolean; era: number; visible: boolean; held: boolean; tray: boolean; detach: (() => void) | null; size: number | null };
+  const specOf = (surface: "dice" | "block"): PanelHost => (surface === "dice" ? h.panel : { surface: "block", kinds: () => ["d20", "d4"] });
+  const fresh = (x: HostModel) => {
+    x.handle = store.host(specOf(x.surface));
+    x.era = 0;
+    x.visible = true;
+    x.held = false;
+    x.tray = false;
+    x.detach = null;
+    x.size = null;
+  };
+  const hosts: HostModel[] = (["dice", "block", "block"] as const).map((surface, i) => {
+    const x = { name: i === 0 ? "dice" : `block-${i}`, surface } as HostModel;
+    fresh(x);
+    return x;
+  });
+  const dice = hosts[0]!;
+  const blocks = hosts.slice(1);
+
+  type Tap = { tag: string; host: HostModel | null; handle: ThrowHost | null; era: number; tapAt: number; panel: boolean; checked: boolean; state: "open" | "waiting" | "done" | "dropped"; answeredAt: number | null; rolls: DiceRoll[] };
   const taps: Tap[] = [];
-  let mount: number | null = null;
-  let mounts = 0;
-  let unmount: (() => void) | null = null;
   let closedAt: number | null = null;
   let stageAtClose: FakeStage | null = null;
   const inputs = { on: true, lowPower: false, reducedMotion: false, preview: false };
@@ -758,31 +1126,40 @@ function run(seed: number): void {
   let broken = false;
   // Some sequences take a while to set up each throw, which the deadlines count.
   h.setup(pick(r, [0, 0, 30, 200]));
-  let short = false;
-  /** The group save page shows in place of the header line and its tray. */
-  let groupSave = false;
-  let detachTray: (() => void) | null = null;
   /** A warm-up finished on the current stage since anything made it cold. */
   let warm = false;
   /** The warm-ups that still count: one asked since nothing made it cold. */
   let counting = new Set<Warmup>();
-  type Play = { tag: string; at: number; reduced: boolean; interrupted: boolean };
+  type Play = { tag: string; host: HostModel; hostId: number; at: number; reduced: boolean; interrupted: boolean };
   // Set inside the stage's callback, which TypeScript cannot follow from here.
   let play = null as Play | null;
+  let plays = 0;
 
   const chill = () => {
     warm = false;
     counting = new Set();
   };
+  const trayOf = (name: string): TrayHost => ({ parent: name, measure: () => (short ? null : GEOMETRY) });
+  /** When the step began: a throw's setup moves the clock on inside the step, after the store decided. */
+  let stepAt = 0;
+  const live = (t: Tap) => {
+    const x = t.host;
+    return x !== null && x.mounted && x.visible && x.handle === t.handle && x.era === t.era && !t.checked && stepAt - t.tapAt <= LATE_MS;
+  };
+  const pending = (t: Tap) => t.panel && (t.state === "open" || t.state === "waiting");
+  const allowed = () => inputs.on && !inputs.lowPower && !inputs.preview && h.loader.current === "ready" && !h.page.hidden && warm && !contextLost && realLosses < 2 && !broken && !short;
   const watchStage = (stage: FakeStage) => {
     if ((stage as { watched?: true }).watched) return;
     (stage as { watched?: true }).watched = true;
     stage.onPlay = (t) => {
       const tap = taps.find((x) => x.tag === t.tag);
-      assert.ok(tap && tap.panel && tap.mount !== null && tap.mount === mount, at(`only a panel tap under this mount throws (${t.tag})`));
+      const host = hosts.find((x) => x.name === t.parent);
+      assert.ok(tap && host && tap.host === host && tap.handle === host.handle, at(`a throw plays only in the tray of the host that sent it (${t.tag})`));
+      assert.ok(host.mounted && host.visible && host.tray && !host.held, at("only a live, settled host with a tray throws"));
       assert.equal(tap.checked, false, at("never a roll a lookup settled"));
       assert.equal(tracker.states.get(t.tag)?.state, "committed", at("only a committed roll throws"));
-      play = { tag: t.tag, at: clock.now(), reduced: t.reduced, interrupted: false };
+      plays++;
+      play = { tag: t.tag, host, hostId: host.handle.id, at: clock.now() - t.elapsed, reduced: t.reduced, interrupted: false };
     };
     stage.onDispose = () => {
       assert.equal(store.view().shown, null, at("never disposed while a throw runs"));
@@ -795,88 +1172,162 @@ function run(seed: number): void {
   const shownNow = () => {
     assert.equal(store.view().held, null, at("the result shows at once after an interruption"));
   };
+  /**
+   * The store's check of its taps, as it runs after any change of a
+   * receipt, a register, an attach or a release: in tap order, a committed
+   * tap waits while its live host holds or has no tray, within 1 s of its
+   * answer, and otherwise is decided. Returns the tap that throws, if any.
+   */
+  const check = (committed: Tap | null = null): string | null => {
+    let throws: string | null = null;
+    const now = stepAt;
+    for (const [i, t] of taps.entries()) {
+      if (t.state !== "waiting" && t !== committed) continue;
+      const answered = t.answeredAt ?? now;
+      const inTime = now - answered < LAND_MS;
+      if (live(t) && (t.host!.held || !t.host!.tray) && inTime) {
+        t.answeredAt = answered;
+        t.state = "waiting";
+        continue;
+      }
+      t.state = "done";
+      const later = taps.slice(i + 1).some(pending);
+      let ok = live(t) && t.host!.tray && !t.host!.held && inTime && allowed() && !later && t.rolls.length === 1;
+      // An eligible commit on a stage that throws as it plays shows at once, and ends the dice for the session.
+      if (ok && h.stage()?.failPlay) {
+        ok = false;
+        broken = true;
+        chill();
+      }
+      if (ok) throws = t.tag;
+    }
+    return throws;
+  };
+  const drop = (x: HostModel) => {
+    for (const t of taps) if (t.host === x && t.handle === x.handle && (t.state === "open" || t.state === "waiting")) t.state = "dropped";
+  };
+  /** A host's own throw ends as it goes, hides or loses its tray. Another host's goes on. */
+  const endFor = (x: HostModel, act: () => void) => {
+    const own = play !== null && play.host === x && play.hostId === x.handle.id;
+    const held = own && store.view().held === play!.tag ? play!.tag : null;
+    const before = tracker.unseenTags.length;
+    if (own) interrupted();
+    act();
+    if (own) shownNow();
+    if (held !== null) assert.equal(tracker.unseenTags.slice(before).at(-1), held, at("a host's own held result goes to the toasts as it goes"));
+  };
+  const mount = (x: HostModel) => {
+    x.mounted = true;
+    x.era++;
+    x.handle.mount();
+    closedAt = null;
+    stageAtClose = null;
+  };
+  const unmount = (x: HostModel) => {
+    endFor(x, () => x.handle.unmount());
+    x.mounted = false;
+    x.era++;
+    drop(x);
+    if (hosts.every((y) => !y.mounted)) {
+      // A warm-up still under way stops counting when the last surface closes.
+      counting = new Set();
+      closedAt = clock.now();
+      stageAtClose = h.stage();
+    }
+  };
 
-  // Most sequences start with the dice ready, so throws happen often enough to break.
+  // Most sequences start with the dice ready and the Dice panel open, so throws happen often enough to break.
   if (chance(r, 0.75)) {
     h.loader.finish(h.module);
-    dice.mount();
-    unmount = () => dice.unmount();
-    detachTray = dice.attach(h.tray);
+    mount(dice);
+    dice.detach = dice.handle.attach(trayOf(dice.name));
+    dice.tray = true;
+    for (const x of blocks) {
+      if (!chance(r, 0.6)) continue;
+      mount(x);
+      if (chance(r, 0.5)) {
+        x.detach = x.handle.attach(trayOf(x.name));
+        x.tray = true;
+      }
+    }
     h.idle.runAll();
     h.stage()?.warmups.at(-1)?.finish(true);
-    mount = ++mounts;
     warm = h.stage() !== null;
   }
-  const steps = int(r, 20, 80);
+  const steps = int(r, 20, 90);
   for (let step = 0; step < steps; step++) {
     const stage = h.stage();
     if (stage) watchStage(stage);
+    stepAt = clock.now();
     const k = r();
-    let committed: Tap | null = null;
-    let committedAt = 0;
-    let eligible = false;
+    let expected: string | null = null;
+    const playsBefore = plays;
     if (k < 0.18) {
-      // A tap: in the panel (with an origin), or elsewhere, such as the tracker's Roll. With the panel closed, a panel tap is a stale one.
-      const panel = chance(r, mount === null ? 0.2 : 0.8);
-      const tag = h.tap(panel ? {} : null);
-      did(`tap ${tag}${panel ? "" : " elsewhere"}`);
-      taps.push({ tag, mount: panel && mount !== null ? mounts : null, tapAt: clock.now(), panel, checked: false, settled: false });
-      if (panel) {
+      // A tap: in a surface (with its origin), or elsewhere, such as the tracker's Roll.
+      const where = r();
+      let host: HostModel | null = null;
+      let origin: Partial<ThrowOrigin> | null = null;
+      let handle: ThrowHost | null = null;
+      if (where < 0.12) origin = null;
+      else if (where < 0.5) {
+        // The Dice panel's controls name no host, or its own.
+        if (chance(r, 0.5)) origin = {};
+        else origin = dice.handle.origin();
+        host = dice.mounted ? dice : null;
+        handle = dice.handle;
+      } else {
+        // Mostly from a panel that is open, sometimes a stale tap from one that closed.
+        const open = blocks.filter((b) => b.mounted);
+        const x = open.length > 0 && chance(r, 0.85) ? pick(r, open) : pick(r, blocks);
+        // A pick holds its host's rolls before it sends, as the header line settles its scroll.
+        if (!x.held && chance(r, 0.6)) {
+          x.held = true;
+          x.handle.hold();
+        }
+        origin = x.handle.origin(null);
+        host = x.mounted ? x : null;
+        handle = x.handle;
+      }
+      const tag = h.tap(origin);
+      did(`tap ${tag} ${origin === null ? "elsewhere" : (host?.name ?? "stale")}`);
+      const tap: Tap = { tag, host, handle, era: host?.era ?? -1, tapAt: clock.now(), panel: origin !== null, checked: false, state: "open", answeredAt: null, rolls: [] };
+      taps.push(tap);
+      if (tap.panel) {
         interrupted();
         shownNow();
+        // The register's own check: a tap that waited sees this newer one on its way.
+        check();
       }
     } else if (k < 0.4) {
-      const open = taps.filter((t) => !t.settled);
+      const open = taps.filter((t) => t.state === "open" || t.state === "dropped");
       if (open.length === 0) continue;
       // Mostly the newest, as answers come in order, sometimes an older one.
       const tap = chance(r, 0.7) ? open.at(-1)! : pick(r, open);
       const how = r();
+      const dropped = tap.state === "dropped";
       if (how < 0.65) {
-        const rolls = chance(r, 0.1) ? [D20, { ...D20, tokenId: "t9" }] : chance(r, 0.05) ? [] : [D20];
-        // Every condition the design names, from the test's own record.
-        const later = taps.some((t) => t !== tap && !t.settled && t.panel && taps.indexOf(t) > taps.indexOf(tap));
-        eligible =
-          tap.panel &&
-          tap.mount !== null &&
-          tap.mount === mount &&
-          !tap.checked &&
-          clock.now() - tap.tapAt <= LATE_MS &&
-          inputs.on &&
-          !inputs.lowPower &&
-          !inputs.preview &&
-          h.loader.current === "ready" &&
-          !h.page.hidden &&
-          warm &&
-          !contextLost &&
-          realLosses < 2 &&
-          !short &&
-          !groupSave &&
-          !later &&
-          !broken &&
-          rolls.length === 1;
-        // An eligible commit on a stage that throws as it plays shows at once, and ends the dice for the session.
-        if (eligible && h.stage()?.failPlay) {
-          eligible = false;
-          broken = true;
-          chill();
-        }
-        tap.settled = true;
-        committed = tap;
-        did(`commit ${tap.tag}${eligible ? " (eligible)" : ""}`);
-        committedAt = clock.now();
-        h.commit(tap.tag, rolls);
+        tap.rolls = chance(r, 0.1) ? [D20, { ...D20, tokenId: "t9" }] : chance(r, 0.05) ? [] : [D20];
+        did(`commit ${tap.tag}`);
+        h.commit(tap.tag, tap.rolls);
+        if (dropped || !tap.panel) {
+          tap.state = "done";
+          expected = check();
+        } else expected = check(tap);
       } else if (how < 0.8) {
-        tap.settled = true;
+        tap.state = "done";
         did(`refuse ${tap.tag}`);
         tracker.set(tap.tag, { state: "refused", code: "invalid", message: "No.", text: "No." });
+        expected = check();
       } else if (how < 0.9) {
         tap.checked = true;
         did(`check ${tap.tag}`);
         tracker.set(tap.tag, { state: "checking" });
+        expected = check();
       } else {
-        tap.settled = true;
+        tap.state = "done";
         did(`unknown ${tap.tag}`);
         tracker.set(tap.tag, { state: "unknown" });
+        expected = check();
       }
     } else if (k < 0.42) {
       if (h.loader.current === "waiting") {
@@ -923,70 +1374,126 @@ function run(seed: number): void {
           s.events.restored();
         }
       }
-    } else if (k < 0.68) {
+    } else if (k < 0.66) {
+      // Any surface's tap or key takes the dice away, whichever surface threw them.
+      const x = pick(r, hosts);
       const e = pick(r, ["down", "click", "up", "cancel", "key"] as const);
-      did(e);
+      did(`${e} in ${x.name}`);
       if (e === "down") {
-        dice.pointerDown();
+        x.handle.pointerDown();
         assert.equal(store.view().shown, null, at("a pointer down takes the dice"));
-        if (play) play.interrupted = true;
-      } else if (e === "click") {
-        // A click or a cancel always ends a press in the panel, even one that began before the throw.
         interrupted();
-        dice.click();
+      } else if (e === "click") {
+        // A click or a cancel always ends a press, even one that began before the throw.
+        interrupted();
+        x.handle.click();
         shownNow();
-      } else if (e === "up") dice.pointerUp();
+      } else if (e === "up") x.handle.pointerUp();
       else if (e === "cancel") {
         interrupted();
-        dice.pointerCancel();
+        x.handle.pointerCancel();
         shownNow();
       } else {
         interrupted();
-        dice.keyDown();
+        x.handle.keyDown();
         shownNow();
       }
-    } else if (k < 0.74) {
-      // The panel opens again soon after it closes, as it does at a table.
-      if (mount !== null && chance(r, 0.5)) continue;
-      if (mount === null) {
-        mount = ++mounts;
-        did("mount");
-        dice.mount();
-        unmount = () => dice.unmount();
-        detachTray = dice.attach(h.tray);
-        groupSave = false;
-        closedAt = null;
-        stageAtClose = null;
+    } else if (k < 0.73) {
+      // A surface opens again soon after it closes, as it does at a table. A stat block's panel often opens as a new host, for another creature.
+      const x = pick(r, hosts);
+      if (x.mounted && chance(r, 0.5)) continue;
+      if (!x.mounted) {
+        if (x.surface === "block" && chance(r, 0.6)) fresh(x);
+        did(`mount ${x.name} #${x.handle.id}`);
+        mount(x);
       } else {
-        interrupted();
-        did("unmount");
-        detachTray?.();
-        detachTray = null;
-        unmount!();
-        mount = null;
-        // A warm-up still under way stops counting when the panel closes.
-        counting = new Set();
-        closedAt = clock.now();
-        stageAtClose = h.stage();
-        shownNow();
+        did(`unmount ${x.name}`);
+        // React cleans up the tray and the host in either order.
+        if (x.tray && chance(r, 0.5)) {
+          endFor(x, () => x.detach!());
+          x.tray = false;
+          x.detach = null;
+        }
+        unmount(x);
       }
-    } else if (k < 0.77) {
-      interrupted();
-      did("resize");
-      store.resized();
-      shownNow();
+    } else if (k < 0.76) {
+      const x = pick(r, hosts);
+      if (!x.mounted) continue;
+      if (x.visible) {
+        did(`hide ${x.name}`);
+        endFor(x, () => x.handle.shown(false));
+        x.visible = false;
+        x.era++;
+        drop(x);
+      } else {
+        did(`show ${x.name}`);
+        x.visible = true;
+        x.handle.shown(true);
+      }
     } else if (k < 0.81) {
+      // A tray attaches (the header line's first roll, or the group save page closing), or detaches (the group save page opening).
+      const bare = hosts.filter((y) => y.mounted && !y.tray);
+      const x = bare.length > 0 && chance(r, 0.7) ? pick(r, bare) : pick(r, hosts);
+      if (x.tray) {
+        did(`detach ${x.name}`);
+        endFor(x, () => x.detach!());
+        x.tray = false;
+        x.detach = null;
+      } else {
+        did(`attach ${x.name}`);
+        x.tray = true;
+        x.detach = x.handle.attach(trayOf(x.name));
+        if (!x.held) expected = check();
+      }
+    } else if (k < 0.87) {
+      // A stat block's host holds its rolls from its pick to its header line's layout effect.
+      const holding = blocks.filter((b) => b.held);
+      const x = holding.length > 0 && chance(r, 0.7) ? pick(r, holding) : pick(r, blocks);
+      if (x.held) {
+        did(`release ${x.name}`);
+        x.held = false;
+        x.handle.release();
+        expected = check();
+      } else {
+        did(`hold ${x.name}`);
+        x.held = true;
+        x.handle.hold();
+      }
+    } else if (k < 0.89) {
+      const x = pick(r, hosts);
+      if (chance(r, 0.4)) {
+        did(`resize`);
+        interrupted();
+        store.resized();
+        shownNow();
+      } else {
+        // Reports at the baseline, within its slop, are no resize. A host's own change only moves the baseline.
+        const size = pick(r, [500, 500.3, 544, 600]);
+        if (chance(r, 0.3)) {
+          did(`${x.name} baseline ${size}`);
+          x.size = size;
+          x.handle.baseline({ width: 300, height: size });
+        } else {
+          const moved = x.size !== null && Math.abs(x.size - size) > RESIZE_SLOP_PX;
+          did(`${x.name} observed ${size}${moved ? " (a resize)" : ""}`);
+          if (moved) interrupted();
+          x.size = size;
+          x.handle.observed({ width: 300, height: size });
+          if (moved) shownNow();
+        }
+      }
+    } else if (k < 0.905) {
       if (!h.page.hidden && chance(r, 0.5)) continue;
       h.page.hidden = !h.page.hidden;
       if (h.page.hidden) interrupted();
-      did(h.page.hidden ? "hide" : "show");
+      did(h.page.hidden ? "page hidden" : "page shown");
       store.visibility(h.page.hidden);
       if (h.page.hidden) {
         chill();
         contextLost = false;
         shownNow();
       }
-    } else if (k < 0.86) {
+    } else if (k < 0.935) {
       if (chance(r, 0.15)) {
         // Another dice set: its textures are drawn ahead, and nothing stops.
         const set = pick(r, ["ivory", "ruby", "gold"]);
@@ -1009,32 +1516,17 @@ function run(seed: number): void {
         chill();
         contextLost = false;
       }
-    } else if (k < 0.88) {
+    } else if (k < 0.94) {
+      did(`short ${!short}`);
       short = !short;
-      h.short(short);
-    } else if (k < 0.9) {
-      // The group save page opens in the panel, or closes and the header line's tray comes back.
-      if (mount === null) continue;
-      if (groupSave) {
-        did("group save closes");
-        detachTray = dice.attach(h.tray);
-        groupSave = false;
-      } else {
-        did("group save opens");
-        interrupted();
-        detachTray?.();
-        detachTray = null;
-        groupSave = true;
-        shownNow();
-      }
-    } else if (k < 0.905) {
+    } else if (k < 0.945) {
       const s = h.stage();
       if (s && !s.disposed && !s.failPlay) {
         did("the stage breaks");
         s.failPlay = true;
       }
     } else {
-      const ms = chance(r, 0.05) ? DISPOSE_MS : pick(r, [16, 100, 250, 400, 700, 999, 1_000, 1_500, 2_500]);
+      const ms = chance(r, 0.05) ? DISPOSE_MS : pick(r, [16, 30, 100, 250, 400, 700, 999, 1_000, 1_500, 2_500]);
       did(`wait ${ms}`);
       clock.advance(ms);
     }
@@ -1042,16 +1534,17 @@ function run(seed: number): void {
     // ---------------------------------------------------------- invariants
     const view = store.view();
     const now = clock.now();
-    if (committed && eligible) assert.equal(play?.tag, committed.tag, at(`an eligible commit throws (${committed.tag})`));
-    if (committed && !eligible) assert.notEqual(play?.tag === committed.tag && play.at === committedAt, true, at(`an ineligible commit never throws (${committed.tag})`));
+    if (expected !== null) assert.equal(play?.tag, expected, at(`a decided tap whose host is live and settled throws (${expected})`));
+    assert.equal(plays - playsBefore, expected !== null ? 1 : 0, at("nothing else throws"));
     if (broken) assert.equal(view.held, null, at("a stage that threw never holds a result"));
+    if (view.shown) assert.equal(view.shown.host, play?.hostId, at("the shown throw names the host that sent it, whose tray alone draws it"));
     if (view.held !== null) {
       assert.ok(play && play.tag === view.held && !play.reduced, at("only a throw holds its result"));
       assert.ok(now < play.at + LAND_MS, at("a result shows by t0 + 1,000 ms"));
     }
-    if (play && !play.interrupted && !play.reduced && now < play.at + LAND_MS) assert.equal(view.held, play.tag, at("a throw holds its result until the dice land"));
+    if (play && !play.interrupted && !play.reduced && now < play.at + LAND_MS) assert.equal(view.held, play.tag, at("a throw holds its result until the dice land, whatever another host does"));
     if (view.shown === null) assert.ok(!h.stage()?.looping(), at("no loop after a throw ends"));
     assert.equal(store.lostContexts, realLosses, at("a deliberate disposal never counts as a lost context"));
-    if (closedAt !== null && stageAtClose && now - closedAt >= DISPOSE_MS) assert.equal(stageAtClose.disposed, true, at("the renderer goes within 30 s of the panel closing"));
+    if (closedAt !== null && stageAtClose && now - closedAt >= DISPOSE_MS) assert.equal(stageAtClose.disposed, true, at("the renderer goes within 30 s of the last surface closing"));
   }
 }
