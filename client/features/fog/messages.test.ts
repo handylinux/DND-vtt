@@ -6,11 +6,12 @@ import type { BuildChunk, FogOp, FogShape, TerrainId } from "#shared/model.ts";
 import { clientMessageSchema, MAX_FOG_DRAFT_OPS } from "#shared/protocol.ts";
 import { sceneHexes, type HexGrid } from "#shared/rules/hex.ts";
 import { deriveWalls, indexBuild } from "#shared/rules/walls.ts";
-import { room, scene } from "#shared/testutil.ts";
+import { applyOp } from "#shared/reducer.ts";
+import { DM, env, room, scene } from "#shared/testutil.ts";
 import { RoomScope } from "../../state/scope.ts";
 import type { ToolContext } from "../tools.ts";
 import { SQUARES } from "#shared/rules/grid.ts";
-import { cellsOutline, draftOutlines, fogEditOf, fogMessages, fogOps, hexCellsOutline, hexRoomShapes, lastEditIds, MAX_FOG_MESSAGE_BYTES, publishLabel, publishShort, rectShape, roomShapes, strokeShapes, type FogMessage } from "./shapes.ts";
+import { cellsOutline, draftEdits, draftOutlines, fogEditOf, fogMessages, fogOps, hexCellsOutline, hexRoomShapes, lastEditIds, MAX_FOG_MESSAGE_BYTES, publishLabel, publishShort, rectShape, roomShapes, strokeShapes, type FogMessage } from "./shapes.ts";
 import { fogSlot } from "./store.ts";
 
 const { submitFog } = await import("./tool.tsx");
@@ -186,12 +187,58 @@ describe("a fog gesture in the draft is one edit", () => {
     const backwards = [op(`${v7}.0`, 1), op(`${v7}.2`, 3), op(`${v7}.1`, 5)];
     assert.equal(publishShort(backwards), "Reveal (2)", "a number that does not climb is an edit of its own");
     assert.deepEqual(lastEditIds(backwards), [`${v7}.1`]);
-    const again = [op(`${v7}.0`, 1), op(`${v7}.1`, 3), op(`${v7}.0`, 5), op(`${v7}.1`, 7)];
-    assert.equal(publishShort(again), "Reveal (2)", "a second .0 starts a second edit");
     // Another DM's edit landing between a gesture's messages leaves it one edit, as the app sends it.
     const between = [op(`${v7}.0`, 1), op(other, 3), op(`${v7}.1`, 5), op(`${v7}.2`, 7)];
     assert.equal(publishShort(between), "Reveal (2)");
     assert.deepEqual(lastEditIds(between), [`${v7}.0`, `${v7}.1`, `${v7}.2`]);
+  });
+
+  test("edits that share an op id are one edit, as Undo removes them, in the count and the outlines too", () => {
+    const v7 = "0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b";
+    const op = (id: string, x: number): FogOp => ({ id, mode: "reveal", shape: { kind: "cells", cells: [`${x},1`] } });
+    const plain = op("p", 9);
+    // An imported draft repeats a gesture's ids: Undo's ids take all four of its ops out together.
+    const again = [plain, op(`${v7}.0`, 1), op(`${v7}.1`, 3), op(`${v7}.0`, 5), op(`${v7}.1`, 7)];
+    assert.equal(publishShort(again), "Reveal (2)");
+    const remove = lastEditIds(again);
+    assert.deepEqual(remove, [`${v7}.0`, `${v7}.1`]);
+    const imported = room({ scenes: { [SCENE_ID]: scene(SCENE_ID, { fogEnabled: true }) }, fogDrafts: { [SCENE_ID]: { sceneId: SCENE_ID, rev: 0, ops: again } } });
+    const result = applyOp(imported, { t: "fog.draft", sceneId: SCENE_ID, remove }, DM, env(1));
+    assert.ok(result.ok);
+    const undone = result.state.fogDrafts[SCENE_ID]?.ops ?? [];
+    assert.deepEqual(undone.map((o) => o.id), ["p"], "one Undo leaves only the edit before");
+    assert.equal(publishShort(undone), "Reveal (1)");
+    const lines = draftOutlines(again, SQUARES);
+    assert.deepEqual(lines.get(`${v7}.0`), cellsOutline(["1,1", "3,1", "5,1", "7,1"]), "one outline round the whole edit");
+    assert.deepEqual(lines.get(`${v7}.1`), []);
+    // A gesture's id that comes again out of order, after another edit, is still that gesture's.
+    const late = [op(`${v7}.0`, 1), op(`${v7}.1`, 3), plain, op(`${v7}.1`, 5)];
+    assert.equal(publishShort(late), "Reveal (2)");
+    assert.deepEqual(lastEditIds(late), [`${v7}.0`, `${v7}.1`]);
+  });
+
+  test("in any draft, no op id spans two edits, so Undo's ids take out exactly the last op's edit", () => {
+    const v7 = "0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b";
+    const ids = [`${v7}.0`, `${v7}.1`, `${v7}.2`, "p", "q", `${v7}`];
+    let seed = 7;
+    const next = (n: number) => {
+      seed = (seed * 1103515245 + 12345) % 2 ** 31;
+      return seed % n;
+    };
+    for (let run = 0; run < 2000; run++) {
+      const draft = Array.from({ length: 1 + next(8) }, (_, x): FogOp => ({ id: ids[next(ids.length)]!, mode: "reveal", shape: { kind: "cells", cells: [`${x},1`] } }));
+      const edits = draftEdits(draft);
+      const owner = new Map<string, number>();
+      edits.forEach((edit, e) => {
+        for (const o of edit) {
+          assert.equal(owner.get(o.id) ?? e, e, `${o.id} in two edits of ${draft.map((d) => d.id).join(" ")}`);
+          owner.set(o.id, e);
+        }
+      });
+      const remove = new Set(lastEditIds(draft));
+      const last = edits.find((edit) => edit.includes(draft.at(-1)!))!;
+      assert.deepEqual(draft.filter((o) => !remove.has(o.id)), draft.filter((o) => !last.includes(o)), "the last op's edit, whole, and nothing else");
+    }
   });
 
   test("the publish button counts the DM's edits: one Builder room tap is one, on hexes and on squares", () => {

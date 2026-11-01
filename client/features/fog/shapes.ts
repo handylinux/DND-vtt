@@ -134,7 +134,7 @@ export function hexRoomShapes(walls: WallSet, g: HexGrid, at: Point, bounds: Bou
  * One gesture's fog ops. A gesture of several shapes (a room over 2,000
  * cells, a long brush stroke) names its ops `<gesture>.<n>` (GESTURE_OP), so the draft
  * shows and counts them as the one edit the DM made, and Undo takes it
- * back whole (fogEditOf). A gesture of one shape keeps a plain id. The
+ * back whole (lastEditIds). A gesture of one shape keeps a plain id. The
  * server never reads the names.
  */
 export function fogOps(shapes: readonly FogShape[], mode: FogMode, newId: () => string): FogOp[] {
@@ -153,7 +153,12 @@ export function fogOps(shapes: readonly FogShape[], mode: FogMode, newId: () => 
  */
 const GESTURE_OP = /^([0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\.(0|[1-9][0-9]?|[1-4][0-9]{2})$/;
 
-/** The gesture an op id names by its form (GESTURE_OP), or the id itself. Whether the op is one of that gesture's edit is the draft's to say (draftEdits). */
+/**
+ * The gesture an op id names by its form (GESTURE_OP), or the id itself.
+ * Whether the op is one of that gesture's edit is the draft's to say
+ * (draftEdits). The app never calls it: it is kept so tests can check the
+ * id form on its own.
+ */
 export function fogEditOf(id: string): string {
   return GESTURE_OP.exec(id)?.[1] ?? id;
 }
@@ -166,8 +171,37 @@ export function fogEditOf(id: string): string {
  * draft the app wrote reads as it always did: its gestures start at .0,
  * and another DM's edit can only land between their ops. An op without an
  * id is an edit of its own.
+ *
+ * Edits that share an op id are one edit: Undo removes ops by id, so it
+ * takes every op of an id back together, and a count or an outline that
+ * kept them apart would promise an undo step that does not exist. Only an
+ * imported draft can repeat an id, such as a gesture's `.0` and `.1` twice.
  */
 function editKeys(ops: readonly { id?: string }[]): string[] {
+  const keys = gestureKeys(ops);
+  const merged = new Map<string, string>();
+  const root = (key: string): string => {
+    let at = key;
+    for (let up = merged.get(at); up !== undefined; up = merged.get(at)) at = up;
+    return at;
+  };
+  const byId = new Map<string, string>();
+  ops.forEach((op, i) => {
+    if (op.id === undefined) return;
+    const seen = byId.get(op.id);
+    if (seen === undefined) {
+      byId.set(op.id, keys[i]!);
+      return;
+    }
+    const a = root(seen);
+    const b = root(keys[i]!);
+    if (a !== b) merged.set(b, a);
+  });
+  return keys.map(root);
+}
+
+/** Each op's edit by its id's form and place alone (editKeys). */
+function gestureKeys(ops: readonly { id?: string }[]): string[] {
   const open = new Map<string, { key: string; last: number }>();
   return ops.map((op, i) => {
     if (op.id === undefined) return `#${i}`;
@@ -204,7 +238,7 @@ export function lastEditIds(ops: readonly FogOp[]): string[] {
   if (ops.length === 0) return [];
   const keys = editKeys(ops);
   const last = keys[keys.length - 1];
-  return ops.filter((_, i) => keys[i] === last).map((o) => o.id);
+  return [...new Set(ops.filter((_, i) => keys[i] === last).map((o) => o.id))];
 }
 
 /**
@@ -219,8 +253,10 @@ export function draftOutlines(ops: readonly FogOp[], g: Grid): Map<string, numbe
     const cellOps = edit.filter((o) => o.shape.kind === "cells");
     if (cellOps.length === 0) continue;
     const cells = cellOps.flatMap((o) => (o.shape.kind === "cells" ? o.shape.cells : []));
-    out.set(cellOps[0]!.id, isHex(g) ? hexCellsOutline(g, cells) : cellsOutline(cells));
-    for (const o of cellOps.slice(1)) out.set(o.id, []);
+    const first = cellOps[0]!.id;
+    out.set(first, isHex(g) ? hexCellsOutline(g, cells) : cellsOutline(cells));
+    // An imported draft can repeat the first op's id further on, which keeps its outline.
+    for (const o of cellOps.slice(1)) if (o.id !== first) out.set(o.id, []);
   }
   return out;
 }
