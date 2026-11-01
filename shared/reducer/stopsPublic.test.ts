@@ -347,10 +347,14 @@ for (const [name, g] of [
       assert.equal(ground.stands(t, [{ size: "medium", refs: [P] }]), false, "the stair's dark neighbor is read beside it");
       const plain = hexNeighbors(g, dark).find((h) => !hexStandHexes(g, { size: "medium", ref: h }).some((x) => hexKey(x) === hexKey(dark)) && hexKey(h) !== hexKey(P))!;
       assert.equal(ground.stands(t, [{ size: "medium", refs: [plain] }]), true, "a hex beside the dark one with no stair reads no neighbor");
-      // A Large stand holding P and another hex is decided as a whole, and kept apart from P's Medium stand.
-      const large = { size: "large" as const, refs: [hexNeighbors(g, P)[0]!] };
-      assert.ok(hexStandHexes(g, { size: "large", ref: large.refs[0]! }).some((x) => hexKey(x) === hexKey(P)) || hexStandHexes(g, { size: "large", ref: large.refs[0]! }).every((x) => hexKey(x) !== hexKey(dark)));
-      assert.equal(ground.stands(t, [large]), plainGround(s, "s1").stands(t, [large]));
+      // A stand's answer is kept by its size and its reference hex together: the Medium stand on a hex beside the dark one is on
+      // that ground, and the Large stand on the same hex, which takes the dark one too, asked after it, is not.
+      const ref = hexNeighbors(g, dark).find((h) => hexKey(h) !== hexKey(P) && hexStandHexes(g, { size: "large", ref: h }).some((x) => hexKey(x) === hexKey(dark)));
+      assert.ok(ref, "a Large stand beside the dark hex takes it");
+      const kept = stopGround(s, "s1");
+      assert.equal(kept.stands(t, [{ size: "medium", refs: [ref] }]), true);
+      assert.equal(kept.stands(t, [{ size: "large", refs: [ref] }]), false);
+      assert.equal(plainGround(s, "s1").stands(t, [{ size: "large", refs: [ref] }]), false);
     });
   });
 }
@@ -408,7 +412,7 @@ function squarePair(r: () => number, n: number, fog = true): Pair {
     s.traps = { ...s.traps, [`t${i}`]: trap(`t${i}`, { zone, rig: rigOf(r, kind === "pit") }) };
   }
   lift(s, "dm", { x: 0, y: 0, w: bounds.w, h: bounds.h });
-  const hidden: [number, number][] = [];
+  const shut: [number, number][] = [];
   // Aimed: a snare under a spot of the walk, and a stub inside a dark cell across the leg from its piece's start to the spot, or inside its core.
   const aims: { cell: [number, number]; a: [number, number]; b: [number, number] }[] = [];
   let walk: { x: number; y: number; progress: readonly [number, number, number] }[] = [];
@@ -436,15 +440,15 @@ function squarePair(r: () => number, n: number, fog = true): Pair {
     const inside = ([px, py]: [number, number]) => px > own[0] && px < own[0] + 1 && py > own[1] && py < own[1] + 1;
     if (inside(a) && inside(b)) {
       aims.push({ cell: own, a, b });
-      hidden.push(own);
+      shut.push(own);
     }
   }
-  for (let i = int(r, 1, 6); i > 0; i--) hidden.push(around());
+  for (let i = int(r, 1, 6); i > 0; i--) shut.push(around());
   if (chance(r, 0.3)) {
     const [cx, cy] = around();
-    for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) hidden.push([cx + a, cy + b]);
+    for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) shut.push([cx + a, cy + b]);
   }
-  const dark = hidden.filter(([hx, hy]) => hx >= 0 && hy >= 0 && hx < bounds.w && hy < bounds.h && !(hx >= Math.floor(x0) && hx < Math.ceil(x0 + side) && hy >= Math.floor(y0) && hy < Math.ceil(y0 + side)));
+  const dark = shut.filter(([hx, hy]) => hx >= 0 && hy >= 0 && hx < bounds.w && hy < bounds.h && !(hx >= Math.floor(x0) && hx < Math.ceil(x0 + side) && hy >= Math.floor(y0) && hy < Math.ceil(y0 + side)));
   for (const [hx, hy] of dark) lift(s, "dm", { x: hx, y: hy, w: 1, h: 1 }, "s1", false);
   const closed = structuredClone(s);
   let walls = 0;
@@ -507,7 +511,7 @@ function hexPair(r: () => number, n: number, withStairs = false): Pair {
     }
   }
   const startHexes = new Set([hexKey(start), ...hexNeighbors(g, start).map(hexKey)]);
-  const hidden = new Set<string>();
+  const shut = new Set<string>();
   let walk: { x: number; y: number }[] = [];
   try {
     walk = trapWalks(opSchema.parse(op), s as TrapRoom, DM, {})[0]?.spots ?? [];
@@ -547,7 +551,7 @@ function hexPair(r: () => number, n: number, withStairs = false): Pair {
         const b: [number, number] = [q(m.x - (d.x / len) * 0.12), q(m.y - (d.y / len) * 0.12)];
         if (hexKey(hexAt(g, { x: a[0], y: a[1] })) === key && hexKey(hexAt(g, { x: b[0], y: b[1] })) === key) {
           aims.push({ a, b });
-          hidden.add(key);
+          shut.add(key);
         }
       }
       break;
@@ -573,18 +577,18 @@ function hexPair(r: () => number, n: number, withStairs = false): Pair {
     const key = hexKey(h);
     if (hexKey(hexAt(g, { x: a[0], y: a[1] })) === key && hexKey(hexAt(g, { x: b[0], y: b[1] })) === key && !startHexes.has(key) && hexInScene(g, bounds, h)) {
       aims.push({ a, b });
-      hidden.add(key);
+      shut.add(key);
     }
   }
   for (let i = int(r, 1, 6); i > 0; i--) {
     const h = around();
-    if (hexInScene(g, bounds, h) && !startHexes.has(hexKey(h))) hidden.add(hexKey(h));
+    if (hexInScene(g, bounds, h) && !startHexes.has(hexKey(h))) shut.add(hexKey(h));
   }
-  liftAllBut(s, "dm", [...hidden]);
+  liftAllBut(s, "dm", [...shut]);
   const closed = structuredClone(s);
   let walls = 0;
   for (const aim of aims) wall(closed, `p2h${String(n).padStart(5, "0")}${walls++}`, aim.a, aim.b);
-  const list = [...hidden];
+  const list = [...shut];
   for (let i = int(r, 0, 3); i > 0 && list.length > 0; i--) {
     const key = pick(r, list);
     const [col, row] = key.split(",").map(Number) as [number, number];
