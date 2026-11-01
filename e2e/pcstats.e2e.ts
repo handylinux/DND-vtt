@@ -146,7 +146,8 @@ function focusedForm(page: Page): Promise<string | null> {
  * A second device of Ana's whose room socket goes through a route. While
  * `route.spoil` is on, a known forms toggle goes out with an id no SRD
  * monster has, so the server refuses it. While `route.hold` is on, the
- * frame carrying the refusal waits until `release`.
+ * frame carrying the refusal waits until `release`. `holdAll` holds every
+ * frame from the server, so a save stays unanswered.
  */
 async function routedAna() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
@@ -154,7 +155,7 @@ async function routedAna() {
   const page = await context.newPage();
   const watch = new ConsoleWatch("ana-2");
   watch.attach(page);
-  const route = { spoil: false, hold: false };
+  const route = { spoil: false, hold: false, holdAll: false };
   const held: (string | Buffer)[] = [];
   let toPage: ((m: string | Buffer) => void) | null = null;
   await page.routeWebSocket(/\/ws\?room=/, (ws) => {
@@ -166,11 +167,12 @@ async function routedAna() {
         upstream.send(JSON.stringify(frame));
       } else upstream.send(m);
     });
-    upstream.onMessage((m) => (route.hold && String(m).includes('"rejects"') ? held.push(m) : ws.send(m)));
+    upstream.onMessage((m) => (route.holdAll || (route.hold && String(m).includes('"rejects"')) ? held.push(m) : ws.send(m)));
     toPage = (m) => ws.send(m);
   });
   const release = () => {
     route.hold = false;
+    route.holdAll = false;
     for (const m of held.splice(0)) toPage?.(m);
   };
   return { context, page, watch, route, held: () => held.length, release };
@@ -464,6 +466,43 @@ describe("raccoon-vtt pc stat blocks", { timeout: 600_000 }, () => {
     await panel.locator("[data-pc-stats]").getByText("Stealth +11").waitFor();
     assert.match(await savesLine(ana), /DEX \+7/);
     assert.match(await savesLine(dm), /DEX \+7/);
+  });
+
+  test("3b. lk1-held-editor: while Save waits for the server, every field and button in the editor draws the disabled look", async () => {
+    const ana2 = await routedAna();
+    const { page } = ana2;
+    try {
+      await page.goto(`${server.origin}/r/${run.roomId}`);
+      await page.getByRole("status", { name: "Connected" }).first().waitFor();
+      await page.locator(".konvajs-content").first().waitFor();
+      await (await showBree(page)).getByRole("button", { name: "Edit", exact: true }).click();
+      const sheet = editor(page);
+      await sheet.waitFor();
+      await sheet.getByLabel("Level", { exact: true }).fill("10");
+      ana2.route.holdAll = true;
+      await sheet.getByRole("button", { name: "Save", exact: true }).click();
+      await sheet.getByRole("button", { name: "Saving…" }).waitFor();
+      const looks = await sheet.evaluate((root) => {
+        const win = root.ownerDocument.defaultView!;
+        // The dialog's own Close and footer stay live, so only the held group is read.
+        const group = root.querySelector("fieldset")!;
+        const controls = [...group.querySelectorAll<HTMLElement>("input:not([type=checkbox]):not([type=radio]), select, textarea, button")].filter((el) => el.getClientRects().length > 0);
+        return controls.map((el) => ({ name: el.getAttribute("aria-label") ?? el.textContent ?? el.tagName, off: (el as HTMLInputElement).disabled, color: win.getComputedStyle(el).color }));
+      });
+      assert.ok(looks.length > 20, `the editor's controls were found: ${looks.length}`);
+      const bright = looks.filter((l) => !l.off || l.color !== "rgb(124, 122, 132)");
+      assert.deepEqual(bright, [], "every control is natively off and draws textDisabled");
+      ana2.release();
+      await sheet.waitFor({ state: "detached" });
+      // Back to level 9, which the steps after read.
+      await (await showBree(page)).getByRole("button", { name: "Edit", exact: true }).click();
+      await sheet.getByLabel("Level", { exact: true }).fill("9");
+      await sheet.getByRole("button", { name: "Save", exact: true }).click();
+      await sheet.waitFor({ state: "detached" });
+      assert.deepEqual(ana2.watch.errors, []);
+    } finally {
+      await ana2.context.close();
+    }
   });
 
   test("4. Take a shape as Wild Shape changes the bar's saves line, AC and speeds and gives the temporary HP, and End the shape restores the rest", async () => {
