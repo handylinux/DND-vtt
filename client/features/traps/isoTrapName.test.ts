@@ -85,3 +85,26 @@ test("FU40B-SOL-02: fogged replacement anchors leave the permitted original name
   const chosen = isoTrapNamePill(original, grid, trap, {}, { view: isometric(0), ground, boxes: [] }, scale, (p) => p.x === original.x && p.y === original.y);
   assert.deepEqual(chosen, original, "an unavailable boundary cannot move the name into fog");
 });
+
+for (const orient of ["rows", "columns"] as const) {
+  test(`FU40B-OPUS-7: a multi-hex trap's name on hex ${orient} sits on its outline, so an unobstructed isometric name keeps the anchor Top-down draws`, () => {
+    const grid: HexGrid = { shape: "hex", orient };
+    for (const cells of [[{ x: 0, y: 0, w: 2, h: 1 }], [{ x: 2, y: 3, w: 4, h: 2 }], [{ x: 0, y: 0, w: 1, h: 5 }, { x: 1, y: 4, w: 4, h: 1 }]]) {
+      const trap = makeTrap("hex trap", { zone: { cells } });
+      const original = trapNamePill(grid, trap, {}, scale, true)!;
+      const sides = rectHexes(cells).flatMap((h) => {
+        const outline = hexOutline(grid, [h]);
+        const points = outline.flatMap((x, i) => (i % 2 ? [] : [{ x, y: outline[i + 1]! }]));
+        return points.map((a, i) => ({ a, b: points[(i + 1) % points.length]! }));
+      });
+      assert.ok(sides.some(({ a, b }) => segmentDistance(original, a, b) < 1e-9), `(${original.x},${original.y}) is not on a hex side`);
+      const top = Math.min(...sides.map(({ a }) => a.y));
+      assert.ok(Math.abs(original.y - top) < 1e-9, "on the zone's top");
+      if (orient === "columns") assert.ok(sides.some(({ a, b }) => Math.abs(a.y - b.y) < 1e-9 && Math.abs((a.x + b.x) / 2 - original.x) < 1e-9), "at the middle of a level top side");
+      for (const turn of [0, 1, 2, 3] as const) {
+        const chosen = isoTrapNamePill(original, grid, trap, {}, { view: isometric(turn), ground, boxes: [] }, scale, () => true);
+        assert.deepEqual(chosen, original, `turn ${turn}`);
+      }
+    }
+  });
+}

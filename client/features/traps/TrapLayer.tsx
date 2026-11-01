@@ -109,17 +109,45 @@ export function trapNamePill(g: Grid, trap: Trap, chunks: Readonly<Record<string
   const zone = trap.zone;
   const words = !dm && (trap as SeenTrap).disarmed ? "Disarmed" : undefined;
   const pill = { name: trap.name, value: words, size: "map" as const, small: true, maxLines: 1 as const };
-  if ("cells" in zone && isHex(g)) {
-    // Over the top of its hexes' box, at its middle.
-    const box = zoneBox(g, trap, chunks)!;
-    return { ...pill, x: (box.x0 + box.x1) / 2, y: box.y0, above: true };
-  }
+  if ("cells" in zone && isHex(g)) return { ...pill, ...hexNameAnchor(g, zone.cells, zoneBox(g, trap, chunks)!), above: true };
   if ("cells" in zone) {
     const top = zone.cells.reduce((a, r) => (r.y < a.y || (r.y === a.y && r.x < a.x) ? r : a));
     return { ...pill, x: top.x + top.w / 2, y: top.y, above: true };
   }
   const badge = "wire" in zone ? { x: (zone.wire.a[0] + zone.wire.b[0]) / 2, y: (zone.wire.a[1] + zone.wire.b[1]) / 2 } : findDoor(chunks, trap.sceneId, zone.door)?.mid;
   return badge ? { ...pill, x: badge.x, y: badge.y, offsetPx: BADGE_PX / 2 + 2, below: true } : null;
+}
+
+/**
+ * Where a hex trap's name points: the top of its outline, as the ground
+ * draws it, nearest the middle of its box. That is a top point on hex rows
+ * and a top side's middle on hex columns. The box's own top middle can lie
+ * off the zone, in the notch between two hexes or over an L's empty corner,
+ * and an isometric name keeps its anchor only on the zone (FU40B-OPUS-7).
+ */
+function hexNameAnchor(g: HexGrid, rects: readonly CellRect[], box: { x0: number; x1: number }): { x: number; y: number } {
+  const mid = (box.x0 + box.x1) / 2;
+  const tops: { x: number; y: number }[] = [];
+  let top = Infinity;
+  for (const r of rects) {
+    const points = hexOutline(g, rectHexes([r]));
+    for (let i = 0; i < points.length; i += 2) {
+      const ay = points[i + 1]!;
+      if (ay > top + 1e-9) continue;
+      if (ay < top - 1e-9) {
+        top = ay;
+        tops.length = 0;
+      }
+      const ax = points[i]!;
+      const bx = points[(i + 2) % points.length]!;
+      const by = points[(i + 3) % points.length]!;
+      const py = points[(i - 1 + points.length) % points.length]!;
+      // A level side at the top is named at its middle, and a point at itself.
+      if (Math.abs(by - ay) < 1e-9) tops.push({ x: (ax + bx) / 2, y: ay });
+      else if (Math.abs(py - ay) >= 1e-9) tops.push({ x: ax, y: ay });
+    }
+  }
+  return tops.reduce((a, b) => (Math.abs(b.x - mid) < Math.abs(a.x - mid) - 1e-9 ? b : a));
 }
 
 /** Standing trap names use the same candidates in placement and its geometry tests. */
