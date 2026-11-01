@@ -33,6 +33,7 @@ import {
   followsInSingleFile,
   seatsApart,
   hiddenTowStands,
+  stopsStandClear,
   discoversMap,
   mapDiscoveryUpgrade,
   needsMapDiscoveryUpgrade,
@@ -1599,14 +1600,14 @@ describe("follow-up batch 39: op version 33", () => {
   });
 });
 
-describe("follow-up batch 45: op version 38, single file behind a squeezing holder, its passengers apart and a hidden creature's stand in tow (D-261101-250, D-261101-251, D-261101-274)", () => {
+describe("follow-up batch 45: op version 38, single file behind a squeezing holder, its passengers apart, a hidden creature's stand in tow and a trap stop's full stand (D-261101-250, D-261101-251, D-261101-274, review FU45B-ASTRA-10)", () => {
   test("keeps stored operations unchanged through the identity step, and gates each rule at 38", () => {
     assert.ok(OP_VERSION >= 38);
     const op = { t: "token.move", tokenId: "horse", x: 9.5, y: 5.5, squeeze: true, route: [[2.5, 5.5, 1, 0], [9.5, 5.5, 2, 0]] };
     assert.equal(runMigrations(op, 37, 38, opMigrations), op);
     assert.equal(migrateOp(op, 37), op);
     assert.throws(() => runMigrations(op, 38, 37, opMigrations), /down/);
-    for (const gate of [followsInSingleFile, seatsApart, hiddenTowStands]) {
+    for (const gate of [followsInSingleFile, seatsApart, hiddenTowStands, stopsStandClear]) {
       assert.deepEqual([gate(1), gate(37), gate(38), gate(undefined)], [false, false, true, true]);
     }
   });

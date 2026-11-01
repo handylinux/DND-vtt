@@ -181,10 +181,13 @@ describe("a trap's stop between the walk's ends (D-261101-181)", () => {
       assert.equal(a.tokens.horse!.squeeze, undefined);
       assert.deepEqual(copies(b, [P1]), copies(a, [P1]));
     }
-    // It stops at 9.5,9.5, a spot on its own grid (it started half a square off), full size at 36 in both rooms, and from 37 at its
-    // route's corner 15.5,9.5, the first spot past the net its walk itself proves.
+    // It stops at 9.5,9.5, a spot on its own grid (it started half a square off), full size at 36 in both rooms, and at 37 at its
+    // route's corner 15.5,9.5, the first spot past the net its walk itself proves. From 38 a stop proves its full stand too, and off
+    // the ground every player sees nothing proves a box half a square off its grid clear of the walls, so nowhere before the walk's
+    // end is a stand and the net stops it nowhere (migrate.ts stopsStandClear, review FU45B-ASTRA-10).
     assert.deepEqual(where(played(open, on, DM, 36)), [9.5, 9.5, false]);
-    assert.deepEqual(where(played(open, on, DM, undefined)), [15.5, 9.5, false]);
+    assert.deepEqual(where(played(open, on, DM, 37)), [15.5, 9.5, false]);
+    assert.deepEqual(where(played(open, on, DM, undefined)), [18, 9, false]);
     assert.deepEqual(where(played(closed, on, DM, 35)), [9.5, 9.5, true], "at op 35 the walls squeezed it there");
     assert.deepEqual(where(played(open, on, DM, 35)), [9.5, 9.5, false]);
   });

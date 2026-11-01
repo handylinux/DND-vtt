@@ -8,7 +8,7 @@ import { projectState, stableStringify } from "../project.ts";
 import type { Op } from "../protocol.ts";
 import { applyOp } from "../reducer.ts";
 import { offGridWallThrough, ownWalk, walkEnd } from "../rules/movement.ts";
-import { DM, env, member, P1, P2, room, scene, token } from "../testutil.ts";
+import { DM, env, member, P1, P2, room, scene, token, trap } from "../testutil.ts";
 
 /**
  * A creature some player cannot see, dragged along on a player's move
@@ -96,5 +96,24 @@ describe("a hidden creature in tow stands where no wall passes through its box (
     const brute = after(s, off, undefined).state.tokens.brute!;
     assert.deepEqual([brute.x, brute.y], [16.5, 9], "where the get-off's walk leaves it");
     assert.ok(offGridWallThrough(s, walkEnd(s, ownWalk({ ...brute, x: 14.5, y: 10 }), brute)), "across the wall, as at op version 37");
+  });
+
+  test("on ground every player sees, a trap's stop stands a Large walker half a square off its grid only clear of the walls, as the move's own stand test does (review FU45B-ASTRA-10)", () => {
+    const s = room({ members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2") }, scenes: { s1: scene("s1", { bounds: { w: 30, h: 20 }, blockMovement: true, autoWalls: "off" }) } });
+    s.buildChunks = {};
+    wall(s, "fu45bh000004", [21, 14], [21, 16]);
+    // Pat's Large ogre walks east up to the wall's end and turns north, a snare on the square its box first reaches past the wall.
+    s.tokens.ogre = token("ogre", { size: "large", x: 16.5, y: 14, name: "Ogre", kind: "pc", ownerIds: ["p1"] });
+    s.traps.t3 = trap("t3", { zone: { cells: [{ x: 21, y: 14, w: 1, h: 1 }] }, rig: { on: ["enter"], who: "any", floor: false, resets: "never", stops: true, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } });
+    const op: Op = { t: "token.move", tokenId: "ogre", x: 19.5, y: 10, route: [[19.5, 14, 0, 0], [19.5, 10, 0, 0]] };
+    assert.ok(canApply(op, P1, s, { canUseAsset: () => true }).ok);
+    const landed = (opVersion: number | undefined) => {
+      const r = applyOp(structuredClone(s), op, P1, { ...env(4), ...(opVersion !== undefined ? { opVersion } : {}) });
+      assert.ok(r.ok);
+      const ogre = r.state.tokens.ogre!;
+      return [ogre.x, ogre.y, offGridWallThrough(r.state, walkEnd(r.state, ownWalk({ ...ogre, x: 16.5, y: 14 }), ogre))];
+    };
+    assert.deepEqual(landed(37), [19.5, 14, true], "at 37 the stop left it across the wall");
+    assert.deepEqual(landed(undefined), [19.5, 12, false], "from 38 on at the first spot past it that stands clear");
   });
 });

@@ -23,6 +23,7 @@ import {
   hexStartStand,
   hexWallsOf,
   legStop,
+  offGridWallThrough,
   onSqueezedLattice,
   ownWalk,
   previewSqueezed,
@@ -855,8 +856,14 @@ export function routeSpots(build: BuildState, route: readonly RoutePoint[], toke
   return stands.walk.map((_, s) => stands.spot(s));
 }
 
-/** How `routeSpots` judges a walk's stands: the last spot's squeeze, as the op has it, whether every spot between the ends stands only full size, and the ground that judges the spots between the ends from op version 37. */
-export type StandRule = { squeeze?: boolean; fullBetween?: boolean; publicGround?: PublicGround };
+/**
+ * How `routeSpots` judges a walk's stands: the last spot's squeeze, as the
+ * op has it, whether every spot between the ends stands only full size,
+ * the ground that judges the spots between the ends from op version 37,
+ * and whether a spot between them stands only where the move's own stand
+ * test would leave the walker (`fullStand`, migrate.ts stopsStandClear).
+ */
+export type StandRule = { squeeze?: boolean; fullBetween?: boolean; publicGround?: PublicGround; fullStand?: boolean };
 
 /**
  * The ground every player sees, as a stop between a walk's ends reads it
@@ -928,6 +935,12 @@ function squareProof(token: Walker, route: readonly RoutePoint[], start: Walker)
   };
 }
 
+/** Whether a creature with a side a squeeze shrinks stands off its own grid at `at`, where only the walls can tell its box clear (movement.ts offGridWallThrough). */
+function offOwnGrid(token: PlacedToken, at: Point): boolean {
+  const step = snapStep(token);
+  return canSqueeze(token) && !(multipleOf(at.x, step) && multipleOf(at.y, step));
+}
+
 /**
  * `routeSpots` a spot at a time: the walk's spots and its trace, and each
  * spot with `stand` worked out only when asked, once, so a search for where
@@ -975,9 +988,12 @@ export function routeStands(build: BuildState, route: readonly RoutePoint[], tok
         // The stand test of op version 35, squeezes included, with the leg cut at the spot: the whole piece's sweep reads past it.
         const sq = squeezes && squeezeFits(build, spotEnd());
         const ok = (sq || onGrid) && !coreBlocked(build, spotEnd()) && (!blocks || legStop(build, at, { x: w.x, y: w.y, elevation: w.elevation }) === null);
-        return (known[s] = { ...w, squeezed: sq, stand: ok });
+        // Full size there, it stands where the move's own stand test would leave it (migrate.ts stopsStandClear).
+        const clear = sq || !opts.fullStand || !blocks || !offGridWallThrough(build, spotEnd());
+        return (known[s] = { ...w, squeezed: sq, stand: ok && clear });
       }
-      return (known[s] = { ...w, squeezed: false, stand: onGrid && proof.proven(i, end, w) });
+      // Off that ground nothing proves a box off its grid clear of the walls, so it is no stand there.
+      return (known[s] = { ...w, squeezed: false, stand: onGrid && proof.proven(i, end, w) && (!opts.fullStand || !blocks || !offOwnGrid(token, w)) });
     }
     const squeezed = last && opts.squeeze !== undefined ? opts.squeeze : (last || !opts.fullBetween) && squeezes && squeezeFits(build, spotEnd());
     const sweepClear = () => (piece.sweep ??= !blocks || straightClear(build, at, { x: b.x, y: b.y, elevation: b.elevation }));

@@ -669,6 +669,7 @@ describe("random rooms in pairs: every player's copy after a walk is the same at
   });
 });
 
+// From op 38 a stop also stands a walker only clear of the walls off its grid (migrate.ts stopsStandClear), which no room here meets.
 describe("with the fog off or every cell revealed, the stops are op 35's", () => {
   for (const [label, make] of [
     ["squares", (r: () => number, n: number) => squarePair(r, n)],

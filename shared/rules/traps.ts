@@ -2,7 +2,7 @@ import { CHUNK_CELLS, FOG_SUBCELLS, MIN_HEIGHT_FT, type BuildChunk, type CellRec
 import { chunkKey, wallMidpoint } from "../keys.ts";
 import { gridOfScene, playersToken, seenByNonOwners } from "../project.ts";
 import type { Op } from "../protocol.ts";
-import { stopsOnPublicGround, stopsOnTrap, stopsStandFullSize } from "../migrate.ts";
+import { stopsOnPublicGround, stopsOnTrap, stopsStandClear, stopsStandFullSize } from "../migrate.ts";
 import { isWritable } from "../writable.ts";
 import { creaturesInArea, type AreaToken } from "./aoe.ts";
 import { holderOf, insideHolder, onHolder, walkerFor } from "./attach.ts";
@@ -1545,7 +1545,7 @@ function standSpots(walks: Walks, walk: Walk, before: RoomState, seen: (id: stri
  * (route.ts StandRule, migrate.ts stopsOnPublicGround).
  */
 function standRule(walks: Walks, before: RoomState, sceneId: string): StandRule {
-  const rule: StandRule = { fullBetween: stopsStandFullSize(walks.opVersion) };
+  const rule: StandRule = { fullBetween: stopsStandFullSize(walks.opVersion), ...(stopsStandClear(walks.opVersion) ? { fullStand: true } : {}) };
   if (!stopsOnPublicGround(walks.opVersion)) return rule;
   let ground = walks.grounds.get(sceneId);
   if (!ground) walks.grounds.set(sceneId, (ground = groundMaker(before, sceneId)));

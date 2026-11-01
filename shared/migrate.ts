@@ -1435,6 +1435,22 @@ export function hiddenTowStands(opVersion: number | undefined): boolean {
 }
 
 /**
+ * Whether a trap's stop between a walk's ends stands each walker it stops
+ * only where the move's own stand test would leave it (review
+ * FU45B-ASTRA-10, route.ts StandRule `fullStand`): a creature with a side
+ * a squeeze shrinks, off its grid with a wall through its box outside a
+ * real narrow space (movement.ts offGridWallThrough), is no stand there.
+ * The stop reads those walls only on ground every player sees, and off it
+ * such a spot off the grid is no stand, since nothing proves it clear. So
+ * a cut that leaves a creature where the trap step judged it never leaves
+ * one across a wall. Ops stored before version 38 stopped by the leg and
+ * core tests alone, and replay so.
+ */
+export function stopsStandClear(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 38);
+}
+
+/**
  * Whether the reducer clips a creature's outline on hexes by the walls the
  * viewer holds where it asks who sees the creature. Ops stored before
  * version 37 replay by the clip they were written under. Live ops carry no
