@@ -464,6 +464,8 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
       scroller.scrollLeft = 0;
       return {
         count: all.length,
+        stripLeft: strip.left,
+        stripRight: strip.right,
         scrolls: scroller.scrollWidth > scroller.clientWidth + 1,
         startGap: first.left - (strip.left + edge),
         endGap: strip.right - edge - last.right,
@@ -496,6 +498,8 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
       await player.setViewportSize({ width: view.width, height: view.height });
       return;
     }
+    // Cleared first, so a load that fails part way is redone by the next case.
+    toolbarScale = null;
     await sizeDm(view);
     await setUp(view);
     toolbarScale = view.scale;
@@ -510,6 +514,9 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
       last = JSON.stringify(now);
       return same ? { now } : null;
     });
+    // A strip wider than the window would still pass the end-gap checks, since they measure against the strip itself.
+    const width = page.viewportSize()?.width;
+    if (settled.now && width !== undefined) assert.ok(settled.now.stripLeft >= -1 && settled.now.stripRight <= width + 1, `the tool strip runs outside the ${width} px window: ${settled.now.stripLeft} to ${settled.now.stripRight}`);
     return settled.now;
   }
 
@@ -556,6 +563,10 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
             assert.ok(one.minWidth >= 43.5 && one.minHeight >= 43.5, `${where}: a tool is under 44 px (${one.minWidth} x ${one.minHeight})`);
           }
         }
+      } catch (err) {
+        // A failed case may have left a page half set up, so the next one loads fresh instead of trusting its size.
+        toolbarScale = null;
+        throw err;
       } finally {
         await ops.send({ t: "room.update", settings: { playersDraw: "all" } });
       }
