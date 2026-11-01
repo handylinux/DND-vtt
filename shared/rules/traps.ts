@@ -713,7 +713,11 @@ function walksOf(op: Op, before: RoomState, entries: readonly MovedToken[], seen
  * ground, else the holder's change but never below the ground. The holder
  * is read at the same spot of the same step's walk, so a member on its own
  * step reads its holder there too. A member walking a route of its own
- * takes that walk's elevations as they are.
+ * takes that walk's elevations as they are, but one in single file, which
+ * walks a route of its own, is judged by the same rule at its own spots,
+ * its holder read at the same moment (`fileElevation`), so the trap step
+ * reads it at the height the move takes it along at (review
+ * FU45B-ASTRA-06).
  *
  * What is carried or rides all the way up adds its holders' changes to the
  * group's walk, in the order `elevationOnStep` adds them, so a walk of 500
@@ -723,7 +727,18 @@ function walksOf(op: Op, before: RoomState, entries: readonly MovedToken[], seen
 function elevationRule(walk: Walk, before: RoomState, shared: boolean): (j: number) => number {
   const last = walk.spots.length - 1;
   const own = walk.spots;
-  if (!shared) return (j) => (j === 0 ? walk.token.elevation : j === last ? walk.entry.to.elevation : own[j]!.elevation);
+  if (!shared) {
+    const holder = walk.holder;
+    if (!holder || !inFile(walk)) return (j) => (j === 0 ? walk.token.elevation : j === last ? walk.entry.to.elevation : own[j]!.elevation);
+    const memo = new Map<number, number>();
+    return (j) => {
+      if (j === 0) return walk.token.elevation;
+      if (j === last) return walk.entry.to.elevation;
+      let hit = memo.get(j);
+      if (hit === undefined) memo.set(j, (hit = fileElevation(walk, holder, before, j)));
+      return hit;
+    };
+  }
   const rises: number[] = [];
   for (let at: Walk = walk; at.holder; at = at.holder) {
     const kind = at.token.attached?.kind;
@@ -746,6 +761,33 @@ function elevationRule(walk: Walk, before: RoomState, shared: boolean): (j: numb
     for (const rise of rises) up = up + rise;
     return up;
   };
+}
+
+/** Whether a walk is one in single file (moveLeg.ts singleFile), or rides on one all the way up to it. */
+function inFile(walk: Walk): boolean {
+  for (let at: Walk | undefined = walk; at; at = at.holder) {
+    if (at.entry.file === true) return true;
+    const kind = at.token.attached?.kind;
+    if (kind === undefined || !onHolder(kind)) return false;
+  }
+  return false;
+}
+
+/**
+ * A walk in single file's elevation at its own spot `j`, by attach's rule
+ * as `elevationOnStep` reads a shared walk: what rides takes its holder's
+ * change, and a dragged creature its own ground behind a holder on the
+ * ground, else the holder's change but never below the ground. The holder
+ * is read at its latest spot at the same progress.
+ */
+function fileElevation(walk: Walk, holder: Walk, before: RoomState, j: number): number {
+  const s = walk.spots[j]!;
+  const up = holder.elevation(latestIndex(holder.spots, s.progress));
+  const kind = walk.token.attached?.kind;
+  if (kind !== undefined && onHolder(kind)) return up + (walk.token.elevation - holder.token.elevation);
+  const ground = groundUnder(before.buildChunks, walk.entry.trace[s.progress[0]]!, { x: s.x, y: s.y });
+  const grounded = footing(before.buildChunks, holder.entry.trace[0]!) === "ground";
+  return grounded ? ground : Math.max(walk.token.elevation + (up - holder.token.elevation), ground);
 }
 
 /** A walk's elevation at spot `j` of its group's own walk at `step`, by attach's rule, its holder read at the same spot. */

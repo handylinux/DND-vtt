@@ -238,4 +238,25 @@ describe("squares: what a holder drags follows it in single file where its move 
     assert.equal(rat.attached?.to, "owl", `the rat still in the owl's tow, at ${rat.x}, ${rat.y}`);
     assert.ok(rat.x <= imp.x, `no further along than the imp: ${rat.x}, ${rat.y}`);
   });
+
+  test("the trap step reads one in the file at the height the move takes it along at, on its own ground behind a horse on the ground, whole walk or cut (review FU45B-ASTRA-06)", () => {
+    const setup = (stops: boolean) => {
+      const s = towing(corridor(), "ogre", { size: "large", x: 0, y: 7, elevation: 5 });
+      if (stops) s.traps.t1 = trap("t1", { zone: { cells: [{ x: 4, y: 5, w: 1, h: 2 }] }, rig: { on: ["enter"], who: "any", floor: true, resets: "never", stops: true, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } });
+      // A trap on the floor the ogre's walk crosses once it is down on the ground.
+      s.traps.t2 = trap("t2", { zone: { cells: [{ x: 2, y: 7, w: 1, h: 1 }] }, rig: { on: ["enter"], who: "any", floor: true, resets: "never", stops: false, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } });
+      return s;
+    };
+    const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 9.5, y: 5.5, squeeze: true, route: [[4, 5, 1, 0], [4.5, 5.5, 1, 0], [9.5, 5.5, 2, 0]] };
+    // By its place, as an op stored at 37 takes it, it sets the floor trap off on its way.
+    const placed = applyOp(setup(false), op, P1, { ...env(5), opVersion: 37 });
+    assert.ok(placed.ok);
+    assert.equal(placed.state.traps.t2!.state, "sprung", "by its place");
+    const whole = served(setup(false), op);
+    assert.deepEqual([whole.tokens.ogre!.elevation, whole.traps.t2!.state], [0, "sprung"], "in single file, the whole walk");
+    const cut = served(setup(true), op);
+    assert.deepEqual([cut.tokens.horse!.x, cut.tokens.horse!.y], [3, 5], "stopped on the trap");
+    const ogre = cut.tokens.ogre!;
+    assert.deepEqual([ogre.x, ogre.y, ogre.elevation, ogre.attached?.to, cut.traps.t2!.state], [2, 6, 0, "horse", "sprung"], "in single file, cut");
+  });
 });
