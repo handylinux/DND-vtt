@@ -1,6 +1,6 @@
 # raccoon-vtt v1: triggers and traps
 
-Status: draft 3, 2026-10-18, revised for review rounds 1 and 2 and the project owner's answers (section 14). The project owner chose "Triggers and traps" (docs/features.md section 13) as one of three "Later" items to design next, with "Movement and walls" (docs/design/design-v1-movement.md) and "Attached tokens" (docs/design/design-v1-attach.md). All three change what happens when a token moves, so they share one description of a move (section 13) and one rule for hidden state (section 7). They build and deploy in that order, movement first, each with its own versions, so traps builds on movement's routes and spots and on attach's groups. Code is cited from main at `88f031251`.
+Status: draft 3, 2026-10-18, revised for review rounds 1 and 2 and the project owner's answers (section 14). The project owner chose "Triggers and traps" (docs/design/mvp.md section 13) as one of three "Later" items to design next, with "Movement and walls" (docs/design/design-v1-movement.md) and "Attached tokens" (docs/design/design-v1-attach.md). All three change what happens when a token moves, so they share one description of a move (section 13) and one rule for hidden state (section 7). They build and deploy in that order, movement first, each with its own versions, so traps builds on movement's routes and spots and on attach's groups. Code is cited from main at `88f031251`.
 
 ## 1. Summary
 

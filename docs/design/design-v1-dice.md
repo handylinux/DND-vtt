@@ -380,7 +380,7 @@ One rule for every surface that rolls: the panel, doc 3's option rows, cards and
 ## 10. What this changes in other designs
 
 - **docs/design/design.md**: 1's "No dice roller" becomes "Dice roll on the server (docs/design/design-v1-dice.md)". 2's determinism rule 2 names dice beside undo as resolved before the reducer, and auto initiative draws on the server too (doc 3 section 7). 6 gains 5.1's types. 7.2's step 5 resolves the dice ops after step 6 checks them (4.2). 7.3 gains 5.2. 7.4 lists them as waiting. 7.7: on no stack. 8.1 gains a Dice row. 9.11's "The app rolls nothing" gives way to 5.4 and 7. 10.3 gains the roll budget and the lookup's limit, 10.5 the dice rows. 10.8 gains `GET /api/rooms/:roomId/receipts/:tag`, and 16.1 the `roll_receipts` table (1.2). 14 gains the Dice panel. 16.4 gains 5.3. 17 records the project owner's answers.
-- **docs/features.md:660**: "Dice roller" leaves Skipped, since rolls now happen in the app.
+- **docs/design/mvp.md:660**: "Dice roller" leaves Skipped, since rolls now happen in the app.
 - **docs/design/design-v1-dm-tools.md 3.3**: rolled answers, changes and Roll (5.4, 7). Doc 4 owns the rest.
 - **docs/design/design-v1-panel-tabs.md 3.2**: the row it measured becomes Token, Initiative and Dice, measured again with each font it names.
 - **docs/design/design-v1-split-panel.md 3.5**: Dice joins "any two".
@@ -450,7 +450,7 @@ One builder, in this order, before docs 2 to 4 build on it:
 4. `feat(ui): the dice panel` (registry, the sticky line, roller, Recent rolls, `diceChoicesSlot` and `useDicePanel` with `take` at the tap, `useReceipt`, the doc 3 slot as an empty section, history, keys and the sheet's Dice rows).
 5. `feat(ui): others' rolls as toasts` (and the This device switch).
 6. `test(e2e): dice`.
-7. `docs: dice in the feature list and the design` (FEATURES.md, docs/design/design.md and docs/features.md per section 10).
+7. `docs: dice in the feature list and the design` (FEATURES.md, docs/design/design.md and docs/design/mvp.md per section 10).
 
 ## 15. FEATURES.md
 

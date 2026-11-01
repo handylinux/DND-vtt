@@ -2,7 +2,7 @@
 
 RaccoonVTT is a self-hosted virtual tabletop for D&D groups playing the 2024 rules (5.5e) on a square grid, 5 ft per square, or on hexes. It is made for phones first, and it works on tablets, laptops and a TV too. It suits a group around one table, players joining from elsewhere, or both. It has no voice or video chat: a group that plays apart uses a call of its own for that. One server hosts many groups at once, each in its own room. Dice roll on the server, so everyone sees the same result. Anyone can still roll real dice and type the total.
 
-This page lists what RaccoonVTT does today, grouped by area. "The DM" means anyone who holds DM in the room, co-DMs included. [docs/features.md](docs/features.md) is the planning list: what is planned next, and what was skipped and why.
+This page lists what RaccoonVTT does today, grouped by area. "The DM" means anyone who holds DM in the room, co-DMs included. [docs/design/mvp.md](docs/design/mvp.md) is the planning list: what is planned next, and what was skipped and why.
 
 The app's Docs page (/docs) lists every written doc. To learn the tools as a DM, read the [DM guide](docs/dm-guide.md): a quick start, how to build maps and run fights, and worked scenarios.
 

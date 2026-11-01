@@ -1,6 +1,6 @@
 # raccoon-vtt design
 
-This document is the technical design of raccoon-vtt as built: the MVP in [features.md](../features.md), with each v1 wave folded in as it shipped. The addenda keep the full reasoning for v1 waves 3 and 4 ([design-v1-maps-vision.md](design-v1-maps-vision.md)), wave 5 ([design-v1-dm-tools.md](design-v1-dm-tools.md)) and the whole-app visual pass ([design-v1-visual.md](design-v1-visual.md)).
+This document is the technical design of raccoon-vtt as built: the MVP in [mvp.md](mvp.md), with each v1 wave folded in as it shipped. The addenda keep the full reasoning for v1 waves 3 and 4 ([design-v1-maps-vision.md](design-v1-maps-vision.md)), wave 5 ([design-v1-dm-tools.md](design-v1-dm-tools.md)) and the whole-app visual pass ([design-v1-visual.md](design-v1-visual.md)).
 
 ## 1. Constraints
 
@@ -135,7 +135,7 @@ scripts/                admin.ts (DM link, list rooms, import), srd-import.ts, i
                         bench-vision.ts, bench-server4.ts and bench-sight-overlay.ts, and (v1 wave 5)
                         game-icons.ts and backup-check.ts
 docker/                 squid.conf, and (v1 wave 5) backup.sh
-docs/                   features.md, design.md
+docs/                   dm-guide.md, and design/ with mvp.md, design.md and the v1 design notes
 CREDITS.md              every third-party asset, its source and license
 Dockerfile  docker-compose.yml  docker-compose.server.yml  .env.example  .dockerignore
 ```

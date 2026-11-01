@@ -55,7 +55,7 @@ tunnel that passes WebSockets through.
 ## Features
 
 [FEATURES.md](FEATURES.md) lists what RaccoonVTT does today, grouped by
-area, in plain words for the DM and the players. [docs/features.md](docs/features.md)
+area, in plain words for the DM and the players. [docs/design/mvp.md](docs/design/mvp.md)
 is the planning list behind it, with what comes next and what was skipped.
 Update FEATURES.md in the same change that adds, changes or removes a
 feature.

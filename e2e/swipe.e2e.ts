@@ -2688,7 +2688,7 @@ async function checkPane(pane: Locator, scale: number, where: string, shot: stri
 /**
  * A screenshot with the browser asking for a dark scheme and one asking
  * for light. The app draws one dark theme (a light theme is a later item,
- * docs/features.md), so the two match: the light one shows that a light
+ * docs/design/mvp.md), so the two match: the light one shows that a light
  * preference changes nothing.
  */
 async function shotsInBothSchemes(page: Page, name: string): Promise<void> {

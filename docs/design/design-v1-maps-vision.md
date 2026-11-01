@@ -1,10 +1,10 @@
 # raccoon-vtt design addendum: v1 waves 3 and 4
 
-This addendum designs the v1 map features of [features.md](../features.md) section 3 (wave 3) and the walls, vision, light and height features of sections 8 and 11 plus raised areas (wave 4). It extends [design.md](design.md) and follows its rules: server-authoritative state, one pure reducer, per-viewer projection as the security boundary, commit before publish, bounded everything. Where this file names a design.md section, it means that section as deployed.
+This addendum designs the v1 map features of [mvp.md](mvp.md) section 3 (wave 3) and the walls, vision, light and height features of sections 8 and 11 plus raised areas (wave 4). It extends [design.md](design.md) and follows its rules: server-authoritative state, one pure reducer, per-viewer projection as the security boundary, commit before publish, bounded everything. Where this file names a design.md section, it means that section as deployed.
 
 It is written against the deployed app, which includes v1 wave 2: `Token.path` (one leg per drop, design.md 9.2), snapshot version 5 and op version 3, and "seen" helpers that answer "not seen" during a blackout (section 4.3.3).
 
-Status: revised after design review rounds 1 to 7 (section 11 lists every finding and what became of it). Wave 3 (section 3, parts 3A to 3G) is built and deployed. Wave 4 (section 4, parts 4A to 4I) is built and deployed, and design.md and features.md describe it as built. The project owner decided every question in section 9 and the fog undo rule on 2026-10-14. Questions 1, 6, 11, 12, 15, 17 and 20 have answers of their own. Every other question keeps its recommendation or owner default: "All defaults good with me". That includes question 5, whose door reach the owner had chosen from its recommendation.
+Status: revised after design review rounds 1 to 7 (section 11 lists every finding and what became of it). Wave 3 (section 3, parts 3A to 3G) is built and deployed. Wave 4 (section 4, parts 4A to 4I) is built and deployed, and design.md and mvp.md describe it as built. The project owner decided every question in section 9 and the fog undo rule on 2026-10-14. Questions 1, 6, 11, 12, 15, 17 and 20 have answers of their own. Every other question keeps its recommendation or owner default: "All defaults good with me". That includes question 5, whose door reach the owner had chosen from its recommendation.
 
 Where the wave 3 build differs from this addendum:
 
@@ -457,7 +457,7 @@ One part lands first, because the others build against it. The rest run in paral
 | **3E Map phases** | `client/features/phases/*`, the map layer's keep-until-decoded swap in `client/canvas/layers/MapLayer.tsx`. | 3A |
 | **3F Stamps** | `scripts/stamps.ts` (fetch, pin, extract, cut, trim, render the Poly Haven models straight down, encode), `public/stamps/*.webp`, `shared/stamps.ts` (keys and footprints), `package.json` and `pnpm-lock.yaml` (`three@0.160.0` and a 7-Zip extractor pinned as dev dependencies), `CREDITS.md`, `shared/credits.ts`, `client/features/builder/stamps/*`, one-line registrations in the builder's store, options and tool. | 3A |
 | **3G Free walls and lights in the builder** | `client/features/builder/draw.ts`, `BuilderLayer.tsx`, `cells.ts` (drawing free walls and doors, erase, tapping a free door through its states, light icons, the border edges). | 3A, 3B |
-| **3H Integration** | e2e: import a synthetic file, duplicate, switch a phase with a player connected. `docs/design/design.md` and `docs/features.md` updated from this file. | all |
+| **3H Integration** | e2e: import a synthetic file, duplicate, switch a phase with a player connected. `docs/design/design.md` and `docs/design/mvp.md` updated from this file. | all |
 
 ## 4. Wave 4: walls, height, vision and light
 

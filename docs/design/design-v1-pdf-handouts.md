@@ -778,7 +778,7 @@ Then:
 
 - `e2e/pdf.e2e.ts`, `e2e/pdfFixture.ts`, `e2e/fixtures/` with its note, the display steps in `e2e/display.e2e.ts`, and the `size.e2e.ts` cases: `test(e2e): pdf handouts from upload to the table display`.
 - The device checks and the rollback rehearsal of 11.4, recorded in the build's report.
-- Docs: `FEATURES.md` (section 12), `docs/features.md` section 16 and its table display line, `docs/design/design-v1-layout-hierarchy.md` 5.4 pointing here, and `docs/design/design.md` sections 6 (the model, near `:350`), 7.3 (handouts, `:567`), 8.1 (the ops catalog, `:729`), 10.5 (the limits table, `:1142`), 11.1 (the hourly budgets, `created`, and pages as ordinary handout uploads), 11.2 (the visible set, `:1288`) and 16.4 (the remap and the import caps, `:2043`): `docs: pdf handouts in the feature lists and the design`.
+- Docs: `FEATURES.md` (section 12), `docs/design/mvp.md` section 16 and its table display line, `docs/design/design-v1-layout-hierarchy.md` 5.4 pointing here, and `docs/design/design.md` sections 6 (the model, near `:350`), 7.3 (handouts, `:567`), 8.1 (the ops catalog, `:729`), 10.5 (the limits table, `:1142`), 11.1 (the hourly budgets, `created`, and pages as ordinary handout uploads), 11.2 (the visible set, `:1288`) and 16.4 (the remap and the import caps, `:2043`): `docs: pdf handouts in the feature lists and the design`.
 - README, Updating: this update changes the snapshot version, so going back to the older build means restoring the backup taken just before it, and rooms changed since lose those changes. Reload every open page, table displays included.
 - Deploy notes: back up first, as the README says. The snapshot step runs on load.
 

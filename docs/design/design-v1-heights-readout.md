@@ -106,7 +106,7 @@ At 100 ft:
   The build puts the repeat's state machine in `client/lib/holdRepeat.ts`, with its test beside it, since a `.tsx` file cannot load under `node --test`. `controls.tsx` wires it to `OptButton` (`repeat`, `onHold`, `repeatValue`) and `StepValue` (`hushed`). A pointer press keeps the value quiet from press to lift, a tap included, so each press is spoken once, at its end.
 
   A typed number was the alternative, and it opens the keyboard over the map being painted.
-- **Tests and docs naming 30 ft.** No test pins the stepper's top. `canvas/tokenShadow.test.ts` names 30 ft as a flier's full lift, which stays. The docs that say 30 ft up are `docs/design/design-v1-maps-vision.md:541` (4.2's "-20 ft to +30 ft"), `docs/design/design.md:1379`, `docs/features.md:117` and `FEATURES.md:80`.
+- **Tests and docs naming 30 ft.** No test pins the stepper's top. `canvas/tokenShadow.test.ts` names 30 ft as a flier's full lift, which stays. The docs that say 30 ft up are `docs/design/design-v1-maps-vision.md:541` (4.2's "-20 ft to +30 ft"), `docs/design/design.md:1379`, `docs/design/mvp.md:117` and `FEATURES.md:80`.
 
 ## 6. Tests
 
@@ -156,7 +156,7 @@ One part, scheduled after the design pass deploys. It touches:
 - Shared constants: `TOAST_MS` moves from `pages/Room.tsx:53` to an export in `client/state/store.ts`. `VISUALLY_HIDDEN` has three copies, in `pages/Room.tsx:730`, `pages/RoomDock.tsx:217` and inline in `pages/RoomChrome.tsx:350`. They move to one export in `client/lib/a11y.ts`, which the readout uses too, rather than a fourth copy.
 - `e2e/vision.e2e.ts`.
 - Deploy notes: reload every open page, table displays included, after the deploy (section 3, Rollout). The README's Updating section says so.
-- Docs: `FEATURES.md` (section 7), `docs/features.md:117`, `docs/design/design-v1-maps-vision.md` 4.2 (the stepper's "-20 ft to +30 ft" at line 541 becomes "+100 ft", and Player behavior gains the readout and the ruler), and `docs/design/design.md` sections 6 (`Drawing.z`), 7.6 (free stops carry `z`, line 649), 9.2 (a free stop stands on its ground, line 778) and 12 (the stepper, line 1379).
+- Docs: `FEATURES.md` (section 7), `docs/design/mvp.md:117`, `docs/design/design-v1-maps-vision.md` 4.2 (the stepper's "-20 ft to +30 ft" at line 541 becomes "+100 ft", and Player behavior gains the readout and the ruler), and `docs/design/design.md` sections 6 (`Drawing.z`), 7.6 (free stops carry `z`, line 649), 9.2 (a free stop stands on its ground, line 778) and 12 (the stepper, line 1379).
 
 ## 9. Questions for the project owner
 

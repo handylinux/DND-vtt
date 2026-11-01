@@ -116,7 +116,7 @@ The project owner reviewed the screenshots on 2026-10-18 and approved the look a
 | Serif headings? A screenshot showed Source Serif 4 (OFL) for the title, parts, sections and the contents' titles, loaded for the shot only. | No. Headings stay in the app's font, so Inter applies to the whole page when it lands, and no second face is bundled or credited. |
 | Captions under screenshots (the alt text, shown) | Kept, as shown. They read like a printed guide's figures. |
 | "Start here" cards for the three opening sections | Kept, as shown. They point a new DM at the Quick start first. |
-| Light mode | Not part of this work. The app has one dark theme (a light theme is a Later item in docs/features.md), so the page has one too. Every color is a token, so it follows a light theme when one comes. |
+| Light mode | Not part of this work. The app has one dark theme (a light theme is a Later item in docs/design/mvp.md), so the page has one too. Every color is a token, so it follows a light theme when one comes. |
 
 ## 11. What must not change
 

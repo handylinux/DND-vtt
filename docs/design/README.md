@@ -15,6 +15,9 @@ and for how to use it, the [DM guide](../dm-guide.md).
 
 - [design.md](design.md): the whole app's technical design, from rooms and
   sign-in to the board, sync, storage and security.
+- [mvp.md](mvp.md): the planning list behind FEATURES.md. It sorts every
+  feature into MVP, v1, Later or Skip, and says why each skipped one was
+  skipped.
 - [design-v1-maps-vision.md](design-v1-maps-vision.md): waves 3 and 4, with
   maps, walls, party vision, lights and raised ground.
 - [design-v1-dm-tools.md](design-v1-dm-tools.md): wave 5, with the DM tools,

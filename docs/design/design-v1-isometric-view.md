@@ -343,7 +343,7 @@ Order: after the hex grids' H1. ISO-1, then ISO-2 and ISO-5 beside each other, t
 
 ISO-4 stacks on ISO-2 for Stage.tsx. ISO-3's edits are mechanical and suit a lighter model. H3's brief adds hex columns and the hex walk (4.4).
 
-**Docs to update:** FEATURES.md (Scenes and maps: an "Isometric view" subsection, Height and elevation, Walls and doors, Fog and vision, Building maps' Top-down line, The table display, This device, and the Shortcuts tables), docs/features.md (section 19's "Hex and isometric grids" later item), docs/design/design.md (13.3 and 14.2), docs/dm-guide.md (an Isometric view section with a screenshot, Suggested view, the four Top-down tools), and README.md's update note (reload open pages). New rows, in the Keys table `| I | Switch between top-down and isometric | everyone |` and `| Q, E | Turn the isometric view left, right | everyone |`, and in the Mouse and touch table `| Tap a standee again | Pick the one behind it, in isometric | everyone |`.
+**Docs to update:** FEATURES.md (Scenes and maps: an "Isometric view" subsection, Height and elevation, Walls and doors, Fog and vision, Building maps' Top-down line, The table display, This device, and the Shortcuts tables), docs/design/mvp.md (section 19's "Hex and isometric grids" later item), docs/design/design.md (13.3 and 14.2), docs/dm-guide.md (an Isometric view section with a screenshot, Suggested view, the four Top-down tools), and README.md's update note (reload open pages). New rows, in the Keys table `| I | Switch between top-down and isometric | everyone |` and `| Q, E | Turn the isometric view left, right | everyone |`, and in the Mouse and touch table `| Tap a standee again | Pick the one behind it, in isometric | everyone |`.
 
 ## 14. As built
 

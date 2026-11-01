@@ -21,9 +21,9 @@ The project owner asked on 2026-10-17 for dice "for saves, attack rolls, ability
 - **A character** has a name, size, portrait, owners, an optional `level` (1 to 20, the XP budget's) and an actor (`shared/model.ts:745-759`). The actor holds `initBonus` and `passivePerception` as typed numbers (`:712-715`) and nothing about abilities, saves or skills. Doc 1 6: "Characters have no saves or skills (doc 2 adds them)."
 - **Edits**: the owners may patch the name, portrait, level and the actor fields `hp`, `speeds`, `ac`, `initBonus`, `passivePerception`, `senses`, `notes`, `sheetUrl` (`shared/permissions.ts:64-65`, `:494-506`, mirrored in `client/features/tokens/access.ts:27-48`). `characterUpdate` copies the named fields and applies the actor patch (`shared/reducer/tokens.ts:460-478`). A PC token's actor patch writes the character too (`:229`).
 - **Projection**: the DM gets the character whole, an owner all of it but DM notes and `monsterId`, and anyone else a fixed list: id, name, size, portrait and the public actor (`shared/project.ts:602-615`). So a new field reaches the DM and owners and no one else without a projection change.
-- **The light card** says it "is not a character sheet: the D&D Beyond link is for that" (`client/features/tokens/StatsSection.tsx:10-16`). docs/features.md:661-662 rules out a sheet builder, and D&D Beyond import because "There is no public API, and scraping breaks its terms." The project owner's answer above now asks for that import, best effort.
+- **The light card** says it "is not a character sheet: the D&D Beyond link is for that" (`client/features/tokens/StatsSection.tsx:10-16`). docs/design/mvp.md:661-662 rules out a sheet builder, and D&D Beyond import because "There is no public API, and scraping breaks its terms." The project owner's answer above now asks for that import, best effort.
 - **The token panel** shows a "Stat block" section only where `statBlockShown` says (`client/features/monsters/statBlockLink.ts:64-68`): the DM on a monster or NPC, a companion's players, and an owner of an SRD-linked token (Wild Shape). A PC token shows its summary line (`client/features/tokens/panelOrder.ts:47-62`).
-- **Wild Shape** today is an SRD monster token the player owns, with its own HP (docs/features.md:559, docs/design/design-v1-dm-tools.md:406), the 2014 way. The 2024 rule keeps the druid's HP and replaces only some of its numbers (SRD 5.2.1, Druid, Wild Shape). A character's actor may hold `srdId`, which its owners receive, but only the DM may set it.
+- **Wild Shape** today is an SRD monster token the player owns, with its own HP (docs/design/mvp.md:559, docs/design/design-v1-dm-tools.md:406), the 2014 way. The 2024 rule keeps the druid's HP and replaces only some of its numbers (SRD 5.2.1, Druid, Wild Shape). A character's actor may hold `srdId`, which its owners receive, but only the DM may set it.
 - **The paste reader**, `parseStatBlockText` (`client/features/monsters/parse.ts:259`), reads 2024 or 2014 monster text into a `StatBlock`, never throws, and lists warnings.
 - **Egress**: the strict proxy port allows exact host names only (`docker/squid.conf:29`), through an explicit undici dispatcher (`server/assets/egress.ts:24-41`). Openverse's JSON transport caps a body at 2 MiB with a time limit (`server/assets/openverse.ts:465-500`). `WindowLimiter` counts hourly budgets in memory (`server/assets/limits.ts:14`), and a `Semaphore` caps concurrent outbound image fetches (`server/assets/slots.ts:97`).
 - **A player's block saves** spend a per-member bucket of 10, refilled one every 6 s, refused with `quota` and never `busy` (`server/rooms/actor.ts:878-886`, `shared/limits.ts:90-91`).
@@ -209,7 +209,7 @@ The "Paste text" step runs `parseStatBlockText` on the text, then `statsFromBloc
 
 **Words**: each code's alert, under Get it, ends with the way out, in Appendix D's words.
 
-**Terms.** docs/features.md:662 ruled this out for D&D Beyond's terms. The project owner chose it best effort. So the server fetches only on a member's tap, once per tap, only a character its owner made public and linked, keeps no copy, reads no text, and caps how often any server asks. An operator who wants none of it removes the host from `docker/squid.conf`, and the link import then answers `fetch_failed` while pasted JSON still works.
+**Terms.** docs/design/mvp.md:662 ruled this out for D&D Beyond's terms. The project owner chose it best effort. So the server fetches only on a member's tap, once per tap, only a character its owner made public and linked, keeps no copy, reads no text, and caps how often any server asks. An operator who wants none of it removes the host from `docker/squid.conf`, and the link import then answers `fetch_failed` while pasted JSON still works.
 
 Changed by docs/design/design-v1-ddb-resources.md (3): the fill also carries `resources`, the character's limited uses read as class resources by `shared/ddb/resources.ts`, and `read.resource`. They live beside the block, not in it, so the editor holds them beside the draft until Save (6.2 of that note), and the missing actions warning names them.
 
@@ -277,7 +277,7 @@ No key or key-plus-pointer combination is added or changed. The editor's fields 
 - **docs/design/design-v1-companion-stat-blocks.md 3.4 and 3.5**: the per-member bucket and the "too full" words also cover every player op that writes a PC's block.
 - **docs/design/design-v1-token-panel.md 3.5**: the Stat block section also shows on a PC token for the DM and its players, with "Take a shape".
 - **docs/design/design.md**: 6 gains 3.2's types, the derived write and `wildShape`. 8.1's owner fields gain `stats`, and a character's `srdId` and `wildShape`, and initiative and Passive Perception follow a block. 10.6's strict list gains `character-service.dndbeyond.com`. 10.8 gains the route. 17 records the project owner's answers of 2026-10-17.
-- **docs/features.md**: 559's Wild Shape token stays for the 2014 way, beside the shape on the character. 661 stays (no sheet builder), and 662's D&D Beyond import moves into the features with the project owner's answer.
+- **docs/design/mvp.md**: 559's Wild Shape token stays for the 2014 way, beside the shape on the character. 661 stays (no sheet builder), and 662's D&D Beyond import moves into the features with the project owner's answer.
 - **README**: the egress paragraph names the new host and how to turn the import off.
 
 ## 10. Edge cases
@@ -366,7 +366,7 @@ One builder, after doc 1's steps 1 to 3 (the grammar, the server's rolls, `bonus
 4. `feat(ui): fill a pc stat block from pasted text` (`statsFromBlock`, the review).
 5. `feat(characters): import a character from d&d beyond` (`shared/ddb/`, the route, its slots, the squid host, README, pasted JSON, the randomized test).
 6. `test(e2e): pc stat blocks`.
-7. `docs: pc stat blocks in the feature list and the design` (FEATURES.md, docs/design/design.md and docs/features.md per 9).
+7. `docs: pc stat blocks in the feature list and the design` (FEATURES.md, docs/design/design.md and docs/design/mvp.md per 9).
 
 **Deploy**: squid reads `docker/squid.conf` at start, so restart the egress container after the update. Open pages keep working, and a reload brings the editor.
 
