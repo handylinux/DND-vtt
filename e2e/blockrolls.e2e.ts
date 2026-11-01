@@ -1226,6 +1226,86 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     }
   });
 
+  test("sbr-21. a held Save's options keep the list's box while the finger is down and fit their rows once it lifts, at 390 x 844 and at 320 x 568 at 130%", async () => {
+    const measure = () =>
+      pat.evaluate(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const doc = (globalThis as any).document;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const menus = [...doc.querySelectorAll('[role="menu"]')] as any[];
+        const menu = menus.find((m) => /^Roll options for |rolls$/.test(m.getAttribute("aria-label") ?? ""));
+        const box = menu?.closest("[data-rvtt-popover]");
+        if (!box) return null;
+        const r = box.getBoundingClientRect();
+        const c = (box.querySelector("[data-roll-mode-menu]") ?? menu).getBoundingClientRect();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const lines = [...menu.querySelectorAll('[role="menuitem"]')].map((item: any) => {
+          let most = 0;
+          const walk = doc.createTreeWalker(item, 4);
+          for (let t = walk.nextNode(); t; t = walk.nextNode()) {
+            if (!t.textContent.trim()) continue;
+            const range = doc.createRange();
+            range.selectNodeContents(t);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const tops = new Set([...range.getClientRects()].filter((q: any) => q.width > 0).map((q: any) => Math.round(q.top)));
+            most = Math.max(most, tops.size);
+          }
+          return { name: item.innerText.trim().split("\n")[0], lines: most, width: item.getBoundingClientRect().width };
+        });
+        const zoom = Number(doc.defaultView.getComputedStyle(doc.documentElement).zoom) || 1;
+        return { label: menu.getAttribute("aria-label"), zoom, box: { top: r.top, bottom: r.bottom, left: r.left, right: r.right, width: r.width, height: r.height }, content: { width: c.width, height: c.height }, scroll: { top: box.scrollTop, height: box.scrollHeight, client: box.clientHeight }, lines, view: { w: (globalThis as unknown as { innerWidth: number }).innerWidth, h: (globalThis as unknown as { innerHeight: number }).innerHeight } };
+      });
+    const sizes: [{ width: number; height: number }, string][] = [
+      [PHONE, "1"],
+      [{ width: 320, height: 568 }, "1.3"],
+    ];
+    try {
+      for (const [size, scale] of sizes) {
+        await pat.setViewportSize(size);
+        await pat.evaluate((s) => localStorage.setItem("rvtt.uiScale", s), scale);
+        await reopenRoom(pat);
+        await pat.getByRole("status", { name: "Connected" }).first().waitFor();
+        const sheet = await patSheet();
+        const view = sheet.locator("[data-pc-stats]");
+        await boxOf(view, "Dexterity").tap();
+        const list = listOf(pat, "Dexterity");
+        await list.waitFor();
+        await sleep(300);
+        const listed = await measure();
+        const from = patSent.ops.length;
+        const touches = new Touches(patCdp);
+        await touches.start([await middle(list.getByRole("menuitem", { name: /^Dexterity save/ }))]);
+        await sleep(HELD_MS);
+        const options = optionsOf(pat, /^Roll options for Dexterity save/);
+        await options.waitFor();
+        await sleep(100);
+        const held = await measure();
+        await shots.take(pat, `sbr-21-${size.width}-${scale}-held`);
+        await touches.end([], 16);
+        await sleep(QUIET_MS);
+        const lifted = await measure();
+        await shots.take(pat, `sbr-21-${size.width}-${scale}-lifted`);
+        await noRoll(patSent, from, "the hold's release and its click");
+        assert.ok(await options.isVisible(), "the options stay open after the lift");
+        assert.ok(listed && held && lifted, "all three measured");
+        assert.ok(Math.abs(held.box.top - listed.box.top) <= 0.5 && Math.abs(held.box.height - listed.box.height) <= 0.5 && Math.abs(held.box.left - listed.box.left) <= 0.5 && Math.abs(held.box.width - listed.box.width) <= 0.5, "held: the list's box as placed");
+        assert.ok(lifted.scroll.height <= lifted.scroll.client + 1, "lifted: the options fit without scrolling");
+        assert.ok(lifted.box.height < listed.box.height - 20, "lifted: the box shrank to the options");
+        assert.ok(lifted.box.height - lifted.content.height <= 40, `lifted: little room under the rows (${lifted.box.height} vs ${lifted.content.height})`);
+        assert.ok(lifted.box.top >= -0.5 && lifted.box.bottom <= lifted.view.h + 0.5 && lifted.box.left >= -0.5 && lifted.box.right <= lifted.view.w + 0.5, "lifted: inside the view");
+        if (scale === "1") for (const l of lifted.lines) assert.equal(l.lines, 1, `lifted: "${l.name}" on one line at 390`);
+        await pat.keyboard.press("Escape");
+        await pat.keyboard.press("Escape");
+        await list.waitFor({ state: "detached" });
+      }
+    } finally {
+      await pat.setViewportSize(PHONE);
+      await pat.evaluate(() => localStorage.setItem("rvtt.uiScale", "1"));
+      await reopenRoom(pat);
+      await closeSheets(pat).catch(() => undefined);
+    }
+  });
+
   test("sbr-19. no page logged an error", async () => {
     assert.deepEqual(consoles.dm.errors, []);
     assert.deepEqual(consoles.pat.errors, []);
