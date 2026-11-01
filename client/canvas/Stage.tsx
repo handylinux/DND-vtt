@@ -42,7 +42,6 @@ import {
   screenToView,
   viewToScreen,
   wheelZoomFactor,
-  zoomAt,
   type Camera,
   type Insets,
   type Point,
@@ -51,6 +50,7 @@ import {
 } from "../lib/camera.ts";
 import { TOP_DOWN, toView, toWorld, viewBox, type Live, type View, type ViewPoint } from "../lib/view.ts";
 import { ellipseBox } from "./relief/standee.ts";
+import { zoomWhileIdle } from "./dragZoom.ts";
 import { isAppleDevice } from "../lib/device.ts";
 import { fitTarget } from "../lib/fitTarget.ts";
 import { revealedMask } from "../lib/fogTiles.ts";
@@ -1028,11 +1028,10 @@ export function MapStage(props: {
   useEffect(() => {
     const slot = scope.get(stageKeysSlot);
     const zoomBy = (factor: number) => {
-      if (dragRef.current) return;
       const s = sizeRef.current;
-      const c = pendingCamRef.current ?? camRef.current;
-      if (!s || !c) return;
-      scheduleCam(zoomAt(c, { x: s.width / 2, y: s.height / 2 }, factor, gestureRef.current.minScale));
+      if (!s) return;
+      const next = zoomWhileIdle(dragRef.current !== null, pendingCamRef.current ?? camRef.current, { x: s.width / 2, y: s.height / 2 }, factor, gestureRef.current.minScale);
+      if (next) scheduleCam(next);
     };
     const nudge = (dx: number, dy: number) => {
       if (dragRef.current) return;
@@ -1321,11 +1320,8 @@ export function MapStage(props: {
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      // The drag's ring height and grab offset belong to its grip-time zoom.
-      if (dragRef.current) return;
-      const c = currentCam();
-      if (!c) return;
-      scheduleCam(zoomAt(c, local(e), wheelZoomFactor(e.deltaY, e.deltaMode, e.ctrlKey), gesture.minScale));
+      const next = zoomWhileIdle(dragRef.current !== null, currentCam(), local(e), wheelZoomFactor(e.deltaY, e.deltaMode, e.ctrlKey), gesture.minScale);
+      if (next) scheduleCam(next);
     };
     const onContextMenu = (e: Event) => e.preventDefault();
     // A middle-button press would start the browser's own autoscroll on some systems.
