@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import { effectiveZoom } from "../features/device/layout.ts";
 import { theme } from "../lib/theme.ts";
 import { letterOf } from "../state/shortcuts.ts";
+import { useHeld } from "./Held.tsx";
 import { Icon } from "./Icon.tsx";
 import { buttonLook } from "./looks.ts";
 import { menuAction, openingIndex, typeahead, type Typed } from "./menuKeys.ts";
@@ -29,6 +30,13 @@ import { focusInView, usePopoverContext } from "./Popover.tsx";
  * End go to the ends, a letter types ahead, Enter or Space picks. Every
  * key it handles is marked used, so no room shortcut runs while focus is
  * in it. Escape, Tab and Shift+Tab are the base's.
+ *
+ * Its items are divs, which a disabled fieldset never stops, so a menu
+ * opened inside a held group (Held.tsx) holds every item itself: each
+ * draws disabled and says so, picks nothing by pointer or key, and drops
+ * its press binding. The keys still move through them, and the menu stays
+ * open, so it reads as off rather than vanishing under the pointer
+ * (D-261101-314).
  */
 
 export type MenuItem = {
@@ -101,6 +109,7 @@ export function Menu(props: {
   data?: Readonly<Record<`data-${string}`, string>>;
 }) {
   const { handle, setInsideFocus, setFitContent } = usePopoverContext();
+  const held = useHeld();
   const tiles = props.tiles === true;
   const ids = useId();
   const items = props.sections.flatMap((s) => s.items);
@@ -181,7 +190,7 @@ export function Menu(props: {
    */
   const pick = (id: string, by: MenuPickBy) => {
     const it = items.find((item) => item.id === id);
-    if (it?.disabled === true || it?.busy === true) return;
+    if (held || it?.disabled === true || it?.busy === true) return;
     flushSync(() => props.onPick(id, by));
     handle.close("pick");
   };
@@ -189,7 +198,7 @@ export function Menu(props: {
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.defaultPrevented) return;
     const focused = items.findIndex((item) => nodes.current.get(item.id) === document.activeElement);
-    const action = menuAction({ key: e.key, letter: letterOf(e), ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey }, focused, items.length, tiles, (i) => items[i]?.disabled === true);
+    const action = menuAction({ key: e.key, letter: letterOf(e), ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey }, focused, items.length, tiles, (i) => held || items[i]?.disabled === true);
     if (action.type === "none") return;
     e.preventDefault();
     if (action.type === "focus") focusItem(action.index);
@@ -210,7 +219,9 @@ export function Menu(props: {
   const item = (it: MenuItem) => {
     const checked = it.checked === true;
     const checkbox = it.kind === "checkbox";
-    const disabled = it.disabled === true;
+    const disabled = held || it.disabled === true;
+    // AbilityMenu's rows roll from their press binding (a long press, ContextMenu, Shift+F10) without a pick, and their owner's own disabled never learned the held group.
+    const events = held ? undefined : it.events;
     const described = it.description ? `${ids}-${it.id}` : undefined;
     const look = buttonLook("quiet", { pressed: checked, disabled });
     return (
@@ -218,7 +229,7 @@ export function Menu(props: {
       <div
         key={it.id}
         {...it.data}
-        {...it.events}
+        {...events}
         ref={(node) => {
           if (node) nodes.current.set(it.id, node);
           else nodes.current.delete(it.id);

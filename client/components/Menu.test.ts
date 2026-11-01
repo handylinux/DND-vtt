@@ -15,6 +15,8 @@ const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { Menu } = await import("./Menu.tsx");
 const { Popover } = await import("./Popover.tsx");
+const { Held } = await import("./Held.tsx");
+const { theme } = await import("../lib/theme.ts");
 
 type Props = Parameters<typeof Menu>[0];
 type Node = { props: Record<string, unknown> & { children?: unknown } };
@@ -23,14 +25,18 @@ function handle(closes: string[]): PopoverHandle {
   return { open: true, kind: "menu", contentId: "m", anchor: { current: null }, box: { current: null }, focusInside: { current: null }, how: { by: "key", from: "first" }, close: (reason: string) => closes.push(reason) } as unknown as PopoverHandle;
 }
 
+/** How the menu is drawn: inside a held group. */
+type Around = { held?: boolean };
+
 /** Renders the menu in an open popover, and keeps the element tree Menu returned, whose handlers a test calls as React would. */
-function draw(props: Props, closes: string[] = []): { html: string; root: Node; items: Node[] } {
+function draw(props: Props, closes: string[] = [], around: Around = {}): { html: string; root: Node; items: Node[] } {
   let tree: ReactElement | null = null;
   function Probe() {
     tree = Menu(props) as ReactElement;
     return tree;
   }
-  const html = renderToStaticMarkup(createElement(Popover, { handle: handle(closes), side: "above", bound: { left: 0, top: 0, right: 400, bottom: 800 }, children: createElement(Probe) }));
+  const popover = createElement(Popover, { handle: handle(closes), side: "above", bound: { left: 0, top: 0, right: 400, bottom: 800 }, children: createElement(Probe) });
+  const html = renderToStaticMarkup(around.held ? createElement(Held, { held: true, children: popover }) : popover);
   assert.ok(tree);
   const items: Node[] = [];
   const walk = (node: unknown) => {
@@ -155,3 +161,101 @@ describe("the pick's input kind (D-261101-098)", () => {
     }
   });
 });
+
+/** A keydown as Menu's root reads it. */
+function key(over: Record<string, unknown>) {
+  return { key: "", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, defaultPrevented: false, timeStamp: 1, preventDefault() {}, ...over };
+}
+
+/** Runs `body` with a stand-in document whose focus Menu's keys read, and gives each drawn item a node that records its focus. */
+function withFocus(body: (focusOn: (drawn: ReturnType<typeof draw>, ids: readonly string[], at: string) => string[]) => void): void {
+  const previous = { document: globalThis.document };
+  const doc = { activeElement: null as unknown };
+  Object.assign(globalThis, { document: doc });
+  try {
+    body((drawn, ids, at) => {
+      const focused: string[] = [];
+      for (const [i, item] of drawn.items.entries()) {
+        const id = ids[i]!;
+        const node = { focus: () => focused.push(id), closest: () => null };
+        (item.props.ref as (n: unknown) => void)(node);
+        if (id === at) doc.activeElement = node;
+      }
+      return focused;
+    });
+  } finally {
+    Object.assign(globalThis, previous);
+  }
+}
+
+/*
+ * A roll menu open on a page that goes held, such as the group save page
+ * as its connection drops (D-261101-314). Its rows are divs, which the
+ * page's disabled fieldset never stops, so Menu holds them itself.
+ */
+describe("a menu inside a held group", () => {
+  const rows: MenuItem[] = [
+    { id: "check", title: "Check", kind: "action" },
+    { id: "save", title: "Save", kind: "action" },
+    { id: "stealth", title: "Stealth", kind: "action" },
+  ];
+
+  test("draws every row disabled and says so, and stays open", () => {
+    const free = draw({ label: "Rolls", sections: [{ key: "s", items: rows }], onPick() {} });
+    const held = draw({ label: "Rolls", sections: [{ key: "s", items: rows }], onPick() {} }, [], { held: true });
+    assert.doesNotMatch(free.html, /aria-disabled/);
+    assert.equal(held.html.match(/role="menuitem"[^>]*aria-disabled="true"/g)?.length, 3);
+    for (const row of held.items) assert.equal((row.props.style as { color?: string }).color, theme.color.textDisabled);
+  });
+
+  test("a pointer's pick and a reader's activation pick nothing and close nothing", () => {
+    const picks: string[] = [];
+    const closes: string[] = [];
+    const { items } = draw({ label: "Rolls", sections: [{ key: "s", items: rows }], onPick: (id) => picks.push(id) }, closes, { held: true });
+    for (const item of items) {
+      (item.props.onPointerDown as ((e: unknown) => void) | undefined)?.({});
+      (item.props.onClick as (e: unknown) => void)({ detail: 1 });
+      (item.props.onClick as (e: unknown) => void)({ detail: 0 });
+    }
+    assert.deepEqual(picks, []);
+    assert.deepEqual(closes, []);
+  });
+
+  test("Enter, Space and typeahead pick nothing, and the arrows still move through the held rows", () => {
+    withFocus((focusOn) => {
+      const picks: string[] = [];
+      const drawn = draw({ label: "Rolls", sections: [{ key: "s", items: rows }], onPick: (id) => picks.push(id) }, [], { held: true });
+      const focused = focusOn(drawn, rows.map((r) => r.id), "check");
+      const keyDown = drawn.root.props.onKeyDown as (e: unknown) => void;
+      keyDown(key({ key: "Enter" }));
+      keyDown(key({ key: " " }));
+      keyDown(key({ key: "s", code: "KeyS" }));
+      keyDown(key({ key: "ArrowDown" }));
+      assert.deepEqual(picks, []);
+      // Enter and Space keep focus on Check, S finds Save, Down moves to Save from Check.
+      assert.deepEqual(focused, ["check", "check", "save", "save"]);
+    });
+  });
+
+  test("a held row drops its press binding, so a ContextMenu, a long press and a touch roll nothing", () => {
+    const pressed: string[] = [];
+    const events = {
+      onPointerDown: () => pressed.push("down"),
+      onTouchStart: () => pressed.push("touch"),
+      onContextMenu: () => pressed.push("context"),
+      onKeyDown: () => pressed.push("key"),
+    };
+    const picks: string[] = [];
+    const { items } = draw({ label: "Rolls", sections: [{ key: "s", items: [{ id: "x", title: "Check", kind: "action", events }] }], onPick: (id) => picks.push(id) }, [], { held: true });
+    const row = items[0]!.props as Record<string, ((e: unknown) => void) | undefined>;
+    // The long press starts at the binding's pointer down, and a phone's long press arrives as a contextmenu.
+    row.onPointerDown?.({ button: 0, pointerId: 1, pointerType: "touch" });
+    row.onTouchStart?.({ changedTouches: [] });
+    row.onContextMenu?.({ preventDefault() {} });
+    row.onKeyDown?.({ key: "F10", shiftKey: true });
+    row.onClick?.({ detail: 1 });
+    assert.deepEqual(pressed, []);
+    assert.deepEqual(picks, []);
+  });
+});
+
