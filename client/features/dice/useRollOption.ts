@@ -12,6 +12,7 @@ import { openAsk } from "../rolls/open.ts";
 import { rollsOf } from "./logic.ts";
 import { asInitiative, asSave, d20Roll, initiativeOp, routedTest, routeOf, targetRef } from "./options.ts";
 import { logSeq, remembered, rowTag, useOption, useOptionStore, type OptionState } from "./optionState.ts";
+import { usePanelShown } from "../panels.ts";
 import { useReceipt, useReceipts, type ReceiptState, type ReceiptTracker } from "./useReceipt.ts";
 import { NEEDS_CONNECTION, sendRoll, useRollSender } from "./send.ts";
 import { diceChoicesSlot, useDicePanel, type PanelChoices, type PanelRoll } from "./useDicePanel.ts";
@@ -200,7 +201,9 @@ export function useRollOption(surface?: "dice") {
  * that room seq counts (rowTag).
  */
 export function useRowResult(row: string, after?: number): { tag: string | null; receipt: ReceiptState | null; rolls: DiceRoll[]; waiting: boolean } {
-  const tag = useOption((s) => rowTag(s, row, after));
+  const rowOf = useOption((s) => rowTag(s, row, after));
+  // A row in a hidden pane keeps its place but watches nothing, or its watch would hide the roll's toast from a player who sees no row (docs/design-v1-stat-block-rolls.md 8).
+  const tag = usePanelShown() ? rowOf : null;
   const receipt = useReceipt(tag);
   const rolls = useMemo(() => (receipt?.state === "committed" ? rollsOf(receipt.lines) : []), [receipt]);
   const waiting = receipt !== null && (receipt.state === "sending" || receipt.state === "checking");

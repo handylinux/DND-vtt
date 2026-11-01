@@ -4,6 +4,8 @@ import { describe, test } from "node:test";
 import { createStore } from "zustand/vanilla";
 import type { ClientOp } from "#shared/protocol.ts";
 import { DM, character, room, token } from "#shared/testutil.ts";
+import { projectState } from "#shared/project.ts";
+import type { RoomState } from "#shared/model.ts";
 import { optionSlot } from "./optionState.ts";
 import { diceChoicesSlot } from "./useDicePanel.ts";
 
@@ -18,7 +20,8 @@ const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { RoomProvider } = await import("../../state/view.ts");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
-const { useRollOption } = await import("./useRollOption.ts");
+const { useRollOption, useRowResult } = await import("./useRollOption.ts");
+const { PanelHere } = await import("../panels.ts");
 
 type Api = ReturnType<typeof useRollOption>;
 
@@ -176,4 +179,32 @@ describe("a stat block's d20, which takes no panel choices (docs/design-v1-stat-
     assert.equal(api.d20({ ...input, bonus: null, onFail: (w) => heard.push(w) }), null);
     assert.deepEqual(heard, []);
   });
+});
+
+test("a row in a hidden pane reads no tag, so it watches no receipt and leaves the roll's toast alone", () => {
+  const read = (shown: boolean) => {
+    const scope = new RoomScope();
+    scope.get(optionSlot).setState({ tags: { row: "T1" } });
+    const options = scope.get(optionSlot);
+    options.getInitialState = options.getState;
+    const view = projectState(room(), DM, { sceneId: "s1" }) as unknown as RoomState;
+    const store = createStore(() => ({ view, roomId: "r1", connection: "open", you: DM, sceneId: "s1", local: { selectedIds: [], multi: false } }));
+    let seen: string | null | undefined;
+    function Probe() {
+      seen = useRowResult("row").tag;
+      return null;
+    }
+    renderToStaticMarkup(
+      createElement(RoomProvider, {
+        store: store as never,
+        actions: { dispatch: () => 1 } as never,
+        ui: {} as never,
+        assets: { url: () => "" } as never,
+        children: createElement(RoomScopeProvider, { scope, children: createElement(PanelHere, { id: "dice", shown, children: createElement(Probe) }) as never }),
+      }),
+    );
+    return seen;
+  };
+  assert.equal(read(true), "T1");
+  assert.equal(read(false), null);
 });
