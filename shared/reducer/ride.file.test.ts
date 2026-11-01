@@ -86,13 +86,22 @@ describe("squares: what a holder drags follows it in single file where its move 
     assert.deepEqual(walkOf(s, op, "gob"), [[1, 6], [3, 6]]);
   });
 
-  test("two goblins line up behind it, the one nearer the horse first", () => {
+  test("two goblins the horse drags: the one nearer goes first, and the other, 10 ft from the horse there, cannot follow (D-261101-397)", () => {
     // The goblin at the horse's corner, the imp below it, whose middle is the nearer to the horse's where the walk starts.
     let s = towing(corridor(), "gob", { x: 1, y: 7 });
     s = towing(s, "imp", { x: 3, y: 7 });
+    const op = into(s);
+    assert.deepEqual([walkOf(s, op, "imp")?.at(-1), walkOf(s, op, "gob")?.at(-1)], [[9, 6], [8, 6]], "the imp right behind the horse, the goblin behind it");
+    // So the drag holds at the corridor's mouth, as the device holds it, and never lets the goblin go unsaid.
+    assert.deepEqual(canApply(op, P1, s, { canUseAsset: () => true }), { ok: false, code: "forbidden", message: "gob can't follow through there." });
+  });
+
+  test("a goblin the imp drags lines up behind the imp, in reach of its own holder, so both go and both hold on", () => {
+    let s = towing(corridor(), "imp", { x: 3, y: 7 });
+    s = { ...s, tokens: { ...s.tokens, gob: token("gob", { x: 1, y: 7, name: "gob", kind: "npc", attached: { to: "imp", kind: "drag" } }) } };
     const after = served(s, into(s));
-    assert.deepEqual([after.tokens.imp!.x, after.tokens.imp!.y], [9, 6]);
-    assert.deepEqual([after.tokens.gob!.x, after.tokens.gob!.y], [8, 6]);
+    assert.deepEqual([after.tokens.imp!.x, after.tokens.imp!.y, after.tokens.imp!.attached?.to], [9, 6, "horse"]);
+    assert.deepEqual([after.tokens.gob!.x, after.tokens.gob!.y, after.tokens.gob!.attached?.to], [8, 6, "imp"]);
   });
 
   test("one players cannot see lines up behind those they see, so the visible one's place reads nothing of it, and it reaches no player", () => {
@@ -102,8 +111,9 @@ describe("squares: what a holder drags follows it in single file where its move 
     const op = into(seen);
     const alone = served(seen, op);
     const after = served(both, op);
-    assert.deepEqual([after.tokens.gob!.x, after.tokens.gob!.y], [alone.tokens.gob!.x, alone.tokens.gob!.y], "the goblin right behind the horse, as with no imp");
-    assert.deepEqual([after.tokens.imp!.x, after.tokens.imp!.y], [8, 6], "the hidden imp behind the goblin");
+    assert.deepEqual([after.tokens.gob!.x, after.tokens.gob!.y, after.tokens.gob!.attached?.to], [alone.tokens.gob!.x, alone.tokens.gob!.y, "horse"], "the goblin right behind the horse, as with no imp");
+    // 10 ft from the horse there, it lets go, as a hidden creature in tow does where it cannot follow, and no refusal reads it.
+    assert.deepEqual([after.tokens.imp!.x, after.tokens.imp!.y, after.tokens.imp!.attached], [8, 6, undefined], "the hidden imp behind the goblin, let go");
     for (const who of [P1, P2]) assert.equal(stableStringify(projectState(after, who, { sceneId: "s1" })), stableStringify(projectState(alone, who, { sceneId: "s1" })), `${who.memberId} is sent the same`);
   });
 
@@ -112,7 +122,7 @@ describe("squares: what a holder drags follows it in single file where its move 
     const op = into(s);
     const after = served(s, op);
     const ogre = after.tokens.ogre!;
-    assert.deepEqual([ogre.x, ogre.y], [8.5, 5.5]);
+    assert.deepEqual([ogre.x, ogre.y, ogre.attached?.to], [8.5, 5.5, "horse"]);
     assert.equal(offGridWallThrough(after, walkEnd(after, ownWalk({ ...ogre, x: 7, y: 5.5 }), ogre)), false, "off its grid, but in a narrow space it could squeeze through");
   });
 

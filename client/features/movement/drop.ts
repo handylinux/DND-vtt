@@ -2,6 +2,7 @@ import type { RoomState, Scene, Token } from "#shared/model.ts";
 import { MAX_MOVES, MAX_ROUTE_PIECES, MAX_ROUTE_REACH, type ClientOp, type DoorRef, type OpOf } from "#shared/protocol.ts";
 import { SOMETHING_BLOCKS, stopWords, WALL_IN_THE_WAY } from "#shared/permissions.ts";
 import type { Blocker, BuildState, LegEnd } from "#shared/ruleHooks.ts";
+import type { DistanceSettings } from "#shared/rules/distance.ts";
 import { holderOf, linkHolds, onHolder, publicMembers, walkerFor, type SeenByAll } from "#shared/rules/attach.ts";
 import { anchorOfHex, canSqueeze, footprintSize, hexSqueezedSize, sizeCategory, snapStep, squeezedSize } from "#shared/rules/footprint.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "#shared/rules/grid.ts";
@@ -9,7 +10,7 @@ import { hexAt, hexKey, hexNeighbors, type Hex } from "#shared/rules/hex.ts";
 import { deviceGround } from "#shared/rules/held.ts";
 import { footing } from "#shared/rules/heights.ts";
 import { coreBlocked, groundUnder, hexEndStand, hexFitWall, hexLegOf, hexLegStand, hexNarrow, hexStandHexes, hexStandInside, hexStandPlace, hexStartStand, hexWallsOf, landedElevation, landing, legSpots, legStop, offGridWallThrough, onSqueezedLattice, ownWalk, previewChunks, previewSqueezed, squeezeFits, walkEnd, walkFrom, type DropMode, type HexStand, type Walker } from "#shared/rules/movement.ts";
-import { fileRoutes, fileShift, followedHeight, followerTrace, routeLattice, routePoints, routeStop, routeWalkers, seatShift, walkSqueezes, walkTrace, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "#shared/rules/route.ts";
+import { fileOutOfReach, fileRoutes, fileShift, followedHeight, followerTrace, routeLattice, routePoints, routeStop, routeWalkers, seatShift, walkSqueezes, walkTrace, type FileEnd, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "#shared/rules/route.ts";
 import { followsInSingleFile } from "#shared/migrate.ts";
 import { checkSetReach } from "#shared/rules/moveLeg.ts";
 import type { WalkRoute } from "#shared/rules/walk.ts";
@@ -696,8 +697,8 @@ export function planGroup(state: DropView, tokens: readonly DropToken[], dx: num
   return { moves, stop: null, held };
 }
 
-/** The room a walk's walkers are read in: its build, and where it has them its tokens, which hold their holders. */
-type WalkersState = BuildState & { tokens?: Readonly<Record<string, Token | undefined>> };
+/** The room a walk's walkers are read in: its build, where it has them its tokens, which hold their holders, and the distance rules a drag's reach reads. */
+type WalkersState = BuildState & { tokens?: Readonly<Record<string, Token | undefined>>; meta?: { settings: DistanceSettings } };
 
 /**
  * The walks of the creatures a holder drags beside it along the holder's
@@ -717,7 +718,9 @@ type WalkersState = BuildState & { tokens?: Readonly<Record<string, Token | unde
  * that ends squeezed takes them in single file (`file`, route.ts
  * fileRoutes, D-261101-250), as the server's move does: each on its own
  * walk along the holder's line, so `to` is then the walk's own point `i`,
- * since a cut of it lands full and takes them by their places.
+ * since a cut of it lands full and takes them by their places, and where
+ * the walk ends one it leaves out of its own holder's reach is stopped too
+ * (route.ts fileOutOfReach, D-261101-397).
  */
 function followersOf(state: WalkersState, lead: Walker, points: readonly RoutePoint[], walkers: readonly DropToken[], end?: boolean): { file: boolean; stop: (i: number, to: RoutePoint, ends?: boolean) => { blocker: Blocker } | null } {
   // As the holder's walk stands where it starts (route.ts WalkTrace).
@@ -761,6 +764,14 @@ function followersOf(state: WalkersState, lead: Walker, points: readonly RoutePo
         if (stop) return stop;
         // Where the walk ends it stands there, off its grid only with no wall through its box (permissions.ts draggedWalls, FU44-OPUS-1).
         if (ends && !fullStandClear(state, f.trace[i - 1]!, at)) return { blocker: "wall" as const, door: null };
+      }
+      // In single file each must end in its own holder's reach, as the server judges them (permissions.ts draggedWalls).
+      if (ends && file && file.size > 0 && state.meta) {
+        const there = new Map<string, FileEnd>();
+        for (const [k, w] of linked.entries()) if (file.has(w.id)) there.set(w.id, follows[k]!.spot(points[i]!, squeezedAt(i, to), i));
+        const inFile = new Map([...file.keys()].flatMap((id) => (there.has(id) ? [[id, there.get(id)!] as const] : [])));
+        const end = points[i]!;
+        if (fileOutOfReach(g, state.meta.settings, { ...lead, id: named.id ?? "" }, { x: end.x, y: end.y, elevation: end.elevation }, memberOf, inFile) !== null) return { blocker: "wall" as const, door: null };
       }
       return null;
     },

@@ -7,7 +7,7 @@ import { canSqueeze, footprintRect, footprintSize, isSqueezed, placedOnHex, rang
 import type { Point, Rect } from "./geom.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
 import { hexDistance, hexKey, hexLine, hexNeighbors, type Hex, type HexGrid } from "./hex.ts";
-import { onHolder, seatedAt } from "./attach.ts";
+import { onHolder, seatedAt, withinReach } from "./attach.ts";
 import { footing, footprintGround, sceneGround } from "./heights.ts";
 import {
   coreBlocked,
@@ -278,6 +278,57 @@ export function fileRoutes(lead: PlacedToken, points: readonly Point[], classes:
     }
   }
   return out;
+}
+
+/** Where a member of a walk in single file stands where the walk ends, as `fileOutOfReach` reads it. */
+export type FileEnd = { x: number; y: number; elevation: number };
+
+/**
+ * The first creature in single file (`fileRoutes`) whose walk would end out
+ * of drag reach of its own holder (D-261101-397, review FU45BR-OPUS-1), so
+ * the link pass after the move would let it go (attach.ts linkHolds), or
+ * null when each stays in reach. `ends` is where each one in the file ends,
+ * in file order, and `end` where the lead's walk ends. Its holder is read
+ * where the walk leaves it: the lead at its end, one in the file at its own
+ * end, and one sitting on another where that one's change takes it. One
+ * sitting on the lead is read from each corner of the squares the lead
+ * squeezes onto, since its seat there turns on who else rides
+ * (attach.ts squeezedSeatsApart), so a creature passes only where every
+ * seat keeps it in reach. The server's check and the device's read it with
+ * the same ends, so both hold the drag at the same place.
+ */
+export function fileOutOfReach(g: Grid, rules: DistanceSettings, lead: Follower, end: FileEnd, memberOf: (id: string) => Follower | undefined, ends: ReadonlyMap<string, FileEnd>): string | null {
+  const at = (id: string): Follower | undefined => (id === lead.id ? lead : memberOf(id));
+  // Every place the walk can leave a holder, chains of seats followed down from the lead (a chain is no longer than the group).
+  const places = (id: string, depth: number): FileEnd[] | null => {
+    if (id === lead.id) return [end];
+    const own = ends.get(id);
+    if (own) return [own];
+    const member = memberOf(id);
+    const link = member?.attached;
+    const holder = link ? at(link.to) : undefined;
+    if (!member || !link || !holder || !onHolder(link.kind) || depth > ends.size + 64) return null;
+    const rise = member.elevation - holder.elevation;
+    if (holder.id === lead.id) {
+      const box = footprintRect(g, { size: lead.size, x: end.x, y: end.y, ...(lead.w !== undefined ? { w: lead.w } : {}), ...(lead.h !== undefined ? { h: lead.h } : {}), squeeze: true });
+      const { w, h } = footprintSize(member);
+      const xs = w >= box.w ? [box.x] : [box.x, box.x + box.w - w];
+      const ys = h >= box.h ? [box.y] : [box.y, box.y + box.h - h];
+      const corners = xs.flatMap((x) => ys.map((y) => ({ x, y, elevation: end.elevation + rise })));
+      // One too big for those squares keeps its own seat (attach.ts seatedAt), so that place counts too.
+      return w > box.w || h > box.h ? [...corners, { x: end.x + member.x - lead.x, y: end.y + member.y - lead.y, elevation: end.elevation + rise }] : corners;
+    }
+    return places(holder.id, depth + 1)?.map((p) => ({ x: p.x + member.x - holder.x, y: p.y + member.y - holder.y, elevation: p.elevation + rise })) ?? null;
+  };
+  for (const [id, there] of ends) {
+    const member = memberOf(id);
+    const link = member?.attached;
+    const holder = link ? at(link.to) : undefined;
+    if (!member || link?.kind !== "drag" || !holder) continue;
+    const held = places(holder.id, 0);
+    if (held?.some((p) => !withinReach(g, rules, { ...member, ...there }, { ...holder, ...p }))) return id;
+  }
+  return null;
 }
 
 /**

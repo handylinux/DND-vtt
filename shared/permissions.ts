@@ -40,7 +40,7 @@ import {
   walkOn,
   type Walker,
 } from "./rules/movement.ts";
-import { legSteps, onRouteLattice, routeLattice, routePoints, routeStop, routeWalkers, type RoutePiece } from "./rules/route.ts";
+import { fileOutOfReach, legSteps, onRouteLattice, routeLattice, routePoints, routeStop, routeWalkers, type RoutePiece } from "./rules/route.ts";
 import { NO_ROOM_TO_GROW, OWNER_SIZES, resizeCandidates, resizeRefusal } from "./rules/resize.ts";
 import { turnMovedOn } from "./rules/initiative.ts";
 import { turnUnderWay } from "./rules/path.ts";
@@ -1573,11 +1573,18 @@ function namedMoveCheck(c: Check, tokenId: string, to?: Pick<Token, "x" | "y"> &
 /**
  * The walls test of a player's group move (docs/design/design-v1-attach.md 4.2):
  * besides each named token's own legs, each dragged creature among the
- * public members walks the holder's route offset by its place, piece by
- * piece, on its own ground. A step onto a seat and a get-off leg are walks
- * too, so what the stepping token drags meets the walls as it would on a move. What sits on its holder rides and is not tested,
- * and a dragged creature some player cannot see walks in the private pass,
+ * public members walks its walk as the move takes it along, piece by
+ * piece, on its own ground: the holder's route offset by its place, or on
+ * squares, where the holder's own move ends squeezed, its walk in single
+ * file (rules/moveLeg.ts singleFile). A step onto a seat and a get-off leg
+ * are walks too, so what the stepping token drags meets the walls as it
+ * would on a move. What sits on its holder rides and is not tested, and a
+ * dragged creature some player cannot see walks in the private pass,
  * stopping where it must unseen (rules/moveLeg.ts), so no refusal reads it.
+ * In single file one the walk would leave out of its own holder's reach
+ * cannot follow there either (route.ts fileOutOfReach, D-261101-397), as
+ * the device holds such a drag at the corridor's mouth. One some player
+ * cannot see lets go there unread, as before.
  */
 function draggedWalls(c: Check, op: Op): Decision {
   const first =
@@ -1585,7 +1592,8 @@ function draggedWalls(c: Check, op: Op): Decision {
   const token = first !== undefined ? c.state.tokens[first] : undefined;
   if (!token || c.state.scenes[token.sceneId]?.blockMovement !== true) return OK;
   if (op.t === "token.move" && op.teleport !== undefined) return OK;
-  for (const moved of planMove(op, c.state, c.actor, {})) {
+  const plan = planMove(op, c.state, c.actor, {});
+  for (const moved of plan) {
     const member = c.state.tokens[moved.tokenId];
     if (moved.carriedBy === undefined || moved.pass !== "public" || !member || member.attached?.kind !== "drag") continue;
     for (let i = 1; i < moved.route.length; i++) {
@@ -1602,7 +1610,12 @@ function draggedWalls(c: Check, op: Op): Decision {
     const n = moved.route.length;
     if (c.stands && (op.t === "token.move" || op.t === "token.moveMany") && n > 1 && offGridWallThrough(c.state, walkEnd(c.state, moved.trace[n - 2]!, moved.route[n - 1]!))) return refuse("forbidden", standWords(c, member, moved.route[n - 1]!));
   }
-  return OK;
+  const filed = plan.filter((m) => m.file === true && m.pass === "public" && c.state.tokens[m.tokenId]?.attached?.kind === "drag");
+  const lead = plan.find((m) => m.tokenId === first);
+  if (filed.length === 0 || !lead) return OK;
+  const far = fileOutOfReach(gridOfToken(c.state, token), c.state.meta.settings, token, lead.to, (id) => c.state.tokens[id], new Map(filed.map((m) => [m.tokenId, m.to])));
+  const left = far !== null ? c.state.tokens[far] : undefined;
+  return left ? refuse("forbidden", `${shownName(left)} can't follow through there.`) : OK;
 }
 
 /** A player's refusals of attaching (docs/design/design-v1-attach.md 6). */

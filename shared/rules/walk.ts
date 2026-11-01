@@ -5,7 +5,7 @@ import { canSqueeze, footprintSize, snapStep, squeezedSize } from "./footprint.t
 import type { Point } from "./geom.ts";
 import { footing } from "./heights.ts";
 import { crossesInnerLedges, groundUnder, legStop, offGridWallThrough, offKey, onOffHolder, pastHolder, stepTester, walkEnd, walkFrom, walkOn, type MovingToken, type StepTester, type Walker } from "./movement.ts";
-import { fileRoutes, fileShift, followedHeight, legSteps, routeFeet, routeLattice, seatedOn, seatShift, straightCost, trueLength, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "./route.ts";
+import { fileOutOfReach, fileRoutes, fileShift, followedHeight, legSteps, routeFeet, routeLattice, seatedOn, seatShift, straightCost, trueLength, type FileEnd, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "./route.ts";
 import { SQUARES } from "./grid.ts";
 
 /**
@@ -617,12 +617,15 @@ export class WalkWorld {
    * the server's move takes them along a walk that ends squeezed: each on
    * its own walk, its sweep on ground the search may read, each piece by
    * the leg test the server runs on it and its end by the server's stand
-   * test (permissions.ts draggedWalls). Null when all of them follow.
+   * test, and then each where it ends by its own holder's reach
+   * (route.ts fileOutOfReach, D-261101-397), as permissions.ts
+   * draggedWalls judges them. Null when all of them follow.
    */
   fileBlocked(points: readonly Point[]): string | null {
     if (this.#towed.length === 0) return null;
     const { token, build } = this.input;
     const file = fileRoutes(token, points, [this.#towed.map((t) => t.walker)]);
+    const ends = new Map<string, FileEnd>();
     for (const t of this.#towed) {
       const walk = file.get(t.walker.id);
       if (!walk) continue;
@@ -641,8 +644,12 @@ export class WalkWorld {
         if (k === walk.length - 1 && offGridWallThrough(build, walkEnd(build, from, to))) return t.walker.id;
         from = to;
       }
+      ends.set(t.walker.id, { x: from.x, y: from.y, elevation: from.elevation });
     }
-    return null;
+    const last = points[points.length - 1]!;
+    const lead: Follower = { ...token, id: (token as { id?: string }).id ?? "" };
+    const inFile = new Map([...file.keys()].flatMap((id) => (ends.has(id) ? [[id, ends.get(id)!] as const] : [])));
+    return fileOutOfReach(SQUARES, this.input.rules, lead, { x: last.x, y: last.y, elevation: this.#leadHeight(last) }, (m) => this.#members.get(m), inFile);
   }
 
   /** Whether the walker drags a creature beside it that a step can leave behind. */

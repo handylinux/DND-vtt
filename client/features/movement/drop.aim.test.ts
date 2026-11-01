@@ -231,6 +231,24 @@ describe("squares: a mount dragging a goblin into a corridor one square wide (LP
   });
 });
 
+describe("squares: two goblins the mount drags, where the corridor has room in reach for one (D-261101-397, review FU45BR-OPUS-1)", () => {
+  test("the drop holds at the corridor's mouth and names the one the file would leave out of reach, and what it sends keeps both", () => {
+    const s = dragCorridor();
+    s.tokens.gob = token("gob", { x: 1, y: 7, name: "Goblin", kind: "npc", attached: { to: "horse", kind: "drag" } });
+    s.tokens.imp = token("imp", { x: 3, y: 7, name: "Imp", kind: "npc", attached: { to: "horse", kind: "drag" } });
+    const { plan } = dropOf(s, { x: 9.5, y: 5.5 });
+    assert.ok(plan, "the drop landed");
+    const horse = plan.moves.find((m) => m.tokenId === "horse");
+    assert.ok(horse && horse.squeeze === undefined && horse.x < 6, `held short of the corridor, full size: ${JSON.stringify(horse)}`);
+    // The imp is the nearer, so first in line, and the goblin behind it would end 10 ft from the horse.
+    assert.equal(plan.stop && stopText(plan.stop), "Goblin can't follow through there.");
+    assert.ok(takes(s, plan), "the server takes it");
+    const r = applyOp(s, moveOpsOf(plan.moves)[0]!, P1, env(1));
+    assert.ok(r.ok);
+    assert.deepEqual([r.state.tokens.gob!.attached?.to, r.state.tokens.imp!.attached?.to], ["horse", "horse"], "both still in tow");
+  });
+});
+
 describe("squares: heights in single file (review FU45B-ASTRA-02)", () => {
   /** The horse drags an ogre in the air, which drags a goblin, over ground the goblin's offset would read under the ogre, and a low ledge on the goblin's own walk in the file. */
   function nested(): RoomState {
