@@ -1420,6 +1420,34 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     }
   });
 
+  test("sbr-26. a side sheet hidden before a block roll lands: the hidden result line neither holds the roll's voice nor hides its toast, and shown again it carries the result (SBR-SOL-002)", async () => {
+    await pat.setViewportSize({ width: 844, height: 390 });
+    await reopenRoom(pat);
+    try {
+      const sheet = await patSheet();
+      const view = sheet.locator("[data-pc-stats]");
+      patWire.hold = true;
+      const from = patSent.ops.length;
+      await boxOf(view, "Wisdom").tap();
+      await listOf(pat, "Wisdom").getByRole("menuitem", { name: /^Wisdom check/ }).tap();
+      await sheet.getByRole("button", { name: "Hide Characters" }).tap();
+      await sheet.waitFor({ state: "hidden" });
+      patWire.release();
+      await oneRoll(patSent, from, "Wisdom check from a sheet hidden before it lands");
+      const toasts = pat.locator('[role="status"]:not([data-block-result]):not([data-block-result] *)').filter({ hasText: /Wisdom/ });
+      await toasts.first().waitFor({ timeout: 5_000 });
+      assert.equal(await toasts.count(), 1, "one own-roll toast, not suppressed by the hidden line");
+      // Shown again, the block's line carries the result.
+      await pat.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).tap();
+      await sheet.waitFor();
+      await resultOf(sheet.locator("[data-pc-stats]")).getByText(/Wisdom check/).first().waitFor();
+    } finally {
+      await pat.setViewportSize(PHONE);
+      await reopenRoom(pat);
+      await closeSheets(pat).catch(() => undefined);
+    }
+  });
+
   test("sbr-19. no page logged an error", async () => {
     assert.deepEqual(consoles.dm.errors, []);
     assert.deepEqual(consoles.pat.errors, []);
