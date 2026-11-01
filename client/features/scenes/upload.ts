@@ -63,7 +63,7 @@ export async function uploadMap(
   // server checks the bytes themselves, so any image type gets it in the door.
   const body = prepared.type.startsWith("image/") ? prepared : new Blob([prepared], { type: "image/jpeg" });
   const row: AssetRow = await api.uploadAsset(roomId, "map", body, { name: file.name, ...rest });
-  return { id: row.id, width: row.width, height: row.height, cellPx: row.cellPx, hexCellPx: row.hexCellPx };
+  return { id: row.id, width: row.width, height: row.height, cellPx: row.cellPx, ...(row.hexCellPx ? { hexCellPx: row.hexCellPx } : null) };
 }
 
 export function uploadErrorText(err: unknown): string {

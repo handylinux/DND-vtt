@@ -31,6 +31,13 @@ describe("map upload", () => {
     assert.equal((call.init.headers as Record<string, string>)["content-type"], "image/jpeg");
   });
 
+  test("reads the hex hint back beside the squares one", async () => {
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ id: "a1", kind: "map", width: 1435, height: 869, variants: ["full"], hexCellPx: { rows: 70 } }), { status: 200, headers: { "content-type": "application/json" } })) as typeof fetch;
+    const asset = await uploadMap("ROOM1234", new File([new Uint8Array(10)], "crypt_20x14.jpg", { type: "image/jpeg" }));
+    assert.deepEqual(asset, { id: "a1", width: 1435, height: 869, cellPx: undefined, hexCellPx: { rows: 70 } });
+  });
+
   test("a file with no type still goes up as an image", async () => {
     let type = "";
     globalThis.fetch = (async (_url: string, init: RequestInit) => {
