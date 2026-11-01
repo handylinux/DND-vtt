@@ -296,19 +296,40 @@ test("terminal results name the captured setup action and preserve a reload refu
   h.controller.receive(frame());
   h.controller.activate("undo", { scope: "setup" });
   h.ack(1);
-  assert.equal(h.view().result, "Undid setup: changing Bree's AC.");
+  assert.equal(h.view().result.setup, "Undid setup: changing Bree's AC.");
   h.controller.receive(frame(2, 0, 1, 1));
   h.controller.activate("undo");
   h.context.terminal = 2;
   h.sent[1]!.answer("refused", { code: "invalid", message: "Reload to use Undo", text: "Reload to use Undo" });
-  assert.equal(h.view().result, "Reload to use Undo");
+  assert.equal(h.view().result.play, "Reload to use Undo");
   h.controller.receive(frame(3, 0, 2, 2));
   h.controller.activate("undo", { scope: "setup" });
   h.context.terminal = 3;
   const refused = "could not undo changing Bree's stat block: Undo the play step first: damaging Bree";
   h.sent[2]!.answer("refused", { code: "invalid", message: refused, text: refused });
-  assert.equal(h.view().result, "Could not undo changing Bree's stat block: Undo the play step first: damaging Bree.", "the sheet shows the toast's sentence");
+  assert.equal(h.view().result.setup, "Could not undo changing Bree's stat block: Undo the play step first: damaging Bree.", "the sheet shows the toast's sentence");
   assert.equal(refusalSentence(FORGET_ASK), FORGET_ASK, "the forget question stays the question Setup history answers");
+});
+
+test("each history keeps its own result, so neither sheet shows what the other did", () => {
+  const h = harness();
+  h.controller.receive(frame());
+  h.controller.activate("undo");
+  h.ack(1);
+  assert.deepEqual(h.view().result, { play: "Undid moving Bree.", setup: null }, "a Play undo leaves Setup history's result empty");
+  h.controller.receive(frame(2, 0, 1, 1));
+  h.controller.activate("undo", { scope: "setup" });
+  h.ack(2);
+  assert.deepEqual(h.view().result, { play: "Undid moving Bree.", setup: "Undid setup: changing Bree's AC." }, "a Setup undo leaves Play's result");
+  h.controller.receive(frame(3, 0, 2, 2));
+  h.controller.activate("redo");
+  assert.deepEqual(h.view().result, { play: "Nothing to redo.", setup: "Undid setup: changing Bree's AC." }, "a Play refusal is Play's alone");
+  h.controller.activate("redo", { scope: "setup" });
+  assert.deepEqual(h.view().result, { play: "Nothing to redo.", setup: "Nothing to redo in Setup history." }, "a Setup refusal is Setup's alone");
+  h.controller.receive(frame(4, 0, 3, 2));
+  h.controller.activate("undo", { scope: "setup" });
+  assert.equal(h.view().result.setup, null, "a new Setup step clears only Setup's result");
+  assert.equal(h.view().result.play, "Nothing to redo.");
 });
 
 test("a lost history answer announces once, while quiet flows keep their own feedback", () => {

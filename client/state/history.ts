@@ -18,8 +18,11 @@ export type HistoryActivation = {
   onAnswer?: OnAnswer;
 };
 
-export type HistoryView = { summary: HistoryMessage | null; ready: boolean; pending: number; slow: boolean; result: string | null };
-export const EMPTY_HISTORY: HistoryView = { summary: null, ready: false, pending: 0, slow: false, result: null };
+/** Each history's last answer, so a sheet shows only what its own history did. */
+export type HistoryResults = Readonly<Record<HistoryScope, string | null>>;
+export type HistoryView = { summary: HistoryMessage | null; ready: boolean; pending: number; slow: boolean; result: HistoryResults };
+const NO_RESULTS: HistoryResults = { play: null, setup: null };
+export const EMPTY_HISTORY: HistoryView = { summary: null, ready: false, pending: 0, slow: false, result: NO_RESULTS };
 export const HISTORY_LOADING = "Loading undo history…";
 export const HISTORY_WAIT_MS = 200;
 
@@ -67,7 +70,7 @@ export class HistoryController {
   private active = 0;
   private draining = false;
   private slow = false;
-  private result: string | null = null;
+  private result: HistoryResults = NO_RESULTS;
   private clicks = new Set<string>();
   private published = EMPTY_HISTORY;
 
@@ -119,7 +122,7 @@ export class HistoryController {
     const control = options.control;
     if (control && (options.detail ?? 0) > 1 && this.clicks.has(control)) return false;
     if (control && (options.detail ?? 0) > 0) this.clicks.add(control);
-    this.result = null;
+    this.setResult(options.scope ?? "play", null);
     this.queue.push({ direction, options: { ...options } });
     this.refresh();
     return true;
@@ -138,16 +141,16 @@ export class HistoryController {
         const { direction, options } = this.queue.shift()!;
         const scope = options.scope ?? "play";
         if (scope === "setup" && !this.ports.context().dm) {
-          this.refuse(options, "Setup history is available only to the DM.");
+          this.refuse(scope, options, "Setup history is available only to the DM.");
           continue;
         }
         const head = this.latest?.[scope]?.[direction].head;
         if (options.expected !== undefined && head?.id !== options.expected) {
-          this.refuse(options, historyChanged(scope));
+          this.refuse(scope, options, historyChanged(scope));
           continue;
         }
         if (!head || (options.discard && !head.retained)) {
-          this.refuse(options, options.discard ? "This step is not retained." : `Nothing to ${direction}${scope === "setup" ? " in Setup history" : ""}.`);
+          this.refuse(scope, options, options.discard ? "This step is not retained." : `Nothing to ${direction}${scope === "setup" ? " in Setup history" : ""}.`);
           continue;
         }
         const target = { t: direction, scope, head: head.id };
@@ -158,17 +161,18 @@ export class HistoryController {
           quiet: options.quiet,
           onAnswer: (...args) => {
             this.active--;
-            this.result = args[0] === "taken"
+            const result = args[0] === "taken"
               ? options.discard ? "Discarded this step. The game stays as it is." : endSentence(`${direction === "undo" ? "Undid" : "Redid"}${scope === "setup" ? " setup:" : ""} ${head.label}`)
               : (args[1]?.message !== undefined ? refusalSentence(args[1].message) : "") || "The answer was lost. Check the next change.";
-            if (args[0] === "unknown" && !options.quiet) this.ports.notify(this.result);
+            this.setResult(scope, result);
+            if (args[0] === "unknown" && !options.quiet) this.ports.notify(result);
             options.onAnswer?.(...args);
             this.refresh();
           },
         });
         if (n === null) {
           this.active--;
-          this.refuse(options, "That history action could not be sent.");
+          this.refuse(scope, options, "That history action could not be sent.");
         }
       }
     } finally {
@@ -177,8 +181,12 @@ export class HistoryController {
     this.publish();
   }
 
-  private refuse(options: HistoryActivation, text: string): void {
-    this.result = text;
+  private setResult(scope: HistoryScope, text: string | null): void {
+    if (this.result[scope] !== text) this.result = { ...this.result, [scope]: text };
+  }
+
+  private refuse(scope: HistoryScope, options: HistoryActivation, text: string): void {
+    this.setResult(scope, text);
     if (!options.quiet) this.ports.notify(text);
     options.onAnswer?.("refused", { code: "invalid", message: text, text });
   }

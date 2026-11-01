@@ -20,6 +20,7 @@ export function HistoryDialogs() {
 export function SetupHistory(props: { scope?: HistoryScope; direction?: HistoryDirection; onClose(): void }) {
   const scope = props.scope ?? "setup";
   const history = useRoomView((s) => s.history ?? EMPTY_HISTORY);
+  const result = history.result[scope];
   const held = useRoomView((s) => s.buildHeldSince !== undefined);
   const connected = useRoomView((s) => s.connection === "open");
   const dm = useRoomView((s) => s.you?.role === "dm");
@@ -99,8 +100,8 @@ export function SetupHistory(props: { scope?: HistoryScope; direction?: HistoryD
           );
         })}
         {/* ToastVoice announces each terminal answer once. Keep its words visible here without a second live region. */}
-        {history.result ? <p data-history-result style={{ margin: 0 }}>{history.result}</p> : null}
-        {history.result === FORGET_ASK && forget?.action ? <div data-history-forget style={{ display: "grid", gap: theme.space(2) }}>
+        {result ? <p data-history-result style={{ margin: 0 }}>{result}</p> : null}
+        {result === FORGET_ASK && forget?.action ? <div data-history-forget style={{ display: "grid", gap: theme.space(2) }}>
           <Button disabled={disabled || forget.action.ready?.() === false} onClick={() => { forget.action?.run(); ui.dismissToast(forget.id); }}>{forget.action.label}</Button>
           <Button onClick={() => ui.dismissToast(forget.id)}>Cancel</Button>
         </div> : null}
