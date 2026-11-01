@@ -260,6 +260,16 @@ function dropsWhole(reverse = false): CSSProperties {
   };
 }
 
+/**
+ * Whether a part of the dice's box lies on a row below its first, out of
+ * sight: its top at or past the first row's height. Not just below the
+ * box's top, since the row centers its parts, so "and 2 more" in small
+ * words sits a few pixels down on the first row (review FU44-OPUS-2).
+ */
+export function wrappedOut(part: Pick<HTMLElement, "offsetTop">): boolean {
+  return part.offsetTop >= REST_PX;
+}
+
 /** `dropsWhole`'s empty first item. `dice` is for the dice's box, whose gap is the chips' 4 px. */
 function LineStart(props: { reverse?: boolean; dice?: boolean }) {
   // Its negative margin takes back the gap after it, so the items after it start at the row's edge.
@@ -306,10 +316,10 @@ export function ResultRest(props: { sum: string | null; label: string | undefine
         setDropped(0);
         return;
       }
-      setDropped([...box.querySelectorAll<HTMLElement>("[data-face]")].filter((chip) => chip.offsetTop > 0).length);
+      setDropped([...box.querySelectorAll<HTMLElement>("[data-face]")].filter(wrappedOut).length);
       // With every part wrapped out of sight the box would still keep the room its shrink left it and its gap, which the label needs more (LP28-A-LINE-1).
       const parts = [...box.children].slice(1) as HTMLElement[];
-      if (parts.length > 0 && parts.every((part) => part.offsetTop > 0)) box.style.display = "none";
+      if (parts.length > 0 && parts.every(wrappedOut)) box.style.display = "none";
     };
     fit();
     // A web font that loads after the first fit changes the parts' widths, and no resize says so.

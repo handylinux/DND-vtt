@@ -20,7 +20,7 @@ const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { RoomProvider } = await import("../../state/view.ts");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
-const { LastResult, RollModes, Roller } = await import("./Roller.tsx");
+const { LastResult, RollModes, Roller, wrappedOut } = await import("./Roller.tsx");
 const { PanelHere } = await import("../panels.ts");
 
 function modes(props: Partial<Parameters<typeof RollModes>[0]> = {}): string {
@@ -253,4 +253,12 @@ test("an answer's line says the roll's name the option gave it, since its roll h
   const markup = inRoom(DM, [createElement(LastResult, { key: "last", onOpen() {} })], scope);
   assert.match(markup, /data-result-label=""[^>]*>Wisdom save</);
   assert.match(markup, /aria-live="polite"[^>]*>Rolled 23, Pass: Wisdom save, Normal\.<\/span>/);
+});
+
+test("a part of a result line's dice box is out of sight only from its second row down: small words centered on the first sit a few px lower (review FU44-OPUS-2)", () => {
+  // Measured in Chrome at 100% and 130%: "and 2 more" in 13 px words on the 24 px first row has an offsetTop of 2, wrapped one row down 24.
+  assert.equal(wrappedOut({ offsetTop: 0 }), false, "a chip on the first row");
+  assert.equal(wrappedOut({ offsetTop: 2 }), false, "\"and 2 more\" centered on the first row");
+  assert.equal(wrappedOut({ offsetTop: 23 }), false);
+  assert.equal(wrappedOut({ offsetTop: 24 }), true, "the second row");
 });
