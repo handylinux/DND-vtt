@@ -242,6 +242,17 @@ export function lastEditIds(ops: readonly FogOp[]): string[] {
 }
 
 /**
+ * A React key for the draft's op at a place. An imported draft can repeat
+ * an op id (`draftOutlines` takes care of the outlines), and two children
+ * with one key are drawn or dropped wrongly when the draft changes. The
+ * place alone would remount every op after one removed from the middle,
+ * so the id rides with it.
+ */
+export function opKey(op: Pick<FogOp, "id">, index: number): string {
+  return `${index}:${op.id}`;
+}
+
+/**
  * The draft's outlines of its "cells" ops, by op id: one outline round all
  * the cells of an edit, on its first cells op, and none on the rest, so a
  * room sent in several ops draws as one room and not as bands. The sides

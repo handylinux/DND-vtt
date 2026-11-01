@@ -11,7 +11,7 @@ import { DM, env, rng, room, scene } from "#shared/testutil.ts";
 import { RoomScope } from "../../state/scope.ts";
 import type { ToolContext } from "../tools.ts";
 import { SQUARES } from "#shared/rules/grid.ts";
-import { cellsOutline, draftEdits, draftOutlines, fogEditOf, fogMessages, fogOps, hexCellsOutline, hexRoomShapes, lastEditIds, MAX_FOG_MESSAGE_BYTES, publishLabel, publishShort, rectShape, roomShapes, strokeShapes, type FogMessage } from "./shapes.ts";
+import { cellsOutline, draftEdits, draftOutlines, fogEditOf, fogMessages, fogOps, hexCellsOutline, hexRoomShapes, lastEditIds, MAX_FOG_MESSAGE_BYTES, opKey, publishLabel, publishShort, rectShape, roomShapes, strokeShapes, type FogMessage } from "./shapes.ts";
 import { fogSlot } from "./store.ts";
 
 const { submitFog } = await import("./tool.tsx");
@@ -191,6 +191,14 @@ describe("a fog gesture in the draft is one edit", () => {
     const between = [op(`${v7}.0`, 1), op(other, 3), op(`${v7}.1`, 5), op(`${v7}.2`, 7)];
     assert.equal(publishShort(between), "Reveal (2)");
     assert.deepEqual(lastEditIds(between), [`${v7}.0`, `${v7}.1`, `${v7}.2`]);
+  });
+
+  test("an imported draft's repeated op ids still give every drawn outline a key of its own (FOG-DUP-KEYS)", () => {
+    const op = (id: string, x: number): FogOp => ({ id, mode: "reveal", shape: { kind: "cells", cells: [`${x},1`] } });
+    const draft = [op("p", 9), op("g.0", 1), op("g.1", 3), op("g.0", 5), op("g.1", 7)];
+    const keys = draft.map(opKey);
+    assert.equal(new Set(keys).size, draft.length, "no two outlines share a key");
+    assert.deepEqual(draft.slice(0, 3).map(opKey), keys.slice(0, 3), "a later op leaves earlier keys as they were");
   });
 
   test("edits that share an op id are one edit, as Undo removes them, in the count and the outlines too", () => {

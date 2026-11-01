@@ -7,7 +7,7 @@ import { gridOfShape } from "#shared/rules/grid.ts";
 import { theme } from "../../lib/theme.ts";
 import { useRoomView } from "../../state/view.ts";
 import type { LayerProps } from "../layers.ts";
-import { draftOutlines, rectShape } from "./shapes.ts";
+import { draftOutlines, opKey, rectShape } from "./shapes.ts";
 import { useFogStore } from "./store.ts";
 
 /** Reveals outline in the crest yellow, hides in red. */
@@ -37,7 +37,7 @@ const DraftOutline = memo(function DraftOutline(props: { draft: FogDraft; bounds
   const { draft, bounds, shape } = props;
   // "Cells" ops are outlined along their edit's edge, computed once per draft change.
   const outlines = useMemo(() => draftOutlines(draft.ops, gridOfShape(shape)), [draft, shape]);
-  return <>{draft.ops.map((op) => <OpOutline key={op.id} op={op} bounds={bounds} cells={outlines.get(op.id)} />)}</>;
+  return <>{draft.ops.map((op, i) => <OpOutline key={opKey(op, i)} op={op} bounds={bounds} cells={outlines.get(op.id)} />)}</>;
 });
 
 /** Outlines stay 2 px wide with a 6 px dash at any zoom: with strokeScaleEnabled off, Konva strokes in screen pixels. */
