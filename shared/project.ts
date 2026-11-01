@@ -1844,10 +1844,12 @@ function heldNear(ground: Ground, cx: number, cy: number, reach: number): boolea
 }
 
 /*
- * Players' chunks, kept by every object a position reads (5.6): the stored
- * chunks and both memories of its 3 x 3 neighborhood, the fog layers' tiles
- * there, and where memory is near, the class's sight, and for a position
- * with stairs the scene's stair map. Each is replaced and never changed, so
+ * Players' chunks, kept by every object a position reads (5.6): its own
+ * stored chunk and memories, the stored chunks west and north of it, whose
+ * cells its edges read, the free walls alone of the rest of its 3 x 3
+ * neighborhood, stored and remembered, the fog layers' tiles there, and
+ * where memory is near, the class's sight, and for a position with stairs
+ * the scene's stair map. Each is replaced and never changed, so
  * an unchanged position hands players the very same object, which the
  * fan-out need not hash again, and a changed input never hits. Of the scene
  * the key holds only the fields a position reads (sceneFields), since every
@@ -1914,15 +1916,21 @@ function sceneFields(scene: Scene): string {
  * up to nine of them.
  */
 type IdsByLayer = Map<string, Map<string | null, Map<number, number>>>;
-const entryIds = { chunk: new WeakMap<object, IdsByLayer>(), tile: new WeakMap<object, IdsByLayer>() };
+type IdKind = "chunk" | "tile" | "walls";
+const entryIds: Record<IdKind, WeakMap<object, IdsByLayer>> = { chunk: new WeakMap(), tile: new WeakMap(), walls: new WeakMap() };
+
+/** A chunk's id (idOf), a tile's, or for `walls` the id of the chunk's free walls alone, which a reducer that leaves them keeps: 0 with none, as with no chunk. */
+function entryId(kind: IdKind, entry: object | undefined): number {
+  return idOf(kind === "walls" ? (entry as { walls?: object } | undefined)?.walls : entry);
+}
 
 /** Columns from -1, as a position on the scene's side reads past it, up to this one: within them `(y + 1) * ID_ROW + (x + 1)` names one place. */
 const ID_ROW = 65536;
 
-function idAt(collection: Readonly<Record<string, object | undefined>> | undefined, kind: "chunk" | "tile", sceneId: string, holder: string | null, x: number, y: number): number {
+function idAt(collection: Readonly<Record<string, object | undefined>> | undefined, kind: IdKind, sceneId: string, holder: string | null, x: number, y: number): number {
   if (!collection) return 0;
   // Past the columns one number can name, read without keeping, so no two places share an id's slot.
-  if (!Number.isInteger(x) || !Number.isInteger(y) || x < -1 || x + 1 >= ID_ROW) return idOf(collection[entryKey(kind, sceneId, holder, x, y)]);
+  if (!Number.isInteger(x) || !Number.isInteger(y) || x < -1 || x + 1 >= ID_ROW) return entryId(kind, collection[entryKey(kind, sceneId, holder, x, y)]);
   let byScene = entryIds[kind].get(collection);
   if (!byScene) entryIds[kind].set(collection, (byScene = new Map()));
   let byHolder = byScene.get(sceneId);
@@ -1931,12 +1939,12 @@ function idAt(collection: Readonly<Record<string, object | undefined>> | undefin
   if (!ids) byHolder.set(holder, (ids = new Map()));
   const at = (y + 1) * ID_ROW + (x + 1);
   let id = ids.get(at);
-  if (id === undefined) ids.set(at, (id = idOf(collection[entryKey(kind, sceneId, holder, x, y)])));
+  if (id === undefined) ids.set(at, (id = entryId(kind, collection[entryKey(kind, sceneId, holder, x, y)])));
   return id;
 }
 
-function entryKey(kind: "chunk" | "tile", sceneId: string, holder: string | null, x: number, y: number): string {
-  if (kind === "chunk") return holder === null ? chunkKey(sceneId, x, y) : holderChunkKey(sceneId, holder, x, y);
+function entryKey(kind: IdKind, sceneId: string, holder: string | null, x: number, y: number): string {
+  if (kind !== "tile") return holder === null ? chunkKey(sceneId, x, y) : holderChunkKey(sceneId, holder, x, y);
   return holder === null ? tileKey(sceneId, x, y) : holderTileKey(sceneId, holder, x, y);
 }
 
@@ -1949,10 +1957,13 @@ function memoKey(state: RoomState, scene: Scene, own: FogClass, ground: Ground, 
     for (let dx = -1; dx <= 1; dx++) {
       const x = cx + dx;
       const y = cy + dy;
-      const party = idAt(state.memory, "chunk", sceneId, null, x, y);
-      const mine = own === null ? 0 : idAt(state.memoryBy, "chunk", sceneId, own, x, y);
+      // The position's own chunk, and those west and north whose cells its edges read (shownEdges), count whole. Of the rest, and of every memory but its own, only free walls are read (scenePieces), so memory is near where those are.
+      const whole = dx === 0 ? dy <= 0 : dy === 0 && dx < 0;
+      const memoryKind = dx === 0 && dy === 0 ? "chunk" : "walls";
+      const party = idAt(state.memory, memoryKind, sceneId, null, x, y);
+      const mine = own === null ? 0 : idAt(state.memoryBy, memoryKind, sceneId, own, x, y);
       if (party !== 0 || mine !== 0) remembered = true;
-      parts.push(idAt(state.buildChunks, "chunk", sceneId, null, x, y), party, mine);
+      parts.push(idAt(state.buildChunks, whole ? "chunk" : "walls", sceneId, null, x, y), party, mine);
     }
   }
   // A stair's direction reads the scene's whole stair map.
