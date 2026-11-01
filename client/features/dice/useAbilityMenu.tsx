@@ -81,6 +81,8 @@ export type AbilityMenuEnv = {
   dm(): boolean;
   /** Sends a row's roll: a tap's with no override, a pick's with one. */
   roll(row: AbilityRow, override?: RollModeOverride): void;
+  /** Why a tap or a pick sent nothing, for the result line (D-261031-167). */
+  unsent(words: string): void;
 };
 
 /**
@@ -176,6 +178,7 @@ export class AbilityMenuControl {
     if (this.view.kind !== "list") return;
     const row = this.#env.rows().find((r) => r.id === id);
     if (this.#ready(row)) this.#env.roll(row);
+    else this.#unsent(row);
   }
 
   /** A choice in a row's options: checked against the roll as it stands, then closed, then sent (FL-17's onPick). */
@@ -183,10 +186,22 @@ export class AbilityMenuControl {
     const view = this.view;
     if (view.kind !== "options") return;
     const row = this.#env.rows().find((r) => r.id === view.row);
-    if (!this.#ready(row) || row.source !== view.source || !row.capability) return;
+    if (row === undefined || row.source !== view.source || !row.capability) return;
     if (!rollModeItems(row.capability, this.#env.dm()).some((item) => item.id === override && !item.disabled)) return;
+    if (!this.#ready(row)) return this.#unsent(row);
     this.#env.close("pick");
     this.#env.roll(row, override);
+  }
+
+  /**
+   * A row its render still offered, though it may not roll now: the
+   * connection dropped before the render that disables it. The result line
+   * says why, as section 8 has it. A busy row says nothing, since its roll
+   * is on its way.
+   */
+  #unsent(row: AbilityRow | undefined): void {
+    const why = this.#env.blocked();
+    if (row !== undefined && why !== null) this.#env.unsent(why);
   }
 
   /** Escape or Back in a roll's options goes back to the list on its row. In the list, they close it (5.3). */
@@ -299,6 +314,7 @@ export function useAbilityMenu(options: UseAbilityMenuOptions): AbilityMenuBindi
       busy: (row) => live.current.busy.has(row.rowKey),
       dm: () => live.current.dm,
       roll: (row, override) => live.current.send(row, override),
+      unsent: (words) => latest.current.onUnsent(words),
     },
     presses,
   );

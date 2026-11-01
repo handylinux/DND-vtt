@@ -211,6 +211,24 @@ describe("a row's tap and its options (4, 5)", () => {
     busy.state.busy.add("c:x|save");
     busy.control.pickRow("save");
     assert.deepEqual(busy.log.rolls, [], "a waiting row cannot go twice, whatever its last render said");
+    assert.deepEqual([answer.log.unsent, busy.log.unsent], [["Rolling needs a connection."], []], "only the blocked pick says why");
+  });
+
+  test("a tap or a pick after the connection dropped, before the render that disables the rows, says why on the result line (section 8)", () => {
+    const h = harness([row("save", { capability: { d20: true, visibility: "selectable" } }), row("check", { kind: "check" })]);
+    h.tap("box");
+    h.state.blocked = "Rolling needs a connection.";
+    h.control.pickRow("check");
+    assert.deepEqual([h.log.rolls, h.log.unsent], [[], ["Rolling needs a connection."]]);
+    h.state.blocked = null;
+    h.hold("row:save");
+    h.up();
+    h.state.blocked = "Rolling needs a connection.";
+    h.control.pickChoice("adv");
+    assert.deepEqual([h.log.rolls, h.log.unsent], [[], ["Rolling needs a connection.", "Rolling needs a connection."]]);
+    // A choice that is not offered, or a roll that changed, says nothing: the options go back to the list, which says why.
+    h.control.pickChoice("normal");
+    assert.equal(h.log.unsent.length, 2);
   });
 
   test("after a held row's finger lifts where its row is gone, the next hold on that row keeps its own finger's drag", () => {

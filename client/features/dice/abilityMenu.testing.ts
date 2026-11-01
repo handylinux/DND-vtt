@@ -79,7 +79,7 @@ export function harness(rows: AbilityRow[] = [row("check", { kind: "check" }), r
   const win = new Target();
   const doc = new Target();
   const clock = new Clock();
-  const log = { rolls: [] as [string, RollModeOverride | undefined][], shows: [] as string[], closes: [] as string[] };
+  const log = { rolls: [] as [string, RollModeOverride | undefined][], unsent: [] as string[], shows: [] as string[], closes: [] as string[] };
   const state = { open: false, drawn: { kind: "list" } as AbilityView, focus: "page", blocked: null as string | null, busy: new Set<string>(), mounted: true };
   /** The page's elements, each an event target, so a touch's events go to the element it started on, as a browser sends them. */
   const nodes = new Map<string, Target & { style: { boxShadow: string }; focus(): void; getBoundingClientRect(): unknown }>();
@@ -125,6 +125,7 @@ export function harness(rows: AbilityRow[] = [row("check", { kind: "check" }), r
     busy: (r) => state.busy.has(r.rowKey),
     dm: () => false,
     roll: (r, override) => void log.rolls.push([r.id, override]),
+    unsent: (words) => void log.unsent.push(words),
   };
   const control = new AbilityMenuControl(env, registry);
   const detach = registry.attach(win, doc, { onLeave: () => env.close("anchor"), keep: (key) => control.keeps(key) });
