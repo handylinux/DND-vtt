@@ -433,7 +433,7 @@ export class ThrowStore {
     };
   }
 
-  /** A host made and mounted at once. */
+  /** A host made and mounted at once: a test convenience, since a surface mounts its host in a layout effect (useThrowSurface). */
   mount(spec: PanelHost): ThrowHost {
     const host = this.host(spec);
     host.mount();
