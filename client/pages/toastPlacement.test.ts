@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import { test } from "node:test";
 import * as React from "react";
-import { keptMapFoot, mapToastBox, measureMapToasts, noticesDock, placeRoomToasts, putToastHosts } from "./toastPlacement.ts";
+import { keptMapFoot, mapToastBox, measureMapToasts, noticesDock, placeRoomToasts, putToastHosts, sheetToastFloor } from "./toastPlacement.ts";
 import { columnFacts, columnTop, EDGE, nextToastPlaces, NO_TOAST_PLACES, raisedRow, SHADOW_ROOM, SUMMARY_ROW, toastTop, type ColumnFacts } from "../canvas/barDock.ts";
 import { theme } from "../lib/theme.ts";
 
@@ -586,4 +586,15 @@ test("FU39-B: the room hands a resting strip and a turn's start on to the placem
   assert.equal(aged.places.get(1), "map");
   assert.deepEqual(placeRoomToasts({ ...base, was: aged, low: 183, turnStarted: true }).places.get(1), { low: 183, column: true });
   assert.equal(placeRoomToasts({ ...base, was: aged, low: 183 }).places.get(1), "map");
+});
+
+// UNDOB-FIN-2: 320 x 568 at 130% is 246 x 437 in the chrome's own px, the toolbar 60.
+test("a phone's open sheet sets the toasts' floor as a resting strip would, and only the toasts'", () => {
+  const at = (mode: "none" | "bottom" | "side" | "full", toolbar: number | null = 60, sheetHeight = 280) => sheetToastFloor({ mode, height: 437, toolbar, sheetHeight });
+  assert.equal(at("bottom"), 437 - 60 - 280 - EDGE - 44 - EDGE, "a bottom sheet: 60 px above its top, which sits on the toolbar");
+  assert.equal(at("side"), 0, "beside a sideways sheet no room, so the one row");
+  assert.equal(at("full"), null, "a full sheet holds its own toasts");
+  assert.equal(at("none"), null, "no sheet, or a wide screen's side panel");
+  assert.equal(at("bottom", null), null, "the toolbar not measured yet");
+  assert.equal(at("bottom", 60, 0), null, "the sheet not measured yet");
 });

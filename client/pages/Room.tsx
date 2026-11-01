@@ -40,7 +40,7 @@ import { SheetHeader } from "../components/SheetHeader.tsx";
 import { addsWords, useTooltip } from "../components/Tooltip.tsx";
 import { QuietLoadNotice } from "./QuietLoadNotice.tsx";
 import { ToastNote, toastPortals, toastRow, toastStacks, useToastStack } from "./ToastParts.tsx";
-import { measureMapToasts, noticesDock, placeRoomToasts, settleToastHosts, sheetToastsToDismiss, toastHostOf, toastLists } from "./toastPlacement.ts";
+import { measureMapToasts, noticesDock, placeRoomToasts, settleToastHosts, sheetToastFloor, sheetToastsToDismiss, toastHostOf, toastLists } from "./toastPlacement.ts";
 import { BlackoutChip } from "./BlackoutChip.tsx";
 import { Loading } from "../components/Loading.tsx";
 import { ScrollStrip } from "../components/ScrollStrip.tsx";
@@ -880,6 +880,8 @@ function RoomPage() {
    */
   const stripTop = useStore(barDock, (s) => (s.bar?.rests ? s.bar.box.top : null));
   const toastFloor = stripTop === null ? null : restFloor(stripTop);
+  // The toasts alone take a phone's open sheet as their floor too (toastPlacement.ts sheetToastFloor). The token bar's options and the alerts keep the strip's.
+  const sheetFloor = sheetToastFloor({ mode: !sheetOpen || wide ? "none" : full ? "full" : sheetModeNow === "side" ? "side" : "bottom", height, toolbar: chrome?.toolbar ?? null, sheetHeight });
   const optionsTop = chrome ? Math.min(height - chrome.bottom, toastFloor ?? Infinity) : 0;
   // The alerts column's width as it works it out (features/encounter/InitiativeStrip.tsx): it steps left of a phone's sideways sheet, and beside the side panel no right safe area is the map's.
   const columnSheet = !wide && width > height && sheetOpen ? sideWidth : 0;
@@ -1025,6 +1027,7 @@ function RoomPage() {
             foot={chrome ? Math.min(height - chrome.controls, toastFloor ?? Infinity) : null}
             optionsTop={chrome ? optionsTop : null}
             restFloor={chrome ? toastFloor : null}
+            sheetFloor={chrome ? sheetFloor : null}
             top={chrome ? Math.max(chrome.top, lastingBottom ?? 0) + EDGE : null}
             safeTop={chrome?.safe.top ?? 0}
           />
@@ -1726,6 +1729,8 @@ function Toasts(props: {
   optionsTop: number | null;
   /** The foot of the room a resting strip leaves the toasts (barDock.ts restFloor), or null. */
   restFloor: number | null;
+  /** The foot of the room a phone's open sheet leaves the toasts (toastPlacement.ts sheetToastFloor), or null. */
+  sheetFloor: number | null;
   /** Where the toasts' room starts, under the top bars and the lasting notices. */
   top: number | null;
   safeTop: number;
@@ -1748,10 +1753,15 @@ function Toasts(props: {
    * Escape shrinks it back. One that arrives meanwhile waits, and takes
    * the row then.
    */
-  const overBars = props.restFloor !== null && props.top !== null && slot === null && !props.paneStands && props.layer !== null && toastsOverBars({ restFloor: props.restFloor, top: props.top });
+  // The lower of the strip's floor and the sheet's: what is left above both is the toasts' room.
+  const floor = props.restFloor === null ? props.sheetFloor : props.sheetFloor === null ? props.restFloor : Math.min(props.restFloor, props.sheetFloor);
+  const overBars = floor !== null && props.top !== null && slot === null && !props.paneStands && props.layer !== null && toastsOverBars({ restFloor: floor, top: props.top });
   const [whole, setWhole] = useState<number | null>(null);
   const wholeToast = overBars && whole !== null ? showing.find((t) => t.id === whole) : undefined;
   const rowToast = overBars ? (wholeToast ?? showing[showing.length - 1]) : undefined;
+  // The very short sheet's one row shows whole the same way, in its own place (UNDOB-FIN-2).
+  const slotWhole = slot !== null && whole !== null ? showing.find((t) => t.id === whole) : undefined;
+  const expanded = wholeToast ?? slotWhole;
   const shrink = useCallback(() => {
     setWhole((id) => {
       if (id !== null) ui.holdToast(id, false);
@@ -1759,8 +1769,8 @@ function Toasts(props: {
     });
   }, [ui]);
   useEffect(() => {
-    if (whole !== null && wholeToast === undefined) shrink();
-  }, [whole, wholeToast, shrink]);
+    if (whole !== null && expanded === undefined) shrink();
+  }, [whole, expanded, shrink]);
   // A toast held whole is let go as the toasts unmount, so none is left stopped. Only a player's blackout unmounts them today, and PauseScreen drops every toast then (review BARBUILD-ASTRA-04).
   const wholeNow = useRef(whole);
   wholeNow.current = whole;
@@ -1776,9 +1786,9 @@ function Toasts(props: {
   const rowStack = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => () => dockStore.setState({ toastRow: null }), [dockStore]);
   useEffect(() => {
-    if (wholeToast === undefined) return;
+    if (expanded === undefined) return;
     return listenToastEscape(shrink);
-  }, [wholeToast, shrink]);
+  }, [expanded, shrink]);
   const upright = width <= height;
   const turn = useRef({ upright, at: -Infinity });
   if (turn.current.upright !== upright) turn.current = { upright, at: Date.now() };
@@ -1841,7 +1851,13 @@ function Toasts(props: {
   const { overMap, inSheet, low, mapToasts, drawn } = toastLists({ overBars, showing, places, inSlot: slot !== null, rowToast });
   const lowAt = toastLayerPlace(placed.current, ids, props.edges);
   // The toasts drawn now, in the very short sheet and the one row too, start their time as they first draw (review BC-OPUS-35).
-  const drawnKey = [...drawn, ...inSheet].map((t) => t.id).join(",");
+  /*
+   * The very short sheet's place holds one toast too, the newest in the one
+   * row's form, and the older ones wait undrawn, so three toasts never take
+   * the body's room (UNDOB-FIN-2). A tap shows it whole, as over the bars.
+   */
+  const sheetToast = inSheet.find((t) => t.id === whole) ?? inSheet[inSheet.length - 1];
+  const drawnKey = [...drawn, ...(sheetToast ? [sheetToast] : [])].map((t) => t.id).join(",");
   useLayoutEffect(() => {
     if (drawnKey !== "") ui.toastsDrawn(drawnKey.split(",").map(Number));
   }, [drawnKey, ui]);
@@ -1861,7 +1877,7 @@ function Toasts(props: {
       [stacks.notices, overMap],
       [stacks.layer, low],
     ] as const) {
-      const drop = stack.fit(list, height, props.foot, zoom);
+      const drop = stack.fit(list, height, props.foot === null || props.sheetFloor === null ? props.foot : Math.min(props.foot, props.sheetFloor), zoom);
       for (const id of drop) ui.dismissToast(id);
     }
     const notices = stacks.notices.box.current;
@@ -1906,9 +1922,9 @@ function Toasts(props: {
       {toastStacks({ layer: props.layer, lowAt, stacks })}
       {toastPortals({ drawn, rowToast, wholeToast, hostOf, dismiss: (id) => ui.dismissToast(id), showWhole: (id) => { setWhole(id); ui.holdToast(id, true); }, shrink })}
       {toastRow({ layer: props.layer, rowBox, rowStack, safeTop: props.safeTop, whole: wholeToast !== undefined })}
-      {slot && inSheet.length > 0
+      {slot && sheetToast
         ? createPortal(
-            inSheet.map((t) => <ToastNote key={t.id} toast={t} onDismiss={() => ui.dismissToast(t.id)} />),
+            <ToastNote key={sheetToast.id} toast={sheetToast} form={whole === sheetToast.id ? "whole" : "row"} onDismiss={() => ui.dismissToast(sheetToast.id)} onWhole={() => { setWhole(sheetToast.id); ui.holdToast(sheetToast.id, true); }} onShrink={shrink} />,
             slot,
           )
         : null}

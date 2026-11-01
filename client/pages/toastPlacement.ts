@@ -1,4 +1,4 @@
-import { EDGE, inToastLayer, nextToastPlaces, type ToastPlace, type ToastPlaces } from "../canvas/barDock.ts";
+import { EDGE, inToastLayer, nextToastPlaces, restFloor, type ToastPlace, type ToastPlaces } from "../canvas/barDock.ts";
 
 /** Places portal hosts in display order without remounting their toast contents. */
 export function putToastHosts(stack: HTMLElement, hosts: readonly HTMLElement[]): void {
@@ -166,4 +166,19 @@ export function measureMapToasts(a: {
   const was = a.wasMap;
   const changed = mapBox === null ? was !== null : was === null || was.top !== mapBox.top || was.bottom !== mapBox.bottom || was.keptBottom !== mapBox.keptBottom;
   return { boxes, mapFoot, measured, mapBox, changed };
+}
+
+/**
+ * The foot of the room a phone's open sheet leaves the toasts, in the
+ * chrome's own px, or null where the sheet sets none (UNDOB-FIN-2). Over a
+ * bottom sheet it is a resting strip's rule (barDock.ts restFloor), 60 px
+ * above the sheet's top, which sits on the toolbar. Beside a sideways sheet
+ * there is no room, so the newest shows as the one row over the top bar.
+ * A full sheet holds its own toasts (modalSlot.tsx), and a wide screen has
+ * no sheet. Until the toolbar and the sheet are measured it sets nothing.
+ */
+export function sheetToastFloor(a: { mode: "none" | "bottom" | "side" | "full"; height: number; toolbar: number | null; sheetHeight: number }): number | null {
+  if (a.mode === "side") return 0;
+  if (a.mode !== "bottom" || a.toolbar === null || a.sheetHeight <= 0) return null;
+  return restFloor(a.height - a.toolbar - a.sheetHeight);
 }
