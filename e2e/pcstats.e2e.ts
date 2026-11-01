@@ -486,8 +486,8 @@ describe("raccoon-vtt pc stat blocks", { timeout: 600_000 }, () => {
         const win = root.ownerDocument.defaultView!;
         // The dialog's own Close and footer stay live, so only the held group is read.
         const group = root.querySelector("fieldset")!;
-        const controls = [...group.querySelectorAll<HTMLElement>("input:not([type=checkbox]):not([type=radio]), select, textarea, button")].filter((el) => el.getClientRects().length > 0);
-        return controls.map((el) => ({ name: el.getAttribute("aria-label") ?? el.textContent ?? el.tagName, off: (el as HTMLInputElement).disabled, color: win.getComputedStyle(el).color }));
+        const controls = [...group.querySelectorAll("input:not([type=checkbox]):not([type=radio]), select, textarea, button")].filter((el) => el.getClientRects().length > 0);
+        return controls.map((el) => ({ name: el.getAttribute("aria-label") ?? el.textContent ?? el.tagName, off: el.matches(":disabled"), color: win.getComputedStyle(el).color }));
       });
       assert.ok(looks.length > 20, `the editor's controls were found: ${looks.length}`);
       const bright = looks.filter((l) => !l.off || l.color !== "rgb(124, 122, 132)");
