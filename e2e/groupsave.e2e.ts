@@ -8,6 +8,7 @@ import { chromium, type Browser, type BrowserContext, type Locator, type Page } 
 import type { DiceRoll, LogEntry, LogEvent } from "#shared/model.ts";
 import { uuidv7 } from "#shared/ids.ts";
 import { blockOf, customMonster } from "#shared/testutil.ts";
+import { theme } from "../client/lib/theme.ts";
 import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
 import { OUTCOME_RESTORED, OUTCOME_UNDONE, OUTCOME_UNAVAILABLE, assertPrivateOutcome, openSaveDice, saveOutcomes } from "./helpers/saveOutcomes.ts";
 import { ConsoleWatch, diceFoldsOpen, multiSelect, OpSocket, openSideTab, reopenRoom, resultLine, Shots, SocketWatch, startServer, tapCell, waitFor, wholeInReach, type Server } from "./harness.ts";
@@ -108,6 +109,12 @@ function goblinHp(id: string): number | undefined {
 
 function breeHp(): number | undefined {
   return dmSocket.state?.characters[run.bree.characterId]?.actor.hp?.cur;
+}
+
+/** A "#rrggbb" token as the "rgb(r, g, b)" the browser reports for a computed color. */
+function hexToRgb(hex: string): string {
+  const n = Number.parseInt(hex.slice(1), 16);
+  return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
 }
 
 /** The Dice sheet on a phone. */
@@ -991,6 +998,69 @@ describe("raccoon-vtt group save", { timeout: 300_000 }, () => {
       asking.close();
       await dm.setViewportSize(PHONE);
     }
+  });
+
+  test("lk1-held-menu. a roll menu open on the group save page when the connection drops reads as off, and a click, Enter and Shift+F10 on a row send no roll and leave it open", async () => {
+    // The save fu43a-gs-cast kept is still open: back on the phone, the page shows its Dice sheet again. A reopened save locks itself
+    // when the connection drops, so it would close the menu by its own Roll's `disabled`. A fresh page's Roll stays enabled, and only
+    // the page's held group stops it, which is the case under test.
+    const sheet = diceSheet(dm);
+    await sheet.waitFor();
+    const open = sheet.locator("[data-open-group-save]").getByRole("button", { name: "Open", exact: true });
+    if (await open.isVisible()) {
+      await open.tap();
+      const discard = sheet.getByRole("button", { name: "Discard", exact: true });
+      await discard.tap();
+      if ((await sheet.getByText(/^Discard .*\?$/).count()) > 0) await discard.tap();
+    }
+    const groupSave = sheet.locator("[data-roll-options]").getByRole("button", { name: "Group save, DC 13 DEX" });
+    await groupSave.waitFor();
+    await scrollToFoot(groupSave);
+    await groupSave.tap();
+    const outcome = sheet.getByRole("group", { name: "Outcome" });
+    if ((await outcome.count()) === 0) await sheet.getByRole("button", { name: "Edit", exact: true }).tap();
+    await sheet.getByLabel("Damage", { exact: true }).fill("2d6 fire");
+    const roll = outcome.getByRole("button", { name: /^Roll( again)?$/ }).first();
+    await roll.focus();
+    await dm.keyboard.press("ContextMenu");
+    const menu = dm.getByRole("menu", { name: "Roll options for Group damage" });
+    await menu.waitFor();
+    const rows = menu.getByRole("menuitem");
+    assert.ok((await rows.count()) >= 1, "the menu has its choices");
+    const off = hexToRgb(theme.color.textDisabled);
+    /** What the rows show: each one's aria-disabled and the color of its words. */
+    const rowLook = () => rows.evaluateAll((els) => els.map((el) => ({ ariaDisabled: el.getAttribute("aria-disabled"), color: (globalThis as unknown as { getComputedStyle(e: unknown): { color: string } }).getComputedStyle(el).color })));
+    assert.ok((await rowLook()).some((row) => row.ariaDisabled !== "true"), "while online, the menu's choices are live");
+
+    const logged = diceLines(dmSocket.state?.log).length;
+    // The page's own socket complains while the connection is gone, which is the point of the step.
+    dmConsole.expectSocketFailures = true;
+    await dmContext.setOffline(true);
+    try {
+      // The page holds itself while the connection is gone, and the menu stays open with its choices off.
+      await waitFor("the page held", async () => ((await roll.isDisabled()) ? true : null));
+      await waitFor("every choice off", async () => ((await rowLook()).every((row) => row.ariaDisabled === "true") ? true : null));
+      for (const row of await rowLook()) assert.equal(row.color, off, `a held choice draws the disabled color: ${JSON.stringify(row)}`);
+      await shots.take(dm, "lk1-held-menu-130");
+
+      const sent = dmSocket.sent.length;
+      const first = rows.first();
+      await first.click({ force: true });
+      await first.focus();
+      await dm.keyboard.press("Enter");
+      await dm.keyboard.press("Space");
+      await dm.keyboard.press("Shift+F10");
+      assert.ok(await menu.isVisible(), "no press on a held choice closes the menu");
+      assert.equal(await first.getAttribute("aria-disabled"), "true");
+      assert.deepEqual(dmSocket.sent.slice(sent).filter((frame) => JSON.parse(frame).t === "op"), [], "no roll or other op left the page");
+      assert.equal(diceLines(dmSocket.state?.log).length, logged, "no roll reached the log");
+    } finally {
+      await dmContext.setOffline(false);
+    }
+    await dm.getByRole("status", { name: "Connected" }).first().waitFor();
+    dmConsole.expectSocketFailures = false;
+    await dm.keyboard.press("Escape");
+    await menu.waitFor({ state: "hidden" });
   });
 
   test("8. nothing went wrong in the browsers", () => {
