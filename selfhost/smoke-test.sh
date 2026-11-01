@@ -31,7 +31,7 @@ if [ "${server%%.*}" -lt "${SMOKE_DOCKER_MIN:-28}" ]; then
   exit 1
 fi
 # The oldest Compose tested with the inline configs, the volume subpath
-# mounts and restart in depends_on, as README.md and compose.yml say.
+# mounts and restart in depends_on, as docs/self-hosting.md and compose.yml say.
 compose_version=$(docker compose version --short)
 compose_version=${compose_version#v}
 major=${compose_version%%.*}

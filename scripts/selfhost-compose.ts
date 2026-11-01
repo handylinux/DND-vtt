@@ -4,8 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * The self-host compose file and its .env template (README.md, "Self-hosting
- * with the published image"), made from the server stack:
+ * The self-host compose file and its .env template (docs/self-hosting.md,
+ * "Self-hosting with the published image"), made from the server stack:
  *
  *   node scripts/selfhost-compose.ts           writes selfhost/compose.yml and selfhost/env.example
  *   node scripts/selfhost-compose.ts --check   exits 1 while either differs from what this makes
@@ -116,7 +116,7 @@ function inService(text: string, service: string, edit: (block: string) => strin
   return text.slice(0, start + 1) + edit(text.slice(start + 1, end)) + text.slice(end);
 }
 
-const HEADER = `# Self-hosting raccoon-vtt with the published image (README.md,
+const HEADER = `# Self-hosting raccoon-vtt with the published image (docs/self-hosting.md,
 # "Self-hosting with the published image"). This file and an .env next to it
 # are all a host needs:
 #
@@ -144,7 +144,7 @@ const HEADER = `# Self-hosting raccoon-vtt with the published image (README.md,
 #
 # Without the profile nothing publishes a port, as in the server stack: your
 # own proxy or tunnel joins raccoon-edge and sends the site's hostname to
-# http://raccoon:3000 (README.md, "Put HTTPS in front of it").
+# http://raccoon:3000 (docs/self-hosting.md, "Put HTTPS in front of it").
 #
 # The internal networks set \`gateway_mode_ipv4: isolated\`, which needs Docker
 # Engine 28 or later. The inline configs, the volume \`subpath\` mounts and
@@ -286,7 +286,7 @@ function extraServices(configHash: string): string {
       # HTTP/3.
       - "443:443/udp"
     # Names resolve through Cloudflare, as squid's do, rather than through the
-    # host's resolver, which may sit on the LAN that README.md's firewall
+    # host's resolver, which may sit on the LAN that docs/self-hosting.md's firewall
     # rules for this bridge keep Caddy away from. Docker's own DNS still
     # answers for raccoon.
     dns:
@@ -388,7 +388,7 @@ export function renderCompose(s: Sources): string {
       `      # Safe only while the front end is the only way in and overwrites this
       # header with the real client address, as Cloudflare does. Behind a
       # proxy that does not overwrite it, set it to 0 or configure the proxy
-      # to (README, "Put HTTPS in front of it").
+      # to (docs/self-hosting.md, "Put HTTPS in front of it").
       - TRUST_CF_CONNECTING_IP=1
 `,
       `      # From .env, and 0 unless .env sets it, the app's own default: limits
@@ -433,7 +433,7 @@ export function renderCompose(s: Sources): string {
 
 const ENV_HEADER = `# The settings and secrets of selfhost/compose.yml. Save this file as .env
 # next to compose.yml, make it readable to you alone, and fill it in
-# (README.md, "Self-hosting with the published image"):
+# (docs/self-hosting.md, "Self-hosting with the published image"):
 #
 #   chmod 600 .env
 #
@@ -474,7 +474,7 @@ function envExtra(minor: string): string {
 # when every request reaches the app through something that overwrites that
 # header with the visitor's address: Cloudflare, or the https profile's
 # Caddy. Anywhere else, anyone could send the header and pick an address
-# (README.md, "Put HTTPS in front of it"). Behind Cloudflare, use a tunnel or
+# (docs/self-hosting.md, "Put HTTPS in front of it"). Behind Cloudflare, use a tunnel or
 # your own proxy on raccoon-edge, not the https profile: Caddy would replace
 # the header with a Cloudflare address.
 # TRUST_CF_CONNECTING_IP=1

@@ -7,7 +7,7 @@
 #
 #   sh /backup/backup.sh                     the nightly loop, at BACKUP_AT in TZ
 #   sh /backup/backup.sh once                one backup now, or "A backup is running"
-#   sh /backup/backup.sh restore <dump>      in the `restore` service only (README.md)
+#   sh /backup/backup.sh restore <dump>      in the `restore` service only (docs/self-hosting.md)
 #
 # The backup service runs as root with no capabilities, so it writes only
 # what root owns (the backups volume) and reads the image volume through a

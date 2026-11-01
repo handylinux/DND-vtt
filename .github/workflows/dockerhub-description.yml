@@ -1,10 +1,10 @@
 # Sets the Docker Hub repository's overview (its full description) from
 # selfhost/DOCKERHUB.md and its short description from
-# selfhost/DOCKERHUB-short.txt (README.md, "Releasing").
+# selfhost/DOCKERHUB-short.txt (docs/releasing.md).
 #
 # It runs only by hand, from the Actions tab, on a release tag: the dockerhub
 # environment admits only v* tags, and waits for one approval. It sends the
-# two files as they are at that tag (README.md, "Releasing", says when). A
+# two files as they are at that tag (docs/releasing.md says when). A
 # release never runs it, so a release keeps its one approval and its
 # concurrency group is never held waiting for this.
 #

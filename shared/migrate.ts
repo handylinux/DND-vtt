@@ -381,7 +381,7 @@ export const opMigrations: MigrationStep[] = [
     // Every wave 7 rule that must replay older ops by their old rules, such
     // as an answer's provenance, gates on this same number.
     //
-    // Deploy: back up the database just before (README, Updating). The first
+    // Deploy: back up the database just before (docs/self-hosting.md, Updating). The first
     // op after it is stored at version 7, and the shutdown writes version 11
     // snapshots. Rollback: an older build refuses to migrate a version 7 op
     // or a version 11 snapshot down (runMigrations), so those rooms would

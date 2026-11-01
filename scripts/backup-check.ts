@@ -28,7 +28,7 @@ import type { AssetKind, Variant } from "../server/assets/kinds.ts";
  * copies by name and length and never looks inside. Where the real app's
  * behavior matters (an upload into a restored folder, cleanup moving a
  * restored file to the trash), the check acts as the app does, as UID 1000
- * through the restore service's mount. README's drill does it with the app.
+ * through the restore service's mount. The drill in docs/self-hosting.md does it with the app.
  */
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));

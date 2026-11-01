@@ -189,7 +189,7 @@ describe("the self-host compose file as compose reads it", { skip: haveCompose ?
     assert.deepEqual(caddy.security_opt, ["no-new-privileges:true"]);
     assert.deepEqual(Object.keys(caddy.networks as object).sort(), ["raccoon-edge", "raccoon-https"]);
     assert.equal((caddy.environment as Record<string, string>).SITE_ADDRESS, "https://vtt.example.com");
-    // Public resolvers, so README.md's firewall rules for its bridge never cut its DNS.
+    // Public resolvers, so docs/self-hosting.md's firewall rules for its bridge never cut its DNS.
     assert.deepEqual(caddy.dns, ["1.1.1.1", "1.0.0.1"]);
 
     const copier = selfhost!.services["config-files"]!;
@@ -198,11 +198,11 @@ describe("the self-host compose file as compose reads it", { skip: haveCompose ?
     assert.deepEqual(copier.security_opt, ["no-new-privileges:true"]);
   });
 
-  test("takes README's compose.override.yml example on its own, moving the subnets it names and nothing else", () => {
-    const readme = read("README.md");
-    const section = readme.slice(readme.indexOf("## Self-hosting with the published image"));
+  test("takes the self-hosting guide's compose.override.yml example on its own, moving the subnets it names and nothing else", () => {
+    const guide = read("docs/self-hosting.md");
+    const section = guide.slice(guide.indexOf("## Self-hosting with the published image"));
     const example = /```yaml\n([\s\S]*?)```/.exec(section.slice(section.indexOf("`compose.override.yml`")))?.[1] ?? "";
-    assert.ok(example.includes("!override"), "README.md's self-host section has no compose.override.yml example");
+    assert.ok(example.includes("!override"), "docs/self-hosting.md's published image section has no compose.override.yml example");
     const dir = mkdtempSync(path.join(tmpdir(), "selfhost-override-"));
     try {
       writeFileSync(path.join(dir, "compose.yml"), read(COMPOSE_PATH));

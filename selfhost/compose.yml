@@ -1,4 +1,4 @@
-# Self-hosting raccoon-vtt with the published image (README.md,
+# Self-hosting raccoon-vtt with the published image (docs/self-hosting.md,
 # "Self-hosting with the published image"). This file and an .env next to it
 # are all a host needs:
 #
@@ -26,7 +26,7 @@
 #
 # Without the profile nothing publishes a port, as in the server stack: your
 # own proxy or tunnel joins raccoon-edge and sends the site's hostname to
-# http://raccoon:3000 (README.md, "Put HTTPS in front of it").
+# http://raccoon:3000 (docs/self-hosting.md, "Put HTTPS in front of it").
 #
 # The internal networks set `gateway_mode_ipv4: isolated`, which needs Docker
 # Engine 28 or later. The inline configs, the volume `subpath` mounts and
@@ -167,7 +167,7 @@ services:
       # No default here, unlike the development file. Postgres reads this
       # only when it initializes an empty data directory, so changing it later
       # does nothing on its own. It is interpolated into DATABASE_URL, so it
-      # must be URL safe (README.md shows how to generate one).
+      # must be URL safe (docs/self-hosting.md shows how to generate one).
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: raccoon
     volumes:
@@ -211,7 +211,7 @@ services:
   # -------------------------------------------------------------- backup
   # A nightly pg_dump, read back whole, and a copy of the images it names,
   # onto the raccoon-backups volume, kept 7 days and 4 weeks
-  # (docs/design/design-v1-dm-tools.md 3.17, docker/backup.sh, README.md).
+  # (docs/design/design-v1-dm-tools.md 3.17, docker/backup.sh, docs/self-hosting.md).
   #
   #   docker compose exec backup sh /backup/backup.sh once
   #
@@ -272,7 +272,7 @@ services:
   #
   #   docker compose --profile restore run --rm restore sh /backup/backup.sh restore <dump name>
   #
-  # README.md has the order around it. It runs as the app's own user, UID
+  # docs/self-hosting.md has the order around it. It runs as the app's own user, UID
   # 1000, so every folder and file it puts on the image volume is the app's,
   # and it holds the backup's lock throughout, so no backup's retention can
   # delete the chosen dump's images partway through.
@@ -398,7 +398,7 @@ services:
   config-files:
     image: *postgres-image
     labels:
-      raccoon.config-sha256: "fa1b73293f1bf299c08cc3891061ba17fb65938614d0212a5b98d86fc2fdd0b7"
+      raccoon.config-sha256: "ede17130b7b60c93bf1fa9e26d2db77839a2db4177758973be11787a7066d18d"
     command:
       - sh
       - -c
@@ -456,7 +456,7 @@ services:
       # HTTP/3.
       - "443:443/udp"
     # Names resolve through Cloudflare, as squid's do, rather than through the
-    # host's resolver, which may sit on the LAN that README.md's firewall
+    # host's resolver, which may sit on the LAN that docs/self-hosting.md's firewall
     # rules for this bridge keep Caddy away from. Docker's own DNS still
     # answers for raccoon.
     dns:
@@ -567,7 +567,7 @@ networks:
   # gateway, and squid alone could address this host through it. squid's own
   # rules refuse every private range, and two host firewall rules back that
   # up against a compromised squid or a DNS rebind (design section 15.3,
-  # README.md). The fixed bridge name keeps those rules valid when the
+  # docs/self-hosting.md). The fixed bridge name keeps those rules valid when the
   # network is recreated.
   raccoon-egress:
     name: raccoon-egress
@@ -601,7 +601,7 @@ networks:
 volumes:
   raccoon-db:
   raccoon-assets:
-  # The backups, on the same disk. README.md says how to size it and how to
+  # The backups, on the same disk. docs/self-hosting.md says how to size it and how to
   # copy it off the server.
   raccoon-backups:
   # The files config-files copies. Safe to delete while the stack is down:
@@ -743,7 +743,7 @@ configs:
       #
       #   sh /backup/backup.sh                     the nightly loop, at BACKUP_AT in TZ
       #   sh /backup/backup.sh once                one backup now, or "A backup is running"
-      #   sh /backup/backup.sh restore <dump>      in the `restore` service only (README.md)
+      #   sh /backup/backup.sh restore <dump>      in the `restore` service only (docs/self-hosting.md)
       #
       # The backup service runs as root with no capabilities, so it writes only
       # what root owns (the backups volume) and reads the image volume through a

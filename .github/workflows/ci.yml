@@ -21,7 +21,7 @@
 #
 # The client is built once, since the bundle is the same bytes on every OS,
 # and each shard downloads it. scripts/e2e-shard.ts decides which files each
-# shard runs, and README.md ("Continuous integration") has the rest.
+# shard runs, and docs/development.md ("Continuous integration") has the rest.
 #
 # It needs no secrets and deploys nothing.
 name: CI

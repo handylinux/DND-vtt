@@ -8,7 +8,7 @@ import { writePngText } from "./pngText.ts";
  * to docs/images/docker-hub-button.png, at 3x for high-density screens, with
  * package.json's version in its chip and in the PNG's "Version" text, which
  * scripts/readme-button.test.ts checks. Run it with `pnpm readme-button` when
- * a release bumps the version (README.md, "Releasing"). It needs Chrome.
+ * a release bumps the version (docs/releasing.md). It needs Chrome.
  */
 
 const root = new URL("../", import.meta.url);

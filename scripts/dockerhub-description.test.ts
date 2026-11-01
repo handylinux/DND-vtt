@@ -421,17 +421,18 @@ describe("the Docker Hub overview", () => {
         assert.ok(slugs.includes(file[2]), `${file[1]} has no heading #${file[2]}`);
       }
     }
-    for (const page of ["FEATURES.md", "docs/dm-guide.md", "LICENSE", "README.md#self-hosting-with-the-published-image"]) {
+    for (const page of ["FEATURES.md", "docs/dm-guide.md", "LICENSE", "docs/self-hosting.md#self-hosting-with-the-published-image"]) {
       assert.ok(links.includes(`${TOKEN}/blob/main/${page}`), `no link to ${page}`);
     }
     assert.ok(links.includes(`${TOKEN}/issues`), "no link to the issue tracker");
   });
 
-  test("downloads the release's files with README.md's commands, the address aside", () => {
+  test("downloads the release's files with the commands of README.md and docs/self-hosting.md, the address aside", () => {
     const curls = (text: string) => text.split("\n").filter((l) => l.startsWith("curl -fsSLo "));
     assert.equal(curls(full).length, 2);
-    // README.md leaves the address to the reader, and the overview gets it filled in.
-    assert.deepEqual(curls(full).map((l) => l.replaceAll(TOKEN, "<this repository's URL>")), curls(read("README.md")));
+    // The README and the self-hosting guide leave the address to the reader, and the overview gets it filled in.
+    for (const doc of ["README.md", "docs/self-hosting.md"])
+      assert.deepEqual(curls(full).map((l) => l.replaceAll(TOKEN, "<this repository's URL>")), curls(read(doc)), doc);
     for (const line of curls(full)) assert.ok(line.includes(`"${TOKEN}/raw/$tag/selfhost/`), line);
   });
 });

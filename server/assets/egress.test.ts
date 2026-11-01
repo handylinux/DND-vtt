@@ -21,8 +21,8 @@ describe("squid's strict port", () => {
   });
 
   test("the update recipe restarts squid, which reads the list only at start and is not recreated when the file changes", async () => {
-    const readme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
-    const updating = readme.slice(readme.indexOf("## Updating"));
+    const guide = await readFile(new URL("../../docs/self-hosting.md", import.meta.url), "utf8");
+    const updating = guide.slice(guide.indexOf("## Updating"));
     const recipe = /```bash\n([\s\S]*?)```/.exec(updating)?.[1] ?? "";
     const lines = recipe.trim().split("\n");
     assert.equal(lines.at(-2), "docker compose -f docker-compose.server.yml up -d --build");

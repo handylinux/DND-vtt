@@ -3,7 +3,7 @@
 ## Supported versions
 
 Only the latest release receives security fixes. Self-hosters should follow
-the README's [Updating](README.md#updating) section to keep their installation
+the [Updating](docs/self-hosting.md#updating) section of docs/self-hosting.md to keep their installation
 current.
 
 ## Report a vulnerability

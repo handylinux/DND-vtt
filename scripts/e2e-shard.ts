@@ -8,7 +8,7 @@ import { anyRerun, attempt, filePassed, NO_TIME, outcome, passedOnRerun, plan, r
 /**
  * One shard of the e2e run, for continuous integration, for a laptop that
  * runs several shards side by side, and as one shard for `pnpm test:e2e`
- * (README, "Continuous integration"):
+ * (docs/development.md, "Continuous integration"):
  *
  *   node scripts/e2e-shard.ts <index> <count>                run shard <index> of <count>, counted from 1
  *   node scripts/e2e-shard.ts <index> <count> --list         print every shard's files and run nothing
@@ -20,7 +20,7 @@ import { anyRerun, attempt, filePassed, NO_TIME, outcome, passedOnRerun, plan, r
  * E2E_PORT, DATABASE_URL and E2E_SCREENSHOT_DIR. Each run's output is also
  * kept in test-results/e2e-logs. Reserve the whole E2E_PORT through
  * E2E_PORT+29 range per shard. On macOS skip bases 6971 through 7000,
- * whose range includes AirPlay Receiver's port 7000 (README).
+ * whose range includes AirPlay Receiver's port 7000 (docs/development.md).
  *
  * The files are placed by the time each took in e2e/durations.json
  * (scripts/e2e-shard-plan.ts). A file missing from the list counts as its

@@ -1,8 +1,9 @@
 # Contributing
 
 RaccoonVTT is a self-hosted virtual tabletop for D&D groups playing the 2024
-rules, made for phones first. See the README's
-[Local development](README.md#local-development) section to run it locally.
+rules, made for phones first. See
+[Local development](docs/development.md#local-development) in
+docs/development.md to run it locally.
 
 Before opening a pull request, run:
 
@@ -15,7 +16,7 @@ pnpm test:e2e
 ```
 
 The integration and browser tests need the development database described in
-the README. Run them separately. Browser tests also need Google Chrome.
+docs/development.md. Run them separately. Browser tests also need Google Chrome.
 For container or backup changes, run `pnpm test:backup` too.
 
 Use Conventional Commits, as in `git log`: one line, lowercase after the

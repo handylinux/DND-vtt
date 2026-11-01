@@ -105,8 +105,8 @@ It prints the room's ID, its player password, the player link and the DM
 link. Anyone who reaches the site can also create a room from its Home
 page, a few a day per address.
 
-The README's
-[Self-hosting with the published image]({{REPOSITORY_URL}}/blob/main/README.md#self-hosting-with-the-published-image)
+The self-hosting guide's
+[Self-hosting with the published image]({{REPOSITORY_URL}}/blob/main/docs/self-hosting.md#self-hosting-with-the-published-image)
 has the rest: firewall rules for the proxy's network, updates, backups and
 restore, and running behind Cloudflare.
 
@@ -150,7 +150,7 @@ way, give it the same.
 ## Links
 
 - Source code: [the raccoon-vtt repository]({{REPOSITORY_URL}})
-- Self-hosting guide: [README.md, Self-hosting with the published image]({{REPOSITORY_URL}}/blob/main/README.md#self-hosting-with-the-published-image)
+- Self-hosting guide: [docs/self-hosting.md, Self-hosting with the published image]({{REPOSITORY_URL}}/blob/main/docs/self-hosting.md#self-hosting-with-the-published-image)
 - What it does: [FEATURES.md]({{REPOSITORY_URL}}/blob/main/FEATURES.md)
 - For DMs: [the DM guide]({{REPOSITORY_URL}}/blob/main/docs/dm-guide.md)
 - Bugs and requests: [the issue tracker]({{REPOSITORY_URL}}/issues)

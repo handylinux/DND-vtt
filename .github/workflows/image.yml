@@ -1,5 +1,5 @@
 # Publishes the app image to Docker Hub on a version tag, for linux/amd64 and
-# linux/arm64, as X.Y.Z, X.Y and latest (README.md, "Releasing"). This
+# linux/arm64, as X.Y.Z, X.Y and latest (docs/releasing.md). This
 # workflow is the only way the image is ever built for or pushed to Docker
 # Hub.
 #
@@ -60,7 +60,7 @@ permissions:
 # that waits. Every release shares one group, so two never publish at once,
 # and a branch has a group of its own. GitHub keeps only one run waiting in a
 # group, though: a release waiting behind another is cancelled when a third
-# arrives, so push one release tag at a time (README.md, "Releasing").
+# arrives, so push one release tag at a time (docs/releasing.md).
 concurrency:
   group: ${{ github.ref_type == 'tag' && 'image-publish' || format('image-{0}', github.ref) }}
   cancel-in-progress: false
@@ -262,7 +262,7 @@ jobs:
       # Every login lives inside one step: the token reaches docker login on
       # stdin, never on a command line, and the trap logs out however the
       # step ends. Only "not found" counts as absent. Any other answer stops
-      # the job, which is why README.md's Releasing asks for the repository
+      # the job, which is why docs/releasing.md asks for the repository
       # to exist, public, before the first tag.
       - name: What Docker Hub holds for this version
         env:
