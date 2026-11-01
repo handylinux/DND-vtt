@@ -45,7 +45,27 @@ export type MovedToken = {
   pass: "public" | "private";
   /** Whether the move leaves it squeezed, which only its own `token.move` does, or an update that keeps its place. */
   squeezed?: true;
+  /** Whether it walks in single file behind its group's lead (`singleFile`), so a trap's cut of the walk keeps its own walk (traps.ts cutOp). */
+  file?: true;
 };
+
+/**
+ * The walks in single file a trap's cut op carries (traps.ts cutOp, review
+ * FU45B-ASTRA-01): each creature's own walk to where the trap step had it
+ * at the stop, index by index with its holder's cut walk. The cut op lands
+ * its holder full size where the stop stands full, so the op alone would
+ * take them by their places, on walks neither the server's wall check nor
+ * the trap step read. Only the reducer makes a cut op, and a symbol key
+ * never comes off the wire, so no client can send one.
+ */
+const FILE_CUT: unique symbol = Symbol("fileCut");
+
+type FileCut = { readonly [FILE_CUT]?: ReadonlyMap<string, readonly Point[]> };
+
+/** `op` with the walks in single file its cut keeps (`FILE_CUT`). */
+export function withFileCut<T extends Op>(op: T, walks: ReadonlyMap<string, readonly Point[]>): T {
+  return { ...op, [FILE_CUT]: walks };
+}
 
 /** The op's envelope as the plan reads it: the version it was stored at, if any. */
 type Versioned = { opVersion?: number };
@@ -156,7 +176,7 @@ export function planMove(op: Op, before: RoomState, actor: Viewer, env: Versione
     const members = groups.get(n.token.id) ?? [];
     if (members.length <= 1) continue;
     const shown = new Set(publicMembers(before.tokens, n.token.id, seen, names));
-    out.push(...followGroup(before, out[out.length - 1]!, members, (id, holderId) => shown.has(id) && shown.has(holderId), actor.role !== "dm", env, stands).filter((m) => !samePose(m.from, m.to)));
+    out.push(...followGroup(before, out[out.length - 1]!, members, (id, holderId) => shown.has(id) && shown.has(holderId), actor.role !== "dm", env, stands, (op as FileCut)[FILE_CUT]).filter((m) => !samePose(m.from, m.to)));
   }
   return out.sort((a, b) => (a.tokenId < b.tokenId ? -1 : a.tokenId > b.tokenId ? 1 : 0));
 }
@@ -168,13 +188,14 @@ export function planMove(op: Op, before: RoomState, actor: Viewer, env: Versione
  * every player's. Where the walk lines them up in single file, or seats
  * its passengers apart, those are worked out for the group at once, the
  * public members before the rest, so no public place reads a hidden one.
+ * `cut` is the walks in single file a trap's cut keeps (`FILE_CUT`).
  */
-function followGroup(before: RoomState, lead: MovedToken, members: readonly string[], isPublic: (id: string, holderId: string) => boolean, byPlayer: boolean, env: Versioned, stands = false): MovedToken[] {
+function followGroup(before: RoomState, lead: MovedToken, members: readonly string[], isPublic: (id: string, holderId: string) => boolean, byPlayer: boolean, env: Versioned, stands = false, cut?: ReadonlyMap<string, readonly Point[]>): MovedToken[] {
   const pub = (id: string) => {
     const link = before.tokens[id]?.attached;
     return link !== undefined && isPublic(id, link.to);
   };
-  const file = singleFile(before, lead, members.slice(1), pub, env);
+  const file = cut ?? singleFile(before, lead, members.slice(1), pub, env);
   const apart = new Map<string, Map<string, Point> | null>();
   const seatsOn = (holder: MovedToken) => {
     let seats = apart.get(holder.tokenId);
@@ -277,7 +298,7 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
   }
   if (!isPublic && byPlayer && holder.how === "walk") route = stoppedAtWalls(before, member, route, holder.route, elevationAt, env, how.stands === true);
   const last = route[route.length - 1]!;
-  return { tokenId: member.id, from, to: { sceneId: member.sceneId, ...last }, route, trace: followerTrace(member, route), how: holder.how, carriedBy: holder.tokenId, pass };
+  return { tokenId: member.id, from, to: { sceneId: member.sceneId, ...last }, route, trace: followerTrace(member, route), how: holder.how, carriedBy: holder.tokenId, pass, ...(file ? { file: true as const } : {}) };
 }
 
 /**

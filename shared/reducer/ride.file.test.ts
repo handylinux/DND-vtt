@@ -10,6 +10,7 @@ import { applyOp } from "../reducer.ts";
 import { findRouteOn } from "../rules/hexWalk.ts";
 import { planMove } from "../rules/moveLeg.ts";
 import { offGridWallThrough, ownWalk, walkEnd } from "../rules/movement.ts";
+import { compareProgress, trapWalks } from "../rules/traps.ts";
 import { groupWalkWorld } from "../rules/walkWorld.ts";
 import { env, member, P1, P2, room, scene, token, trap } from "../testutil.ts";
 
@@ -125,14 +126,49 @@ describe("squares: what a holder drags follows it in single file where its move 
     assert.ok(canApply(op, { memberId: "dm1", role: "dm" }, s, { canUseAsset: () => true }).ok, "the DM's move meets no walls");
   });
 
-  test("a trap that stops the walk at the corridor's mouth stops what it drags with it, by the rule the stopped walk's own end gives", () => {
+  test("a trap that stops the walk at the corridor's mouth stops what it drags where its walk in the file had it at the stop", () => {
     const s = towing(corridor(), "gob", { x: 1, y: 6 });
     s.traps.t1 = trap("t1", { zone: { cells: [{ x: 4, y: 5, w: 1, h: 2 }] }, rig: { on: ["enter"], who: "any", floor: true, resets: "never", stops: true, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } });
     const op = into(s);
     const after = served(s, op);
-    // The stop stands it squeezed at the mouth, so the goblin is right behind it there, as on a walk that ends there.
+    // The stop stands it squeezed at the mouth. The file walks the horse's own line, so at that moment the goblin is on the square
+    // the horse squeezes onto, where the trap step read it (review FU45B-ASTRA-01).
     assert.deepEqual([after.tokens.horse!.x, after.tokens.horse!.y, after.tokens.horse!.squeeze], [4.5, 5.5, true]);
-    assert.deepEqual([after.tokens.gob!.x, after.tokens.gob!.y], [4, 6]);
+    assert.deepEqual([after.tokens.gob!.x, after.tokens.gob!.y, after.tokens.gob!.attached?.to], [5, 6, "horse"]);
     assert.equal(after.traps.t1!.state, "sprung");
+  });
+
+  test("a trap that stops the walk where the horse stands full size stops a creature in the file where its own walk had it then, never by its place (review FU45B-ASTRA-01)", () => {
+    const s = towing(corridor(), "ogre", { size: "large", x: 0, y: 7 });
+    // A stub its place beside the horse would meet, which its walk in single file never does.
+    wall(s, "fu45bf000010", [2.25, 7.75], [2.25, 8]);
+    s.traps.t1 = trap("t1", { zone: { cells: [{ x: 4, y: 5, w: 1, h: 2 }] }, rig: { on: ["enter"], who: "any", floor: true, resets: "never", stops: true, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } });
+    const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 9.5, y: 5.5, squeeze: true, route: [[3, 5, 1, 0], [3.5, 5.5, 1, 0], [4, 5.5, 1, 0], [9.5, 5.5, 2, 0]] };
+    const after = served(s, op);
+    const horse = after.tokens.horse!;
+    assert.deepEqual([horse.x, horse.y, horse.squeeze], [3, 5, undefined], "stopped full size on the trap");
+    // Where the trap step's walk of it stood at the horse's stop: its latest spot at or before it.
+    const walks = trapWalks(op, s, P1, {});
+    const stop = walks.find((w) => w.tokenId === "horse")!.spots.find((p) => p.x === 3 && p.y === 5)!.progress;
+    const seen = walks.find((w) => w.tokenId === "ogre")!.spots.filter((p) => compareProgress(p.progress, stop) <= 0).at(-1)!;
+    const ogre = after.tokens.ogre!;
+    assert.deepEqual([ogre.x, ogre.y, ogre.attached?.to], [seen.x, seen.y, "horse"], "where its walk had it at the stop, still in tow");
+    const box = { x0: ogre.x, x1: ogre.x + 2, y0: ogre.y, y1: ogre.y + 2 };
+    assert.ok(!(box.x0 < 2.25 && 2.25 < box.x1 && box.y0 < 8 && box.y1 > 7.75), `no wall through its box at ${ogre.x}, ${ogre.y}`);
+  });
+
+  test("a hidden creature in the file changes nothing players see of a trap's cut: the visible one stops where it stops with none", () => {
+    const setup = (hidden: boolean) => {
+      let s = towing(corridor(), "ogre", { size: "large", x: 0, y: 7 });
+      // Nearer the horse than the ogre, so by nearness alone it would go first.
+      if (hidden) s = towing(s, "imp", { x: 1, y: 4, visibility: "dm" });
+      s.traps.t1 = trap("t1", { zone: { cells: [{ x: 4, y: 5, w: 1, h: 2 }] }, rig: { on: ["enter"], who: "any", floor: true, resets: "never", stops: true, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } });
+      return s;
+    };
+    const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 9.5, y: 5.5, squeeze: true, route: [[3, 5, 1, 0], [3.5, 5.5, 1, 0], [4, 5.5, 1, 0], [9.5, 5.5, 2, 0]] };
+    const alone = served(setup(false), op);
+    const both = served(setup(true), op);
+    assert.deepEqual([both.tokens.ogre!.x, both.tokens.ogre!.y], [alone.tokens.ogre!.x, alone.tokens.ogre!.y]);
+    for (const who of [P1, P2]) assert.equal(stableStringify(projectState(both, who, { sceneId: "s1" })), stableStringify(projectState(alone, who, { sceneId: "s1" })), `${who.memberId} is sent the same`);
   });
 });

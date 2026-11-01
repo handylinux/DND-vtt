@@ -9,7 +9,7 @@ import { holderOf, insideHolder, onHolder, walkerFor } from "./attach.ts";
 import { footprintRect, footprintSize, isSqueezed, occupiedHexes, occupiedRange, rangeAtInto, sizeCategory, type CellRange, type PlacedToken } from "./footprint.ts";
 import { footing, footprintGround, groundAt, sceneGround, standing } from "./heights.ts";
 import { pendingGround } from "./held.ts";
-import { planMove, type MovedToken } from "./moveLeg.ts";
+import { planMove, withFileCut, type MovedToken } from "./moveLeg.ts";
 import { groundUnder, hexStandHexes, storedBuild, type HexWalls } from "./movement.ts";
 import { onTrace, routeLattice, routeStands, routeWalk, type PublicGround, type RoutePiece, type RoutePoint, type RouteSpot, type StandGroup, type StandRule, type WalkSpot } from "./route.ts";
 import { APART, contact, orient } from "./segments.ts";
@@ -1547,7 +1547,10 @@ function cutOp(op: Op, walks: Walks, stops: ReadonlyMap<string, Stop>, before: R
       const { route, squeeze: _squeeze, ...rest } = op;
       const next = { ...rest, x: at.x, y: at.y, elevation: at.elevation, ...(at.squeezed ? { squeeze: true as const } : {}) };
       const pieces = route ? cutRoute(route, at.progress, at) : [];
-      return pieces.length > 0 ? { ...next, route: pieces as [number, number, number, 0 | 1][] } : next;
+      const cut = pieces.length > 0 ? { ...next, route: pieces as [number, number, number, 0 | 1][] } : next;
+      // A walk with no route is one straight piece, so the cut walk has a point more than its pieces, and two at the least.
+      const file = fileCut(walks, op.tokenId, stops.get(op.tokenId)!, Math.max(pieces.length, 1) + 1);
+      return file ? withFileCut(cut, file) : cut;
     }
     case "token.moveMany":
       return {
@@ -1560,6 +1563,30 @@ function cutOp(op: Op, walks: Walks, stops: ReadonlyMap<string, Stop>, before: R
     default:
       return op;
   }
+}
+
+/**
+ * The walks of a stopped group's creatures in single file to the stop
+ * (moveLeg.ts withFileCut, review FU45B-ASTRA-01): each its own walk to its
+ * latest spot at or before the stop, where the stop judged it stands and
+ * the springings read it, so the cut moves them where the trap step had
+ * them, never by their places. Each takes `points` points, index by index
+ * with its holder's cut walk, holding at its spot once there. Null where
+ * none walks in single file.
+ */
+function fileCut(walks: Walks, named: string, stop: Stop, points: number): Map<string, { x: number; y: number }[]> | null {
+  const group = walks.groups.get(named);
+  const out = new Map<string, { x: number; y: number }[]>();
+  for (const walk of walks.all) {
+    if (walk.group !== group || walk.entry.file !== true) continue;
+    const spot = spotAt(walk, latestIndex(walk.spots, stop.s));
+    const [piece, k] = spot.progress;
+    const route = walk.entry.route.slice(0, piece + 1).map(({ x, y }) => ({ x, y }));
+    if (k > 0) route.push({ x: spot.x, y: spot.y });
+    while (route.length < points) route.push(route[route.length - 1]!);
+    out.set(walk.token.id, route.slice(0, points));
+  }
+  return out.size > 0 ? out : null;
 }
 
 /** A route cut at a spot of piece `progress[0]`: the pieces before it whole, then that piece to the spot, its extra kept. */
