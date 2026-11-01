@@ -1448,6 +1448,106 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     }
   });
 
+  test("sbr-23. switching between two character pages through a companion link: a roll on one page leaves no result line and no voice on the other (SBR-SOL-003)", async () => {
+    const mira = { char: randomUUID(), token: randomUUID(), moth: randomUUID(), loneToken: randomUUID() };
+    const at = { lone: { x: 14, y: 3 }, mira: { x: 16, y: 3 }, moth: { x: 16, y: 5 } };
+    await dm.keyboard.press("Escape");
+    await ops.send({ t: "character.create", character: { id: mira.char, name: "Mira", size: "medium", ownerIds: [], actor: actor(), level: 3, stats: THORN_STATS } });
+    await ops.send(tokenOp(mira.loneToken, { kind: "pc", name: "Lone", ...at.lone, disposition: "ally", actor: { ref: run.loneChar } }));
+    await ops.send(tokenOp(mira.token, { kind: "pc", name: "Mira", ...at.mira, disposition: "ally", actor: { ref: mira.char } }));
+    await ops.send(tokenOp(mira.moth, { kind: "npc", name: "Moth", ...at.moth, disposition: "ally", companion: { of: mira.char, turn: "shared" }, actor: { inline: actor({ srdId: "wolf" }) } }));
+    const tabs = dm.getByRole("tablist", { name: "Panels" });
+    const bar = dm.locator("[data-pane-bar]");
+    try {
+      // Characters on top, the Token panel under it.
+      await openSideTab(dm, "Characters");
+      if ((await bar.count()) === 0) {
+        await tabs.locator('[role="tab"][aria-haspopup="menu"]').click();
+        await dm.getByRole("menu", { name: "More panels" }).getByRole("menuitemcheckbox", { name: "Two panels" }).click();
+        await dm.getByRole("menu", { name: "More panels" }).waitFor({ state: "detached" });
+      }
+      await bar.getByRole("button", { name: / below$/ }).click();
+      await dm.getByRole("menu", { name: "Panel below" }).getByRole("menuitemradio", { name: sideTabName("Token") }).click();
+      const characters = dm.getByRole("tabpanel", { name: sideTabName("Characters") });
+      const opener = characters.locator(`[data-opener="character:${run.loneChar}"]`);
+      const heading = (name: string) => characters.locator("[data-creature-heading]").filter({ hasText: name });
+      await heading("Lone").or(opener).first().waitFor();
+      if ((await heading("Lone").count()) === 0) await opener.click();
+      await heading("Lone").waitFor();
+      const fold = characters.getByRole("button", { name: "Stat block", exact: true });
+      if ((await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
+      const lone = characters.locator("[data-pc-stats]");
+      const from = dmSent.ops.length;
+      await boxOf(lone, "Strength").click();
+      await listOf(dm, "Strength").getByRole("menuitem", { name: /^Strength check/ }).click();
+      await oneRoll(dmSent, from, "Lone's Strength check");
+      await resultOf(lone).getByText(/Strength check/).first().waitFor();
+      // Moth's token panel, whose "Companion of Mira" link opens Mira's page in place.
+      await tapCell(dm, BOUNDS, at.moth);
+      const mothBar = dm.getByRole("dialog", { name: "Moth actions" });
+      await mothBar.waitFor();
+      await (await barControl(mothBar, "Details")).click();
+      await dm.getByRole("button", { name: /^Companion of Mira/ }).first().click();
+      await heading("Mira").waitFor();
+      const miraView = characters.locator("[data-pc-stats]");
+      await miraView.waitFor();
+      assert.equal(await resultOf(miraView).count(), 0, "Mira's page shows no result line from Lone's roll");
+      assert.equal(await resultOf(characters).count(), 0, "and none anywhere in the panel");
+      await sleep(500);
+      const said = await characters.locator('[data-block-result] [role="status"], [data-block-result] [role="alert"]').allInnerTexts();
+      assert.deepEqual(said.filter((t) => t.trim() !== ""), [], "no voice carried to the other page");
+    } finally {
+      for (const id of [mira.moth, mira.token, mira.loneToken]) await ops.send({ t: "token.delete", tokenId: id }).catch(() => undefined);
+      await ops.send({ t: "character.delete", characterId: mira.char }).catch(() => undefined);
+      if ((await bar.count()) > 0) {
+        await dm.getByRole("button", { name: "Close Token", exact: true }).click().catch(() => undefined);
+        await bar.waitFor({ state: "detached", timeout: 3_000 }).catch(() => undefined);
+      }
+    }
+  });
+
+  test("sbr-24. a split pane hidden before the answer: the hidden block holds no voice, one toast is heard, and shown again its line carries the result without a second announcement (SBR-SOL-002)", async () => {
+    await dm.keyboard.press("Escape");
+    const panel = await dmPanel("Goblin", run.goblin);
+    const tabs = dm.getByRole("tablist", { name: "Panels" });
+    const bar = dm.locator("[data-pane-bar]");
+    try {
+      if ((await bar.count()) === 0) {
+        await tabs.locator('[role="tab"][aria-haspopup="menu"]').click();
+        await dm.getByRole("menu", { name: "More panels" }).getByRole("menuitemcheckbox", { name: "Two panels" }).click();
+        await dm.getByRole("menu", { name: "More panels" }).waitFor({ state: "detached" });
+      }
+      await bar.getByRole("button", { name: / below$/ }).click();
+      await dm.getByRole("menu", { name: "Panel below" }).getByRole("menuitemradio", { name: sideTabName("Initiative") }).click();
+      await dm.getByRole("group", { name: "Initiative below", exact: true }).waitFor();
+      const toastsNow = () => dm.locator("[data-toast]").filter({ hasText: /Acrobatics/ }).count();
+      const before = await toastsNow();
+      const from = dmSent.ops.length;
+      dmWire.hold = true;
+      await boxOf(panel, "Dexterity").click();
+      await listOf(dm, "Dexterity").getByRole("menuitem", { name: /^Acrobatics/ }).click();
+      await dm.getByRole("button", { name: "Hide panels" }).click();
+      await panel.first().waitFor({ state: "hidden" });
+      dmWire.release();
+      await oneRoll(dmSent, from, "Acrobatics from a split pane hidden before it lands");
+      await waitFor("one toast for the roll", async () => ((await toastsNow()) > before ? true : null), 5_000);
+      assert.equal((await toastsNow()) - before, 1, "one own-roll toast");
+      // Shown again: the line carries the result and says nothing more.
+      await dm.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).click();
+      await panel.first().waitFor();
+      await resultOf(panel).getByText(/Acrobatics/).first().waitFor();
+      await sleep(600);
+      const said = (await resultOf(panel).locator('[role="status"], [role="alert"]').allInnerTexts()).filter((t) => t.trim() !== "");
+      assert.deepEqual(said, [], "the reshown line announces nothing: the toast already did");
+      assert.equal((await toastsNow()) - before, 1, "and no second toast");
+    } finally {
+      if ((await bar.count()) > 0) {
+        await dm.getByRole("button", { name: "Close Initiative", exact: true }).click().catch(() => undefined);
+        await bar.waitFor({ state: "detached", timeout: 3_000 }).catch(() => undefined);
+      }
+    }
+  });
+
   test("sbr-19. no page logged an error", async () => {
     assert.deepEqual(consoles.dm.errors, []);
     assert.deepEqual(consoles.pat.errors, []);
