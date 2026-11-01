@@ -9,7 +9,7 @@ import { holderOf, insideHolder, onHolder, walkerFor } from "./attach.ts";
 import { footprintRect, footprintSize, isSqueezed, occupiedHexes, occupiedRange, rangeAtInto, sizeCategory, type CellRange, type PlacedToken } from "./footprint.ts";
 import { footing, footprintGround, groundAt, sceneGround, standing } from "./heights.ts";
 import { pendingGround } from "./held.ts";
-import { planMove, withFileCut, type MovedToken } from "./moveLeg.ts";
+import { planWalks, takesAlong, withFileCut, type MovedToken } from "./moveLeg.ts";
 import { groundUnder, hexStandHexes, storedBuild, type HexWalls } from "./movement.ts";
 import { onTrace, routeLattice, routeStands, routeWalk, type PublicGround, type RoutePiece, type RoutePoint, type RouteSpot, type StandGroup, type StandRule, type WalkSpot } from "./route.ts";
 import { APART, contact, orient } from "./segments.ts";
@@ -1228,7 +1228,7 @@ export function planTrapMove(op: Op, before: TrapRoom, actor: Viewer, env: { opV
   const index = trapIndex(before, sceneId);
   if (index.traps.length === 0) return none;
   const onScene = (e: MovedToken) => e.from.sceneId === sceneId && e.to.sceneId === sceneId;
-  const entries = planMove(op, before, actor, env).filter(onScene);
+  const entries = trapPlan(op, before, actor, env).filter(onScene);
   if (entries.length === 0) return none;
   const seen = seenByAll(before, env);
   const walks = walksOf(op, before, entries, seen, env.opVersion);
@@ -1269,7 +1269,7 @@ export function planTrapMove(op: Op, before: TrapRoom, actor: Viewer, env: { opV
   const cut = stops.size > 0 ? cutOp(op, walks, stops, before, seen) : op;
   // A move with no walk players cannot see has no private pass, so its cut op needs no walks of its own.
   if (!walks.all.some((w) => !w.isPublic)) return { springings, op: cut };
-  const rest = cut === op ? walks : walksOf(cut, before, planMove(cut, before, actor, env).filter(onScene), seen, env.opVersion);
+  const rest = cut === op ? walks : walksOf(cut, before, trapPlan(cut, before, actor, env).filter(onScene), seen, env.opVersion);
   const priv = passCache(before, sceneId);
   const hidden = byTrap(rest.all.filter((w) => !w.isPublic), (walk) => walkEvents(walk, index, before, seen, spent, priv));
   const never = () => false;
@@ -1283,6 +1283,18 @@ export function planTrapMove(op: Op, before: TrapRoom, actor: Viewer, env: { opV
 }
 
 /**
+ * The walks of a move the trap step reads: each token the move writes
+ * (moveLeg.ts planMove), and each in single file too, from op version 38,
+ * though its walk ends where it started, since it walks its holder's line
+ * on the way and a stop between the ends leaves it there (moveLeg.ts
+ * withFileCut). By its place such a walk keeps its holder's loop, which
+ * ends where it started, as before.
+ */
+function trapPlan(op: Op, before: RoomState, actor: Viewer, env: { opVersion?: number }): MovedToken[] {
+  return planWalks(op, before, actor, env).filter((m) => takesAlong(m) || m.file === true);
+}
+
+/**
  * What the trap step reads of a move, token by token: which pass it walks
  * in, whether it is a walker, its step, and the spots it passes, the start
  * first, for the tests. The drag label reads which traps a drag crosses on
@@ -1291,7 +1303,7 @@ export function planTrapMove(op: Op, before: TrapRoom, actor: Viewer, env: { opV
 export function trapWalks(op: Op, before: TrapRoom, actor: Viewer, env: { opVersion?: number }): { tokenId: string; isPublic: boolean; walker: boolean; step: number; spots: { x: number; y: number; progress: Progress }[] }[] {
   const sceneId = liveTrapScene(before);
   if (sceneId === null || !walkOp(op)) return [];
-  const entries = planMove(op, before, actor, env).filter((e) => e.from.sceneId === sceneId && e.to.sceneId === sceneId);
+  const entries = trapPlan(op, before, actor, env).filter((e) => e.from.sceneId === sceneId && e.to.sceneId === sceneId);
   const walks = walksOf(op, before, entries, seenByAll(before, env), env.opVersion);
   return walks.all
     .map((w) => ({ tokenId: w.token.id, isPublic: w.isPublic, walker: w.walker, step: w.step, spots: w.spots.map((_, j) => spotAt(w, j)) }))

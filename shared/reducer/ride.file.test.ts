@@ -259,4 +259,24 @@ describe("squares: what a holder drags follows it in single file where its move 
     const ogre = cut.tokens.ogre!;
     assert.deepEqual([ogre.x, ogre.y, ogre.elevation, ogre.attached?.to, cut.traps.t2!.state], [2, 6, 0, "horse", "sprung"], "in single file, cut");
   });
+
+  test("one whose walk in the file ends where it started walks it for the trap step all the same, so a trap's cut stops it where that walk had it, never by its place", () => {
+    const s = room({ members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2") }, scenes: { s1: scene("s1", { bounds: { w: 22, h: 12 }, blockMovement: true, autoWalls: "off" }) } });
+    s.buildChunks = {};
+    // The horse walks west and back, ending squeezed where it stood, so the imp's walk in the file ends at its start.
+    s.tokens.horse = token("horse", { size: "large", x: 10, y: 5, name: "Warhorse", kind: "npc", ownerIds: ["p1"] });
+    s.tokens.imp = token("imp", { x: 10, y: 6, name: "imp", kind: "npc", attached: { to: "horse", kind: "drag" } });
+    s.traps.t1 = trap("t1", { zone: { cells: [{ x: 7, y: 5, w: 1, h: 2 }] } });
+    const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 10, y: 5, squeeze: true, route: [[6, 5, 1, 0], [10, 5, 1, 0]] };
+    assert.equal(walkOf(s, op, "imp"), undefined, "the move writes no imp");
+    // As the reducer runs it, its trap step and its dispatch: no permission reads a trap.
+    const r = applyOp(s, op, P1, env(5));
+    assert.ok(r.ok);
+    // The stop waits for a spot where both stand, the imp on whole squares, which on the way back is where the horse reaches 9, 5.
+    assert.deepEqual([r.state.tokens.horse!.x, r.state.tokens.horse!.y, r.state.traps.t1!.state], [9, 5, "sprung"], "stopped by the trap");
+    const walks = trapWalks(op, s, P1, {});
+    const stop = walks.find((w) => w.tokenId === "horse")!.spots.filter((p) => p.x === 9 && p.y === 5).at(-1)!.progress;
+    const seen = walks.find((w) => w.tokenId === "imp")!.spots.filter((p) => compareProgress(p.progress, stop) <= 0).at(-1)!;
+    assert.deepEqual([r.state.tokens.imp!.x, r.state.tokens.imp!.y, r.state.tokens.imp!.attached?.to], [seen.x, seen.y, "horse"], "where the trap step had it, still in tow");
+  });
 });
