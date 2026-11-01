@@ -219,7 +219,7 @@ test("sbr: a grid with no creature to roll for is byte for byte the list FL-15 d
 
 test("sbr: a rolling grid is a group of six buttons, one box each, with no list inside it", () => {
   const markup = rolling();
-  assert.match(markup, /^<div><div data-ability-grid="" role="group" aria-label="Abilities" style="margin:0;display:grid;grid-template-columns:repeat\(3, minmax\(0, 1fr\)\);gap:4px">/);
+  assert.match(markup, /^<div style="min-width:0"><div data-ability-grid="" role="group" aria-label="Abilities" style="margin:0;display:grid;grid-template-columns:repeat\(3, minmax\(0, 1fr\)\);gap:4px">/);
   assert.doesNotMatch(markup, /<dl|<dt|<dd/);
   assert.equal(buttonsOf(markup).length, 6);
   assert.deepEqual(

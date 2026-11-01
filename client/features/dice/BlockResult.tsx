@@ -44,6 +44,8 @@ const LINE: CSSProperties = {
   alignItems: "center",
   gap: theme.space(2),
   minWidth: 0,
+  // Its one row never sets a width above it: a block nests the grid and this line in grids of its own (a shape's StatBlockView), and each would take the row's full length as its floor and grow past the sheet (LP27-A-BLOCK-1).
+  contain: "inline-size",
   borderRadius: theme.radius.md,
   background: theme.color.surfaceRaised,
   fontSize: theme.font.body14,

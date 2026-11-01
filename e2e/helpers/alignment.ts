@@ -2024,3 +2024,77 @@ export async function rollRowLines(popover: Locator, screen: string): Promise<st
   });
   return lines.map((line) => `${screen}: ${line}`);
 }
+
+/**
+ * Containment (LP27-A-BLOCK-1): a root stays inside its container sideways,
+ * and nothing it lays out runs past its own sides. measureAlignment measures
+ * centering, so a stat block whose result line widened its ability grid
+ * past the sheet read as aligned while CON and CHA were cut off at the
+ * screen's edge.
+ *
+ * - **Its container**: the root's border box lies inside its parent's
+ *   content box, and inside the padding box of every ancestor that clips
+ *   or scrolls sideways, within LIMIT_PX.
+ * - **Its content**: where the root shows what overflows it, its scroll
+ *   width is no more than its client width. What a part inside it clips,
+ *   as a label ended in "…" or a result line's parts that wrap out of
+ *   sight, never reaches its scroll width, so only a part that pushed the
+ *   root's own layout wider counts.
+ *
+ * Box sizes are read from the layout, so CSS zoom (130%) needs no
+ * correction: each ratio and difference is taken in one element's units.
+ * The check is strict: a root that matches nothing is a line.
+ */
+export async function containmentLines(root: Locator, screen: string): Promise<string[]> {
+  if ((await root.count()) === 0) return [`${screen}: no root to check for containment`];
+  const lines = await root.evaluateAll((nodes, limit) => {
+    type C = {
+      tagName: string;
+      parentElement: C | null;
+      offsetWidth: number;
+      clientWidth: number;
+      scrollWidth: number;
+      clientLeft: number;
+      getAttribute(name: string): string | null;
+      getBoundingClientRect(): { left: number; right: number; width: number };
+      ownerDocument: { defaultView: { getComputedStyle(el: C): Record<string, string> } };
+    };
+    const out: string[] = [];
+    const name = (el: C) => {
+      const marks = ["data-ability-grid", "data-block-result", "data-pc-stats", "aria-label", "role"].filter((a) => el.getAttribute(a) !== null);
+      const mark = marks[0];
+      return `${el.tagName.toLowerCase()}${mark ? `[${mark}${el.getAttribute(mark) ? `="${el.getAttribute(mark)}"` : ""}]` : ""}`;
+    };
+    const px = (v: string | undefined) => Number.parseFloat(v ?? "0") || 0;
+    for (const node of nodes as unknown as C[]) {
+      const css = (el: C) => node.ownerDocument.defaultView.getComputedStyle(el);
+      const r = node.getBoundingClientRect();
+      if (r.width === 0) {
+        out.push(`${name(node)} has no width`);
+        continue;
+      }
+      const parent = node.parentElement;
+      if (parent) {
+        const p = parent.getBoundingClientRect();
+        // The page's zoom, from the parent's own box: its border box in viewport px over its layout px.
+        const k = parent.offsetWidth > 0 ? p.width / parent.offsetWidth : 1;
+        const s = css(parent);
+        const left = p.left + (px(s.borderLeftWidth) + px(s.paddingLeft)) * k;
+        const right = p.right - (px(s.borderRightWidth) + px(s.paddingRight)) * k;
+        if (r.left < left - limit || r.right > right + limit) out.push(`${name(node)} spans ${r.left.toFixed(1)} to ${r.right.toFixed(1)}, past its container's content box ${left.toFixed(1)} to ${right.toFixed(1)}`);
+      }
+      for (let up = parent; up; up = up.parentElement) {
+        const s = css(up);
+        if (s.overflowX === "visible") continue;
+        const u = up.getBoundingClientRect();
+        const k = up.offsetWidth > 0 ? u.width / up.offsetWidth : 1;
+        const left = u.left + up.clientLeft * k;
+        const right = left + up.clientWidth * k;
+        if (r.left < left - limit || r.right > right + limit) out.push(`${name(node)} spans ${r.left.toFixed(1)} to ${r.right.toFixed(1)}, past the ${name(up)} that clips it at ${left.toFixed(1)} to ${right.toFixed(1)}`);
+      }
+      if (css(node).overflowX === "visible" && node.scrollWidth > node.clientWidth + limit) out.push(`${name(node)}'s content runs ${node.scrollWidth - node.clientWidth} px past its right side`);
+    }
+    return out;
+  }, LIMIT_PX);
+  return lines.map((line) => `${screen}: ${line}`);
+}

@@ -19,7 +19,7 @@ import { trapPreset } from "../shared/srd/traps.ts";
 import { barControl, ConsoleWatch, dragCells, expandBar, multiSelect, OpSocket, openSceneGroup, openSideTab, pagePoint, pickOption, pickTool, pressOption, reopenRoom, ROOT, sceneGroup, sceneGroupFold, Shots, sideTabName, SocketWatch, startServer, tapCell, touchSwipe, untilReady, waitFor, wholeInReach, type Server } from "./harness.ts";
 import { DEFAULT_SNAPSHOT_BUDGET } from "../server/rooms/budgets.ts";
 import { INTER_FILES } from "../client/lib/interFont.ts";
-import { alignmentLines, headerLines, headerPlaces, leadLines, LIMIT_PX, measureAlignment, menuWordLines, pillLines, popoverScrollbarLines, proficiencyHeightLines, proficiencyLines, rollingGridLines, rollRowLines, saveOutlineLines, toastLaneLines, toastsUnderCards, type HeaderPlace, type PillPoint } from "./helpers/alignment.ts";
+import { alignmentLines, containmentLines, headerLines, headerPlaces, leadLines, LIMIT_PX, measureAlignment, menuWordLines, pillLines, popoverScrollbarLines, proficiencyHeightLines, proficiencyLines, rollingGridLines, rollRowLines, saveOutlineLines, toastLaneLines, toastsUnderCards, type HeaderPlace, type PillPoint } from "./helpers/alignment.ts";
 import { measureSpacing, spacingLines, type SpacingFinding } from "./helpers/spacing.ts";
 import { moreMenuFixture } from "./helpers/menuFixture.ts";
 
@@ -4603,6 +4603,7 @@ async function blockRollScreens(sweep: Sweep, page: Page, screen: string, root: 
   await sweep.measure(page, `sbr-${screen}-closed`, root);
   await sweep.add(page, `sbr-${screen}-closed`, await rollingGridLines(grid, where));
   await sweep.add(page, `sbr-${screen}-closed`, await saveOutlineLines(page, root, where, false));
+  await sweep.add(page, `sbr-${screen}-closed`, await containmentLines(root, where));
 
   const box = grid.getByRole("button", { name: new RegExp(`^${at.ability} `) });
   const menu = page.getByRole("menu", { name: `${at.ability} rolls` });
@@ -4647,6 +4648,8 @@ async function blockRollScreens(sweep: Sweep, page: Page, screen: string, root: 
   if (before && after && (Math.abs(before.height - after.height) > 0.5 || Math.abs(before.width - after.width) > 0.5)) {
     await sweep.add(page, `sbr-${screen}-result`, [`${where}-result: the grid went from ${before.width} x ${before.height} to ${after.width} x ${after.height} px after a roll`]);
   }
+  // A long label's one row must not widen the grid or the block past the sheet (LP27-A-BLOCK-1), which centering alone never sees.
+  await sweep.add(page, `sbr-${screen}-result`, [...(await containmentLines(root, `${where}-result`)), ...(await containmentLines(grid, `${where}-result`)), ...(await containmentLines(result.first(), `${where}-result`))]);
   const g = await grid.boundingBox();
   const r = await result.first().boundingBox();
   if (g && r && (r.y < g.y + g.height || Math.abs(r.x - g.x) > 0.5 || Math.abs(r.width - g.width) > 0.5)) {
@@ -4695,7 +4698,8 @@ export function blockRollTests(): void {
         const sheet = await thornsPage(pat);
         const fold = sheet.getByRole("button", { name: "Stat block", exact: true });
         if ((await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
-        await blockRollScreens(sweep, pat, "pc-sheet", sheet.locator("[data-pc-stats]"), { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: /^Dexterity save/ });
+        // Sleight of Hand, the longest label, for the result line's containment.
+        await blockRollScreens(sweep, pat, "pc-sheet", sheet.locator("[data-pc-stats]"), { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: /^Sleight of Hand/ });
         // The longest list, Wisdom's seven rows, which scrolls inside its box on the smallest screens.
         await blockRollScreens(sweep, pat, "pc-sheet-long", sheet.locator("[data-pc-stats]"), { ability: "Wisdom", row: /^Wisdom save/, marked: true, roll: /^Perception/ });
         await shot(pat, "pc-sheet");
@@ -4703,7 +4707,7 @@ export function blockRollTests(): void {
         await ops.send({ t: "character.update", characterId: run.ids.thornChar, patch: { actor: { srdId: "wolf", wildShape: true } } });
         try {
           await sheet.locator("[data-shape-numbers]").waitFor();
-          await blockRollScreens(sweep, pat, "wild-shape", sheet, { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: /^Dexterity save/ });
+          await blockRollScreens(sweep, pat, "wild-shape", sheet, { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: /^Sleight of Hand/ });
           await shot(pat, "wild-shape");
         } finally {
           await ops.send({ t: "character.update", characterId: run.ids.thornChar, patch: { actor: { srdId: null } } });

@@ -96,8 +96,9 @@ export function AbilityGrid(props: { abilities: readonly AbilityBox[]; roll?: Bl
 function RollingGrid(props: { abilities: readonly AbilityBox[]; roller: BlockRoller }) {
   const [outcome, setOutcome] = useState<BlockOutcome | null>(null);
   // One box around both, so a parent that spaces its children (the PC sheet's grid) does not add its gap to the result's own margin.
+  // As a grid item (the PC sheet's grid) it would take its content's width as its floor, and the result line's one row would widen the grid past the sheet (LP27-A-BLOCK-1).
   return (
-    <div>
+    <div style={{ minWidth: 0 }}>
       <div data-ability-grid="" role="group" aria-label="Abilities" style={GRID}>
         {props.abilities.map((a) => (
           <RollingBox key={a.key} box={a} roller={props.roller} onSent={(sent) => setOutcome({ kind: "sent", sent })} onUnsent={(words) => setOutcome({ kind: "unsent", words })} />

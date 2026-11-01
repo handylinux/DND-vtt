@@ -6,6 +6,7 @@ import path from "node:path";
 import { after, before, describe, test } from "node:test";
 import { chromium, type Browser, type BrowserContext, type CDPSession, type Locator, type Page, type Route, type WebSocketRoute } from "playwright-core";
 import { barControl, ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, reopenRoom, Shots, sideTabName, sleep, SocketWatch, startServer, tapCell, Touches, waitFor, type Server, type TouchAt } from "./harness.ts";
+import { containmentLines } from "./helpers/alignment.ts";
 
 /**
  * Rolling from a stat block's ability boxes (docs/design-v1-stat-block-rolls.md
@@ -351,6 +352,36 @@ async function patSheet(): Promise<Locator> {
   if ((await fold.count()) > 0 && (await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
   await sheet.locator("[data-ability-grid]").first().waitFor();
   return sheet;
+}
+
+/** Pat's page at a size and interface scale, opened again so the scale takes. */
+async function patAt(size: { width: number; height: number }, scale: string): Promise<void> {
+  await closeSheets(pat);
+  await pat.setViewportSize(size);
+  await pat.evaluate((s) => localStorage.setItem("rvtt.uiScale", s), scale);
+  await reopenRoom(pat);
+  await pat.getByRole("status", { name: "Connected" }).first().waitFor();
+}
+
+/** A hold on an ability's row and a tap on one of its options, which must send one roll. */
+async function rollPicked(scope: Locator, ability: string, row: RegExp, option: string): Promise<Op> {
+  await boxOf(scope, ability).tap();
+  await hold(patCdp, listOf(pat, ability).getByRole("menuitem", { name: row }).first());
+  const from = patSent.ops.length;
+  await optionsOf(pat, new RegExp(`^Roll options for ${row.source.replace(/^\^/, "")}`)).getByRole("menuitem", { name: option }).tap();
+  return oneRoll(patSent, from, `${ability}: ${row.source}, ${option}`);
+}
+
+/** A grid near the top of its scroller, so a shot holds it and the result line under it. Only up and down: a sideways scroll would hide a block wider than its sheet. */
+async function showUnder(grid: Locator): Promise<void> {
+  await grid.evaluate((node) => {
+    type S = { parentElement: S | null; scrollTop: number; scrollHeight: number; clientHeight: number; getBoundingClientRect(): { top: number } };
+    const el = node as unknown as S & { ownerDocument: { defaultView: { getComputedStyle(e: S): { overflowY: string } } } };
+    let box = el.parentElement;
+    while (box && !(/(auto|scroll)/.test(el.ownerDocument.defaultView.getComputedStyle(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
+    if (box) box.scrollTop += el.getBoundingClientRect().top - box.getBoundingClientRect().top - 24;
+  });
+  await sleep(400);
 }
 
 async function closeSheets(page: Page): Promise<void> {
@@ -1606,6 +1637,46 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await sleep(600);
     assert.deepEqual(await spoken(), [], "shown again, the line announces nothing and raises no alert");
     assert.equal(await toastsNow(), toasts, "and no toast told it");
+  });
+
+  test("fl20-1. at 320 x 568 at 130% a Sleight of Hand result keeps Thorn's grid, its line and the block inside the sheet, and so does a Polymorphed Ape's block (LP27-A-BLOCK-1)", async () => {
+    try {
+      await patAt({ width: 320, height: 568 }, "1.3");
+      const sheet = await patSheet();
+      const view = sheet.locator("[data-pc-stats]");
+      const before = (await gridOf(view).boundingBox())!;
+      // Picked with Advantage, so two chips make the line long whatever the dice show.
+      await rollPicked(view, "Dexterity", /^Sleight of Hand/, "Roll with Advantage");
+      const line = resultOf(view).first();
+      await line.getByText(/Sleight of Hand/).first().waitFor();
+      await showUnder(gridOf(view));
+      await shots.take(pat, "fl20-1-sleight-of-hand-320-130");
+      const after = (await gridOf(view).boundingBox())!;
+      assert.ok(Math.abs(after.width - before.width) <= 0.5, `the grid keeps its width: ${before.width} then ${after.width} px`);
+      const lines = [...(await containmentLines(view, "pc block")), ...(await containmentLines(gridOf(view), "pc grid")), ...(await containmentLines(line, "pc line"))];
+      assert.deepEqual(lines, [], "the block, its grid and its line stay inside the sheet");
+
+      // A shape's block is a StatBlockView, whose grid sits deeper in a grid of its own.
+      await ops.send({ t: "character.update", characterId: run.thornChar, patch: { actor: { srdId: "ape" } } });
+      const shaped = await patSheet();
+      await shaped.getByText(/^In the shape of Ape\./).waitFor();
+      // The section around the shape's note, its numbers and the creature's block.
+      const block = shaped.getByText(/^In the shape of Ape\./).locator("xpath=ancestor::*[.//*[@data-ability-grid]][1]");
+      const apeBefore = (await gridOf(shaped).boundingBox())!;
+      await rollPicked(shaped, "Dexterity", /^Sleight of Hand/, "Roll with Advantage");
+      const apeLine = resultOf(shaped).first();
+      await apeLine.getByText(/Sleight of Hand/).first().waitFor();
+      await showUnder(gridOf(shaped));
+      await shots.take(pat, "fl20-1-ape-sleight-of-hand-320-130");
+      const apeAfter = (await gridOf(shaped).boundingBox())!;
+      assert.ok(Math.abs(apeAfter.width - apeBefore.width) <= 0.5, `the Ape's grid keeps its width: ${apeBefore.width} then ${apeAfter.width} px`);
+      const apeLines = [...(await containmentLines(block, "ape block")), ...(await containmentLines(gridOf(shaped), "ape grid")), ...(await containmentLines(apeLine, "ape line"))];
+      assert.deepEqual(apeLines, [], "the Ape's block, its grid and its line stay inside the sheet");
+    } finally {
+      await ops.send({ t: "character.update", characterId: run.thornChar, patch: { actor: { srdId: null } } });
+      await closeSheets(pat);
+      await patAt(PHONE, "1");
+    }
   });
 
   test("sbr-19. no page logged an error", async () => {
