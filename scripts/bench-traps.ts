@@ -23,6 +23,15 @@
  * - An `encounter.next` springing all 50 traps twice, at the turn that
  *   ends and, after the `nextTurn` reset, at the turn that starts, with
  *   500 tokens in the room, at 15 ms.
+ * - The four stopping moveMany rows again on a scene whose walls stop moves,
+ *   its fog on and its west half revealed, so each spot past the middle
+ *   asks the ground every player sees before its stand (route.ts
+ *   PublicGround), each at 25 ms.
+ * - 100 Gargantuan walkers on a hex scene of 1,500 short walls, each a
+ *   straight leg of 40 hexes from the revealed west half into the fog, one
+ *   trap across their way stopping them all, with party vision off and on,
+ *   at 25 ms. And the vision room's plan on a copy of the room no rule has
+ *   read yet, every cache cold, at 150 ms.
  *
  * The moves time the trap step's plan of the move (`planTrapMove`):
  * the walks, both passes and every springing's frozen hits. The turn
@@ -40,11 +49,14 @@
  *
  * It exits 1 when a gate fails.
  */
+import { lift, liftSubs, wall } from "../shared/discoveryTestutil.ts";
 import type { RoomState, Token, Trap } from "../shared/model.ts";
 import type { Op } from "../shared/protocol.ts";
 import { applyOp } from "../shared/reducer.ts";
+import { hexCenter, hexSubcells, sceneHexes } from "../shared/rules/hex.ts";
+import { onHex, ROWS } from "../shared/rules/hexWalls.testkit.ts";
 import { planTrapMove, type TrapRoom } from "../shared/rules/traps.ts";
-import { actor, room, token } from "../shared/testutil.ts";
+import { actor, member, rng, room, scene, token, trap } from "../shared/testutil.ts";
 
 type Ms = { median: number; max: number };
 
@@ -193,6 +205,58 @@ function turnRoom(): { state: RoomState; op: Op } {
   return { state, op: { t: "encounter.next" } };
 }
 
+/** A room's scene with its walls stopping moves and its fog on, only the west half revealed. */
+function fogged({ state, op }: { state: RoomState; op: Op }): { state: RoomState; op: Op } {
+  const scene = state.scenes.s1!;
+  state.scenes.s1 = { ...scene, fogEnabled: true, blockMovement: true };
+  lift(state, "dm", { x: 0, y: 0, w: Math.floor(scene.bounds.w / 2), h: scene.bounds.h });
+  return { state, op };
+}
+
+/**
+ * 100 Gargantuan walkers on a hex scene of 120 by 110 cells with 1,500
+ * short walls, each walking 40 hexes east from the revealed west half into
+ * the fog, and one trap across their way stopping them all. With `vision`
+ * the scene has party vision in bright light and four PCs to see by.
+ */
+function hexRoom(vision: boolean): { state: RoomState; op: Op } {
+  const state = room({ members: { dm1: member("dm1", "dm"), p1: member("p1") }, scenes: { s1: scene("s1", { gridShape: "hexRows", bounds: { w: 120, h: 110 }, autoWalls: "off", fogEnabled: true, ...(vision ? { vision: { on: true, light: "bright" } } : {}) }) } });
+  state.meta = { ...state.meta, playerSceneId: "s1" };
+  state.buildChunks = {};
+  const r = rng(3);
+  const q = (v: number) => Math.round(v * 64) / 64;
+  for (let i = 0; i < 1500; i++) {
+    const x = 1 + r() * 118;
+    const y = 1 + r() * 108;
+    wall(state, `hb${String(i).padStart(10, "0")}`, [q(x), q(y)], [q(x + (r() - 0.5) * 2), q(y + (r() - 0.5) * 2)]);
+  }
+  const west: [number, number][] = [];
+  for (const h of sceneHexes(ROWS, state.scenes.s1!.bounds)) if (hexCenter(ROWS, h).x < 60) west.push(...hexSubcells(ROWS, h));
+  liftSubs(state, "dm", west);
+  if (vision) for (let i = 0; i < 4; i++) state.tokens[`pc${i}`] = onHex(ROWS, `pc${i}`, "medium", { col: 10 + i * 10, row: 2 }, { name: "Pc", kind: "pc", disposition: "ally", ownerIds: ["p1"] });
+  const moves: { tokenId: string; x: number; y: number }[] = [];
+  for (let i = 0; i < 100; i++) {
+    state.tokens[`g${i}`] = onHex(ROWS, `g${i}`, "gargantuan", { col: 30, row: 4 + i }, { name: "G", kind: "npc" });
+    const to = onHex(ROWS, "x", "gargantuan", { col: 70, row: 4 + i });
+    moves.push({ tokenId: `g${i}`, x: to.x, y: to.y });
+  }
+  const cells = [0, 20, 40, 60, 80, 100].map((y) => ({ x: 52, y, w: 1, h: y === 100 ? 10 : 20 }));
+  state.traps = { t: trap("t", { grid: "hexRows", zone: { cells }, rig: { on: ["enter"], who: "any", floor: false, resets: "never", stops: true, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } }) };
+  return { state, op: { t: "token.moveMany", moves } };
+}
+
+/** Like `time`, on a copy of the room no rule has read, so nothing kept by the objects it holds carries over. */
+function timeCold(runs: number, state: RoomState, body: (state: RoomState) => unknown): Ms {
+  const times: number[] = [];
+  for (let r = 0; r < runs + 3; r++) {
+    const s = structuredClone(state);
+    const t = performance.now();
+    body(s);
+    if (r >= 3) times.push(performance.now() - t);
+  }
+  return stats(times);
+}
+
 type Row = { row: string; ms: Ms; gate?: number };
 
 export function runTrapRows(runs = 15): Row[] {
@@ -236,6 +300,24 @@ export function runTrapRows(runs = 15): Row[] {
     rows.push({ row: `${name}, whole op`, ms: time(runs, room.state, apply(room.op)) });
   }
   rows.push({ row: "encounter.next, 50 traps going off twice, whole op", ms: time(runs, turn.state, apply(turn.op)), gate: 15 });
+  for (const [name, room] of [
+    ["500-walker token.moveMany, one trap stopping all 100 walkers", fogged(goingRoom(0, true))],
+    ["500-walker token.moveMany, 48 traps going off and one stopping all 100 walkers", fogged(goingRoom(48, true))],
+    ["500-walker token.moveMany on the ground, one floor trap stopping all 100 walkers", fogged(goingRoom(0, true, "ground"))],
+    ["500-walker token.moveMany on the ground under 48 floor traps and one stopping all 100 walkers", fogged(goingRoom(48, true, "ground"))],
+  ] as const) {
+    const plan0 = planTrapMove(room.op, fresh(room.state) as TrapRoom, DM, {});
+    const stops = plan0.op === room.op ? "" : ", the walks cut";
+    rows.push({ row: `${name}, fog on and the west half revealed, plan (${plan0.springings.length} springings${stops})`, ms: time(runs, room.state, plan(room.op)), gate: 25 });
+  }
+  for (const vision of [false, true]) {
+    const room = hexRoom(vision);
+    const plan0 = planTrapMove(room.op, fresh(room.state) as TrapRoom, DM, {});
+    const stops = plan0.op === room.op ? "" : ", the walks cut";
+    const name = `100 Gargantuan walkers on hexes, one trap stopping them all, fog on${vision ? " with party vision" : ""} and the west half revealed`;
+    rows.push({ row: `${name}, plan (${plan0.springings.length} springings${stops})`, ms: time(runs, room.state, plan(room.op)), gate: 25 });
+    if (vision) rows.push({ row: `${name}, plan on a room no rule has read`, ms: timeCold(runs, room.state, plan(room.op)), gate: 150 });
+  }
   return rows;
 }
 
