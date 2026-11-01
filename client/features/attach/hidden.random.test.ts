@@ -13,10 +13,9 @@ import type { Change, ClientOp, EphEvent, Op, ServerMessage } from "#shared/prot
 import { applyOp } from "#shared/reducer.ts";
 import type { HistoryScope } from "#shared/undoContract.ts";
 import { undoScope } from "#shared/undoScope.ts";
-import { carriedGroup, getOffSpot, holderOf, seatSpot, walkerFor, withinReach } from "#shared/rules/attach.ts";
-import { isSqueezed } from "#shared/rules/footprint.ts";
-import { LEDGE_IN_THE_WAY, WALL_IN_THE_WAY, walkEnd, walkStates, type Walker } from "#shared/rules/movement.ts";
-import { encodeHeights, footing, footprintGround } from "#shared/rules/heights.ts";
+import { carriedGroup, getOffSpot, holderOf, seatSpot, withinReach } from "#shared/rules/attach.ts";
+import { LEDGE_IN_THE_WAY, WALL_IN_THE_WAY } from "#shared/rules/movement.ts";
+import { encodeHeights, footprintGround } from "#shared/rules/heights.ts";
 import { stopsForOwners, turnUnderWay } from "#shared/rules/path.ts";
 import { DM, P1, P2, actor, chance, deepClone, effect, env, int, pick, reveal, rng, room, token } from "#shared/testutil.ts";
 import { dragOf, groupDragOf, type Drag, type GroupDrag } from "../movement/dragTesting.ts";
@@ -1231,9 +1230,9 @@ describe("no hidden link or hidden token changes anything a player receives (8.0
  * without any, goes through the server's routing, and P1 must get none
  * that the move, once made, leaves out of P1's copy.
  */
-type PreviewSeen = { frames: number; shown: number; withheld: number; reentries: number; squeezed: number; squeezedStarts: number; closure: number };
+type PreviewSeen = { frames: number; shown: number; withheld: number; reentries: number; squeezed: number; squeezedStarts: number };
 
-const PREVIEW_ZERO: PreviewSeen = { frames: 0, shown: 0, withheld: 0, reentries: 0, squeezed: 0, squeezedStarts: 0, closure: 0 };
+const PREVIEW_ZERO: PreviewSeen = { frames: 0, shown: 0, withheld: 0, reentries: 0, squeezed: 0, squeezedStarts: 0 };
 
 function previewWorld(r: () => number): { state: RoomState; cart: { x: number; y: number }; astra: boolean } {
   const cart = { x: int(r, 5, 9), y: int(r, 4, 7) };
@@ -1303,10 +1302,7 @@ function reentry(r: () => number, cart: { x: number; y: number }, from: Token, w
 /**
  * One move and the frames its sender would send for it, with the move's
  * corners and without any, routed by the server: P1 must get none that the
- * move, once made, leaves out of P1's copy. And the walker the server reads
- * where the move's last leg starts must be one of the walkers it judges a
- * frame without corners by (movement.ts walkStates), so a frame that sends
- * no route is judged at least as the move is.
+ * move, once made, leaves out of P1's copy.
  */
 function judgeMove(state: RoomState, op: Op & { t: "token.move" }, who: Viewer, where: string, seen: PreviewSeen, at: ReturnType<typeof env>): RoomState {
   const id = op.tokenId;
@@ -1314,13 +1310,6 @@ function judgeMove(state: RoomState, op: Op & { t: "token.move" }, who: Viewer, 
   if (op.squeeze) seen.squeezed++;
   if (token.squeeze) seen.squeezedStarts++;
   const corners = (op.route ?? []).slice(0, -1).map(([x, y]) => ({ x, y }));
-  const sees = (t: { id: string }) => state.tokens[t.id] !== undefined && inSightOfNonOwners(state, state.tokens[t.id]!, {});
-  const walker = walkerFor(state, token, sees);
-  const key = (w: Walker) => `${isSqueezed(w)},${w.offHolder !== undefined},${footing(state.buildChunks, w)}`;
-  const reached = key(walkEnd(state, walker, op, corners).walker);
-  const states = walkStates(state.buildChunks, walker).map(key);
-  assert.ok(states.includes(reached), `${where}: ${JSON.stringify(op)} reaches ${reached}, which a frame without corners never judges (${states.join(" ")})`);
-  seen.closure++;
   const frames: EphEvent[] = [
     { k: "dragMove", tokenId: id, x: op.x, y: op.y, path: corners.flatMap((c) => [c.x, c.y]) },
     { k: "dragMove", tokenId: id, x: op.x, y: op.y },

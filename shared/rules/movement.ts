@@ -38,8 +38,7 @@ import { footprintHexes, hexCenter, hexInScene, hexKey, hexLine, hexNeighbors, r
 /**
  * The token fields the movement rule reads. `footing` and `offHolder` are
  * set only on a copy made for a walk off a holder on the ground
- * (rules/attach.ts walkerFor), or `footing` for a judgment of a walk whose
- * route is not known (`walkStates`), never on a stored token. A walk off a
+ * (rules/attach.ts walkerFor), never on a stored token. A walk off a
  * holder is on the ground (`footing`), whatever its height, and every
  * ledge stops it, but for one exemption (docs/design/design-v1-attach.md 4.3, reviews AT-O-26,
  * AT-ASTRA-16 and AT-ASTRA-17). Until it first stands clear of the holder,
@@ -684,28 +683,6 @@ export function groundUnder(chunks: Chunks, walker: MovingToken, at: Point): num
   return footprintGround(chunks, { ...walker, x: at.x, y: at.y });
 }
 
-/** The walker standing with `footing` where a leg of its walk starts (walkStates). */
-function withFooting<T extends Walker>(token: T, footing: Standing): T {
-  return { ...token, footing };
-}
-
-const STANDINGS: readonly Standing[] = ["ground", "flying", "inside"];
-
-/**
- * Every walker a walk from `token` can have where its last leg starts, for
- * a judgment of its end whose route is not known, as a drag preview's
- * frame without corners (server/rooms/ephemeral.ts): where it starts, for a
- * straight leg, and past any stop as `walkOn` leaves it, on its holder or
- * past it, and for a walk that keeps its height at any footing, since the
- * ground under a later stop may be any.
- */
-export function walkStates(chunks: Chunks, token: Walker): Walker[] {
-  const start = walkFrom(chunks, token);
-  const on = walkOn(chunks, start, start);
-  const past = on.offHolder ? [on, pastHolder(on)] : [on];
-  return [start, ...(start.grounded ? past : past.flatMap((w) => STANDINGS.map((f) => withFooting(w, f))))];
-}
-
 /** The token as a walk that has cleared the holder it walks off reads it: on the ground, off no holder. */
 export function pastHolder<T extends Walker>(token: T): T {
   if (!token.offHolder) return token;
@@ -1176,13 +1153,15 @@ export function squeezeFits(state: BuildState, end: WalkEnd): boolean {
 }
 
 /**
- * The server's looser rule for a drag preview at an unsnapped point
- * (section 4.1, "Drag previews"): checks 1, 3 and 4 without cell alignment,
+ * The looser rule for a squeeze at an unsnapped point, first written for a
+ * drag preview (section 4.1, "Drag previews"). A drop's search on squares
+ * (client movement/drop.ts), the ruler's squeezed and full pieces (client
+ * measure/movement.ts) and an op stored before op version 36 (route.ts
+ * walkSqueezes) read it. It is checks 1, 3 and 4 without cell alignment,
  * the narrow space judged around the squeezed footprint centered there.
- * When it holds, the frame is judged by the squeezed footprint centered on
- * the preview point (`footprintRect({ ...token, x, y, squeeze: true })`),
- * else by the full one. The walker is the walk's at the preview point
- * (`WalkEnd`).
+ * When it holds, the point takes the squeezed footprint centered on it
+ * (`footprintRect({ ...token, x, y, squeeze: true })`), else the full one.
+ * The walker is the walk's at the point (`WalkEnd`).
  */
 export function previewSqueezed(state: BuildState, end: WalkEnd): boolean {
   const hex = hexWallsOf(state, end.walker);
