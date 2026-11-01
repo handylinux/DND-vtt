@@ -19,6 +19,7 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const { RoomProvider } = await import("../../state/view.ts");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
 const { BlockResult, modeWords } = await import("./BlockResult.tsx");
+const { PanelHere } = await import("../panels.ts");
 
 const die = (extra: Partial<DiceRoll> = {}): DiceRoll => ({ formula: "1d20+5", faces: [10], total: 15, label: "Dexterity save", ...extra });
 
@@ -34,7 +35,7 @@ function scopeWith(lines: LogEntry[]) {
   return { scope, tracker };
 }
 
-function render(scope: InstanceType<typeof RoomScope>, outcome: Parameters<typeof BlockResult>[0]["outcome"], viewer: Viewer = DM): string {
+function render(scope: InstanceType<typeof RoomScope>, outcome: Parameters<typeof BlockResult>[0]["outcome"], viewer: Viewer = DM, shown = true): string {
   const view = projectState(room(), viewer, { sceneId: "s1" }) as unknown as RoomState;
   const store = createStore(() => ({ view, roomId: "r1", connection: "open", you: viewer, sceneId: "s1", local: { selectedIds: [], multi: false } }));
   return renderToStaticMarkup(
@@ -43,7 +44,7 @@ function render(scope: InstanceType<typeof RoomScope>, outcome: Parameters<typeo
       actions: { dispatch: () => 1 } as never,
       ui: {} as never,
       assets: { url: () => "" } as never,
-      children: createElement(RoomScopeProvider, { scope, children: createElement(BlockResult, { outcome }) as never }),
+      children: createElement(RoomScopeProvider, { scope, children: createElement(PanelHere, { id: "token", shown, children: createElement(BlockResult, { outcome }) }) as never }),
     }),
   );
 }
@@ -186,5 +187,16 @@ describe("one announcer per roll (D-261031-133)", () => {
     const html = render(scope, sent("D"));
     assert.match(html, />15</, "the result still shows");
     assert.doesNotMatch(html, /aria-live="polite"[^>]*>Rolled/, "and its live region says nothing");
+  });
+});
+
+describe("a hidden sheet or pane (SBR-SOL-002)", () => {
+  test("it shows no result, watches no receipt and says nothing, and shows it again when shown", () => {
+    const { scope, tracker } = scopeWith([line("H", die())]);
+    tracker.answer("H", 0, "taken");
+    const hidden = render(scope, sent("H"), DM, false);
+    assert.doesNotMatch(hidden, />15</);
+    assert.match(hidden, /aria-live="polite"[^>]*><\/span>/);
+    assert.match(render(scope, sent("H"), DM, true), />15</);
   });
 });

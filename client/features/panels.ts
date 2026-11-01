@@ -237,6 +237,18 @@ const PanelHeaderContext = createContext<PublishHeader | null>(null);
 
 const PanelHereContext = createContext<string | null>(null);
 
+const PanelShownContext = createContext(true);
+
+/**
+ * Whether the panel the calling code is drawn in is on screen. A hidden
+ * sheet or pane keeps its panel mounted, so whatever watches a roll for the
+ * sake of saying it (a stat block's result line) stops while this is false
+ * and leaves the roll to the surface that is shown. True outside the panels.
+ */
+export function usePanelShown(): boolean {
+  return useContext(PanelShownContext);
+}
+
 /**
  * The id of the panel the calling code is drawn in, or null outside the
  * panels, such as on the map or in the token window. A link inside a
@@ -250,8 +262,8 @@ export function usePanelHere(): string | null {
 }
 
 /** Names the panel inside it for usePanelHere. PanelBody wraps each panel in one. */
-export function PanelHere(props: { id: string; children?: ReactNode }): ReactElement {
-  return createElement(PanelHereContext.Provider, { value: props.id }, props.children);
+export function PanelHere(props: { id: string; shown?: boolean; children?: ReactNode }): ReactElement {
+  return createElement(PanelHereContext.Provider, { value: props.id }, createElement(PanelShownContext.Provider, { value: props.shown ?? true }, props.children));
 }
 
 /**

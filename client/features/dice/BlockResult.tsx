@@ -7,6 +7,7 @@ import { theme } from "../../lib/theme.ts";
 import { effectiveRollMode, type RollModeOverride } from "./rollMode.ts";
 import { ResultRest, ResultTotal, shownVerdict, useCommittedRoll } from "./Roller.tsx";
 import type { BlockSent } from "./useAbilityMenu.tsx";
+import { usePanelShown } from "../panels.ts";
 import { useReceipt, useReceiptVoice } from "./useReceipt.ts";
 import { useInitiativeChanged } from "./useRollOption.ts";
 
@@ -58,7 +59,10 @@ const LINE: CSSProperties = {
  */
 export function BlockResult(props: { outcome: BlockOutcome }) {
   const { outcome } = props;
-  const tag = outcome.kind === "sent" ? outcome.sent.tag : null;
+  const sentTag = outcome.kind === "sent" ? outcome.sent.tag : null;
+  // A hidden sheet or pane keeps this mounted. It then neither watches the roll nor holds its voice, so the toast or a shown Dice panel can say it.
+  const shown = usePanelShown();
+  const tag = shown ? sentTag : null;
   const receipt = useReceipt(tag);
   const speaks = useReceiptVoice(tag, true);
   const { first, head, data, level, said } = useCommittedRoll(receipt);

@@ -27,7 +27,7 @@ export function PanelBody(props: { id: string; shown: boolean; selectedTokenId: 
     // Keyed by panel, so a panel that failed does not keep its notice when another one opens.
     <LoadBoundary key={props.id} fallback={(f) => <RoomLoadNotice {...f} subject="This panel" reopen={{ panel: props.id }} />}>
       <Suspense fallback={<Loading text="Loading…" />}>
-        <PanelHere id={props.id}>
+        <PanelHere id={props.id} shown={props.shown}>
           <Component selectedTokenId={props.selectedTokenId} close={props.close} shown={props.shown} />
           {dm && def.guide ? <PanelGuideLink section={def.guide} panel={def.title} /> : null}
         </PanelHere>
