@@ -648,7 +648,8 @@ The update that lets a square trip wire with older, finer end points be
 renamed or edited again changes no version, so an older build still reads
 every room it saves. One caution applies to going back. Stop the server
 cleanly first, with `docker compose -f docker-compose.server.yml stop raccoon`
-or an ordinary update, because that saves a snapshot of every room. An older
+(`docker compose stop raccoon` for the published image) or an ordinary update,
+because that saves a snapshot of every room. An older
 build refuses a rename or an edit of such a trap that sits in the changes
 saved since a room's last snapshot, and a room that meets one opens read-only.
 A server that crashed or was killed before it saved can leave such changes. In
