@@ -6870,6 +6870,32 @@ export function toastsOverSheetTests(): void {
       await dismissToasts(page);
       const beside = size.name === "844x390";
       const veryShort = size.name === "480x320";
+      // A toast drawn below an alert card when the sheet opens takes its place again above the sheet (LOOK1-SOL-002).
+      if (!beside && !veryShort) {
+        await settleTraps();
+        await resetThorn();
+        await waitFor("the settled trap cards to leave", async () => ((await page.getByRole("group", { name: /went off$/ }).count()) === 0 ? true : null));
+        // Four cards in the column, so the toast stands low, where the sheet's top will be.
+        await spring(run.traps.door);
+        await spring(run.traps.pit);
+        await spring(run.traps.pit);
+        await spring(run.traps.needle);
+        await patCrosses();
+        const underCard = toasts(page, /went off/);
+        if (!(await showsWithin(underCard.first(), 3_000))) lines.push(`${sweep.at}: no toast for the trip wire`);
+        else if ((await toastsUnderCards(page)) === 0) lines.push(`${sweep.at}: the toast stood under no alert card, so it does not test the sheet opening over it`);
+        else {
+          const over = await openDice(page);
+          await page.waitForTimeout(400);
+          const overBox = await over.boundingBox();
+          for (const box of await boxesOfAll(page.locator("[data-toast]"))) if (overBox && boxesMeet(box, overBox)) lines.push(`${sweep.at}: a toast drawn under an alert card meets the sheet it opened under: ${JSON.stringify(box)} against ${JSON.stringify(overBox)}`);
+          await shots.take(page, `lk1-toasts-${sweep.at}-under-card`);
+        }
+        await dismissToasts(page);
+        await closeSheets(page);
+        await settleTraps();
+        await resetThorn();
+      }
       // Beside a sideways sheet the token bar docks by the alerts column: their boxes must not move as toasts come.
       if (beside) await selectToken(page, "Thorn", { x: 5, y: 5 });
       const sheet = await openDice(page);
@@ -6921,6 +6947,19 @@ export function toastsOverSheetTests(): void {
         await page.keyboard.press("Escape");
         await page.waitForTimeout(200);
         await gone("Escape");
+        // Toasts that come while one is held whole wait undrawn, so they were never seen: the sheet closing does not take them, and they show over the map (LOOK1-OPUS-01).
+        await dismissToasts(page);
+        await patOps.send({ t: "log.whisper", to: [dmId], text: "Over the map zero." });
+        await row.first().waitFor({ timeout: 3_000 });
+        await row.first().locator("button").first().click();
+        await whole.first().waitFor({ timeout: 3_000 });
+        for (const text of ["Over the map one.", "Over the map two."]) await patOps.send({ t: "log.whisper", to: [dmId], text });
+        await page.waitForTimeout(400);
+        if ((await shown.count()) !== 1) lines.push(`${sweep.at}: ${await shown.count()} toasts drawn while one is held whole, not just it`);
+        await closeSheets(page);
+        const waited = toasts(page, /Over the map two\./);
+        if (!(await showsWithin(waited.first(), 3_000))) lines.push(`${sweep.at}: the toasts that waited behind the whole one were dropped unseen as the sheet closed`);
+        await shots.take(page, `lk1-toasts-${sweep.at}-closed`);
       }
       await dismissToasts(page);
       await closeSheets(page);
