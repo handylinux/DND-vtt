@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import { assertMembership, checkPair } from "./differential.ts";
 import { liftSubs, remember, wall } from "./discoveryTestutil.ts";
 import { keys, tileKey, wallChunk } from "./keys.ts";
 import type { FreeWall, GridShape, InitEntry, LogEntry, RoomState, Token, Viewer } from "./model.ts";
@@ -355,6 +356,22 @@ describe("each player's copy and frames, clipped by the walls the viewer holds",
       assert.ok(apart > 0, `the build's walls mark ${apart} pairs otherwise, so the pairs test something`);
     });
   }
+
+  test("the DM's drag and a player's search the same in both rooms, each device counting seen by all as the server does", () => {
+    for (const [, g] of SHAPES) {
+      const { s: a } = middleWallRoom(g, { holders: ["p1"] });
+      const b = structuredClone(a);
+      // A second wall in the dark beside the first, which the DM's copy holds and no player's does.
+      const c = storedCenter(a.tokens.ogre!);
+      wall(b, "midwall00002", [q(c.x - 0.25), q(c.y + 0.125)], [q(c.x + 0.25), q(c.y + 0.125)]);
+      a.tokens.hero = onHex(g, "hero", "medium", { col: 3, row: 3 }, { name: "Hero", kind: "pc", disposition: "ally", ownerIds: ["p1"] });
+      b.tokens.hero = structuredClone(a.tokens.hero);
+      const to = onHex(g, "ogre", "huge", { col: 10, row: 7 });
+      checkPair({ name: `${g.orient}: a Huge creature beside a wall no player holds`, a, b, drags: [{ who: DM, tokenId: "ogre", to: { x: to.x, y: to.y } }] });
+      // A device that read the room's own tokens, which carry no mark, would count the creature otherwise, and the check says so.
+      assert.throws(() => assertMembership(a, a, DM, "s1", "the room as the DM's device"), /otherwise than the server/);
+    }
+  });
 });
 
 describe("ops stored before op version 37 judge a creature's outline by the build's walls", () => {

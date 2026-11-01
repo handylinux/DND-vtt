@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import type { PathStop, RoomState, Token, Viewer } from "./model.ts";
 import { canApply, mayMoveToken, touchLanding } from "./permissions.ts";
-import { projectState } from "./project.ts";
+import { inSightOfNonOwners, projectState } from "./project.ts";
 import type { Op } from "./protocol.ts";
 import { applyOp } from "./reducer.ts";
 import { moveGroups, walkerFor } from "./rules/attach.ts";
@@ -21,9 +21,12 @@ import { env } from "./testutil.ts";
  * Not a test file itself: node --test runs only `*.test.ts`.
  *
  * A drag is searched as the device that makes it searches: a player's on
- * their own copy of the room, the DM's on the whole room, both in the
- * public world. Its route's geometry, the op it sends, the answer, the drag
- * frame as each player receives it, and each player's copy of the room
+ * their own copy of the room, the DM's on the DM's, both in the public
+ * world. Before its route, each creature the device counts as seen by every
+ * player must be one the server counts so (`publicToken` against
+ * `inSightOfNonOwners`), since that decides which creatures a drag carries
+ * along. Its route's geometry, the op it sends, the answer, the drag frame
+ * as each player receives it, and each player's copy of the room
  * afterward, its log included, must be the same in both rooms for every
  * player whose copy was the same before.
  */
@@ -72,9 +75,19 @@ function actorTested(pair: Pick<Pair, "a" | "b" | "ownSightDiffers">, same: read
   return isDeepEqual(fog(pair.a), fog(pair.b));
 }
 
-/** The room as this viewer's device holds it. */
+/** The room as this viewer's device holds it: the DM's too is a projection, which carries marks the room's own tokens do not. */
 function deviceView(state: RoomState, who: Viewer, sceneId: string): RoomState {
-  return who.role === "dm" ? state : (projectState(state, who, { sceneId }) as unknown as RoomState);
+  return projectState(state, who, { sceneId }) as unknown as RoomState;
+}
+
+/** Each creature on the scene the device holds counts as seen by every player exactly where the server counts it so. */
+export function assertMembership(state: RoomState, view: RoomState, who: Viewer, sceneId: string, where: string): void {
+  for (const t of Object.values(view.tokens)) {
+    if (!t || t.sceneId !== sceneId) continue;
+    const real = state.tokens[t.id];
+    if (!real) continue;
+    assert.equal(publicToken(view, t, { role: who.role }), inSightOfNonOwners(state, real, {}), `${where}: ${who.memberId}'s device counts ${t.id} seen by every player otherwise than the server`);
+  }
 }
 
 /** The creature's stops this turn as a device holds them (client/features/measure/movement.ts pathNow). */
@@ -98,6 +111,7 @@ export function dragged(state: RoomState, drag: Drag): { route: unknown; op: Op;
   const view = deviceView(state, drag.who, token.sceneId);
   const mine = view.tokens[drag.tokenId];
   if (!mine) return null;
+  assertMembership(state, view, drag.who, token.sceneId, `drag of ${drag.tokenId}`);
   // The world a device's drag searches, with what the token carries, walked as it walks off a holder every player sees (client/features/movement/press.ts worldFor).
   const byAll = (t: { id: string }) => view.tokens[t.id] !== undefined && publicToken(view, view.tokens[t.id]!, { role: drag.who.role });
   const world = groupWalkWorld(view, walkerFor(view, mine, byAll), { role: drag.who.role }, stopsNow(view, mine, drag.who.role));
