@@ -1,7 +1,7 @@
 import type { AbilityKey } from "#shared/model.ts";
 import { ABILITY_NAMES } from "#shared/rules/skills.ts";
 import { Loading } from "../../components/Loading.tsx";
-import { Menu, type MenuItem, type MenuItemEvents } from "../../components/Menu.tsx";
+import { Menu, type MenuItem, type MenuItemEvents, type MenuPickBy } from "../../components/Menu.tsx";
 import { markedBy, proficiencyBox } from "../../components/ProficiencyMark.tsx";
 import { theme } from "../../lib/theme.ts";
 import { SrdLoadFailed } from "../monsters/SrdLoadFailed.tsx";
@@ -26,7 +26,7 @@ export type AbilityMenuProps = {
   busy: ReadonlySet<string>;
   /** Each row's press binding, by row id. */
   events(id: string): MenuItemEvents;
-  onPick(id: string): void;
+  onPick(id: string, by: MenuPickBy): void;
 };
 
 export function AbilityMenu(props: AbilityMenuProps) {

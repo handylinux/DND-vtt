@@ -1,6 +1,7 @@
 import { useContext, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import type { AbilityKey } from "#shared/model.ts";
+import type { MenuPickBy } from "../../components/Menu.tsx";
 import { focusInView, Popover, usePopover, type CloseReason, type OpenHow } from "../../components/Popover.tsx";
 import { useRoomStore, useRoomView } from "../../state/view.ts";
 import { PreviewContext } from "../dm/previewContext.ts";
@@ -13,6 +14,7 @@ import { presetFor } from "./presets.ts";
 import { RollModeMenuBody, rollModeBound } from "./RollModeMenu.tsx";
 import { hasRollModeMenu, rollModeItems, type RollModeOverride } from "./rollMode.ts";
 import { NEEDS_CONNECTION } from "./send.ts";
+import type { ThrowHost, ThrowOrigin } from "./throw/store.ts";
 import { useDiceView } from "./useDiceView.ts";
 import { useReceipts } from "./useReceipt.ts";
 import { IN_PREVIEW, useRollOption, useWatchInitiative } from "./useRollOption.ts";
@@ -21,20 +23,29 @@ import { markRollModeSource, raiseRollModeHosts, RollPressRegistry, useRollPress
 /**
  * A roll the block sent (docs/design/design-v1-stat-block-rolls.md 8): its tag,
  * the choice picked from its options, undefined for a tap, which the
- * result line reads only to decide whether mode words qualify, and the
+ * header line reads only to decide whether mode words qualify, and the
  * row's label. An answer's roll comes back with no label of its own, so the
  * line names it from the row (LP27-A-BLOCK-3), as the Dice panel's newest
  * line names an answer from its option.
  */
 export type BlockSent = { tag: string; override?: RollModeOverride; label: string };
 
+/** What a pick that sent a roll, or said why it did not, hands the panel's header host: the box, its top on screen then, and how it was picked. */
+export type BlockPick<Box = HTMLElement> = { box: Box | null; top: number; by: MenuPickBy };
+
 export type UseAbilityMenuOptions = {
   ability: AbilityKey;
   roller: BlockRoller;
-  /** After each tap or pick that sent a roll. */
-  onSent(sent: BlockSent): void;
-  /** After each tap or pick whose roll did not go, with why: "Rolling needs a connection.". */
-  onUnsent(words: string): void;
+  /** The panel's throw host: a roll's dice leave the box, in its tray (docs/design/design-v1-token-roll-header.md 4.1). None, and nothing throws. */
+  throwHost?: ThrowHost | null;
+  /** Before a tap or pick sends: the host holds its committed rolls until its line has settled (1.2, "The order in the commit"). */
+  onHold?(): void;
+  /** After each tap or pick that sent a roll, with the box, its top on screen before React draws, and how it was picked. */
+  onSent(sent: BlockSent, pick: BlockPick<HTMLElement>): void;
+  /** After each tap or pick whose roll did not go, with why, "Rolling needs a connection.", and the pick as for `onSent`. */
+  onUnsent(words: string, pick: BlockPick<HTMLElement>): void;
+  /** At the end of each tap or pick's handler, so one that drew nothing lets the held rolls go. */
+  onPicked?(): void;
 };
 
 /** Spread on the box's own button. It carries the box's popup state and description, not its name. */
@@ -83,9 +94,13 @@ export type AbilityMenuEnv = {
   busy(row: AbilityRow): boolean;
   dm(): boolean;
   /** Sends a row's roll: a tap's with no override, a pick's with one. */
-  roll(row: AbilityRow, override?: RollModeOverride): void;
-  /** Why a tap or a pick sent nothing, for the result line (D-261031-167). */
-  unsent(words: string): void;
+  roll(row: AbilityRow, override: RollModeOverride | undefined, by: MenuPickBy): void;
+  /** Why a tap or a pick sent nothing, for the header line (D-261031-167). */
+  unsent(words: string, by: MenuPickBy): void;
+  /** Before a tap or a pick may send. */
+  hold(): void;
+  /** After a tap or a pick held, whatever it did. */
+  picked(): void;
 };
 
 /**
@@ -176,35 +191,49 @@ export class AbilityMenuControl {
     if (by === "key") this.#env.focusInside("first");
   }
 
-  /** A row's tap, Menu's pick in the list. Menu closes the list after it, focus on the box. */
-  pickRow(id: string): void {
+  /**
+   * A row's tap, Menu's pick in the list. Menu closes the list after it,
+   * focus on the box. The host holds from before the send, so even a
+   * sender that answers inside it cannot throw before the line settles.
+   */
+  pickRow(id: string, by: MenuPickBy = "pointer"): void {
     if (this.view.kind !== "list") return;
     const row = this.#env.rows().find((r) => r.id === id);
-    if (this.#ready(row)) this.#env.roll(row);
-    else this.#unsent(row);
+    this.#env.hold();
+    try {
+      if (this.#ready(row)) this.#env.roll(row, undefined, by);
+      else this.#unsent(row, by);
+    } finally {
+      this.#env.picked();
+    }
   }
 
   /** A choice in a row's options: checked against the roll as it stands, then closed, then sent (FL-17's onPick). */
-  pickChoice(override: RollModeOverride): void {
+  pickChoice(override: RollModeOverride, by: MenuPickBy = "pointer"): void {
     const view = this.view;
     if (view.kind !== "options") return;
     const row = this.#env.rows().find((r) => r.id === view.row);
     if (row === undefined || row.source !== view.source || !row.capability) return;
     if (!rollModeItems(row.capability, this.#env.dm()).some((item) => item.id === override && !item.disabled)) return;
-    if (!this.#ready(row)) return this.#unsent(row);
-    this.#env.close("pick");
-    this.#env.roll(row, override);
+    this.#env.hold();
+    try {
+      if (!this.#ready(row)) return this.#unsent(row, by);
+      this.#env.close("pick");
+      this.#env.roll(row, override, by);
+    } finally {
+      this.#env.picked();
+    }
   }
 
   /**
    * A row its render still offered, though it may not roll now: the
-   * connection dropped before the render that disables it. The result line
+   * connection dropped before the render that disables it. The header line
    * says why, as section 8 has it. A busy row says nothing, since its roll
    * is on its way.
    */
-  #unsent(row: AbilityRow | undefined): void {
+  #unsent(row: AbilityRow | undefined, by: MenuPickBy): void {
     const why = this.#env.blocked();
-    if (row !== undefined && why !== null) this.#env.unsent(why);
+    if (row !== undefined && why !== null) this.#env.unsent(why, by);
   }
 
   /** Escape or Back in a roll's options goes back to the list on its row. In the list, they close it (5.3). */
@@ -278,9 +307,16 @@ export function useAbilityMenu(options: UseAbilityMenuOptions): AbilityMenuBindi
   const option = useRollOption();
   const watch = useWatchInitiative();
   const dm = useRoomView((s) => s.you?.role === "dm");
+  // The box and its top on screen as the pick runs, before React draws its outcome: the host's anchor (1.2 step 1).
+  const pickOf = (by: MenuPickBy): BlockPick<HTMLElement> => {
+    const box = current.current.anchor.current;
+    return { box, top: box?.getBoundingClientRect().top ?? 0, by };
+  };
+  // The dice leave the box, since the row the finger left is gone once the list closes (D-261101-085).
+  const originOf = (): ThrowOrigin | undefined => latest.current.throwHost?.origin(current.current.anchor.current);
   // What the control reads as it acts: this render's, since it was made once, on the first.
-  const send = (row: AbilityRow, override?: RollModeOverride) =>
-    sendAbilityRow({ option, watch, dice: loaded.dice, dm, roller: latest.current.roller, ask, onSent: (sent) => latest.current.onSent(sent), onUnsent: (words) => latest.current.onUnsent(words) }, row, override);
+  const send = (row: AbilityRow, override: RollModeOverride | undefined, by: MenuPickBy) =>
+    sendAbilityRow({ option, watch, dice: loaded.dice, dm, roller: latest.current.roller, ask, origin: originOf, onSent: (sent) => latest.current.onSent(sent, pickOf(by)), onUnsent: (words) => latest.current.onUnsent(words, pickOf(by)) }, row, override);
   const live = useRef({ dice: loaded.dice, blocked, busy, rowsFor, dm, send });
   live.current = { dice: loaded.dice, blocked, busy, rowsFor, dm, send };
 
@@ -316,8 +352,10 @@ export function useAbilityMenu(options: UseAbilityMenuOptions): AbilityMenuBindi
       blocked: () => (live.current.blocked !== null ? live.current.blocked : room.getState().connection === "open" ? null : NEEDS_CONNECTION),
       busy: (row) => live.current.busy.has(row.rowKey),
       dm: () => live.current.dm,
-      roll: (row, override) => live.current.send(row, override),
-      unsent: (words) => latest.current.onUnsent(words),
+      roll: (row, override, by) => live.current.send(row, override, by),
+      unsent: (words, by) => latest.current.onUnsent(words, pickOf(by)),
+      hold: () => latest.current.onHold?.(),
+      picked: () => latest.current.onPicked?.(),
     },
     presses,
   );
@@ -364,7 +402,7 @@ export function useAbilityMenu(options: UseAbilityMenuOptions): AbilityMenuBindi
         </span>
         <Popover handle={handle} side="above" flip bound={rollModeBound} stepBack={(reason) => ctl.stepBack(reason)} contentKey={abilityContent(loaded, view)}>
           {shown?.capability ? (
-            <RollModeMenuBody name={shown.title} title={shown.title} capability={shown.capability} dm={dm} onPick={(override) => ctl.pickChoice(override)} />
+            <RollModeMenuBody name={shown.title} title={shown.title} capability={shown.capability} dm={dm} onPick={(override, by) => ctl.pickChoice(override, by)} />
           ) : (
             <AbilityMenu
               ability={ability}
@@ -374,7 +412,7 @@ export function useAbilityMenu(options: UseAbilityMenuOptions): AbilityMenuBindi
               failed={loaded.failed}
               busy={busy}
               events={(id) => presses.handlers(rowPress(id), ctl.rowControl(id))}
-              onPick={(id) => ctl.pickRow(id)}
+              onPick={(id, by) => ctl.pickRow(id, by)}
             />
           )}
         </Popover>
@@ -396,17 +434,20 @@ export type SendDeps = {
   dm: boolean;
   roller: BlockRoller;
   ask: boolean;
+  /** Where the roll's dice leave from, read as it sends: the box in the panel's host. */
+  origin?(): ThrowOrigin | undefined;
   onSent(sent: BlockSent): void;
   onUnsent(words: string): void;
 };
 
 /**
  * A row's roll through the Dice panel's path (section 7), taking none of
- * its choices and throwing no dice: an answer, an ask or a free roll by its
- * route, Initiative written to its row once it lands, and the score set
- * with no roll. A roll that went is the grid's newest, one that did not
- * says why, and a tap that sends no roll, an ask or the score, leaves the
- * result line as it stood (D-261031-137).
+ * its choices: an answer, an ask or a free roll by its route, Initiative
+ * written to its row once it lands, and the score set with no roll. A roll
+ * throws its dice from the box in the panel's own tray
+ * (docs/design/design-v1-token-roll-header.md 4.1). A roll that went is the
+ * panel's newest, one that did not says why, and a tap that sends no roll,
+ * an ask or the score, leaves the header line as it stood (D-261031-137).
  */
 export function sendAbilityRow(deps: SendDeps, row: AbilityRow, override?: RollModeOverride): void {
   if (row.route === "score") {
@@ -418,6 +459,7 @@ export function sendAbilityRow(deps: SendDeps, row: AbilityRow, override?: RollM
   const rolls = creatureRolls(dice, roller.creature);
   const initiative = row.kind === "initiative";
   let failed: string | null = null;
+  const origin = deps.origin?.();
   const sent = deps.option.d20({
     ...(override ? { override } : {}),
     creature: roller.creature,
@@ -432,6 +474,7 @@ export function sendAbilityRow(deps: SendDeps, row: AbilityRow, override?: RollM
     ask: initiative ? false : deps.ask,
     ...(roller.tokenId ? { tokenId: roller.tokenId } : {}),
     choices: "none",
+    ...(origin ? { origin } : {}),
     onFail: (words) => {
       failed = words;
     },

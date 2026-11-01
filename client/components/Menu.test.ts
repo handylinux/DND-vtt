@@ -80,7 +80,7 @@ describe("a menu item with its own parts", () => {
     const item = items[0]!;
     (item.props.onPointerDown as () => void)();
     (item.props.onContextMenu as () => void)();
-    (item.props.onClick as () => void)();
+    (item.props.onClick as (e: unknown) => void)({ detail: 1 });
     assert.deepEqual(pressed, ["down", "context"], "the binding's own onClick never lands on the item");
     assert.deepEqual(picks, ["x"]);
     assert.deepEqual(closes, ["pick"]);
@@ -89,7 +89,7 @@ describe("a menu item with its own parts", () => {
   test("a disabled or busy item picks nothing", () => {
     const picks: string[] = [];
     const { items } = draw({ label: "Rolls", sections: [{ key: "s", items: [{ id: "x", title: "Check", kind: "action", disabled: true }, { id: "y", title: "Save", kind: "action", busy: true }] }], onPick: (id) => picks.push(id) });
-    for (const item of items) (item.props.onClick as () => void)();
+    for (const item of items) (item.props.onClick as (e: unknown) => void)({ detail: 1 });
     assert.deepEqual(picks, []);
   });
 
@@ -120,6 +120,36 @@ describe("a menu item with its own parts", () => {
       assert.deepEqual(picks, [], "a key the row marked used, as its ContextMenu, is left alone");
       (drawn.root.props.onKeyDown as (e: unknown) => void)(key({ key: "Enter" }));
       assert.deepEqual(picks, ["check"]);
+    } finally {
+      Object.assign(globalThis, previous);
+    }
+  });
+});
+
+describe("the pick's input kind (D-261101-098)", () => {
+  test("a click with detail 1 is a pointer's pick, and one with detail 0, a reader's activation, is a key's", () => {
+    const picks: string[] = [];
+    const { items } = draw({ label: "Rolls", sections: [{ key: "s", items: [{ id: "x", title: "Check", kind: "action" }] }], onPick: (id, by) => picks.push(`${id}:${by}`) });
+    (items[0]!.props.onClick as (e: unknown) => void)({ detail: 1 });
+    (items[0]!.props.onClick as (e: unknown) => void)({ detail: 0 });
+    (items[0]!.props.onClick as (e: unknown) => void)({ detail: 2 });
+    assert.deepEqual(picks, ["x:pointer", "x:key", "x:pointer"]);
+  });
+
+  test("Enter and Space pick as a key", () => {
+    const previous = { document: globalThis.document };
+    const doc = { activeElement: null as unknown };
+    Object.assign(globalThis, { document: doc });
+    try {
+      const picks: string[] = [];
+      const drawn = draw({ label: "Rolls", sections: [{ key: "s", items: [{ id: "check", title: "Check", kind: "action" }] }], onPick: (id, by) => picks.push(`${id}:${by}`) });
+      const node = { focus() {}, closest: () => null };
+      (drawn.items[0]!.props.ref as (n: unknown) => void)(node);
+      doc.activeElement = node;
+      const key = (k: string) => ({ key: k, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, defaultPrevented: false, timeStamp: 1, preventDefault() {} });
+      (drawn.root.props.onKeyDown as (e: unknown) => void)(key("Enter"));
+      (drawn.root.props.onKeyDown as (e: unknown) => void)(key(" "));
+      assert.deepEqual(picks, ["check:key", "check:key"]);
     } finally {
       Object.assign(globalThis, previous);
     }

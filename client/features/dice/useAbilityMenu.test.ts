@@ -215,7 +215,7 @@ describe("a row's tap and its options (4, 5)", () => {
     assert.deepEqual([answer.log.unsent, busy.log.unsent], [["Rolling needs a connection."], []], "only the blocked pick says why");
   });
 
-  test("a tap or a pick after the connection dropped, before the render that disables the rows, says why on the result line (section 8)", () => {
+  test("a tap or a pick after the connection dropped, before the render that disables the rows, says why on the header line (section 8)", () => {
     const h = harness([row("save", { capability: { d20: true, visibility: "selectable" } }), row("check", { kind: "check" })]);
     h.tap("box");
     h.state.blocked = "Rolling needs a connection.";
@@ -281,6 +281,75 @@ describe("a row's tap and its options (4, 5)", () => {
   });
 });
 
+describe("a pick's hold, input kind and throw (docs/design/design-v1-token-roll-header.md 1.2, 1.4, 4.1)", () => {
+  test("a tap on a row is a pointer's pick, and Enter on it or a reader's activation a key's, each held from before its send until after it", () => {
+    const h = harness();
+    h.tap("box");
+    h.tap("row:save");
+    // Enter on the box opens the list on its first row, and Enter there picks it.
+    h.key("Enter");
+    h.key("Enter");
+    h.tap("box");
+    h.click("row:save", 0);
+    assert.deepEqual(h.log.rolls, [["save", undefined], ["check", undefined], ["save", undefined]]);
+    assert.deepEqual(h.log.by, ["pointer", "key", "key"]);
+    assert.deepEqual(h.log.holds, ["hold", "picked", "hold", "picked", "hold", "picked"]);
+  });
+
+  test("a choice keeps its input kind, and a pick that says why it sent nothing still holds and ends", () => {
+    const h = harness([row("save", { capability: { d20: true, visibility: "selectable" } })]);
+    h.tap("box");
+    h.hold("row:save");
+    h.up(false);
+    h.click("choice:adv", 0);
+    assert.deepEqual([h.log.rolls, h.log.by], [[["save", "adv"]], ["key"]]);
+    h.tap("box");
+    h.state.blocked = "Rolling needs a connection.";
+    h.control.pickRow("save", "pointer");
+    assert.deepEqual([h.log.unsent, h.log.by.at(-1)], [["Rolling needs a connection."], "pointer"]);
+    assert.deepEqual(h.log.holds, ["hold", "picked", "hold", "picked"]);
+  });
+
+  test("a stale choice sends nothing and holds nothing", () => {
+    const h = harness([row("save", { capability: { d20: true, visibility: "request" } })]);
+    h.tap("box");
+    h.hold("row:save");
+    h.up();
+    h.control.pickChoice("secret");
+    assert.deepEqual([h.log.rolls, h.log.holds], [[], []]);
+  });
+
+  test("a roll's origin is read as it sends and handed to d20, and a block host's is the box with its host", async () => {
+    const { ThrowStore } = await import("./throw/store.ts");
+    const store = new ThrowStore();
+    const host = store.host({ surface: "block", kinds: () => ["d20"] });
+    host.mount();
+    const box = { id: "dex" } as unknown as Element;
+    const origin = host.origin(box);
+    assert.deepEqual({ ...origin, tapAt: 0 }, { surface: "block", host: host.id, element: box, tapAt: 0 });
+    const inputs: Record<string, unknown>[] = [];
+    let read = 0;
+    const d = {
+      option: { d20: (input: Record<string, unknown>) => (inputs.push(input), "tag1"), setInitiative: () => undefined } as never,
+      watch: () => undefined,
+      dice: { you: { memberId: "dm1", role: "dm" as const }, view: { tokens: {}, characters: {} }, srd: { monsters: null, rolls: null } } as never,
+      dm: true,
+      roller: { creature: { characterId: "thorn" }, tokenId: "t1", name: "Thorn", played: true },
+      ask: true,
+      origin: () => (read++, origin),
+      onSent: () => undefined,
+      onUnsent: () => undefined,
+    };
+    sendAbilityRow(d, row("save"));
+    assert.equal(inputs[0]?.origin, origin);
+    sendAbilityRow(d, row("score", { kind: "score", test: null, route: "score", bonus: 12, entryId: "e1", capability: null }));
+    assert.equal(read, 1, "the score sends no roll and reads no origin");
+    sendAbilityRow({ ...d, origin: () => undefined }, row("save"));
+    assert.equal("origin" in inputs[1]!, false, "no host: the roll throws nothing");
+    host.unmount();
+  });
+});
+
 describe("sending a row (section 7)", () => {
   const roller = { creature: { characterId: "thorn" }, tokenId: "t1", name: "Thorn", played: true };
   const dice = { you: { memberId: "dm1", role: "dm" as const }, view: { tokens: {}, characters: {} }, srd: { monsters: null, rolls: null } } as never;
@@ -306,7 +375,7 @@ describe("sending a row (section 7)", () => {
     return { d, seen };
   }
 
-  test("a roll goes with no panel choices and no dice tray, and its tag and pick reach the grid", () => {
+  test("a roll goes with no panel choices, and its tag and pick reach the grid", () => {
     const { d, seen } = deps("tag1");
     sendAbilityRow(d, row("save"), "adv");
     assert.equal(seen.inputs[0]?.choices, "none");

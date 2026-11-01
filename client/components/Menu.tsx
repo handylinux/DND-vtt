@@ -79,12 +79,20 @@ export type MenuSection = {
   items: readonly MenuItem[];
 };
 
+/** How an item was picked. */
+export type MenuPickBy = "pointer" | "key";
+
 export function Menu(props: {
   /** The menu's name: "More panels", "Setup tools", "Tools". */
   label: string;
   sections: readonly MenuSection[];
-  /** The pick. It runs before focus goes back to the anchor, so the anchor names what was picked by then. */
-  onPick(id: string): void;
+  /**
+   * The pick. It runs before focus goes back to the anchor, so the anchor
+   * names what was picked by then. `by` is "key" for Enter or Space, and for
+   * a click with `detail` 0, a reader's activation with no finger down
+   * (D-261101-098), else "pointer".
+   */
+  onPick(id: string, by: MenuPickBy): void;
   /** Tiles in rows, for Setup and Tools, where Right and Left move as Down and Up do. */
   tiles?: boolean;
   /** Roll options open at an enabled action. Other menus retain their existing opening rule. */
@@ -160,10 +168,10 @@ export function Menu(props: {
    * when focus reaches it ("Monsters, tab, selected"), and focus never
    * falls to the page between the item going and the anchor taking it.
    */
-  const pick = (id: string) => {
+  const pick = (id: string, by: MenuPickBy) => {
     const it = items.find((item) => item.id === id);
     if (it?.disabled === true || it?.busy === true) return;
-    flushSync(() => props.onPick(id));
+    flushSync(() => props.onPick(id, by));
     handle.close("pick");
   };
 
@@ -174,7 +182,7 @@ export function Menu(props: {
     if (action.type === "none") return;
     e.preventDefault();
     if (action.type === "focus") focusItem(action.index);
-    else if (action.type === "pick") pick(items[action.index]!.id);
+    else if (action.type === "pick") pick(items[action.index]!.id, "key");
     else {
       const next = typeahead(
         typed.current,
@@ -213,7 +221,7 @@ export function Menu(props: {
         aria-keyshortcuts={it.keys?.aria}
         title={it.keys?.title}
         tabIndex={-1}
-        onClick={() => pick(it.id)}
+        onClick={(e) => pick(it.id, e.detail === 0 ? "key" : "pointer")}
         style={tiles ? { ...TILE, ...look, ...it.style } : { ...ROW, ...look, ...(disabled || it.busy ? { cursor: "default" } : null), ...it.style }}
       >
         {tiles ? (

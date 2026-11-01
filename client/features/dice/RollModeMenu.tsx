@@ -1,5 +1,5 @@
 import { useLayoutEffect, type ReactNode } from "react";
-import { Menu } from "../../components/Menu.tsx";
+import { Menu, type MenuPickBy } from "../../components/Menu.tsx";
 import { Popover, type PopoverHandle } from "../../components/Popover.tsx";
 import { theme } from "../../lib/theme.ts";
 import { uiScale } from "../device/settings.ts";
@@ -10,8 +10,10 @@ const TITLE = { fontSize: theme.font.small, fontWeight: theme.weight.bold, lineH
 /**
  * `title` names the roll at the menu's top, in the words its source shows
  * (D-261031-079), since on a phone the finger covers the button it held.
+ * `onPick` hands on Menu's input kind, which a stat block's pick reads to
+ * reveal the box after a key (D-261101-098).
  */
-export type RollModeMenuProps = { handle: PopoverHandle; name: string; title: string; capability: RollModeCapability; dm: boolean; onPick(override: RollModeOverride): void };
+export type RollModeMenuProps = { handle: PopoverHandle; name: string; title: string; capability: RollModeCapability; dm: boolean; onPick(override: RollModeOverride, by: MenuPickBy): void };
 export function RollModeMenu({ handle, name, title, capability, dm, onPick }: RollModeMenuProps) {
   useLayoutEffect(() => {
     if (!handle.open) return;
@@ -46,7 +48,7 @@ export function RollModeMenuBody({ name, title, capability, dm, onPick }: Omit<R
   return (
     <div data-roll-mode-menu="" onContextMenu={(e) => e.preventDefault()}>
       <RollModeTitle>{title}</RollModeTitle>
-      <Menu label={`Roll options for ${name}`} sections={[{ key: "roll", items }]} skipDisabledOnOpen onPick={(id) => onPick(id as RollModeOverride)} />
+      <Menu label={`Roll options for ${name}`} sections={[{ key: "roll", items }]} skipDisabledOnOpen onPick={(id, by) => onPick(id as RollModeOverride, by)} />
     </div>
   );
 }
