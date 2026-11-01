@@ -111,6 +111,24 @@ export function grabberDesign(id: GrabberId): GrabberDesign {
 /** Where every design sits: 5 layout px under the surface's top edge, inside its 1 px border, so it has visible room above it. */
 export const GRABBER_TOP = 5;
 
+/*
+ * The held grabber's look (docs/design/design-v1-sheet-swipe.md 4.8), which
+ * SheetGrabber draws from the custom properties in lib/sheetSwipe.ts. Here
+ * rather than beside them so the e2e files, which compile without the
+ * DOM's types that sheetSwipe.ts needs, check the drawing against them.
+ */
+/** The share of the member's color a held grabber shows with no pull. The pull fills the rest, to all of it at a full pull. */
+export const HOLD_SHARE = 0.3;
+/** How much wider the drawing stretches at a full pull, as a share of its width. */
+export const STRETCH_X = 0.4;
+/** How much flatter the drawing gets at a full pull, as a share of its height. */
+export const STRETCH_Y = 0.25;
+
+/** The member's color's share in the held grabber at `pull`, a CSS number from 0 to 1, as color-mix's percentage. */
+export function heldShare(pull: string): string {
+  return `calc(100% * (${HOLD_SHARE} + ${pull} * ${1 - HOLD_SHARE}))`;
+}
+
 /**
  * The room a header keeps above its first line where it holds the
  * grabber: the grabber's place, its height and 1 px clear of the buttons

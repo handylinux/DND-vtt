@@ -2,7 +2,7 @@ import { createElement, type CSSProperties } from "react";
 import { useSheetHandle } from "../features/device/settings.ts";
 import { GRABBER_TRANSITION_VAR, HELD_COLOR_VAR, PULL_VAR, SLIDE_MS, STRETCH_VAR } from "../lib/sheetSwipe.ts";
 import { theme } from "../lib/theme.ts";
-import { grabberDesign, grabberRoom, GRABBER_TOP, type GrabberDesign } from "./grabberDesigns.ts";
+import { grabberDesign, grabberRoom, GRABBER_TOP, heldShare, STRETCH_X, STRETCH_Y, type GrabberDesign } from "./grabberDesigns.ts";
 
 /** Marks the grabber, for the checks that every sheet that swipes shows exactly one. */
 export const GRABBER_ATTR = "data-sheet-grabber";
@@ -52,8 +52,8 @@ export function SheetGrabber() {
         top: GRABBER_TOP,
         left: "50%",
         marginLeft: -design.width / 2,
-        color: `color-mix(in srgb, var(${HELD_COLOR_VAR}, ${theme.color.controlBorder}) calc(30% + var(${PULL_VAR}, 0) * 70%), ${theme.color.controlBorder})`,
-        transform: `scale(calc(1 + var(${STRETCH_VAR}, 0) * 0.4), calc(1 - var(${STRETCH_VAR}, 0) * 0.25))`,
+        color: `color-mix(in srgb, var(${HELD_COLOR_VAR}, ${theme.color.controlBorder}) ${heldShare(`var(${PULL_VAR}, 0)`)}, ${theme.color.controlBorder})`,
+        transform: `scale(calc(1 + var(${STRETCH_VAR}, 0) * ${STRETCH_X}), calc(1 - var(${STRETCH_VAR}, 0) * ${STRETCH_Y}))`,
         transformOrigin: "center",
         transition: `var(${GRABBER_TRANSITION_VAR}, color ${SLIDE_MS}ms ease, transform ${SLIDE_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1))`,
         pointerEvents: "none",

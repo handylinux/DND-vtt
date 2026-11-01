@@ -52,10 +52,13 @@ export const SWIPE_REST_EVENT = "rvtt-sheet-swipe-rest";
 export const HELD_ATTR = "data-sheet-held";
 /** The member's color while held, mixed with controlBorder by the grabber (4.8). */
 export const HELD_COLOR_VAR = "--rvtt-grabber-held";
+/** How far the finger has pulled, 0 to 1 (SheetSwipe.pull), which fills the grabber's color past its hold share (grabberDesigns.ts HOLD_SHARE). */
 export const PULL_VAR = "--rvtt-grabber-pull";
+/** The pull the drawing stretches by (grabberDesigns.ts STRETCH_X and STRETCH_Y): 0 under reduced motion. */
 export const STRETCH_VAR = "--rvtt-grabber-stretch";
+/** The grabber's transition while held: none while the finger moves it, so it never trails, and the color's fade as the hold starts. */
 export const GRABBER_TRANSITION_VAR = "--rvtt-grabber-transition";
-/** A stationary press warms to 30% of the member's color before the pull takes over. */
+/** A stationary press warms to its hold share of the member's color before the pull takes over. */
 export const HOLD_MS = 300;
 
 /** The style that makes a header a grab area: no pan starts there, so every move is the page's to read, and pinch zoom still works where the page allows it. */

@@ -6,7 +6,7 @@ import path from "node:path";
 import { after, afterEach, before, describe, test } from "node:test";
 import { chromium, type Browser, type BrowserContext, type CDPSession, type Locator, type Page } from "playwright-core";
 import { LIMITS } from "../shared/limits.ts";
-import { GRABBER_DESIGNS, grabberRoom, type GrabberId } from "../client/components/grabberDesigns.ts";
+import { GRABBER_DESIGNS, grabberRoom, heldShare, STRETCH_X, STRETCH_Y, type GrabberId } from "../client/components/grabberDesigns.ts";
 import { barControl, ConsoleWatch, OpSocket, openSceneGroup, pagePoint, pickOption, pickTool, readCamera, Shots, SocketWatch, startServer, waitFor, type Server } from "./harness.ts";
 
 /**
@@ -2529,16 +2529,16 @@ function systemColors(page: Page): Promise<{ rest: string; accent: string; grayT
 
 /** A browser-resolved mix, so rgb() versus color(srgb) serialization cannot disguise a wrong color. */
 function mixedGrabberColor(page: Page, pull: number): Promise<string> {
-  return page.evaluate((p) => {
+  return page.evaluate((share) => {
     type Probe = { style: Record<string, string>; remove(): void };
     const g = globalThis as unknown as Win & { document: { createElement(t: string): Probe; body: { appendChild(n: Probe): void } } };
     const probe = g.document.createElement("span");
-    probe.style.color = `color-mix(in srgb, var(--rvtt-accent) calc(30% + ${p} * 70%), #76747f)`;
+    probe.style.color = `color-mix(in srgb, var(--rvtt-accent) ${share}, #76747f)`;
     g.document.body.appendChild(probe);
     const color = g.getComputedStyle(probe as unknown as El).color ?? "";
     probe.remove();
     return color;
-  }, pull);
+  }, heldShare(String(pull)));
 }
 
 function grabberLook(surface: Locator): Promise<{ color: string; matrix: number[]; pull: number; property: string; duration: string; surfaceVars: string[] }> {
@@ -2568,7 +2568,7 @@ async function checkPull(surface: Locator, expected: number, reduced = false): P
   assert.equal(look.property, "none", "FL-8: a transition trails the finger");
   assert.deepEqual(look.surfaceVars, [], "FL-8: the sheet's content inherits changing grabber properties");
   const stretch = reduced ? 0 : look.pull;
-  const matrix = [1 + 0.4 * stretch, 0, 0, 1 - 0.25 * stretch, 0, 0];
+  const matrix = [1 + STRETCH_X * stretch, 0, 0, 1 - STRETCH_Y * stretch, 0, 0];
   assert.equal(look.matrix.length, 6, "FL-8: the drawing has no valid scale transform");
   matrix.forEach((value, i) => assert.ok(Math.abs(look.matrix[i]! - value) < 0.0001, `FL-8: wrong scale at pull ${look.pull}: ${look.matrix}`));
 }
