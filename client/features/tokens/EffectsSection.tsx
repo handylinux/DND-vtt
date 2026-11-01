@@ -31,6 +31,7 @@ import {
 import { EffectIcon } from "./EffectIcon.tsx";
 import { SaveEndsFields, sameSave, saveEndsForm, saveEndsText, saveOf } from "./SaveEndsFields.tsx";
 import { FieldRow, Note, NumberField, Section, Select, SmallButton, Stepper } from "./ui.tsx";
+import { useHeld } from "../../components/Held.tsx";
 
 /**
  * Conditions and statuses on a creature (features section 7): the list with
@@ -232,6 +233,8 @@ const UNDER_NAME = { display: "block", width: 0, minWidth: "100%" } as const;
 /** Every condition and status as an icon tile. A tap opens its rules text and the form to add it. */
 export function EffectPicker(props: { present: Effect[]; onPick(key: EffectKey): void }) {
   const has = new Set(props.present.map((e) => e.key));
+  // A raw button, so it reads the held group itself: the fieldset stops it but cannot draw it off.
+  const off = useHeld();
   const tile = (key: EffectKey) => {
     const info = infoOf(key);
     const on = has.has(key) && key !== "custom";
@@ -240,6 +243,7 @@ export function EffectPicker(props: { present: Effect[]; onPick(key: EffectKey):
         key={key}
         type="button"
         onClick={() => props.onPick(key)}
+        disabled={off}
         aria-pressed={on}
         title={info.summary}
         style={{
@@ -251,10 +255,10 @@ export function EffectPicker(props: { present: Effect[]; onPick(key: EffectKey):
           minHeight: 64,
           padding: theme.space(1),
           borderRadius: theme.radius.md,
-          ...buttonLook("secondary", { pressed: on }),
+          ...buttonLook("secondary", { pressed: on, disabled: off }),
           fontSize: theme.font.tiny,
           fontFamily: theme.font.body,
-          cursor: "pointer",
+          cursor: off ? "default" : "pointer",
           overflow: "hidden",
         }}
       >
