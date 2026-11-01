@@ -39,6 +39,15 @@ through a private DM link. There are no accounts.
 - A journal with secrets, map pins, chat and whispers, handouts, an X-card,
   and a table display for a TV.
 
+<p align="center">
+  <img src="docs/images/readme-map.webp" width="600" alt="The DM's view of a fight in a cavern: the party's tokens and three monsters on the map, fog over the ground the party has not seen yet, and the initiative tracker beside it">
+  <img src="docs/images/readme-phone.webp" width="173" alt="A player's phone during the same fight: the map above, and Bree's stat block raised over it with an Arcana check just rolled">
+</p>
+<p align="center">
+  <img src="docs/images/readme-stat-block.webp" width="400" alt="A player's character stat block, with a Perception check just rolled from its Wisdom box">
+  <img src="docs/images/readme-dice.webp" width="400" alt="The DM's Dice panel, with a goblin's attack and damage rolled in secret and the players' recent rolls under them">
+</p>
+
 Dice roll on the server, so everyone sees the same result. Anyone can still
 roll real dice and type the total.
 
