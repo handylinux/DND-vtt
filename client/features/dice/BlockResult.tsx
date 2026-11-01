@@ -67,7 +67,7 @@ export function BlockResult(props: { outcome: BlockOutcome }) {
   const tag = shown ? sentTag : null;
   const receipt = useReceipt(tag);
   const speaks = useReceiptVoice(tag, true);
-  const { first, head, data, level, said } = useCommittedRoll(receipt);
+  const { first, head, data, level, said } = useCommittedRoll(receipt, outcome.kind === "sent" ? outcome.sent.label : undefined);
   const changed = useInitiativeChanged(tag);
   const muted = { color: theme.color.textMuted } as const;
   if (outcome.kind === "unsent") {
@@ -86,7 +86,7 @@ export function BlockResult(props: { outcome: BlockOutcome }) {
   else if (receipt.state === "unknown") body = <span style={muted}>This may have happened. Check the log.</span>;
   else if (!first || !head) body = <span style={muted}>Rolled. Its result is no longer in the log.</span>;
   else {
-    const label = head.label !== undefined ? labelText(head.label) : undefined;
+    const label = head.label !== undefined ? labelText(head.label) : outcome.sent.label;
     const mode = modeWords(outcome.sent.override, first, secret);
     body = (
       <div aria-description={effectiveRollMode(first, secret) || undefined} style={{ display: "flex", alignItems: "center", gap: theme.space(2), minWidth: 0, flex: 1, whiteSpace: "nowrap", overflow: "hidden" }}>

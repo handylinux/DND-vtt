@@ -240,3 +240,17 @@ test("a hidden Dice pane's sticky line shows nothing of the roll and says nothin
   assert.doesNotMatch(hidden, /Rolled 15/);
   assert.match(line(true), /aria-live="polite"[^>]*>Rolled 15/);
 });
+
+test("an answer's line says the roll's name the option gave it, since its roll has none (LP27-A-BLOCK-3)", () => {
+  const scope = new RoomScope();
+  const choices = scope.get(diceChoicesSlot);
+  choices.setState({ last: { tag: "N", once: true, label: "Wisdom save" } });
+  choices.getInitialState = choices.getState;
+  const tracker = scope.get(receiptsSlot);
+  const log = [{ id: "1:0", at: "", kind: "event", data: { type: "roll", test: { kind: "save", ability: "wis" }, tag: "N", characterId: "c1", dc: 15, dcShown: true, resultShown: true, total: 23, result: "pass", dice: { formula: "1d20+6", faces: [17], total: 23 } } }];
+  tracker.env = { lookup: () => Promise.resolve({ parts: [] }), log: () => log as never };
+  tracker.answer("N", 0, "taken");
+  const markup = inRoom(DM, [createElement(LastResult, { key: "last", onOpen() {} })], scope);
+  assert.match(markup, /data-result-label=""[^>]*>Wisdom save</);
+  assert.match(markup, /aria-live="polite"[^>]*>Rolled 23, Pass: Wisdom save, Normal\.<\/span>/);
+});

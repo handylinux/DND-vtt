@@ -20,10 +20,13 @@ import { markRollModeSource, raiseRollModeHosts, RollPressRegistry, useRollPress
 
 /**
  * A roll the block sent (docs/design-v1-stat-block-rolls.md 8): its tag,
- * and the choice picked from its options, undefined for a tap, which the
- * result line reads only to decide whether mode words qualify.
+ * the choice picked from its options, undefined for a tap, which the
+ * result line reads only to decide whether mode words qualify, and the
+ * row's label. An answer's roll comes back with no label of its own, so the
+ * line names it from the row (LP27-A-BLOCK-3), as the Dice panel's newest
+ * line names an answer from its option.
  */
-export type BlockSent = { tag: string; override?: RollModeOverride };
+export type BlockSent = { tag: string; override?: RollModeOverride; label: string };
 
 export type UseAbilityMenuOptions = {
   ability: AbilityKey;
@@ -436,7 +439,7 @@ export function sendAbilityRow(deps: SendDeps, row: AbilityRow, override?: RollM
   if (sent === "asked") return;
   if (sent !== null) {
     if (initiative && row.entryId) deps.watch(sent, row.entryId);
-    deps.onSent(override ? { tag: sent, override } : { tag: sent });
+    deps.onSent(override ? { tag: sent, override, label: row.label } : { tag: sent, label: row.label });
   } else if (failed !== null) deps.onUnsent(failed);
 }
 

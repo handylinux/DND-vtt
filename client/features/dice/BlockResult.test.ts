@@ -49,7 +49,7 @@ function render(scope: InstanceType<typeof RoomScope>, outcome: Parameters<typeo
   );
 }
 
-const sent = (tag: string, override?: "adv" | "dis" | "secret" | "normal") => ({ kind: "sent" as const, sent: { tag, ...(override ? { override } : {}) } });
+const sent = (tag: string, override?: "adv" | "dis" | "secret" | "normal", label = "Dexterity save") => ({ kind: "sent" as const, sent: { tag, label, ...(override ? { override } : {}) } });
 
 describe("the mode words (D-261031-134)", () => {
   test("a tap names no mode, whatever the returned roll holds", () => {
@@ -106,6 +106,17 @@ describe("the line", () => {
     assert.match(markup, /Dexterity save/);
     assert.doesNotMatch(markup, /data-result-mode/);
     assert.match(markup, /aria-live="polite"[^>]*>Rolled 15: Dexterity save, Disadvantage\.<\/span>/);
+  });
+
+  test("an answer's roll, which has no label of its own, is shown and said with the row's label (LP27-A-BLOCK-3)", () => {
+    const { label: _, ...bare } = die({ total: 23, faces: [17], formula: "1d20+6" });
+    const answer = { id: "1:N", at: "", kind: "event", data: { type: "roll", test: { kind: "save", ability: "wis" }, tag: "N", characterId: "c1", dc: 15, dcShown: true, resultShown: true, total: 23, result: "pass", dice: bare } } as unknown as LogEntry;
+    const { scope, tracker } = scopeWith([answer]);
+    tracker.answer("N", 0, "taken");
+    const markup = render(scope, sent("N", undefined, "Wisdom save"));
+    assert.match(markup, />23</);
+    assert.match(markup, /data-result-label=""[^>]*>Wisdom save</);
+    assert.match(markup, /aria-live="polite"[^>]*>Rolled 23, Pass: Wisdom save, Normal\.<\/span>/);
   });
 
   test("a picked Advantage adds its words as the line's last part, hidden from a reader, and the description keeps the mode", () => {

@@ -816,6 +816,10 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     const op = await oneRoll(patSent, from, "the answer");
     assert.equal(op.t, "roll.dice", "a tap on an asked save answers the request");
     await waitFor("the request answered", () => dmSocket.state?.rolls[requestId]?.targets.some((t) => t.total !== undefined) || null);
+    // The answer's roll has no label of its own, so the line names it from the row (LP27-A-BLOCK-3).
+    const line = resultOf(sheet).first();
+    await line.locator("[data-result-label]").filter({ hasText: /^Dexterity save$/ }).waitFor();
+    await line.locator('[role="status"][aria-live="polite"]').filter({ hasText: /: Dexterity save/ }).waitFor({ state: "attached" });
     await ops.send({ t: "roll.close", rollIds: [requestId] }).catch(() => undefined);
     await closeSheets(pat);
   });
@@ -1733,6 +1737,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await line.locator("[data-result-verdict]").waitFor();
       parts = await lineParts(line);
       assert.equal(parts.verdict, "shown", `the verdict stays: ${JSON.stringify(parts)}`);
+      assert.ok(parts.label === "shown" || parts.label === "cut", `the answer's label, from its row, stays: ${JSON.stringify(parts)}`);
       assert.ok(parts.mode === "hidden" || parts.label !== "cut", `the words never cut the label: ${JSON.stringify(parts)}`);
 
       // Where the line has room the words show, beside the label, which is not cut.

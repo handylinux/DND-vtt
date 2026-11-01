@@ -838,7 +838,9 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
     await cell.scrollIntoViewIfNeeded();
     await cell.tap();
     const sticky = player.locator("[data-dice-last]");
-    await sticky.getByText("Dexterity save").waitFor();
+    await sticky.locator("[data-result-label]").filter({ hasText: /^Dexterity save$/ }).waitFor();
+    // Its roll has no label of its own, so what the line says takes the option's name too (LP27-A-BLOCK-3).
+    await sticky.locator('[role="status"][aria-live="polite"]').filter({ hasText: /: Dexterity save/ }).waitFor({ state: "attached" });
     assert.equal(await sticky.getByRole("button", { name: "Again" }).count(), 0, "an answer cannot go again as it went");
     await shots.take(player, "dice-answer-header-line");
     assert.deepEqual(dmConsole.errors, []);

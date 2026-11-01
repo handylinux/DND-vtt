@@ -314,9 +314,9 @@ describe("sending a row (section 7)", () => {
     assert.equal(seen.inputs[0]?.row, "c:x|save");
     assert.equal(seen.inputs[0]?.tokenId, "t1");
     assert.equal(seen.inputs[0]?.played, true);
-    assert.deepEqual(seen.sent, [{ tag: "tag1", override: "adv" }]);
+    assert.deepEqual(seen.sent, [{ tag: "tag1", override: "adv", label: "save" }]);
     sendAbilityRow(d, row("save"));
-    assert.deepEqual(seen.sent[1], { tag: "tag1" }, "a tap names no override");
+    assert.deepEqual(seen.sent[1], { tag: "tag1", label: "save" }, "a tap names no override");
   });
 
   test("a roll that did not go gives its words to the grid, and an ask or any other null leaves the line", () => {

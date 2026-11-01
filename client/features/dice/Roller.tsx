@@ -111,9 +111,11 @@ export function spokenResult(head: HeaderRoll, verdict: string | null, level?: P
  * What a settled receipt holds for a result line: its first roll, the
  * header roll, the proficiency mark of its label and the words a live region
  * says. The sticky line and a stat block's result line (BlockResult.tsx)
- * both read their roll through it, so the two show one roll alike.
+ * both read their roll through it, so the two show one roll alike. An
+ * answer's roll has no label of its own, so `label` names it where the
+ * surface knows what it rolled (LP27-A-BLOCK-3).
  */
-export function useCommittedRoll(receipt: ReceiptState | null) {
+export function useCommittedRoll(receipt: ReceiptState | null, label?: string) {
   const committed = receipt?.state === "committed" ? receipt : null;
   const rolls = useMemo(() => (committed ? rollsOf(committed.lines) : []), [committed]);
   const first = rolls[0];
@@ -127,7 +129,7 @@ export function useCommittedRoll(receipt: ReceiptState | null) {
   const level = target && marksTest(test) ? levelOf(target, test) : undefined;
   const secret = data?.type === "dice" && data.to === "dm";
   // A polite live region says each result once, from the render that first holds it, so it is said as it lands on the server even while the dice still fly.
-  const said = first && head ? spokenResult(head, spokenVerdict(first, data), level, secret) : "";
+  const said = first && head ? spokenResult(head.label === undefined && label !== undefined ? { ...head, label } : head, spokenVerdict(first, data), level, secret) : "";
   return { rolls, first, head, data, firstLine, level, secret, said };
 }
 
@@ -160,7 +162,7 @@ export function LastResult(props: { onOpen(lineId: string): void }) {
   const holding = tag !== null && thrown.held === tag;
   const receipt = useReceipt(tag);
   const waiting = receipt !== null && (receipt.state === "sending" || receipt.state === "checking");
-  const { rolls, first, head, data, firstLine, level, said: spoken } = useCommittedRoll(receipt);
+  const { rolls, first, head, data, firstLine, level, said: spoken } = useCommittedRoll(receipt, last && "once" in last ? last.label : undefined);
   // Only the surface that may say a roll puts it in a live region or gives its refusal an alert: a roll sent from a stat block is said there (docs/design-v1-stat-block-rolls.md 8).
   const speaks = useReceiptVoice(tag, false);
   const said = speaks ? spoken : "";
