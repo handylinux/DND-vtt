@@ -85,7 +85,7 @@ describe("websocket: hello, ops and acks", () => {
     s.close();
   });
 
-  test("several relative ops from one client in one batch are applied once each, in one ev", async () => {
+  test("several relative ops from one client sent together are applied once each", async () => {
     const dm = t.client();
     const { roomId } = await dm.createRoom("Damage");
     const s = await t.connect(roomId, dm);
@@ -94,11 +94,19 @@ describe("websocket: hello, ops and acks", () => {
     const tokenId = (op as { token: { id: string } }).token.id;
     await s.apply(op);
     const ns = [1, 2, 3].map(() => s.op({ t: "actor.hp", target: { tokenId }, change: { kind: "damage", amount: 7 } }));
-    const ev = await s.next("ev", (m) => (m.acks?.length ?? 0) > 0);
-    assert.deepEqual(ev.acks, ns);
-    const change = ev.changes.find((c) => c.key === `token:${tokenId}`);
-    assert.ok(change && "value" in change);
-    assert.equal((change.value as { actor: { inline: { hp: { cur: number } } } }).actor.inline.hp.cur, 9);
+    // The three frames can reach the room in one batch or split across batches under load, so the acks may
+    // come in one ev or several. Each must still be acked exactly once, in order, and none may be applied twice.
+    const acked: number[] = [];
+    let hp: number | undefined;
+    while (acked.length < ns.length) {
+      const ev = await s.next("ev", (m) => (m.acks?.length ?? 0) > 0);
+      acked.push(...(ev.acks ?? []));
+      const change = ev.changes.find((c) => c.key === `token:${tokenId}`);
+      assert.ok(change && "value" in change);
+      hp = (change.value as { actor: { inline: { hp: { cur: number } } } }).actor.inline.hp.cur;
+    }
+    assert.deepEqual(acked, ns);
+    assert.equal(hp, 9, "three hits of 7 from 30, each applied once");
     s.close();
   });
 
