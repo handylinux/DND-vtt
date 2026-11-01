@@ -718,14 +718,18 @@ export function withinBudget(root: CountedNode, budget: number): boolean {
  * Cancel on a form returns to the page that opened it, keeps the picture
  * it had, since the press that returned took a picture of the form, and
  * the pages opened from it since are dropped. The first page drops them all.
+ * Every page shown is kept, null where it has no picture (the page the
+ * panel opened on, or one a press copied nothing for), so it too reads as
+ * shown again and never takes the picture of the form it returns from.
  */
 export class PagePictures {
   private pressed: (PagePicture & { at: number }) | null = null;
-  private readonly under = new Map<string, PagePicture>();
+  private readonly under = new Map<string, PagePicture | null>();
   private shown: string | null;
 
   constructor(page: string | null) {
     this.shown = page;
+    if (page !== null) this.under.set(page, null);
   }
 
   /** A press on a control in the body, with the page as it found it, or null where it copied nothing. */
@@ -752,7 +756,7 @@ export class PagePictures {
       }
       return;
     }
-    if (p && now - p.at < PICTURE_MS) this.under.set(page, { node: p.node, top: p.top });
+    this.under.set(page, p && now - p.at < PICTURE_MS ? { node: p.node, top: p.top } : null);
   }
 
   /** The picture under the page shown now. */

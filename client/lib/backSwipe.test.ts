@@ -837,6 +837,35 @@ describe("fu43c. the pictures under pages inside a panel", () => {
     assert.equal(p.current(), null, "a press past the budget");
   });
 
+  test("a page with no picture is still a page shown again, so Cancel back to it never shows the form under it (FU43R-OPUS-01)", () => {
+    // Opened straight on a character from outside the panel, Add a companion, Cancel.
+    const opened = new PagePictures("thorn");
+    opened.press(0, picture("thorn"));
+    opened.show("companion", 10);
+    assert.equal(opened.current()?.node, picture("thorn").node);
+    opened.press(100, picture("companion form"));
+    opened.show("thorn", 110);
+    assert.equal(opened.current(), null, "the page the panel opened on has nothing under it");
+    // A list past the budget, a character, Add a companion, Cancel.
+    const long = new PagePictures(null);
+    long.press(0, null);
+    long.show("thorn", 10);
+    long.press(100, picture("thorn"));
+    long.show("companion", 110);
+    long.press(200, picture("companion form"));
+    long.show("thorn", 210);
+    assert.equal(long.current(), null, "the press that copied nothing left nothing under the character");
+    // A page that came too late is the same.
+    const late = new PagePictures(null);
+    late.press(0, picture("list"));
+    late.show("thorn", 1000);
+    late.press(1100, picture("thorn"));
+    late.show("companion", 1110);
+    late.press(1200, picture("companion form"));
+    late.show("thorn", 1210);
+    assert.equal(late.current(), null, "the late page left nothing under the character");
+  });
+
   test("withinBudget counts every element below the root and stops once past the budget", () => {
     let read = 0;
     const node = (children: unknown[]): CountedNode => ({ get children() { read++; return children as CountedNode[]; } });
