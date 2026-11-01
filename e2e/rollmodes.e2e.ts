@@ -542,12 +542,14 @@ type Box = { left: number; top: number; right: number; bottom: number };
  * would take. The box shows its roll's name over its choices' titles and
  * nothing else (D-261031-079, D-261031-080), lies on the screen, and
  * stands within 10 px of its button, which wears its ring, without
- * covering it. With `whole` false, where neither side of the button has room for every
- * choice, as at 320 x 568 at 130% with the button mid-screen, the box may
- * scroll its choices: those it shows still take a press.
+ * covering it. With `whole` false the box may scroll its choices, those it
+ * shows still taking a press. With `covering` "either", where neither side
+ * of the button has room for every choice, as at 320 x 568 at 130% with the
+ * button mid-screen, the box may slide over its button, but then every
+ * choice shows (FL17-AGAIN-320).
  */
-function menuFaults(button: Locator, at: string, title: string, whole = true): Promise<string[]> {
-  return button.evaluate((el, [at, title, whole]) => {
+function menuFaults(button: Locator, at: string, title: string, whole = true, covering: "no" | "either" = "no"): Promise<string[]> {
+  return button.evaluate((el, [at, title, whole, covering]) => {
     type R = { left: number; top: number; right: number; bottom: number };
     type E = { getBoundingClientRect(): R; contains(n: unknown): boolean; querySelectorAll(s: string): ArrayLike<E>; innerText: string; textContent: string | null; tagName: string };
     const doc = (el as unknown as { ownerDocument: { querySelector(s: string): E | null; elementFromPoint(x: number, y: number): E | null; defaultView: { innerWidth: number; innerHeight: number } } }).ownerDocument;
@@ -575,10 +577,13 @@ function menuFaults(button: Locator, at: string, title: string, whole = true): P
     if (!/(^|, )0 0 0 2px /.test(shadow)) faults.push(`${at}: the button wears no ring while its menu is open: "${shadow}"`);
     const s = (el as unknown as E).getBoundingClientRect();
     const gap = b.bottom <= s.top + 0.5 ? s.top - b.bottom : b.top >= s.bottom - 0.5 ? b.top - s.bottom : null;
-    if (gap === null) faults.push(`${at}: the box ${shown(b)} covers its button ${shown(s)}`);
-    else if (gap > 10) faults.push(`${at}: the box ${shown(b)} stands ${Math.round(gap)} px off its button ${shown(s)}`);
+    // A box that fits on neither side slides over its button to stand whole (FL17-AGAIN-320), so where covering is allowed it must show every choice.
+    if (gap === null) {
+      if (covering === "no") faults.push(`${at}: the box ${shown(b)} covers its button ${shown(s)}`);
+      else if (items.some((item) => { const r = item.getBoundingClientRect(); return r.top < b.top - 0.5 || r.bottom > b.bottom + 0.5; })) faults.push(`${at}: the box ${shown(b)} covers its button ${shown(s)} and still scrolls`);
+    } else if (gap > 10) faults.push(`${at}: the box ${shown(b)} stands ${Math.round(gap)} px off its button ${shown(s)}`);
     return faults;
-  }, [at, title, whole] as const);
+  }, [at, title, whole, covering] as const);
 }
 
 /**
@@ -2233,7 +2238,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
             await menu.waitFor({ timeout: 3_000 }).catch(() => undefined);
             await sleep(150);
             await shots.take(page, `fl17-1-${tag}-${what}`);
-            faults.push(...(await menuFaults(button, `${at}, ${what}`, title)));
+            faults.push(...(await menuFaults(button, `${at}, ${what}`, title, true, scale === 1 ? "no" : "either")));
             return where;
           };
           /** Escape closes an open menu. With none open it would close the sheet under it. */
@@ -2258,7 +2263,7 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
             if (!during) faults.push(`${at}, ${what}: a finger scrolling the panel closed the menu while its button stayed in view`);
             if (Math.abs(scrolled) < 8) faults.push(`${at}, ${what}: the finger's drag scrolled the panel only ${scrolled} px`);
             if (await isOpen()) {
-              faults.push(...(await menuFaults(button, `${at}, ${what}, after the panel scrolled`, title, scale === 1)));
+              faults.push(...(await menuFaults(button, `${at}, ${what}, after the panel scrolled`, title, scale === 1, scale === 1 ? "no" : "either")));
               await shots.take(page, `fl17-1-${tag}-${what}-scrolled`);
               // A tap first stops any fling the drag left, with no click (harness.ts untilTapsClick).
               await sleep(1_500);
@@ -2335,6 +2340,104 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
       await waitFor("Thorn up and whole", () => (dmSocket.state?.characters[run.thornChar]?.actor.life === "alive" && dmSocket.state.characters[run.thornChar]!.actor.hp.cur === 30 ? true : null));
     }
     assert.deepEqual(faults, [], "the menu over a scrolled panel");
+  });
+
+  test("lk1-again. at 320 x 568 at 130% the sticky line's Again opens a menu that stands whole over its button, a second tap on its first choice within 350 ms picks nothing and leaves it open, and a tap on a choice after that rolls once (D-261101-313)", async () => {
+    const size = { width: 320, height: 568 };
+    const context = await browser.newContext({ viewport: size, deviceScaleFactor: 2, isMobile: true, hasTouch: true, reducedMotion: "reduce" });
+    const faults: string[] = [];
+    try {
+      await diceFoldsOpen(context);
+      await context.addCookies(await patContext.cookies(server.origin));
+      await context.addInitScript((s) => localStorage.setItem("rvtt.uiScale", String(s)), 1.3);
+      const page = await context.newPage();
+      const cdp = await context.newCDPSession(page);
+      const sent = new OpsSent();
+      sent.attach(page);
+      await page.goto(`${server.origin}/r/${run.roomId}`);
+      await page.getByRole("status", { name: "Connected" }).first().waitFor();
+      await page.locator(".konvajs-content").first().waitFor();
+      const sheet = await openDiceSheet(page);
+      await sheet.getByRole("region", { name: "Rolls for Thorn" }).waitFor();
+      const field = sheet.getByLabel("Dice formula", { exact: true });
+      await field.fill("1d20+2 Stealth");
+      let from = sent.ops.length;
+      await field.press("Enter");
+      await oneRoll(sent, from, "the first roll");
+      const again = sheet.locator("[data-dice-last]").getByRole("button", { name: "Again", exact: true });
+      await again.waitFor();
+      // Page-clock marks, so the step proves its second tap came inside the guard's window and not only that nothing rolled.
+      await page.evaluate(() => {
+        type W = { __opened: number | null; __downs: number[]; performance: { now(): number }; requestAnimationFrame(f: () => void): void; document: { addEventListener(t: string, f: () => void, c: boolean): void; querySelector(s: string): unknown } };
+        const w = globalThis as unknown as W;
+        const look = () => {
+          if (w.__opened === null && w.document.querySelector("[data-rvtt-popover]")) w.__opened = w.performance.now();
+          w.requestAnimationFrame(look);
+        };
+        w.__opened = null;
+        w.__downs = [];
+        look();
+        w.document.addEventListener("pointerdown", () => w.__downs.push(w.performance.now()), true);
+      });
+      const menu = page.getByRole("menu", { name: /^Roll options for Again$/ });
+      const marked = () => page.evaluate(() => {
+        const w = globalThis as unknown as { __opened: number | null; __downs: number[] };
+        return { opened: w.__opened, down: w.__downs[w.__downs.length - 1] ?? null };
+      });
+      from = sent.ops.length;
+      // The hold fires at 500 ms. The finger lifts just after and a new one lands on the first choice with no wait between. The slid box covers only the foot of Again's own box, so Again's middle stays the button and a press there is the source press that closes the menu (dpf1-5), not a choice. A slow runner may let the window pass, so a late try is closed and made again.
+      let at = { x: 0, y: 0 };
+      let lateness = Infinity;
+      for (let attempt = 0; attempt < 4 && !(lateness < 300); attempt++) {
+        if (attempt > 0) {
+          if (await menu.isVisible().catch(() => false)) {
+            await page.keyboard.press("Escape");
+            await menu.waitFor({ state: "detached" });
+          }
+          await page.evaluate(() => {
+            const w = globalThis as unknown as { __opened: number | null; __downs: number[] };
+            w.__opened = null;
+            w.__downs = [];
+          });
+          await sleep(QUIET_MS);
+        }
+        at = await middle(again);
+        const first = new Touches(cdp);
+        await first.start([at]);
+        await sleep(540);
+        const row = await menu.getByRole("menuitem", { name: "Roll with Advantage" }).boundingBox();
+        if (!row) throw new Error("setup: the menu has no Roll with Advantage after the hold");
+        const aimed = { x: row.x + row.width / 2, y: row.y + row.height / 2 };
+        await first.end([], 0);
+        const second = new Touches(cdp);
+        await second.start([aimed], 0);
+        await second.end([], 20);
+        const marks = await marked();
+        lateness = marks.opened !== null && marks.down !== null ? marks.down - marks.opened : Infinity;
+      }
+      if (!(lateness < 300)) throw new Error(`setup: the second tap never landed within 300 ms of the menu showing (last: ${Math.round(lateness)} ms)`);
+      await sleep(QUIET_MS);
+      if (sent.rolls(from).length > 0) throw new Error(`the second tap within the window sent ${JSON.stringify(sent.rolls(from))}`);
+      if (!(await menu.isVisible())) throw new Error("the second tap within the window closed the menu");
+      const title = (await page.locator("[data-rvtt-popover]").evaluate((el) => (el as unknown as { innerText: string }).innerText.split("\n")[0] ?? "")).trim();
+      faults.push(...(await menuFaults(again, "320 x 568 at 130%, Again", title, true, "either")));
+      const box = await page.locator("[data-rvtt-popover]").boundingBox();
+      assert.ok(box, "the menu has a box");
+      const button = await again.boundingBox();
+      assert.ok(button, "Again has a box");
+      if (!(box.y < button.y + button.height && box.y + box.height > button.y && box.x < button.x + button.width && box.x + box.width > button.x)) faults.push(`the menu ${JSON.stringify(box)} does not cover Again ${JSON.stringify(button)}`);
+      await shots.take(page, "lk1-again-320-130");
+      // Past the window the same spot is a choice.
+      await menu.getByRole("menuitem", { name: "Roll with Advantage" }).tap();
+      await waitFor("the pick's roll", () => sent.rolls(from).length > 0 || null);
+      await sleep(QUIET_MS);
+      if (sent.rolls(from).length !== 1) faults.push(`a tap on Roll with Advantage after the window sent ${sent.rolls(from).length} rolls`);
+      else assert.deepEqual(sentMode(sent.rolls(from)[0]!), { cancelled: false, t: "dice.roll", mode: "adv", to: "all" });
+      if (await menu.isVisible().catch(() => false)) faults.push("the menu stayed open after a pick");
+    } finally {
+      await context.close();
+    }
+    assert.deepEqual(faults, [], "the slid menu over Again");
   });
 
   test("fl17-2. any pop-up, not only a roll's menu: on a phone, a roll card's Ask to change it menu stays open while a finger scrolls the card and closes once its button leaves the card's view (FL17-OPUS-01)", async () => {
