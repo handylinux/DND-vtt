@@ -2283,10 +2283,12 @@ describe("raccoon-vtt hex grids: the board", { timeout: 600_000 }, () => {
     await ops.send({ t: "room.setPlayerScene", sceneId: run.sceneId });
   });
 
-  test("fu44c-1: a hex scene from an NxM name holds all the art", async () => {
+  test("fu44c-1: a hex scene from an NxM name holds all the art, and art named for a new scale refits it in the same Setup step", async () => {
     // 12 x 8 hexes of 70 px on hex rows is 12.5 hexes wide and 7.2 rows tall. The squares' count (12 by 7) left out the last row and the last hex of every odd row.
     const first = path.join(work, "fen_12x8.png");
+    const second = path.join(work, "fen_24x16.png");
     await sharp({ create: { width: 875, height: 505, channels: 3, background: "#435468" } }).png().toFile(first);
+    await sharp({ create: { width: 858, height: 495, channels: 3, background: "#546843" } }).png().toFile(second);
     await pickTool(dm, "Select");
     const panel = await openScenes(dm);
     await panel.getByRole("radio", { name: "Map image", exact: true }).click();
@@ -2298,7 +2300,17 @@ describe("raccoon-vtt hex grids: the board", { timeout: 600_000 }, () => {
     await waitFor("the DM on the named map", () => dmSocket.you?.sceneId === scene.id || null);
     assert.equal(scene.gridShape, "hexRows");
     assert.equal(scene.map?.cellPx, 70);
+    const firstMap = scene.map!;
     await waitFor("the hex scene holds 8 rows of 12 hexes", () => { const b = dmSocket.state?.scenes[scene.id]?.bounds; return b?.w === 13 && b.h === 8 ? b : null; });
+    // Other art named for half the scale replaces it: the new art and its bounds are one step.
+    await (await openSceneGroup(panel, "Map image and grid")).getByLabel("Replace map image", { exact: true }).setInputFiles(second);
+    await waitFor("the replacement's scale", () => { const m = dmSocket.state?.scenes[scene.id]?.map; return m && m.assetId !== firstMap.assetId && Math.abs(m.cellPx - 35.02) < 0.05 ? m : null; }, 30_000);
+    await waitFor("the bounds refit to 24 x 16 hexes", () => { const b = dmSocket.state?.scenes[scene.id]?.bounds; return b?.w === 25 && b.h === 15 ? b : null; });
+    await undoSetup(dm);
+    const back = await waitFor("one Undo setup took back the art and its bounds", () => dmSocket.state?.scenes[scene.id]);
+    assert.equal(back.map?.assetId, firstMap.assetId, "the first art is back");
+    assert.equal(back.map?.cellPx, 70);
+    assert.deepEqual({ w: back.bounds.w, h: back.bounds.h }, { w: 13, h: 8 }, "in its own bounds");
   });
 
   test("fu44c-2: art uploaded while another device changes the map scales from the map the room holds when the upload ends", async () => {

@@ -524,7 +524,9 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
       const bounds0 = held.bounds;
       const refitTo = !found && !wait.later && refitsToNamedMap(oldMap, next, named, bounds0, held.gridShape) ? fitBounds(next, sceneGrid(held)) : null;
       const refit = refitTo && (refitTo.w !== bounds0.w || refitTo.h !== bounds0.h) ? refitTo : null;
-      actions.dispatch({ t: "scene.setMap", sceneId: scene.id, map: next });
+      // The refit travels in the replacement's undo step, so one Undo setup takes the new art and its bounds back together.
+      const group = refit ? actions.newId() : undefined;
+      actions.dispatch({ t: "scene.setMap", sceneId: scene.id, map: next }, group ? { group, groupScope: "setup" } : undefined);
       // A scene with map phases takes new art only in its map's shape, and this device's own
       // prediction has already refused any other with the reducer's words (NOT_SAME_SHAPE). A grid
       // found on art the scene refused belongs to no image it shows, so Line up grid is left alone.
@@ -543,7 +545,7 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
       // refits bounds that were fitted to the old one (refitsToNamedMap).
       const fallback = { cellPx: next.cellPx, originPx: next.originPx };
       if (refitTo) {
-        if (refit) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { bounds: refit } });
+        if (refit && group) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { bounds: refit } }, { group, groupScope: "setup" });
       } else if (!oldMap || found || wait.later) {
         // The shape the room holds now, not as the upload began: Grid shape may have changed meanwhile, here or on another device.
         const gridShape = room.getState().view?.scenes[scene.id]?.gridShape;
