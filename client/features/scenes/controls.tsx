@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { Button } from "../../components/Button.tsx";
 import { fieldStyle } from "../../components/Field.tsx";
+import { useHeld } from "../../components/Held.tsx";
 import { buttonLook } from "../../components/looks.ts";
 import { accessibleName } from "../../lib/a11y.ts";
 import { theme } from "../../lib/theme.ts";
@@ -18,12 +19,14 @@ export function Select<T extends string>(props: {
   options: readonly { value: T; label: string }[];
   onChange(value: T): void;
 }) {
+  const disabled = useHeld();
   return (
     <select
       aria-label={props.label}
       value={props.value}
+      disabled={disabled}
       onChange={(e) => props.onChange(e.target.value as T)}
-      style={{ ...fieldStyle(), flex: "none", padding: `0 ${theme.space(2)}px` }}
+      style={{ ...fieldStyle({ disabled }), flex: "none", padding: `0 ${theme.space(2)}px` }}
     >
       {props.options.map((o) => (
         <option key={o.value} value={o.value}>
@@ -34,11 +37,12 @@ export function Select<T extends string>(props: {
   );
 }
 
-const inputStyle: CSSProperties = { ...fieldStyle(), padding: `0 ${theme.space(2)}px` };
+const inputStyle = (disabled: boolean): CSSProperties => ({ ...fieldStyle({ disabled }), padding: `0 ${theme.space(2)}px` });
 
 /** A whole number typed in, kept as text while editing so a field can be cleared and retyped. */
 export function NumberInput(props: { label: string; value: number; min: number; max: number; onChange(value: number): void; width?: number }) {
   const [text, setText] = useState(String(props.value));
+  const disabled = useHeld();
   useEffect(() => setText(String(props.value)), [props.value]);
   const commit = (raw: string) => {
     const n = Math.round(Number(raw));
@@ -55,12 +59,13 @@ export function NumberInput(props: { label: string; value: number; min: number; 
       aria-label={props.label}
       inputMode="numeric"
       value={text}
+      disabled={disabled}
       onChange={(e) => setText(e.target.value)}
       onBlur={(e) => commit(e.target.value)}
       onKeyDown={(e) => {
         if (e.key === "Enter") commit((e.target as HTMLInputElement).value);
       }}
-      style={{ ...inputStyle, width: props.width ?? 64, textAlign: "center" }}
+      style={{ ...inputStyle(disabled), width: props.width ?? 64, textAlign: "center" }}
     />
   );
 }
@@ -102,17 +107,19 @@ export function useDebounced<T>(value: T, send: (v: T) => void, ms = 250): [T, (
 
 export function ColorInput(props: { label: string; value: string; onChange(value: string): void }) {
   const [local, set] = useDebounced(props.value, props.onChange);
+  const disabled = useHeld();
   return (
     <input
       type="color"
       aria-label={props.label}
+      disabled={disabled}
       value={/^#[0-9a-fA-F]{6}$/.test(local) ? local : theme.color.white}
       onChange={(e) => set(e.target.value)}
       style={{
         width: theme.touch,
         height: theme.touch,
         padding: theme.space(0.5),
-        border: `${theme.line.border}px solid ${theme.color.controlBorder}`,
+        border: `${theme.line.border}px solid ${disabled ? theme.color.border : theme.color.controlBorder}`,
         borderRadius: theme.radius.md,
         background: theme.color.bg,
         flex: "none",
@@ -124,9 +131,10 @@ export function ColorInput(props: { label: string; value: string; onChange(value
 export function Slider(props: { label: string; value: number; min: number; max: number; step: number; onChange(value: number): void; format?(v: number): string }) {
   const [local, set] = useDebounced(props.value, props.onChange);
   const id = useId();
+  const disabled = useHeld();
   return (
     <div style={{ display: "flex", alignItems: "center", gap: theme.space(2), minHeight: theme.touch, flex: 1, minWidth: 0 }}>
-      <label htmlFor={id} style={{ fontSize: theme.font.body14, color: theme.color.text, flex: "none", minWidth: 72 }}>
+      <label htmlFor={id} style={{ fontSize: theme.font.body14, color: disabled ? theme.color.textDisabled : theme.color.text, flex: "none", minWidth: 72 }}>
         {props.label}
       </label>
       <input
@@ -136,10 +144,11 @@ export function Slider(props: { label: string; value: number; min: number; max: 
         max={props.max}
         step={props.step}
         value={local}
+        disabled={disabled}
         onChange={(e) => set(Number(e.target.value))}
-        style={{ flex: 1, minWidth: 0, height: theme.touch, accentColor: theme.color.accent }}
+        style={{ flex: 1, minWidth: 0, height: theme.touch, accentColor: disabled ? theme.color.textDisabled : theme.color.accent }}
       />
-      <span style={{ fontSize: theme.font.small, color: theme.color.textMuted, flex: "none", minWidth: 36, textAlign: "right" }}>
+      <span style={{ fontSize: theme.font.small, color: disabled ? theme.color.textDisabled : theme.color.textMuted, flex: "none", minWidth: 36, textAlign: "right" }}>
         {props.format ? props.format(local) : String(local)}
       </span>
     </div>
