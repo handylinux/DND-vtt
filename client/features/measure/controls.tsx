@@ -18,6 +18,7 @@ import {
 } from "react";
 import { Button } from "../../components/Button.tsx";
 import { Input, Select } from "../../components/Field.tsx";
+import { useHeld } from "../../components/Held.tsx";
 import { Icon, type IconName } from "../../components/Icon.tsx";
 import { Loading } from "../../components/Loading.tsx";
 import { buttonLook, choiceLook } from "../../components/looks.ts";
@@ -900,9 +901,10 @@ export type ValueChipProps = {
  */
 export function ValueChip(props: ValueChipProps) {
   const place = useSlotPlace();
-  if (place?.at === "measure") return <span style={chipLook(false, props.disabled === true)}>{chipFace(props, place.form)}</span>;
+  const disabled = useHeld(props.disabled);
+  if (place?.at === "measure") return <span style={chipLook(false, disabled)}>{chipFace(props, place.form)}</span>;
   if (inPopover(place)) return <ChipInline {...props} id={place!.id} />;
-  return <LiveChip {...props} place={place} />;
+  return <LiveChip {...props} disabled={disabled} place={place} />;
 }
 
 function LiveChip(props: ValueChipProps & { place: SlotPlace | null }) {
@@ -1080,6 +1082,9 @@ function isRadio(target: EventTarget): target is HTMLInputElement {
   return target instanceof HTMLInputElement && target.type === "radio";
 }
 
+/** A tile or row that is off does not invite a press, as Segmented and Chip do not. */
+const DEFAULT_CURSOR: CSSProperties = { cursor: "default" };
+
 /** An option the whole of its tile or row, as in Segmented: a tap anywhere on it hits the radio. */
 const RADIO_COVER: CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%", margin: 0, opacity: 0, cursor: "inherit" };
 
@@ -1108,13 +1113,15 @@ export function ChoiceTiles<T extends string>(props: {
   even?: boolean;
 }) {
   const name = useId();
+  const held = useHeld();
   return (
     <div role="radiogroup" aria-label={props.label} style={props.even ? EVEN_TILES : { display: "flex", flexWrap: "wrap", gap: theme.space(1), maxWidth: TILES_MAX }}>
       {props.options.map((o) => {
         const chosen = o.value === props.value;
+        const off = held || o.disabled === true;
         return (
-          <label key={o.value} className="rvtt-choice" title={o.title} style={{ ...TILE, ...(props.even ? EVEN_TILE : null), ...choiceLook(chosen, o.disabled === true) }}>
-            <input type="radio" name={name} value={o.value} checked={chosen} disabled={o.disabled} aria-label={accessibleName(o.spoken ?? o.label, o.title) ?? o.spoken} onChange={() => props.onChange(o.value)} style={RADIO_COVER} />
+          <label key={o.value} className="rvtt-choice" title={o.title} style={{ ...TILE, ...(props.even ? EVEN_TILE : null), ...choiceLook(chosen, off), ...(off ? DEFAULT_CURSOR : null) }}>
+            <input type="radio" name={name} value={o.value} checked={chosen} disabled={off} aria-label={accessibleName(o.spoken ?? o.label, o.title) ?? o.spoken} onChange={() => props.onChange(o.value)} style={RADIO_COVER} />
             {o.glyph ? (
               <span aria-hidden style={{ display: "grid", placeItems: "center" }}>
                 {o.glyph}
@@ -1182,13 +1189,14 @@ export type RowOption<T extends string> = { value: T; label: string; title?: str
  */
 export function ChoiceRows<T extends string>(props: { label: string; value: T; options: readonly RowOption<T>[]; onChange(value: NoInfer<T>): void; wrap?: boolean }) {
   const name = useId();
+  const held = useHeld();
   return (
     <div role="radiogroup" aria-label={props.label} style={{ display: "grid", gap: theme.space(0.5) }}>
       {props.options.map((o) => {
         const chosen = o.value === props.value;
         return (
-          <label key={o.value} className="rvtt-choice" title={o.title} style={{ ...CHOICE_ROW, ...(props.wrap ? CHOICE_ROW_WRAP : null), ...buttonLook("quiet", { pressed: chosen }) }}>
-            <input type="radio" name={name} value={o.value} checked={chosen} aria-label={accessibleName(o.label, o.title)} onChange={() => props.onChange(o.value)} style={RADIO_COVER} />
+          <label key={o.value} className="rvtt-choice" title={o.title} style={{ ...CHOICE_ROW, ...(props.wrap ? CHOICE_ROW_WRAP : null), ...buttonLook("quiet", { pressed: chosen, disabled: held }), ...(held ? DEFAULT_CURSOR : null) }}>
+            <input type="radio" name={name} value={o.value} checked={chosen} disabled={held} aria-label={accessibleName(o.label, o.title)} onChange={() => props.onChange(o.value)} style={RADIO_COVER} />
             {o.swatch !== undefined ? <ChipSwatch color={o.swatch} /> : null}
             {o.picture !== undefined ? (
               <span aria-hidden style={{ flex: "none", display: "grid", placeItems: "center" }}>
@@ -1197,7 +1205,7 @@ export function ChoiceRows<T extends string>(props: { label: string; value: T; o
             ) : null}
             <span style={{ flex: 1, minWidth: props.wrap ? 0 : undefined }}>
               {o.label}
-              {o.detail !== undefined ? <span style={{ fontWeight: theme.weight.regular, color: theme.color.textMuted }}> {o.detail}</span> : null}
+              {o.detail !== undefined ? <span style={{ fontWeight: theme.weight.regular, color: held ? theme.color.textDisabled : theme.color.textMuted }}> {o.detail}</span> : null}
             </span>
             {chosen ? <Icon name="check" size="sm" style={props.wrap ? { flex: "none" } : undefined} /> : null}
           </label>

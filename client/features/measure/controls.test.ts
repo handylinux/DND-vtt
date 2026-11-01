@@ -8,7 +8,8 @@ const { MeasuringContext } = await import("../../components/measuring.ts");
 const { Segmented } = await import("../../components/Segmented.tsx");
 const { Swatches } = await import("../../components/Swatches.tsx");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
-const { ChoiceTiles, ConfirmButton, OptButton, OptionsStrip, shortName, StableWords, ValueChip } = await import("./controls.tsx");
+const { ChoiceRows, ChoiceTiles, ConfirmButton, OptButton, OptionsStrip, shortName, StableWords, ValueChip } = await import("./controls.tsx");
+const { Held } = await import("../../components/Held.tsx");
 const { theme } = await import("../../lib/theme.ts");
 
 /*
@@ -158,5 +159,47 @@ describe("the options line (8)", () => {
     const least = /min-height:([\d.]+)px/.exec(hint)?.[1];
     assert.equal(Number(least), theme.font.body14 * theme.leading.body + 2 * theme.space(1.5) + 2 * theme.line.border);
     assert.equal(/min-height:([\d.]+)px/.exec(line("reading", "30 ft"))?.[1], least, "a hint and a reading stand at different heights");
+  });
+});
+
+/*
+ * LOCKED-LOOK: the options kit's hand-rolled choices read a held group, as
+ * the shared controls do. A tile, a row and a chip each go natively off and
+ * draw textDisabled, never a fade.
+ */
+describe("a held group stops the options kit's choices (LOCKED-LOOK)", () => {
+  const options = [
+    { value: "a", label: "Wall", detail: "Blocks" },
+    { value: "b", label: "Door" },
+  ];
+  const kit = {
+    ChoiceTiles: () => createElement(ChoiceTiles, { label: "Mode", value: "a", options, onChange: () => {} }),
+    ChoiceRows: () => createElement(ChoiceRows, { label: "Edge", value: "a", options, onChange: () => {} }),
+    ValueChip: () => createElement(ValueChip, { label: "Drawing tool", kind: "choice", value: "free", options: [{ key: "free", words: "Pen" }], children: "tiles" }),
+    "a measuring copy of ValueChip": () => createElement(MeasuringContext.Provider, { value: true }, createElement(ValueChip, { label: "Drawing tool", kind: "choice", value: "free", options: [{ key: "free", words: "Pen" }], children: "tiles" })),
+  };
+  const dim = new RegExp(`color:${theme.color.textDisabled}`, "i");
+  for (const [name, draw] of Object.entries(kit)) {
+    test(name, () => {
+      const free = inRoom(draw());
+      const held = inRoom(createElement(Held, { held: true, children: draw() }));
+      assert.doesNotMatch(free, dim, "free, it never draws dim");
+      assert.match(held, dim, "held, it draws textDisabled");
+      assert.doesNotMatch(held, /opacity:0\.\d/, "never a fade");
+      if (!name.startsWith("a measuring")) assert.match(held.replace(/^<fieldset[^>]*>/, ""), /\sdisabled=""/, "natively off");
+    });
+  }
+
+  test("a row's detail takes the dim color too", () => {
+    const held = inRoom(createElement(Held, { held: true, children: kit.ChoiceRows() }));
+    assert.match(held, new RegExp(`color:${theme.color.textDisabled}"> Blocks`, "i"));
+    assert.doesNotMatch(held, new RegExp(`color:${theme.color.textMuted}`, "i"));
+  });
+
+  test("the chosen row and tile keep a dim outline, not the accent tint", () => {
+    for (const name of ["ChoiceTiles", "ChoiceRows"] as const) {
+      const held = inRoom(createElement(Held, { held: true, children: kit[name]() }));
+      assert.doesNotMatch(held, /accent/i, name);
+    }
   });
 });
