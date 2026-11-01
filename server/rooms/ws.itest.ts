@@ -104,6 +104,7 @@ describe("websocket: hello, ops and acks", () => {
       const change = ev.changes.find((c) => c.key === `token:${tokenId}`);
       assert.ok(change && "value" in change);
       hp = (change.value as { actor: { inline: { hp: { cur: number } } } }).actor.inline.hp.cur;
+      assert.equal(hp, 30 - 7 * acked.length, `an ev acking ${acked.length} of the hits so far carries their HP`);
     }
     assert.deepEqual(acked, ns);
     assert.equal(hp, 9, "three hits of 7 from 30, each applied once");
