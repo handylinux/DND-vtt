@@ -1,9 +1,11 @@
 import { useMemo, useState, type CSSProperties } from "react";
+import type { RoomState } from "#shared/model.ts";
 import { ABILITY_ABBR, ABILITY_NAMES } from "#shared/rules/skills.ts";
 import { Icon } from "../../components/Icon.tsx";
 import { spokenProficiency } from "../../components/ProficiencyMark.tsx";
 import { VISUALLY_HIDDEN } from "../../lib/a11y.ts";
 import { theme } from "../../lib/theme.ts";
+import type { You } from "../../state/types.ts";
 import { useRoomView } from "../../state/view.ts";
 import { BlockResult, type BlockOutcome } from "../dice/BlockResult.tsx";
 import { blockRoller, type BlockFrom, type BlockRoller } from "../dice/blockRolls.ts";
@@ -33,14 +35,15 @@ import type { AbilityBox } from "./abilityTable.ts";
  * same creature keeps the same object across the room's changes, so a list
  * that is open is not handed a new roller at every op.
  */
+/** The roller as text, so equal rollers are equal values and the room store skips the redraw. */
+export function blockRollerText(s: { view: RoomState | null; you: You | null; sceneId: string | null }, from: BlockFrom): string {
+  return s.view && s.you ? (JSON.stringify(blockRoller(s.view, s.you, s.sceneId, from)) ?? "null") : "null";
+}
+
 export function useBlockRoller(from: BlockFrom): BlockRoller | null {
-  const view = useRoomView((s) => s.view);
-  const you = useRoomView((s) => s.you);
-  const sceneId = useRoomView((s) => s.sceneId);
-  const found = view && you ? blockRoller(view, you, sceneId, from) : null;
-  const key = found ? JSON.stringify(found) : "";
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => found, [key]);
+  // Decided inside the selector and compared as text, so a roll or log line elsewhere in the room, which changes the view, redraws nothing here.
+  const text = useRoomView((s) => blockRollerText(s, from));
+  return useMemo(() => JSON.parse(text) as BlockRoller | null, [text]);
 }
 
 const GRID: CSSProperties = { margin: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: theme.space(1) };

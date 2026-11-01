@@ -7,7 +7,7 @@ import { loadMonsters } from "#shared/srd/monsters.ts";
 import { monsterView, statBlockOf } from "#shared/statBlock.ts";
 import { customMonster } from "#shared/testutil.ts";
 import { projectState } from "#shared/project.ts";
-import { DM, room } from "#shared/testutil.ts";
+import { castTable, DM, room } from "#shared/testutil.ts";
 import { createStore } from "zustand/vanilla";
 import type { RoomState } from "#shared/model.ts";
 import { theme } from "../../lib/theme.ts";
@@ -308,4 +308,18 @@ test("sbr: the rolling grid is keyed by its creature, so one creature's result n
   assert.notEqual(keyOf({ characterId: "a" }), keyOf({ characterId: "b" }), "another character's block starts with no result");
   assert.notEqual(keyOf({ characterId: "a" }), keyOf({ tokenId: "a" }));
   assert.equal(keyOf({ characterId: "a" }), keyOf({ characterId: "a" }), "the same creature keeps its result across renders");
+});
+
+test("sbr: a roller reads the same text across a room change that is not its own, so the block is not redrawn (SBR-OPUS-10)", async () => {
+  const { blockRollerText } = await import("./AbilityGrid.tsx");
+  const base = castTable();
+  const view = projectState(base, DM, { sceneId: "s1" }) as unknown as RoomState;
+  const state = (v: RoomState) => ({ view: v, you: DM, sceneId: "s1" });
+  const from = { tokenId: "g1" };
+  const before = blockRollerText(state(view), from);
+  assert.notEqual(before, "null", "a real roller, so equal text means something");
+  // A new view object with a new log line and an unrelated change, as every roll makes.
+  const next = { ...view, log: [...view.log, { id: "9:0", at: "", kind: "event", data: { type: "dice" } } as never], meta: { ...view.meta } } as RoomState;
+  assert.equal(blockRollerText(state(next), from), before);
+  assert.equal(blockRollerText({ view: null, you: DM, sceneId: "s1" }, from), "null");
 });
