@@ -109,14 +109,17 @@ class Check {
   readonly actor: Viewer;
   readonly deps: PermissionDeps;
   readonly opts: ProjectOpts;
+  /** Whether a move's full-size stand off the grid is judged (`standCheck`): off for the touch rule's search along a walk, which judges it after (`moveLanding`). */
+  readonly stands: boolean;
   private encounter: ProjectedEncounter | null | undefined;
   private readonly grounds = new Map<string, Ground | null>();
 
-  constructor(state: RoomState, actor: Viewer, deps: PermissionDeps) {
+  constructor(state: RoomState, actor: Viewer, deps: PermissionDeps, stands = true) {
     this.state = state;
     this.actor = actor;
     this.deps = deps;
     this.opts = { sceneId: state.meta.playerSceneId };
+    this.stands = stands;
   }
 
   visible(key: string): boolean {
@@ -219,11 +222,16 @@ class Check {
 }
 
 export function canApply(op: Op, actor: Viewer, state: RoomState, deps: PermissionDeps): Decision {
+  return decide(op, actor, state, deps, true);
+}
+
+/** `canApply`, with the off-grid stand check left out where `stands` is false (Check `stands`). */
+function decide(op: Op, actor: Viewer, state: RoomState, deps: PermissionDeps, stands: boolean): Decision {
   if (op.t === "roll.answer" && op.tag === undefined) return refuse("invalid", ANSWER_NEEDS_TAG);
   if (op.t === "sys.restore" && op.entries.some((entry) => entry.key.startsWith("saveOutcome:"))) {
     return refuse("invalid", "a save outcome requires a lifecycle transition");
   }
-  const check = new Check(state, actor, deps);
+  const check = new Check(state, actor, deps, stands);
   const decision = actor.role === "dm" ? forDm(op, check) : forPlayer(op, check);
   // After the role's checks, so a player who names a hidden effect hears that it is not there, never what it holds.
   if (!decision.ok) return decision;
@@ -2147,11 +2155,12 @@ export function touchLanding(op: Op, actor: Viewer, state: RoomState, deps: Perm
   if (first.ok || !TOUCH_REFUSALS.has(first.message)) return null;
   const c = new Check(state, actor, deps);
   const takes = (o: Op) => canApply(o, actor, state, deps).ok;
+  const walks = (o: Op) => decide(o, actor, state, deps, false).ok;
   switch (op.t) {
     case "token.move":
-      return moveLanding(c, op, takes);
+      return moveLanding(c, op, takes, walks);
     case "token.moveMany":
-      return groupLanding(c, op, takes);
+      return groupLanding(c, op, takes, walks);
     case "token.update":
       return resizeLanding(c, op, takes);
     case "token.create":
@@ -2191,8 +2200,11 @@ function cutMove(op: OpOf<"token.move">, token: Token, at: Point, piece: number,
   return out;
 }
 
-/* `squeeze: false` for a mover of a group, which carries no squeeze: the search then goes back to the last spot it takes unsqueezed. */
-function moveLanding(c: Check, op: OpOf<"token.move">, takes: (o: Op) => boolean, opts: { squeeze: boolean } = { squeeze: true }): TouchLanding | null {
+/*
+ * `squeeze: false` for a mover of a group, which carries no squeeze: the search then goes back to the last spot it takes unsqueezed.
+ * `walks` is the check without its off-grid stand test (Check `stands`).
+ */
+function moveLanding(c: Check, op: OpOf<"token.move">, takes: (o: Op) => boolean, walks: (o: Op) => boolean, opts: { squeeze: boolean } = { squeeze: true }): TouchLanding | null {
   if (op.teleport !== undefined) return null;
   const on = walkingOn(c, op.tokenId, op);
   if (!on) return null;
@@ -2242,9 +2254,20 @@ function moveLanding(c: Check, op: OpOf<"token.move">, takes: (o: Op) => boolean
     const s = spots[k]!;
     return cutMove(op, token, s.at, s.piece, cutHeight(c, s.from, s.at), s.squeeze === true);
   };
-  const last = lastTaken(spots.length - 1, (k) => takes(candidate(k)));
-  return last === null ? null : { op: candidate(last), words: SOMETHING_BLOCKS };
+  // The stand test refuses a spot here and there along a walk, where a wall crosses the box but misses the core, so the spots the
+  // whole check takes are no run from the start (FU44-SOL-01). Those the walk's own tests take are, so the gallop finds the last of
+  // them, and the landing steps back from there to the first the whole check takes, held where it stands past a few.
+  const last = lastTaken(spots.length - 1, (k) => walks(candidate(k)));
+  if (last === null) return null;
+  // Refused by the stand test alone, the landing says what the refusal does: the wall where the sender sees the whole footprint (FU44-OPUS-4).
+  const own = walks(op) ? canApply(op, c.actor, c.state, c.deps) : null;
+  const words = own && !own.ok ? own.message : SOMETHING_BLOCKS;
+  for (let k = last; k >= Math.max(0, last - STAND_STEPS_BACK); k--) if (takes(candidate(k))) return { op: candidate(k), words };
+  return takes(candidate(0)) ? { op: candidate(0), words } : null;
 }
+
+/** How many spots a touch landing steps back past those the stand test refuses: more than a few walls through a box in a row is rare. */
+const STAND_STEPS_BACK = 32;
 
 /*
  * The last index in 0 to n - 1 whose candidate the check takes, assuming
@@ -2279,13 +2302,13 @@ function lastTaken(n: number, taken: (k: number) => boolean): number | null {
  * whose own landing would squeeze goes back to the last spot it takes
  * unsqueezed (MD2-ASTRA-8, MD2-LK-9). Words are the first landed move's.
  */
-function groupLanding(c: Check, op: OpOf<"token.moveMany">, takes: (o: Op) => boolean): TouchLanding | null {
+function groupLanding(c: Check, op: OpOf<"token.moveMany">, takes: (o: Op) => boolean, walks: (o: Op) => boolean): TouchLanding | null {
   let words: string | null = null;
   const moves = op.moves.map((move) => {
     const single: OpOf<"token.move"> = { t: "token.move", ...move };
     const alone = canApply(single, c.actor, c.state, c.deps);
     if (alone.ok || !TOUCH_REFUSALS.has(alone.message)) return move;
-    const landed = moveLanding(c, single, takes, { squeeze: false });
+    const landed = moveLanding(c, single, takes, walks, { squeeze: false });
     if (!landed || landed.op.t !== "token.move") return move;
     words ??= landed.words;
     const { elevation: _elevation, ...rest } = move;
@@ -2435,13 +2458,18 @@ function routeCheck(c: Check, tokenId: string, routes: readonly (readonly RouteP
 function standCheck(c: Check, tokenId: string, to: StoredEnd, route?: readonly RoutePiece[]): Decision {
   const token = c.state.tokens[tokenId];
   const scene = token ? c.state.scenes[token.sceneId] : undefined;
-  if (!token || !scene || scene.blockMovement !== true || to.squeeze === true || (to.x === token.x && to.y === token.y)) return OK;
+  if (!c.stands || !token || !scene || scene.blockMovement !== true || to.squeeze === true || (to.x === token.x && to.y === token.y)) return OK;
   const walker = walkerFor(c.state, token, seenAllIn(c), { to });
   const points = route ? routePoints(c.state.buildChunks, walker, route, to.elevation ?? token.elevation) : [];
   if (!offGridWallThrough(c.state, walkEnd(c.state, walker, { x: to.x, y: to.y }, points.slice(1, -1)))) return OK;
+  return refuse("forbidden", standWords(c, token, to));
+}
+
+/** A stand refusal's words, as a resize's: the wall named only where the sender sees the whole footprint, full size there, live. */
+function standWords(c: Check, token: Token, at: Point): string {
   const ground = c.liveGround(token.sceneId);
   const { squeeze: _squeeze, ...full } = token;
-  return refuse("forbidden", ground && !footprintLive(ground, { ...full, x: to.x, y: to.y }) ? SOMETHING_BLOCKS : WALL_IN_THE_WAY);
+  return ground && !footprintLive(ground, { ...full, x: at.x, y: at.y }) ? SOMETHING_BLOCKS : WALL_IN_THE_WAY;
 }
 
 /** Where a move, an attach or a restore puts a token, with the squeeze it stores there (absent for none). */

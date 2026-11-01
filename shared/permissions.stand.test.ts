@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { wall } from "./discoveryTestutil.ts";
+import { lift, wall } from "./discoveryTestutil.ts";
 import type { RoomState, Token } from "./model.ts";
-import { WALL_IN_THE_WAY, canApply, type PermissionDeps } from "./permissions.ts";
-import type { Op } from "./protocol.ts";
+import { SOMETHING_BLOCKS, WALL_IN_THE_WAY, canApply, touchLanding, type PermissionDeps } from "./permissions.ts";
+import type { Op, OpOf } from "./protocol.ts";
 import { DM, P1, room, scene, token } from "./testutil.ts";
 
 /**
@@ -64,5 +64,59 @@ describe("a player's move that ends full size off the grid meets the walls throu
     assert.equal(decide({ t: "token.move", tokenId: "half", x: 2.5, y: 10 }, s), "ok", "a square further south, clear of it");
     // A Medium creature's walk keeps its own grid from where it stands, so the core, its middle, decides wherever that is.
     assert.equal(decide({ t: "token.move", tokenId: "gob", x: 3.5, y: 8.5 }, s), "ok", "a goblin half a square off, its box over the wall's end");
+  });
+});
+
+/** Sol's room (review FU44-SOL-01): fog on, a Large warhorse at 0.5, 9.5, a short wall through its box at x 2.5 and 3.5 but not its core, and a wall at x 10. */
+function shortWall(lit: boolean): RoomState {
+  const s = room({ scenes: { s1: scene("s1", { bounds: { w: 22, h: 16 }, blockMovement: true, autoWalls: "off", fogEnabled: true }) } });
+  s.buildChunks = {};
+  wall(s, "fu44fl000001", [3.75, 9.75], [4.25, 9.75]);
+  wall(s, "fu44fl000002", [10, 6], [10, 14]);
+  s.tokens.horse = token("horse", { size: "large", x: 0.5, y: 9.5, name: "Warhorse", kind: "npc", ownerIds: ["p1"] });
+  if (lit) lift(s, "dm", { x: 0, y: 0, w: 22, h: 16 });
+  return s;
+}
+
+function fogCorridor(lit: boolean): RoomState {
+  const s = corridor();
+  s.scenes.s1 = { ...s.scenes.s1!, fogEnabled: true };
+  if (lit) lift(s, "dm", { x: 0, y: 0, w: 22, h: 16 });
+  return s;
+}
+
+const where = (op: Op | undefined) => (op?.t === "token.move" ? [op.x, op.y, op.route] : op?.t === "token.moveMany" ? [op.moves[0]!.x, op.moves[0]!.y] : null);
+
+describe("the touch rule lands a walk the stand test stops where the whole check takes it (review FU44-SOL-01, FU44-OPUS-3 and FU44-OPUS-4)", () => {
+  test("past a short wall that refuses two spots along the way, the walk lands at the last spot it takes, plain, routed and in a group", () => {
+    for (const lit of [false, true]) {
+      const s = shortWall(lit);
+      const plain: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 12, y: 10 };
+      for (const [op, at] of [
+        [plain, [7.5, 9.5, undefined]],
+        [{ ...plain, route: [[12, 9.5, 0, 0]] }, [8, 9.5, [[8, 9.5, 0, 0]]]],
+        [{ t: "token.moveMany", moves: [{ tokenId: "horse", x: 12, y: 10 }] }, [7.5, 9.5]],
+      ] as [Op, unknown[]][]) {
+        const landed = touchLanding(op, P1, s, deps);
+        assert.deepEqual(where(landed?.op), at, `lit ${lit}: ${JSON.stringify(op)}`);
+        assert.equal(decide(landed!.op, s), "ok");
+      }
+    }
+  });
+
+  test("into the corridor's mouth: dark ground names nothing and lit ground the wall, and either way the walk lands at 4, 5 with those words", () => {
+    for (const lit of [false, true]) {
+      const s = fogCorridor(lit);
+      const words = lit ? WALL_IN_THE_WAY : SOMETHING_BLOCKS;
+      for (const [op, at] of [
+        [{ t: "token.move", tokenId: "horse", x: 4.5, y: 5 }, [4, 5, undefined]],
+        [{ t: "token.move", tokenId: "horse", x: 4.5, y: 5, route: [[4.5, 5, 1, 0]] }, [4, 5, [[4, 5, 1, 0]]]],
+        [{ t: "token.moveMany", moves: [{ tokenId: "horse", x: 4.5, y: 5 }] }, [4, 5]],
+      ] as [Op, unknown[]][]) {
+        assert.equal(decide(op, s), `forbidden: ${words}`, `lit ${lit}`);
+        const landed = touchLanding(op, P1, s, deps);
+        assert.deepEqual([where(landed?.op), landed?.words], [at, words], `lit ${lit}: ${JSON.stringify(op)}`);
+      }
+    }
   });
 });
