@@ -231,15 +231,27 @@ describe("the admin page", () => {
     // The CLI's list-rooms prints the same size for the room, once it has unloaded and its snapshot settled.
     for (let i = 0; i < 100 && t.manager.get(roomId); i++) await new Promise((r) => setTimeout(r, 20));
     assert.equal(t.manager.get(roomId), null);
-    const settled = (await admin.request("GET", "/api/admin/rooms")).json<{ rooms: AdminRoom[] }>().rooms.find((r) => r.id === roomId)!;
-    assert.equal(settled.bytes, await roomPhysicalBytes(t.pool, roomId));
-    const cli = await run(process.execPath, ["scripts/admin.ts", "list-rooms"], {
-      cwd: fileURLToPath(new URL("../../", import.meta.url)),
-      env: { PATH: process.env.PATH ?? "", DATABASE_URL: t.config.DATABASE_URL },
-    });
-    const line = cli.stdout.split("\n").find((l) => l.startsWith(`${roomId.slice(0, 4)}-${roomId.slice(4)} `));
-    assert.ok(line, cli.stdout);
-    const kib = (settled.bytes / 1024).toFixed(1);
+    // A late snapshot or log write can still land after the unload. Accept the CLI's line only when the
+    // room's bytes read the same before and after the CLI ran, so the two sizes describe the same state.
+    let line: string | undefined;
+    let kib = "";
+    let stdout = "";
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const before = await roomPhysicalBytes(t.pool, roomId);
+      const cli = await run(process.execPath, ["scripts/admin.ts", "list-rooms"], {
+        cwd: fileURLToPath(new URL("../../", import.meta.url)),
+        env: { PATH: process.env.PATH ?? "", DATABASE_URL: t.config.DATABASE_URL },
+      });
+      stdout = cli.stdout;
+      line = stdout.split("\n").find((l) => l.startsWith(`${roomId.slice(0, 4)}-${roomId.slice(4)} `));
+      if (before !== (await roomPhysicalBytes(t.pool, roomId))) continue;
+      const settled = (await admin.request("GET", "/api/admin/rooms")).json<{ rooms: AdminRoom[] }>().rooms.find((r) => r.id === roomId)!;
+      assert.equal(settled.bytes, before, "the listing and the CLI agree with the disk once it holds still");
+      kib = (before / 1024).toFixed(1);
+      break;
+    }
+    assert.ok(kib, "the room's bytes never held still across a CLI run");
+    assert.ok(line, stdout);
     assert.match(line, new RegExp(` ${kib.replace(".", "\\.")} KiB  Listed$`));
   });
 
