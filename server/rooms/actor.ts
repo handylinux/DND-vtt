@@ -99,6 +99,8 @@ export type ActorOptions = {
   receiptCaps: Partial<ReceiptCaps>;
   /** The map step (remember.ts), which only tests replace, to make its op one the schema or the reducer refuses. */
   mapStep: typeof mapStepOps;
+  /** The memory estimate's scan (remember.ts), which only tests wrap, to see which scan each estimate asks for. */
+  memoryGrowth: typeof memoryGrowth;
   /** Asked before each write to the log archive (persistence.ts ArchiveGuard). The app passes the asset volume's free-disk check. */
   archiveGuard: ArchiveGuard;
 };
@@ -119,6 +121,7 @@ export const DEFAULT_ACTOR_OPTIONS: ActorOptions = {
   draw: serverDraw,
   receiptCaps: {},
   mapStep: mapStepOps,
+  memoryGrowth,
   archiveGuard: ARCHIVE_ALWAYS,
 };
 
@@ -1390,7 +1393,7 @@ export class RoomActor {
       }
     }
     const result = applyOp(this.#staged.state, restore, viewer, { seq: this.#staged.seq + 1, at });
-    const over = result.ok && this.#memoryEstimate(result.state, result.touched)?.over;
+    const over = result.ok && this.#memoryEstimate(result.state, result.touched, false)?.over;
     if (!over || confirmed) {
       this.#forgetAsks.delete(key);
       return true;
@@ -1404,10 +1407,12 @@ export class RoomActor {
    * Each layer's running estimate with what an op could add (5.3): its
    * memory as the batch found it, charged, and every op's growth since.
    * `over` when one would pass its cap. Null when the op adds nothing.
+   * `applied` when `after` may be staged, so its map step can reuse a
+   * complete scan. A copy that is only read and thrown away (an undo's
+   * preflight, an ask) takes the cheaper scan that skips unheld ground.
    */
-  #memoryEstimate(after: RoomState, touched: readonly EntityKey[], from: { before: RoomState; totals: ReadonlyMap<string, number> } | null = null): { over: boolean; next: ReadonlyMap<string, number>; commit: () => void } | null {
-    // Applied edits share a complete scan with their map step. Ask copies have no step to reuse it.
-    const growth = memoryGrowth(from?.before ?? this.#staged.state, after, touched, from === null);
+  #memoryEstimate(after: RoomState, touched: readonly EntityKey[], applied: boolean, from: { before: RoomState; totals: ReadonlyMap<string, number> } | null = null): { over: boolean; next: ReadonlyMap<string, number>; commit: () => void } | null {
+    const growth = this.#opts.memoryGrowth(from?.before ?? this.#staged.state, after, touched, applied);
     if (growth.size === 0) return null;
     const estimate = this.#ensureBatch().estimate;
     const next = new Map<string, number>();
@@ -1483,7 +1488,7 @@ export class RoomActor {
       if (inner.sceneId !== op.sceneId) continue;
       const result = applyOp(chain.state, inner, read.viewer, read.ctx);
       if (result.ok) {
-        const memory = this.#memoryEstimate(result.state, result.touched, { before: chain.state, totals: chain.totals });
+        const memory = this.#memoryEstimate(result.state, result.touched, false, { before: chain.state, totals: chain.totals });
         memory?.next.forEach((total, layer) => chain.totals.set(layer, total));
         if (memory?.over) chain.over = true;
         chain.state = result.state;
@@ -1562,7 +1567,8 @@ export class RoomActor {
     // The state limit is what refuses a block save here, since the projected scene leaves blocks out: it says what to do.
     if (!size.ok) return isBlockSave(op) ? { ...size, message: BLOCKS_ROOM_TOO_FULL } : size;
     // Only the DM's ops grow players' memory by what they build: a player's door is touched, which drops its entries.
-    const memory = viewer.role === "dm" && viewer !== SERVER_ACTOR ? this.#memoryEstimate(result.state, result.touched) : null;
+    // An op that asks is refused only past a cap, so it is scanned as applied: nearly every one goes on to its map step.
+    const memory = viewer.role === "dm" && viewer !== SERVER_ACTOR ? this.#memoryEstimate(result.state, result.touched, true) : null;
     if (asks && memory?.over) return { ok: false, code: "forget", message: FORGET_ASK };
     // The room stored is the real one, larger only by what a public springing changed, which every viewer sees anyway: the
     // guard counts that too, so its bounds stay bounds of what is stored.

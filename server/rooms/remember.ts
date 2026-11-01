@@ -932,8 +932,9 @@ export function layerKey(sceneId: string, layer: Layer): string {
  * changed on a layer's remembered ground counts as out of sight, at the
  * charge of the entry the step would write from what the build was, so
  * the estimate is never low. Keyed by layerKey. Applied edits retain a
- * complete scan for the map step. Ask-only reads filter unheld ground,
- * since no map step will use their discarded changes.
+ * complete scan for the map step. Reads of a copy that is thrown away (an
+ * ask, an undo's preflight) filter unheld ground, since no map step will
+ * use their discarded changes.
  */
 export function memoryGrowth(before: RoomState, after: RoomState, touched: readonly EntityKey[], forMapStep = false): Map<string, number> {
   const out = new Map<string, number>();

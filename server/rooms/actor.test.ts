@@ -29,7 +29,7 @@ import { applyOp } from "#shared/reducer.ts";
 import { actor as testActor, character as testCharacter, companionBlock as testBlock, entry as testEntry, template as testTemplate, token as testToken } from "#shared/testutil.ts";
 import { ASK_CHAIN_MS, RoomActor, RoomReplayFailed, SysOpRefused, type ActorDeps } from "./actor.ts";
 import { layerCharge, MEMORY_CAP } from "./memorySize.ts";
-import { mapStepOps } from "./remember.ts";
+import { mapStepOps, memoryGrowth } from "./remember.ts";
 import { layerHeld } from "#shared/reducer/memory.ts";
 import { encodeTile, fullTileBits } from "#shared/rules/fog.ts";
 import { SnapshotBudget } from "./budgets.ts";
@@ -3139,6 +3139,31 @@ describe("map discovery on the actor (docs/design/design-v1-map-discovery.md 5.3
       // Small edits after it ask nothing.
       assert.equal(await send({ t: "build.paint", sceneId, terrain: "stone", cells: ["94,40"] }), null);
     });
+  });
+
+  test("only an estimate whose copy may be staged takes the complete scan: an undo's preflight reads the cheaper one (FU40PERF-1)", async () => {
+    const dm = member("DM", "dm");
+    const player = member("Ayla", "player");
+    const { state, sceneId } = discovery(dm, player);
+    const scans: boolean[] = [];
+    const recorded: typeof memoryGrowth = (before, after, touched, forMapStep) => {
+      scans.push(forMapStep === true);
+      return memoryGrowth(before, after, touched, forMapStep);
+    };
+    await withRoom(
+      state,
+      dm,
+      async (_actor, send) => {
+        const scanned = async (op: Parameters<typeof send>[0]) => {
+          scans.length = 0;
+          assert.equal(await send(op), null);
+          return [...scans];
+        };
+        assert.deepEqual(await scanned({ t: "build.paint", sceneId, terrain: "wood", cells: ["2,2", "3,2"] }), [true], "an applied edit shares its scan with the map step");
+        assert.deepEqual(await scanned({ t: "undo" }), [false, true], "the preflight's copy is thrown away, and the restore that applies is scanned whole");
+      },
+      { memoryGrowth: recorded },
+    );
   });
 
   test("a gesture of bands asks first: none of it applies before the question, a no leaves it unmade, a yes builds it whole (builder's item 10)", async () => {
