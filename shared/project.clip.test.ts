@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { liftSubs, remember, wall } from "./discoveryTestutil.ts";
-import { wallChunk } from "./keys.ts";
+import { keys, tileKey, wallChunk } from "./keys.ts";
 import type { FreeWall, GridShape, InitEntry, LogEntry, RoomState, Token, Viewer } from "./model.ts";
 import {
   activeRowShownTo,
   areaSeenMark,
+  dependents,
   heldSightClip,
   inSightOfNonOwners,
   lineReader,
@@ -18,11 +19,13 @@ import {
   withheldFromViewer,
   withheldWhereItStands,
 } from "./project.ts";
+import { walkerFor } from "./rules/attach.ts";
 import { occupiedHexes, storedCenter } from "./rules/footprint.ts";
 import { wallSpans } from "./rules/held.ts";
 import { hexAt, hexCenter, hexKey, hexNeighbors, hexSubcells, sceneHexes, HEX_R, type Hex, type HexGrid } from "./rules/hex.ts";
 import { COLUMNS, onHex, ROWS, sideWall } from "./rules/hexWalls.testkit.ts";
 import { clipFootprint, sightClipOf } from "./rules/vision.ts";
+import { publicToken } from "./rules/walkWorld.ts";
 import { sceneWalls } from "./rules/walls.ts";
 import { chance, DM, int, member, P1, pick, rng, room, scene, template } from "./testutil.ts";
 
@@ -33,7 +36,7 @@ import { chance, DM, int, member, P1, pick, rng, room, scene, template } from ".
  * where ops stored before op version 37 read the build's walls.
  * Seen by all on a per-player hex scene is what the shared class's copy
  * shows, and every screen shows it (docs/design/design-v1-per-player-vision.md
- * decision 10).
+ * decision 10). Devices read it from the `seenAll` mark.
  */
 
 const SHAPES = [
@@ -516,5 +519,166 @@ describe("seen by all on a per-player hex scene is what the shared class's copy 
       }
     }
     assert.ok(pairs > 100, `${pairs} pairs`);
+  });
+
+  for (const [name, g] of SHAPES) {
+    test(`${name}: a Huge rider seen by all that P1's own copy clips is a member of the group every device walks`, () => {
+      const s = hexRoom(g, { vision: true, holders: ["p1", "p2"] });
+      s.meta = { ...s.meta, playerSceneId: "s1" };
+      const at = { col: 8, row: 8 };
+      s.tokens.lamp = onHex(g, "lamp", "medium", { col: 10, row: 8 }, { name: "Lamp", kind: "npc", disposition: "ally", partyVision: true, light: { bright: 5, dim: 0 } });
+      const c = hexCenter(g, at);
+      const a: [number, number] = [q(c.x + 0.6), q(c.y - 2.2)];
+      const b: [number, number] = [q(c.x + 0.6), q(c.y + 2.2)];
+      const all = sceneHexes(g, s.scenes.s1!.bounds);
+      const strip = new Set<string>();
+      for (let t = 0; t <= 200; t++) {
+        const y = a[1] + ((b[1] - a[1]) * t) / 200;
+        for (const dx of [-0.02, 0, 0.02]) strip.add(hexKey(hexAt(g, { x: a[0] + dx, y })));
+      }
+      liftSubs(s, "party", subsOf(g, all.filter((h) => !strip.has(hexKey(h)))));
+      liftSubs(s, { holder: "p1" }, subsOf(g, all.filter((h) => strip.has(hexKey(h)))));
+      wall(s, "grw000000001", a, b);
+      s.tokens.beast = onHex(g, "beast", "gargantuan", at, { name: "Beast", kind: "npc" });
+      s.tokens.rider = { ...onHex(g, "rider", "huge", at, { name: "Rider", kind: "npc" }), attached: { to: "beast", kind: "ride" } };
+      const rider = s.tokens.rider!;
+      assert.equal(inSightOfNonOwners(s, rider, {}), true, "seen by all");
+      const p1Copy = projectState(s, P1, { sceneId: "s1" }) as unknown as RoomState;
+      assert.equal(withheldFromViewer(p1Copy, { memberId: "", role: "player" }, rider), true, "P1's own copy clips it");
+      const server = walkerFor(s, rider, (t) => s.tokens[t.id] !== undefined && inSightOfNonOwners(s, s.tokens[t.id]!, {}));
+      for (const v of [P1, P2, P3, DM]) {
+        const view = projectState(s, v, { sceneId: "s1" }) as unknown as RoomState;
+        const mine = view.tokens.rider!;
+        assert.ok(mine, `${v.memberId}'s screen shows it`);
+        const device = walkerFor(view, mine, (t) => view.tokens[t.id] !== undefined && publicToken(view, view.tokens[t.id]!, { role: v.role }));
+        assert.deepEqual(device.offHolder, server.offHolder, `${v.memberId}'s device walks it off its mount as the server does`);
+      }
+    });
+  }
+});
+
+describe("devices read seen by all from the projection's mark", () => {
+  test("random per-player rooms with vision and memory: a holder's, a non-holder's and the DM's device answer as the server does", () => {
+    let marked = 0;
+    for (let n = 0; n < 400; n++) {
+      const { s, ogre } = randomRoom(n, { vision: n % 4 !== 0, perPlayer: true, seed: 0xe17 });
+      s.meta = { ...s.meta, playerSceneId: "s1" };
+      const server = inSightOfNonOwners(s, ogre, {});
+      for (const v of [P1, P2, P3, DM]) {
+        const view = projectState(s, v, { sceneId: "s1" }) as unknown as RoomState;
+        const mine = view.tokens.ogre;
+        if (!mine) continue;
+        assert.equal(publicToken(view, mine, { role: v.role }), server, `room ${n}: ${v.memberId}'s device`);
+        if ((mine as Token & { seenAll?: true }).seenAll) marked++;
+      }
+    }
+    assert.ok(marked > 500, `${marked} marked copies`);
+  });
+
+  for (const [name, g] of SHAPES) {
+    test(`${name}: where a device's own walls would answer otherwise, its answer is still the server's`, () => {
+      // A holder's copy holds a wall the shared class's lacks.
+      const s = hexRoom(g, { vision: true, holders: ["p1", "p2"] });
+      s.meta = { ...s.meta, playerSceneId: "s1" };
+      s.tokens.lamp = onHex(g, "lamp", "medium", { col: 10, row: 8 }, { name: "Lamp", kind: "npc", disposition: "ally", partyVision: true, light: { bright: 5, dim: 0 } });
+      const c = hexCenter(g, { col: 8, row: 8 });
+      const a: [number, number] = [q(c.x + 0.6), q(c.y - 2.2)];
+      const b: [number, number] = [q(c.x + 0.6), q(c.y + 2.2)];
+      const all = sceneHexes(g, s.scenes.s1!.bounds);
+      const strip = new Set<string>();
+      for (let t = 0; t <= 200; t++) {
+        const y = a[1] + ((b[1] - a[1]) * t) / 200;
+        for (const dx of [-0.02, 0, 0.02]) strip.add(hexKey(hexAt(g, { x: a[0] + dx, y })));
+      }
+      liftSubs(s, "party", subsOf(g, all.filter((h) => !strip.has(hexKey(h)))));
+      liftSubs(s, { holder: "p1" }, subsOf(g, all.filter((h) => strip.has(hexKey(h)))));
+      wall(s, "dmw000000001", a, b);
+      s.tokens.ogre = onHex(g, "ogre", "gargantuan", { col: 8, row: 8 }, { name: "Ogre", kind: "npc" });
+      const holder = projectState(s, P1, { sceneId: "s1" }) as unknown as RoomState;
+      assert.equal(withheldWhereItStands(holder, holder.tokens.ogre!), true, "P1's own walls withhold it");
+      assert.equal(publicToken(holder, holder.tokens.ogre!, { role: "player" }), true, "P1's device reads the mark");
+      // The DM's view holds the build's walls on a whole-party scene, where the party's copy lacks one.
+      const { s: dmRoom, ogre } = middleWallRoom(g);
+      const view = projectState(dmRoom, DM, { sceneId: "s1" }) as unknown as RoomState;
+      assert.equal(withheldWhereItStands(view, view.tokens.ogre!), true, "the build's walls withhold it");
+      assert.equal(inSightOfNonOwners(dmRoom, ogre, {}), true);
+      assert.equal(publicToken(view, view.tokens.ogre!, { role: "dm" }), true, "the DM's device reads the mark");
+      // And a wall the DM added where the party remembers none, out of sight on a whole-party vision scene.
+      const m = hexRoom(g, { vision: true });
+      const at = { col: 9, row: 8 };
+      const big = onHex(g, "ogre", "huge", at, { name: "Ogre", kind: "npc" });
+      m.tokens.lamp = onHex(g, "lamp", "medium", { col: 13, row: 8 }, { name: "Lamp", kind: "npc", disposition: "ally", partyVision: true, light: { bright: 15, dim: 0 } });
+      liftSubs(m, "party", subsOf(g, occupiedHexes(g, big).flatMap((h) => [h, ...hexNeighbors(g, h)])));
+      const ctr = storedCenter(big);
+      const w: FreeWall = { id: "dmm000000001", a: [q(ctr.x + 0.3), q(ctr.y - 0.6)], b: [q(ctr.x + 0.3), q(ctr.y + 0.6)], f: { kind: "wall" } };
+      wall(m, w.id, w.a, w.b);
+      rememberWall(m, null, w, null);
+      m.tokens.ogre = big;
+      const dmView = projectState(m, DM, { sceneId: "s1" }) as unknown as RoomState;
+      if (dmView.tokens.ogre) assert.equal(publicToken(dmView, dmView.tokens.ogre, { role: "dm" }), inSightOfNonOwners(m, big, {}), "the DM's device with the party's memory");
+    });
+
+    test(`${name}: a revealed Large object carrying a PC is public on every device, and the PC's Get off walks as the server's`, () => {
+      const { s } = middleWallRoom(g, { holders: ["p1"] });
+      s.meta = { ...s.meta, playerSceneId: "s1" };
+      const ogre = s.tokens.ogre!;
+      delete s.tokens.ogre;
+      s.tokens.cart = { ...ogre, id: "cart", name: "Cart", kind: "object", size: "huge", disposition: "neutral" };
+      s.tokens.pc = { ...onHex(g, "pc", "medium", { col: 9, row: 7 }, { name: "Hero", kind: "pc", disposition: "ally", ownerIds: ["p1"] }), attached: { to: "cart", kind: "ride" } };
+      const cart = s.tokens.cart!;
+      assert.equal(inSightOfNonOwners(s, cart, {}), true, "the server sees the cart");
+      assert.equal(inSightOfNonOwners(s, cart, { opVersion: 36 }), false, "where the build's walls would not");
+      const server = walkerFor(s, s.tokens.pc!, (t) => s.tokens[t.id] !== undefined && inSightOfNonOwners(s, s.tokens[t.id]!, {}));
+      assert.ok(server.offHolder, "the server walks the PC off the cart");
+      for (const v of [P1, P2, DM]) {
+        const view = projectState(s, v, { sceneId: "s1" }) as unknown as RoomState;
+        assert.ok(view.tokens.cart && view.tokens.pc, `${v.memberId} holds both`);
+        assert.equal(publicToken(view, view.tokens.cart!, { role: v.role }), true, `${v.memberId}'s device`);
+        const device = walkerFor(view, view.tokens.pc!, (t) => view.tokens[t.id] !== undefined && publicToken(view, view.tokens[t.id]!, { role: v.role }));
+        assert.deepEqual(device.offHolder, server.offHolder, `${v.memberId}'s Get off`);
+      }
+    });
+  }
+
+  test("the mark is absent where the shared class's copy withholds the token, and only on hex scenes", () => {
+    const { s } = middleWallRoom(ROWS, { holders: ["p1"], layer: { holder: "p1" } });
+    s.meta = { ...s.meta, playerSceneId: "s1" };
+    const view = projectState(s, P1, { sceneId: "s1" });
+    assert.ok(view.tokens.ogre, "P1's own layer shows it");
+    assert.equal(view.tokens.ogre!.seenAll, undefined);
+    const squares = room({ scenes: { s1: scene("s1", { fogEnabled: true, vision: { on: false, light: "bright", perPlayer: true } }) } });
+    squares.tokens.goblin = { ...onHex(ROWS, "goblin", "medium", { col: 2, row: 2 }), sceneId: "s1", fogExempt: true };
+    for (const v of [P1, DM]) assert.equal(projectState(squares, v, { sceneId: "s1" }).tokens.goblin?.seenAll, undefined, v.memberId);
+  });
+});
+
+describe("what re-projects a hex creature when a copy of the walls round it can change", () => {
+  test("a fog, explored or memory write, a sight change where memory is, and a scene's bounds, each to the DM too", () => {
+    const { s, ogre } = middleWallRoom(ROWS, { vision: true, holders: ["p1"] });
+    const far = onHex(ROWS, "far", "huge", { col: 2, row: 14 }, { name: "Far", kind: "npc" });
+    s.scenes.s1 = { ...s.scenes.s1!, bounds: { w: 120, h: 16 } };
+    s.tokens.far = { ...far, x: far.x + 100 };
+    const c = storedCenter(ogre);
+    const tx = Math.floor(c.x / 16);
+    const ty = Math.floor(c.y / 16);
+    const near = keys.token(ogre.id);
+    for (const key of [keys.fog("s1", tx, ty), keys.explored("s1", tx, ty), keys.exploredBy("s1", "p1", tx, ty), keys.memory("s1", tx, ty), keys.memoryBy("s1", "p1", tx, ty)]) {
+      const out = dependents(s, [key]);
+      assert.ok(out.includes(near), `${key} re-projects the creature`);
+      assert.ok(!out.includes(keys.token("far")), `${key} leaves the far one`);
+    }
+    // Sight decides live or remembered only where memory is, so a sight change beside the creature's tile re-projects it only then.
+    assert.ok(!dependents(s, [keys.sight("s1", tx + 1, ty)]).includes(near));
+    const w: FreeWall = { id: "depwall00001", a: [q(c.x), q(c.y - 0.5)], b: [q(c.x), q(c.y + 0.5)], f: { kind: "wall" } };
+    rememberWall(s, null, w, w);
+    assert.ok(dependents(s, [keys.sight("s1", tx + 1, ty)]).includes(near), "a sight change where memory is");
+    const shrunk = { ...s, scenes: { ...s.scenes, s1: { ...s.scenes.s1!, bounds: { w: 110, h: 16 } } } };
+    for (const out of [dependents(shrunk, [keys.scene("s1")], s), dependents(s, [keys.scene("s1")], shrunk)]) {
+      assert.ok(out.includes(near), "a change of the scene's bounds");
+      assert.ok(out.includes(keys.token("far")));
+    }
+    const renamed = { ...s, scenes: { ...s.scenes, s1: { ...s.scenes.s1!, name: "Hall" } } };
+    assert.ok(!dependents(renamed, [keys.scene("s1")], s).includes(near), "a new name changes no copy");
+    assert.equal(tileKey("s1", tx, ty), `s1:${tx},${ty}`);
   });
 });

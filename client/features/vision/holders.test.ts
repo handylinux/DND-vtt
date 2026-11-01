@@ -1,9 +1,17 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
+import { liftSubs, wall } from "#shared/discoveryTestutil.ts";
 import type { RoomState } from "#shared/model.ts";
 import { cellVision } from "#shared/perPlayerTestutil.ts";
+import { projectState, withheldWhereItStands } from "#shared/project.ts";
 import { visionRules } from "#shared/ruleHooks.ts";
-import { actor, character, effect, member, room, scene, token } from "#shared/testutil.ts";
+import { occupiedHexes, storedCenter } from "#shared/rules/footprint.ts";
+import { gridOfShape } from "#shared/rules/grid.ts";
+import { hexKey, hexSubcells, type HexGrid } from "#shared/rules/hex.ts";
+import { onHex } from "#shared/rules/hexWalls.testkit.ts";
+import { clipFootprint, sightClipOf } from "#shared/rules/vision.ts";
+import { sceneWalls } from "#shared/rules/walls.ts";
+import { actor, character, DM, effect, member, room, scene, token } from "#shared/testutil.ts";
 import { HOLDERS_UNDER, holderRows, holdersAfter, lendsText, sharedOnlyText, unsharedMounts, untickQuestion } from "./holders.ts";
 
 /** "Who sees for themselves", "Who lends sight" and the mount's note (docs/design/design-v1-per-player-vision.md 7.1), from the DM's view. */
@@ -100,5 +108,29 @@ describe("a mount not every player sees (7.1, risk 2)", () => {
     const lent = riding();
     lent.tokens.horse = { ...lent.tokens.horse!, partyVision: true };
     assert.deepEqual(unsharedMounts(lent, "s1"), [], "a mount sharing sight is always shown");
+  });
+});
+
+describe("a mount not every player sees, on hexes", () => {
+  test("a Huge mount every player sees by the walls they hold says nothing, though the DM's view holds a wall in the dark through its middle", () => {
+    const g = gridOfShape("hexRows") as HexGrid;
+    const s = room({ members: { dm1: member("dm1", "dm"), ana: { ...member("ana"), name: "Ana" } } });
+    s.scenes.s1 = scene("s1", { gridShape: "hexRows", bounds: { w: 20, h: 16 }, autoWalls: "off", fogEnabled: true, vision: { on: false, light: "bright", perPlayer: true } });
+    s.buildChunks = {};
+    const at = { col: 9, row: 7 };
+    const horse = onHex(g, "horse", "huge", at, { kind: "npc", name: "Horse" });
+    const c = storedCenter(horse);
+    const q = (v: number) => Math.round(v * 64) / 64;
+    wall(s, "midwall00001", [q(c.x - 0.25), q(c.y)], [q(c.x + 0.25), q(c.y)]);
+    // The ground the build's wall cuts off from its middle, the only ground revealed.
+    const kept = new Set(clipFootprint(g, horse, sightClipOf(sceneWalls(s.scenes.s1, s.buildChunks))).kept.map((sub) => sub.join(",")));
+    const cut = occupiedHexes(g, horse).filter((h) => hexKey(h) !== hexKey(at) && hexSubcells(g, h).every((sub) => !kept.has(sub.join(","))));
+    assert.ok(cut.length > 0, "the build's wall cuts some of its hexes off");
+    liftSubs(s, "dm", cut.flatMap((h) => hexSubcells(g, h)));
+    s.tokens.horse = horse;
+    s.tokens.thorn = { ...onHex(g, "thorn", "medium", at, { kind: "pc", name: "Thorn", ownerIds: ["ana"] }), attached: { to: "horse", kind: "ride", steer: true } };
+    const view = projectState(s, DM, { sceneId: "s1" }) as unknown as RoomState;
+    assert.equal(withheldWhereItStands(view, view.tokens.horse!), true, "the DM's view withholds it by the build's walls");
+    assert.deepEqual(unsharedMounts(view, "s1"), [], "every player sees it");
   });
 });

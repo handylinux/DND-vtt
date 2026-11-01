@@ -1,6 +1,6 @@
 import { viewMapsOf } from "#shared/keys.ts";
 import type { FogTile, RoomState, Token } from "#shared/model.ts";
-import { withheldFromViewer } from "#shared/project.ts";
+import { seenAllMarked, withheldFromViewer } from "#shared/project.ts";
 import { decodeTile, encodeTile } from "#shared/rules/fog.ts";
 
 /**
@@ -25,8 +25,16 @@ export function unionView(view: RoomState): RoomState {
   return { ...view, exploredTiles };
 }
 
-/** Whether no player sees a token where it stands, by the union (unionView). Its visibility and a blackout are the caller's. */
+/**
+ * Whether no player sees a token where it stands, by the union (unionView).
+ * Its visibility and a blackout are the caller's. A creature the server
+ * marks seen by all (project.ts seenAllMarked) some player sees. Any other
+ * is judged by the build's walls, which the DM's view holds, so on hexes a
+ * creature a holder's own copy of the walls shows can rarely read as seen
+ * by no player.
+ */
 export function withheldFromEveryPlayer(view: RoomState, token: Token): boolean {
+  if (seenAllMarked(view.scenes[token.sceneId], "dm") && (token as Token & { seenAll?: true }).seenAll === true) return false;
   // A projection holds no holder list, so any member id reads the view's own fog and sight: here the union's.
   return withheldFromViewer(unionView(view), { memberId: "", role: "player" }, token);
 }

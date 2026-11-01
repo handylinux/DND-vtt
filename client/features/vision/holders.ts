@@ -1,6 +1,6 @@
 import { LIMITS } from "#shared/limits.ts";
 import type { RoomState, Token } from "#shared/model.ts";
-import { ownsToken, perPlayerScene, sightHolders, withheldWhereItStands } from "#shared/project.ts";
+import { ownsToken, perPlayerScene, seenAllMarked, sightHolders, withheldWhereItStands } from "#shared/project.ts";
 import { holderOf } from "#shared/rules/attach.ts";
 import { HOLDERS_FULL } from "#shared/reducer/map.ts";
 import { displayName } from "../../lib/scene.ts";
@@ -89,16 +89,20 @@ export function lendsText(view: Pick<RoomState, "members" | "holders" | "charact
  * there every player sees only what creatures that share sight see. The
  * DM keeps the turn by making the mount always visible. A mount the DM hid
  * is left out, since being hidden is why. Behind a blackout the answer is
- * the same, since a blackout ends.
+ * the same, since a blackout ends. On a hex scene the server marks what
+ * every player sees (project.ts seenAllMarked), since the DM's view holds
+ * the build's walls where the shared class's copy may hold fewer.
  */
 export function unsharedMounts(view: RoomState, sceneId: string): string[] {
   if (!perPlayerScene(view.scenes[sceneId])) return [];
+  const marked = seenAllMarked(view.scenes[sceneId], "dm");
+  const seenByAll = (t: Token) => (marked ? (t as Token & { seenAll?: true }).seenAll === true : !withheldWhereItStands(view, t));
   const out: { key: string; text: string }[] = [];
   for (const rider of Object.values(view.tokens)) {
     if (!rider || rider.sceneId !== sceneId || rider.attached?.kind !== "ride" || rider.attached.steer !== true) continue;
     const mount = view.tokens[rider.attached.to];
     if (!mount || holderOf(view.tokens, rider) !== mount || mount.visibility === "dm" || rider.visibility === "dm") continue;
-    if (withheldWhereItStands(view, rider) || !withheldWhereItStands(view, mount)) continue;
+    if (!seenByAll(rider) || seenByAll(mount)) continue;
     const name = displayName(mount);
     out.push({ key: `${displayName(rider)}\u0000${rider.id}`, text: `${displayName(rider)} rides ${name}, which not every player sees, so they share no turn. Make ${name} always visible to keep it.` });
   }

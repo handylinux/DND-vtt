@@ -116,6 +116,14 @@ export type ProjectedToken = Omit<Token, "actor" | DmOnlyTokenField> &
     /** Player projections only: drawn above the fog (design 13.3). */
     aboveFog?: boolean;
     /**
+     * Seen by all where it stands, by the walls the shared class holds
+     * (withheldWhereItStands), on the scenes `seenAllMarked` names, which a
+     * device reads it on, its absence there as not seen by all. A holder's
+     * copy and the DM's hold walls the shared copy lacks, so neither can
+     * work it out.
+     */
+    seenAll?: true;
+    /**
      * Player projections only, derived and never stored: a member of kind
      * player owns the token or its character (docs/design/design-v1-dm-tools.md
      * 3.1), as `playerPlays` reads owners. A table display, whose
@@ -1227,7 +1235,37 @@ export function projectToken(state: RoomState, viewer: Viewer, token: Token, opt
  */
 function projectTokenCtx(ctx: Ctx, token: Token): ProjectedToken | null {
   if (!tokenVisibleTo(ctx, token)) return null;
-  if (ctx.viewer.role === "dm") return token;
+  const marked = seenAllMarked(ctx.state.scenes[token.sceneId], ctx.viewer.role) && !withheldWhereItStands(ctx.state, token);
+  if (ctx.viewer.role === "dm") return marked ? markedCopy(token) : token;
+  const out = projectPlayerToken(ctx, token);
+  if (marked) out.seenAll = true;
+  return out;
+}
+
+/**
+ * Where a device reads seen by all from the projection's `seenAll` mark
+ * rather than working it out: a player's copy of a per-player hex scene,
+ * whose holders hold walls the shared class lacks, and the DM's copy of a
+ * hex scene with fog on or per player, which holds the build and no memory.
+ */
+export function seenAllMarked(scene: Pick<Scene, "vision" | "fogEnabled" | "gridShape"> | undefined, role: Viewer["role"]): boolean {
+  if (!scene || !isHex(sceneGrid(scene))) return false;
+  return perPlayerScene(scene) || (role === "dm" && scene.fogEnabled);
+}
+
+/* A DM's token with the mark, kept per token object, which is replaced and never changed, so the fan-out hashes it once. */
+const markedCopies = new WeakMap<Token, ProjectedToken>();
+
+function markedCopy(token: Token): ProjectedToken {
+  let out = markedCopies.get(token);
+  if (!out) {
+    out = { ...token, seenAll: true };
+    if (!isWritable(token)) markedCopies.set(token, out);
+  }
+  return out;
+}
+
+function projectPlayerToken(ctx: Ctx, token: Token): ProjectedToken {
   const aboveFog = isAboveFog(token, isPartyMember(ctx.state, token));
   if (ownsToken(ctx.state, ctx.viewer, token)) {
     const actor = "inline" in token.actor ? { inline: projectActorOwner(token.actor.inline) } : token.actor;
@@ -4110,8 +4148,11 @@ function perPlayerKeys(state: RoomState): EntityKey[] {
  * any of them. On wave 4 scenes, the fog tile an explored write changes and
  * what stands on a tile where exploring or the party's sight changed
  * (tileDependents). On hex scenes, the tokens around a written chunk
- * (wallDependents). With both states of a batch, scene changes invalidate
- * all chunk positions only when their projection inputs differ.
+ * (wallDependents), and with fog on those round every player chunk whose
+ * walls a write can change, since each viewer's copy of them clips a
+ * creature's outline (heldSightClip). With both states of a batch, scene
+ * changes invalidate all chunk positions only when their projection inputs
+ * differ.
  */
 export function dependents(state: RoomState, touched: EntityKey[], other?: RoomState): EntityKey[] {
   const seen = new Set(touched);
@@ -4174,13 +4215,30 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
     if (!scene) return;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (inPositions(scene, cx + dx, cy + dy)) add(keys.chunk(sceneId, cx + dx, cy + dy));
   };
-  // The positions whose chunk reads a fog tile (positionTiles).
+  // The positions whose chunk reads a fog tile (positionTiles), each tile's worked out once, since on hexes it reads every position.
+  const reading = new Map<string, { cx: number; cy: number }[]>();
+  const readingTile = (scene: Scene, tx: number, ty: number) => {
+    const at = partsKey([scene.id, tx, ty]);
+    let out = reading.get(at);
+    if (!out) reading.set(at, (out = positionsReading(scene, tx, ty)));
+    return out;
+  };
   const aroundTile = (sceneId: string, tx: number, ty: number) => {
     const scene = state.scenes[sceneId];
-    if (scene) for (const { cx, cy } of positionsReading(scene, tx, ty)) add(keys.chunk(sceneId, cx, cy));
+    if (scene) for (const { cx, cy } of readingTile(scene, tx, ty)) add(keys.chunk(sceneId, cx, cy));
   };
   const stairScenes = new Set<string>();
   const wallChunks: { sceneId: string; cx: number; cy: number }[] = [];
+  // On a hex scene with fog on, the player chunks a fog, explored or memory write changes, or a sight change where memory
+  // is: every viewer's copy of their walls clips the creatures round them, and each copy carries the seenAll mark.
+  const heldHex = (sceneId: string) => fogScene(sceneId) && isHex(gridOfScene(state, sceneId));
+  const copyAround = (sceneId: string, cx: number, cy: number) => {
+    if (heldHex(sceneId)) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) wallChunks.push({ sceneId, cx: cx + dx, cy: cy + dy });
+  };
+  const copyOnTile = (sceneId: string, tx: number, ty: number) => {
+    const scene = state.scenes[sceneId];
+    if (scene && heldHex(sceneId)) for (const { cx, cy } of readingTile(scene, tx, ty)) wallChunks.push({ sceneId, cx, cy });
+  };
   for (const key of touched) {
     const parsed = parseKey(key);
     if (!parsed) continue;
@@ -4201,6 +4259,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
     } else if (parsed.kind === "memory" || parsed.kind === "memoryBy") {
       // What players remember shows in their chunks there and around, and in the labels and stamps it names (5.6).
       aroundChunk(parsed.sceneId, parsed.cx, parsed.cy);
+      copyAround(parsed.sceneId, parsed.cx, parsed.cy);
       const chunk = readEntity(state, key) as MemoryChunk | null;
       for (const id of Object.keys(chunk?.labels ?? {})) add(keys.label(id));
       for (const id of Object.keys(chunk?.stamps ?? {})) add(keys.stamp(id));
@@ -4212,9 +4271,19 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
       if (scene?.fogEnabled && (!was || sceneFields(scene) !== sceneFields(was) || stableStringify(scene.vision) !== stableStringify(was.vision))) {
         for (const { cx, cy } of chunkPositions(scene)) add(keys.chunk(scene.id, cx, cy));
       }
-    } else if (parsed.kind === "explored") {
+      // Every chunk of a viewer's copy reads the scene's fields, so on hexes each creature's outline may clip anew.
+      if (scene && heldHex(scene.id) && (!was || sceneFields(scene) !== sceneFields(was))) {
+        for (const token of Object.values(state.tokens)) {
+          if (token.sceneId !== scene.id) continue;
+          add(keys.token(token.id));
+          tokenIds.add(token.id);
+        }
+      }
+    } else if (parsed.kind === "fog") copyOnTile(parsed.sceneId, parsed.tx, parsed.ty);
+    else if (parsed.kind === "explored") {
       add(keys.fog(parsed.sceneId, parsed.tx, parsed.ty));
       onTile(parsed.sceneId, parsed.tx, parsed.ty);
+      copyOnTile(parsed.sceneId, parsed.tx, parsed.ty);
       if (fogScene(parsed.sceneId)) aroundTile(parsed.sceneId, parsed.tx, parsed.ty);
       // Every player's fog reads the party's layer, and on a per-player scene so do the shared fog and every owner's
       // route corners (docs/design/design-v1-per-player-vision.md 7.5).
@@ -4225,13 +4294,17 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
       add(keys.fog(parsed.sceneId, parsed.tx, parsed.ty));
       add(keys.exploredAny(parsed.sceneId, parsed.tx, parsed.ty));
       onTile(parsed.sceneId, parsed.tx, parsed.ty);
+      copyOnTile(parsed.sceneId, parsed.tx, parsed.ty);
       cornersOn(parsed.sceneId, parsed.memberId);
       if (fogScene(parsed.sceneId)) aroundTile(parsed.sceneId, parsed.tx, parsed.ty);
     } else if (parsed.kind === "sight" || parsed.kind === "sightAll") {
       onTile(parsed.sceneId, parsed.tx, parsed.ty);
       if (visionScene(parsed.sceneId)) cornersOn(parsed.sceneId, null);
       // Sight decides live or remembered only where some memory has entries (MD-O-24).
-      if (fogScene(parsed.sceneId) && hasMemory(state, parsed.sceneId)) aroundTile(parsed.sceneId, parsed.tx, parsed.ty);
+      if (fogScene(parsed.sceneId) && hasMemory(state, parsed.sceneId)) {
+        aroundTile(parsed.sceneId, parsed.tx, parsed.ty);
+        copyOnTile(parsed.sceneId, parsed.tx, parsed.ty);
+      }
     }
     else if (parsed.kind === "token") tokenIds.add(parsed.id);
     else if (parsed.kind === "character") characterIds.add(parsed.id);

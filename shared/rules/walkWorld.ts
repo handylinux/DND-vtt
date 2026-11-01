@@ -1,5 +1,5 @@
 import type { AreaSlows, AreaTemplate, BuildChunk, Effect, PathStop, RoomState, Token } from "../model.ts";
-import { inSightOfNonOwners, isPartyMember, perPlayerScene, playersSeeGround, projectChunkForPlayer, sharedGround, withheldWhereItStands } from "../project.ts";
+import { inSightOfNonOwners, isPartyMember, perPlayerScene, playersSeeGround, projectChunkForPlayer, seenAllMarked, sharedGround, withheldWhereItStands } from "../project.ts";
 import { computeCoverage, creaturesInArea, type AreaContext, type AreaToken } from "./aoe.ts";
 import { carriedGroup, dragExtra, onHolder, publicMembers } from "./attach.ts";
 import type { DiagonalCounter, DistanceSettings } from "./distance.ts";
@@ -92,13 +92,19 @@ export type WorldOptions = {
  * 10): the shared sight with vision on, the shared fog with fog alone, and
  * every token with both off. A copy holds no owners of another's token, so
  * there a party member reads as one by the projection's `aboveFog`, as in
- * seenWhereMoved.
+ * seenWhereMoved. Where the projection marks it (project.ts seenAllMarked),
+ * on a per-player hex scene and on the DM's hex scenes with fog on, a
+ * device reads the server's answer from the token's `seenAll` mark: a
+ * holder's copy and the DM's hold walls the shared class's copy lacks, so
+ * neither can work it out there.
  */
 export function publicToken(state: RoomState, token: Token, viewer: WalkViewer): boolean {
   if (token.visibility === "dm") return false;
   if (viewer.role === "player" && !perPlayerScene(state.scenes[token.sceneId])) return true;
+  if (state.meta.view?.blackout === true) return false;
+  if (seenAllMarked(state.scenes[token.sceneId], viewer.role)) return (token as Token & { seenAll?: true }).seenAll === true;
   const above = viewer.role === "player" && (token as Token & { aboveFog?: boolean }).aboveFog === true;
-  return state.meta.view?.blackout !== true && !withheldWhereItStands(state, above ? { ...token, fogExempt: true } : token);
+  return !withheldWhereItStands(state, above ? { ...token, fogExempt: true } : token);
 }
 
 function actorOf(state: RoomState, token: Token) {
