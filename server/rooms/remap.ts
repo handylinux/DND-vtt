@@ -371,7 +371,7 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
     out.characters[next.id] = next;
   }
   for (const t of liveTokens) {
-    // A path is tagged with the seq of its turn, and seqs start again in the new room (see `encounter` below).
+    // A path is tagged with the seq of its turn, which counts ops of the old room, so it goes with that seq (see `encounter` below).
     const { path: _path, ...rest } = t;
     const next: Token = {
       ...rest,
@@ -438,8 +438,9 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
     const next: Encounter = { ...rest, activeEntryId: active, entries: kept };
     // The spot belongs to its row and token, so it goes with either of them.
     if (turnStart && entries.has(turnStart.entryId) && tokens.has(turnStart.tokenId) && scenes.has(turnStart.sceneId)) {
-      // The seq that names the turn counts ops of the old room. The new room counts from the start again, so a
-      // later turn could get the same number and take up an old path. The turn records no path until the next.
+      // The seq that names the turn counts ops of the old room. The new room counts on from the newest seq the file's
+      // lines name (lastLineSeq), which need not be this turn's, so a later turn could still get the same number and take
+      // up an old path. The turn records no path until the next.
       // Without its seq the turn shares nothing with a mount either (docs/design-v1-attach.md 7.1).
       const { seq: _seq, mounts: _mounts, ...spot } = turnStart;
       next.turnStart = { ...spot, entryId: entries.of(turnStart.entryId), tokenId: tokens.of(turnStart.tokenId), sceneId: scenes.of(turnStart.sceneId) };
