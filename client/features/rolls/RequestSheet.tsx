@@ -7,6 +7,7 @@ import { Button } from "../../components/Button.tsx";
 import { Checkbox } from "../../components/Checkbox.tsx";
 import { Chip, ChipRow } from "../../components/Chip.tsx";
 import { Input, NUMBER_FIELD_WIDTH, Select } from "../../components/Field.tsx";
+import { Held } from "../../components/Held.tsx";
 import { Help, Note, Section } from "../../components/Panel.tsx";
 import { Segmented } from "../../components/Segmented.tsx";
 import { UnsavedInput } from "../../lib/sheetSwipe.ts";
@@ -194,7 +195,7 @@ export function RequestSheet(props: { from: AskFrom; onClose(): void }) {
         }}
       >
         {/* Locked while the request waits for the server, so nothing set after Send is lost when the sheet closes on the answer. Closing stays, outside it. */}
-        <fieldset disabled={sending} style={{ border: "none", margin: 0, padding: 0, minWidth: 0 }}>
+        <Held held={sending}>
           <div style={{ display: "grid", gap: theme.space(4) }}>
             {recent.length > 0 ? (
               <Section label="Recent" divider={false} style={STACKED}>
@@ -222,7 +223,6 @@ export function RequestSheet(props: { from: AskFrom; onClose(): void }) {
                   key={i}
                   draft={draft}
                   index={i}
-                  disabled={sending}
                   onStep={(step) => change((d) => step(d, i))}
                   onRemove={() => {
                     change((d) => removeChoice(d, i));
@@ -263,7 +263,7 @@ export function RequestSheet(props: { from: AskFrom; onClose(): void }) {
                   />
                   {/* A save's DC is the effect's (SRD 5.2.1 page 7), so only checks get the typical ones (page 6). */}
                   {chips?.map((t) => (
-                    <Chip key={t.dc} circle aria-label={`${t.dc}, ${t.name}`} title={t.name} pressed={t.pressed} disabled={sending} onClick={() => change((d) => tapDc(d, t.dc))}>
+                    <Chip key={t.dc} circle aria-label={`${t.dc}, ${t.name}`} title={t.name} pressed={t.pressed} onClick={() => change((d) => tapDc(d, t.dc))}>
                       {t.dc}
                     </Chip>
                   ))}
@@ -274,7 +274,7 @@ export function RequestSheet(props: { from: AskFrom; onClose(): void }) {
               {options.length === 0 ? <Help>No player plays a character yet.</Help> : null}
               <ChipRow label="Who rolls">
                 {options.map((o) => (
-                  <Chip key={o.key} pressed={ticked(o.ref)} unavailable={o.blocked} disabled={sending} onClick={() => tick(o.ref, !ticked(o.ref))}>
+                  <Chip key={o.key} pressed={ticked(o.ref)} unavailable={o.blocked} onClick={() => tick(o.ref, !ticked(o.ref))}>
                     {o.why ? `${o.name}, ${o.why}` : o.name}
                   </Chip>
                 ))}
@@ -283,13 +283,13 @@ export function RequestSheet(props: { from: AskFrom; onClose(): void }) {
             <Section label="What players see" divider={false} fold={{ open: seenOpen, onToggle: () => setSeenOpen((v) => !v), summary: <span style={{ color: theme.color.textMuted }}>{seen}</span> }}>
               {/* Options that Send reads, so checkboxes rather than switches (docs/design/design-v1-visual.md 3.7). Each shows only while it applies (4.6). */}
               <div style={{ display: "grid" }}>
-                {hasDc ? <Checkbox label="Players see the DC" checked={draft.dcShown} disabled={sending} onChange={(dcShown) => set({ dcShown })} /> : null}
-                <Checkbox label="Players see pass or fail" checked={draft.resultShown} disabled={sending} onChange={(resultShown) => set({ resultShown })} />
+                {hasDc ? <Checkbox label="Players see the DC" checked={draft.dcShown} onChange={(dcShown) => set({ dcShown })} /> : null}
+                <Checkbox label="Players see pass or fail" checked={draft.resultShown} onChange={(resultShown) => set({ resultShown })} />
               </div>
               {hasDc && !draft.dcShown && draft.resultShown ? (
                 <Note>With the DC hidden, a typed answer is final once it passes or fails, and a rolled one at once, so changed totals cannot find the DC. You can reopen one from its card.</Note>
               ) : null}
-              {saves ? <Checkbox label="Against a spell" checked={draft.spell} disabled={sending} onChange={(spell) => set({ spell })} /> : null}
+              {saves ? <Checkbox label="Against a spell" checked={draft.spell} onChange={(spell) => set({ spell })} /> : null}
               <Input
                 aria-label="Note for the players"
                 value={draft.note}
@@ -302,7 +302,7 @@ export function RequestSheet(props: { from: AskFrom; onClose(): void }) {
               />
             </Section>
           </div>
-        </fieldset>
+        </Held>
       </form>
     </SheetDialog>
   );
@@ -317,7 +317,7 @@ const SKILLS_BY_NAME: readonly SkillKey[] = [...SKILL_KEYS].sort((a, b) => SKILL
  * any row replaces the whole pick. With two choices each is a named group
  * with Remove.
  */
-function ChoicePicker(props: { draft: AskDraft; index: number; disabled: boolean; onStep(step: (draft: AskDraft, i: number) => AskDraft): void; onRemove(): void }) {
+function ChoicePicker(props: { draft: AskDraft; index: number; onStep(step: (draft: AskDraft, i: number) => AskDraft): void; onRemove(): void }) {
   const two = props.draft.choices.length > 1;
   const view = pickerView(props.draft, props.index);
   const whyId = useId();
@@ -345,7 +345,6 @@ function ChoicePicker(props: { draft: AskDraft; index: number; disabled: boolean
               label="Saving throw"
               even
               value={view.save.value}
-              disabled={props.disabled}
               options={abilities(view.save.disabled)}
               onChange={(ability) => props.onStep((d, i) => pickerSteps.save(d, i, ability))}
             />
@@ -355,7 +354,6 @@ function ChoicePicker(props: { draft: AskDraft; index: number; disabled: boolean
               label="Ability check"
               even
               value={view.check.value}
-              disabled={props.disabled}
               options={abilities(view.check.disabled)}
               onChange={(ability) => props.onStep((d, i) => pickerSteps.check(d, i, ability))}
             />
@@ -365,7 +363,6 @@ function ChoicePicker(props: { draft: AskDraft; index: number; disabled: boolean
               <Select
                 aria-label="Skill check"
                 value={view.skill.value ?? ""}
-                disabled={props.disabled}
                 onChange={(e) => {
                   const skill = e.target.value === "" ? null : (e.target.value as SkillKey);
                   props.onStep((d, i) => pickerSteps.skill(d, i, skill));
@@ -385,7 +382,6 @@ function ChoicePicker(props: { draft: AskDraft; index: number; disabled: boolean
                   <Select
                     aria-label={`Ability for ${SKILLS[view.with.skill].name}`}
                     value={view.with.value}
-                    disabled={props.disabled}
                     onChange={(e) => {
                       const ability = e.target.value as AbilityKey;
                       props.onStep((d, i) => pickerSteps.with(d, i, ability));
