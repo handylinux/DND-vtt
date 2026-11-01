@@ -11,7 +11,7 @@ import type { Op } from "./protocol.ts";
  * no old ops at all. The op pipeline is here for the crash case.
  */
 export const SNAPSHOT_VERSION = 31;
-export const OP_VERSION = 36;
+export const OP_VERSION = 37;
 
 export type MigrationStep = {
   from: number;
@@ -973,6 +973,22 @@ export const opMigrations: MigrationStep[] = [
     to: 36,
     apply: (op) => op,
   },
+  {
+    // Follow-up batch 43, part 2: no op changes shape, so the step is the
+    // identity. From this version a trap's stop between a walk's ends reads
+    // the ground every player sees, and elsewhere stands only where the
+    // walk itself went (`stopsOnPublicGround`). On hexes the reducer clips
+    // a creature's outline by the walls the viewer holds
+    // (`clipsByHeldWalls`). Older ops replay by the rules they were written
+    // under, so they put each token where they put it then, and a stored
+    // restore's hash guards still match.
+    // Deploy: back up first and reload open pages. Rollback needs the
+    // backup only for a room with version 37 ops after its last snapshot,
+    // which an older build refuses to migrate down.
+    from: 36,
+    to: 37,
+    apply: (op) => op,
+  },
 ];
 
 /** Historical restores keep their original log entries and numbering. */
@@ -1342,6 +1358,30 @@ export function seatsFullBetweenEnds(opVersion: number | undefined): boolean {
  */
 export function stopsStandFullSize(opVersion: number | undefined): boolean {
   return !(opVersion !== undefined && opVersion < 36);
+}
+
+/**
+ * Whether a stopping trap stops a walker between its walk's ends by the
+ * walls only where every square or hex that stand reads lies on the ground
+ * every player sees, and elsewhere only where the walk itself went, full
+ * size: a corner of its route, a spot exactly on its line for a walker of
+ * Medium size or smaller, and on hexes a spot its own steps reach
+ * (route.ts routeStands). Ops stored before version 37 replay by the rule
+ * they were written under. Live ops carry no stored version and take
+ * today's rule.
+ */
+export function stopsOnPublicGround(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 37);
+}
+
+/**
+ * Whether the reducer clips a creature's outline on hexes by the walls the
+ * viewer holds where it asks who sees the creature. Ops stored before
+ * version 37 replay by the clip they were written under. Live ops carry no
+ * stored version and take today's rule.
+ */
+export function clipsByHeldWalls(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 37);
 }
 
 /**
