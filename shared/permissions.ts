@@ -2463,7 +2463,8 @@ function routeCheck(c: Check, tokenId: string, routes: readonly (readonly RouteP
 function standCheck(c: Check, tokenId: string, to: StoredEnd, route?: readonly RoutePiece[]): Decision {
   const token = c.state.tokens[tokenId];
   const scene = token ? c.state.scenes[token.sceneId] : undefined;
-  if (!c.stands || !token || !scene || scene.blockMovement !== true || to.squeeze === true || (to.x === token.x && to.y === token.y)) return OK;
+  // In place it is judged only where it stands up from a squeeze there, which the leg test reads by the core alone (FU44-OPUS-6).
+  if (!c.stands || !token || !scene || scene.blockMovement !== true || to.squeeze === true || (to.x === token.x && to.y === token.y && token.squeeze !== true)) return OK;
   const walker = walkerFor(c.state, token, seenAllIn(c), { to });
   const points = route ? routePoints(c.state.buildChunks, walker, route, to.elevation ?? token.elevation) : [];
   if (!offGridWallThrough(c.state, walkEnd(c.state, walker, { x: to.x, y: to.y }, points.slice(1, -1)))) return OK;

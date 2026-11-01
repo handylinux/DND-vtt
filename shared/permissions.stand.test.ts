@@ -78,7 +78,7 @@ function besides(): RoomState {
   return s;
 }
 
-describe("the stand test beside the mover (review FU44-OPUS-1)", () => {
+describe("the stand test beside the mover (review FU44-OPUS-1 and FU44-OPUS-6)", () => {
   test("a creature the mover drags that would stand off the grid with a wall through its box refuses the move, which its core alone would pass", () => {
     const s = besides();
     // The brute ends at 17.5, 14, its box over the wall at x 19 and its core clear of it.
@@ -87,6 +87,11 @@ describe("the stand test beside the mover (review FU44-OPUS-1)", () => {
     assert.equal(decide({ t: "token.move", tokenId: "pc", x: 16, y: 12 }, s), "ok", "north, clear of it");
   });
 
+  test("standing up in place from a squeeze where no narrow space holds it is judged by its box", () => {
+    const s = besides();
+    assert.equal(decide({ t: "token.move", tokenId: "stale", x: 19.5, y: 0.5 }, s), `forbidden: ${WALL_IN_THE_WAY}`);
+    assert.equal(decide({ t: "token.move", tokenId: "stale", x: 19, y: 0 }, s), "ok", "half a square west and north, on the grid");
+  });
 });
 
 /** Sol's room (review FU44-SOL-01): fog on, a Large warhorse at 0.5, 9.5, a short wall through its box at x 2.5 and 3.5 but not its core, and a wall at x 10. */
