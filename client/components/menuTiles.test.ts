@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import { theme } from "../lib/theme.ts";
 import { laidGap, menuWidth, tileRows, type TileRect } from "./menuTiles.ts";
+
+/** The room a menu's rows have inside a viewport: the popover's gutter at each side, then its box's border and padding. */
+const BOX_INSET = theme.space(2) + theme.line.border + theme.space(3);
 
 describe("fl5: a menu's row width", () => {
   test("uses the widest complete row, including its icon, gaps, note and badge", () => {
@@ -8,10 +12,10 @@ describe("fl5: a menu's row width", () => {
     assert.equal(menuWidth([112, 158.25, 196.5], 300), 196.5);
   });
 
-  test("caps long labels at the room inside the popover's gutter, border and padding at every interface size", () => {
+  test("caps long labels at the room and keeps a row that fits, for the room each viewport and scale leaves", () => {
     for (const viewport of [320, 390, 1440]) {
       for (const scale of [1, 1.3]) {
-        const room = viewport / scale - 2 * (8 + 1 + 12);
+        const room = viewport / scale - 2 * BOX_INSET;
         assert.equal(menuWidth([160, 2000], room), room);
         assert.equal(menuWidth([112, 158.25], room), 158.25);
       }
@@ -30,8 +34,8 @@ describe("fl5: a menu's row width", () => {
 const SETUP = [73.9, 60, 60, 84.7, 83.9];
 const PLAY = [60, 60, 60, 60, 60, 60];
 const GAP = 4;
-/** The room a phone's width leaves the tiles: its 8 px margins, the box's 1 px border and 12 px padding at each side. */
-const room = (phone: number) => phone - 2 * (8 + 1 + 12);
+/** The room a phone's width leaves the tiles: its margins, the box's border and padding at each side. */
+const room = (phone: number) => phone - 2 * BOX_INSET;
 const sizes = (rows: number[][]) => rows.map((r) => r.length);
 
 describe("a menu's tile rows", () => {

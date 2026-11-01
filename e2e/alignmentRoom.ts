@@ -19,6 +19,7 @@ import { trapPreset } from "../shared/srd/traps.ts";
 import { barControl, ConsoleWatch, dragCells, expandBar, multiSelect, OpSocket, openSceneGroup, openSideTab, pagePoint, pickOption, pickTool, pressOption, reopenRoom, ROOT, sceneGroup, sceneGroupFold, Shots, sideTabName, SocketWatch, startServer, tapCell, touchSwipe, untilReady, waitFor, wholeInReach, type Server } from "./harness.ts";
 import { DEFAULT_SNAPSHOT_BUDGET } from "../server/rooms/budgets.ts";
 import { INTER_FILES } from "../client/lib/interFont.ts";
+import { theme } from "../client/lib/theme.ts";
 import { alignmentLines, containmentLines, headerLines, headerPlaces, leadLines, LIMIT_PX, measureAlignment, menuWordLines, pillLines, popoverScrollbarLines, proficiencyHeightLines, proficiencyLines, rollingGridLines, rollRowLines, saveOutlineLines, toastLaneLines, toastsUnderCards, type HeaderPlace, type PillPoint } from "./helpers/alignment.ts";
 import { measureSpacing, spacingLines, type SpacingFinding } from "./helpers/spacing.ts";
 import { moreMenuFixture } from "./helpers/menuFixture.ts";
@@ -130,6 +131,8 @@ const work = mkdtempSync(path.join(tmpdir(), "raccoon-e2e-alignment-"));
 const assetDir = path.join(work, "assets");
 const shots = new Shots(SHOT_DIR === "0" ? null : SHOT_DIR);
 
+/** The least a popover keeps from the viewport's edge, in layout px (the field Popover.tsx follows it in). */
+const POPOVER_GUTTER = theme.space(2);
 const BOUNDS = { w: 20, h: 14 };
 /** The needle trap's uses, given back at each size, since each size sets it off twice. */
 const NEEDLE_USES = 3;
@@ -4944,7 +4947,7 @@ function moreMenuTest(size: Size, scale: number, at: string): void {
       });
       assert.deepEqual(wrapped, [], `${at}: a normal menu label wrapped despite room for its whole row`);
       const placed = await box.boundingBox();
-      assert.ok(placed && placed.x >= 8 * scale - 1 && placed.x + placed.width <= size.width - 8 * scale + 1, `${at}: the menu exceeds its viewport gutter`);
+      assert.ok(placed && placed.x >= POPOVER_GUTTER * scale - 1 && placed.x + placed.width <= size.width - POPOVER_GUTTER * scale + 1, `${at}: the menu exceeds its viewport gutter`);
       await shots.take(page, `fl5-more-${at}`);
 
       // A short containing panel guarantees the scrolling path even on a tall desktop.
@@ -5029,7 +5032,7 @@ function moreMenuTest(size: Size, scale: number, at: string): void {
         await shots.take(page, `fl5-more-${at}-${caseName}`);
         assert.deepEqual(await menuWordLines(box, `${at} ${caseName}`), []);
         const capped = await box.boundingBox();
-        assert.ok(capped && capped.x >= 8 * scale - 1 && capped.x + capped.width <= size.width - 8 * scale + 1, `${at} ${caseName}: the long label exceeds the gutter`);
+        assert.ok(capped && capped.x >= POPOVER_GUTTER * scale - 1 && capped.x + capped.width <= size.width - POPOVER_GUTTER * scale + 1, `${at} ${caseName}: the long label exceeds the gutter`);
         const widths = await Promise.all([box, item, label].map((part) => part.evaluate((el) => {
           const part = el as unknown as { scrollWidth: number; clientWidth: number };
           return { scroll: part.scrollWidth, client: part.clientWidth };
