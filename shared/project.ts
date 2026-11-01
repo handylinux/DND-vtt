@@ -1899,10 +1899,22 @@ const stairChunks = new WeakMap<BuildChunk, boolean>();
 function hasStairs(chunk: BuildChunk): boolean {
   let has = stairChunks.get(chunk);
   if (has === undefined) {
-    has = chunkMarks(chunk) !== null || Object.values(chunk.cells).includes("stairs");
+    has = marksOf(chunk) !== null || Object.values(chunk.cells).includes("stairs");
     if (!isWritable(chunk)) stairChunks.set(chunk, has);
   }
   return has;
+}
+
+/* A chunk's stair marks (heights.ts chunkMarks), kept per chunk object the same way, since every fog class's copy of a position reads them. */
+const marksByChunk = new WeakMap<BuildChunk, string | null>();
+
+function marksOf(chunk: BuildChunk): string | null {
+  let marks = marksByChunk.get(chunk);
+  if (marks === undefined) {
+    marks = chunkMarks(chunk);
+    if (!isWritable(chunk)) marksByChunk.set(chunk, marks);
+  }
+  return marks;
 }
 
 /** What a player's chunk reads of its scene: chunkFor, groundOf, the pieces' rounding and the stair map. Kept per scene object, which is replaced and never changed. */
@@ -2076,7 +2088,7 @@ function chunkFor(state: RoomState, scene: Scene, ground: Ground, cx: number, cy
   const known = new Uint8Array(CELLS_PER_CHUNK / 8);
   const cells: Record<string, TerrainId> = {};
   const feet = chunkHeights(stored ?? EMPTY_CHUNK);
-  const marks = stored ? chunkMarks(stored) : null;
+  const marks = stored ? marksOf(stored) : null;
   const heights = new Int16Array(CELLS_PER_CHUNK);
   const up = new Array<StairMark>(CELLS_PER_CHUNK).fill(".");
   const rough = new Array<boolean>(CELLS_PER_CHUNK).fill(false);
@@ -2150,10 +2162,13 @@ function chunkFor(state: RoomState, scene: Scene, ground: Ground, cx: number, cy
 /*
  * Every north and west edge of a position as players see it live, edge 2k
  * north and 2k + 1 west of cell k: the same for every fog class, so a batch
- * that projects a position for each class works it out once. Kept per
- * chunk collection, which the reducer replaces and never changes, by the
- * chunk objects the edges read (the position's own and those north and
- * west, whose cells the automatic walls read) and the rule.
+ * that projects a position for each class works it out once. Kept one a
+ * position, hung off the scene's bounds object as players' chunks are, by
+ * the chunk objects the edges read (the position's own and those north and
+ * west, whose cells the automatic walls read) and the rule. A chunk is
+ * replaced and never changed, so a build edit elsewhere, which replaces
+ * the collection, keeps the answer. Nothing is kept from a collection an
+ * op is still writing.
  */
 const shownEdgeCache = new WeakMap<object, Map<string, { ids: string; values: ShownEdge[] }>>();
 
@@ -2162,7 +2177,7 @@ function shownEdges(chunks: Readonly<Record<string, BuildChunk>>, scene: Scene, 
   const rule = autoWallsOf(scene);
   const ids = partsKey([rule, idOf(chunks[chunkKey(sceneId, cx, cy)]), idOf(chunks[chunkKey(sceneId, cx - 1, cy)]), idOf(chunks[chunkKey(sceneId, cx, cy - 1)])]);
   const writable = isWritable(chunks);
-  let byPosition = writable ? undefined : shownEdgeCache.get(chunks);
+  let byPosition = writable ? undefined : shownEdgeCache.get(scene.bounds);
   const at = partsKey([sceneId, cx, cy]);
   const hit = byPosition?.get(at);
   if (hit && hit.ids === ids) return hit.values;
@@ -2174,7 +2189,7 @@ function shownEdges(chunks: Readonly<Record<string, BuildChunk>>, scene: Scene, 
     values[2 * k + 1] = shownEdge(chunks, sceneId, rule, `${x},${y},w`);
   }
   if (!writable) {
-    if (!byPosition) shownEdgeCache.set(chunks, (byPosition = new Map()));
+    if (!byPosition) shownEdgeCache.set(scene.bounds, (byPosition = new Map()));
     byPosition.set(at, { ids, values });
   }
   return values;

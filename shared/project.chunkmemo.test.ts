@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { chunkKey } from "./keys.ts";
-import { autoAt, fogRoom, lift, wall } from "./discoveryTestutil.ts";
-import type { PlayerChunk, RoomState } from "./model.ts";
+import { autoAt, fogRoom, lift, stairs, wall } from "./discoveryTestutil.ts";
+import type { BuildChunk, PlayerChunk, RoomState } from "./model.ts";
 import { playerChunkBatch, stableStringify } from "./project.ts";
 import type { Op } from "./protocol.ts";
 import { applyOp } from "./reducer.ts";
@@ -14,8 +14,9 @@ import { DM, deepClone, env } from "./testutil.ts";
  * the chunks west and north of it whole, and of the rest of its
  * neighborhood the free walls alone, so an edit beside it that leaves the
  * walls keeps its answer. A miss whose walls and ground read the same as
- * its last answer takes that answer's pieces. Each case also checks the
- * answer against a room that shares no object with it.
+ * its last answer takes that answer's pieces, and its edges and stair
+ * marks are read once whatever else the room did. Each case also checks
+ * the answer against a room that shares no object with it.
  */
 
 function apply(state: RoomState, op: Op, seq: number): RoomState {
@@ -90,5 +91,50 @@ describe("a player's chunk across build edits beside it", () => {
     const after = one(hidden, 0, 0);
     assert.equal(stableStringify(after), cold(hidden, 0, 0));
     assert.notEqual(stableStringify(after?.walls), stableStringify(before?.walls), "the hidden cell cuts the wall");
+  });
+
+  test("a position's edges are read again only where its own, west or north chunk changed, whatever else the collection did", () => {
+    const start = revealed();
+    const painted = apply(start, { t: "build.paint", sceneId: "s1", terrain: "stone", cells: ["3,3", "4,3", "3,4"] }, 10);
+    one(painted, 0, 0);
+    // A build edit far off replaces the collection. The position then misses its answer by its ground alone.
+    const far = apply(painted, { t: "build.paint", sceneId: "s1", terrain: "stone", cells: ["40,40"] }, 11);
+    const hidden = { ...far, fogTiles: { ...far.fogTiles } };
+    lift(hidden, "dm", { x: 10, y: 10, w: 1, h: 1 }, "s1", false);
+    let reads = 0;
+    const counted = new Proxy(hidden.buildChunks, {
+      get(target, prop, receiver) {
+        if (typeof prop === "string") reads++;
+        return Reflect.get(target, prop, receiver);
+      },
+    });
+    const answer = one({ ...hidden, buildChunks: counted }, 0, 0);
+    assert.equal(stableStringify(answer), cold(hidden, 0, 0));
+    // Each of the 512 edges reads its chunk and the cells either side when worked out again: kept, the edges read none of them.
+    assert.ok(reads < 200, `${reads} reads of the chunks`);
+  });
+
+  test("a position's stair marks are read once for every fog class", () => {
+    const state = fogRoom({ vision: true, perPlayer: true, bounds: { w: 48, h: 48 } });
+    state.holders.s1 = { sceneId: "s1", rev: 0, entries: [{ memberId: "p1", on: true }, { memberId: "p2", on: true }] };
+    lift(state, "dm", { x: 0, y: 0, w: 48, h: 48 });
+    lift(state, { holder: "p1" }, { x: 0, y: 0, w: 8, h: 8 });
+    lift(state, { holder: "p2" }, { x: 8, y: 8, w: 8, h: 8 });
+    stairs(state, [[4, 4], [5, 4]], "e");
+    const key = chunkKey("s1", 0, 0);
+    let reads = 0;
+    const chunk = new Proxy(state.buildChunks[key]!, {
+      get(target, prop, receiver) {
+        if (prop === "up") reads++;
+        return Reflect.get(target, prop, receiver);
+      },
+    }) as BuildChunk;
+    const counted = { ...state, buildChunks: { ...state.buildChunks, [key]: chunk } };
+    const p1 = one(counted, 0, 0, "p1");
+    reads = 0;
+    const p2 = one(counted, 0, 0, "p2");
+    assert.equal(reads, 0, "the second class reads the marks the first did");
+    assert.equal(stableStringify(p1), cold(state, 0, 0, "p1"));
+    assert.equal(stableStringify(p2), cold(state, 0, 0, "p2"));
   });
 });
