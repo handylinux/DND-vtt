@@ -179,7 +179,7 @@ export function FoldedParty(props: { entries: readonly PartyEntry[]; onFrame(ent
             style={{ ...pill, cursor: e.tokenId ? "pointer" : "default" }}
           >
             <strong style={{ maxWidth: CHIP_NAME_MAX, overflow: "hidden", textOverflow: "ellipsis", color: e.tokenId ? theme.color.text : theme.color.textDisabled }}>{e.character.name}</strong>
-            <span style={{ color: LABEL_COLOR[e.label], fontVariantNumeric: "tabular-nums" }}>{lifeWord(e.life) ?? hpLine(e.hp)}</span>
+            <span data-disabled-look="readonly" style={{ color: LABEL_COLOR[e.label], fontVariantNumeric: "tabular-nums" }}>{lifeWord(e.life) ?? hpLine(e.hp)}</span>
             <Pill look={{ background: theme.color.surfaceRaised, border: `${theme.line.border}px solid ${theme.color.border}` }} />
           </button>
         </div>
@@ -213,7 +213,7 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
         borderRadius: theme.radius.sm,
         border: "none",
         background: theme.color.surfaceRaised,
-        // A character off this scene has nothing to show on the map, so the row reads as off, not as a live button (D-261101-302).
+        // A character off this scene has nothing to show on the map, so the row reads as off, not as a live button (D-261101-302). The words that show state keep their colors and say so with a readonly mark, which the sweep's disabled-look check reads (D-261101-344).
         color: here ? theme.color.text : theme.color.textDisabled,
         fontFamily: theme.font.body,
         textAlign: "left",
@@ -227,11 +227,11 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
           <strong style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: theme.font.body14 }}>{entry.character.name}</strong>
           <span style={{ fontSize: theme.font.small, fontVariantNumeric: "tabular-nums" }}>
             {entry.hp.cur}/{entry.hp.max}
-            {entry.hp.temp > 0 ? <span style={{ color: theme.color.ally }}> +{entry.hp.temp}</span> : null}
+            {entry.hp.temp > 0 ? <span data-disabled-look="readonly" style={{ color: theme.color.ally }}> +{entry.hp.temp}</span> : null}
           </span>
         </span>
         {life ? (
-          <span style={{ fontSize: theme.font.small, fontWeight: theme.weight.bold, color: entry.life === "stable" ? theme.color.warning : entry.life === "dead" ? theme.color.textMuted : theme.color.danger }}>{life}</span>
+          <span data-disabled-look="readonly" style={{ fontSize: theme.font.small, fontWeight: theme.weight.bold, color: entry.life === "stable" ? theme.color.warning : entry.life === "dead" ? theme.color.textMuted : theme.color.danger }}>{life}</span>
         ) : (
           <span aria-hidden style={{ height: 4, borderRadius: theme.radius.xs, background: theme.color.border, overflow: "hidden" }}>
             <span style={{ display: "block", width: `${Math.round(entry.fraction * 100)}%`, height: "100%", background: color }} />
@@ -239,7 +239,11 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
         )}
         <span style={{ display: "flex", alignItems: "center", gap: theme.space(2), fontSize: theme.font.small, color: here ? theme.color.textMuted : theme.color.textDisabled }}>
           {/* Both say what they are on screen, not in a tooltip a touch screen never shows (docs/design/design-v1-layout-hierarchy.md M9). */}
-          {ac !== null ? <AcBadge ac={ac} size="sm" /> : null}
+          {ac !== null ? (
+            <span data-disabled-look="readonly" style={{ display: "contents" }}>
+              <AcBadge ac={ac} size="sm" />
+            </span>
+          ) : null}
           <span style={{ position: "relative", whiteSpace: "nowrap" }}>
             <span aria-hidden>
               PP <span style={{ color: here ? theme.color.text : theme.color.textDisabled, fontVariantNumeric: "tabular-nums" }}>{entry.passivePerception}</span>
@@ -254,6 +258,7 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
                 key={effect.id}
                 title={chip.label}
                 aria-hidden
+                data-disabled-look="readonly"
                 style={{
                   minWidth: 20,
                   height: 18,

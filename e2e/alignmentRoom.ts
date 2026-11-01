@@ -3149,7 +3149,7 @@ export function helperTest(): void {
       await page.close();
     }
   });
-  test("lk1-disabled-look. an off control with bright or faded words fails, while dim words, wordless controls, hidden native inputs and the two marks pass", async () => {
+  test("lk1-disabled-look. an off control with bright or faded words fails, while dim words, wordless controls, hidden native inputs, the two marks and a readonly mark on a state inside a control pass", async () => {
     const page = await dmContext.newPage();
     const dim = theme.color.textDisabled;
     const bright = theme.color.text;
@@ -3162,6 +3162,7 @@ export function helperTest(): void {
         <label style="position:relative;color:${dim}"><input type="checkbox" disabled style="position:absolute;inset:0;opacity:0">Secret</label>
         <button disabled data-disabled-look="busy" style="color:${bright}">Send</button>
         <button disabled data-disabled-look="readonly" style="color:${bright}">Pip</button>
+        <button disabled style="color:${dim}">Seraphina <span data-disabled-look="readonly" style="color:${bright}">Unconscious</span></button>
         <button style="color:${bright}">Live</button>
       </div>`);
       const root = page.locator("#look");
@@ -3174,10 +3175,12 @@ export function helperTest(): void {
         <button disabled data-disabled-look="dim" style="color:${dim}">Unknown mark</button>
         <input disabled aria-label="Bonus" placeholder="+0" style="color:${dim}">
         <button disabled style="color:${dim}">Zoom <span style="opacity:0.5">100%</span></button>
+        <button disabled style="color:${dim}">Ana <span data-disabled-look="readonly" style="color:${bright}">Stable</span> <span style="color:${bright}">+3</span></button>
       </div>`);
       const lines = (await disabledLookLines(root, "lk1-disabled-look")).join("\n");
-      for (const miss of [/"Frightened" is off but draws "Frightened" in rgb\(241, 239, 233\)/, /input "" is off but draws its words in rgb\(241, 239, 233\)/, /"Rounds 2" is off but draws "2"/, /"Marked" is off but faded to opacity 0\.35/, /"Inside a fade" is off but faded to opacity 0\.5 by its div/, /data-disabled-look="dim", which is neither busy nor readonly/, /input "Bonus" is off but draws its words in rgb\(117, 117, 117\)/, /"Zoom 100%" is off but its "100%" is faded to opacity 0\.5/]) assert.match(lines, miss);
-      assert.equal(lines.split("\n").length, 8, lines);
+      for (const miss of [/"Frightened" is off but draws "Frightened" in rgb\(241, 239, 233\)/, /input "" is off but draws its words in rgb\(241, 239, 233\)/, /"Rounds 2" is off but draws "2"/, /"Marked" is off but faded to opacity 0\.35/, /"Inside a fade" is off but faded to opacity 0\.5 by its div/, /data-disabled-look="dim", which is neither busy nor readonly/, /input "Bonus" is off but draws its words in rgb\(117, 117, 117\)/, /"Zoom 100%" is off but its "100%" is faded to opacity 0\.5/, /"Ana Stable \+3" is off but draws "\+3" in rgb\(241, 239, 233\)/]) assert.match(lines, miss);
+      assert.doesNotMatch(lines, /Stable"|Unconscious/, "words inside a readonly mark pass");
+      assert.equal(lines.split("\n").length, 9, lines);
     } finally {
       await page.close();
     }

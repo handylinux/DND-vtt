@@ -1645,7 +1645,9 @@ const TEXT_DISABLED = (() => {
  * stops its controls without telling them. Only a control marked
  * `data-disabled-look="busy"` (a send in flight) or `"readonly"` (a state
  * shown, not edited) keeps its own look (D-261101-302), so an exemption
- * is always written at the control, never guessed here.
+ * is always written at the control, never guessed here. A `"readonly"`
+ * mark on a descendant exempts the words inside it only: the state a
+ * disabled row shows (a party row's life word, its chips).
  *
  * A native control hidden under a drawn one (opacity 0, or a box under
  * 2 px) is not seen, and the fieldset that holds a group is no control.
@@ -1724,7 +1726,11 @@ export async function disabledLookLines(root: Locator, screen: string): Promise<
             if (color !== want) bright.set(color, [...(bright.get(color) ?? []), words]);
             const inner = fade ? null : fadeOf(parent);
             if (inner && control.contains(inner.el)) out.push(`${nameOf(control)} is off but its "${words}" is faded to opacity ${inner.opacity}`);
-          } else for (const child of Array.from(node.childNodes)) visit(child);
+          } else {
+            // A state shown inside an off control (a life word, a condition chip) keeps its own color and says so itself, as the control may.
+            if (node !== (control as Node) && (node as El).getAttribute?.("data-disabled-look") === "readonly") return;
+            for (const child of Array.from(node.childNodes)) visit(child);
+          }
         };
         visit(control);
         for (const [color, words] of bright) out.push(`${nameOf(control)} is off but draws "${words.join(" ")}" in ${color}, not textDisabled ${want}`);
