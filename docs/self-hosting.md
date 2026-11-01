@@ -644,16 +644,28 @@ step makes an open page reload. Until it reloads, an old DM page applies a
 group save as before, once, but untracked: its page stays locked, and Undo
 takes the outcome back without ever opening that page again.
 
-The update that lets a square trip wire with older, finer end points be
-renamed or edited again changes no version, so an older build still reads
-every room it saves. One caution applies to going back. Stop the server
-cleanly first, with `docker compose -f docker-compose.server.yml stop raccoon`
+The update that keeps riders' seats and trap stops off the walls between a
+walk's ends, and lets a square trip wire with older, finer end points be
+renamed or edited again, stores changes at op version 36, which the builds
+before it cannot read. Snapshots keep their version, so a room whose saved
+snapshot holds all its changes still opens in an older build. Back up first,
+and reload every page left open across the update, table displays included.
+Until it reloads, an old page plans a drag for what a rider pulls by the old
+seat.
+
+Going back needs the backup only for a room with changes stored since its last
+snapshot. An older build refuses to open such a room, and refuses a rename or
+an edit of a trip wire with older, finer end points that sits in those
+changes. To avoid that, stop the server cleanly first, with
+`docker compose -f docker-compose.server.yml stop raccoon`
 (`docker compose stop raccoon` for the published image) or an ordinary update,
-because that saves a snapshot of every room. An older
-build refuses a rename or an edit of such a trap that sits in the changes
-saved since a room's last snapshot, and a room that meets one opens read-only.
-A server that crashed or was killed before it saved can leave such changes. In
-that case restore the backup taken just before the update.
+because that saves a snapshot of every room. Then check out the commit you ran
+before (`git log` lists it), rebuild with
+`docker compose -f docker-compose.server.yml up -d --build`, and every room
+loads in the older build. A server that crashed or was killed before it saved
+can leave such changes. In that case follow Restore under Backups with the
+backup taken just before the update. Every room loses what changed after that
+backup.
 
 Compose rebuilds the image and replaces only the containers that changed. On
 the way down the app closes every WebSocket with code 1012, finishes each
