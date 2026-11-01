@@ -6790,6 +6790,111 @@ export function undoSaveAlignmentTests(names: readonly string[]): void {
   }
 }
 
+/** The sizes where toasts meet a phone's open Dice sheet, each at 130% (UNDOB-FIN-2). */
+const SHEET_TOAST_AT: Size[] = [...["320x568", "390x844", "844x390"].map((name) => SIZES.find((s) => s.name === name)!), COMBAT_SMALL];
+
+type PlainBox = { x: number; y: number; width: number; height: number };
+
+/** Whether two boxes share area, past half a px of rounding. */
+function boxesMeet(a: PlainBox, b: PlainBox): boolean {
+  return a.x + 0.5 < b.x + b.width && b.x + 0.5 < a.x + a.width && a.y + 0.5 < b.y + b.height && b.y + 0.5 < a.y + a.height;
+}
+
+/** Every box of what `locator` matches and shows, in order. */
+async function boxesOfAll(locator: Locator): Promise<PlainBox[]> {
+  const shown = locator.filter({ visible: true });
+  const boxes: PlainBox[] = [];
+  for (let i = 0, n = await shown.count(); i < n; i++) {
+    const box = await shown.nth(i).boundingBox();
+    if (box) boxes.push(box);
+  }
+  return boxes;
+}
+
+/**
+ * lk1-toasts: three toasts arrive while the Dice sheet is open, at the
+ * phone sizes at 130%. None meets the sheet, and the newest shows as one
+ * row over the top bar where the sheet leaves under 44 px. Beside a
+ * sideways sheet, with a token selected, the token bar and the alerts keep
+ * their boxes as the toasts come. In the very short sheet the slot holds
+ * one row, a tap shows it whole, it outlasts its 5 s, and Close and Escape
+ * each shrink it with the sheet left open.
+ */
+export function toastsOverSheetTests(): void {
+  test("lk1-toasts. three toasts with the Dice sheet open stay clear of the sheet as one row, the token bar and alerts keep their boxes, and the very short sheet's row shows whole until Close or Escape, at 320 x 568, 390 x 844, 844 x 390 and 480 x 320 at 130%", async () => {
+    const dmId = await waitFor("the DM's member id", () => dmSocket.you?.memberId ?? null);
+    const lines: string[] = [];
+    for (const size of SHEET_TOAST_AT) {
+      const sweep = new Sweep(`${size.name}-130`);
+      const page = await dmPageFor(size);
+      page.setDefaultTimeout(10_000);
+      await openAt(page, size, 1.3);
+      await settleTraps();
+      await closeSheets(page);
+      await dismissToasts(page);
+      const beside = size.name === "844x390";
+      const veryShort = size.name === "480x320";
+      // Beside a sideways sheet the token bar docks by the alerts column: their boxes must not move as toasts come.
+      if (beside) await selectToken(page, "Thorn", { x: 5, y: 5 });
+      const sheet = await openDice(page);
+      const held = () => boxesOfAll(page.locator('dialog[data-rvtt-sheet][aria-label="Dice"], [role="dialog"][data-bar-mode], [data-alert]'));
+      const before = beside ? await held() : [];
+      await dismissToasts(page);
+      for (const text of ["The altar hums.", "A door creaks open.", "Cold air spills out."]) await patOps.send({ t: "log.whisper", to: [dmId], text });
+      const shown = page.locator("[data-toast]").filter({ visible: true });
+      await shown.first().waitFor();
+      // A beat for the placement to settle, short of the toasts' 5 s.
+      await page.waitForTimeout(400);
+      const sheetBox = await sheet.boundingBox();
+      const toastBoxes = await boxesOfAll(page.locator("[data-toast]"));
+      if (!sheetBox || toastBoxes.length === 0) lines.push(`${sweep.at}: the sheet or its toasts were not drawn`);
+      else if (veryShort) {
+        // The toasts' place is inside the sheet: one row of 44 chrome px (57.2 px at 130%), never a stack.
+        if (toastBoxes.length !== 1) lines.push(`${sweep.at}: the sheet's toasts place holds ${toastBoxes.length} toasts, not one row`);
+        else if (toastBoxes[0]!.height > 44 * 1.3 + 1) lines.push(`${sweep.at}: the sheet's row is ${toastBoxes[0]!.height} px tall, over 44 chrome px`);
+      } else {
+        for (const box of toastBoxes) if (boxesMeet(box, sheetBox)) lines.push(`${sweep.at}: a toast at ${JSON.stringify(box)} meets the sheet at ${JSON.stringify(sheetBox)}`);
+        if (beside || size.name === "320x568") if (toastBoxes.length !== 1) lines.push(`${sweep.at}: ${toastBoxes.length} toasts drawn, not the one row`);
+      }
+      if (beside) {
+        const after = await held();
+        if (JSON.stringify(after.map((b) => [b.x, b.y, b.width, b.height].map(Math.round))) !== JSON.stringify(before.map((b) => [b.x, b.y, b.width, b.height].map(Math.round)))) lines.push(`${sweep.at}: the token bar, alerts or sheet moved as toasts came: ${JSON.stringify(before)} then ${JSON.stringify(after)}`);
+      }
+      await sweep.measure(page, "lk1-toasts", shown);
+      await shots.take(page, `lk1-toasts-${sweep.at}`);
+
+      if (veryShort) {
+        const row = page.locator('[data-toast-form="row"]').filter({ visible: true });
+        const whole = page.locator('[data-toast-form="whole"]').filter({ visible: true });
+        const gone = async (why: string) => {
+          if ((await whole.count()) !== 0) lines.push(`${sweep.at}: ${why}: the toast stayed whole`);
+          if ((await row.count()) !== 1) lines.push(`${sweep.at}: ${why}: the toast is not back to its row`);
+          if (!(await visible(sheet))) lines.push(`${sweep.at}: ${why}: the sheet closed`);
+        };
+        await row.first().locator("button").first().click();
+        await whole.first().waitFor({ timeout: 3_000 });
+        // Held whole it outlasts the 5 s a toast shows for.
+        await page.waitForTimeout(5_500);
+        assert.equal(await whole.count(), 1, `${sweep.at}: the whole toast did not outlast its 5 s`);
+        await shots.take(page, `lk1-toasts-${sweep.at}-whole`);
+        await whole.first().getByRole("button", { name: "Close", exact: true }).click();
+        await page.waitForTimeout(200);
+        await gone("Close");
+        await row.first().locator("button").first().click();
+        await whole.first().waitFor({ timeout: 3_000 });
+        await page.keyboard.press("Escape");
+        await page.waitForTimeout(200);
+        await gone("Escape");
+      }
+      await dismissToasts(page);
+      await closeSheets(page);
+      sweep.tally();
+      lines.push(...sweep.lines);
+    }
+    assert.deepEqual(lines, [], "toasts over the Dice sheet");
+  });
+}
+
 /** Keep LogPanel mounted through blackout so Room's pause screen cannot mask a missing key reset. */
 export async function buildLogHistoryFixture(): Promise<string> {
   const entry = path.join(ROOT, "client/fu41-log-fixture.tsx");
