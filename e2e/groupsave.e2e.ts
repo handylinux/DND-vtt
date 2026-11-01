@@ -1033,6 +1033,7 @@ describe("raccoon-vtt group save", { timeout: 300_000 }, () => {
     assert.ok((await rowLook()).some((row) => row.ariaDisabled !== "true"), "while online, the menu's choices are live");
 
     const logged = diceLines(dmSocket.state?.log).length;
+    const sent = dmSocket.sent.length;
     // The page's own socket complains while the connection is gone, which is the point of the step.
     dmConsole.expectSocketFailures = true;
     await dmContext.setOffline(true);
@@ -1043,22 +1044,26 @@ describe("raccoon-vtt group save", { timeout: 300_000 }, () => {
       for (const row of await rowLook()) assert.equal(row.color, off, `a held choice draws the disabled color: ${JSON.stringify(row)}`);
       await shots.take(dm, "lk1-held-menu-130");
 
-      const sent = dmSocket.sent.length;
       const first = rows.first();
       await first.click({ force: true });
       await first.focus();
       await dm.keyboard.press("Enter");
       await dm.keyboard.press("Space");
       await dm.keyboard.press("Shift+F10");
+      // Shift+F10 here lands on a RollModeMenu row, which carries no press bindings (`events`), so it does not test their drop. Menu.test.ts covers a held row with `events` ignoring a contextmenu and a long press.
+      // The menu staying open is the only thing a closed socket can show. SocketWatch records frames the page sends or receives, so a roll the
+      // menu tried to send while offline would never appear: the sends and the log are read once the connection is back.
       assert.ok(await menu.isVisible(), "no press on a held choice closes the menu");
       assert.equal(await first.getAttribute("aria-disabled"), "true");
-      assert.deepEqual(dmSocket.sent.slice(sent).filter((frame) => JSON.parse(frame).t === "op"), [], "no roll or other op left the page");
-      assert.equal(diceLines(dmSocket.state?.log).length, logged, "no roll reached the log");
     } finally {
       await dmContext.setOffline(false);
     }
     await dm.getByRole("status", { name: "Connected" }).first().waitFor();
     dmConsole.expectSocketFailures = false;
+    // A roll that a held row let through would have gone out as an op (or been held for the reconnect), so wait a moment for one.
+    await dm.waitForTimeout(1_000);
+    assert.deepEqual(dmSocket.sent.slice(sent).filter((frame) => JSON.parse(frame).t === "op"), [], "no roll or other op left the page");
+    assert.equal(diceLines(dmSocket.state?.log).length, logged, "no roll reached the log");
     await dm.keyboard.press("Escape");
     await menu.waitFor({ state: "hidden" });
   });
