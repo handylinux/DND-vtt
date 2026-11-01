@@ -11,7 +11,6 @@ import type { DiceRoll, LogEvent, RoomState } from "#shared/model.ts";
 import { creatureRolls, type DiceView } from "./creature.ts";
 import { DICE_FOLD_KEYS, diceFoldsSlot } from "./diceFolds.ts";
 import { foldSummary } from "./options.ts";
-import { toastMarks } from "./proficiencyPresentation.ts";
 
 const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
@@ -170,16 +169,6 @@ test("fl7: a creature whose name holds a comma and a test's name is never marked
   const labels = [...two.text.matchAll(/, Stealth check:/g)].map((m) => m.index + 2);
   assert.deepEqual(two.marks.map((m) => m.at), labels);
   assert.equal(labels.length, 2);
-});
-
-test("fl7: a toast keeps its words and marks the label only for one creature's rolls", () => {
-  const s = state();
-  const roll: DiceRoll = { characterId: "hero", label: "Stealth check", formula: "1d20+7", faces: [9], total: 16 };
-  const one = toastMarks("Pat rolled 16 for Hero, Stealth check.", [roll], levelOf(s) as never);
-  assert.deepEqual(one, [{ at: 24, length: 13, level: "expert" }]);
-  assert.equal(toastMarks("Pat rolled 2 Stealth checks.", [roll, { ...roll, total: 4 }], levelOf(s) as never).length, 1, "one creature twice");
-  assert.deepEqual(toastMarks("Pat rolled 2 Stealth checks.", [roll, { ...roll, characterId: "other" }], levelOf(s) as never), [], "two creatures stay neutral");
-  assert.deepEqual(toastMarks("Pat rolled 16 for Hero, Stealth damage.", [{ ...roll, label: "Stealth damage" }], levelOf(s) as never), []);
 });
 
 test("fl7: the live region that says a result names its test's level after the test, and a result with no level says nothing more (FL7-SOL-04)", async () => {

@@ -1,5 +1,4 @@
 import type { D20Test } from "#shared/dice/bonus.ts";
-import { labelText } from "#shared/logText.ts";
 import { ABILITY_KEYS, SKILL_KEYS, type DiceRoll, type RollTest } from "#shared/model.ts";
 import type { ActorTarget } from "#shared/protocol.ts";
 import type { Proficiency } from "#shared/rules/proficiency.ts";
@@ -70,23 +69,4 @@ export function findMarks(text: string, labels: readonly { label: string; level:
     next = at + label.length;
   }
   return out;
-}
-
-/**
- * Where a roll toast names its test: "Pat rolled 19 for Thorn, Perception
- * check.", "Rolled 19: Perception check.", "Pat rolled 3 Dexterity saves."
- * Each form ends with the label, after any creature's name. Several rolls
- * are marked only when they share the creature as well as the label, since
- * a line for several creatures stays neutral (D-261029-415). The words
- * themselves never change.
- */
-export function toastMarks(text: string, rolls: readonly DiceRoll[], levelOf: (creature: ActorTarget, test: D20Test) => Proficiency): TextMark[] {
-  const first = rolls[0];
-  const target = first ? rollTarget(first) : null;
-  const test = first ? rollTest(first) : null;
-  if (!first || !target || first.label === undefined || !marksTest(test)) return [];
-  if (rolls.some((roll) => roll.label !== first.label || roll.tokenId !== first.tokenId || roll.characterId !== first.characterId)) return [];
-  const label = labelText(first.label);
-  const at = text.lastIndexOf(label);
-  return at < 0 ? [] : [{ at, length: label.length, level: levelOf(target, test) }];
 }
