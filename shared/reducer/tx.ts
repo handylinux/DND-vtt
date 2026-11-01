@@ -289,7 +289,7 @@ export class Tx {
   private settleLog(): void {
     if (this.settled || !logsByAudience(this.env.opVersion)) return;
     this.settled = true;
-    const reachOf = lineReader(this.state);
+    const reachOf = lineReader(this.state, this.env.opVersion);
     const reaches = this.unsettled.map((u): LineReach | null => {
       if (!("line" in u) || u.line.kind !== "event") return null;
       const frozen = this.frozenReach.get(u.line);

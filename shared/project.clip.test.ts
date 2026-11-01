@@ -1,0 +1,414 @@
+import assert from "node:assert/strict";
+import { describe, test } from "node:test";
+import { liftSubs, remember, wall } from "./discoveryTestutil.ts";
+import { wallChunk } from "./keys.ts";
+import type { FreeWall, GridShape, InitEntry, LogEntry, RoomState, Token, Viewer } from "./model.ts";
+import {
+  activeRowShownTo,
+  areaSeenMark,
+  heldSightClip,
+  inSightOfNonOwners,
+  lineReader,
+  projectState,
+  rowSeenMark,
+  seenAtEvery,
+  seenByNonOwners,
+  seenMark,
+  stableStringify,
+  withheldFromViewer,
+  withheldWhereItStands,
+} from "./project.ts";
+import { occupiedHexes, storedCenter } from "./rules/footprint.ts";
+import { wallSpans } from "./rules/held.ts";
+import { hexAt, hexCenter, hexKey, hexNeighbors, hexSubcells, sceneHexes, HEX_R, type Hex, type HexGrid } from "./rules/hex.ts";
+import { COLUMNS, onHex, ROWS, sideWall } from "./rules/hexWalls.testkit.ts";
+import { clipFootprint, sightClipOf } from "./rules/vision.ts";
+import { sceneWalls } from "./rules/walls.ts";
+import { chance, DM, int, member, P1, pick, rng, room, scene, template } from "./testutil.ts";
+
+/**
+ * A creature's outline on hexes, clipped by the walls the viewer holds
+ * (docs/design/design-v1-hex-grids.md HX-D10). Each fog class's copy of the
+ * sight walls is built from its own chunks with their remembered versions,
+ * where ops stored before op version 37 read the build's walls.
+ */
+
+const SHAPES = [
+  ["hex rows", ROWS],
+  ["hex columns", COLUMNS],
+] as const;
+const P2: Viewer = { memberId: "p2", role: "player" };
+const P3: Viewer = { memberId: "p3", role: "player" };
+const DISPLAY: Viewer = { memberId: "display:abcdefghijkl", role: "player" };
+const q = (v: number) => Math.round(v * 64) / 64;
+const shapeOf = (g: HexGrid): GridShape => (g.orient === "rows" ? "hexRows" : "hexColumns");
+const subsOf = (g: HexGrid, hexes: readonly Hex[]) => hexes.flatMap((h) => hexSubcells(g, h));
+
+type RoomOpts = { vision?: boolean; perPlayer?: boolean; holders?: readonly string[] };
+
+/** A 20 by 16 hex scene with fog on and no automatic walls, three players, and on a per-player scene these sight holders. */
+function hexRoom(g: HexGrid, opts: RoomOpts = {}): RoomState {
+  const vision = opts.vision === true;
+  const perPlayer = opts.perPlayer === true || opts.holders !== undefined;
+  const s = room({
+    members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2"), p3: member("p3") },
+    scenes: { s1: scene("s1", { gridShape: shapeOf(g), bounds: { w: 20, h: 16 }, autoWalls: "off", fogEnabled: true, vision: { on: vision, light: vision ? "dark" : "bright", ...(perPlayer ? { perPlayer: true as const } : {}) } }) },
+  });
+  s.buildChunks = {};
+  if (opts.holders) s.holders = { s1: { sceneId: "s1", rev: 1, entries: opts.holders.map((memberId) => ({ memberId, on: true })) } };
+  return s;
+}
+
+/** The sub-cells of a creature's footprint a clip keeps, as text to compare. */
+function keptBy(g: HexGrid, token: Token, clip: ReturnType<typeof sightClipOf>): string {
+  return clipFootprint(g, token, clip)
+    .kept.map((s) => s.join(","))
+    .join(" ");
+}
+
+const buildClip = (s: RoomState) => sightClipOf(sceneWalls(s.scenes.s1!, s.buildChunks));
+/** The walls a viewer's device clips by: those of its own copy of the room. */
+const copyClip = (s: RoomState, viewer: Viewer) => {
+  const copy = projectState(s, viewer, { sceneId: "s1" }) as unknown as RoomState;
+  return sightClipOf(sceneWalls(copy.scenes.s1!, copy.buildChunks));
+};
+
+/** A memory entry for a wall, as the map step writes one: the wall as remembered, or null for one remembered absent. */
+function rememberWall(s: RoomState, layer: string | null, w: FreeWall, remembered: FreeWall | null): void {
+  const cells = wallSpans(sceneGridOf(s), w).map((span) => span.cell);
+  const home = wallChunk(w);
+  remember(s, layer, home.cx, home.cy, { walls: { [w.id]: [{ wall: remembered, cells }] } });
+}
+
+const sceneGridOf = (s: RoomState) => (s.scenes.s1!.gridShape === "hexRows" ? ROWS : COLUMNS);
+
+/**
+ * A random per-player or whole-party room round a large creature (the
+ * design's probes): the DM's, the party's and two holders' layers lifted
+ * on random hexes round it, walls near it, on a vision scene a lamp and
+ * the holders' torch bearers, and in some vision rooms memory of a wall
+ * the DM removed or added.
+ */
+function randomRoom(n: number, opts: { vision: boolean; perPlayer: boolean; seed: number }): { s: RoomState; g: HexGrid; ogre: Token; holders: string[] } {
+  const r = rng(opts.seed + n);
+  const g = chance(r, 0.5) ? ROWS : COLUMNS;
+  const holders = opts.perPlayer ? ["p1", "p2"] : [];
+  const s = hexRoom(g, { vision: opts.vision, ...(opts.perPlayer ? { holders } : {}) });
+  const at = { col: int(r, 6, 13), row: int(r, 5, 10) };
+  const ogre = onHex(g, "ogre", pick(r, ["huge", "gargantuan", "large"] as const), at, { name: "Ogre", kind: "npc" });
+  const mine = occupiedHexes(g, ogre);
+  const ring = [...mine, ...mine.flatMap((h) => hexNeighbors(g, h))];
+  const c = hexCenter(g, at);
+  const nearby = sceneHexes(g, s.scenes.s1!.bounds).filter((h) => {
+    const hc = hexCenter(g, h);
+    const d = Math.hypot(hc.x - c.x, hc.y - c.y);
+    return d < 6 && d > 2.5;
+  });
+  const torch = () => ({ light: { bright: 5 * int(r, 1, 4), dim: 5 * int(r, 0, 3) } });
+  if (opts.vision) {
+    s.tokens.lamp = onHex(g, "lamp", "medium", pick(r, nearby), { name: "Lamp", kind: "npc", disposition: "ally", partyVision: true, ...torch() });
+    for (const h of holders) if (chance(r, 0.8)) s.tokens[`pc${h}`] = onHex(g, `pc${h}`, "medium", pick(r, nearby), { name: `Hero ${h}`, kind: "pc", disposition: "ally", ownerIds: [h], ...torch() });
+  }
+  liftSubs(s, "dm", subsOf(g, ring.filter(() => chance(r, opts.vision ? 0.15 : 0.12))));
+  liftSubs(s, "party", subsOf(g, ring.filter(() => chance(r, opts.vision ? 0.35 : 0.12))));
+  for (const h of holders) liftSubs(s, { holder: h }, subsOf(g, ring.filter(() => chance(r, 0.3))));
+  for (let i = int(r, 2, 7); i > 0; i--) {
+    const hc = hexCenter(g, pick(r, ring));
+    wall(s, `cl${String(n).padStart(5, "0")}${i}000`.slice(0, 12), [q(hc.x + (r() - 0.5) * 2 * HEX_R), q(hc.y + (r() - 0.5) * 2 * HEX_R)], [q(hc.x + (r() - 0.5) * 2 * HEX_R), q(hc.y + (r() - 0.5) * 2 * HEX_R)]);
+  }
+  if (opts.vision && chance(r, 0.5)) {
+    const hc = hexCenter(g, pick(r, ring));
+    const w: FreeWall = { id: `cm${String(n).padStart(5, "0")}0000000`.slice(0, 12), a: [q(hc.x + (r() - 0.5) * 2 * HEX_R), q(hc.y - 0.6)], b: [q(hc.x + (r() - 0.5) * 2 * HEX_R), q(hc.y + 0.6)], f: { kind: "wall" } };
+    const layer = holders.length === 0 || chance(r, 0.6) ? null : pick(r, holders);
+    if (chance(r, 0.5)) rememberWall(s, layer, w, w);
+    else {
+      wall(s, w.id, w.a, w.b);
+      rememberWall(s, layer, w, null);
+    }
+  }
+  s.tokens.ogre = ogre;
+  return { s, g, ogre, holders };
+}
+
+/**
+ * A Huge creature on a whole-party or per-player fog scene with a short
+ * wall through its stored center, on its middle hex, which no layer holds.
+ * The build's clip steps its eye off that wall to one side, and the hexes
+ * the wall then cuts off are the only ground revealed, in `layer`: so the
+ * build's walls withhold it and every copy, which holds no wall, shows it.
+ */
+function middleWallRoom(g: HexGrid, opts: RoomOpts & { layer?: "dm" | "party" | { holder: string } } = {}): { s: RoomState; ogre: Token } {
+  const s = hexRoom(g, opts);
+  const at = { col: 9, row: 7 };
+  const ogre = onHex(g, "ogre", "huge", at, { name: "Ogre", kind: "npc" });
+  const c = storedCenter(ogre);
+  wall(s, "midwall00001", [q(c.x - 0.25), q(c.y)], [q(c.x + 0.25), q(c.y)]);
+  const kept = new Set(clipFootprint(g, ogre, buildClip(s)).kept.map((sub) => sub.join(",")));
+  const cut = occupiedHexes(g, ogre).filter((h) => hexKey(h) !== hexKey(at) && hexSubcells(g, h).every((sub) => !kept.has(sub.join(","))));
+  assert.ok(cut.length > 0, "the build's clip cuts off some of its hexes");
+  liftSubs(s, opts.layer ?? "dm", subsOf(g, cut));
+  s.tokens.ogre = ogre;
+  return { s, ogre };
+}
+
+for (const [name, g] of SHAPES) {
+  describe(`a creature's outline is clipped by the walls the viewer holds, ${name}`, () => {
+    test("a wall through its middle that no player holds clips nothing: the eye steps off only the walls held", () => {
+      const s = hexRoom(g);
+      const at = { col: 9, row: 8 };
+      const ogre = onHex(g, "ogre", "huge", at, { name: "Ogre", kind: "npc" });
+      liftSubs(s, "dm", subsOf(g, occupiedHexes(g, ogre).filter((h) => hexKey(h) !== hexKey(at))));
+      const c = hexCenter(g, at);
+      wall(s, "k2d000000001", [q(c.x - 0.3), q(c.y)], [q(c.x + 0.3), q(c.y)]);
+      const all = clipFootprint(g, ogre, null).subs.length;
+      assert.ok(clipFootprint(g, ogre, buildClip(s)).kept.length < all, "the build's walls clip it");
+      assert.equal(clipFootprint(g, ogre, heldSightClip(s, s.scenes.s1!, g, null, ogre)).kept.length, all, "the held walls clip nothing");
+      assert.equal(keptBy(g, ogre, heldSightClip(s, s.scenes.s1!, g, null, ogre)), keptBy(g, ogre, copyClip(s, P1)), "as the player's own copy clips it");
+    });
+
+    test("a wall the DM removed still clips where the party remembers it, and one the DM added where it remembers none does not", () => {
+      for (const kind of ["removed", "added"] as const) {
+        const s = hexRoom(g, { vision: true });
+        const at = { col: 9, row: 8 };
+        const ogre = onHex(g, "ogre", "huge", at, { name: "Ogre", kind: "npc" });
+        liftSubs(s, "party", subsOf(g, occupiedHexes(g, ogre).flatMap((h) => [h, ...hexNeighbors(g, h)])));
+        const c = hexCenter(g, at);
+        const w: FreeWall = { id: "k2m000000001", a: [q(c.x + 0.3), q(c.y - 0.6)], b: [q(c.x + 0.3), q(c.y + 0.6)], f: { kind: "wall" } };
+        if (kind === "removed") rememberWall(s, null, w, w);
+        else {
+          wall(s, w.id, w.a, w.b);
+          rememberWall(s, null, w, null);
+        }
+        const all = clipFootprint(g, ogre, null).subs.length;
+        const held = clipFootprint(g, ogre, heldSightClip(s, s.scenes.s1!, g, null, ogre)).kept.length;
+        const built = clipFootprint(g, ogre, buildClip(s)).kept.length;
+        if (kind === "removed") {
+          assert.equal(built, all, "the build has no wall");
+          assert.ok(held < all, "the remembered wall clips");
+        } else {
+          assert.ok(built < all, "the build's wall clips");
+          assert.equal(held, all, "the wall remembered absent does not");
+        }
+        assert.equal(keptBy(g, ogre, heldSightClip(s, s.scenes.s1!, g, null, ogre)), keptBy(g, ogre, copyClip(s, P1)), `${kind}: as the party's copy clips it`);
+      }
+    });
+
+    test("a seen wall between its middle and its revealed hex withholds it, and a Huge creature with its middle unrevealed and no walls is shown, as today", () => {
+      const s = hexRoom(g);
+      const at = { col: 9, row: 8 };
+      const ogre = onHex(g, "ogre", "huge", at, { name: "Ogre", kind: "npc" });
+      const outer = occupiedHexes(g, ogre).find((h) => hexKey(h) !== hexKey(at))!;
+      liftSubs(s, "dm", hexSubcells(g, outer));
+      s.tokens.ogre = ogre;
+      assert.equal(withheldWhereItStands(s, ogre), false, "shown by its one revealed hex");
+      assert.equal(inSightOfNonOwners(s, ogre, { opVersion: 36 }), true);
+      // Walls round the revealed hex, along its six sides, which every player holds.
+      for (let d = 0; d < 6; d++) {
+        const side = sideWall(g, outer, d);
+        wall(s, `k2s00000000${d}`, side.a, side.b);
+      }
+      assert.equal(withheldWhereItStands(s, ogre), true, "withheld behind the walls players hold");
+      assert.equal(inSightOfNonOwners(s, ogre, { opVersion: 36 }), false, "as the build's walls withhold it");
+    });
+
+    test("one revealed hex with a wall along its side, and random rooms: each class's clip is the clip of its own copy", () => {
+      if (g === ROWS) {
+        const s = hexRoom(g);
+        liftSubs(s, "dm", hexSubcells(g, { col: 8, row: 8 }));
+        wall(s, "k2a000000001", [8, 7.796875], [8, 7.21875]);
+        const ogre = onHex(g, "ogre", "huge", { col: 7, row: 8 }, { name: "Ogre", kind: "npc" });
+        s.tokens.ogre = ogre;
+        assert.equal(keptBy(g, ogre, heldSightClip(s, s.scenes.s1!, g, null, ogre)), keptBy(g, ogre, copyClip(s, P1)));
+        assert.equal(withheldWhereItStands(s, ogre), true, "the copy's wall piece withholds it");
+      }
+      let checked = 0;
+      let today = 0;
+      for (let n = 0; n < 150; n++) {
+        const vision = n % 2 === 1;
+        const { s, g: grid, ogre, holders } = randomRoom(n, { vision, perPlayer: n % 3 !== 0, seed: g === ROWS ? 0xc11 : 0xc12 });
+        for (const view of [null, ...holders]) {
+          const viewer = { memberId: view ?? "p3", role: "player" as const };
+          const copy = keptBy(grid, ogre, copyClip(s, viewer));
+          assert.equal(keptBy(grid, ogre, heldSightClip(s, s.scenes.s1!, grid, view, ogre)), copy, `room ${n}, ${view ?? "the shared class"}`);
+          if (keptBy(grid, ogre, buildClip(s)) !== copy) today++;
+          checked++;
+        }
+      }
+      assert.ok(today > 20, `the build's clip differs from a copy's in ${today} of ${checked}, so the rooms test something`);
+    });
+
+    test("a warm answer after a scene update that shrinks its bounds is the cold one", () => {
+      let shrunkClips = 0;
+      for (let n = 0; n < 120; n++) {
+        const r = rng((g === ROWS ? 0x5ce : 0x5cf) + n);
+        const s = hexRoom(g);
+        const at = { col: int(r, 4, 9), row: int(r, 4, 10) };
+        const ogre = onHex(g, "ogre", pick(r, ["huge", "gargantuan"] as const), at, { name: "Ogre", kind: "npc" });
+        const c = hexCenter(g, at);
+        for (let i = int(r, 2, 6); i > 0; i--) {
+          const x = c.x + (r() - 0.2) * 6;
+          const y = c.y + (r() - 0.5) * 4;
+          wall(s, `sc${String(n).padStart(5, "0")}${i}0000`.slice(0, 12), [q(x), q(y)], [q(x + (r() - 0.5) * 2 * HEX_R), q(y + (r() - 0.5) * 2 * HEX_R)]);
+        }
+        liftSubs(s, "dm", subsOf(g, sceneHexes(g, s.scenes.s1!.bounds).filter(() => chance(r, 0.7))));
+        const kept = (st: RoomState) => keptBy(g, ogre, heldSightClip(st, st.scenes.s1!, g, null, ogre));
+        const before = kept(s);
+        const shrunk = { ...s, scenes: { ...s.scenes, s1: { ...s.scenes.s1!, bounds: { w: int(r, 6, 12), h: 16 } } } };
+        const warm = kept(shrunk);
+        const cold = kept({ ...shrunk, buildChunks: { ...shrunk.buildChunks }, fogTiles: { ...shrunk.fogTiles } });
+        assert.equal(warm, cold, `room ${n}`);
+        if (cold !== before) shrunkClips++;
+      }
+      assert.ok(shrunkClips > 10, `the shrink changes ${shrunkClips} clips, so the cache is tested`);
+    });
+  });
+}
+
+describe("each player's copy and frames, clipped by the walls the viewer holds", () => {
+  /**
+   * The design's clip pairs: a Huge or Gargantuan creature, a revealed
+   * half-plane through it or random revealed hexes or both, with vision a
+   * torch bearer near it and ground explored out of sight, short walls
+   * through and beside it, and in the second room more walls inside hexes
+   * round it that P1 neither holds nor sees.
+   */
+  function pairOf(n: number, vision: boolean): { a: RoomState; b: RoomState; added: number } {
+    const r = rng(0xc11 + n);
+    const g = chance(r, 0.5) ? ROWS : COLUMNS;
+    const s = hexRoom(g, { vision });
+    const at = { col: int(r, 6, 13), row: int(r, 5, 10) };
+    const ogre = onHex(g, "ogre", pick(r, ["huge", "gargantuan"] as const), at, { name: "Ogre", kind: "npc" });
+    const mine = occupiedHexes(g, ogre);
+    const all = sceneHexes(g, s.scenes.s1!.bounds);
+    const c = hexCenter(g, at);
+    const turn = r() * 2 * Math.PI;
+    const off = (r() - 0.5) * 3;
+    const revealed = new Set<string>();
+    const style = int(r, 0, 2);
+    for (const h of all) {
+      const hc = hexCenter(g, h);
+      const side = (hc.x - c.x) * Math.cos(turn) + (hc.y - c.y) * Math.sin(turn) - off;
+      if ((style !== 1 && side > 0) || (style !== 0 && chance(r, 0.35))) revealed.add(hexKey(h));
+    }
+    if (vision) {
+      const nearby = all.filter((h) => {
+        const hc = hexCenter(g, h);
+        return Math.hypot(hc.x - c.x, hc.y - c.y) < 6 && Math.hypot(hc.x - c.x, hc.y - c.y) > 2.5;
+      });
+      s.tokens.pc = onHex(g, "pc", "medium", pick(r, nearby), { name: "Hero", kind: "pc", disposition: "ally", ownerIds: ["p1"], light: { bright: 10, dim: 5 * int(r, 0, 3) } });
+    }
+    liftSubs(s, "dm", subsOf(g, all.filter((h) => revealed.has(hexKey(h)))));
+    if (vision) liftSubs(s, "party", subsOf(g, all.filter(() => chance(r, 0.4))));
+    const wallsIn = (st: RoomState, pickHex: () => Hex | null, count: number, tag: string) => {
+      let made = 0;
+      for (let i = 0; i < count; i++) {
+        const h = pickHex();
+        if (!h) continue;
+        const hc = hexCenter(g, h);
+        const a: [number, number] = [q(hc.x + (r() - 0.5) * 1.4 * HEX_R), q(hc.y + (r() - 0.5) * 1.4 * HEX_R)];
+        const b: [number, number] = [q(hc.x + (r() - 0.5) * 1.4 * HEX_R), q(hc.y + (r() - 0.5) * 1.4 * HEX_R)];
+        if (hexKey(hexAt(g, { x: a[0], y: a[1] })) !== hexKey(h) || hexKey(hexAt(g, { x: b[0], y: b[1] })) !== hexKey(h) || (a[0] === b[0] && a[1] === b[1])) continue;
+        wall(st, `${tag}${String(n).padStart(5, "0")}${made++}`, a, b);
+      }
+      return made;
+    };
+    const ring = [...mine, ...mine.flatMap((h) => hexNeighbors(g, h))];
+    wallsIn(s, () => pick(r, ring), int(r, 0, 3), "pub");
+    const b = structuredClone(s);
+    const hidden = ring.filter((h) => !revealed.has(hexKey(h)));
+    const added = wallsIn(b, () => (hidden.length ? pick(r, hidden) : null), int(r, 1, 4), "hid");
+    s.tokens.ogre = ogre;
+    b.tokens.ogre = structuredClone(ogre);
+    return { a: s, b, added };
+  }
+
+  for (const vision of [false, true]) {
+    test(`give P1 the same copy and the same drag frames, ${vision ? "with vision" : "with fog alone"}, where the build's walls mark some pairs otherwise`, () => {
+      let pairs = 0;
+      let apart = 0;
+      const copyWithout = (st: RoomState) => {
+        const t = structuredClone(st);
+        delete t.tokens.ogre;
+        return stableStringify(projectState(t, P1, { sceneId: "s1" }));
+      };
+      for (let n = 0; n < (vision ? 300 : 400); n++) {
+        const { a, b, added } = pairOf(n, vision);
+        if (added === 0 || copyWithout(a) !== copyWithout(b)) continue;
+        pairs++;
+        assert.equal(stableStringify(projectState(b, P1, { sceneId: "s1" })), stableStringify(projectState(a, P1, { sceneId: "s1" })), `pair ${n}: P1's copy`);
+        const ogre = a.tokens.ogre!;
+        const r = rng(n);
+        for (let k = 0; k < 4; k++) {
+          const frame = { ...ogre, x: ogre.x + (r() - 0.5) * 2, y: ogre.y + (r() - 0.5) * 2 };
+          for (const t of [frame, { ...frame, squeeze: true as const }]) assert.equal(withheldFromViewer(b, P1, t), withheldFromViewer(a, P1, t), `pair ${n}: frame ${k}`);
+        }
+        const old = (st: RoomState) => stableStringify(seenMark(st, st.tokens.ogre!, { opVersion: 36 }, "anywhere"));
+        if (old(a) !== old(b)) apart++;
+      }
+      assert.ok(pairs > (vision ? 60 : 350), `${pairs} pairs`);
+      assert.ok(apart > 0, `the build's walls mark ${apart} pairs otherwise, so the pairs test something`);
+    });
+  }
+});
+
+describe("ops stored before op version 37 judge a creature's outline by the build's walls", () => {
+  const OLD = { opVersion: 36 };
+  const LIVE = {};
+  const NOW = { opVersion: 37 };
+  for (const [name, g] of SHAPES) {
+    test(`${name}: every stored mark and audience, seen by all`, () => {
+      const { s, ogre } = middleWallRoom(g, { perPlayer: true });
+      s.meta = { ...s.meta, playerSceneId: "s1" };
+      assert.equal(inSightOfNonOwners(s, ogre, OLD), false, "the build's walls withhold it");
+      for (const env of [LIVE, NOW]) {
+        assert.equal(inSightOfNonOwners(s, ogre, env), true, "the walls players hold show it");
+        assert.equal(seenByNonOwners(s, ogre, env), true);
+        assert.deepEqual(seenMark(s, ogre, env, "here"), { seen: true });
+      }
+      assert.equal(seenByNonOwners(s, ogre, OLD), false);
+      assert.deepEqual(seenMark(s, ogre, OLD, "here"), { seenBy: [] });
+      // A walk's spots on a whole-party scene, where no spot need stand on ground every player shares.
+      const party = middleWallRoom(g);
+      const spot = [{ x: party.ogre.x, y: party.ogre.y, elevation: 0 }];
+      assert.equal(seenAtEvery(party.s, party.ogre, spot, NOW), true);
+      assert.equal(seenAtEvery(party.s, party.ogre, spot, LIVE), true);
+      assert.equal(seenAtEvery(party.s, party.ogre, spot, OLD), false);
+      // A turn, an area and a line about it.
+      const row: InitEntry = { id: "e1", tokenId: "ogre", value: 10, tieOrder: 0, hidden: false, reactionUsed: false, inLair: false };
+      s.encounter = { id: "enc1", rev: 1, round: 1, activeEntryId: "e1", entries: [row] } as unknown as RoomState["encounter"];
+      assert.deepEqual(rowSeenMark(s, row, NOW), { seen: true });
+      assert.deepEqual(rowSeenMark(s, row, OLD), { seenBy: [] });
+      assert.equal(activeRowShownTo(s, P1, NOW), true);
+      assert.equal(activeRowShownTo(s, P1, OLD), false);
+      const area = template("t1", { sceneId: "s1", attachedTo: "ogre", origin: { x: ogre.x + 1.5, y: ogre.y + 1.5, z: 0 }, ownerId: "dm1", visibility: "all" });
+      assert.deepEqual(areaSeenMark(s, area, ogre, NOW), { seen: true });
+      assert.deepEqual(areaSeenMark(s, area, ogre, OLD), { hidden: true });
+      // A line marked seen by all reaches every player who sees the creature as the op leaves the room.
+      const line: Pick<LogEntry, "kind" | "data"> = { kind: "event", data: { type: "life", tokenId: "ogre", life: "dead", seen: true } };
+      assert.equal(lineReader(s, 37)(line).audience, "shared");
+      assert.equal(lineReader(s)(line).audience, "shared");
+      assert.equal(lineReader(s, 36)(line).audience, "dm");
+    });
+
+    test(`${name}: a sight holder's marks and audience by their own copy`, () => {
+      // Only p1's own layer reveals the hexes the build's clip cuts off.
+      const { s, ogre } = middleWallRoom(g, { holders: ["p1"], layer: { holder: "p1" } });
+      s.meta = { ...s.meta, playerSceneId: "s1" };
+      for (const env of [OLD, NOW]) assert.equal(inSightOfNonOwners(s, ogre, env), false, "no ground every player holds shows it");
+      assert.deepEqual(seenMark(s, ogre, NOW, "here"), { seenBy: ["p1"] });
+      assert.deepEqual(seenMark(s, ogre, OLD, "here"), { seenBy: [] });
+      const row: InitEntry = { id: "e1", tokenId: "ogre", value: 10, tieOrder: 0, hidden: false, reactionUsed: false, inLair: false };
+      s.encounter = { id: "enc1", rev: 1, round: 1, activeEntryId: "e1", entries: [row] } as unknown as RoomState["encounter"];
+      assert.deepEqual(rowSeenMark(s, row, NOW), { seenBy: ["p1"] });
+      assert.deepEqual(rowSeenMark(s, row, OLD), { seenBy: [] });
+      const area = template("t1", { sceneId: "s1", origin: { x: ogre.x + 1.5, y: ogre.y + 1.5, z: 0 }, ownerId: "dm1", visibility: "all" });
+      assert.deepEqual(areaSeenMark(s, area, ogre, NOW), { seenBy: ["p1"] });
+      assert.deepEqual(areaSeenMark(s, area, ogre, OLD), { seenBy: [] });
+      const line: Pick<LogEntry, "kind" | "data"> = { kind: "event", data: { type: "life", tokenId: "ogre", life: "dead", seenBy: ["p1"] } };
+      const now = lineReader(s, 37)(line);
+      assert.equal(now.audience, "party");
+      assert.deepEqual(now.audience === "party" ? now.views.map(([id]) => id) : [], ["p1"]);
+      assert.equal(lineReader(s, 36)(line).audience, "dm");
+    });
+  }
+});

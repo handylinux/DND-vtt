@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { chunkKey, wallChunk } from "../keys.ts";
 import type { FreeWall, GridShape, RoomState, SightTile, Token } from "../model.ts";
 import { withheldWhereItStands } from "../project.ts";
-import { actor, int, pick, rng, room, scene, token } from "../testutil.ts";
+import { actor, int, pick, reveal, rng, room, scene, token } from "../testutil.ts";
 import { footprintSubcells, type PlacedToken } from "./footprint.ts";
 import { gridOfShape, SQUARES } from "./grid.ts";
 import type { HexGrid } from "./hex.ts";
@@ -162,6 +162,8 @@ describe("the wall clip on hexes (HX-D10)", () => {
     // A second player's eye far off, so the holder's sources are fewer than the union's and its sight is a point query.
     if (perPlayer) s.tokens.b = token("b", { kind: "pc", ownerIds: ["p2"], x: 14, y: 6, actor: { inline: actor({ senses: "darkvision 10 ft" }) } });
     s.holders = perPlayer ? { s1: { sceneId: "s1", rev: 1, entries: [{ memberId: "p1", on: true }] } } : {};
+    // Revealed, as the ground the party sees is once explored, so every player holds the wall.
+    reveal(s, "s1", { x: 0, y: 0, w: 16, h: 8 });
     return addWalls(s, [free(WALL_X, 0, WALL_X, 3)]);
   }
 
@@ -246,6 +248,8 @@ describe("the wall clip on hexes (HX-D10)", () => {
       s,
       lines.map(([a, b]) => free(10 - a, 10 - b, 10 + a, 10 + b)),
     );
+    // Revealed, as the ground the party sees is once explored, so every player holds the walls.
+    reveal(s, "s1", { x: 0, y: 0, w: 24, h: 24 });
     const m = s.tokens.m;
     const party = coldPartySight(s, "s1", world);
     assert.equal(party.seesToken(m, g), true, "the eye sees part of its hex");

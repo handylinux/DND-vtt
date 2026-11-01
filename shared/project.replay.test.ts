@@ -236,4 +236,10 @@ describe("stored op tails on hex scenes replay to the states they made", () => {
       assert.deepEqual(differ, [], `op version ${v}: these tails replay to other states`);
     }
   });
+
+  test("the same tails as live ops end otherwise in many, so the pinned states test what the rules of op version 37 change", () => {
+    const tails = Array.from({ length: TAILS }, (_, seed) => tail(seed));
+    const moved = tails.filter((t) => replay(t, 36) !== replay(t, 37)).length;
+    assert.ok(moved >= 20, `${moved} of ${TAILS} tails end otherwise`);
+  });
 });

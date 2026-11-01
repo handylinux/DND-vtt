@@ -60,7 +60,7 @@ import {
 import { handoutPages } from "./handouts.ts";
 import { imageAssetId } from "./imageRef.ts";
 import { inLiveLog, lineAudience, liveStart, neverRead } from "./logRings.ts";
-import { revealSeenAnywhere } from "./migrate.ts";
+import { clipsByHeldWalls, revealSeenAnywhere } from "./migrate.ts";
 import type { Change } from "./protocol.ts";
 import type { Env } from "./reducer/tx.ts";
 import { isWritable } from "./writable.ts";
@@ -78,7 +78,7 @@ import { legOnGround, pathThisTurn, seenWhole, stopsForNonOwners, stopsForOwners
 import { zoneFogged, zoneRanges } from "./rules/traps.ts";
 import { clipFootprint, seesCreature, sightClipOf, sightRect } from "./rules/vision.ts";
 import type { SegmentIndex } from "./rules/segments.ts";
-import { sceneWalls, type WallSet } from "./rules/walls.ts";
+import { deriveWalls, indexBuild, sceneWalls, type WallSet } from "./rules/walls.ts";
 
 /**
  * Per-viewer projection (design section 7.3): the security boundary that
@@ -607,7 +607,9 @@ function holderLayer(state: RoomState, sceneId: string, memberId: string): Recor
  * per-player scene a sight holder's sight and fog, the shared ones for
  * every other player and a display, and the union for a DM
  * (docs/design/design-v1-per-player-vision.md 6.2). Sight is worked out once per
- * projection.
+ * projection. `held` is whether a creature's outline on hexes is clipped
+ * by the walls the viewer holds (ClipBy): always for a projection, and for
+ * the reducer's questions by the op's version.
  */
 type Ctx = {
   state: RoomState;
@@ -618,11 +620,12 @@ type Ctx = {
   fogged: FogReader;
   presence: (sceneId: string) => Record<string, FogTile>;
   sight: (sceneId: string) => PartySight;
+  held: boolean;
   /** The viewer's ground per scene (rules/held.ts), worked out when first asked (groundCtx). */
   grounds: Map<string, Ground | null>;
 };
 
-function ctxOf(state: RoomState, viewer: Viewer, opts: ProjectOpts): Ctx {
+function ctxOf(state: RoomState, viewer: Viewer, opts: ProjectOpts, held = true): Ctx {
   const own = viewer.role === "player" ? viewer.memberId : null;
   return {
     state,
@@ -633,6 +636,7 @@ function ctxOf(state: RoomState, viewer: Viewer, opts: ProjectOpts): Ctx {
     fogged: fogReader(state, own),
     presence: (sceneId) => presenceOf(state, own, sceneId),
     sight: sightReader((sceneId) => viewerSightOf(state, viewer, sceneId)),
+    held,
     grounds: new Map(),
   };
 }
@@ -662,7 +666,25 @@ function tokenVisibleTo(ctx: Ctx, token: Token, revealedSeen = false): boolean {
   if (ctx.viewer.role === "dm") return token.sceneId === ctx.sceneId;
   if (token.sceneId !== ctx.sceneId) return false;
   if (token.visibility === "dm" && !ownsToken(ctx.state, ctx.viewer, token)) return false;
-  return !withheldFromPlayers(ctx.state, ctx.fogged, ctx.sight, token, revealedSeen);
+  return !withheldOnScreen(ctx, token, revealedSeen);
+}
+
+/** What a viewer's screen judges a creature by: their own sight and fog, and whose walls clip its outline (Ctx `held`). */
+type Screen = Pick<Ctx, "state" | "viewer" | "fogged" | "sight" | "held">;
+
+/**
+ * Whether a viewer's screen withholds a token where it stands
+ * (docs/design/design-v1-per-player-vision.md 6.2): by their own sight and fog,
+ * a creature's outline on hexes clipped by the walls they hold.
+ */
+function withheldOnScreen(screen: Screen, token: Token, revealedSeen: boolean): boolean {
+  return withheldFromPlayers(screen.state, screen.fogged, screen.sight, token, revealedSeen, clipOfScreen(screen, token.sceneId));
+}
+
+/** The walls that clip a creature's outline on a viewer's screen: their fog class's copy, and for a DM, who holds it, the build. */
+function clipOfScreen(screen: Screen, sceneId: string): ClipBy {
+  if (!screen.held || screen.viewer.role === "dm") return "build";
+  return { view: fogClassOf(screen.state, sceneId, screen.viewer.memberId) };
 }
 
 /**
@@ -686,18 +708,20 @@ function tokenVisibleTo(ctx: Ctx, token: Token, revealedSeen = false): boolean {
  * anywhere. Only the seen marks of such an op, and the reducer's check of
  * a player's guarded Next or Previous (activeRowShownTo), pass it on replay.
  *
+ * `clip` says whose walls clip a creature's outline on hexes (ClipBy).
+ *
  * The checks run cheapest first, so sight is asked only about the DM's
  * other creatures.
  */
-function withheldFromPlayers(state: RoomState, fogged: FogReader, sight: (sceneId: string) => PartySight, token: Token, revealedSeen = false): boolean {
+function withheldFromPlayers(state: RoomState, fogged: FogReader, sight: (sceneId: string) => PartySight, token: Token, revealedSeen: boolean, clip: ClipBy): boolean {
   const scene = state.scenes[token.sceneId];
   if (!scene) return false;
   if (!visionOn(scene) && !scene.fogEnabled) return false;
   if (isAboveFog(token, isPartyMember(state, token)) || (revealedSeen && token.fogExemptAuto)) return false;
   const grid = sceneGrid(scene);
-  const clip = sightClip(state, scene, grid);
-  if (visionOn(scene)) return !seesCreature(sight(scene.id), token, grid, clip);
-  return footprintFogged(grid, fogged, token, clip);
+  const walls = clipWalls(state, scene, grid, clip, token);
+  if (visionOn(scene)) return !seesCreature(sight(scene.id), token, grid, walls);
+  return footprintFogged(grid, fogged, token, walls);
 }
 
 /**
@@ -737,6 +761,110 @@ function sightClip(state: Pick<RoomState, "buildChunks">, scene: Scene, grid: Gr
 }
 
 /**
+ * Whose walls clip a creature's outline on a hex scene (HX-D10). "build" is
+ * the walls of the state's own chunks: what ops stored before op version 37
+ * read (shared/migrate.ts clipsByHeldWalls), and what a DM holds. Otherwise
+ * it is one fog class's copy of the walls (heldSightClip), the null class
+ * being the one every player shares.
+ */
+type ClipBy = "build" | { view: FogClass };
+
+const SHARED_COPY: ClipBy = { view: null };
+
+/** The shared class's copy, or for an op stored before op version 37 the build's walls. */
+function sharedClip(env: Pick<Env, "opVersion">): ClipBy {
+  return clipsByHeldWalls(env.opVersion) ? SHARED_COPY : "build";
+}
+
+function clipWalls(state: RoomState, scene: Scene, grid: Grid, clip: ClipBy, token: Token): SegmentIndex | null {
+  return clip === "build" ? sightClip(state, scene, grid) : heldSightClip(state, scene, grid, clip.view, token);
+}
+
+/**
+ * The sight walls one fog class holds round a creature on a hex scene with
+ * fog on (HX-D10): the free walls of the class's own chunks (playerChunk),
+ * remembered versions included, at every position within a free wall's
+ * reach (4 cells) of the creature's footprint box, and one ring past them.
+ * They are the very walls the class's device holds, so a creature's
+ * outline is clipped by the walls the viewer holds and its eye steps off
+ * those alone. With fog off every viewer holds the build. A device's state
+ * already is its copy, so there it is the walls the state holds.
+ *
+ * Three layers keep it. The player chunks keep their own memo. The index
+ * is kept while the chunk objects it was built from are the same. And one
+ * state's answers are kept by every collection those chunks read, the scene
+ * object among them, whose fields they read (sceneFields), so one op's
+ * many questions build each neighborhood once. That last layer keeps
+ * nothing while an op is still writing any of them or the scenes, nor while
+ * the room holds memory, since a remembered element reads which ground is
+ * in sight now.
+ */
+const heldClips = new Map<string, { parts: readonly (PlayerChunk | null)[]; clip: SegmentIndex | null }>();
+const HELD_CLIPS_KEPT = 4096;
+let heldSerial = 0;
+const byCollections = new WeakMap<object, WeakMap<object, unknown>>();
+const NO_COLLECTION = {};
+
+export function heldSightClip(state: RoomState, scene: Scene, grid: Grid, view: FogClass, token: Token): SegmentIndex | null {
+  if (!isHex(grid) || !scene.fogEnabled || sightOf(state) !== undefined) return sightClip(state, scene, grid);
+  const own = view !== null && holdsOwnSight(state, scene.id, view) ? view : null;
+  const r = footprintRect(grid, token);
+  const cx0 = Math.floor((r.x - 4) / CHUNK_CELLS);
+  const cy0 = Math.floor((r.y - 4) / CHUNK_CELLS);
+  const cx1 = Math.floor((r.x + r.w + 4) / CHUNK_CELLS);
+  const cy1 = Math.floor((r.y + r.h + 4) / CHUNK_CELLS);
+  const at = partsKey([own, cx0, cy0, cx1, cy1]);
+  const kept = stateClips(state, scene);
+  const known = kept?.get(at);
+  if (known !== undefined) return known;
+  const positions: { cx: number; cy: number }[] = [];
+  for (let cy = cy0 - 1; cy <= cy1 + 1; cy++) for (let cx = cx0 - 1; cx <= cx1 + 1; cx++) positions.push({ cx, cy });
+  const batch = playerChunkBatch(state, scene.id, positions, own);
+  const parts = positions.map((p) => batch.get(chunkKey(scene.id, p.cx, p.cy)) ?? null);
+  const key = partsKey([sceneFields(scene), at]);
+  const index = heldClips.get(key);
+  let clip: SegmentIndex | null;
+  if (index && index.parts.length === parts.length && index.parts.every((c, i) => c === parts[i])) clip = index.clip;
+  else {
+    const chunks = parts.filter((c): c is PlayerChunk => c !== null);
+    // Derived apart from sceneWalls, whose few sets a scene keeps are the build's and its device copies'.
+    clip = chunks.length === 0 ? null : sightClipOf(deriveWalls(indexBuild(chunks), `held:${++heldSerial}`, { rule: autoWallsOf(scene), bounds: scene.bounds, grid }));
+    if (heldClips.size >= HELD_CLIPS_KEPT) heldClips.clear();
+    heldClips.set(key, { parts, clip });
+  }
+  kept?.set(at, clip);
+  return clip;
+}
+
+/** The per-state layer of heldSightClip: null while it may keep nothing. */
+function stateClips(state: RoomState, scene: Scene): Map<string, SegmentIndex | null> | null {
+  const parts: object[] = [scene, state.buildChunks, state.fogTiles, state.exploredTiles ?? NO_COLLECTION, state.exploredBy ?? NO_COLLECTION, state.memory ?? NO_COLLECTION, state.memoryBy ?? NO_COLLECTION];
+  if (isWritable(state.scenes) || parts.some((p) => isWritable(p)) || holdsMemory(state)) return null;
+  let at: WeakMap<object, unknown> = byCollections;
+  for (let i = 0; i < parts.length - 1; i++) {
+    let next = at.get(parts[i]!) as WeakMap<object, unknown> | undefined;
+    if (!next) at.set(parts[i]!, (next = new WeakMap()));
+    at = next;
+  }
+  let out = at.get(parts[parts.length - 1]!) as Map<string, SegmentIndex | null> | undefined;
+  if (!out) at.set(parts[parts.length - 1]!, (out = new Map()));
+  return out;
+}
+
+/* Whether a memory collection holds any chunk, kept per collection, which is replaced and never changed. */
+const memoryHeld = new WeakMap<object, boolean>();
+
+function holdsMemory(state: RoomState): boolean {
+  const any = (all: Readonly<Record<string, unknown>> | undefined) => {
+    if (!all) return false;
+    let held = memoryHeld.get(all);
+    if (held === undefined) memoryHeld.set(all, (held = Object.keys(all).length > 0));
+    return held;
+  };
+  return any(state.memory) || any(state.memoryBy);
+}
+
+/**
  * Whether every hex of a creature holds a sub-cell the wall clip keeps and
  * `open` passes: on a per-player scene, a spot on shared ground. A hex
  * the clip empties lies wholly behind a wall and counts as under the fog.
@@ -759,26 +887,31 @@ function everyHexOpen(grid: HexGrid, token: Token, clip: SegmentIndex | null, op
  * fully under the merged fog elsewhere, unless it is a party member or
  * exempt. Its visibility and a blackout are the caller's to check. On a
  * per-player scene it is the rule of what every viewer shares, the shared
- * sight and fog (docs/design/design-v1-per-player-vision.md decision 10).
+ * sight and fog (docs/design/design-v1-per-player-vision.md decision 10), and
+ * on hexes the walls the shared class holds.
  */
 export function withheldWhereItStands(state: RoomState, token: Token): boolean {
   const shared = sharedOf(state);
-  return withheldFromPlayers(state, shared.fogged, shared.sight, token);
+  return withheldFromPlayers(state, shared.fogged, shared.sight, token, false, SHARED_COPY);
 }
 
 /**
  * Whether where a token stands keeps it from one viewer, by their own
  * sight and fog (docs/design/design-v1-per-player-vision.md 6.2): the rule their
- * projection judges creatures by, which on a device is the copy's own, and
- * for a DM the union. Its visibility and a blackout are the caller's. The
- * ephemeral channel asks it of a drag preview's spot for each receiver,
- * with the footprint its own preview rule decides
+ * projection judges creatures by (withheldOnScreen), which on a device is
+ * the copy's own, and for a DM the union. Its visibility and a blackout are
+ * the caller's. The ephemeral channel asks it of a drag preview's spot for
+ * each receiver, with the footprint its own preview rule decides
  * (docs/design/design-v1-maps-vision.md 4.1 and 4.3.5, and 7.5 of the per-player
  * design).
  */
 export function withheldFromViewer(state: RoomState, viewer: Viewer, token: Token): boolean {
+  return withheldOnScreen(screenOf(state, viewer, true), token, false);
+}
+
+function screenOf(state: RoomState, viewer: Viewer, held: boolean): Screen {
   const own = viewer.role === "player" ? viewer.memberId : null;
-  return withheldFromPlayers(state, fogReader(state, own), sightReader((sceneId) => viewerSightOf(state, viewer, sceneId)), token);
+  return { state, viewer, fogged: fogReader(state, own), sight: sightReader((sceneId) => viewerSightOf(state, viewer, sceneId)), held };
 }
 
 /*
@@ -800,12 +933,14 @@ function behindBlackout(state: RoomState): boolean {
  *
  * The marks are stored, so each of these questions takes the op's envelope:
  * an op stored before op version 4 marks by the rule it was applied under
- * (shared/migrate.ts revealSeenAnywhere), and replays to the same state.
+ * (shared/migrate.ts revealSeenAnywhere), and one stored before op version
+ * 37 clips a creature's outline on hexes by the build's walls
+ * (clipsByHeldWalls), so each replays to the same state.
  */
 export function seenByNonOwners(state: RoomState, token: Token, env: Pick<Env, "opVersion">): boolean {
   if (behindBlackout(state) || token.sceneId !== state.meta.playerSceneId || token.visibility === "dm") return false;
   const shared = sharedOf(state);
-  return !withheldFromPlayers(state, shared.fogged, shared.sight, token, revealSeenAnywhere(env.opVersion));
+  return !withheldFromPlayers(state, shared.fogged, shared.sight, token, revealSeenAnywhere(env.opVersion), sharedClip(env));
 }
 
 /**
@@ -818,7 +953,7 @@ export function seenByNonOwners(state: RoomState, token: Token, env: Pick<Env, "
 export function inSightOfNonOwners(state: RoomState, token: Token, env: Pick<Env, "opVersion">): boolean {
   if (behindBlackout(state) || token.visibility === "dm") return false;
   const shared = sharedOf(state);
-  return !withheldFromPlayers(state, shared.fogged, shared.sight, token, revealSeenAnywhere(env.opVersion));
+  return !withheldFromPlayers(state, shared.fogged, shared.sight, token, revealSeenAnywhere(env.opVersion), sharedClip(env));
 }
 
 /**
@@ -836,15 +971,15 @@ export function seenAtEvery(state: RoomState, token: Token, spots: readonly { x:
   const revealed = revealSeenAnywhere(env.opVersion);
   const { squeeze: _squeeze, ...rest } = token;
   const placed = (p: (typeof spots)[number]): Token => ({ ...rest, x: p.x, y: p.y, elevation: p.elevation, ...(p.squeezed ? { squeeze: true as const } : {}) });
-  if (!spots.every((p) => !withheldFromPlayers(state, shared.fogged, shared.sight, placed(p), revealed))) return false;
+  const clip = sharedClip(env);
+  if (!spots.every((p) => !withheldFromPlayers(state, shared.fogged, shared.sight, placed(p), revealed, clip))) return false;
   const scene = state.scenes[token.sceneId];
   if (!perPlayerScene(scene) || !scene?.fogEnabled) return true;
   // Every cell of the footprint on shared ground, not wholly under the shared fog: on hexes every hex of it, by the sub-cells the wall clip keeps (HX-D10).
   const grid = sceneGrid(scene);
-  const clip = sightClip(state, scene, grid);
   const open = (t: Token) =>
     grid.shape === "hex"
-      ? everyHexOpen(grid, t, clip, (sx, sy) => !shared.fogged.sub(token.sceneId, sx, sy))
+      ? everyHexOpen(grid, t, clipWalls(state, scene, grid, clip, t), (sx, sy) => !shared.fogged.sub(token.sceneId, sx, sy))
       : occupiedCells(grid, t).every((cell) => !shared.fogged(token.sceneId, cell.x, cell.y));
   return spots.every((p) => open(placed(p)));
 }
@@ -879,10 +1014,16 @@ export function seenMark(state: RoomState, token: Token, env: Pick<Env, "opVersi
   if (scope === "here" && !here) return {};
   const revealed = revealSeenAnywhere(env.opVersion);
   const shared = sharedOf(state);
-  if (!withheldFromPlayers(state, shared.fogged, shared.sight, token, revealed)) return { seen: true };
+  if (!withheldFromPlayers(state, shared.fogged, shared.sight, token, revealed, sharedClip(env))) return { seen: true };
   if (!perPlayerScene(state.scenes[token.sceneId]) || sightOf(state) !== undefined) return {};
   if (!here) return { seenBy: [] };
-  return { seenBy: holdersWho(state, token.sceneId, (id) => !ownsToken(state, { memberId: id, role: "player" }, token) && !withheldFromViewer(state, { memberId: id, role: "player" }, token)) };
+  const held = clipsByHeldWalls(env.opVersion);
+  return {
+    seenBy: holdersWho(state, token.sceneId, (id) => {
+      const viewer: Viewer = { memberId: id, role: "player" };
+      return !ownsToken(state, viewer, token) && !withheldOnScreen(screenOf(state, viewer, held), token, false);
+    }),
+  };
 }
 
 /** The sight holders of a scene that pass `test`, sorted. */
@@ -903,7 +1044,8 @@ export function rowSeenMark(state: RoomState, entry: InitEntry, env: Pick<Env, "
   if (entry.hidden || behindBlackout(state) || !token || sceneId === null || token.sceneId !== sceneId || !perPlayerScene(state.scenes[sceneId]) || sightOf(state) !== undefined) return {};
   const owners = new Set([...ownersOf(state, token), ...(entry.characterId !== undefined ? (state.characters[entry.characterId]?.ownerIds ?? []) : [])]);
   const revealed = revealSeenAnywhere(env.opVersion);
-  return { seenBy: holdersWho(state, sceneId, (id) => !owners.has(id) && entryShown(ctxOf(state, { memberId: id, role: "player" }, { sceneId }), entry, revealed)) };
+  const held = clipsByHeldWalls(env.opVersion);
+  return { seenBy: holdersWho(state, sceneId, (id) => !owners.has(id) && entryShown(ctxOf(state, { memberId: id, role: "player" }, { sceneId }, held), entry, revealed)) };
 }
 
 /**
@@ -929,9 +1071,10 @@ export function areaSeenMark(at: RoomState, template: AreaTemplate, token: Token
   if (behindBlackout(at) || token.sceneId !== at.meta.playerSceneId) return {};
   const witnessed = (ctx: Ctx) => tokenVisibleTo(ctx, token, revealSeenAnywhere(env.opVersion)) && projectTemplateCtx(ctx, template) !== null;
   const sceneId = token.sceneId;
-  if (witnessed(ctxOf(at, ANY_PLAYER, { sceneId }))) return { seen: true };
+  const held = clipsByHeldWalls(env.opVersion);
+  if (witnessed(ctxOf(at, ANY_PLAYER, { sceneId }, held))) return { seen: true };
   const players = Object.values(at.members).flatMap((m) => (m.kind === "player" ? [m.id] : []));
-  return { seenBy: players.filter((id) => witnessed(ctxOf(at, { memberId: id, role: "player" }, { sceneId }))).sort() };
+  return { seenBy: players.filter((id) => witnessed(ctxOf(at, { memberId: id, role: "player" }, { sceneId }, held))).sort() };
 }
 
 function tokenVisibleById(ctx: Ctx, tokenId: string, revealedSeen = false): boolean {
@@ -2932,7 +3075,7 @@ export function activeRowShownTo(state: RoomState, viewer: Viewer, env: Pick<Env
   const entry = encounter?.entries.find((e) => e.id === encounter.activeEntryId);
   if (!entry) return false;
   if (viewer.role === "dm") return true;
-  const ctx = ctxOf(state, viewer, { sceneId: state.meta.playerSceneId });
+  const ctx = ctxOf(state, viewer, { sceneId: state.meta.playerSceneId }, clipsByHeldWalls(env.opVersion));
   return !ctx.paused && entryShown(ctx, entry, revealSeenAnywhere(env.opVersion));
 }
 
@@ -3162,13 +3305,16 @@ export function lineReach(state: RoomState, entry: Pick<LogEntry, "kind" | "data
  * lineReach for every line of one room: each player's read keeps one
  * context, with that player's own fog and sight reader, across every line,
  * so an op of many lines judges them all against the same room for about
- * the cost of reading each.
+ * the cost of reading each. The reach is stored, so it takes the op's
+ * version: one stored before op version 37 reads a creature's outline on
+ * hexes by the build's walls (clipsByHeldWalls).
  */
-export function lineReader(state: RoomState): (entry: Pick<LogEntry, "kind" | "data">) => LineReach {
+export function lineReader(state: RoomState, opVersion?: number): (entry: Pick<LogEntry, "kind" | "data">) => LineReach {
   // Each reader with their own sight and fog, which on a per-player scene are theirs alone, and any player the shared
   // ones (docs/design/design-v1-per-player-vision.md 6.5). Any player stands for a member who owns nothing, so it reads a dice
   // line as members do.
-  const ctxOfReader = (viewer: Viewer): Ctx => ({ ...ctxOf(state, viewer, { sceneId: null }), member: true });
+  const held = clipsByHeldWalls(opVersion);
+  const ctxOfReader = (viewer: Viewer): Ctx => ({ ...ctxOf(state, viewer, { sceneId: null }, held), member: true });
   const players = Object.values(state.members)
     .filter((m) => m.kind === "player")
     .map((m) => m.id)
