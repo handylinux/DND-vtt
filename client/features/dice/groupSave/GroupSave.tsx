@@ -87,8 +87,8 @@ import { parseDamageOverride } from "./damageInput.ts";
 import { Loading } from "../../../components/Loading.tsx";
 import { saveRechargeSpendSchema } from "#shared/saveOutcomeContract.ts";
 import { LIMITS, serializedBytes } from "#shared/limits.ts";
-import { noticeWords, prepareSave, reconcileSave, resumeSaveEdits, saveEditable, SAVE_MEMORY_ONLY, OUTCOME_UNAVAILABLE, type SaveSession } from "./reopen.ts";
-import { authorityOf, saveHistoryOf, serverTime } from "./lifecycle.ts";
+import { noticeWords, prepareSave, reconcileSave, resumeSaveEdits, saveEditable, SAVE_MEMORY_ONLY, OUTCOME_UNAVAILABLE, type SaveHistory, type SaveSession } from "./reopen.ts";
+import { authorityOf, knownSaveHistory, serverTime } from "./lifecycle.ts";
 import { askAgain, rerollSaves } from "./reroll.ts";
 
 export function RowDamageField(props: { name: string; value: number | string | undefined; computed: number | null; summary?: DamageSummaryLines; onChange(value: string | null): void }) {
@@ -187,7 +187,10 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
   const roomStore = useRoomStore();
   const reopen = useGroupSave(s => s.reopen);
   const history = useRoomView((s) => s.history?.summary);
-  const notice = noticeWords(reopen, saveHistoryOf(history));
+  const lastHistory = useRef<SaveHistory | undefined>(undefined);
+  const knownHistory = knownSaveHistory(lastHistory.current, history);
+  lastHistory.current = knownHistory;
+  const notice = noticeWords(reopen, knownHistory);
   const confirmedRoom = () => roomStore.getState().you?.role === "dm" ? roomStore.getState().confirmed as RoomState | null | undefined : null;
   const currentSession = (): SaveSession => ({ page: groupStore.getState().page ?? pageRef.current, reopen: groupStore.getState().reopen });
   const roomId = useRoomView((s) => s.roomId);

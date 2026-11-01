@@ -35,6 +35,15 @@ export function saveHistoryOf(summary: HistoryMessage | null | undefined): SaveH
   return summary ? { epoch: summary.epoch, undoSteps: summary.play.undo.depth } : undefined;
 }
 
+/**
+ * The Play history to word the page's notice by. The controller drops its summary
+ * after every room op until that op's own history message comes, so between the
+ * two the last one known stands, and the notice never flips back for the gap.
+ */
+export function knownSaveHistory(last: SaveHistory | undefined, summary: HistoryMessage | null | undefined): SaveHistory | undefined {
+  return saveHistoryOf(summary) ?? last;
+}
+
 export function authorityOf(room: RoomView, page: Page): SaveAuthority {
   const history = saveHistoryOf(room.history?.summary);
   const confirmed = room.confirmed as (NonNullable<RoomView["confirmed"]> & { saveOutcomes?: SaveOutcomeLedger }) | null | undefined;

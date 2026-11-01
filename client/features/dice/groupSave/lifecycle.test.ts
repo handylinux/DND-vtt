@@ -12,8 +12,8 @@ import { FakeClock } from "../../../state/testing.ts";
 import { ReceiptTracker } from "../useReceipt.ts";
 import { askAnswered, newPage, type Page } from "./chain.ts";
 import { askAgain } from "./reroll.ts";
-import { authorityOf, bindSaveLifecycle, serverTime } from "./lifecycle.ts";
-import { captureChoices, OUTCOME_RESTORED, OUTCOME_UNAVAILABLE, OUTCOME_UNDONE, prepareSave, resumeSaveEdits, SAVE_MEMORY_ONLY, sessionOfDraft, type SaveSession } from "./reopen.ts";
+import { authorityOf, bindSaveLifecycle, knownSaveHistory, serverTime } from "./lifecycle.ts";
+import { captureChoices, noticeWords, OUTCOME_APPLIED, OUTCOME_RESTORED, OUTCOME_UNAVAILABLE, OUTCOME_UNDONE, prepareSave, resumeSaveEdits, SAVE_MEMORY_ONLY, sessionOfDraft, type SaveSession } from "./reopen.ts";
 import type { SaveDraft } from "./reopenContract.ts";
 import type { GroupSaveState } from "./store.ts";
 
@@ -508,4 +508,21 @@ test("a later Apply refused because Redo restored the earlier outcome relocks th
   assert.equal(relocked.reopen?.redoHeld?.dc, 18, "the refused choices are held for Resume your edits");
   stop();
   f.room.dispose();
+});
+
+test("the notice never flips back to Undo while a room op's history message is still to come (FU42-OPUS-2)", () => {
+  const summary = (epoch: string, depth: number) => ({ t: "history", epoch, seq: 1, serial: 1, watermark: 1, play: { undo: { head: null, depth }, redo: { head: null, depth: 0 } } }) as unknown as Parameters<typeof knownSaveHistory>[1];
+  const reopen = { check: "applied" as const, notice: OUTCOME_RESTORED, observed: { revision: 3, state: "applied" as const, restored: true as const, epoch: "e2" } };
+  // A restart cleared Undo: the page says the outcome stands.
+  const known = knownSaveHistory(undefined, summary("e2", 0));
+  assert.equal(noticeWords(reopen, known), OUTCOME_APPLIED);
+  // A room op's ev makes the controller publish no summary until its history message comes.
+  const gap = knownSaveHistory(known, null);
+  assert.equal(noticeWords(reopen, gap), OUTCOME_APPLIED, "the gap keeps the last known words");
+  assert.equal(noticeWords(reopen, knownSaveHistory(gap, undefined)), OUTCOME_APPLIED);
+  // The next summary replaces what was remembered.
+  assert.equal(knownSaveHistory(gap, summary("e2", 2))?.undoSteps, 2);
+  assert.equal(noticeWords(reopen, knownSaveHistory(gap, summary("e2", 2))), OUTCOME_RESTORED);
+  // With nothing known yet the notice stands as it is.
+  assert.equal(knownSaveHistory(undefined, null), undefined);
 });
