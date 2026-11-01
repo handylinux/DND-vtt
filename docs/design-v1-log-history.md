@@ -192,7 +192,7 @@ Read incomplete rows in bounded batches of 500. Validate the existing id grammar
 No permanent forward checkpoint may skip rollback-period rows. Revisit the partial index until none remain, including rows from concurrent legacy writes. A completion hint cannot suppress the null-row check.
 Malformed ids stop that room's backfill with an operator error and leave the complete raw path available as far as its existing parser permits. Never silently exclude the malformed portion as indexed history.
 
-Drop the proposed import-seeding marker. Preserve today's any-matching-seq-0 or at-old-cap guard with `LEGACY_LOG_STORED = 10_000` in persistence.ts. It is historical evidence, not current retention.
+Drop the proposed import-seeding marker (reversed by 7.4, D-261101-030). Preserve today's any-matching-seq-0 or at-old-cap guard with `LEGACY_LOG_STORED = 10_000` in persistence.ts. It is historical evidence, not current retention.
 Keep the existing all-rows-deleted old-import repair test. Describe partially missing seq-0 rows as simulating pre-cutover pruning, including the comments in export.itest.ts:1002 and persistence.ts:80-83.
 Remove LIMITS.logStored and update its references. No op, snapshot or room-export version bump: the reducer and RoomState do not change.
 Migration is additive and resumable. Rollback may leave new structures unused, but only to the first stage below, never the old pruning binary. Do not drop source history or restore pruning as a rollback step.
@@ -275,7 +275,7 @@ Own `db/schema.sql`, `server/db.ts` and its unit test, `server/main.ts`, `server
 After A's exact commit handoff, B takes `server/app.ts`, `server/rooms/persistence.ts` and its unit test, `server/rooms/logHistory.ts`, `server/http/log.itest.ts`, `server/http/logExport.itest.ts` and `server/rooms/logArchive.itest.ts`. Never edit these concurrently with A.
 B also owns `server/http/receipts.ts`, `server/rooms/receipts.test.ts`, and new `server/http/receipts.itest.ts`, plus `server/http/admin.ts` and its itest after A for access-table physical-size reporting.
 Implement atomic source/membership completion, post-boot concurrent partial-index creation/recovery, fair advisory-locked background backfill, null-row checks on all indexed reads, and access-prefix receipt lookup.
-No full numeric source-table index, import marker or trusted completeness flag. Wire worker lifecycle, disk guard and shutdown cancellation through the handed-off interfaces.
+No full numeric source-table index, import marker (reversed by 7.4, D-261101-030) or trusted completeness flag. Wire worker lifecycle, disk guard and shutdown cancellation through the handed-off interfaces.
 
 ### 5.3 Client and post-deploy docs lane
 
@@ -333,7 +333,7 @@ Builders run their required lane checks and report exact commits and actual outc
 | D-261030-475 | Frozen state/seq, id ranges, canonical summaries, uncached live-session/grant/epoch/room join requiring the original admission token hash and captured member/role between export batches | Mixed states, timestamp ranges, page-sized keys and cached, expiry-blind or rotation-blind authentication give stale checks |
 | D-261030-476 | Preserve ids/visible times and document legacy/global-seq residuals | HTTP-only opaque ids break merging without hiding the live seq |
 | D-261030-477 | 500 rendered rows, 25 sessions, 8 MiB Blob ceiling and optional native download | Unbounded client memory and line-count byte guesses are unsound |
-| D-261030-478 | Feature-run A correctness/quota/streaming rollback, B atomic metadata and post-boot concurrent index recovery, lazy fair backfill, no import marker | A no-prune binary with full-log cache is unsafe. Boot index builds, partial lane ownership and extra import state add risk |
+| D-261030-478 | Feature-run A correctness/quota/streaming rollback, B atomic metadata and post-boot concurrent index recovery, lazy fair backfill, no import marker (reversed by 7.4, D-261101-030) | A no-prune binary with full-log cache is unsafe. Boot index builds, partial lane ownership and extra import state add risk |
 | D-261030-479 | Every list/export request charged independently of cache, room ZIP keeps in-memory log only, guide states archive backup separately | Cache-dependent charging leaks activity. Expanded ZIP format or allowances are outside this feature |
 
 Revision 4 follows the coordinator's round 1 through round 3 dispositions. LOG-OPUS-18 remains an explicitly named follow-up. These records do not assert owner approval or review consensus.

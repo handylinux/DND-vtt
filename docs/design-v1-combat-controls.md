@@ -213,7 +213,7 @@ Typed damage reads defenses on the server (3.4). The reducer uses the room's PC,
 - **Op 20** adds the ops and fields of 3.1, which an older build's strict schema refuses. Its replay rules are the gate of 3.3. The step is the identity.
 - **Snapshot 22** adds 2.2's optional fields. The step is the identity, and an older build refuses the room. Rollback means restoring the backup taken before the deploy.
 - **Import.** server/rooms/stateSchema.ts gains `resources`, `turnUses`, and `uses`, `hurt` and `turnRecord` through `actorSchemaForImport` only (protocol.ts:2166-2172), never an op's actor, as for `unshaped`. remap.ts maps `turnUses[].holderId` as `legendary.holderId` (remap.ts:397).
-- **Imported ids are seqs of the old room**, and the new one counts from its snapshot at seq 0 (gateway.ts:101-104), as remap.ts:374-377 says of `turnStart.seq`. So import drops every actor's `turnRecord` and `hurt`, and each `turnUses` entry's `record` (left absent, so Previous leaves the record as it is). Imported HP lines already cannot be taken back: remap drops each one's whole `revert` (remap.ts:478-485).
+- **Imported ids are seqs of the old room**, and the new one counts on from the newest seq the file's lines name (`lastLineSeq` in remap.ts, which `createRoom` in gateway.ts takes as its snapshot's seq), which need not be a turn's, as remap.ts says of `turnStart.seq`. So import drops every actor's `turnRecord` and `hurt`, and each `turnUses` entry's `record` (left absent, so Previous leaves the record as it is). Imported HP lines already cannot be taken back: remap drops each one's whole `revert` (remap.ts:478-485).
 - The per-tab `rvtt.rechargeUsed.<roomId>` marks are deleted on load and never read.
 
 ## 4. The cards
