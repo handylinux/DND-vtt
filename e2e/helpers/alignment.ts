@@ -229,10 +229,11 @@ export async function proficiencyHeightLines(root: Locator, screen: string, requ
  * outside it, a neighbor unit's border included, and never crosses its
  * own words, measured by their glyphs' outlines. A name a box clips out of
  * view whole, or kept from sight for a screen reader as a folded line's
- * parts past its cut are, has nothing to see.
+ * parts past its cut are, has nothing to see. A name inside the `plain`
+ * selector is skipped, since that is a preview that draws no frame.
  */
-export async function proficiencyLines(root: Locator, screen: string, required = true): Promise<string[]> {
-  const measured = await root.evaluateAll(async (roots) => {
+export async function proficiencyLines(root: Locator, screen: string, required = true, plain = ""): Promise<string[]> {
+  const measured = await root.evaluateAll(async (roots, plain) => {
     type Rect = { top: number; bottom: number; left: number; right: number; width: number; height: number };
     type Box = { l: number; r: number; t: number; b: number };
     type Css = {
@@ -275,9 +276,11 @@ export async function proficiencyLines(root: Locator, screen: string, required =
     };
     const MARKED = '[data-proficiency-level="prof"], [data-proficiency-level="expert"]';
     const labels = new Set<El>();
+    // A name inside `plain` is a preview, drawn with no frame (D-261031-290): the caller checks that it has none.
+    const drawn = (label: El) => !plain || !label.closest(plain);
     for (const root of roots as unknown as El[]) {
-      if (root.matches(MARKED)) labels.add(root);
-      for (const label of Array.from(root.querySelectorAll(MARKED))) labels.add(label);
+      if (root.matches(MARKED) && drawn(root)) labels.add(root);
+      for (const label of Array.from(root.querySelectorAll(MARKED))) if (drawn(label)) labels.add(label);
     }
     const lines: string[] = [];
     const style = (node: El) => node.ownerDocument.defaultView.getComputedStyle(node);
@@ -565,7 +568,7 @@ export async function proficiencyLines(root: Locator, screen: string, required =
     if (needed.size === 0) return first;
     await loadFaces();
     return run();
-  });
+  }, plain);
   return [...(required && measured.count === 0 ? ["no visible proficiency marks were measured"] : []), ...measured.lines].map((line) => `${screen}: ${line}`);
 }
 

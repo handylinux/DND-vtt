@@ -2384,7 +2384,11 @@ async function groupOverflowLines(root: Locator, at: string, screen: string): Pr
     }
     return { out, folded };
   });
-  return { lines: [...found.out.map((line) => `${at} ${screen}: ${line}`), ...await proficiencyLines(root, `${at} ${screen}`, false)], folded: found.folded };
+  // The Dice panel's folded Saves and checks and Skills lines only preview: they draw no frame (D-261031-290), so the mark check skips them and this one says they hold none.
+  const preview = "[data-roll-options] [data-group-fold]";
+  const framed = await root.locator(`${preview} [data-proficiency-mark]`).count();
+  const framedLines = framed > 0 ? [`${at} ${screen}: ${framed} names in a folded Saves and checks or Skills line draw a frame`] : [];
+  return { lines: [...found.out.map((line) => `${at} ${screen}: ${line}`), ...framedLines, ...await proficiencyLines(root, `${at} ${screen}`, false, preview)], folded: found.folded };
 }
 
 /**
