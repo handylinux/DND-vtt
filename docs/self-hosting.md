@@ -667,6 +667,20 @@ can leave such changes. In that case follow Restore under Backups with the
 backup taken just before the update. Every room loses what changed after that
 backup.
 
+Two later updates each step the op version again, and the builds before each
+cannot read what it stores. The update that has a trap stop a creature between
+a walk's ends by the ground every player sees, and clips a creature on hexes by
+the walls the viewer holds, stores changes at op version 37. The update that
+has dragged creatures follow a squeezing holder in single file, seats its
+passengers apart, and stands a hidden creature in tow clear of walls stores
+changes at op version 38. Snapshots keep their version for both. Back up
+first, and reload every page left open across each update, table displays
+included. Until it reloads, an old page plans a drag by the old rules, and the
+server's answer moves the tokens where they go. Going back is the same as for
+op version 36 above: stop the server cleanly first so every room saves a
+snapshot, then rebuild the commit you ran before, or restore the backup taken
+just before the update if the server stopped without saving.
+
 Compose rebuilds the image and replaces only the containers that changed. On
 the way down the app closes every WebSocket with code 1012, finishes each
 room's current write and saves a snapshot, so phones reconnect on their own
