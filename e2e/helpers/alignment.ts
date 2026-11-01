@@ -1,5 +1,6 @@
 import type { Locator, Page } from "playwright-core";
 import sharp from "sharp";
+import { theme } from "../../client/lib/theme.ts";
 
 /**
  * The alignment check (docs/design/design-v1-polish.md 4): what the polish pass
@@ -1625,6 +1626,113 @@ export async function measureAlignment(root: Locator, opts: { optional?: boolean
 /** One readable line per finding over the limit, for `screen`. */
 export function alignmentLines(findings: readonly Finding[], screen: string): string[] {
   return findings.filter((f) => Math.abs(f.offset) > LIMIT_PX).map((f) => `${screen}: ${f.check} ${f.offset} px, ${f.role} "${f.name}": ${f.what}${f.detail ? ` (${f.detail})` : ""}`);
+}
+
+/** `theme.color.textDisabled` as getComputedStyle writes it. */
+const TEXT_DISABLED = (() => {
+  const hex = theme.color.textDisabled.replace("#", "");
+  const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(hex.slice(i, i + 2), 16));
+  return `rgb(${r}, ${g}, ${b})`;
+})();
+
+/**
+ * The disabled look (docs/design/design-v1-look-pass-1.md 1): every
+ * visible control under a root that is off, natively (`:disabled`) or by
+ * `aria-disabled="true"`, draws its words in `textDisabled`, and nothing
+ * between the root and its words fades it below full opacity. A control
+ * with no words (an icon, a picture tile) passes on color. Bright words on
+ * a dead control are the bug class the Held pass closed: a fieldset that
+ * stops its controls without telling them. Only a control marked
+ * `data-disabled-look="busy"` (a send in flight) or `"readonly"` (a state
+ * shown, not edited) keeps its own look (D-261101-302), so an exemption
+ * is always written at the control, never guessed here.
+ *
+ * A native control hidden under a drawn one (opacity 0, or a box under
+ * 2 px) is not seen, and the fieldset that holds a group is no control.
+ */
+export async function disabledLookLines(root: Locator, screen: string): Promise<string[]> {
+  const lines = await root.evaluateAll((roots, want) => {
+    type Node = { nodeType: number; textContent: string | null; childNodes: ArrayLike<Node>; parentElement: El | null };
+    type El = Node & {
+      tagName: string;
+      value?: string;
+      placeholder?: string;
+      type?: string;
+      getAttribute(name: string): string | null;
+      querySelectorAll(selector: string): ArrayLike<El>;
+      matches(selector: string): boolean;
+      contains(other: El): boolean;
+      checkVisibility(opts: { opacityProperty: boolean; visibilityProperty: boolean }): boolean;
+      getBoundingClientRect(): { width: number; height: number };
+      ownerDocument: {
+        createRange(): { selectNodeContents(node: Node): void; getClientRects(): ArrayLike<{ width: number; height: number }> };
+        defaultView: { getComputedStyle(el: El, pseudo?: string): { color: string; opacity: string } };
+      };
+    };
+    const OFF = ':disabled:not(fieldset, option, optgroup), [aria-disabled="true"]';
+    const EXEMPT = new Set(["busy", "readonly"]);
+    const WORDLESS = new Set(["checkbox", "radio", "range", "color", "file", "hidden"]);
+    const out: string[] = [];
+    const seen = new Set<El>();
+    const nameOf = (el: El) => {
+      const words = (el.getAttribute("aria-label") ?? el.textContent ?? "").replace(/\s+/g, " ").trim();
+      const role = el.getAttribute("role");
+      return `${el.tagName.toLowerCase()}${role ? `[role=${role}]` : ""} "${words.length > 40 ? `${words.slice(0, 39)}…` : words}"`;
+    };
+    const shows = (el: El) => el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+    for (const root of roots as unknown as El[]) {
+      const css = (el: El, pseudo?: string) => root.ownerDocument.defaultView.getComputedStyle(el, pseudo);
+      // The first element from `from` up to the root that draws below full opacity.
+      const fadeOf = (from: El) => {
+        for (let up: El | null = from; up; up = up.parentElement) {
+          const opacity = Number.parseFloat(css(up).opacity);
+          if (opacity < 1) return { el: up, opacity };
+          if (up === root) break;
+        }
+        return null;
+      };
+      const controls = [...(root.matches(OFF) ? [root] : []), ...Array.from(root.querySelectorAll(OFF))];
+      for (const control of controls) {
+        if (seen.has(control)) continue;
+        seen.add(control);
+        const box = control.getBoundingClientRect();
+        if (box.width < 2 || box.height < 2 || !shows(control)) continue;
+        const mark = control.getAttribute("data-disabled-look");
+        if (mark !== null) {
+          if (!EXEMPT.has(mark)) out.push(`${nameOf(control)} is marked data-disabled-look="${mark}", which is neither busy nor readonly`);
+          continue;
+        }
+        const fade = fadeOf(control);
+        if (fade) out.push(`${nameOf(control)} is off but faded to opacity ${fade.opacity}${fade.el === control ? "" : ` by its ${nameOf(fade.el)}`}`);
+        const tag = control.tagName.toLowerCase();
+        if (tag === "input" || tag === "textarea" || tag === "select") {
+          if (tag === "input" && WORDLESS.has(control.type ?? "")) continue;
+          const color = tag === "select" || (control.value ?? "") !== "" ? css(control).color : (control.placeholder ?? "") !== "" ? css(control, "::placeholder").color : null;
+          if (color !== null && color !== want) out.push(`${nameOf(control)} is off but draws its words in ${color}, not textDisabled ${want}`);
+          continue;
+        }
+        const bright = new Map<string, string[]>();
+        const visit = (node: Node) => {
+          if (node.nodeType === 3) {
+            const words = (node.textContent ?? "").trim();
+            const parent = node.parentElement;
+            if (!words || !parent || !shows(parent)) return;
+            const range = control.ownerDocument.createRange();
+            range.selectNodeContents(node);
+            if (!Array.from(range.getClientRects()).some((r) => r.width > 0 && r.height > 0)) return;
+            const color = css(parent).color;
+            if (color !== want) bright.set(color, [...(bright.get(color) ?? []), words]);
+            const inner = fade ? null : fadeOf(parent);
+            if (inner && control.contains(inner.el)) out.push(`${nameOf(control)} is off but its "${words}" is faded to opacity ${inner.opacity}`);
+          } else for (const child of Array.from(node.childNodes)) visit(child);
+        };
+        visit(control);
+        for (const [color, words] of bright) out.push(`${nameOf(control)} is off but draws "${words.join(" ")}" in ${color}, not textDisabled ${want}`);
+      }
+    }
+    return [...new Set(out)];
+  }, TEXT_DISABLED);
+  return lines.map((line) => `${screen}: disabled look, ${line}`);
 }
 
 

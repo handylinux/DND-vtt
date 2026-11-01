@@ -20,7 +20,7 @@ import { barControl, ConsoleWatch, dragCells, expandBar, multiSelect, OpSocket, 
 import { DEFAULT_SNAPSHOT_BUDGET } from "../server/rooms/budgets.ts";
 import { INTER_FILES } from "../client/lib/interFont.ts";
 import { theme } from "../client/lib/theme.ts";
-import { alignmentLines, containmentLines, headerLines, headerPlaces, leadLines, LIMIT_PX, measureAlignment, menuWordLines, pillLines, popoverScrollbarLines, proficiencyHeightLines, proficiencyLines, rollingGridLines, rollRowLines, saveOutlineLines, toastLaneLines, toastsUnderCards, type HeaderPlace, type PillPoint } from "./helpers/alignment.ts";
+import { alignmentLines, containmentLines, disabledLookLines, headerLines, headerPlaces, leadLines, LIMIT_PX, measureAlignment, menuWordLines, pillLines, popoverScrollbarLines, proficiencyHeightLines, proficiencyLines, rollingGridLines, rollRowLines, saveOutlineLines, toastLaneLines, toastsUnderCards, type HeaderPlace, type PillPoint } from "./helpers/alignment.ts";
 import { measureSpacing, spacingLines, type SpacingFinding } from "./helpers/spacing.ts";
 import { moreMenuFixture } from "./helpers/menuFixture.ts";
 
@@ -356,10 +356,10 @@ export class Sweep {
   }
 
   /**
-   * Measures what `root` matches and shows with the five checks, as
-   * `screen`. A root that matches nothing, or only what is hidden, is a
-   * screen missing, unless `optional`, when it is a screen that did not
-   * show. Either way it is not counted as seen, since nothing was measured.
+   * Measures what `root` matches and shows with the five checks and the
+   * disabled look, as `screen`. A root that matches nothing, or only what
+   * is hidden, is a screen missing, unless `optional`, when it is a screen
+   * that did not show. Either way it is not counted as seen, since nothing was measured.
    */
   async measure(page: Page, screen: string, root: Locator, opts: { optional?: boolean } = {}): Promise<void> {
     const shown = root.filter({ visible: true });
@@ -374,6 +374,7 @@ export class Sweep {
     await this.add(page, screen, await proficiencyLines(shown, `${this.at} ${screen}`, false));
     await this.add(page, screen, await proficiencyHeightLines(shown, `${this.at} ${screen}`, false));
     await this.add(page, screen, spacingLines(await measureSpacing(shown, { optional: opts.optional }), `${this.at} ${screen}`));
+    await this.add(page, screen, await disabledLookLines(shown, `${this.at} ${screen}`));
   }
 
   /** The board's pills, as `screen`, with each trap name's pointer it read counted as a screen of its own. */
@@ -3144,6 +3145,39 @@ export function helperTest(): void {
         assert.deepEqual(await measure(page.locator("#presnet"), { optional: true }), []);
         assert.deepEqual(await measure(page.locator("#present")), []);
       }
+    } finally {
+      await page.close();
+    }
+  });
+  test("lk1-disabled-look. an off control with bright or faded words fails, while dim words, wordless controls, hidden native inputs and the two marks pass", async () => {
+    const page = await dmContext.newPage();
+    const dim = theme.color.textDisabled;
+    const bright = theme.color.text;
+    try {
+      await page.setContent(`<div id="look" style="font:14px/20px sans-serif;background:#222">
+        <button disabled style="color:${dim}">Roll</button>
+        <fieldset disabled style="border:0;margin:0;padding:0"><button style="color:${dim}">Half</button><input value="12" style="color:${dim}"></fieldset>
+        <div role="menuitem" aria-disabled="true" style="color:${dim}">Advantage</div>
+        <button disabled style="color:${bright}"><svg width="16" height="16"><rect width="16" height="16"/></svg></button>
+        <label style="position:relative;color:${dim}"><input type="checkbox" disabled style="position:absolute;inset:0;opacity:0">Secret</label>
+        <button disabled data-disabled-look="busy" style="color:${bright}">Send</button>
+        <button disabled data-disabled-look="readonly" style="color:${bright}">Pip</button>
+        <button style="color:${bright}">Live</button>
+      </div>`);
+      const root = page.locator("#look");
+      assert.deepEqual(await disabledLookLines(root, "lk1-disabled-look"), []);
+      await page.setContent(`<div id="look" style="font:14px/20px sans-serif;background:#222">
+        <fieldset disabled style="border:0;margin:0;padding:0"><button style="color:${bright}">Frightened</button><input value="13" style="color:${bright}"></fieldset>
+        <button disabled style="color:${dim}">Rounds <span style="color:${bright}">2</span></button>
+        <div role="button" aria-disabled="true" style="color:${dim};opacity:0.35">Marked</div>
+        <div style="opacity:0.5"><button disabled style="color:${dim}">Inside a fade</button></div>
+        <button disabled data-disabled-look="dim" style="color:${dim}">Unknown mark</button>
+        <input disabled aria-label="Bonus" placeholder="+0" style="color:${dim}">
+        <button disabled style="color:${dim}">Zoom <span style="opacity:0.5">100%</span></button>
+      </div>`);
+      const lines = (await disabledLookLines(root, "lk1-disabled-look")).join("\n");
+      for (const miss of [/"Frightened" is off but draws "Frightened" in rgb\(241, 239, 233\)/, /input "" is off but draws its words in rgb\(241, 239, 233\)/, /"Rounds 2" is off but draws "2"/, /"Marked" is off but faded to opacity 0\.35/, /"Inside a fade" is off but faded to opacity 0\.5 by its div/, /data-disabled-look="dim", which is neither busy nor readonly/, /input "Bonus" is off but draws its words in rgb\(117, 117, 117\)/, /"Zoom 100%" is off but its "100%" is faded to opacity 0\.5/]) assert.match(lines, miss);
+      assert.equal(lines.split("\n").length, 8, lines);
     } finally {
       await page.close();
     }
