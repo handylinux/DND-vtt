@@ -13,6 +13,7 @@ import { damageSummary, type DamageSummaryLines } from "../damageSummaryLines.ts
 import { Button, type ButtonProps } from "../../../components/Button.tsx";
 import { Checkbox } from "../../../components/Checkbox.tsx";
 import { Chip, ChipRow } from "../../../components/Chip.tsx";
+import { Held } from "../../../components/Held.tsx";
 import { Input } from "../../../components/Field.tsx";
 import { Notice } from "../../../components/Notice.tsx";
 import { ProficiencyLabel } from "../../../components/ProficiencyMark.tsx";
@@ -626,10 +627,10 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
       <div style={{ display: "flex", alignItems: "center", gap: theme.space(2), flexWrap: "wrap" }}>
         <span style={{ fontWeight: theme.weight.strong, flex: "999 1 0%", fontVariantNumeric: "tabular-nums" }}>{page.phase === "setup" && page.test.kind !== "none" ? creatureCount(rows.length) : count}</span>
         <span style={{ flex: "1 1 auto", display: "flex", gap: theme.space(2) }}>
-          <Button size="sm" style={{ flex: "1 1 auto" }} disabled={page.phase === "applying" || page.phase === "applied" || lifecycleLocked} onClick={() => update(rows.reduce((p, r) => (stateOf(p, r).mark === "skip" && r.skip ? p : mark(p, r.holder, "fail")), { ...pageRef.current, rows } as Page))}>
+          <Button size="sm" style={{ flex: "1 1 auto" }} onClick={() => update(rows.reduce((p, r) => (stateOf(p, r).mark === "skip" && r.skip ? p : mark(p, r.holder, "fail")), { ...pageRef.current, rows } as Page))}>
             All fail
           </Button>
-          <Button size="sm" style={{ flex: "1 1 auto" }} disabled={page.phase === "applying" || page.phase === "applied" || lifecycleLocked} onClick={() => update(rows.reduce((p, r) => (stateOf(p, r).mark === "skip" && r.skip ? p : mark(p, r.holder, "pass")), { ...pageRef.current, rows } as Page))}>
+          <Button size="sm" style={{ flex: "1 1 auto" }} onClick={() => update(rows.reduce((p, r) => (stateOf(p, r).mark === "skip" && r.skip ? p : mark(p, r.holder, "pass")), { ...pageRef.current, rows } as Page))}>
             All pass
           </Button>
         </span>
@@ -732,7 +733,7 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
           <Note tone="error">{error}</Note>
         </div>
       ) : null}
-      <fieldset disabled={frozen} style={{ border: 0, padding: 0, margin: 0, minWidth: 0, display: "contents" }}>
+      <Held held={frozen} style={{ display: "contents" }}>
       {page.phase === "setup" ? (
         <>
           {fillFrom.length > 0 ? <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space(1) }}>{fillFrom}</div> : null}
@@ -754,7 +755,7 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
           {outcome}
         </>
       )}
-      </fieldset>
+      </Held>
       {reopen?.check === "undone" && page.test.kind !== "none" ? <Button busy={page.rolls.some(roll => roll.state === "sending") || page.requests.some(request => request.state === "sending")} disabled={frozen || offScene} onClick={() => doReroll(rows.map(row => row.holder))}>Roll saves again</Button> : null}
       {(reopen?.check === "undone" || reopen?.check === "unavailable") ? (
         confirmStartOver ? <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space(2), alignItems: "center" }}><span>Start over? This replaces these save results.</span><Button onClick={startOver}>Start over</Button><Button onClick={() => setConfirmStartOver(false)}>Keep this save</Button></div> : <Button onClick={() => setConfirmStartOver(true)}>Start over</Button>
@@ -879,7 +880,7 @@ function OutcomePanel(props: {
   onChange(page: Page): void;
   onRoll(override?: RollModeOverride): void;
   blocked: boolean;
-  /** A save whose outcome is checking or cannot be checked: its disabled fieldset already stops these controls, and they should look stopped as on an applied page. */
+  /** A save whose outcome is checking or cannot be checked: the page's held group already stops these controls and draws them off, as on an applied page. */
   locked: boolean;
   picking: boolean;
   setPicking(v: boolean): void;
@@ -934,7 +935,6 @@ function OutcomePanel(props: {
         <Input
           id={damageId}
           value={page.outcome.damage}
-          disabled={frozen}
           placeholder="8d6 fire, or 28"
           enterKeyHint="done"
           autoComplete="off"
@@ -969,7 +969,6 @@ function OutcomePanel(props: {
             { value: "none", label: "None" },
           ]}
           onChange={(onPass) => setOutcome({ onPass })}
-          disabled={frozen}
         />
       </FieldRow>
       <div style={{ display: "grid", gap: theme.space(1) }}>
@@ -1112,7 +1111,7 @@ function GroupRow(props: {
             value={markValue}
             options={MARKS}
             onChange={(m) => props.onChange(mark(page, row.holder, s.mark === m ? null : m))}
-            disabled={frozen || waits}
+            disabled={waits}
             grow
           />
         </div>
