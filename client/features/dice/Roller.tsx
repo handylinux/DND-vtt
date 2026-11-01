@@ -274,6 +274,11 @@ function LineStart(props: { reverse?: boolean; dice?: boolean }) {
  * goes before all of them, whole, so it never costs a line. Each step is a box inside
  * the last, so a part gives up nothing while one before it in turn still
  * has room (docs/design-v1-dice-ui.md 4.1).
+ *
+ * The mode words go by measurement (LP27-A-BLOCK-2): flex wraps a part only
+ * by its basis, and the label's box must keep a basis of 0 to shrink to its
+ * "…" rather than wrap out of sight whole. So the words show only where,
+ * shown, they cut no other part.
  */
 export function ResultRest(props: { sum: string | null; label: string | undefined; level?: Proficiency | undefined; dice: readonly DiceRoll[]; more: number; verdict: string | null; mode?: string | undefined }) {
   // A damage of several types shows every part's dice, each part keyed apart since each restarts its chips' keys.
@@ -295,24 +300,49 @@ export function ResultRest(props: { sum: string | null; label: string | undefine
     observer.observe(el);
     return () => observer.disconnect();
   }, [chips]);
+  const row = useRef<HTMLSpanElement>(null);
+  const modeBox = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const line = row.current;
+    const words = modeBox.current;
+    if (!line || !words) return;
+    // Set on the node, not through state, so the trial and its answer land in one layout and no frame shows the words cutting the rest.
+    const fit = () => {
+      words.style.display = "";
+      if (partCut(line, words)) words.style.display = "none";
+    };
+    fit();
+    // A web font that loads after the first fit changes the words' widths, and no resize says so.
+    void document.fonts?.ready.then(fit);
+    if (typeof ResizeObserver === "undefined") return;
+    // The row's own width is set from outside it, so showing or hiding the words never resizes it and calls this again.
+    const observer = new ResizeObserver(fit);
+    observer.observe(line);
+    return () => observer.disconnect();
+  }, [props.mode, props.label, props.level, props.verdict, props.sum, props.more, chips]);
   const muted = { fontSize: theme.font.small, color: theme.color.textMuted } as const;
   return (
-    <span style={dropsWhole()}>
+    <span ref={row} style={dropsWhole()}>
       <LineStart />
       {props.sum ? <span style={{ flex: "none", ...muted, fontVariantNumeric: "tabular-nums" }}>{`(${props.sum})`}</span> : null}
-      <span style={{ ...dropsWhole(true), ...(props.mode ? { flex: "0 1 auto" } : {}) }}>
+      {/* With mode words after it, it grows only to its own width, so the words sit beside its last part rather than at the line's end. */}
+      <span style={{ ...dropsWhole(true), ...(props.mode ? { maxWidth: "max-content" } : {}) }}>
         <LineStart reverse />
-        {props.verdict ? <span style={{ flex: "none", ...muted }}>{props.verdict}</span> : null}
+        {props.verdict ? (
+          <span data-result-verdict="" style={{ flex: "none", ...muted }}>
+            {props.verdict}
+          </span>
+        ) : null}
         {dropped > 0 ? (
           <span aria-hidden="true" style={{ ...FACE_CHIP, border: `${theme.line.border}px solid ${theme.color.border}`, color: theme.color.textMuted }}>
             +{dropped}
           </span>
         ) : null}
         {/* Grows only to its own width, so the parts after it sit beside it rather than at the line's end. */}
-        <span style={{ flex: props.mode ? "1 1 auto" : "1 1 0", minWidth: 0, maxWidth: "max-content", display: "flex", alignItems: "center", gap: theme.space(2), overflow: "hidden" }}>
+        <span style={{ flex: "1 1 0", minWidth: 0, maxWidth: "max-content", display: "flex", alignItems: "center", gap: theme.space(2), overflow: "hidden" }}>
           {/* A marked label is framed from inside, since every box around it cuts what reaches past its words (D-261030-527). */}
           {props.label ? (
-            <span {...markedBy(props.level, "frame")} style={{ flex: "0 10 auto", minWidth: 0, fontSize: theme.font.body14, overflow: "hidden", textOverflow: "ellipsis", ...proficiencyFrame(props.level) }}>
+            <span data-result-label="" {...markedBy(props.level, "frame")} style={{ flex: "0 10 auto", minWidth: 0, fontSize: theme.font.body14, overflow: "hidden", textOverflow: "ellipsis", ...proficiencyFrame(props.level) }}>
               {props.level ? <ProficiencyLabel level={props.level} bare>{props.label}</ProficiencyLabel> : props.label}
             </span>
           ) : null}
@@ -329,14 +359,32 @@ export function ResultRest(props: { sum: string | null; label: string | undefine
           ) : null}
         </span>
       </span>
-      {/* A stat block's mode words (BlockResult.tsx) follow everything as one part. The line is one row tall, so where they do not fit beside the rest they wrap out of sight first, whole. A description keeps them for a reader. */}
+      {/* A stat block's mode words (BlockResult.tsx) follow everything as one part. Where they would cut any other part they are hidden first, whole (the effect above). A description keeps them for a reader. */}
       {props.mode ? (
-        <span aria-hidden="true" data-result-mode="" style={{ flex: "none", ...muted }}>
+        <span ref={modeBox} aria-hidden="true" data-result-mode="" style={{ flex: "none", ...muted }}>
           {props.mode}
         </span>
       ) : null}
     </span>
   );
+}
+
+/**
+ * Whether a part of a one-row line, other than `skip`, is cut: wrapped onto
+ * the row it never shows, or clipped inside its box, as a label ended in
+ * "…" or dice that dropped chips.
+ */
+function partCut(line: HTMLElement, skip: HTMLElement): boolean {
+  const bottom = line.getBoundingClientRect().bottom;
+  for (const el of line.querySelectorAll<HTMLElement>("*")) {
+    if (skip.contains(el)) continue;
+    const r = el.getBoundingClientRect();
+    // LineStart and other empty boxes hold no part.
+    if (r.width === 0) continue;
+    if (r.top >= bottom - 0.5) return true;
+    if (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX !== "visible") return true;
+  }
+  return false;
 }
 
 /** The formula field, Roll, the reading, the quick dice and the one-roll choices. */

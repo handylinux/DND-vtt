@@ -372,6 +372,37 @@ async function rollPicked(scope: Locator, ability: string, row: RegExp, option: 
   return oneRoll(patSent, from, `${ability}: ${row.source}, ${option}`);
 }
 
+type LinePart = "absent" | "shown" | "cut" | "hidden";
+
+/**
+ * How a result line shows its label, verdict and mode words: shown whole,
+ * shown but ended in "…" (cut), or hidden, wrapped out of the one row or
+ * not drawn. A part is shown where it lies inside every box that clips it.
+ */
+async function lineParts(line: Locator): Promise<{ label: LinePart; verdict: LinePart; mode: LinePart }> {
+  return line.evaluate((node) => {
+    type E = { parentElement: E | null; scrollWidth: number; clientWidth: number; getBoundingClientRect(): { left: number; right: number; top: number; bottom: number; width: number }; querySelector(s: string): E | null };
+    const root = node as unknown as E & { ownerDocument: { defaultView: { getComputedStyle(e: E): { overflowX: string; overflowY: string } } } };
+    const css = (e: E) => root.ownerDocument.defaultView.getComputedStyle(e);
+    const part = (selector: string): LinePart => {
+      const el = root.querySelector(selector);
+      if (!el) return "absent";
+      const r = el.getBoundingClientRect();
+      if (r.width === 0) return "hidden";
+      for (let up = el.parentElement; up; up = up.parentElement) {
+        const c = css(up);
+        if (c.overflowX !== "visible" || c.overflowY !== "visible") {
+          const u = up.getBoundingClientRect();
+          if (r.left < u.left - 0.5 || r.right > u.right + 0.5 || r.top < u.top - 0.5 || r.bottom > u.bottom + 0.5) return "hidden";
+        }
+        if (up === root) break;
+      }
+      return el.scrollWidth > el.clientWidth + 1 ? "cut" : "shown";
+    };
+    return { label: part("[data-result-label]"), verdict: part("[data-result-verdict]"), mode: part("[data-result-mode]") };
+  });
+}
+
 /** A grid near the top of its scroller, so a shot holds it and the result line under it. Only up and down: a sideways scroll would hide a block wider than its sheet. */
 async function showUnder(grid: Locator): Promise<void> {
   await grid.evaluate((node) => {
@@ -1231,11 +1262,12 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       assert.match(describedBy, /Advantage/, "the description keeps the mode");
       // The words give way whole and first: clipped out of the one-row line, which keeps its height.
       const geometry = await shortLine.evaluate((el) => {
-        type R = { left: number; right: number; top: number; bottom: number };
+        type R = { left: number; right: number; top: number; bottom: number; width: number };
         const mode = el.querySelector("[data-result-mode]") as unknown as { getBoundingClientRect(): R; closest(s: string): { getBoundingClientRect(): R } | null };
         const body = mode.closest("[aria-description]")!.getBoundingClientRect();
         const m = mode.getBoundingClientRect();
-        return { clipped: m.right > body.right + 0.5 || m.left >= body.right - 0.5 || m.top >= body.bottom - 0.5 || m.bottom > body.bottom + 0.5, mode: m, body };
+        // Hidden whole, it has no box at all.
+        return { clipped: m.width === 0 || m.right > body.right + 0.5 || m.left >= body.right - 0.5 || m.top >= body.bottom - 0.5 || m.bottom > body.bottom + 0.5, mode: m, body };
       });
       assert.ok(geometry.clipped, `the short line drops the words: ${JSON.stringify(geometry)}`);
       assert.ok(Math.abs((await shortLine.boundingBox())!.height - plainHeight) <= 1, "and the line keeps its height, no extra line");
@@ -1674,6 +1706,47 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       assert.deepEqual(apeLines, [], "the Ape's block, its grid and its line stay inside the sheet");
     } finally {
       await ops.send({ t: "character.update", characterId: run.thornChar, patch: { actor: { srdId: null } } });
+      await closeSheets(pat);
+      await patAt(PHONE, "1");
+    }
+  });
+
+  test("fl20-2. at 320 x 568 at 130% a roll picked with Advantage keeps its label and its verdict and drops only the mode words, and at 390 x 844 the words show where they fit (LP27-A-BLOCK-2)", async () => {
+    const requestId = randomUUID();
+    try {
+      await patAt({ width: 320, height: 568 }, "1.3");
+      let sheet = await patSheet();
+      let view = sheet.locator("[data-pc-stats]");
+      const line = resultOf(view).first();
+      await rollPicked(view, "Dexterity", /^Sleight of Hand/, "Roll with Advantage");
+      await line.locator("[data-result-label]").waitFor();
+      await showUnder(gridOf(view));
+      await shots.take(pat, "fl20-2-sleight-of-hand-advantage-320-130");
+      let parts = await lineParts(line);
+      assert.notEqual(parts.label, "hidden", `the label stays, ended in "…" at worst: ${JSON.stringify(parts)}`);
+      assert.equal(parts.mode, "hidden", `the mode words go first: ${JSON.stringify(parts)}`);
+
+      // An answer to a save with a DC shown has a verdict, which stays too.
+      await ops.send({ t: "roll.ask", request: { id: requestId, test: { kind: "save", choices: [{ ability: "dex" }] }, dc: 12, dcShown: true, resultShown: true, targets: [{ characterId: run.thornChar }] } });
+      await waitFor("the request on Pat's page", () => patSocket.state?.rolls[requestId] || null);
+      await rollPicked(view, "Dexterity", /^Dexterity save/, "Roll with Advantage");
+      await line.locator("[data-result-verdict]").waitFor();
+      parts = await lineParts(line);
+      assert.equal(parts.verdict, "shown", `the verdict stays: ${JSON.stringify(parts)}`);
+      assert.ok(parts.mode === "hidden" || parts.label !== "cut", `the words never cut the label: ${JSON.stringify(parts)}`);
+
+      // Where the line has room the words show, beside the label, which is not cut.
+      await patAt(PHONE, "1");
+      sheet = await patSheet();
+      view = sheet.locator("[data-pc-stats]");
+      await rollPicked(view, "Strength", /^Strength check/, "Roll with Advantage");
+      const wide = resultOf(view).first();
+      await wide.locator("[data-result-label]").waitFor();
+      parts = await lineParts(wide);
+      // A natural 1 or 20 adds a verdict, which shows too.
+      assert.deepEqual({ ...parts, verdict: parts.verdict === "absent" ? "shown" : parts.verdict }, { label: "shown", verdict: "shown", mode: "shown" }, "at 390 x 844 the whole line shows");
+    } finally {
+      await ops.send({ t: "roll.close", rollIds: [requestId] }).catch(() => undefined);
       await closeSheets(pat);
       await patAt(PHONE, "1");
     }
