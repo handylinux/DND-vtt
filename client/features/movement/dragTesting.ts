@@ -1,6 +1,7 @@
 import type { RoomState } from "#shared/model.ts";
 import type { ClientOp } from "#shared/protocol.ts";
 import { footprintSize } from "#shared/rules/footprint.ts";
+import { isHex } from "#shared/rules/grid.ts";
 import { WorkBudget, type WalkInput } from "#shared/rules/walk.ts";
 import { findRouteOn } from "#shared/rules/hexWalk.ts";
 import { snapPosition } from "../../lib/scene.ts";
@@ -99,7 +100,11 @@ export function dragOf(copy: RoomState, role: Role, tokenId: string, raw: Point,
     get answer() {
       if (answer) return answer;
       const view = dropView(copy, role);
-      const found = findRouteOn(worldFor(view, view.tokens[tokenId]!, role).input, routeTarget(view, token, raw));
+      const input = worldFor(view, view.tokens[tokenId]!, role).input;
+      const target = routeTarget(view, token, raw);
+      // A drop on squares that ends squeezed takes what it drags in single file, along the walker's own way (routeDrag.ts inFile).
+      if (target.squeeze && (input.towed?.length ?? 0) > 0 && !isHex(dropGrid(view, token)) && view.scenes[token.sceneId]?.blockMovement === true) return (answer = settledAt(input, target));
+      const found = findRouteOn(input, target);
       return (answer = found === null ? { kind: "open" } : found === "none" ? { kind: "none", capped: false } : { kind: "route", route: found });
     },
     preview,

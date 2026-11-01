@@ -9,7 +9,8 @@ import { hexAt, hexKey, hexNeighbors, type Hex } from "#shared/rules/hex.ts";
 import { deviceGround } from "#shared/rules/held.ts";
 import { footing } from "#shared/rules/heights.ts";
 import { coreBlocked, groundUnder, hexEndStand, hexFitWall, hexLegOf, hexLegStand, hexNarrow, hexStandHexes, hexStandInside, hexStandPlace, hexStartStand, hexWallsOf, landedElevation, landing, legSpots, legStop, offGridWallThrough, onSqueezedLattice, ownWalk, previewChunks, previewSqueezed, squeezeFits, walkEnd, walkFrom, type DropMode, type HexStand, type Walker } from "#shared/rules/movement.ts";
-import { followedHeight, followerTrace, routeLattice, routePoints, routeStop, routeWalkers, seatShift, walkSqueezes, walkTrace, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "#shared/rules/route.ts";
+import { fileRoutes, followedHeight, followerTrace, routeLattice, routePoints, routeStop, routeWalkers, seatShift, walkSqueezes, walkTrace, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "#shared/rules/route.ts";
+import { followsInSingleFile } from "#shared/migrate.ts";
 import { checkSetReach } from "#shared/rules/moveLeg.ts";
 import type { WalkRoute } from "#shared/rules/walk.ts";
 import { routeLegCheck, type RouteWorld } from "#shared/rules/hexWalk.ts";
@@ -712,9 +713,13 @@ type WalkersState = BuildState & { tokens?: Readonly<Record<string, Token | unde
  * `stop` is the first of them whose leg from the holder's piece `i`'s
  * start a wall or a ledge stops, with the holder at `to` on that piece,
  * and with `ends`, where the walk ends there, the first that would stand
- * full size off its grid with a wall through its box.
+ * full size off its grid with a wall through its box. A walk on squares
+ * that ends squeezed takes them in single file (`file`, route.ts
+ * fileRoutes, D-261101-250), as the server's move does: each on its own
+ * walk along the holder's line, so `to` is then the walk's own point `i`,
+ * since a cut of it lands full and takes them by their places.
  */
-function followersOf(state: WalkersState, lead: Walker, points: readonly RoutePoint[], walkers: readonly DropToken[], end?: boolean): { stop: (i: number, to: RoutePoint, ends?: boolean) => { blocker: Blocker } | null } {
+function followersOf(state: WalkersState, lead: Walker, points: readonly RoutePoint[], walkers: readonly DropToken[], end?: boolean): { file: boolean; stop: (i: number, to: RoutePoint, ends?: boolean) => { blocker: Blocker } | null } {
   // As the holder's walk stands where it starts (route.ts WalkTrace).
   const grounded = footing(state.buildChunks, walkFrom(state.buildChunks, lead)) === "ground";
   // Each walker comes as the token it is (attach/walk.ts walkersFor), and its holders up to the lead, riders and carried creatures
@@ -731,19 +736,23 @@ function followersOf(state: WalkersState, lead: Walker, points: readonly RoutePo
   const squeezedAt = (i: number, to: Point) => to.x === points[i]!.x && to.y === points[i]!.y && squeezes[i]!;
   const groundAt = (w: DropToken, p: Point, by: Point) => groundUnder(state.buildChunks, followerTrace(w, [w])[0]!, { x: p.x + w.x - lead.x + by.x, y: p.y + w.y - lead.y + by.y });
   const heightAt = (w: DropToken, p: RoutePoint, by: Point) => followedHeight(state.buildChunks, from, memberOf, w.id, { x: p.x - lead.x + by.x, y: p.y - lead.y + by.y }, p.elevation);
+  // In single file each walks its own walk, as the move takes it along (moveLeg.ts singleFile): every walker here is a public one.
+  const file = end === true && !isHex(g) && followsInSingleFile(undefined) ? fileRoutes(lead, points, [walkers]) : null;
   const follows = linked.map((w) => {
+    const own = file?.get(w.id);
     // One whose height is not followed stands on its ground, so it meets every ledge, the most any walk of it could.
-    const spot = (p: RoutePoint, squeezed: boolean): RoutePoint => {
-      const by = seatShift(g, named, memberOf, w.id, p, squeezed);
+    const spot = (p: RoutePoint, squeezed: boolean, i: number): RoutePoint => {
+      const by = own ? { x: own[i]!.x - (p.x + w.x - lead.x), y: own[i]!.y - (p.y + w.y - lead.y) } : seatShift(g, named, memberOf, w.id, p, squeezed);
       return { x: p.x + w.x - lead.x + by.x, y: p.y + w.y - lead.y + by.y, elevation: heightAt(w, p, by) ?? groundAt(w, p, by) };
     };
-    return { spot, trace: followerTrace(w, [{ x: w.x, y: w.y, elevation: w.elevation }, ...points.slice(1).map((p, k) => spot(p, squeezes[k + 1]!))]) };
+    return { spot, trace: followerTrace(w, [{ x: w.x, y: w.y, elevation: w.elevation }, ...points.slice(1).map((p, k) => spot(p, squeezes[k + 1]!, k + 1))]) };
   });
   return {
+    file: file !== null && file.size > 0,
     stop: (i, to, ends = false) => {
       for (const f of follows) {
         // Full size at each point, as the server stores it wherever it stops (moveLeg.ts stoppedAtWalls).
-        const at = f.spot(to, squeezedAt(i, to));
+        const at = f.spot(file && file.size > 0 ? points[i]! : to, squeezedAt(i, to), i);
         const stop = legStop(state, f.trace[i - 1]!, { ...at, squeeze: false });
         if (stop) return stop;
         // Where the walk ends it stands there, off its grid only with no wall through its box (permissions.ts draggedWalls, FU44-OPUS-1).
@@ -798,6 +807,12 @@ export function cutPieces(points: readonly RoutePoint[], pieces: readonly RouteP
  * read with the holder full there, at a waypoint too, where its walk on
  * read it as the holder stood on the way (D-261029-83).
  *
+ * A walk on squares that ends squeezed (`walk.squeeze`) takes them in
+ * single file, as the server's move does (D-261101-250): null when each
+ * walks its single-file walk clear. Else it is cut, and since a cut lands
+ * full and takes them by their places, the cut is the one their places
+ * give, the walk's last piece stopped at the latest.
+ *
  * A walk along `route` keeps a spot only where the server takes the cut
  * whole (review FU20A-CUTSTOP): the holder's own check of the cut route
  * (route.ts routeStop), which may judge a straight walk's own route by
@@ -816,7 +831,15 @@ export function walkersStop(
   const L = routeLattice(lead);
   // The holder's walk (route.ts WalkTrace): the leg test of each piece counts from its walker where it starts.
   const trace = walkTrace(state.buildChunks, lead, points);
-  const followers = followersOf(state, lead, points, walkers, walk.squeeze);
+  // A walk that ends squeezed takes them in single file. Where one cannot follow so, the walk is cut, and a cut lands full and
+  // takes them by their places, so the cut is found by those, stopped on the last piece at the latest.
+  const sent = followersOf(state, lead, points, walkers, walk.squeeze);
+  let inFile: { blocker: Blocker } | null = null;
+  if (sent.file) {
+    for (let i = 1; i < points.length && !inFile; i++) inFile = sent.stop(i, points[i]!, i === points.length - 1);
+    if (!inFile) return null;
+  }
+  const followers = sent.file ? followersOf(state, lead, points, walkers, false) : sent;
   const route = walk.route && state.scenes[lead.sceneId]?.blockMovement === true ? walk.route : undefined;
   const start = points[0]!;
   // The cut to `c`, `whole` pieces kept and then one on to it unless a piece starts there: as the route it sends, else as the plain leg.
@@ -841,7 +864,7 @@ export function walkersStop(
     return Array.from({ length: n - 1 }, (_, m) => ({ x: a.x + along(b.x - a.x, n - 1 - m), y: a.y + along(b.y - a.y, n - 1 - m) }));
   };
   for (let i = 1; i < points.length; i++) {
-    const stopped = followers.stop(i, points[i]!, i === points.length - 1);
+    const stopped = followers.stop(i, points[i]!, i === points.length - 1) ?? (i === points.length - 1 ? inFile : null);
     if (!stopped) continue;
     for (let j = i; j >= 1; j--) {
       const a = points[j - 1]!;

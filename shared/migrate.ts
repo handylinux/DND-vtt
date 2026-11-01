@@ -11,7 +11,7 @@ import type { Op } from "./protocol.ts";
  * no old ops at all. The op pipeline is here for the crash case.
  */
 export const SNAPSHOT_VERSION = 31;
-export const OP_VERSION = 37;
+export const OP_VERSION = 38;
 
 export type MigrationStep = {
   from: number;
@@ -989,6 +989,25 @@ export const opMigrations: MigrationStep[] = [
     to: 37,
     apply: (op) => op,
   },
+  {
+    // Follow-up batch 45: no op changes shape, so the step is the
+    // identity. From this version, on squares, what a holder drags follows
+    // it in single file where its move ends squeezed
+    // (`followsInSingleFile`), what sits on it takes squares of its own
+    // there where there are enough (`seatsApart`), and a creature it drags
+    // that some player cannot see stands where a player's move leaves it
+    // only where no wall passes through its box (`hiddenTowStands`). Older
+    // ops replay by the rules they were written under, so they put each
+    // token where they put it then, and a stored restore's hash guards
+    // still match.
+    // Deploy: back up first and reload open pages, since an old page plans
+    // a drag into a narrow space by the old rule. Rollback needs the backup
+    // only for a room with version 38 ops after its last snapshot, which an
+    // older build refuses to migrate down.
+    from: 37,
+    to: 38,
+    apply: (op) => op,
+  },
 ];
 
 /** Historical restores keep their original log entries and numbering. */
@@ -1372,6 +1391,47 @@ export function stopsStandFullSize(opVersion: number | undefined): boolean {
  */
 export function stopsOnPublicGround(opVersion: number | undefined): boolean {
   return !(opVersion !== undefined && opVersion < 37);
+}
+
+/**
+ * Whether, on squares, every creature a holder's walk drags along follows
+ * it in single file where the holder's own move ends squeezed
+ * (D-261101-250, route.ts fileRoutes): along the holder's own line, and
+ * last just behind its squeezed footprint, so a goblin a warhorse drags
+ * goes with it into a corridor one square wide. The op's own squeeze, which
+ * every player sees, decides it, never the walls. Ops stored before version
+ * 38 took each by its place beside the holder all the way, and replay so.
+ * Live ops carry no stored version and take today's rule.
+ */
+export function followsInSingleFile(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 38);
+}
+
+/**
+ * Whether, on squares, what sits on a holder whose walk ends squeezed takes
+ * squeezed squares of its own where there are enough, nearest first
+ * (D-261101-251, attach.ts squeezedSeatsApart), so four passengers on a
+ * Huge mount squeezed into a corridor two squares wide keep four squares
+ * from any seat. Ops stored before version 38 took each one's nearest
+ * square alone, which tied passengers off the corners onto one, and replay
+ * so. Live ops carry no stored version and take today's rule.
+ */
+export function seatsApart(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 38);
+}
+
+/**
+ * Whether a creature some player cannot see, dragged along on a player's
+ * move where walls stop moves, stands where the move leaves it only where
+ * no wall passes through its box off its grid, as a creature every player
+ * sees is judged by the permission rule (D-261101-274, moveLeg.ts
+ * stoppedAtWalls, movement.ts offGridWallThrough). It steps back along its
+ * last piece to the last spot it may stand on. Ops stored before version 38
+ * left it where its leg test stopped it, and replay so. Live ops carry no
+ * stored version and take today's rule.
+ */
+export function hiddenTowStands(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 38);
 }
 
 /**

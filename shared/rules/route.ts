@@ -3,7 +3,7 @@ import type { AttachKind, PathStop } from "../model.ts";
 import type { Blocker, BuildState } from "../ruleHooks.ts";
 import { legFeet, type DiagonalCounter, type DistanceSettings } from "./distance.ts";
 import { convexHull } from "./aoe.ts";
-import { canSqueeze, footprintRect, footprintSize, isSqueezed, placedOnHex, rangeAtInto, snapStep, stopFootprint, storedCenter, tokenRefHex, type CellRange, type PlacedToken, type SizeCategory } from "./footprint.ts";
+import { canSqueeze, footprintRect, footprintSize, isSqueezed, placedOnHex, rangeAtInto, snapStep, squeezedSize, stopFootprint, storedCenter, tokenRefHex, type CellRange, type PlacedToken, type SizeCategory } from "./footprint.ts";
 import type { Point, Rect } from "./geom.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
 import { hexDistance, hexKey, hexLine, hexNeighbors, type Hex, type HexGrid } from "./hex.ts";
@@ -195,6 +195,70 @@ export function seatedOn(lead: { id?: string | undefined }, memberOf: (id: strin
     member = memberOf(member.attached.to);
   }
   return member?.attached && member.attached.to === lead.id && onHolder(member.attached.kind) ? member : undefined;
+}
+
+/**
+ * Where each creature a holder's walk drags along stands at each point of
+ * that walk when it follows in single file (D-261101-250, migrate.ts
+ * followsInSingleFile): on a walk on squares that ends squeezed, as the op
+ * says. Its own place where the walk starts, its middle on the holder's
+ * middle at each corner, the holder full size there as it is between the
+ * walk's ends (`walkSqueezes`), and at the end just behind the holder's
+ * squeezed footprint along the walk's last piece, on its own route lattice
+ * (`routeLattice`). So between corners it walks the holder's own line,
+ * which the holder's core cleared, and a creature no wider than that core
+ * goes where the holder went. A line through a narrow space is a line of
+ * squeezes, so one that can squeeze is spaced by its squeezed sides, as
+ * the holder is: a Large one ends where a squeeze of its own would fit in
+ * a corridor one square wide, the narrow space its stand is judged by
+ * (movement.ts offGridWallThrough). Several line up, each just behind the
+ * one before, in `classes` order and within a class nearest the holder
+ * first (their middles where the walk starts, then token id): a caller
+ * that puts the creatures every player sees in the first class keeps
+ * their places from reading the rest. `lead` is the holder as it stands
+ * where the walk starts and `points` its walk's points, its start first.
+ * Empty for a walk with no last piece to line up along.
+ */
+export function fileRoutes(lead: PlacedToken, points: readonly Point[], classes: readonly (readonly (PlacedToken & { id: string })[])[]): Map<string, Point[]> {
+  const out = new Map<string, Point[]>();
+  const n = points.length - 1;
+  const end = points[n];
+  const from = points[n - 1];
+  if (!end || !from) return out;
+  const len = Math.hypot(end.x - from.x, end.y - from.y);
+  if (len < 1e-9) return out;
+  const ux = (end.x - from.x) / len;
+  const uy = (end.y - from.y) / len;
+  const full = footprintSize(lead);
+  const start = storedCenter(lead);
+  // The squeezed box each one lines up behind, centered in its full box: the holder's first, then the one before it.
+  const squeezedAt = (token: PlacedToken, at: Point): Rect => {
+    const side = footprintSize(token);
+    const small = canSqueeze(token) ? squeezedSize(token) : side;
+    return { x: at.x + (side.w - small.w) / 2, y: at.y + (side.h - small.h) / 2, w: small.w, h: small.h };
+  };
+  let ahead = squeezedAt(lead, end);
+  for (const members of classes) {
+    const near = (m: PlacedToken) => {
+      const c = storedCenter(m);
+      return (c.x - start.x) ** 2 + (c.y - start.y) ** 2;
+    };
+    for (const member of [...members].sort((a, b) => near(a) - near(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
+      const { w, h } = footprintSize(member);
+      const small = squeezedAt(member, { x: 0, y: 0 });
+      // How far back along the last piece its middle goes for its squeezed box to touch the one ahead, along whichever axis meets first.
+      const t = Math.min(Math.abs(ux) > 1e-9 ? (small.w + ahead.w) / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-9 ? (small.h + ahead.h) / 2 / Math.abs(uy) : Infinity);
+      const step = routeLattice(member);
+      const snap = (v: number) => Math.round(v / step) * step + 0;
+      const last = { x: snap(ahead.x + ahead.w / 2 - ux * t - w / 2), y: snap(ahead.y + ahead.h / 2 - uy * t - h / 2) };
+      const walk: Point[] = [{ x: member.x, y: member.y }];
+      for (let i = 1; i < n; i++) walk.push({ x: points[i]!.x + (full.w - w) / 2, y: points[i]!.y + (full.h - h) / 2 });
+      walk.push(last);
+      out.set(member.id, walk);
+      ahead = squeezedAt(member, last);
+    }
+  }
+  return out;
 }
 
 /**

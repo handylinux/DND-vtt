@@ -106,7 +106,7 @@ describe("squares: a rider on a Large mount drags a goblin into a corridor one s
     cutTaken(s, { x: 20, y: 9 }, [[6, 9.5, 0, 0], [7.5, 9.5, 1, 0], [11.5, 9.5, 1, 0], [17, 9.5, 1, 0], [20, 9, 0, 0]]);
   });
 
-  test("a route that stops half a square off the grid in the corridor seats Brom on the mount's square there at op version 35, and on his own seat from 36, for the server and the device's cut alike", () => {
+  test("a route that stops half a square off the grid in the corridor seats Brom on the mount's square there at op version 35, and on his own seat from 36, for the server and the device's cut alike, and from 38 the goblin follows in single file", () => {
     const s = keep();
     // Each point past the start squeezes, the middle one off the grid, where only the walk's own pinch reads the squeeze.
     const route: [number, number, number, 0 | 1][] = [[6, 9.5, 0, 0], [7.5, 9.5, 0, 0], [9, 9.5, 0, 0], [11.5, 9.5, 0, 0]];
@@ -116,10 +116,15 @@ describe("squares: a rider on a Large mount drags a goblin into a corridor one s
     assert.deepEqual(at("gob", 35)[3], [8.5, 10], "behind him in the corridor");
     const replayed = applyOp(s, op, P1, { ...env(1), opVersion: 35 });
     assert.ok(replayed.ok && replayed.state.tokens.gob!.attached?.to === "brom", "an op stored at 35 replays as it was taken");
-    // Between the ends the mount stands full size, so Brom keeps his own seat and the goblin beside him meets the corridor's wall.
+    // Between the ends the mount stands full size, so Brom keeps his own seat, and at op version 37 the goblin beside him meets the corridor's wall.
     assert.deepEqual(at("brom")[3], [10, 10.5], "on his own seat between the ends");
-    assert.deepEqual(at("gob")[3], [9, 10.5], "beside him, across the corridor's wall");
-    assert.equal(canApply(op, P1, s, { canUseAsset: () => true }).ok, false, "the server refuses the route the goblin cannot follow");
+    assert.deepEqual(at("gob", 37)[3], [9, 10.5], "beside him, across the corridor's wall");
+    // From 38 the walk ends squeezed, so the goblin walks the mount's own line and ends behind it (D-261101-250).
+    assert.deepEqual(at("gob"), [[3, 10], [6.5, 10], [8, 10], [9.5, 10], [11, 10]], "in single file");
+    assert.ok(canApply(op, P1, s, { canUseAsset: () => true }).ok, "the server takes it");
+    const points = routePoints(s.buildChunks, ownWalk(s.tokens.horse!), route, 0);
+    assert.equal(walkersStop(s, ownWalk(s.tokens.horse!), points, [s.tokens.gob!], { route, squeeze: true }), null, "and the device's cut leaves it whole");
+    // The same walk ending full size takes the goblin by its place, so it is cut where the server takes it.
     cutTaken(s, { x: 11.5, y: 9.5 }, route);
   });
 });

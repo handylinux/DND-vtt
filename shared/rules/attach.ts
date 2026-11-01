@@ -272,11 +272,55 @@ export function standingSeatSpot(g: Grid, carried: PlacedToken, holder: PlacedTo
  * device's walk.
  */
 export function seatedAt(g: Grid, seated: PlacedToken, walker: PlacedToken, at: Point, squeezed: boolean, opVersion?: number): Point {
-  const own = isSqueezed(walker) ? fullSeat(g, seated, walker) : { seat: seated, beside: walker };
-  const box = isSqueezed(walker) && !isHex(g) && seatsFromSnappedBox(opVersion) ? fullRect(g, { ...unsqueezed(walker), x: at.x, y: at.y }) : at;
-  const place = { x: box.x + (own.seat.x - own.beside.x), y: box.y + (own.seat.y - own.beside.y) };
+  const place = seatPlace(g, seated, walker, at, opVersion);
   if (!squeezed && !isHex(g)) return place;
   return standingSeatSpot(g, { ...unsqueezed(seated), ...place }, { ...unsqueezed(walker), x: at.x, y: at.y, ...(squeezed ? { squeeze: true as const } : {}) }) ?? place;
+}
+
+/** Its own seat carried by the walker's move to `at` (`seatedAt`), before a squeeze there seats it again. */
+function seatPlace(g: Grid, seated: PlacedToken, walker: PlacedToken, at: Point, opVersion?: number): Point {
+  const own = isSqueezed(walker) ? fullSeat(g, seated, walker) : { seat: seated, beside: walker };
+  const box = isSqueezed(walker) && !isHex(g) && seatsFromSnappedBox(opVersion) ? fullRect(g, { ...unsqueezed(walker), x: at.x, y: at.y }) : at;
+  return { x: box.x + (own.seat.x - own.beside.x), y: box.y + (own.seat.y - own.beside.y) };
+}
+
+/**
+ * Where the tokens sitting on a walker sit where its walk ends squeezed on
+ * squares, each on squeezed squares of its own where there are enough
+ * (D-261101-251, migrate.ts seatsApart): of every pair of a token and a
+ * spot it could take inside the squeezed footprint (`standingSeatSpot`'s
+ * spots), nearest the seat the walk carries it to first, then by token id
+ * and then the spot's smaller y and x, each is taken while neither the
+ * token nor any square of the spot is taken yet. One left with no free
+ * spot takes its nearest, as a lone token does, so a token alone sits as
+ * `seatedAt` seats it. `classes` are taken in order, each class's tokens
+ * first to the spots, so a caller that puts the tokens every player sees
+ * first keeps their seats from reading the rest. `walker` and the tokens
+ * are as they stand where the walk starts, `at` the walker's stored box
+ * where the walk ends. By id, every token of `classes`.
+ */
+export function squeezedSeatsApart(g: Grid, walker: PlacedToken, at: Point, classes: readonly (readonly (PlacedToken & { id: string })[])[], opVersion?: number): Map<string, Point> {
+  const out = new Map<string, Point>();
+  const box = footprintRect(g, { ...unsqueezed(walker), x: at.x, y: at.y, squeeze: true });
+  const taken: Rect[] = [];
+  const free = (r: Rect) => taken.every((t) => r.x >= t.x + t.w - EPS || t.x >= r.x + r.w - EPS || r.y >= t.y + t.h - EPS || t.y >= r.y + r.h - EPS);
+  for (const seated of classes) {
+    const pairs: { id: string; spot: Rect; d: number }[] = [];
+    for (const token of seated) {
+      const place = seatPlace(g, token, walker, at, opVersion);
+      const { w, h } = footprintSize(token);
+      const step = snapStep(token);
+      for (const y of gridSpots(box.y, box.y + box.h - h, step, box.y)) for (const x of gridSpots(box.x, box.x + box.w - w, step, box.x)) pairs.push({ id: token.id, spot: { x, y, w, h }, d: (x - place.x) ** 2 + (y - place.y) ** 2 });
+    }
+    pairs.sort((a, b) => (Math.abs(a.d - b.d) > EPS ? a.d - b.d : a.id < b.id ? -1 : a.id > b.id ? 1 : a.spot.y - b.spot.y || a.spot.x - b.spot.x));
+    for (const p of pairs) {
+      if (out.has(p.id) || !free(p.spot)) continue;
+      out.set(p.id, { x: p.spot.x, y: p.spot.y });
+      taken.push(p.spot);
+    }
+    for (const token of seated) if (!out.has(token.id)) out.set(token.id, seatedAt(g, token, walker, at, true, opVersion));
+  }
+  return out;
 }
 
 /** On a walker standing squeezed: the seat of its full footprint nearest the seated token, and where the walker's box stands for that footprint. */

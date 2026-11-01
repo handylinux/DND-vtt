@@ -4,8 +4,8 @@ import type { DiagonalCounter, DistanceSettings } from "./distance.ts";
 import { canSqueeze, footprintSize, snapStep, squeezedSize } from "./footprint.ts";
 import type { Point } from "./geom.ts";
 import { footing } from "./heights.ts";
-import { crossesInnerLedges, groundUnder, legStop, offKey, onOffHolder, pastHolder, stepTester, walkFrom, walkOn, type MovingToken, type StepTester, type Walker } from "./movement.ts";
-import { followedHeight, legSteps, routeFeet, routeLattice, seatedOn, seatShift, straightCost, trueLength, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "./route.ts";
+import { crossesInnerLedges, groundUnder, legStop, offGridWallThrough, offKey, onOffHolder, pastHolder, stepTester, walkEnd, walkFrom, walkOn, type MovingToken, type StepTester, type Walker } from "./movement.ts";
+import { fileRoutes, followedHeight, legSteps, routeFeet, routeLattice, seatedOn, seatShift, straightCost, trueLength, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "./route.ts";
 import { SQUARES } from "./grid.ts";
 
 /**
@@ -607,6 +607,39 @@ export class WalkWorld {
       const a = points[i - 1]!;
       const b = points[i]!;
       for (const t of this.#towed) if (!this.#towedWalks(t, a.x, a.y, b.x, b.y)) return t.walker.id;
+    }
+    return null;
+  }
+
+  /**
+   * The first creature the walker drags beside it that cannot follow a walk
+   * along `points` in single file (route.ts fileRoutes, D-261101-250), as
+   * the server's move takes them along a walk that ends squeezed: each on
+   * its own walk, its sweep on ground the search may read, each piece by
+   * the leg test the server runs on it and its end by the server's stand
+   * test (permissions.ts draggedWalls). Null when all of them follow.
+   */
+  fileBlocked(points: readonly Point[]): string | null {
+    if (this.#towed.length === 0) return null;
+    const { token, build } = this.input;
+    const file = fileRoutes(token, points, [this.#towed.map((t) => t.walker)]);
+    for (const t of this.#towed) {
+      const walk = file.get(t.walker.id);
+      if (!walk) continue;
+      // Each spot as the move takes it along: at the height its holders' walk gives it there, on its ground where that is not followed.
+      const at = (k: number): Walker => {
+        if (k === 0) return t.walker;
+        const p = walk[k]!;
+        const height = followedHeight(build.buildChunks, this.#lead, (m) => this.#members.get(m), t.walker.id, { x: p.x - t.walker.x, y: p.y - t.walker.y }, this.#leadHeight(points[k]!));
+        return { ...t.walker, x: p.x, y: p.y, elevation: height ?? groundUnder(build.buildChunks, t.walker, p) };
+      };
+      let from = at(0);
+      for (let k = 1; k < walk.length; k++) {
+        const to = at(k);
+        if (!this.#towedSeen(t, from, to) || legStop(build, from, { x: to.x, y: to.y, elevation: to.elevation, squeeze: false }) !== null) return t.walker.id;
+        if (k === walk.length - 1 && offGridWallThrough(build, walkEnd(build, from, to))) return t.walker.id;
+        from = to;
+      }
     }
     return null;
   }

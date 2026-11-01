@@ -1,14 +1,14 @@
-import { attaches, draggedWalkFull, seatsOnSqueeze, walksRoutes } from "../migrate.ts";
+import { attaches, draggedWalkFull, followsInSingleFile, hiddenTowStands, seatsApart, seatsOnSqueeze, walksRoutes } from "../migrate.ts";
 import type { RoomState, Token, Viewer } from "../model.ts";
 import { inSightOfNonOwners } from "../project.ts";
 import type { Op } from "../protocol.ts";
-import { movementRules } from "../ruleHooks.ts";
-import { carriedGroup, moveGroups, onHolder, publicMembers, seatedAt, walkerFor, type SeenByAll } from "./attach.ts";
+import { movementRules, type BuildState } from "../ruleHooks.ts";
+import { carriedGroup, moveGroups, onHolder, publicMembers, seatedAt, squeezedSeatsApart, walkerFor, type SeenByAll } from "./attach.ts";
 import type { Point } from "./geom.ts";
 import { isHex, sceneGrid } from "./grid.ts";
 import { footing } from "./heights.ts";
-import { groundUnder, hexFullStop, landing, storedBuild } from "./movement.ts";
-import { followerTrace, pieceReach, routeWalkers, walkSqueezes, type RoutePoint, type WalkTrace } from "./route.ts";
+import { groundUnder, hexFullStop, landing, legSpots, legStop, offGridWallThrough, storedBuild, walkEnd } from "./movement.ts";
+import { fileRoutes, followerTrace, pieceReach, routeWalkers, walkSqueezes, type RoutePoint, type WalkTrace } from "./route.ts";
 
 /**
  * One description of a move (contract section 1, docs/design/design-v1-attach.md
@@ -119,10 +119,16 @@ function namedMoves(op: Op, before: RoomState, env: Versioned): Named[] {
  * (`squeezedSeats`, D-261029-52 on hexes, D-261029-53 on squares). A
  * teleport leaves what it drags, and a scene change takes everything.
  *
+ * On squares, from op version 38, a walk that ends squeezed takes what it
+ * drags in single file instead of by its place (`singleFile`), and seats
+ * what sits on it on squeezed squares of its own (`endSeatsApart`).
+ *
  * On a player's walk on a scene whose walls stop moves, a dragged creature
  * outside the public members stops where its own leg test stops it, and
  * what it carries stops with it (4.2): the public members' legs are the
- * permissions' to test, so no landing or refusal reads a hidden one.
+ * permissions' to test, so no landing or refusal reads a hidden one. From
+ * op version 38, on a move, it also stands only where no wall passes
+ * through its box off its grid (`standsBack`).
  * Sorted by token id.
  */
 /** Whether every player sees a token in this state, by the op's envelope. */
@@ -143,24 +149,88 @@ export function planMove(op: Op, before: RoomState, actor: Viewer, env: Versione
   // it, even round a loop the new link closes through a link the player's check cannot see.
   if (op.t === "token.attach") names.add(op.to);
   const groups = attaches(env.opVersion) ? moveGroups(before.tokens, [...names]) : new Map<string, string[]>();
+  // A hidden creature in tow takes the stand test where a move leaves it, as the permission rule judges one every player sees (D-261101-274).
+  const stands = (op.t === "token.move" || op.t === "token.moveMany") && hiddenTowStands(env.opVersion);
   for (const n of named) {
     out.push({ tokenId: n.token.id, from: poseOf(n.token), to: n.to, route: n.route, trace: n.trace, how: n.how, pass: seen(n.token) ? "public" : "private", ...(n.squeezed ? { squeezed: true as const } : {}) });
     const members = groups.get(n.token.id) ?? [];
     if (members.length <= 1) continue;
     const shown = new Set(publicMembers(before.tokens, n.token.id, seen, names));
-    const walked = new Map<string, MovedToken>([[n.token.id, out[out.length - 1]!]]);
-    for (const id of members.slice(1)) {
-      const member = before.tokens[id]!;
-      const holderMove = walked.get(member.attached!.to);
-      if (!holderMove) continue;
-      const moved = follow(before, member, holderMove, shown.has(id) && shown.has(holderMove.tokenId), actor.role !== "dm", env);
-      if (!moved) continue;
-      walked.set(id, moved);
-      if (!samePose(moved.from, moved.to)) out.push(moved);
-    }
+    out.push(...followGroup(before, out[out.length - 1]!, members, (id, holderId) => shown.has(id) && shown.has(holderId), actor.role !== "dm", env, stands).filter((m) => !samePose(m.from, m.to)));
   }
   return out.sort((a, b) => (a.tokenId < b.tokenId ? -1 : a.tokenId > b.tokenId ? 1 : 0));
 }
+
+/**
+ * How a group's members follow its lead's walk, top down (`follow`):
+ * `members` the lead first, then what it takes along, each after its
+ * holder, and `isPublic` whether a member and its link to its holder are
+ * every player's. Where the walk lines them up in single file, or seats
+ * its passengers apart, those are worked out for the group at once, the
+ * public members before the rest, so no public place reads a hidden one.
+ */
+function followGroup(before: RoomState, lead: MovedToken, members: readonly string[], isPublic: (id: string, holderId: string) => boolean, byPlayer: boolean, env: Versioned, stands = false): MovedToken[] {
+  const pub = (id: string) => {
+    const link = before.tokens[id]?.attached;
+    return link !== undefined && isPublic(id, link.to);
+  };
+  const file = singleFile(before, lead, members.slice(1), pub, env);
+  const apart = new Map<string, Map<string, Point> | null>();
+  const seatsOn = (holder: MovedToken) => {
+    let seats = apart.get(holder.tokenId);
+    if (seats === undefined) apart.set(holder.tokenId, (seats = endSeatsApart(before, holder, members, pub, env)));
+    return seats;
+  };
+  const out: MovedToken[] = [];
+  const walked = new Map<string, MovedToken>([[lead.tokenId, lead]]);
+  for (const id of members.slice(1)) {
+    const member = before.tokens[id]!;
+    const holderMove = walked.get(member.attached!.to);
+    if (!holderMove) continue;
+    const moved = follow(before, member, holderMove, pub(id), byPlayer, env, { file: file?.get(id), seats: seatsOn, stands });
+    if (!moved) continue;
+    walked.set(id, moved);
+    out.push(moved);
+  }
+  return out;
+}
+
+/**
+ * Where each creature the lead's walk drags along walks when it follows in
+ * single file (route.ts fileRoutes, D-261101-250): from op version 38, on
+ * squares, on the lead's own walk that ends squeezed as the op says. Every
+ * dragged member of the group goes, the public ones first. Null where they
+ * follow by their places.
+ */
+function singleFile(before: RoomState, lead: MovedToken, members: readonly string[], pub: (id: string) => boolean, env: Versioned): Map<string, Point[]> | null {
+  if (!followsInSingleFile(env.opVersion) || lead.squeezed !== true || lead.how !== "walk" || lead.carriedBy !== undefined) return null;
+  const scene = before.scenes[lead.from.sceneId];
+  const standing = before.tokens[lead.tokenId];
+  if (!scene || !standing || isHex(sceneGrid(scene))) return null;
+  const dragged = members.map((id) => before.tokens[id]!).filter((t) => t.attached?.kind === "drag");
+  if (dragged.length === 0) return null;
+  return fileRoutes(standing, lead.route, [dragged.filter((t) => pub(t.id)), dragged.filter((t) => !pub(t.id))]);
+}
+
+/**
+ * Where what sits on `holder` sits where its walk ends squeezed, each on a
+ * squeezed square of its own where there are enough (attach.ts
+ * squeezedSeatsApart, D-261101-251): from op version 38, on squares, on the
+ * holder's own walk, the public passengers first. Null where each takes its
+ * nearest alone.
+ */
+function endSeatsApart(before: RoomState, holder: MovedToken, members: readonly string[], pub: (id: string) => boolean, env: Versioned): Map<string, Point> | null {
+  if (!seatsApart(env.opVersion) || holder.squeezed !== true || holder.how !== "walk" || holder.carriedBy !== undefined) return null;
+  const scene = before.scenes[holder.from.sceneId];
+  const standing = before.tokens[holder.tokenId];
+  if (!scene || !standing || isHex(sceneGrid(scene))) return null;
+  const seated = members.map((id) => before.tokens[id]!).filter((t) => t.attached?.to === holder.tokenId && onHolder(t.attached.kind));
+  if (seated.length < 2) return null;
+  return squeezedSeatsApart(sceneGrid(scene), standing, holder.route[holder.route.length - 1]!, [seated.filter((t) => pub(t.id)), seated.filter((t) => !pub(t.id))], env.opVersion);
+}
+
+/** How a member follows: its single-file walk where it has one, the holder's squeezed seats apart, and whether a hidden one takes the stand test. */
+type Following = { file?: readonly Point[] | undefined; seats?: (holder: MovedToken) => Map<string, Point> | null; stands?: boolean };
 
 function samePose(a: Pose, b: Pose): boolean {
   return a.sceneId === b.sceneId && a.x === b.x && a.y === b.y && a.elevation === b.elevation;
@@ -171,7 +241,7 @@ function samePose(a: Pose, b: Pose): boolean {
  * stays (a dragged creature a teleport leaves). On a player's walk
  * (`byPlayer`) a dragged creature outside the public members stops at walls.
  */
-function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: boolean, byPlayer: boolean, env: Versioned): MovedToken | null {
+function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: boolean, byPlayer: boolean, env: Versioned, how: Following = {}): MovedToken | null {
   const kind = member.attached!.kind;
   const from = poseOf(member);
   const pass = isPublic ? "public" : "private";
@@ -181,7 +251,7 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
   if (holder.how === "scene" || onHolder(kind)) {
     // What sits on its holder keeps its height above it at every point, and a scene change takes all by the holder's change.
     const oz = member.elevation - holder.from.elevation;
-    const seats = onHolder(kind) ? squeezedSeats(before, member, holder, env) : null;
+    const seats = onHolder(kind) ? squeezedSeats(before, member, holder, env, how.seats?.(holder)?.get(member.id)) : null;
     const route = holder.route.map((p, i) => ({ ...(seats?.[i] ?? { x: p.x + ox, y: p.y + oy }), elevation: p.elevation + oz }));
     const last = route[route.length - 1]!;
     return { tokenId: member.id, from, to: { sceneId: holder.to.sceneId, ...last }, route, trace: followerTrace(member, route), how: holder.how, carriedBy: holder.tokenId, pass };
@@ -198,8 +268,14 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
     return grounded ? ground : Math.max(member.elevation + (holderElevation - holder.from.elevation), ground);
   };
   let route: RoutePoint[] = [{ x: member.x, y: member.y, elevation: member.elevation }];
-  for (const p of holder.route.slice(1)) route.push({ x: p.x + ox, y: p.y + oy, elevation: elevationAt(p.x + ox, p.y + oy, p.elevation) });
-  if (!isPublic && byPlayer && holder.how === "walk") route = stoppedAtWalls(before, member, route, holder.route, elevationAt, env);
+  // In single file its own walk, else the holder's offset by its place.
+  const file = how.file;
+  for (const [i, p] of holder.route.entries()) {
+    if (i === 0) continue;
+    const at = file?.[i] ?? { x: p.x + ox, y: p.y + oy };
+    route.push({ x: at.x, y: at.y, elevation: elevationAt(at.x, at.y, p.elevation) });
+  }
+  if (!isPublic && byPlayer && holder.how === "walk") route = stoppedAtWalls(before, member, route, holder.route, elevationAt, env, how.stands === true);
   const last = route[route.length - 1]!;
   return { tokenId: member.id, from, to: { sceneId: member.sceneId, ...last }, route, trace: followerTrace(member, route), how: holder.how, carriedBy: holder.tokenId, pass };
 }
@@ -229,9 +305,10 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
  * seats it, and one nudged off its anchor sits on it again, as a device
  * reads it (review DP34-OPUS-10). Its link reads the full footprint
  * (docs/design/design-v1-attach.md 5.1), which every such seat lies in, so it
- * never lets go mid-corridor.
+ * never lets go mid-corridor. `apart` is its seat where the walk ends,
+ * where it takes one apart from the others on the holder (`endSeatsApart`).
  */
-function squeezedSeats(before: RoomState, member: Token, holder: MovedToken, env: Versioned): (Point | null)[] | null {
+function squeezedSeats(before: RoomState, member: Token, holder: MovedToken, env: Versioned, apart?: Point): (Point | null)[] | null {
   if (!seatsOnSqueeze(env.opVersion) || holder.carriedBy !== undefined || (holder.how !== "walk" && holder.how !== "teleport")) return null;
   const scene = before.scenes[member.sceneId];
   const standing = before.tokens[holder.tokenId];
@@ -239,7 +316,9 @@ function squeezedSeats(before: RoomState, member: Token, holder: MovedToken, env
   const squeezedAt = walkSqueezes(before, standing, holder.route, holder.trace, holder.squeezed === true, env.opVersion);
   const g = sceneGrid(scene);
   if (!isHex(g) && !squeezedAt.some((s) => s)) return null;
-  return holder.route.map((p, i) => (i === 0 ? null : seatedAt(g, member, standing, p, squeezedAt[i]!, env.opVersion)));
+  const last = holder.route.length - 1;
+  // Where the walk ends squeezed, the seat it takes apart from the others on the holder, where it has one (followGroup).
+  return holder.route.map((p, i) => (i === 0 ? null : i === last && apart ? apart : seatedAt(g, member, standing, p, squeezedAt[i]!, env.opVersion)));
 }
 
 /**
@@ -257,21 +336,13 @@ function squeezedSeats(before: RoomState, member: Token, holder: MovedToken, env
  * never touched. The cap only bounds the work a route costs, and its
  * squares across the ground do that alone. `squeezed` is whether the move
  * ends squeezed, so what sits on the walker is read on the seat the move
- * gives it there (review DP34-OPUS-3).
+ * gives it there (review DP34-OPUS-3), and what it drags in single file
+ * on squares (`singleFile`).
  */
 export function checkSetReach(before: RoomState, token: Pick<Token, "id" | "sceneId" | "x" | "y" | "elevation">, trace: WalkTrace, seen: SeenByAll, feetPerCell: number, role: Viewer["role"], squeezed = false): number {
   const route = trace.map(({ x, y, elevation }) => ({ x, y, elevation }));
   const lead: MovedToken = { tokenId: token.id, from: poseOf(token), to: { sceneId: token.sceneId, ...route[route.length - 1]! }, route, trace, how: "walk", pass: "public", ...(squeezed ? { squeezed: true as const } : {}) };
-  const walks = [lead];
-  const walked = new Map<string, MovedToken>([[token.id, lead]]);
-  for (const id of publicMembers(before.tokens, token.id, seen, new Set([token.id])).slice(1)) {
-    const member = before.tokens[id];
-    const holder = member?.attached ? walked.get(member.attached.to) : undefined;
-    const moved = member && holder ? follow(before, member, holder, true, false, {}) : null;
-    if (!moved) continue;
-    walked.set(id, moved);
-    walks.push(moved);
-  }
+  const walks = [lead, ...followGroup(before, lead, publicMembers(before.tokens, token.id, seen, new Set([token.id])), () => true, false, {})];
   // Infinite feet per square make every rise no reach.
   const perSquare = role === "player" && before.scenes[token.sceneId]?.fogEnabled === true ? Infinity : feetPerCell;
   let reach = 0;
@@ -291,9 +362,11 @@ export function checkSetReach(before: RoomState, token: Pick<Token, "id" | "scen
  * migrate.ts draggedWalkFull). On squares its walk is judged by its core,
  * which a corridor one square wide lets through, so it keeps the drop's
  * landing at every op version: refusing only a stopped walk's squeezed
- * landing there would part it from the walk that is not stopped.
+ * landing there would part it from the walk that is not stopped. With
+ * `stands`, a move's from op version 38, where it ends it then takes the
+ * stand test too (`standsBack`).
  */
-function stoppedAtWalls(before: RoomState, member: Token, route: RoutePoint[], holderRoute: readonly RoutePoint[], elevationAt: (x: number, y: number, holderElevation: number) => number, env: Versioned): RoutePoint[] {
+function stoppedAtWalls(before: RoomState, member: Token, route: RoutePoint[], holderRoute: readonly RoutePoint[], elevationAt: (x: number, y: number, holderElevation: number) => number, env: Versioned, stands = false): RoutePoint[] {
   const scene = before.scenes[member.sceneId];
   if (scene?.blockMovement !== true) return route;
   // Its stands on hexes as the op was written under (movement.ts storedBuild).
@@ -301,17 +374,41 @@ function stoppedAtWalls(before: RoomState, member: Token, route: RoutePoint[], h
   // A creature a holder drags beside it walks as itself, since a drag is no seat (route.ts followerTrace).
   const trace = followerTrace(member, route);
   const full = draggedWalkFull(env.opVersion) && isHex(sceneGrid(scene));
+  let kept = route;
   for (let i = 1; i < route.length; i++) {
     const a = route[i - 1]!;
     const b = full ? { ...route[i]!, squeeze: false } : route[i]!;
     const at = trace[i - 1]!;
     if (movementRules.legBlocker(build, at, b) === null) continue;
     const stop = (full ? hexFullStop(build, at, b) : null) ?? landing(build, at, b, "walk");
-    const kept = route.slice(0, i);
+    kept = route.slice(0, i);
     if (stop.x !== a.x || stop.y !== a.y) kept.push({ x: stop.x, y: stop.y, elevation: elevationAt(stop.x, stop.y, holderRoute[i - 1]!.elevation) });
-    return kept;
+    break;
   }
-  return route;
+  return stands ? standsBack(build, member, kept, holderRoute, elevationAt) : kept;
+}
+
+/**
+ * A hidden creature's walk in tow as it ends where it may stand
+ * (migrate.ts hiddenTowStands, D-261101-274): where its walk ends off its
+ * grid with a wall through its box outside a real narrow space
+ * (movement.ts offGridWallThrough), the last spot back along its last
+ * piece that its leg and its stand both take, as a public one's walk is cut
+ * (client drop.ts standingBack), else that piece's start. Only a creature
+ * with a side a squeeze shrinks can meet it, and only it and what it
+ * carries move for it, so nothing a player sees reads it.
+ */
+function standsBack(build: BuildState, member: Token, route: RoutePoint[], holderRoute: readonly RoutePoint[], elevationAt: (x: number, y: number, holderElevation: number) => number): RoutePoint[] {
+  const n = route.length;
+  if (n < 2) return route;
+  const from = followerTrace(member, route)[n - 2]!;
+  if (!offGridWallThrough(build, walkEnd(build, from, route[n - 1]!))) return route;
+  const spots = legSpots(from, route[n - 1]!);
+  for (let k = spots.length - 2; k > 0; k--) {
+    const spot = { ...spots[k]!, elevation: elevationAt(spots[k]!.x, spots[k]!.y, holderRoute[n - 2]!.elevation) };
+    if (legStop(build, from, spot) === null && !offGridWallThrough(build, walkEnd(build, from, spot))) return [...route.slice(0, n - 1), spot];
+  }
+  return route.slice(0, n - 1);
 }
 
 /**

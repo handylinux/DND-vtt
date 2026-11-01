@@ -107,7 +107,7 @@ for (const [name, g] of [
 }
 
 describe("squares: a Large ogre no player sees, dragged toward a corridor one square wide", () => {
-  test("keeps the drop's landing where its leg is stopped, at every op version, as its core walks the corridor (review FU37-OPUS-3)", () => {
+  test("keeps the drop's landing where its leg is stopped, at every op version before 38, as its core walks the corridor (review FU37-OPUS-3)", () => {
     const s = room({ scenes: { s1: scene("s1", { bounds: { w: 30, h: 20 }, blockMovement: true, autoWalls: "off" }) } });
     s.buildChunks = {};
     // Rock from x 8 to 16 but for row 10, each wall at most 8 squares long.
@@ -130,6 +130,8 @@ describe("squares: a Large ogre no player sees, dragged toward a corridor one sq
     assert.equal(old.length, found.pieces.length + 1, "its last piece is stopped and lands on the way");
     assert.deepEqual(old.at(-1), [9.5, 9.5], "the stopped piece keeps its squeezed landing");
     assert.deepEqual(walk(32), old, "op 32");
-    assert.deepEqual(walk(), old, "live");
+    assert.deepEqual(walk(37), old, "op 37");
+    // From op 38 the horse's move ends squeezed, so the ogre follows it in single file: on its line at each corner, behind it at the end.
+    assert.deepEqual(walk(), [[1, 8.5], [3.5, 9.5], [6, 9.5], [10.5, 9.5]], "live");
   });
 });

@@ -22,6 +22,7 @@ import { tokenStop, type RulerStop } from "../measure/ruler.ts";
 import { measureWalk } from "../measure/walkRuler.ts";
 import { copyFor } from "./testing.ts";
 import { SQUARES } from "#shared/rules/grid.ts";
+import { wall } from "#shared/discoveryTestutil.ts";
 
 /**
  * The planner's walks of attached tokens against the server (reviews
@@ -744,7 +745,9 @@ describe("a holder's route search walks the creatures it drags beside it with it
     const raw65 = { x: Math.max(0, Math.min(27, k65.x + int(r65, -8, 8))), y: Math.max(0, Math.min(27, k65.y + int(r65, -8, 8))) };
     // Rugged ground under Large holders (Opus's probe, seeds 602, 1064 and 1257): each cut a straight walk's own route that
     // the server took only as the whole leg's, never as the shorter cut. In seed 4508 no cut route passes there, and the plain leg does.
-    const cases = [{ where: "relief seed 65", state: relief.state, who: relief.who, raw: raw65 }, ...[602, 1064, 1257, 4508].map((seed) => ({ where: `rugged seed ${seed}`, ...ruggedTow(seed) }))];
+    // Seeds 1064 and 4508 walk to a squeeze, where from op version 38 the goblin follows in single file (D-261101-250): seed 1016
+    // stands for 1064's kind, holding where it stands, and 4508 keeps its cut with a stub across the goblin's ways onto Kira's line.
+    const cases = [{ where: "relief seed 65", state: relief.state, who: relief.who, raw: raw65 }, ...[602, 1016, 1257].map((seed) => ({ where: `rugged seed ${seed}`, ...ruggedTow(seed) })), { where: "rugged seed 4508", ...stubbed4508() }];
     const sent: Record<string, Op | null> = {};
     for (const { where, state, who, raw } of cases) {
       const drag = dragOf(copyFor(state, who), "player", "kira", raw);
@@ -772,7 +775,7 @@ describe("a holder's route search walks the creatures it drags beside it with it
     // same spot the plain leg's cut takes: the picture then follows the plain cut, drawn straight and priced as sent, which on
     // difficult ground costs what the plain leg does, not the route's doubled feet (review FU20A-SOL-R3-1).
     for (const budget of [5, 20, 80]) {
-      const { state, who, raw } = ruggedTow(4508);
+      const { state, who, raw } = stubbed4508();
       for (const [cx, cy] of [[0, 0], [1, 0], [0, 1], [1, 1]] as const) {
         const key = `s1:${cx},${cy}`;
         state.buildChunks[key] = { ...(state.buildChunks[key] ?? { sceneId: "s1", cx, cy, rev: 1, cells: {}, edges: {} }), rough: "d".repeat(CHUNK_CELLS * CHUNK_CELLS) };
@@ -788,10 +791,33 @@ describe("a holder's route search walks the creatures it drags beside it with it
     // Each kind of cut: a shorter route, a stand further back, the plain leg, and none at all.
     assert.deepEqual(
       Object.fromEntries(Object.entries(sent).map(([where, op]) => [where, op && op.t === "token.move" ? [op.x, op.y, op.route?.length ?? 0] : null])),
-      { "relief seed 65": [18.5, 11, 1], "rugged seed 602": [16.5, 13, 1], "rugged seed 1064": null, "rugged seed 1257": [12, 8.5, 1], "rugged seed 4508": [21, 16.5, 0] },
+      { "relief seed 65": [18.5, 11, 1], "rugged seed 602": [16.5, 13, 1], "rugged seed 1016": null, "rugged seed 1257": [12, 8.5, 1], "rugged seed 4508": [21, 16.5, 0] },
     );
   });
+
+  test("seeds 1064 and 4508 walk Kira to a squeeze, so the goblin follows in single file and the server takes the walk whole (D-261101-250)", () => {
+    for (const seed of [1064, 4508]) {
+      const { state, who, raw } = ruggedTow(seed);
+      const drag = dragOf(copyFor(state, who), "player", "kira", raw);
+      const op = drag.op as Op & { t: "token.move" };
+      assert.ok(op && op.squeeze === true && drag.plan.stop === null, `seed ${seed}: squeezed, held nowhere`);
+      assert.ok(canApply(op, who, state, { canUseAsset: () => true }).ok, `seed ${seed}: the server takes it`);
+      const applied = applyOp(state, op, who, env(10));
+      assert.ok(applied.ok && applied.state.tokens.gob1!.attached?.to === "kira", `seed ${seed}: the goblin still in tow`);
+      assert.deepEqual(drag.preview.to, { x: applied.state.tokens.kira!.x, y: applied.state.tokens.kira!.y }, `seed ${seed}: the picture showed another spot`);
+    }
+  });
 });
+
+/**
+ * Seed 4508 with a stub across the goblin's ways into single file, the route's and the straight walk's, which neither Kira's
+ * core nor the goblin's walks beside her meet: the goblin cannot follow in single file, so the walk is cut by its place.
+ */
+function stubbed4508(): { state: RoomState; who: Viewer; raw: Point } {
+  const out = ruggedTow(4508);
+  wall(out.state, "fu45bk000000", [1101 / 64, 16.625], [1101 / 64, 1085 / 64]);
+  return out;
+}
 
 /** The room with these ground heights in feet by cell key and every other square at 0, its chunks' heights encoded as the store keeps them. */
 function withHeights(state: RoomState, heights: Readonly<Record<string, number>>): RoomState {

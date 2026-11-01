@@ -10,13 +10,15 @@ import { findRouteOn } from "#shared/rules/hexWalk.ts";
 import { COLUMNS, hexWallRoom, onHex, ROWS, wallsRound } from "#shared/rules/hexWalls.testkit.ts";
 import { ownWalk } from "#shared/rules/movement.ts";
 import { groupWalkWorld } from "#shared/rules/walkWorld.ts";
-import { P1, room, scene, token } from "#shared/testutil.ts";
+import { applyOp } from "#shared/reducer.ts";
+import { env, P1, room, scene, token } from "#shared/testutil.ts";
 import { WorkBudget } from "#shared/rules/walk.ts";
 import { RoomScope } from "../../state/scope.ts";
 import { measureWalk } from "../measure/walkRuler.ts";
 import { cutRoute, moveOpsOf, planGroup, planOne, pressedAim, routeTarget, stopText, walkersStop, type DropPlan } from "./drop.ts";
 import { RouteWork, type Frames } from "./routeWork.ts";
 import { dragStops, type DragDeps } from "./stageHooks.ts";
+import { holdSlot } from "./store.ts";
 import { seenRoom } from "./testing.ts";
 
 /**
@@ -184,13 +186,75 @@ function dragCorridor(): RoomState {
 
 const takes = (s: RoomState, plan: DropPlan) => moveOpsOf(plan.moves).every((op) => canApply(op, P1, s, { canUseAsset: () => true }).ok);
 
-describe("squares: a walk that ends full size where its box would reach through a wall stops short of it (LP28-B-RIDE-1)", () => {
-  test("ridden or not, pressed on the rider or the mount, from on the grid or half a square off it, the walk stops at 4, 5 west of the rock and names the goblin", () => {
-    // At 4.5 its core is clear of the rock and its box reaches over the wall at x 6.
+/** The drag of the mount, pressed on `pressed` or on the mount, dropped with its box at `box`, as the board plans it, and whether the picture held it before the drop. */
+function dropOf(s: RoomState, box: { x: number; y: number }, pressed?: Token): { plan: DropPlan | null; held: boolean } {
+  const node = { x: () => box.x, y: () => box.y, position: () => {} };
+  const b = board(s);
+  const horse = s.tokens.horse!;
+  b.stops.start(horse.id, pressed);
+  for (let i = 0; i < 50; i++) {
+    b.stops.frame(node, horse);
+    b.frames.frame();
+  }
+  const held = b.hold() !== null;
+  let plan: DropPlan | null = null;
+  b.stops.drop(node, horse, [horse], (p) => (plan = p));
+  for (let i = 0; i < 50 && !plan; i++) b.frames.frame();
+  return { plan, held };
+}
+
+describe("squares: a mount dragging a goblin into a corridor one square wide (LP28-B-RIDE-1, D-261101-250)", () => {
+  test("ridden or not, pressed on the rider or the mount, from on the grid or half a square off it, the goblin follows it in single file and the server takes it", () => {
     for (const x of [2, 2.5]) for (const ridden of [true, false]) {
       const base = dragCorridor();
       base.tokens.horse = { ...base.tokens.horse!, x };
       base.tokens.gob = token("gob", { x: x - 1, y: 6, name: "Goblin", kind: "npc", attached: { to: "horse", kind: "drag" } });
+      const s = ridden ? riding(base, { x, y: 5 }) : base;
+      for (const box of [{ x: 9.5, y: 5.5 }, { x: 10.2, y: 5.7 }, { x: 11.6, y: 5.9 }]) {
+        for (const pressed of ridden ? [s.tokens.brom, undefined] : [undefined]) {
+          const at = `from ${x}, ridden ${ridden}, pressed ${pressed?.id ?? "horse"}, box ${box.x}, ${box.y}`;
+          const { plan, held } = dropOf(s, box, pressed);
+          assert.ok(plan, `${at}: the drop landed`);
+          assert.equal(held, false, `${at}: the picture holds it nowhere on the way`);
+          const landed = plan.moves.find((m) => m.tokenId === "horse");
+          assert.ok(landed && landed.squeeze === true && landed.y === 5.5 && landed.x > 6, `${at}: squeezed in the corridor, ${JSON.stringify(landed)}`);
+          assert.equal(plan.stop, null, `${at}: nothing holds it`);
+          assert.ok(takes(s, plan), `${at}: the server takes it`);
+          const op = moveOpsOf(plan.moves)[0]!;
+          const r = applyOp(s, op, P1, env(1));
+          assert.ok(r.ok);
+          // Its squeezed square starts half a square into its box, so the goblin's square is the one before it.
+          assert.deepEqual([r.state.tokens.gob!.x, r.state.tokens.gob!.y, r.state.tokens.gob!.attached?.to], [landed.x - 0.5, 6, "horse"], `${at}: the goblin right behind it`);
+        }
+      }
+    }
+  });
+});
+
+describe("squares: a walk that ends squeezed where a creature it drags cannot fall in behind (D-261101-250)", () => {
+  test("is cut, by their places, since a cut lands full, even where their places would walk the whole way", () => {
+    const s = room({ scenes: { s1: scene("s1", { bounds: { w: 22, h: 12 }, blockMovement: true, autoWalls: "off" }) } });
+    s.buildChunks = {};
+    // On the goblin's line straight onto the horse's, short of the horse's core and of the goblin's walk beside it.
+    wall(s, "fu45bc000000", [2, 6.25], [2, 418 / 64]);
+    s.tokens.horse = token("horse", { size: "large", x: 2, y: 5, name: "Warhorse", kind: "npc", ownerIds: ["p1"] });
+    s.tokens.gob = token("gob", { x: 1, y: 6, name: "Goblin", kind: "npc", attached: { to: "horse", kind: "drag" } });
+    const points = [{ x: 2, y: 5, elevation: 0 }, { x: 6.5, y: 5.5, elevation: 0 }];
+    assert.equal(walkersStop(s, ownWalk(s.tokens.horse), points, [s.tokens.gob], { squeeze: false }), null, "by its place it walks the whole way");
+    const cut = walkersStop(s, ownWalk(s.tokens.horse), points, [s.tokens.gob], { squeeze: true });
+    assert.ok(cut && cut.blocker === "wall" && cut.at.x < 6.5, `cut short: ${JSON.stringify(cut)}`);
+  });
+});
+
+describe("squares: a walk that ends full size where its box would reach through a wall stops short of it (LP28-B-RIDE-1)", () => {
+  test("ridden or not, pressed on the rider or the mount, from on the grid or half a square off it, a goblin that cannot fall in behind stops the walk at 4, 5 west of the rock and is named", () => {
+    // At 4.5 its core is clear of the rock and its box reaches over the wall at x 6.
+    for (const x of [2, 2.5]) for (const ridden of [true, false]) {
+      const base = dragCorridor();
+      base.tokens.horse = { ...base.tokens.horse!, x };
+      // Above its left side, and a stub across the goblin's way down onto the mount's line, clear of the mount's core and of the goblin's walk beside it.
+      base.tokens.gob = token("gob", { x: x - 1, y: 4, name: "Goblin", kind: "npc", attached: { to: "horse", kind: "drag" } });
+      wall(base, "fu45bs000000", [x + 0.25, 5.625], [x + 0.625, 5.25]);
       const s = ridden ? riding(base, { x, y: 5 }) : base;
       const horse = s.tokens.horse!;
       for (const box of [{ x: 9.5, y: 5.5 }, { x: 10.2, y: 5.7 }, { x: 11.6, y: 5.9 }]) {
@@ -365,5 +429,5 @@ function board(view: RoomState) {
     role: "player",
     work,
   };
-  return { frames, stops: dragStops(deps) };
+  return { frames, stops: dragStops(deps), hold: () => deps.scope.get(holdSlot).getState().hold };
 }

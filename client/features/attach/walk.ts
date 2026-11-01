@@ -50,9 +50,10 @@ export function walkersFor(view: RoomState, tokenId: string, role: Role, named: 
  * stops so the creatures it drags beside it can follow (4.2), as the drag's
  * preview holds it and the drop cuts it (drop.ts cutForWalkers): null when
  * all of them walk the whole way. The route is the one the drop would land,
- * cut past 64 pieces, walked as the drop walks it (drop.ts walkerOf).
+ * cut past 64 pieces, walked as the drop walks it (drop.ts walkerOf), and
+ * squeezed at its end where `target` is.
  */
-export function walkersCut(view: DropView, token: DropToken, target: Point, route: Pick<WalkRoute, "pieces"> | null, role: Role): (WalkersCut & { blocker: Blocker }) | null {
+export function walkersCut(view: DropView, token: DropToken, target: Point & { squeeze?: boolean }, route: Pick<WalkRoute, "pieces"> | null, role: Role): (WalkersCut & { blocker: Blocker }) | null {
   const walkers = walkersFor(view, token.id, role);
   if (walkers.length === 0) return null;
   const long = route ? cutRoute(view, token, route.pieces) : null;
@@ -66,7 +67,8 @@ export function walkersCut(view: DropView, token: DropToken, target: Point, rout
         { x: end.x, y: end.y, elevation: landing },
       ];
   const pieces = route ? (long ? long.pieces : route.pieces) : undefined;
-  const cut = walkersStop(view, walking, points, walkers, { ...(pieces ? { route: pieces } : {}), landing: (at) => dropLanding(view, token, at) });
+  // A walk that ends squeezed takes them in single file, as the drop's cut reads it (drop.ts cutForWalkers).
+  const cut = walkersStop(view, walking, points, walkers, { ...(pieces ? { route: pieces } : {}), landing: (at) => dropLanding(view, token, at), squeeze: end.squeeze === true });
   return cut ? { at: { x: cut.at.x, y: cut.at.y }, pieces: cut.pieces, blocker: cut.blocker, ...(cut.plain ? { plain: true as const } : {}) } : null;
 }
 

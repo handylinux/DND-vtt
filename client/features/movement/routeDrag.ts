@@ -1,5 +1,5 @@
 import type { Point } from "#shared/rules/geom.ts";
-import { WorkBudget, type WalkInput, type WalkRoute } from "#shared/rules/walk.ts";
+import { WalkWorld, WorkBudget, type WalkInput, type WalkRoute } from "#shared/rules/walk.ts";
 import { routeLegCheck, routeSearch, routeWorld, routeWorldUnits, type RouteLegCheck, type RouteSearch, type RouteWorld } from "#shared/rules/hexWalk.ts";
 import type { RouteJob, RouteWork } from "./routeWork.ts";
 
@@ -38,6 +38,8 @@ export class RouteDrag {
   #alone: RouteSearch | null = null;
   #built = false;
   #target: Point | null = null;
+  /** Whether the drop at the target ends squeezed, so on squares what the walker drags follows it in single file (route.ts fileRoutes). */
+  #squeezed = false;
   #check: RouteLegCheck | null = null;
   #answer: RouteAnswer = { kind: "open" };
   #landing: ((answer: Settled) => void) | null = null;
@@ -80,11 +82,12 @@ export class RouteDrag {
     return this.#world !== null || this.#search !== null || this.#alone !== null || this.#queued || this.#landing !== null;
   }
 
-  /** The finger is over a new spot, the spot the drop would land on. Once the finger is up and a drop waits, it aims nowhere else. */
-  aim(to: Point): RouteAnswer {
+  /** The finger is over a new spot, the spot the drop would land on, squeezed there or not. Once the finger is up and a drop waits, it aims nowhere else. */
+  aim(to: Point & { squeeze?: boolean }): RouteAnswer {
     if (this.#over || this.#landing) return this.#answer;
-    if (this.#target && this.#target.x === to.x && this.#target.y === to.y) return this.#answer;
+    if (this.#target && this.#target.x === to.x && this.#target.y === to.y && this.#squeezed === (to.squeeze === true)) return this.#answer;
     this.#target = { x: to.x, y: to.y };
+    this.#squeezed = to.squeeze === true;
     this.#check = null;
     this.#solve();
     return this.#answer;
@@ -105,7 +108,7 @@ export class RouteDrag {
    * The drop at `to`: `land` hears the answer for it once it is known, at
    * once when it is, else when the search settles it. A drop ends the drag.
    */
-  drop(to: Point, land: (answer: Settled) => void): void {
+  drop(to: Point & { squeeze?: boolean }, land: (answer: Settled) => void): void {
     if (this.#over || this.#landing) return;
     this.aim(to);
     if (this.#answer.kind === "searching") {
@@ -153,6 +156,7 @@ export class RouteDrag {
     };
     const world = this.#worldNow(budget);
     if (!world) return this.#answered({ kind: "open" });
+    if (this.#squeezed && world.tows && world instanceof WalkWorld) return this.#inFile(world, to, budget);
     // The straight leg first: most drags need no search (5.2).
     this.#check ??= routeLegCheck(world, to);
     if (!this.#check.done && !this.#check.run(late)) return false;
@@ -180,6 +184,17 @@ export class RouteDrag {
    * walker's own search shares the drag's budget as the first one does.
    */
   #follower(world: RouteWorld, to: Point, budget: WorkBudget): string | null | "paused" {
+    const alone = this.#aloneSearch(world, budget);
+    if (alone === "paused") return "paused";
+    const result = alone.settle(to, budget);
+    if (result === "paused") return "paused";
+    const route = result === "settled" ? alone.traceTo(to, budget) : null;
+    if (route === "paused") return "paused";
+    return route ? (world.cannotFollow(route.points) ?? world.input.towed![0]!.id) : null;
+  }
+
+  /** The walker's search without the creatures it drags, built on the drag's budget when first asked for. */
+  #aloneSearch(world: RouteWorld, budget: WorkBudget): RouteSearch | "paused" {
     if (!this.#alone) {
       if (budget.spent) return "paused";
       const { towed: _towed, ...input } = world.input;
@@ -187,11 +202,38 @@ export class RouteDrag {
       budget.charge(routeWorldUnits(alone) + Math.ceil((alone.nx * alone.ny) / 400));
       this.#alone = routeSearch(alone);
     }
-    const result = this.#alone.settle(to, budget);
-    if (result === "paused") return "paused";
-    const route = result === "settled" ? this.#alone.traceTo(to, budget) : null;
-    if (route === "paused") return "paused";
-    return route ? (world.cannotFollow(route.points) ?? world.input.towed![0]!.id) : null;
+    return this.#alone;
+  }
+
+  /**
+   * A drop on squares that ends squeezed, so what the walker drags follows
+   * it in single file along its own walk (D-261101-250, route.ts
+   * fileRoutes), as the server's move takes them: the walker's own way
+   * there, the straight leg first, taken when every one of them follows it
+   * so on ground the search may read (walk.ts fileBlocked), else no way,
+   * naming the first that cannot follow.
+   */
+  #inFile(world: WalkWorld, to: Point, budget: WorkBudget): boolean {
+    const late = (units = 1) => {
+      budget.charge(units);
+      return budget.spent;
+    };
+    const alone = this.#aloneSearch(world, budget);
+    if (alone === "paused") return false;
+    this.#check ??= routeLegCheck(alone.world, to);
+    if (!this.#check.done && !this.#check.run(late)) return false;
+    const start = world.input.token;
+    if (this.#check.open) {
+      const follower = world.fileBlocked([start, to]);
+      return this.#answered(follower === null ? { kind: "open" } : { kind: "none", capped: false, follower });
+    }
+    const result = alone.settle(to, budget);
+    if (result === "paused") return false;
+    const route = result === "settled" ? alone.traceTo(to, budget) : null;
+    if (route === "paused") return false;
+    if (!route) return this.#answered({ kind: "none", capped: result === "capped" });
+    const follower = world.fileBlocked(route.points);
+    return this.#answered(follower === null ? { kind: "route", route } : { kind: "none", capped: false, follower });
   }
 
   /** The spot is answered: a drop waiting for it lands with it, and the drag is over. */

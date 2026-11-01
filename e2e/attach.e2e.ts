@@ -1068,14 +1068,14 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
    * stopped at x 4.5, its box across the corridor's west wall, and the
    * server took a player's move there.
    */
-  test("fu44b-1. Pat drags Brom on the warhorse, which drags a goblin, into a corridor one square wide: the warhorse stops at 4, 5 clear of the rock, the note names the goblin, and the server refuses Pat's move to 4.5, 5 across the wall (LP28-B-RIDE-1)", async () => {
+  test("fu45b-1. Pat drags Brom on the warhorse, which drags a goblin, into a corridor one square wide: the goblin follows it in single file, right behind the squeezed warhorse, Brom on its square (D-261101-250)", async () => {
     if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
     const field = { w: 20, h: 12 };
     const keep = { scene: randomUUID(), horse: randomUUID(), brom: randomUUID(), gob: randomUUID() };
-    await ops.send({ t: "scene.create", scene: { id: keep.scene, name: "FU44B squares", bounds: field, fogEnabled: false } });
+    await ops.send({ t: "scene.create", scene: { id: keep.scene, name: "FU45B squares", bounds: field, fogEnabled: false } });
     await ops.send({ t: "scene.update", sceneId: keep.scene, patch: { blockMovement: true } });
     // Rock from x 6 to 14 but for a corridor along row 6, in runs of at most 8 cells.
-    const walls = ([[6, 0, 6, 6], [6, 7, 6, 12], [14, 0, 14, 6], [14, 7, 14, 12], [6, 6, 14, 6], [6, 7, 14, 7]] as const).map(([ax, ay, bx, by], i) => ({ id: `fu44bq${String(i).padStart(6, "0")}`, a: [ax, ay] as [number, number], b: [bx, by] as [number, number], f: { kind: "wall" as const } }));
+    const walls = ([[6, 0, 6, 6], [6, 7, 6, 12], [14, 0, 14, 6], [14, 7, 14, 12], [6, 6, 14, 6], [6, 7, 14, 7]] as const).map(([ax, ay, bx, by], i) => ({ id: `fu45bq${String(i).padStart(6, "0")}`, a: [ax, ay] as [number, number], b: [bx, by] as [number, number], f: { kind: "wall" as const } }));
     await ops.send({ t: "build.walls", sceneId: keep.scene, put: walls });
     const at = { x: 2, y: 5 };
     await ops.send({ t: "token.create", token: { id: keep.horse, sceneId: keep.scene, kind: "npc", name: "Warhorse", size: "large", ...at, disposition: "ally", visibility: "all", ownerIds: [run.patId], actor: { inline: actor({ speeds: { walk: 60 } }) } } });
@@ -1083,6 +1083,51 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
     await ops.send({ t: "token.attach", tokenId: keep.brom, to: keep.horse, kind: "ride", steer: true, ...at, elevation: 0 });
     await ops.send({ t: "token.create", token: { id: keep.gob, sceneId: keep.scene, kind: "monster", name: "Goblin", size: "medium", x: 1, y: 6, disposition: "hostile", visibility: "all", actor: { inline: actor() } } });
     await ops.send({ t: "token.attach", tokenId: keep.gob, to: keep.horse, kind: "drag", x: 1, y: 6, elevation: 0 });
+    await ops.send({ t: "room.setPlayerScene", sceneId: keep.scene });
+    await waitFor("Brom and the goblin in Pat's copy", () => (token(patSocket, keep.brom)?.attached && token(patSocket, keep.gob)?.attached ? true : null));
+    await waitFor("the corridor's walls in Pat's copy", () => (Object.values((patSocket.state as RoomState | null)?.buildChunks ?? {}).reduce((n, c) => n + (c?.sceneId === keep.scene ? (c.walls?.length ?? 0) : 0), 0) === walls.length ? true : null));
+    await pat.locator(".konvajs-content").first().waitFor();
+    const from = await pagePoint(pat, field, { x: at.x + 0.5, y: at.y + 0.5 });
+    const to = await pagePoint(pat, field, { x: 10.2, y: 6.2 });
+    await touchSwipe(patCdp, from, to, { steps: 16, everyMs: 20 });
+    const horse = await waitFor("the warhorse squeezed in the corridor", () => {
+      const t = token(patSocket, keep.horse);
+      return t && t.squeeze === true ? t : null;
+    });
+    assert.ok(horse.x > 6 && horse.y === 5.5, `in the corridor at ${horse.x}, ${horse.y}`);
+    const gob = await waitFor("the goblin behind it", () => {
+      const t = token(patSocket, keep.gob);
+      return t && t.x !== 1 ? t : null;
+    });
+    // The warhorse's one square starts half a square into its box, so the goblin's is the one before it.
+    assert.deepEqual([gob.x, gob.y, gob.attached?.to], [horse.x - 0.5, 6, keep.horse], "right behind it, still in tow");
+    assert.deepEqual([token(patSocket, keep.brom)?.x, token(patSocket, keep.brom)?.y, token(patSocket, keep.brom)?.attached?.to], [horse.x + 0.5, 6, keep.horse], "Brom on its square");
+    assert.equal(await pat.getByRole("status").filter({ hasText: /through there|Stopped at a wall/ }).count(), 0, "no note");
+    await shots.take(pat, "fu45b-goblin-follows-in-single-file");
+    await ops.send({ t: "room.setPlayerScene", sceneId: run.sceneId });
+    await waitFor("Pat back on the party's scene", () => ((patSocket.state as RoomState | null)?.meta.playerSceneId === run.sceneId ? true : null));
+    for (const id of [keep.gob, keep.brom, keep.horse]) await ops.send({ t: "token.delete", tokenId: id });
+    await ops.send({ t: "scene.delete", sceneId: keep.scene });
+  });
+
+  test("fu44b-1. Pat drags Brom on the warhorse, which drags a goblin that cannot fall in behind it, into a corridor one square wide: the warhorse stops at 4, 5 clear of the rock, the note names the goblin, and the server refuses Pat's move to 4.5, 5 across the wall (LP28-B-RIDE-1)", async () => {
+    if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
+    const field = { w: 20, h: 12 };
+    const keep = { scene: randomUUID(), horse: randomUUID(), brom: randomUUID(), gob: randomUUID() };
+    await ops.send({ t: "scene.create", scene: { id: keep.scene, name: "FU44B squares", bounds: field, fogEnabled: false } });
+    await ops.send({ t: "scene.update", sceneId: keep.scene, patch: { blockMovement: true } });
+    // Rock from x 6 to 14 but for a corridor along row 6, in runs of at most 8 cells.
+    const walls = ([[6, 0, 6, 6], [6, 7, 6, 12], [14, 0, 14, 6], [14, 7, 14, 12], [6, 6, 14, 6], [6, 7, 14, 7]] as const).map(([ax, ay, bx, by], i) => ({ id: `fu44bq${String(i).padStart(6, "0")}`, a: [ax, ay] as [number, number], b: [bx, by] as [number, number], f: { kind: "wall" as const } }));
+    // The goblin stands above the warhorse's left side, and a stub inside the warhorse's box, clear of its core, crosses the
+    // goblin's way down onto its line, so from op version 38 it cannot follow in single file and the walk is cut by its place.
+    walls.push({ id: "fu44bq000006", a: [2.25, 5.625], b: [2.625, 5.25], f: { kind: "wall" as const } });
+    await ops.send({ t: "build.walls", sceneId: keep.scene, put: walls });
+    const at = { x: 2, y: 5 };
+    await ops.send({ t: "token.create", token: { id: keep.horse, sceneId: keep.scene, kind: "npc", name: "Warhorse", size: "large", ...at, disposition: "ally", visibility: "all", ownerIds: [run.patId], actor: { inline: actor({ speeds: { walk: 60 } }) } } });
+    await ops.send({ t: "token.create", token: { id: keep.brom, sceneId: keep.scene, kind: "pc", name: "Brom", size: "medium", ...at, disposition: "ally", visibility: "all", ownerIds: [run.patId], actor: { inline: actor() } } });
+    await ops.send({ t: "token.attach", tokenId: keep.brom, to: keep.horse, kind: "ride", steer: true, ...at, elevation: 0 });
+    await ops.send({ t: "token.create", token: { id: keep.gob, sceneId: keep.scene, kind: "monster", name: "Goblin", size: "medium", x: 1, y: 4, disposition: "hostile", visibility: "all", actor: { inline: actor() } } });
+    await ops.send({ t: "token.attach", tokenId: keep.gob, to: keep.horse, kind: "drag", x: 1, y: 4, elevation: 0 });
     await ops.send({ t: "room.setPlayerScene", sceneId: keep.scene });
     await waitFor("Brom and the goblin in Pat's copy", () => (token(patSocket, keep.brom)?.attached && token(patSocket, keep.gob)?.attached ? true : null));
     await waitFor("the corridor's walls in Pat's copy", () => (Object.values((patSocket.state as RoomState | null)?.buildChunks ?? {}).reduce((n, c) => n + (c?.sceneId === keep.scene ? (c.walls?.length ?? 0) : 0), 0) === walls.length ? true : null));
