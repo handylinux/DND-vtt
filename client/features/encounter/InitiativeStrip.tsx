@@ -7,7 +7,7 @@ import { Icon } from "../../components/Icon.tsx";
 import { RollResultLine } from "../rolls/card.ts";
 import type { RollModeOverride } from "../dice/rollMode.ts";
 import { ProficiencyLabel } from "../../components/ProficiencyMark.tsx";
-import { askedAlerts, barDockSlot, CARD_MAX, columnFacts, columnRoom, columnTop, DOCK_MIN_WIDTH, EDGE, placedChrome, raisedRow, SHADOW_ROOM, SUMMARY_ROW, type AskedAlerts } from "../../canvas/barDock.ts";
+import { askedAlerts, barDockSlot, CARD_MAX, columnFacts, columnRoom, columnTop, DOCK_MIN_WIDTH, EDGE, placedChrome, raisedRow, SHADOW_ROOM, SUMMARY_ROW, type AskedAlerts, type ColumnFacts } from "../../canvas/barDock.ts";
 import { ScrollForMore } from "../../canvas/TokenActionBar.tsx";
 import { useAlertsSummaryEntry } from "../../components/sheetFocus.ts";
 import { useBackClose } from "../../lib/backClose.ts";
@@ -636,23 +636,12 @@ function FightAlerts() {
   const laneRow = summaryFor({ paneLane: folded || asked !== null ? null : (paneLane?.lane ?? null), barLane: bar?.lane ?? null });
   const forPane = drawsPaneRow({ paneLane: paneLane?.lane ?? null, barLane: bar?.lane ?? null, folded, asked: asked !== null, waiting: paneSummary !== null });
   const overlay = asked !== null && asked !== "column" && !folded;
-  const laneTop = chrome ? chrome.top + EDGE : null;
-  const columnHidden = folded || forFootCard || forPane || overlay || (laneRow === "bar" && barSummary !== null);
-  const drawnIds = columnHidden ? [] : [...alerts.filter((a) => a.kind !== "turn" || !turnHidden).map((a) => `${a.kind}:${a.id}`), ...(rolls?.drawnIds ?? [])];
-  const cardsWaiting = drawnIds.length > 0;
-  // Only the same cards in the same lane keep the push. Compare during render
-  // so a replacement or layout move never paints with the previous latch.
-  const heldKey = JSON.stringify([[...new Set(drawnIds)].sort(), laneTop, noticesSpanning, zoom]);
-  const heldTop = useRef<{ key: string; top: number | null } | null>(null);
-  const keptTop = cardsWaiting && heldTop.current?.key === heldKey ? heldTop.current.top : null;
-  const candidateTop = laneTop === null ? null : columnTop(laneTop, lasting, mapToasts?.keptBottom ?? null, keptTop);
-  // A latch that would hide the cards cannot keep their buttons in place.
-  // Drop it before the final cramped check, so release cannot toggle a fold.
-  const candidateCramped = !asked && roomSummary !== null && firstHeight > 0 && chrome !== null && candidateTop !== null && height - chrome.bottom - candidateTop < firstHeight;
-  const colTop = candidateCramped && laneTop !== null ? columnTop(laneTop, lasting, mapToasts?.keptBottom ?? null) : candidateTop;
+  const heldTop = useRef<HeldTop>(null);
+  const column = alertColumnTop({ chrome, alerts, rolls, turnHidden, folded, forFootCard, forPane, overlay, laneRow, barSummary, asked, roomSummary, firstHeight, height, noticesSpanning, zoom, lasting, mapToasts, held: heldTop.current });
+  const { laneTop, drawnIds, colTop } = column;
   useLayoutEffect(() => {
-    heldTop.current = cardsWaiting && !candidateCramped ? { key: heldKey, top: colTop } : null;
-  }, [cardsWaiting, candidateCramped, heldKey, colTop]);
+    heldTop.current = heldAfter(column);
+  }, [column.cardsWaiting, column.candidateCramped, column.heldKey, colTop]);
   const push = laneTop !== null && colTop !== null ? colTop - laneTop : 0;
   const toOptions = chrome ? height - chrome.top - chrome.bottom - push : Infinity;
   const cramped = !folded && roomSummary !== null && firstHeight > 0 && toOptions < EDGE + firstHeight;
@@ -743,18 +732,7 @@ function FightAlerts() {
     const controls = Array.from(header.querySelectorAll("button"))
       .filter((b) => !box.contains(b) && !b.hasAttribute("data-rvtt-backdrop"))
       .map((b) => b.getBoundingClientRect());
-    const rules = {
-      row: usual,
-      // Its shadow keeps inside the window.
-      minLeft: (chrome.safe.left + SHADOW_ROOM) * zoom,
-      ceiling: header.firstElementChild?.getBoundingClientRect().top ?? 0,
-      floor: (height - chrome.controls - theme.space(1)) * zoom,
-      // The raised summary must clear map toasts too, including one waiting for a card that cannot fit yet.
-      taken: [...(lasting === null ? [] : [{ top: chrome.top * zoom, bottom: (lasting + theme.space(1)) * zoom }]), ...(mapToasts === null ? [] : [{ top: (mapToasts.top - EDGE) * zoom, bottom: (mapToasts.bottom + EDGE) * zoom }]), ...(toastRow === null ? [] : [{ top: toastRow.top - EDGE * zoom, bottom: toastRow.bottom + EDGE * zoom }])],
-      controls,
-      gap: EDGE * zoom,
-      minWidth: theme.touch * zoom,
-    };
+    const rules = summaryRowRules({ usual, chrome, zoom, height, ceiling: header.firstElementChild?.getBoundingClientRect().top ?? 0, lasting, mapToasts, toastRow, controls });
     /*
      * Best above the whole of the tool's options, its hint included, where
      * a spot is left there, such as over the room's name at 480 x 320 at
@@ -871,36 +849,16 @@ function FightAlerts() {
     [publishColumn],
   );
 
-  // The cards' measures, while they are drawn. Folded or summarized they keep the last ones, so hiding them never reads as having none, at the column's top now (barDock.ts columnFacts).
-  // The rolls summary also brings trap and save cards from the child desk.
-  // Measure them before paint so their waiting toasts can move below them.
-  useLayoutEffect(() => {
-    const cards = cardsRef.current;
-    if (!cards || colTop === null) return;
-    // Where the summary row stands while it has risen over the bars, so a bar under it may take the room it left.
-    const row = summarized && rowPlace.lift > 0 ? colTop - rowPlace.lift : undefined;
-    const measure = () => {
-      // The row standing in for a folded foot card, or for cards with no room, is the column's first card then, so the bar keeps below it, wherever it stands.
-      if ((forFootCard || forRoom) && dock.getState().bar?.lane !== "summary") {
-        const top = row ?? colTop;
-        const prev = dock.getState().column;
-        if (prev?.top !== top || prev.first !== SUMMARY_ROW || prev.content !== SUMMARY_ROW) dock.setState({ column: { top, content: SUMMARY_ROW, first: SUMMARY_ROW } });
-        return;
-      }
-      // Over the screen the cards are as wide as it, so they say nothing of the column: its last measures stand.
-      if (overlay) return;
-      // Folding keeps one card. A toast must clear all the cards still drawn below it.
-      const measured = drawn(cards) ? { content: cards.getBoundingClientRect().height / zoom, first: firstCardHeight(cards) / zoom, cover: cards.getBoundingClientRect().height / zoom } : null;
-      if (measured) setFirstHeight(measured.first);
-      const prev = dock.getState().column;
-      const next = columnFacts(prev, { top: colTop, measured, ...(row === undefined ? null : { row }) });
-      if (next !== prev) dock.setState({ column: next });
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(cards);
-    return () => observer.disconnect();
-  }, [dock, colTop, zoom, alerts, rolls, summarized, folded, forFootCard, forRoom, overlay, rowPlace.lift, turnFolded, turnHidden]);
+  const columnMeasured = columnMeasure({
+    cards: cardsRef, colTop, zoom, dock, alerts, rolls, summarized, folded, forFootCard, forRoom, overlay, rowLift: rowPlace.lift, turnFolded, turnHidden,
+    isDrawn: drawn, firstHeight: firstCardHeight, setFirstHeight,
+    observe: (el, measure) => {
+      const observer = new ResizeObserver(measure);
+      observer.observe(el);
+      return () => observer.disconnect();
+    },
+  });
+  useLayoutEffect(columnMeasured.effect, columnMeasured.deps);
   useLayoutEffect(() => () => dock.setState({ column: null }), [dock]);
 
   useLayoutEffect(() => {
@@ -1181,7 +1139,7 @@ function FightAlerts() {
  * summary row (docs/design/design-v1-combat-controls.md 4.2). Toast clearance
  * separately reads the whole column, so it counts turn cards too.
  */
-function firstCard(cards: HTMLElement): HTMLElement | null {
+export function firstCard(cards: HTMLElement): HTMLElement | null {
   for (const child of cards.children) {
     if (!(child instanceof HTMLElement) || child.dataset.alert === "turn") continue;
     if (child.dataset.alertStack !== undefined || getComputedStyle(child).display === "contents") {
@@ -1195,8 +1153,151 @@ function firstCard(cards: HTMLElement): HTMLElement | null {
 }
 
 /** The first card's height as drawn (firstCard). */
-function firstCardHeight(cards: HTMLElement): number {
+export function firstCardHeight(cards: HTMLElement): number {
   return firstCard(cards)?.getBoundingClientRect().height ?? 0;
+}
+
+/** The alert cards' measures, in the interface's px, or null while they are not drawn. Folding keeps one card, but a toast must clear all the cards still drawn below it. */
+export function measureCards(cards: HTMLElement, zoom: number, isDrawn: (el: HTMLElement) => boolean, firstHeight: (el: HTMLElement) => number): { content: number; first: number; cover: number } | null {
+  return isDrawn(cards) ? { content: cards.getBoundingClientRect().height / zoom, first: firstHeight(cards) / zoom, cover: cards.getBoundingClientRect().height / zoom } : null;
+}
+
+type ColumnDock = { getState(): { column: ColumnFacts | null; bar?: { lane?: string } | null }; setState(patch: { column: ColumnFacts | null }): void };
+
+/**
+ * The cards' measures while they are drawn, as a layout effect and the
+ * dependencies it reruns on. Folded or summarized they keep the last ones, so
+ * hiding them never reads as having none, at the column's top now
+ * (barDock.ts columnFacts). The rolls summary also brings trap and save cards
+ * from the child desk. They are measured before paint so their waiting toasts
+ * can move below them, and again as soon as a fold or hide changes the cards,
+ * without waiting for the ResizeObserver.
+ */
+export function columnMeasure(a: {
+  cards: { readonly current: HTMLElement | null };
+  colTop: number | null;
+  zoom: number;
+  dock: ColumnDock;
+  alerts: unknown;
+  rolls: unknown;
+  summarized: boolean;
+  folded: boolean;
+  forFootCard: boolean;
+  forRoom: boolean;
+  overlay: boolean;
+  rowLift: number;
+  turnFolded: boolean;
+  turnHidden: boolean;
+  isDrawn: (el: HTMLElement) => boolean;
+  firstHeight: (el: HTMLElement) => number;
+  setFirstHeight(height: number): void;
+  observe(el: HTMLElement, measure: () => void): () => void;
+}): { effect(): (() => void) | undefined; deps: readonly unknown[] } {
+  const { colTop, zoom, dock } = a;
+  return {
+    deps: [dock, colTop, zoom, a.alerts, a.rolls, a.summarized, a.folded, a.forFootCard, a.forRoom, a.overlay, a.rowLift, a.turnFolded, a.turnHidden],
+    effect() {
+      // Read when the effect runs: the cards' box is attached by then, and not at the render that makes this.
+      const cards = a.cards.current;
+      if (!cards || colTop === null) return;
+      // Where the summary row stands while it has risen over the bars, so a bar under it may take the room it left.
+      const row = a.summarized && a.rowLift > 0 ? colTop - a.rowLift : undefined;
+      const measure = () => {
+        // The row standing in for a folded foot card, or for cards with no room, is the column's first card then, so the bar keeps below it, wherever it stands.
+        if ((a.forFootCard || a.forRoom) && dock.getState().bar?.lane !== "summary") {
+          const top = row ?? colTop;
+          const prev = dock.getState().column;
+          if (prev?.top !== top || prev.first !== SUMMARY_ROW || prev.content !== SUMMARY_ROW) dock.setState({ column: { top, content: SUMMARY_ROW, first: SUMMARY_ROW } });
+          return;
+        }
+        // Over the screen the cards are as wide as it, so they say nothing of the column: its last measures stand.
+        if (a.overlay) return;
+        const measured = measureCards(cards, zoom, a.isDrawn, a.firstHeight);
+        if (measured) a.setFirstHeight(measured.first);
+        const prev = dock.getState().column;
+        const next = columnFacts(prev, { top: colTop, measured, ...(row === undefined ? null : { row }) });
+        if (next !== prev) dock.setState({ column: next });
+      };
+      measure();
+      return a.observe(cards, measure);
+    },
+  };
+}
+
+/** The cards the column holds on one render, and where its top stands. */
+export type HeldTop = { key: string; top: number | null } | null;
+
+/**
+ * Where the alerts column's top stands, and the cards it draws. Only the same
+ * cards in the same lane keep the push a toast gave them (`held`). Compared
+ * during render so a replacement or layout move never paints with the
+ * previous latch.
+ */
+export function alertColumnTop(a: {
+  chrome: { top: number; bottom: number } | null;
+  alerts: readonly { id: string; kind: string }[];
+  rolls: { drawnIds?: readonly string[] } | null;
+  turnHidden: boolean;
+  folded: boolean;
+  forFootCard: boolean;
+  forPane: boolean;
+  overlay: boolean;
+  laneRow: string | null;
+  barSummary: object | null;
+  asked: string | null;
+  roomSummary: object | null;
+  firstHeight: number;
+  height: number;
+  noticesSpanning: boolean;
+  zoom: number;
+  lasting: number | null;
+  mapToasts: { keptBottom: number | null } | null;
+  held: HeldTop;
+}) {
+  const { chrome } = a;
+  const laneTop = chrome ? chrome.top + EDGE : null;
+  const columnHidden = a.folded || a.forFootCard || a.forPane || a.overlay || (a.laneRow === "bar" && a.barSummary !== null);
+  const drawnIds = columnHidden ? [] : [...a.alerts.filter((alert) => alert.kind !== "turn" || !a.turnHidden).map((alert) => `${alert.kind}:${alert.id}`), ...(a.rolls?.drawnIds ?? [])];
+  const cardsWaiting = drawnIds.length > 0;
+  const heldKey = JSON.stringify([[...new Set(drawnIds)].sort(), laneTop, a.noticesSpanning, a.zoom]);
+  const keptTop = cardsWaiting && a.held?.key === heldKey ? a.held.top : null;
+  const keptBottom = a.mapToasts?.keptBottom ?? null;
+  const candidateTop = laneTop === null ? null : columnTop(laneTop, a.lasting, keptBottom, keptTop);
+  // A latch that would hide the cards cannot keep their buttons in place.
+  // Drop it before the final cramped check, so release cannot toggle a fold.
+  const candidateCramped = !a.asked && a.roomSummary !== null && a.firstHeight > 0 && chrome !== null && candidateTop !== null && a.height - chrome.bottom - candidateTop < a.firstHeight;
+  const colTop = candidateCramped && laneTop !== null ? columnTop(laneTop, a.lasting, keptBottom) : candidateTop;
+  return { laneTop, columnHidden, drawnIds, cardsWaiting, heldKey, candidateCramped, colTop };
+}
+
+/** What the column keeps for the next render once this one is committed. */
+export function heldAfter(column: { cardsWaiting: boolean; candidateCramped: boolean; heldKey: string; colTop: number | null }): HeldTop {
+  return column.cardsWaiting && !column.candidateCramped ? { key: column.heldKey, top: column.colTop } : null;
+}
+
+/** The raised summary row's rules (barDock.ts raisedRow), in screen px. Its shadow keeps inside the window, and it must clear map toasts too, including one waiting for a card that cannot fit yet. */
+export function summaryRowRules(a: {
+  usual: { left: number; right: number; top: number; height: number };
+  chrome: { safe: { left: number }; top: number; controls: number };
+  zoom: number;
+  height: number;
+  ceiling: number;
+  lasting: number | null;
+  mapToasts: { top: number; bottom: number } | null;
+  toastRow: { top: number; bottom: number } | null;
+  controls: readonly { left: number; top: number; right: number; bottom: number }[];
+}): Parameters<typeof raisedRow>[0] {
+  const { zoom, chrome, lasting, mapToasts, toastRow } = a;
+  return {
+    row: a.usual,
+    minLeft: (chrome.safe.left + SHADOW_ROOM) * zoom,
+    ceiling: a.ceiling,
+    floor: (a.height - chrome.controls - theme.space(1)) * zoom,
+    taken: [...(lasting === null ? [] : [{ top: chrome.top * zoom, bottom: (lasting + theme.space(1)) * zoom }]), ...(mapToasts === null ? [] : [{ top: (mapToasts.top - EDGE) * zoom, bottom: (mapToasts.bottom + EDGE) * zoom }]), ...(toastRow === null ? [] : [{ top: toastRow.top - EDGE * zoom, bottom: toastRow.bottom + EDGE * zoom }])],
+    controls: a.controls,
+    gap: EDGE * zoom,
+    minWidth: theme.touch * zoom,
+  };
 }
 
 /** The alerts over the screen: their header's height, SheetHeader's one row with its rule, and the padding above and below their cards. */

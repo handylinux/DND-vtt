@@ -5,23 +5,18 @@ import { stripTypeScriptTypes } from "node:module";
 import { test } from "node:test";
 import * as React from "react";
 import { keptMapFoot, mapToastBox, measureMapToasts, noticesDock, placeRoomToasts, putToastHosts } from "./toastPlacement.ts";
-import { columnFacts, columnTop, EDGE, nextToastPlaces, NO_TOAST_PLACES, raisedRow, SHADOW_ROOM, toastTop, type ColumnFacts } from "../canvas/barDock.ts";
+import { columnFacts, columnTop, EDGE, nextToastPlaces, NO_TOAST_PLACES, raisedRow, SHADOW_ROOM, SUMMARY_ROW, toastTop, type ColumnFacts } from "../canvas/barDock.ts";
 import { theme } from "../lib/theme.ts";
 
 const { toastStacks } = await import("./ToastParts.tsx");
-
-// Read the actual measurement so a first-card-only clearance cannot pass.
-const alertsSource = readFileSync(new URL("../features/encounter/InitiativeStrip.tsx", import.meta.url), "utf8");
-const measureFrom = alertsSource.indexOf("const measured = drawn(cards) ?");
-const measureTo = alertsSource.indexOf(";", measureFrom);
-assert.ok(measureFrom > 0 && measureTo > measureFrom);
-const measureCards = new Function("cards", "zoom", "drawn", "firstCardHeight", `${stripTypeScriptTypes(alertsSource.slice(measureFrom, measureTo + 1))}\nreturn measured;`);
+const { alertColumnTop, columnMeasure, firstCardHeight, heldAfter, measureCards, summaryRowRules } = await import("../features/encounter/InitiativeStrip.tsx");
+type HeldTop = Parameters<typeof alertColumnTop>[0]["held"];
 
 test("FU40-B pl2-b: three unfolded cards end at 497, so the toast starts at 505, not 240", () => {
   // Browser capture at 390 x 844: the first card ends at 232, the column
   // starts at 108, and its three cards end at 497. No summary row stands in.
   const cards = { getBoundingClientRect: () => ({ height: 389 }) };
-  const measured = measureCards(cards, 1, () => true, () => 124);
+  const measured = measureCards(cards as never, 1, () => true, () => 124);
   const column = columnFacts(null, { top: 108, measured });
   assert.ok(column);
   assert.equal(column.first, 124, "folding still measures only the first card");
@@ -30,7 +25,7 @@ test("FU40-B pl2-b: three unfolded cards end at 497, so the toast starts at 505,
   assert.equal(toastTop({ ...phone, optionsTop: 505 + 44 }), 505);
   assert.equal(toastTop({ ...phone, optionsTop: 505 + 44 - 1 }), null, "without a full toast row it stays above the column");
   assert.equal(toastTop({ ...phone, cards: false }), null, "a folded column places no toast underneath its hidden cards");
-  const single = columnFacts(null, { top: 108, measured: measureCards({ getBoundingClientRect: () => ({ height: 124 }) }, 1, () => true, () => 124) });
+  const single = columnFacts(null, { top: 108, measured: measureCards({ getBoundingClientRect: () => ({ height: 124 }) } as never, 1, () => true, () => 124) });
   assert.equal(toastTop({ ...phone, column: single }), 240, "one drawn card keeps the original 8 px gap");
 });
 
@@ -41,10 +36,6 @@ test("ALERTS-FIRSTCARD: a 359 px desk measures its first trap card, not the whol
   const { RoomProvider } = await import("../state/view.ts");
   const { RoomScope, RoomScopeProvider } = await import("../state/scope.ts");
   const { DmDesk } = await import("../features/rolls/DmDesk.tsx");
-  const source = readFileSync(new URL("../features/encounter/InitiativeStrip.tsx", import.meta.url), "utf8");
-  const from = source.indexOf("function firstCard(");
-  const to = source.indexOf("/** The alerts over the screen:", from);
-  assert.ok(from > 0 && to > from);
   class Element {
     height: number;
     children: Element[];
@@ -58,10 +49,12 @@ test("ALERTS-FIRSTCARD: a 359 px desk measures its first trap card, not the whol
     }
     getBoundingClientRect() { return { height: this.height }; }
   }
-  const firstHeight = new Function("HTMLElement", "getComputedStyle", `${stripTypeScriptTypes(source.slice(from, to))}\nreturn firstCardHeight;`)(Element, (e: Element) => ({ display: e.display })) as (el: Element) => number;
-  const oldWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  // firstCard tells a card from a wrapper by `instanceof HTMLElement` and its computed display.
+  const fakes = { window: { innerWidth: 320 / 1.3, innerHeight: 568 / 1.3 }, HTMLElement: Element, getComputedStyle: (e: Element) => ({ display: e.display }) };
+  const olds = Object.entries(fakes).map(([name]) => [name, Object.getOwnPropertyDescriptor(globalThis, name)] as const);
+  const firstHeight = (el: Element) => firstCardHeight(el as never);
   try {
-    Object.defineProperty(globalThis, "window", { configurable: true, value: { innerWidth: 320 / 1.3, innerHeight: 568 / 1.3 } });
+    for (const [name, value] of Object.entries(fakes)) Object.defineProperty(globalThis, name, { configurable: true, value });
     const traps = Object.fromEntries(Array.from({ length: 7 }, (_, i) => {
       const t = trap(`trap${i}`);
       return [t.id, { ...t, rig: { ...t.rig!, due: [{ id: `due${i}`, at: "2026-10-30T00:00:00Z", how: "enter" as const, by: [], hits: [] }] } }];
@@ -75,7 +68,7 @@ test("ALERTS-FIRSTCARD: a 359 px desk measures its first trap card, not the whol
     assert.equal(firstHeight(cards), 62, "the 359 px desk must not become the first card");
     const zoom = 1.3;
     const first = firstHeight(cards) / zoom;
-    const measured = measureCards(cards, zoom, () => true, firstHeight);
+    const measured = measureCards(cards as never, zoom, () => true, firstHeight as never);
     const facts = columnFacts(null, { top: 120, measured });
     assert.ok(facts);
     assert.equal(200 < EDGE + first, false, "the 200 px lane can keep the first card without folding");
@@ -84,12 +77,14 @@ test("ALERTS-FIRSTCARD: a 359 px desk measures its first trap card, not the whol
     const hidden = new Element(0);
     const turn = new Element(44, [], { alert: "turn" });
     assert.equal(firstHeight(new Element(44, [hidden, turn])), 0, "a lone turn card still cannot force a fold");
-    assert.equal(measureCards(new Element(44, [hidden, turn]), 1, () => true, firstHeight).cover, 44, "toasts still clear a lone turn card");
+    assert.equal(measureCards(new Element(44, [hidden, turn]) as never, 1, () => true, firstHeight as never)!.cover, 44, "toasts still clear a lone turn card");
     const wholeCard = new Element(150, [new Element(44)], {}, "grid");
     assert.equal(firstHeight(new Element(150, [wholeCard])), 150, "a card's own grid must not be reduced to its header");
   } finally {
-    if (oldWindow) Object.defineProperty(globalThis, "window", oldWindow);
-    else Reflect.deleteProperty(globalThis, "window");
+    for (const [name, old] of olds) {
+      if (old) Object.defineProperty(globalThis, name, old);
+      else Reflect.deleteProperty(globalThis, name);
+    }
   }
 });
 
@@ -225,10 +220,6 @@ test("FU39-B: a first card clears an older toast while its new toast moves below
 });
 
 test("HF-41 R1: a kept notice followed by a trap and its card places the trap toast below the card before an observer runs", () => {
-  const alerts = readFileSync(new URL("../features/encounter/InitiativeStrip.tsx", import.meta.url), "utf8");
-  const start = alerts.indexOf("  useLayoutEffect(() => {\n    const cards = cardsRef.current;");
-  const end = alerts.indexOf("\n  useLayoutEffect(() => () => dock.setState({ column: null })", start);
-  assert.ok(start > 0 && end > start);
   for (const zoom of [1, 1.3]) {
     const input = { ids: [1], pane: null, paneStands: false, low: null, layer: true, slot: false, recent: new Set<number>() };
     let placed = nextToastPlaces(NO_TOAST_PLACES, input);
@@ -239,26 +230,23 @@ test("HF-41 R1: a kept notice followed by a trap and its card places the trap to
     let cardHeight = 0;
     let dependencies: readonly unknown[] | undefined;
     let cleanUp: (() => void) | undefined;
+    const inputs = { rolls: null as object | null, turnFolded: false, turnHidden: false };
+    const dock = { getState: () => state, setState: (patch: { column: ColumnFacts | null }) => Object.assign(state, patch) };
+    const alerts: never[] = [];
+    const cards = { current: { getBoundingClientRect: () => ({ height: cardHeight * zoom }) } as unknown as HTMLElement };
     // A child can publish its trap card after the empty column measured.
     // Run React's dependency check without delivering ResizeObserver yet.
-    const bindings = {
-      useLayoutEffect: (effect: () => (() => void) | undefined, next: readonly unknown[]) => {
-        if (dependencies && next.every((value, i) => Object.is(value, dependencies![i]))) return;
-        cleanUp?.();
-        dependencies = next;
-        cleanUp = effect();
-      },
-      cardsRef: { current: { getBoundingClientRect: () => ({ height: cardHeight * zoom }) } },
-      colTop: top, zoom, alerts: [], rolls: null as object | null,
-      summarized: false, folded: false, forFootCard: false, forRoom: false, overlay: false, rowPlace: { lift: 0 },
-      turnFolded: false, turnHidden: false,
-      drawn: () => true, firstCardHeight: () => cardHeight * zoom, setFirstHeight: () => {},
-      dock: { getState: () => state, setState: (patch: { column: ColumnFacts | null }) => Object.assign(state, patch) },
-      columnFacts, SUMMARY_ROW: 44,
-      ResizeObserver: class { observe() {} disconnect() {} },
+    const measure = () => {
+      const next = columnMeasure({
+        cards, colTop: top, zoom, dock, alerts, rolls: inputs.rolls, summarized: false, folded: false, forFootCard: false, forRoom: false, overlay: false, rowLift: 0,
+        turnFolded: inputs.turnFolded, turnHidden: inputs.turnHidden, isDrawn: () => true, firstHeight: () => cardHeight * zoom, setFirstHeight: () => {}, observe: () => () => {},
+      });
+      if (dependencies && next.deps.every((value, i) => Object.is(value, dependencies![i]))) return;
+      cleanUp?.();
+      dependencies = next.deps;
+      cleanUp = next.effect();
     };
-    const measure = new Function(...Object.keys(bindings), stripTypeScriptTypes(alerts.slice(start, end)));
-    measure(...Object.values(bindings));
+    measure();
     assert.equal(state.column, null, "Wait here stands above an empty column");
     const waiting = { ...input, ids: [1, 2], recent: new Set([2]), mapFoot: keptFoot };
     placed = nextToastPlaces(placed, waiting);
@@ -267,8 +255,8 @@ test("HF-41 R1: a kept notice followed by a trap and its card places the trap to
     const map = mapToastBox([kept, { id: 2, top: 120 * zoom, bottom: 226 * zoom }], placed.awaitCard, zoom, { top: 68 * zoom, bottom: 226 * zoom });
     assert.equal(columnTop(60, null, map!.keptBottom), top, "the waiting toast must not move the card");
     cardHeight = 62;
-    bindings.rolls = { text: "Stepstone went off", requests: 1 };
-    measure(...Object.values(bindings));
+    inputs.rolls = { text: "Stepstone went off", requests: 1 };
+    measure();
     const low = toastTop({ spanning: true, column: state.column, cards: true, optionsTop: 780 });
     placed = nextToastPlaces(placed, { ...waiting, low });
     assert.deepEqual(placed.places.get(2), { low: top + cardHeight + EDGE, column: true }, "the trap toast must clear the card in its first visible frame");
@@ -277,42 +265,57 @@ test("HF-41 R1: a kept notice followed by a trap and its card places the trap to
     const settled = nextToastPlaces(placed, { ...waiting, low, recent: new Set<number>() });
     assert.deepEqual(settled.places, placed.places, "the trap toast must not move again after its card wait ends");
     cardHeight = 44;
-    bindings.turnFolded = true;
-    measure(...Object.values(bindings));
+    inputs.turnFolded = true;
+    measure();
     assert.equal((state.column as ColumnFacts | null)?.cover, 44, "HF41-R2-1: folding remeasures the first card before ResizeObserver runs");
     cardHeight = 0;
-    bindings.turnHidden = true;
-    measure(...Object.values(bindings));
+    inputs.turnHidden = true;
+    measure();
     assert.equal(state.column, null, "HF41-R2-1: hiding remeasures the empty column in the same frame");
     cleanUp?.();
   }
 });
 
-/** Run the real render and its layout effect, keeping the previous committed latch. */
+test("HF-41 R2: over the screen the column keeps its last measures, and a summary row stands in for cards that have no room", () => {
+  const state = { column: null as ColumnFacts | null, bar: null as { lane?: string } | null };
+  const dock = { getState: () => state, setState: (patch: { column: ColumnFacts | null }) => Object.assign(state, patch) };
+  let height = 100;
+  const cards = { current: { getBoundingClientRect: () => ({ height }) } as unknown as HTMLElement };
+  const base = { cards, colTop: 60, zoom: 1, dock, alerts: [], rolls: null, summarized: false, folded: false, forFootCard: false, forRoom: false, overlay: false, rowLift: 0, turnFolded: false, turnHidden: false, isDrawn: () => true, firstHeight: () => 44, setFirstHeight() {}, observe: () => () => {} };
+  const run = (patch: Partial<typeof base>) => columnMeasure({ ...base, ...patch }).effect();
+  run({});
+  assert.deepEqual(state.column, { top: 60, content: 100, first: 44, cover: 100 });
+  height = 200;
+  run({ overlay: true });
+  assert.equal(state.column?.content, 100, "the alerts over the screen say nothing of the column");
+  run({ forRoom: true });
+  assert.deepEqual(state.column, { top: 60, content: SUMMARY_ROW, first: SUMMARY_ROW }, "the row is the column's one card while the cards have no room");
+  run({ forRoom: true, summarized: true, rowLift: 30 });
+  assert.equal(state.column?.top, 30, "a row raised over the bars gives the bar below it the room it left");
+  run({ forRoom: true, summarized: false, rowLift: 30 });
+  assert.equal(state.column?.top, 60, "a row that has not risen leaves the top");
+  state.bar = { lane: "summary" };
+  run({ forRoom: true });
+  assert.equal(state.column?.content, 200, "a bar already in the summary lane measures the cards again");
+});
+
+/** Render the column's top, then commit what it keeps for the render after. */
 function alertColumnRender() {
-  const source = readFileSync(new URL("../features/encounter/InitiativeStrip.tsx", import.meta.url), "utf8");
-  const start = source.indexOf("  const laneTop = chrome ?");
-  const end = source.indexOf("  const push =", start);
-  assert.ok(start > 0 && end > start);
-  const held = { current: null as unknown };
-  let effects: (() => void)[] = [];
-  const bindings = {
-    chrome: { top: 52, bottom: 60 } as { top: number; bottom: number } | null, EDGE, columnTop,
+  let held: HeldTop = null;
+  const inputs = {
+    chrome: { top: 52, bottom: 60 } as { top: number; bottom: number } | null,
     alerts: [{ id: "turn:1", kind: "turn" }] as { id: string; kind: string; says?: string }[],
-    turnHidden: false, folded: false, footRolls: false, rolls: null as { drawnIds: string[] } | null,
+    turnHidden: false, folded: false, rolls: null as { drawnIds: string[] } | null,
     forFootCard: false, forPane: false, overlay: false, laneRow: null as string | null, barSummary: null as object | null,
     asked: null as string | null, roomSummary: {} as object | null, firstHeight: 80, height: 844,
     noticesSpanning: true, zoom: 1, lasting: null as number | null,
     mapToasts: null as { keptBottom: number | null } | null,
-    useRef: () => held, useLayoutEffect: (effect: () => void) => effects.push(effect),
   };
-  const run = new Function(...Object.keys(bindings), `${stripTypeScriptTypes(source.slice(start, end))}\nreturn colTop;`);
-  return (patch: Partial<typeof bindings> = {}) => {
-    Object.assign(bindings, patch);
-    effects = [];
-    const top = run(...Object.values(bindings)) as number | null;
-    for (const effect of effects) effect();
-    return top;
+  return (patch: Partial<typeof inputs> = {}) => {
+    Object.assign(inputs, patch);
+    const column = alertColumnTop({ ...inputs, held });
+    held = heldAfter(column);
+    return column.colTop;
   };
 }
 
@@ -360,6 +363,14 @@ test("FU40B-OPUS-2: the drawn card set and layout release a pushed top in the sa
     const change = changes[Math.floor(random() * changes.length)]!;
     assert.equal(draw(change.patch), change.top, "an identity or layout change releases independently of the toast's age");
   }
+});
+
+test("FU40B-OPUS-2: a latch that would hide the cards is not kept for the render after", () => {
+  const render = alertColumnRender();
+  assert.equal(render({ mapToasts: { keptBottom: 112 } }), 120);
+  // Too short for the cards under the pushed top: the push stays for the toast still there, but is no longer the cards' to keep.
+  assert.equal(render({ height: 220 }), 120);
+  assert.equal(render({ height: 844, mapToasts: null }), 60, "the toast leaving after a cramped render releases the cards");
 });
 
 test("FU40B-OPUS-2: roll publications track the IDs drawn, including same-count replacements", () => {
@@ -426,10 +437,6 @@ test("FU39-ASTRA-04 and FU39-S-2: a turn keeps its pushed top after the aged toa
 });
 
 test("FU39-B: the room publishes visible spanning toasts and the column uses only the kept foot", () => {
-  const alerts = readFileSync(new URL("../features/encounter/InitiativeStrip.tsx", import.meta.url), "utf8");
-  const rulesStart = alerts.indexOf("    const rules = {");
-  const rulesEnd = alerts.indexOf("\n    };", rulesStart);
-  assert.ok(rulesStart > 0 && rulesEnd > rulesStart);
   for (const zoom of [1, 1.3]) {
     const kept = { id: 1, top: 68 * zoom, bottom: 112 * zoom };
     const waiting = { id: 2, top: 120 * zoom, bottom: 226 * zoom };
@@ -447,13 +454,11 @@ test("FU39-B: the room publishes visible spanning toasts and the column uses onl
     assert.equal(placeColumn({ mapToasts: null }), top, "the mounted column keeps its latched top when the toast leaves");
     assert.equal(placeColumn({ alerts: [] }), 60, "an empty column ignores the latch");
     assert.ok(top !== null && Math.abs(top - 120) < 1e-9, "the real column must clear the kept toast without reserving the waiting toast");
-    const rulesBindings = {
+    const rules = summaryRowRules({
       usual: { left: 12, right: 378, top: 160 * zoom, height: 44 * zoom },
-      chrome: { safe: { left: 0 }, top: 60, controls: 60 }, zoom, height: 844,
-      header: { firstElementChild: { getBoundingClientRect: () => ({ top: 0 }) } },
-      lasting: null, mapToasts: state.mapToasts, toastRow: null, controls: [], theme, EDGE, SHADOW_ROOM,
-    };
-    const rules = new Function(...Object.keys(rulesBindings), `${alerts.slice(rulesStart, rulesEnd + 7)}\nreturn rules;`)(...Object.values(rulesBindings)) as Parameters<typeof raisedRow>[0];
+      chrome: { safe: { left: 0 }, top: 60, controls: 60 }, zoom, height: 844, ceiling: 0,
+      lasting: null, mapToasts: state.mapToasts, toastRow: null, controls: [],
+    });
     const summary = raisedRow(rules);
     assert.ok(summary && summary.top + rules.row.height <= kept.top, "a raised summary must clear even the waiting map toast");
     props.spanning = false;
