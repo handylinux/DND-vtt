@@ -1548,6 +1548,40 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     }
   });
 
+  test("sbr-25. the Dice pane hidden before the answer, with the block hidden too: the hidden Dice line watches no roll, so one toast is heard", async () => {
+    await dm.keyboard.press("Escape");
+    const panel = await dmPanel("Goblin", run.goblin);
+    const tabs = dm.getByRole("tablist", { name: "Panels" });
+    const bar = dm.locator("[data-pane-bar]");
+    try {
+      if ((await bar.count()) === 0) {
+        await tabs.locator('[role="tab"][aria-haspopup="menu"]').click();
+        await dm.getByRole("menu", { name: "More panels" }).getByRole("menuitemcheckbox", { name: "Two panels" }).click();
+        await dm.getByRole("menu", { name: "More panels" }).waitFor({ state: "detached" });
+      }
+      await bar.getByRole("button", { name: / below$/ }).click();
+      await dm.getByRole("menu", { name: "Panel below" }).getByRole("menuitemradio", { name: sideTabName("Dice") }).click();
+      await dm.getByRole("group", { name: "Dice below", exact: true }).waitFor();
+      const toastsNow = () => dm.locator("[data-toast]").filter({ hasText: /Acrobatics/ }).count();
+      const before = await toastsNow();
+      const from = dmSent.ops.length;
+      dmWire.hold = true;
+      await boxOf(panel, "Dexterity").click();
+      await listOf(dm, "Dexterity").getByRole("menuitem", { name: /^Acrobatics/ }).click();
+      await dm.getByRole("button", { name: "Hide panels" }).click();
+      await panel.first().waitFor({ state: "hidden" });
+      dmWire.release();
+      await oneRoll(dmSent, from, "Acrobatics from a split pane hidden before it lands");
+      await waitFor("one toast for the roll", async () => ((await toastsNow()) > before ? true : null), 5_000);
+      assert.equal((await toastsNow()) - before, 1, "one own-roll toast");
+    } finally {
+      if ((await bar.count()) > 0) {
+        await dm.getByRole("button", { name: "Close Dice", exact: true }).click().catch(() => undefined);
+        await bar.waitFor({ state: "detached", timeout: 3_000 }).catch(() => undefined);
+      }
+    }
+  });
+
   test("sbr-19. no page logged an error", async () => {
     assert.deepEqual(consoles.dm.errors, []);
     assert.deepEqual(consoles.pat.errors, []);

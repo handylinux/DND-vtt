@@ -27,6 +27,7 @@ import { useThrows, useThrowView } from "./throw/useThrows.ts";
 import { againOf, useDicePanel, useLastRoll, useRollPresses } from "./useDicePanel.ts";
 import { useRollBlocked } from "./useRollOption.ts";
 import { useProficiency } from "./useProficiency.ts";
+import { usePanelShown } from "../panels.ts";
 import { useReceipt, useReceiptVoice, type ReceiptState } from "./useReceipt.ts";
 
 /**
@@ -153,7 +154,9 @@ export function LastResult(props: { onOpen(lineId: string): void }) {
   const panel = useDicePanel();
   const throws = useThrows();
   const thrown = useThrowView();
-  const tag = last && "tag" in last ? last.tag : null;
+  // A hidden pane keeps this mounted. It then neither watches its roll nor holds its voice, so the toast says a roll nobody sees.
+  const shown = usePanelShown();
+  const tag = shown && last && "tag" in last ? last.tag : null;
   const holding = tag !== null && thrown.held === tag;
   const receipt = useReceipt(tag);
   const waiting = receipt !== null && (receipt.state === "sending" || receipt.state === "checking");

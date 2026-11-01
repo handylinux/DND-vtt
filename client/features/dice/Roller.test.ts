@@ -21,6 +21,7 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const { RoomProvider } = await import("../../state/view.ts");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
 const { LastResult, RollModes, Roller } = await import("./Roller.tsx");
+const { PanelHere } = await import("../panels.ts");
 
 function modes(props: Partial<Parameters<typeof RollModes>[0]> = {}): string {
   return renderToStaticMarkup(createElement(RollModes, { adv: false, dis: false, secret: false, dm: true, onPress() {}, ...props }));
@@ -31,7 +32,7 @@ function buttons(markup: string): Map<string, string> {
   return new Map([...markup.matchAll(/<button[^>]*aria-label="([^"]+)"[^>]*>/g)].map((m) => [m[1]!, m[0]]));
 }
 
-function inRoom(viewer: Viewer, children: unknown[], scope = new RoomScope(), connection = "open"): string {
+function inRoom(viewer: Viewer, children: unknown[], scope = new RoomScope(), connection = "open", shown = true): string {
   const view = projectState(room(), viewer, { sceneId: "s1" }) as unknown as RoomState;
   const store = createStore(() => ({ view, roomId: "r1", connection, you: viewer, sceneId: "s1", local: { selectedIds: [], multi: false } }));
   return renderToStaticMarkup(
@@ -40,7 +41,7 @@ function inRoom(viewer: Viewer, children: unknown[], scope = new RoomScope(), co
       actions: { dispatch: () => 1 } as never,
       ui: {} as never,
       assets: { url: () => "" } as never,
-      children: createElement(RoomScopeProvider, { scope, children: children as never }),
+      children: createElement(RoomScopeProvider, { scope, children: createElement(PanelHere, { id: "dice", shown, children: children as never }) as never }),
     }),
   );
 }
@@ -222,4 +223,20 @@ describe("one announcer per roll: the sticky line yields to the surface that sen
     assert.match(markup, /aria-live="polite"[^>]*>Rolled 15/);
     assert.match(sticky(refused), /role="alert"[^>]*>Nope\./);
   });
+});
+
+test("a hidden Dice pane's sticky line shows nothing of the roll and says nothing, so the toast can (docs/design-v1-stat-block-rolls.md 8)", () => {
+  const scope = new RoomScope();
+  const choices = scope.get(diceChoicesSlot);
+  choices.setState({ last: { tag: "H", rolls: [{ formula: "1d20+5" }], to: "all" } });
+  choices.getInitialState = choices.getState;
+  const tracker = scope.get(receiptsSlot);
+  const log = [{ id: "1:0", at: "", kind: "event", data: { type: "dice", tag: "H", by: "dm1", to: "all", rolls: [{ formula: "1d20+5", faces: [10], total: 15, label: "Acrobatics" }] } }];
+  tracker.env = { lookup: () => Promise.resolve({ parts: [] }), log: () => log as never };
+  tracker.answer("H", 0, "taken");
+  const line = (shown: boolean) => inRoom(DM, [createElement(LastResult, { key: "last", onOpen() {} })], scope, "open", shown);
+  const hidden = line(false);
+  assert.doesNotMatch(hidden, />15</);
+  assert.doesNotMatch(hidden, /Rolled 15/);
+  assert.match(line(true), /aria-live="polite"[^>]*>Rolled 15/);
 });
