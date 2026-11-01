@@ -44,7 +44,7 @@ import { BlackoutChip } from "./BlackoutChip.tsx";
 import { Loading } from "../components/Loading.tsx";
 import { ScrollStrip } from "../components/ScrollStrip.tsx";
 import { Sheet, paneBodyPadding, type SheetMode } from "../components/Sheet.tsx";
-import { headerStacks, SHEET_HEADER, SHEET_HEADER_STACKED, sheetCap, sheetKeyboard, sheetMode, sheetWidth, sideSheetWidth } from "../components/sheetCap.ts";
+import { headerStacks, SHEET_HEADER, SHEET_HEADER_STACKED, pageHeightOf, sheetCap, sheetKeyboard, sheetMode, sheetWidth, sideSheetWidth } from "../components/sheetCap.ts";
 import { SHORT_LANDSCAPE_MAX, useRecordOverflow, useTopBars, useTurnPlacement, type TurnPlacement } from "../features/encounter/band.ts";
 import { FightWatch, InitiativeStrip, useYourTurnNotice } from "../features/encounter/InitiativeStrip.tsx";
 import { panelById, panelSections, panelsFor, panelSubject, subpageBack, usePanelScroll, useSubpageFocus, type PanelClose, type PanelDef, type PanelHeader } from "../features/panels.ts";
@@ -716,7 +716,7 @@ function RoomPage() {
    */
   const sheetKeys = sheetKeyboard(keyboard, zoom);
   // The page as it is: shorter than the room's steady height where a browser shrank it for its keyboard, whose view then hides nothing more.
-  const pageHeight = keyboard ? (keyboard.top + keyboard.height + keyboard.inset) / zoom : height;
+  const pageHeight = pageHeightOf(keyboard, zoom, height);
   const [sheetTall, setSheetTall] = useState(false);
   const dockInHeader = docked && (full || landscape || sheetTall || !dockFits({ height: pageHeight, safeTop: safe.top, safeBottom: safe.bottom, insetTop: topInset, insetBottom: TOOLBAR, keyboard: sheetKeys }));
   const sheetHeight = useLayoutHeight(sheetEl, zoom);
@@ -880,7 +880,7 @@ function RoomPage() {
   const stripTop = useStore(barDock, (s) => (s.bar?.rests ? s.bar.box.top : null));
   const toastFloor = stripTop === null ? null : restFloor(stripTop);
   // The toasts alone take a phone's open sheet as their floor too (toastPlacement.ts sheetToastFloor). The token bar's options and the alerts keep the strip's.
-  const sheetFloor = sheetToastFloor({ mode: !sheetOpen || wide ? "none" : full ? "full" : sheetModeNow === "side" ? "side" : "bottom", height, toolbar: chrome?.toolbar ?? null, sheetHeight, keyboard: sheetKeys?.inset ?? null });
+  const sheetFloor = sheetToastFloor({ mode: !sheetOpen || wide ? "none" : full ? "full" : sheetModeNow === "side" ? "side" : "bottom", height: pageHeight, toolbar: chrome?.toolbar ?? null, sheetHeight, keyboard: sheetKeys?.inset ?? null });
   const optionsTop = chrome ? Math.min(height - chrome.bottom, toastFloor ?? Infinity) : 0;
   // The alerts column's width as it works it out (features/encounter/InitiativeStrip.tsx): it steps left of a phone's sideways sheet, and beside the side panel no right safe area is the map's.
   const columnSheet = !wide && width > height && sheetOpen ? sideWidth : 0;

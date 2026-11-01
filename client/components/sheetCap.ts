@@ -52,6 +52,14 @@ export function sheetKeyboard(view: KeyboardView | null, zoom: number): SheetKey
   return view ? { top: view.top / zoom, inset: view.inset / zoom } : null;
 }
 
+/**
+ * The page's height in the chrome's own pixels as the sheet lays out in it: the keyboard's view added up (its top, its visible height and the part it
+ * hides), which is the short page where a browser shrank the layout for its keyboard and the view hides nothing more, else the room's steady `height`.
+ */
+export function pageHeightOf(view: KeyboardView | null, zoom: number, height: number): number {
+  return view ? (view.top + view.height + view.inset) / zoom : height;
+}
+
 /** The pixels between the top bars and the toolbar left for the sheet once the gap or reserve above it is kept. Under SHEET_MIN_HEIGHT, the dock does not fit (3.2.1). */
 export function sheetRoom(space: SheetSpace): number {
   const kb = space.keyboard;

@@ -6,6 +6,7 @@ import { test } from "node:test";
 import * as React from "react";
 import { keptMapFoot, mapToastBox, measureMapToasts, lowerFloor, noticesDock, placeRoomToasts, putToastHosts, sheetToastFloor, sheetToastsToDismiss, toastStartTop } from "./toastPlacement.ts";
 import { columnFacts, columnTop, EDGE, nextToastPlaces, NO_TOAST_PLACES, raisedRow, SHADOW_ROOM, SUMMARY_ROW, toastTop, type ColumnFacts } from "../canvas/barDock.ts";
+import { pageHeightOf } from "../components/sheetCap.ts";
 import { theme } from "../lib/theme.ts";
 
 const { toastStacks } = await import("./ToastParts.tsx");
@@ -607,6 +608,24 @@ test("with the on-screen keyboard open the sheet's floor follows the sheet's rea
   assert.equal(floor(40), floor(null), "a keyboard under the toolbar's top changes nothing");
   assert.equal(floor(60), floor(null));
   assert.equal(floor(300, null as unknown as number), null, "the toolbar not measured yet");
+});
+
+// LOOK1-SOL-001, LOOK1-OPUS-06: a browser that shrinks the layout for its keyboard reports a view of the short page with nothing hidden (keyboardInset.ts readKeyboardView), and Sheet lays out in that page, not in the room's kept steady height.
+test("a page held short for the keyboard sets the sheet's floor from the short page", () => {
+  const view = { top: 0, height: 544, inset: 0 };
+  assert.equal(pageHeightOf(view, 1, 844), 544, "the short page, not the steady 844");
+  assert.equal(pageHeightOf(null, 1, 844), 844, "no view: the room's own height");
+  assert.equal(pageHeightOf({ top: 0, height: 544, inset: 300 }, 1, 844), 844, "a visual-viewport keyboard adds up to the layout's height");
+  assert.equal(pageHeightOf({ top: 0, height: 408, inset: 0 }, 1.3, 844), 408 / 1.3, "in the chrome's own px at 130%");
+  const sheetHeight = 326.4;
+  const floor = sheetToastFloor({ mode: "bottom", height: pageHeightOf(view, 1, 844), toolbar: 60, sheetHeight, keyboard: null });
+  assert.ok(Math.abs((floor ?? NaN) - 97.6) < 1e-9, `the sheet starts at 157.6 on the short page, so the floor is 97.6, not ${floor}`);
+  assert.equal(sheetToastFloor({ mode: "bottom", height: 844, toolbar: 60, sheetHeight, keyboard: null }), 844 - 60 - sheetHeight - 60, "the steady height would put it 300 px too low");
+  // Room reads the page's height, the keyboard's inset and the combined floor, as the tests above assume.
+  const room = readFileSync(new URL("./Room.tsx", import.meta.url), "utf8");
+  assert.match(room, /sheetToastFloor\(\{[^}]*height: pageHeight,[^}]*keyboard: sheetKeys\?\.inset \?\? null/);
+  assert.match(room, /const pageHeight = pageHeightOf\(keyboard, zoom, height\);/);
+  assert.match(room, /placeRoomToasts\(\{[\s\S]{0,200}restFloor: floor, floorWas: floorWas\.current/);
 });
 
 // LOOK1-SOL-002: Room hands placement the combined floor, so a stack drawn below the alert cards when a sheet opens takes its place anew.
