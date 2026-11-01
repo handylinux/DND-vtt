@@ -438,6 +438,43 @@ function useCreature(target: RollTarget): { name: string; effects: readonly Effe
   return { name, effects, noBlock: character && character.stats === undefined && editsPcStats(you, character) ? character.id : null };
 }
 
+type AnswerFocus = { key: string; node: HTMLElement };
+
+/** Remembers the answer row a control was focused in, before a result replaces that control. */
+export function rememberAnswerFocus(focusedAnswer: { current: AnswerFocus | null }, target: HTMLElement): void {
+  const answer = answerFocus(target);
+  if (answer) focusedAnswer.current = answer;
+}
+
+/**
+ * What the card does when its targets change: the answers it first saw are no
+ * news, and one that lands after is shown in place, said aloud, and engages
+ * the card. Focus goes to the header only when it was lost with the answer
+ * row that landed (rollFocus.ts).
+ */
+export function rollResultEffect(a: {
+  seen: { current: Map<string, string | undefined> | null };
+  focusedAnswer: { current: AnswerFocus | null };
+  targets: readonly RollTarget[];
+  names: string;
+  card: HTMLElement | null;
+  active: Element | null;
+  body: HTMLElement;
+  rolled(keys: string[]): void;
+  announce(news: string): void;
+  engage(): void;
+  focusHeader(): void;
+}): void {
+  const before = a.seen.current;
+  a.seen.current = new Map(a.targets.map((t) => [targetKey(t), t.tag]));
+  const arrival = rollArrival(before, a.targets, a.names, { card: a.card, active: a.active, body: a.body, prior: a.focusedAnswer.current });
+  if (!arrival) return;
+  a.rolled(arrival.keys);
+  a.announce(arrival.news);
+  a.engage();
+  if (arrival.focusHeader) a.focusHeader();
+}
+
 export function RollCard(props: {
   cardRef: RefObject<HTMLElement | null>;
   request: RollRequest;
@@ -501,14 +538,19 @@ export function RollCard(props: {
   const names = useRoomView((s) => (s.view ? request.targets.map((t) => creatureName(s.view!, t)).join("|") : ""));
   const { onEngage } = props;
   useEffect(() => {
-    const before = seen.current;
-    seen.current = new Map(request.targets.map((t) => [targetKey(t), t.tag]));
-    const arrival = rollArrival(before, request.targets, names, { card: props.cardRef.current, active: document.activeElement, body: document.body, prior: focusedAnswer.current });
-    if (!arrival) return;
-    setRolledHere((r) => new Set([...r, ...arrival.keys]));
-    setNews(arrival.news);
-    onEngage();
-    if (arrival.focusHeader) headerButton.current?.focus();
+    rollResultEffect({
+      seen,
+      focusedAnswer,
+      targets: request.targets,
+      names,
+      card: props.cardRef.current,
+      active: document.activeElement,
+      body: document.body,
+      rolled: (keys) => setRolledHere((r) => new Set([...r, ...keys])),
+      announce: setNews,
+      engage: onEngage,
+      focusHeader: () => headerButton.current?.focus(),
+    });
   }, [request.targets, names, onEngage, props.cardRef]);
   const sent = (key: string) => {
     if (foldsAfterSend(request, key, rolledHere)) props.onFold();
@@ -658,8 +700,7 @@ export function RollCard(props: {
     tabIndex: -1,
     hidden: props.hidden,
     onFocus: (e: FocusEvent<HTMLElement>) => {
-      const answer = answerFocus(e.target);
-      if (answer) focusedAnswer.current = answer;
+      rememberAnswerFocus(focusedAnswer, e.target);
       props.onFocusWithin(true);
     },
     onBlur: (e: FocusEvent<HTMLElement>) => {
