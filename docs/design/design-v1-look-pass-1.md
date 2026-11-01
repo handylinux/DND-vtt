@@ -233,3 +233,8 @@ The app-wide check (L1A2):
 - The one miss it found: an empty field that is off drew its placeholder in the browser's gray (the group save row's "+0" bonus, at every size). globals.css now draws an off field's placeholder in `textDisabled`, the one place an inline style cannot reach, and Held.test.ts checks the rule's color against the token.
 - Mutation: with GroupSave's `Held` put back to a bare fieldset, the lifecycle roots fail on All fail, All pass, Edit and the DC field.
 - The block roll sweep taps an ability list's roll 400 ms after it opens, past the 350 ms guard, as L2's dice and block roll steps do.
+
+Review fixes, round 2:
+- Where a browser shrinks the layout for its keyboard, the sheet lays out in the short page while the room keeps its steady height. The sheet's floor reads the page's height (`pageHeightOf`, which Room's `pageHeight` already used), so it stays above the sheet's real top (LOOK1-SOL-001, LOOK1-OPUS-06).
+- The off-scene party row keeps its state colors (temporary HP, the life word, the AC badge and the condition chips, and the folded pill's HP). Each is marked `data-disabled-look="readonly"`, and `disabledLookLines` skips the words inside a descendant with that mark, so the sweep does not ask the row to dim them (LOOK1-OPUS-07, D-261101-344).
+
