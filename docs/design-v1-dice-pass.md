@@ -174,6 +174,7 @@ One line, 13 px muted, cut with "…", read by a screen reader as the fold's des
 
 - **Saves and checks**: the shared notes first, then the six saves: "asks Thorn · Str +4, Dex +1, Con +3, Int +0, Wis +5, Cha +7".
 - **Skills**: the ones above their ability's check, so the trained ones: "Athletics +6, Insight +4, Persuasion +6". None for a creature with none.
+  Changed (D-261031-290, -291): a character's line lists the skills it is proficient or expert in, from its own record, since Jack of All Trades puts all 18 above their checks. A monster has no record of levels, so it keeps the rule above. Neither line frames a proficient or expert name, because a folded line only previews and the frames stay where dice roll. A screen reader still hears each level after its name.
 - **Traits** and the action groups: the rows' names, "Rend, Acid Breath (used)".
 - **Spells**: "DC 14 · +6 to hit · 13 spells".
 - **Recent rolls**: the newest, "Thorn 20 Longsword".
