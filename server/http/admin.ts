@@ -237,6 +237,9 @@ async function storage(app: FastifyInstance): Promise<AdminStorage> {
     pool.query<RunRow>("select * from backup_runs where outcome = 'good' order by started_at desc limit 1"),
     trashSize(assetDir),
     // Each room's archive as ROOM_ARCHIVE_BYTES_SQL sums it, in one pass over both tables rather than a pass a room.
+    // That pass reads every row of room_log and room_log_access on each Storage load. It stays uncached, since the
+    // admin page asks for Storage only when it opens and on Refresh, so the scan runs only as often as the operator
+    // looks (FU43R-OPUS-08).
     pool.query<{ id: string; name: string; bytes: string }>(
       `select room.id, room.name, sizes.bytes from (
          select room_id, sum(bytes) as bytes from (
