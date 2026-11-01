@@ -245,6 +245,40 @@ function contextMenus(page: Page): Promise<boolean[]> {
   return page.evaluate(() => [...((globalThis as unknown as { rvttMenus?: boolean[] }).rvttMenus ?? [])]);
 }
 
+/**
+ * Chromium on Windows sends a context key's contextmenu after the key's
+ * keyup, to whatever holds focus then. The next keyup of `key` here does
+ * the same, so that order is tried on every platform. keyMenusSent says
+ * how many it sent.
+ */
+async function contextMenuAfterKeyup(page: Page, key: string): Promise<void> {
+  await page.evaluate((k) => {
+    type W = {
+      addEventListener(t: string, f: (e: { key: string }) => void, capture: boolean): void;
+      removeEventListener(t: string, f: (e: { key: string }) => void, capture: boolean): void;
+      setTimeout(f: () => void, ms: number): void;
+      document: { activeElement: { dispatchEvent(e: unknown): boolean } | null };
+      MouseEvent: new (t: string, o: object) => unknown;
+      rvttKeyMenus?: number;
+    };
+    const w = globalThis as unknown as W;
+    w.rvttKeyMenus = 0;
+    const up = (e: { key: string }) => {
+      if (e.key !== k) return;
+      w.removeEventListener("keyup", up, true);
+      w.setTimeout(() => {
+        w.rvttKeyMenus = (w.rvttKeyMenus ?? 0) + 1;
+        w.document.activeElement?.dispatchEvent(new w.MouseEvent("contextmenu", { bubbles: true, cancelable: true, detail: 0 }));
+      }, 0);
+    };
+    w.addEventListener("keyup", up, true);
+  }, key);
+}
+
+function keyMenusSent(page: Page): Promise<number> {
+  return page.evaluate(() => (globalThis as unknown as { rvttKeyMenus?: number }).rvttKeyMenus ?? 0);
+}
+
 function focusedName(page: Page): Promise<string> {
   return page.evaluate(() => {
     const el = (globalThis as unknown as { document: { activeElement: { getAttribute(n: string): string | null; innerText?: string } | null } }).document.activeElement;
@@ -657,14 +691,22 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     assert.deepEqual(await contextMenus(dm), [true], "the page prevented the browser's menu");
     await box.click({ button: "right" });
     await list.waitFor({ state: "detached" });
-    await box.focus();
-    await dm.keyboard.press("Shift+F10");
-    await list.waitFor();
-    await dm.keyboard.press("Escape");
-    await list.waitFor({ state: "detached" });
-    await box.focus();
-    await dm.keyboard.press("ContextMenu");
-    await list.waitFor();
+    // Each context key on the box as Windows sends it too: the key's contextmenu after its keyup, at the first row the opening focused. The list stays.
+    for (const key of ["Shift+F10", "ContextMenu"]) {
+      await box.focus();
+      await contextMenuAfterKeyup(dm, key === "Shift+F10" ? "F10" : key);
+      await dm.keyboard.press(key);
+      await list.waitFor();
+      await waitFor(`${key}'s contextmenu after its keyup`, () => keyMenusSent(dm), 2_000);
+      await sleep(QUIET_MS);
+      assert.equal(await optionsOf(dm, /^Roll options for/).count(), 0, `${key}: no options after the key's keyup`);
+      assert.ok(await list.isVisible(), `${key}: the list stays open after the key's keyup`);
+      assert.ok(await isFocused(list.getByRole("menuitem").first()), `${key}: the first row keeps focus: ${await focusedName(dm)}`);
+      if (key === "Shift+F10") {
+        await dm.keyboard.press("Escape");
+        await list.waitFor({ state: "detached" });
+      }
+    }
     const save = list.getByRole("menuitem", { name: /^Dexterity save/ });
     await save.click({ button: "right" });
     await options.waitFor();

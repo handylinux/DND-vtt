@@ -4,7 +4,8 @@ import { test } from "node:test";
 const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
-const { useRollModeMenu } = await import("./useRollModeMenu.tsx");
+const { KEY_CONTEXT_MS, RollPressRegistry, useRollModeMenu } = await import("./useRollModeMenu.tsx");
+const { Clock, Target } = await import("./abilityMenu.testing.ts");
 const { RollModeMenu } = await import("./RollModeMenu.tsx");
 const { theme } = await import("../../lib/theme.ts");
 import type { PopoverHandle } from "../../components/Popover.tsx";
@@ -265,4 +266,29 @@ test("the open menu's ring goes on its source outside its border and comes off a
   clear();
   assert.equal(framed.style.boxShadow, "inset 0 -2px 0 silver", "a render's new value while open stays");
   markRollModeSource(null)();
+});
+
+test("a roll button's context key closes its open menu once: the contextmenu Chromium on Windows sends after the keyup does not open it again, and a reader's later one does", () => {
+  const clock = new Clock();
+  const win = new Target();
+  const registry = new RollPressRegistry({ clock, document: new Target() });
+  const detach = registry.attach(win, new Target(), { onLeave() {} });
+  let open = true;
+  const shows: string[] = [];
+  const button = { open: () => open, show: (by: "pointer" | "key") => { open = true; shows.push(by); }, close: () => void (open = false), node: () => null, menuOpen: () => open };
+  const handlers = registry.handlers("button", button);
+  const key = (k: string) => {
+    win.fire("keydown", { key: k });
+    handlers.onKeyDown?.({ key: k, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, preventDefault() {} } as never);
+  };
+  const keyMenu = () => handlers.onContextMenu?.({ preventDefault() {}, nativeEvent: { pointerType: "" }, detail: 0 } as never);
+  key("ContextMenu");
+  assert.equal(open, false, "the key closed the open menu");
+  assert.equal(win.fire("keyup", { key: "ContextMenu" }).defaultPrevented, true);
+  keyMenu();
+  clock.advance(KEY_CONTEXT_MS);
+  assert.equal(open, false, "and its keyup's contextmenu did not open it again");
+  keyMenu();
+  assert.deepEqual([open, shows], [true, ["key"]], "a reader's contextmenu, with no key before it, opens it");
+  detach();
 });

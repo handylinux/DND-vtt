@@ -10,6 +10,7 @@ import { describe, test } from "node:test";
  */
 
 const { abilityContent, BOX, sendAbilityRow } = await import("./useAbilityMenu.tsx");
+const { KEY_CONTEXT_MS } = await import("./useRollModeMenu.tsx");
 const { harness, row } = await import("./abilityMenu.testing.ts");
 
 describe("presses on the box (3.3)", () => {
@@ -460,6 +461,64 @@ describe("the options' own box (D-261031-212)", () => {
       if (how === "right") h.rightClick("row:save");
       else h.key("ContextMenu");
       assert.equal((h.state.drawn as { fit?: boolean }).fit, true, how);
+    }
+  });
+
+  test("a context key's own contextmenu, which Chromium on Windows sends after the keyup to what holds focus by then, swaps nothing: the list stays on its first row", () => {
+    for (const key of ["ContextMenu", "F10"] as const) {
+      for (const order of ["after the keyup", "before the keyup"] as const) {
+        const at = `${key}, ${order}`;
+        const h = harness();
+        h.state.focus = "box";
+        h.key(key, key === "F10");
+        assert.deepEqual([h.state.open, h.state.focus], [true, "row:check"], at);
+        if (order === "before the keyup") h.keyContextMenu();
+        // Used while the wait lasts, so where Blink makes the contextmenu as the keyup's default action it makes none.
+        assert.equal(h.keyUp(key), order === "after the keyup", at);
+        if (order === "after the keyup") h.keyContextMenu();
+        h.clock.advance(KEY_CONTEXT_MS);
+        assert.deepEqual([h.state.open, h.state.drawn, h.state.focus], [true, { kind: "list" }, "row:check"], at);
+        // A reader's own contextmenu later, with no key down first, still opens the row's options.
+        h.keyContextMenu();
+        assert.deepEqual(h.state.drawn, { kind: "options", row: "check", source: "check@1", fit: true }, at);
+        assert.deepEqual(h.log.rolls, [], at);
+      }
+    }
+  });
+
+  test("Mac's and Linux's order, a used keydown and no contextmenu, changes nothing: the next context key on the row swaps at once, and other keyups are left alone", () => {
+    const h = harness();
+    h.state.focus = "box";
+    h.key("ContextMenu");
+    assert.equal(h.keyUp("a"), false, "another key's keyup is not used");
+    assert.equal(h.keyUp("ContextMenu"), true);
+    h.clock.advance(KEY_CONTEXT_MS);
+    assert.equal(h.keyUp("ContextMenu"), false, "the wait is over");
+    h.key("ContextMenu");
+    assert.deepEqual(h.state.drawn, { kind: "options", row: "check", source: "check@1", fit: true });
+  });
+
+  test("the wait for a context key's contextmenu ends at the next press, the next key, or the window's blur, so a reader's contextmenu after them acts", () => {
+    for (const end of ["press", "key", "blur"] as const) {
+      const h = harness();
+      h.state.focus = "box";
+      h.key("ContextMenu");
+      if (end === "press") {
+        h.down("outside", false);
+        h.up();
+        h.tap("box");
+        h.state.focus = "row:check";
+      } else if (end === "key") h.key("ArrowDown");
+      else {
+        // The blur closes the list. A reader's contextmenu on the box opens it again.
+        h.leave();
+        h.state.focus = "box";
+        h.keyContextMenu();
+        assert.equal(h.state.open, true, end);
+        continue;
+      }
+      h.keyContextMenu();
+      assert.equal(h.state.drawn.kind, "options", end);
     }
   });
 

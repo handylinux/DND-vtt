@@ -80,6 +80,16 @@ export class RollPressRegistry {
   readonly #slots = new Map<string, Slot>();
   readonly #clock: RollPressClock | undefined;
   readonly #document: () => TouchTarget;
+  /**
+   * The context key, ContextMenu or F10, whose keydown a control here used.
+   * Chromium on Windows sends that key's contextmenu after its keyup, to
+   * whatever holds focus by then: the row its opening focused, or the
+   * button its press closed. Preventing the keydown does not stop it, so
+   * one key-made contextmenu that follows is spent here, until a moment
+   * after the key's keyup. Mac and Linux send none after a used keydown.
+   */
+  #keyContext: string | null = null;
+  #keyContextEnd: unknown = null;
 
   constructor(env: { clock?: RollPressClock; document?: TouchTarget } = {}) {
     this.#clock = env.clock;
@@ -200,15 +210,30 @@ export class RollPressRegistry {
         const native = e.nativeEvent as PointerEvent;
         const touch = native.pointerType === "touch" || (native.pointerType !== "mouse" && s.press.touchSequence) || (native as PointerEvent & { sourceCapabilities?: { firesTouchEvents?: boolean } }).sourceCapabilities?.firesTouchEvents;
         const by = touch ? "touch" : !native.pointerType && e.detail === 0 ? "key" : "mouse";
+        if (by === "key" && this.#keyContext !== null) {
+          this.#endKeyContext();
+          return;
+        }
         s.press.context(by);
       },
       onKeyDown: (e) => {
         if ((e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) && !e.ctrlKey && !e.altKey && !e.metaKey) {
           e.preventDefault();
           slot().press.context("key");
+          this.#keyContext = e.key;
         }
       },
     };
+  }
+
+  #endKeyContext(): void {
+    this.#keyContext = null;
+    if (this.#keyContextEnd !== null) this.#timers().clear(this.#keyContextEnd);
+    this.#keyContextEnd = null;
+  }
+
+  #timers(): RollPressClock {
+    return this.#clock ?? { set: (run, ms) => setTimeout(run, ms), clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>) };
   }
 
   /** A control's own click: false where the press machine swallows it, or a press on it closed its open menu. */
@@ -253,6 +278,7 @@ export class RollPressRegistry {
     const slots = () => [...this.#slots.values()];
     const prune = () => this.prune(opts.keep ?? (() => true));
     const down = (e: Event) => {
+      this.#endKeyContext();
       const { pointerId } = e as PointerEvent;
       for (const s of slots()) {
         if (s.press.activeId !== null && s.press.activeId !== pointerId) {
@@ -283,11 +309,20 @@ export class RollPressRegistry {
       }
     };
     const key = () => {
+      // A control's keydown comes after this one, and marks its own context key again.
+      this.#endKeyContext();
       for (const s of slots()) {
         s.press.key();
         clearTouch(s);
       }
       prune();
+    };
+    const keyUp = (e: Event) => {
+      if (this.#keyContext === null || (e as KeyboardEvent).key !== this.#keyContext) return;
+      // Where Blink makes the contextmenu as this keyup's default action, it makes none.
+      e.preventDefault();
+      // Where the system sends it after the keyup, it comes within this moment, or the person's next key or press ends the wait first.
+      if (this.#keyContextEnd === null) this.#keyContextEnd = this.#timers().set(() => this.#endKeyContext(), KEY_CONTEXT_MS);
     };
     const click = (e: Event) => {
       const m = e as MouseEvent;
@@ -302,6 +337,7 @@ export class RollPressRegistry {
       for (const s of slots()) handleRollModeScroll({ target: e.target, anchor: s.control.node(), open: s.control.menuOpen(), cancel: () => { s.press.cancel(); clearTouch(s); } });
     };
     const leave = () => {
+      this.#endKeyContext();
       this.cancelAll();
       opts.onLeave();
     };
@@ -314,6 +350,7 @@ export class RollPressRegistry {
       [win, "pointerup", end, true],
       [win, "pointercancel", end, true],
       [win, "keydown", key, true],
+      [win, "keyup", keyUp, true],
       [win, "click", click, true],
       [win, "blur", leave, false],
       [doc, "scroll", scroll, true],
@@ -321,6 +358,7 @@ export class RollPressRegistry {
     ];
     for (const [target, type, listener, capture] of listeners) target.addEventListener(type, listener, capture);
     return () => {
+      this.#endKeyContext();
       this.cancelAll();
       for (const [target, type, listener, capture] of listeners) target.removeEventListener(type, listener, capture);
     };
@@ -337,6 +375,9 @@ export class RollPressRegistry {
     this.#slots.clear();
   }
 }
+
+/** How long after a used context key's keyup its contextmenu may still come (RollPressRegistry's key context). */
+export const KEY_CONTEXT_MS = 250;
 
 type ListenTarget = Pick<EventTarget, "addEventListener" | "removeEventListener">;
 type TouchTarget = Pick<EventTarget, "addEventListener" | "removeEventListener">;

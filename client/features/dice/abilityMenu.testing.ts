@@ -270,6 +270,15 @@ export function harness(rows: AbilityRow[] = [row("check", { kind: "check" }), r
         if (!e.defaultPrevented && (key === "Enter" || key === " ")) elementClick(at(focus), 0);
       }
     },
+    /** A key's keyup, at the window first. Whether a listener marked it used. */
+    keyUp(key: string): boolean {
+      return state.mounted && win.fire("keyup", { key }).defaultPrevented;
+    },
+    /** The contextmenu a key makes, at what holds focus: no pointer type, `detail` 0. */
+    keyContextMenu() {
+      if (!state.mounted) return;
+      handlers(at(state.focus as Point)).onContextMenu?.(reactEvent({ nativeEvent: { pointerType: "" }, detail: 0 }));
+    },
     back() {
       if (state.mounted && state.open && backStep("back", (reason) => control.stepBack(reason)) === "close") env.close("back");
     },
