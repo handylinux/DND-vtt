@@ -34,6 +34,33 @@ function DefenseWords({ line, inline = false }: { line: DefenseSummaryLine; inli
   </>;
 }
 
+const SIGNS = "+-\u2212";
+
+/**
+ * A formula with a break chance after each + or − that follows a term, so a
+ * long one wraps between its terms and never inside one ("1d" over "6"),
+ * and a leading minus stays with its term. `anywhere` on its box still
+ * breaks a single term longer than the line (FL4-SONNET-2). A loop, not a
+ * lookbehind, which older Safari cannot parse.
+ */
+export function formulaTerms(formula: string): string[] {
+  const terms: string[] = [];
+  let start = 0;
+  for (let i = 1; i < formula.length; i++) {
+    // After a term only: not after a space, which wraps on its own, and not after another sign.
+    if (SIGNS.includes(formula[i]!) && !/[\s+\-\u2212]/.test(formula[i - 1]!)) {
+      terms.push(formula.slice(start, i + 1));
+      start = i + 1;
+    }
+  }
+  terms.push(formula.slice(start));
+  return terms;
+}
+
+function breakAfterSigns(formula: string) {
+  return formulaTerms(formula).map((term, index) => <Fragment key={index}>{index > 0 ? <wbr /> : null}{term}</Fragment>);
+}
+
 /** One slip for every HP preview, with shared columns for the worked-out damage. */
 export function DamageSummary(props: Props) {
   const summary = "summary" in props ? props.summary : null;
@@ -56,7 +83,7 @@ export function DamageSummary(props: Props) {
               <span aria-hidden data-damage-gutter="" style={{ width: "1ch", color: theme.color.textMuted }}>{part.gutter ? `${part.gutter} ` : ""}</span>
               <DamageIcon icon={part.icon} />
               {typeof part.amount === "string" ? <span data-damage-formula="" style={{ gridColumn: "3 / -1", minWidth: 0, whiteSpace: "normal", overflowWrap: "anywhere" }}>
-                <span data-damage-text="">{`${part.amount} ${part.label}${summary.parts.length === 1 ? suffix : ""}`}</span>
+                <span data-damage-text="">{breakAfterSigns(part.amount)}{` ${part.label}${summary.parts.length === 1 ? suffix : ""}`}</span>
               </span> : <>
                 {hasOriginals ? <span data-damage-original="" style={{ textAlign: "right", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                   {part.original !== undefined ? <><s aria-hidden style={{ color: theme.color.textMuted }}>{part.original}</s>{" "}</> : null}

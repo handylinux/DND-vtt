@@ -7,7 +7,7 @@ import { parseParts } from "#shared/rules/typedDamage.ts";
 
 const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
-const { DamageSummary } = await import("./DamageSummary.tsx");
+const { DamageSummary, formulaTerms } = await import("./DamageSummary.tsx");
 const text = (markup: string) => markup.replace(/<[^>]*>/g, "");
 const draw = (summary: ReturnType<typeof damageSummary>) => renderToStaticMarkup(createElement(DamageSummary, { summary }));
 
@@ -108,4 +108,17 @@ test("FL-4 review: long valid formulas wrap across the amount and words tracks",
   assert.match(text(markup), /Cold damage/);
   assert.equal((markup.match(/data-damage-result=/g) ?? []).length, 1, "only numeric parts use the aligned result column");
   assert.match(markup, /data-damage-amount=""[^>]*white-space:nowrap/);
+});
+
+test("a long formula may break only after a sign that follows a term (FL4-SONNET-2)", () => {
+  assert.deepEqual(formulaTerms("1d6+1d6-2"), ["1d6+", "1d6-", "2"]);
+  assert.deepEqual(formulaTerms("-1d4+3"), ["-1d4+", "3"], "a leading minus stays with its term");
+  assert.deepEqual(formulaTerms("1d6 + 2"), ["1d6 + 2"], "spaces already break");
+  assert.deepEqual(formulaTerms("2d6−1"), ["2d6−", "1"]);
+  assert.deepEqual(formulaTerms("1d6+-2"), ["1d6+", "-2"], "a sign that follows a sign is no break chance");
+  assert.deepEqual(formulaTerms("-1d4"), ["-1d4"]);
+  const long = Array(20).fill("1d6").join("+");
+  const html = renderToStaticMarkup(createElement(DamageSummary, { summary: damageSummary((parseParts(`${long} cold`) as { ok: true; parts: Parameters<typeof damageSummary>[0] }).parts) }));
+  assert.equal((html.match(/<wbr\/>/g) ?? []).length, 19, "one break chance after each plus");
+  assert.match(text(html), new RegExp(`^${long.replace(/\+/g, "\\+")} Cold damage`), "the words read the same");
 });
