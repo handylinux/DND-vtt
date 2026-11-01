@@ -1,13 +1,11 @@
 import { keys, partsKey } from "#shared/keys.ts";
 import type { RoomState, Token, Viewer } from "#shared/model.ts";
 import { mayMoveToken } from "#shared/permissions.ts";
-import { gridOfToken, inSightOfNonOwners, ownsToken, perPlayerScene, projectEntity, viewerSceneId, withheldFromViewer } from "#shared/project.ts";
-import { walkerFor } from "#shared/rules/attach.ts";
+import { ownsToken, perPlayerScene, projectEntity, viewerSceneId, withheldFromViewer } from "#shared/project.ts";
 import { canSqueeze } from "#shared/rules/footprint.ts";
-import { isHex } from "#shared/rules/grid.ts";
+import { isHex, sceneGrid } from "#shared/rules/grid.ts";
 import type { EphEvent } from "#shared/protocol.ts";
 import type { PartySight } from "#shared/ruleHooks.ts";
-import { previewSqueezed, walkEnd, walkStates, type WalkEnd } from "#shared/rules/movement.ts";
 import type { Connection, PreviewKind, SentPreview } from "./connection.ts";
 import { perPlayerClasses } from "./fanout.ts";
 
@@ -132,49 +130,22 @@ function tokenVisibleTo(state: RoomState, receiver: Connection, tokenId: string)
  * creature dragged along a corridor out of sight is not shown by the half
  * of its preview drawn over the corridor's walls.
  *
- * On squares a creature that can squeeze is withheld where either its full
- * footprint or the one size smaller around the preview point would be, and
- * any other creature by its full footprint (D-261101-187). The preview
- * point is unsnapped and only the drop settles whether the creature
- * squeezes, so the preview errs toward withholding whichever footprint the
- * drop gives it, and needs no walk to judge. The stored squeeze is dropped
- * first so the full footprint is always tested: the squeezed one does not
- * always lie inside it (a custom 1 by 3 creature's reaches out of its
- * snapped rectangle), so a token already squeezed would otherwise skip it.
- *
- * On a hex scene the footprint is one size smaller around the preview
- * point where a creature that can squeeze stands with its core clear and a
- * blocker through its full footprint, as along a narrow corridor, and full
- * size otherwise. Which players a drag carries along a holder with it stays
- * a public rule, read from what every player sees (`inSightOfNonOwners`).
- * The squeeze is judged as the end of the walk the frame draws (movement.ts
- * WalkEnd, review AT-ASTRA-21): off a holder every player sees by the walk
- * off it (rules/attach.ts walkerFor), carried through the frame's corners
- * (`path`), so a walk that cleared its holder and came back over it reads
- * the step under it on the ground's rule. A drag's start has walked
- * nowhere. Any other frame without corners may have walked any way, so it
- * is judged for every walker its last leg may start from, squeezed as it
- * stands or past a corner, on its holder or past it, at any footing a walk
- * off the ground may reach (movement.ts walkStates, review AT-ASTRA-22),
- * and withheld when any of them withholds it.
- *
- * This follows the hex rules (docs/design/design-v1-hex-grids.md
- * HX-D10 and HX-D17): the preview squeezes where the squeezed hexes
- * nearest it are a real narrow space, and is judged by the sub-cells
- * inside the hexes it stands on there, as projection judges a creature
- * standing there.
+ * A creature that can squeeze is withheld where either its full footprint
+ * or the one size smaller around the preview point would be, and any other
+ * creature by its full footprint (D-261101-187), on squares and hexes
+ * alike. The preview point is unsnapped and only the drop settles whether
+ * the creature squeezes, so the preview errs toward withholding whichever
+ * footprint the drop gives it, and needs no walk and no walls to judge. The
+ * stored squeeze is dropped first so the full footprint is always tested:
+ * the squeezed one does not always lie inside it (a custom 1 by 3
+ * creature's reaches out of its snapped rectangle), so a token already
+ * squeezed would otherwise skip it. On hexes each footprint is judged by
+ * the sub-cells inside the hexes it stands on, as projection judges a
+ * creature standing there (docs/design/design-v1-hex-grids.md HX-D10).
  */
-function previewWithheld(state: RoomState, viewer: Viewer, token: Token, x: number, y: number, path: readonly number[] | undefined): boolean {
+function previewWithheld(state: RoomState, viewer: Viewer, token: Token, x: number, y: number): boolean {
   const { squeeze: _squeeze, ...rest } = token;
-  if (!isHex(gridOfToken(state, token))) return withheldFromViewer(state, viewer, { ...rest, x, y }) || (canSqueeze(rest) && withheldFromViewer(state, viewer, { ...rest, x, y, squeeze: true }));
-  const seen = (t: { id: string }) => state.tokens[t.id] !== undefined && inSightOfNonOwners(state, state.tokens[t.id]!, {});
-  const walker = walkerFor(state, token, seen);
-  const at = { x, y };
-  const withheldAs = (end: WalkEnd) => withheldFromViewer(state, viewer, previewSqueezed(state, end) ? { ...rest, x, y, squeeze: true } : { ...rest, x, y });
-  if (path === undefined) return walkStates(state.buildChunks, walker).some((w) => withheldAs(walkEnd(state, w, at)));
-  const corners: { x: number; y: number }[] = [];
-  for (let i = 0; i + 1 < path.length; i += 2) corners.push({ x: path[i]!, y: path[i + 1]! });
-  return withheldAs(walkEnd(state, walker, at, corners));
+  return withheldFromViewer(state, viewer, { ...rest, x, y }) || (canSqueeze(rest) && withheldFromViewer(state, viewer, { ...rest, x, y, squeeze: true }));
 }
 
 /**
@@ -182,8 +153,11 @@ function previewWithheld(state: RoomState, viewer: Viewer, token: Token, x: numb
  * 7.5), so players who read the same are judged once per event: with
  * vision on, the sight they read, which viewers with the same sources share,
  * with fog alone, their fog (each holder alone, the rest together), and
- * with both off nothing, since nothing is withheld then. A whole-party
- * scene reads the same for every player. Null when nothing is withheld.
+ * with both off nothing, since nothing is withheld then. On a hex scene with
+ * fog on a creature's outline is clipped by the walls the receiver holds,
+ * which holders who share one sight hold apart, so there their fog joins the
+ * sight. A whole-party scene reads the same for every player. Null when
+ * nothing is withheld.
  */
 function judgedBy(state: RoomState, sceneId: string, receiver: Connection, sights: Map<PartySight, number>): string | null {
   const scene = state.scenes[sceneId];
@@ -191,7 +165,8 @@ function judgedBy(state: RoomState, sceneId: string, receiver: Connection, sight
   if (!perPlayerScene(scene)) return "party";
   // The fan-out's classes (fanout.ts perPlayerClasses): withholding reads sight alone with vision on, and fog alone otherwise.
   const { sight, fog } = perPlayerClasses(state, sceneId, receiver.memberId, sights);
-  return scene.vision?.on === true ? partsKey(["sight", sight]) : partsKey(["fog", fog]);
+  if (scene.vision?.on !== true) return partsKey(["fog", fog]);
+  return scene.fogEnabled && isHex(sceneGrid(scene)) ? partsKey(["sight", sight, fog]) : partsKey(["sight", sight]);
 }
 
 /**
@@ -321,7 +296,7 @@ function withheldFor(state: RoomState, sceneId: string, e: EphEvent): (receiver:
     const by = judgedBy(state, sceneId, receiver, sights);
     if (by === null) return false;
     let hidden = answers.get(by);
-    if (hidden === undefined) answers.set(by, (hidden = previewWithheld(state, receiver.viewer, token, e.x, e.y, e.k === "dragMove" ? e.path : e.k === "dragStart" ? [] : undefined)));
+    if (hidden === undefined) answers.set(by, (hidden = previewWithheld(state, receiver.viewer, token, e.x, e.y)));
     return hidden;
   };
 }

@@ -149,3 +149,44 @@ for (const [name, g, seen, wallEnds] of [
     assert.deepEqual(patReceives(closed, frames, again), patReceives(open, frames, again));
   });
 }
+
+/**
+ * Three pairs: on hex rows the Huge creature's own sub-cells and one more
+ * revealed with a wall beside it, and both pairs above. P1 gets the same
+ * frames in both rooms and the same copy of the creature standing there,
+ * full size or squeezed.
+ */
+for (const [name, g, seen, wallEnds] of [
+  ["hex rows, one more sub-cell", ROWS, [[38, 25]], [[9.34375, 6.015625], [9.734375, 5.921875]]],
+  ["hex rows, two more", ROWS, [[38, 25], [41, 21]], [[9.515625, 5.96875], [9.578125, 5.96875]]],
+  ["hex columns, two more", COLUMNS, [[29, 24], [32, 30]], [[8.234375, 6.84375], [8.203125, 6.890625]]],
+] as const) {
+  const shape = g.orient === "rows" ? "hexRows" : "hexColumns";
+  const bounds = g.orient === "rows" ? { w: 22, h: 16 } : { w: 16, h: 22 };
+  function rooms(): { open: RoomState; closed: RoomState } {
+    const open = room({ members: { dm1: member("dm1", "dm"), p1: member("p1") }, scenes: { s1: scene("s1", { gridShape: shape, bounds, autoWalls: "off", fogEnabled: true }) } });
+    open.buildChunks = {};
+    const start = onHex(g as HexGrid, "giant", "huge", { col: 3, row: 3 }, { name: "Giant", kind: "npc" });
+    liftSubs(open, "dm", [...occupiedHexes(g as HexGrid, start).flatMap((h) => hexSubcells(g as HexGrid, h)), ...seen.map(([x, y]) => [x, y] as [number, number])]);
+    open.tokens.giant = start;
+    const closed = structuredClone(open);
+    wall(closed, "pairwall0001", [...wallEnds[0]], [...wallEnds[1]]);
+    return { open, closed };
+  }
+
+  test(`${name}: frames and the creature standing at hex 9,6 reach P1 alike in both rooms`, () => {
+    const { open, closed } = rooms();
+    sameCopies(open, closed);
+    const to = onHex(g as HexGrid, "to", "huge", { col: 9, row: 6 });
+    const frames: EphEvent[] = [{ k: "dragMove", tokenId: "giant", x: to.x, y: to.y }];
+    assert.deepEqual(patReceives(closed, frames), patReceives(open, frames));
+    for (const squeeze of [false, true]) {
+      const stand = (s: RoomState) => {
+        const t = structuredClone(s);
+        t.tokens.giant = { ...t.tokens.giant!, x: to.x, y: to.y, ...(squeeze ? { squeeze: true as const } : {}) };
+        return stableStringify(projectState(t, P1, { sceneId: "s1" }));
+      };
+      assert.equal(stand(closed), stand(open), squeeze ? "squeezed" : "full size");
+    }
+  });
+}

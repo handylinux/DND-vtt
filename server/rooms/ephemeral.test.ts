@@ -5,13 +5,18 @@ import { CHUNK_CELLS, type BuildChunk, type EdgeFeature, type FreeWall, type Roo
 import { encodeHeights } from "#shared/rules/heights.ts";
 import { MAX_EPH_BYTES, type EphEvent, type Op, type ServerMessage } from "#shared/protocol.ts";
 import { canApply } from "#shared/permissions.ts";
-import { projectState } from "#shared/project.ts";
+import { liftSubs, remember } from "#shared/discoveryTestutil.ts";
+import { projectState, withheldFromViewer } from "#shared/project.ts";
+import { visionRules } from "#shared/ruleHooks.ts";
+import { occupiedHexes, placedOnHex, storedCenter } from "#shared/rules/footprint.ts";
 import { gridOfShape } from "#shared/rules/grid.ts";
-import type { HexGrid } from "#shared/rules/hex.ts";
+import { wallSpans } from "#shared/rules/held.ts";
+import { hexKey, hexSubcells, sceneHexes, type HexGrid } from "#shared/rules/hex.ts";
+import { onHex } from "#shared/rules/hexWalls.testkit.ts";
 import { clipFootprint, sightClipOf } from "#shared/rules/vision.ts";
 import { sceneWalls } from "#shared/rules/walls.ts";
 import { applyOp } from "#shared/reducer.ts";
-import { DM, P1, P2, actor, character, env, reveal, room, scene, token } from "#shared/testutil.ts";
+import { DM, P1, P2, actor, character, env, member, reveal, room, scene, token } from "#shared/testutil.ts";
 import { Connection } from "./connection.ts";
 import { cancelPreviews, MOST_PREVIEWS_SENT, PREVIEW_STALE_MS, rejudgePreviews, routeEphemeral } from "./ephemeral.ts";
 
@@ -635,5 +640,83 @@ describe("a drag preview on hexes beside a wall (docs/design/design-v1-hex-grids
     revealSub(kept[0]!);
     t.send(t.dm.conn, { k: "dragMove", tokenId: "gob", ...at });
     assert.deepEqual(t.p1.got.at(-1), { k: "dragMove", tokenId: "gob", ...at }, "one on its own side shows it");
+  });
+});
+
+describe("drag previews on hexes take the square rule (docs/design/design-v1-hex-grids.md HX-D10)", () => {
+  test("a Huge creature in the open is withheld where its squeezed footprint would be under the fog, though its full one shows and no wall makes a narrow space", () => {
+    const g = gridOfShape("hexRows") as HexGrid;
+    const state = room({ scenes: { s1: scene("s1", { gridShape: "hexRows", bounds: { w: 20, h: 16 }, autoWalls: "off", fogEnabled: true }), s2: scene("s2", { order: 1 }) } });
+    const giant = onHex(g, "giant", "huge", { col: 8, row: 7 }, { name: "Giant", kind: "npc" });
+    state.tokens.giant = giant;
+    const inner = occupiedHexes(g, { ...giant, squeeze: true });
+    const squeezed = new Set(inner.map(hexKey));
+    const outer = occupiedHexes(g, giant).find((h) => !squeezed.has(hexKey(h)))!;
+    liftSubs(state, "dm", hexSubcells(g, outer));
+    const t = table(state);
+    t.send(t.dm.conn, { k: "dragMove", tokenId: "giant", x: giant.x, y: giant.y });
+    assert.deepEqual(t.p1.got, [], "its squeezed footprint stands under the fog");
+    liftSubs(state, "dm", hexSubcells(g, inner[0]!));
+    t.send(t.dm.conn, { k: "dragMove", tokenId: "giant", x: giant.x, y: giant.y });
+    assert.deepEqual(t.p1.got, [{ k: "dragMove", tokenId: "giant", x: giant.x, y: giant.y }], "and shows once both footprints reach revealed ground");
+  });
+});
+
+describe("drag previews to sight holders who read one sight but hold different walls", () => {
+  /**
+   * A per-player hex rows scene in the dark, every hex explored by the
+   * party, a Gargantuan creature lit on its east side by a lamp that lends
+   * every player its sight, and a wall east of its middle that the DM took
+   * away and the party remembers. P2's own layer holds the ground the wall
+   * stood on, and P2 never saw it, so P2's copy holds no wall there, while
+   * P1's copy and the shared one hold the party's memory of it.
+   */
+  function hall(): RoomState {
+    const g = gridOfShape("hexRows") as HexGrid;
+    const s = room({
+      members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2") },
+      scenes: { s1: scene("s1", { gridShape: "hexRows", bounds: { w: 20, h: 16 }, autoWalls: "off", fogEnabled: true, vision: { on: true, perPlayer: true, light: "dark" } }) },
+    });
+    s.buildChunks = {};
+    s.holders = { s1: { sceneId: "s1", rev: 1, entries: [{ memberId: "p1", on: true }, { memberId: "p2", on: true }] } };
+    s.tokens.lamp = onHex(g, "lamp", "medium", { col: 10, row: 8 }, { name: "Lamp", kind: "npc", disposition: "ally", partyVision: true, light: { bright: 5, dim: 0 } });
+    const ogre = onHex(g, "ogre", "gargantuan", { col: 8, row: 8 }, { name: "Ogre", kind: "npc" });
+    const c = storedCenter(ogre);
+    const q = (v: number) => Math.round(v * 64) / 64;
+    const w: FreeWall = { id: "ekw000000001", a: [q(c.x + 0.3), q(c.y - 2.4)], b: [q(c.x + 0.3), q(c.y + 2.4)], f: { kind: "wall" } };
+    const cells = wallSpans(g, w).map((span) => span.cell);
+    const all = sceneHexes(g, s.scenes.s1!.bounds);
+    liftSubs(s, "party", all.flatMap((h) => hexSubcells(g, h)));
+    liftSubs(s, { holder: "p2" }, all.filter((h) => cells.includes(hexKey(h))).flatMap((h) => hexSubcells(g, h)));
+    const home = wallChunk(w);
+    remember(s, null, home.cx, home.cy, { walls: { [w.id]: [{ wall: w, cells }] } });
+    s.tokens.ogre = ogre;
+    return s;
+  }
+
+  test("each gets their own frames, in either receiver order and when a global batch judges them again", () => {
+    const state = hall();
+    const ogre = state.tokens.ogre!;
+    assert.equal(visionRules.holderSight(state, "s1", "p1"), visionRules.holderSight(state, "s1", "p2"), "both read one sight");
+    assert.equal(withheldFromViewer(state, P1, ogre), true, "P1's copy holds the remembered wall");
+    assert.equal(withheldFromViewer(state, P2, ogre), false, "P2's holds none");
+    // The creature itself stands in the lamp's light clear of the wall, where both see it, and is dragged to where they part.
+    state.tokens.ogre = { ...ogre, ...placedOnHex(gridOfShape("hexRows") as HexGrid, ogre, { col: 11, row: 8 }) };
+    for (const v of [P1, P2]) assert.ok(projectState(state, v, { sceneId: "s1" }).tokens.ogre, `${v.memberId} sees it where it stands`);
+    const frame: EphEvent = { k: "dragMove", tokenId: "ogre", x: ogre.x, y: ogre.y };
+    for (const order of [
+      ["p1", "p2"],
+      ["p2", "p1"],
+    ] as const) {
+      const dm = viewer(DM);
+      const p = { p1: viewer(P1), p2: viewer(P2) };
+      const all = [dm.conn, ...order.map((id) => p[id].conn)];
+      routeEphemeral(state, dm.conn, "s1", frame, all);
+      assert.deepEqual(p.p1.got, [], `${order.join(" then ")}: P1 gets no frame`);
+      assert.deepEqual(p.p2.got, [frame], `${order.join(" then ")}: P2 gets it`);
+      rejudgePreviews(state, all);
+      assert.deepEqual(p.p2.got, [frame], `${order.join(" then ")}: a global batch keeps P2's`);
+      assert.deepEqual(p.p1.got, [], `${order.join(" then ")}: and sends P1 nothing`);
+    }
   });
 });
