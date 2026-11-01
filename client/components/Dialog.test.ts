@@ -54,3 +54,31 @@ describe("the shape of a dialog's card", () => {
     assert.equal(dialogCard(390, { phone: "sheet" }).bottom, true);
   });
 });
+
+/*
+ * A dialog opened from a held page, such as Change it on the group save
+ * page, portals out of the page's disabled fieldset, so its controls act.
+ * They must look it too: the dialog ends the held group (Held.tsx).
+ */
+describe("a dialog opened inside a held group", () => {
+  test("draws its controls enabled, since its portal leaves the held fieldset", async () => {
+    const { Dialog } = await import("./Dialog.tsx");
+    const { Held } = await import("./Held.tsx");
+    const { Button } = await import("./Button.tsx");
+    const { drawn } = await import("./testing/drawn.ts");
+    // Just enough page for Dialog's render: its portal's target and the focus its modal hook reads.
+    const previous = { document: globalThis.document, HTMLElement: globalThis.HTMLElement };
+    Object.assign(globalThis, { document: { body: { nodeType: 1 }, activeElement: null }, HTMLElement: class {} });
+    try {
+      const button = createElement(Button, { onClick() {} }, "Save");
+      const portal = drawn(Dialog, { title: "Change it", onClose() {}, children: button }, (child) => createElement(Held, { held: true, children: child })) as unknown as { children: ReturnType<typeof createElement> };
+      // The portal's content, drawn where the opener is: inside the held group, as React's context reaches it.
+      const markup = renderToStaticMarkup(createElement(Held, { held: true, children: portal.children }));
+      assert.match(markup, />Save</);
+      assert.doesNotMatch(markup, new RegExp(`color:${theme.color.textDisabled}`, "i"));
+      assert.doesNotMatch(markup.replace(/^<fieldset disabled=""[^>]*>/, ""), /<button[^>]*\sdisabled=""/);
+    } finally {
+      Object.assign(globalThis, previous);
+    }
+  });
+});

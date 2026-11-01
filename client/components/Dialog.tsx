@@ -8,6 +8,7 @@ import { useModalDialog } from "../lib/modalDialog.ts";
 import { DraftScope, useDraftRegistry, useSheetSwipe } from "../lib/sheetSwipe.ts";
 import { theme } from "../lib/theme.ts";
 import { RowHintScope } from "./Field.tsx";
+import { HeldScope } from "./Held.tsx";
 import { SheetGrabber } from "./SheetGrabber.tsx";
 import { SheetHeader, type HeaderBack } from "./SheetHeader.tsx";
 
@@ -204,79 +205,82 @@ export function Dialog(props: DialogProps) {
   const headlessSheet = bottom && !header;
 
   // The dialog element is the dimmed layer over the whole screen, so a tap on it outside the card closes the card.
+  // The portal leaves any held fieldset around its opener, so its controls act and must look it (Held.tsx).
   return createPortal(
-    <dialog
-      ref={dialog}
-      aria-modal="true"
-      aria-label={props.title}
-      aria-describedby={header && props.headerDetail ? detailId : undefined}
-      tabIndex={-1}
-      onClick={(e) => {
-        if (props.dismissOnBackdrop !== false && e.target === e.currentTarget) onClose();
-      }}
-      style={{
-        position: "fixed",
-        // The dialog's own px are zoomed by the interface size (useModalDialog), and the keyboard's are the page's.
-        inset: view ? `${view.top / scale}px 0 ${view.inset / scale}px` : 0,
-        width: "100%",
-        height: view ? "auto" : "100%",
-        maxWidth: "none",
-        maxHeight: "none",
-        margin: 0,
-        padding: 0,
-        border: "none",
-        display: "flex",
-        alignItems: bottom ? "flex-end" : "center",
-        justifyContent: "center",
-        background: props.scrim ?? theme.color.scrim,
-        fontFamily: theme.font.body,
-        color: theme.color.text,
-        outline: "none",
-        overflow: "hidden",
-      }}
-    >
-      <section
-        ref={card}
+    <HeldScope>
+      <dialog
+        ref={dialog}
+        aria-modal="true"
+        aria-label={props.title}
+        aria-describedby={header && props.headerDetail ? detailId : undefined}
+        tabIndex={-1}
+        onClick={(e) => {
+          if (props.dismissOnBackdrop !== false && e.target === e.currentTarget) onClose();
+        }}
         style={{
+          position: "fixed",
+          // The dialog's own px are zoomed by the interface size (useModalDialog), and the keyboard's are the page's.
+          inset: view ? `${view.top / scale}px 0 ${view.inset / scale}px` : 0,
+          width: "100%",
+          height: view ? "auto" : "100%",
+          maxWidth: "none",
+          maxHeight: "none",
+          margin: 0,
+          padding: 0,
+          border: "none",
           display: "flex",
-          flexDirection: "column",
-          background: theme.color.surface,
-          border: `${theme.line.border}px solid ${theme.color.border}`,
-          boxShadow: theme.shadow.dialog,
+          alignItems: bottom ? "flex-end" : "center",
+          justifyContent: "center",
+          background: props.scrim ?? theme.color.scrim,
+          fontFamily: theme.font.body,
+          color: theme.color.text,
+          outline: "none",
           overflow: "hidden",
-          ...cardStyle,
-          ...(tight ? { alignSelf: "stretch", height: "auto", maxHeight: "none" } : null),
         }}
       >
-        {header && !tight ? <SheetHeader title={props.title} back={props.back} actions={props.headerActions} detail={props.headerDetail} detailId={detailId} onClose={onClose} divider grab={bottom} /> : null}
-        <div ref={body} style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", padding: BODY_PAD, ...props.bodyStyle, ...(headlessSheet ? { position: "relative" } : null) }}>
-          {/* With no header to hold it, the X-card's grabber sits at the top of its body, all it has to swipe by, in the 20 px its content keeps above its first line. */}
-          {headlessSheet ? <SheetGrabber /> : null}
-          <DraftScope value={drafts}>
-            <RowHintScope>{props.children}</RowHintScope>
-          </DraftScope>
-        </div>
-        {props.footer || props.status ? (
-          <footer
-            style={{
-              flex: "none",
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              gap: theme.space(2),
-              padding: theme.space(3),
-              borderTop: `${theme.line.border}px solid ${theme.color.border}`,
-            }}
-          >
-            {props.status ? (
-              <span style={{ flex: `${props.statusGrow ? STATUS_GROW : 1} 1 160px`, minWidth: 0, fontSize: theme.font.small, color: theme.color.textMuted, lineHeight: theme.leading.body }}>{props.status}</span>
-            ) : null}
-            {props.footer}
-          </footer>
-        ) : null}
-      </section>
-    </dialog>,
+        <section
+          ref={card}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            background: theme.color.surface,
+            border: `${theme.line.border}px solid ${theme.color.border}`,
+            boxShadow: theme.shadow.dialog,
+            overflow: "hidden",
+            ...cardStyle,
+            ...(tight ? { alignSelf: "stretch", height: "auto", maxHeight: "none" } : null),
+          }}
+        >
+          {header && !tight ? <SheetHeader title={props.title} back={props.back} actions={props.headerActions} detail={props.headerDetail} detailId={detailId} onClose={onClose} divider grab={bottom} /> : null}
+          <div ref={body} style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", padding: BODY_PAD, ...props.bodyStyle, ...(headlessSheet ? { position: "relative" } : null) }}>
+            {/* With no header to hold it, the X-card's grabber sits at the top of its body, all it has to swipe by, in the 20 px its content keeps above its first line. */}
+            {headlessSheet ? <SheetGrabber /> : null}
+            <DraftScope value={drafts}>
+              <RowHintScope>{props.children}</RowHintScope>
+            </DraftScope>
+          </div>
+          {props.footer || props.status ? (
+            <footer
+              style={{
+                flex: "none",
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: theme.space(2),
+                padding: theme.space(3),
+                borderTop: `${theme.line.border}px solid ${theme.color.border}`,
+              }}
+            >
+              {props.status ? (
+                <span style={{ flex: `${props.statusGrow ? STATUS_GROW : 1} 1 160px`, minWidth: 0, fontSize: theme.font.small, color: theme.color.textMuted, lineHeight: theme.leading.body }}>{props.status}</span>
+              ) : null}
+              {props.footer}
+            </footer>
+          ) : null}
+        </section>
+      </dialog>
+    </HeldScope>,
     document.body,
   );
 }
