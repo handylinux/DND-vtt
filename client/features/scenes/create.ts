@@ -281,14 +281,24 @@ export function sameImageShape(old: SceneMap, asset: MapAsset): boolean {
  * but a find that differs from that grid is only offered (`kept`): the DM
  * may have lined it up by hand. Other art starts over, as a first image
  * does. A size in the file name wins on every grid (D-261101-190), so
- * such a file is not searched.
+ * such a file is not searched, and other art takes the name's scale
+ * unless the kept grid already has it: a kept grid that disagrees would
+ * stand unsearched with nothing left to correct it.
  */
 export function replacement(old: SceneMap | undefined, asset: MapAsset, gridShape?: GridShape): { map: SceneMap; search: boolean; kept: KeptGrid | null } {
-  const map = replaceMap(old, asset, gridShape);
   const sameFile = old?.assetId === asset.id;
-  const kept = old && !sameFile && sameImageShape(old, asset) ? { cellPx: map.cellPx, originPx: map.originPx, scale: asset.width / old.widthPx } : null;
-  return { map, search: !sameFile && nameCellPx(asset, gridShape) === undefined, kept };
+  const named = sameFile ? undefined : nameCellPx(asset, gridShape);
+  const scaled = replaceMap(old, asset, gridShape);
+  if (named !== undefined) {
+    const agrees = Math.abs(scaled.cellPx - named) <= NAME_AGREES * named;
+    return { map: agrees ? scaled : initialMap(asset, gridShape).map, search: false, kept: null };
+  }
+  const kept = old && !sameFile && sameImageShape(old, asset) ? { cellPx: scaled.cellPx, originPx: scaled.originPx, scale: asset.width / old.widthPx } : null;
+  return { map: scaled, search: !sameFile, kept };
 }
+
+/** A kept grid within 1% of a name's scale is that grid, lined up by hand, so it keeps its origin. */
+const NAME_AGREES = 0.01;
 
 /**
  * Whether a scene's first map image should turn its fog on. Design 13.2

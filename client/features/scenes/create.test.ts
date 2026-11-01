@@ -143,6 +143,24 @@ describe("new scenes", () => {
     assert.equal(replacement(old, { id: "c", width: 1000, height: 1000, cellPx: 50 }, "hexRows").search, true, "squares' counts are no scale for hexes");
     assert.equal(replacement(old, { id: "c", width: 1000, height: 1000, hexCellPx: { columns: 50 } }, "hexColumns").search, false);
   });
+
+  test("other art of the old shape takes its name's scale over a kept grid that disagrees, and keeps one that agrees", () => {
+    // A 1435 x 869 map lined up at 35 px, then other art of that size named for 70 px hex rows.
+    const old = { assetId: "a", widthPx: 1435, heightPx: 869, cellPx: 35, originPx: { x: 3, y: 4 } };
+    const rows = { id: "b", width: 1435, height: 869, hexCellPx: { rows: 70 } };
+    assert.deepEqual(replacement(old, rows, "hexRows"), { map: { assetId: "b", widthPx: 1435, heightPx: 869, cellPx: 70, originPx: { x: 0, y: 0 } }, search: false, kept: null });
+    const squares = { id: "b", width: 1435, height: 869, cellPx: 71.75 };
+    assert.equal(replacement(old, squares).map.cellPx, 71.75, "squares too");
+    assert.equal(replacement(old, squares).search, false);
+    // A grid lined up by hand that already has the name's scale keeps its origin.
+    const byHand = { ...old, cellPx: 70.3 };
+    assert.deepEqual(replacement(byHand, rows, "hexRows"), { map: { ...byHand, assetId: "b" }, search: false, kept: null });
+    // The same file is the same art: the grid stands, whatever its name says.
+    assert.deepEqual(replacement(old, { ...rows, id: "a" }, "hexRows"), { map: old, search: false, kept: null });
+    // A name for another grid is no scale for this one: the grid is kept and searched.
+    assert.equal(replacement(old, rows).map.cellPx, 35);
+    assert.equal(replacement(old, rows).search, true);
+  });
 });
 
 describe("scene list", () => {
