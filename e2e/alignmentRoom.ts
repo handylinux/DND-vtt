@@ -2128,6 +2128,9 @@ async function groupSaveScreen(sweep: Sweep, page: Page, screen: string, trap: s
     const slip = host.getByRole("group", { name: "Outcome", exact: true }).locator("[data-damage-summary]");
     await slip.filter({ hasText: formula }).waitFor();
     await sweep.measure(page, "fl4-long-formula", slip);
+    // The measure shoots only a failure. This one is for the eye, since the slip wraps its long formula (FL4-SONNET-2).
+    await slip.scrollIntoViewIfNeeded();
+    await shots.take(page, `alignment-${sweep.at}-fl4-long-formula-wrapped`);
   }
   await host.getByRole("button", { name: "Discard", exact: true }).first().click();
   const sheet = page.locator('dialog[data-rvtt-sheet][aria-label="Dice"]');
