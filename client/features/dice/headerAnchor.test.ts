@@ -47,8 +47,9 @@ function pane(opts: { zoom?: number; content?: number; client?: number; scrollTo
     get clientHeight() {
       return grows && state.inserted ? client + line : client;
     },
+    // As a browser's: never less than the client height, so content shorter than the pane reads as exactly the pane.
     get scrollHeight() {
-      return content + (state.inserted ? line : 0) + state.spacer;
+      return Math.max(this.clientHeight, content + (state.inserted ? line : 0) + state.spacer);
     },
     get scrollTop() {
       return state.top;
@@ -108,7 +109,7 @@ describe("the host's order (1.2, the order in the commit)", () => {
   });
 
   test("the box stands where it stood, to the px, with room, at 130%, and on short content", () => {
-    for (const opts of [{ scrollTop: 200 }, { zoom: 1.3, scrollTop: 40.5 }, { content: 500, client: 600, scrollTop: 0 }]) {
+    for (const opts of [{ scrollTop: 200 }, { zoom: 1.3, scrollTop: 40.5 }, { content: 500, client: 600, scrollTop: 0 }, { content: 300, client: 600, scrollTop: 0 }, { zoom: 1.3, content: 200, client: 600, scrollTop: 0 }]) {
       const p = pane(opts);
       const before = p.top();
       p.roll();
@@ -120,7 +121,10 @@ describe("the host's order (1.2, the order in the commit)", () => {
     // 500 of content in a 600 pane, as a monster's folded panel on a computer: with the line in it still cannot scroll 57.
     const p = pane({ content: 500, client: 600, scrollTop: 0 });
     p.roll();
-    assert.deepEqual(p.steps.slice(0, 3), ["picked(anchor none)", "spacer 100", "scroll(anchor none)"]);
+    const spacers = p.steps.filter((s) => s.startsWith("spacer"));
+    assert.equal(spacers.at(-1), "spacer 100", `the spacer ends at the shortfall: ${p.steps.join(", ")}`);
+    assert.equal(p.steps.at(p.steps.lastIndexOf("spacer 100") + 1), "scroll(anchor none)", "and the scroll comes after it");
+    assert.equal(p.state.top, 57);
     p.steps.length = 0;
     p.roll();
     assert.ok(!p.steps.some((s) => s.startsWith("spacer")), "it stays as it was");

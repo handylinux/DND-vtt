@@ -104,11 +104,15 @@ export class HeaderAnchor<Box> {
     const scroller = this.#scroller;
     if (pick?.first && box !== null && scroller) {
       const next = anchorScroll({ moved: this.#env.top(box) - pick.top, zoom: this.#env.zoom(scroller), scrollTop: scroller.scrollTop, scrollHeight: scroller.scrollHeight, clientHeight: scroller.clientHeight, spacer: this.#spacer });
-      if (next.spacer !== this.#spacer) {
-        this.#spacer = next.spacer;
-        this.#env.spacer(next.spacer);
-      }
+      this.#setSpacer(next.spacer);
       if (next.scrollTop !== scroller.scrollTop) scroller.scrollTop = next.scrollTop;
+      // `scrollHeight` never reads below the pane's height, so on content shorter than the pane the shortfall above comes out short too, and the browser stops the scroll where the content ends. With a whole pane more at the foot the content's own height reads true, and the spacer then takes exactly what the scroll needs.
+      if (next.scrollTop - scroller.scrollTop > 0.5) {
+        this.#setSpacer(this.#spacer + scroller.clientHeight);
+        const content = scroller.scrollHeight - this.#spacer;
+        this.#setSpacer(Math.max(0, Math.ceil(next.scrollTop + scroller.clientHeight - content)));
+        scroller.scrollTop = next.scrollTop;
+      }
     }
     if (pick) this.#inserted = true;
     this.pad();
@@ -116,6 +120,12 @@ export class HeaderAnchor<Box> {
     this.#restoreAnchoring();
     if (pick?.first) this.#env.baseline();
     this.#env.release();
+  }
+
+  #setSpacer(px: number): void {
+    if (px === this.#spacer) return;
+    this.#spacer = px;
+    this.#env.spacer(px);
   }
 
   /** The scroller's scroll padding, the line's stuck height, so a reveal, a field keeper and the browser's own focus scrolling keep a target clear of the line (1.2 step 8). */
