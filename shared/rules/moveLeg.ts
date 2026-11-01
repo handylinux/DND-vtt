@@ -444,7 +444,10 @@ function stoppedAtWalls(before: RoomState, member: Token, route: RoutePoint[], h
  * piece that its leg and its stand both take, as a public one's walk is cut
  * (client drop.ts standingBack), else that piece's start. Only a creature
  * with a side a squeeze shrinks can meet it, and only it and what it
- * carries move for it, so nothing a player sees reads it.
+ * carries move for it: no refusal, landing or public walk reads it. What
+ * players may still see is the private pass's own reveal, as for a leg
+ * that stops it: a token they see that it carries steps back with it
+ * (8.0), and one hidden only by sight still lights the ground around it.
  */
 function standsBack(build: BuildState, member: Token, route: RoutePoint[], holderRoute: readonly RoutePoint[], elevationAt: (x: number, y: number, holderElevation: number) => number): RoutePoint[] {
   const n = route.length;
