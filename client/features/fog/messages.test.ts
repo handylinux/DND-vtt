@@ -7,7 +7,7 @@ import { clientMessageSchema, MAX_FOG_DRAFT_OPS } from "#shared/protocol.ts";
 import { sceneHexes, type HexGrid } from "#shared/rules/hex.ts";
 import { deriveWalls, indexBuild } from "#shared/rules/walls.ts";
 import { applyOp } from "#shared/reducer.ts";
-import { DM, env, room, scene } from "#shared/testutil.ts";
+import { DM, env, rng, room, scene } from "#shared/testutil.ts";
 import { RoomScope } from "../../state/scope.ts";
 import type { ToolContext } from "../tools.ts";
 import { SQUARES } from "#shared/rules/grid.ts";
@@ -220,13 +220,16 @@ describe("a fog gesture in the draft is one edit", () => {
   test("in any draft, no op id spans two edits, so Undo's ids take out exactly the last op's edit", () => {
     const v7 = "0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b";
     const ids = [`${v7}.0`, `${v7}.1`, `${v7}.2`, "p", "q", `${v7}`];
-    let seed = 7;
-    const next = (n: number) => {
-      seed = (seed * 1103515245 + 12345) % 2 ** 31;
-      return seed % n;
-    };
+    const random = rng(7);
+    const next = (n: number) => Math.floor(random() * n);
+    const seen = new Set<string>();
+    let several = 0;
+    let repeated = 0;
     for (let run = 0; run < 2000; run++) {
       const draft = Array.from({ length: 1 + next(8) }, (_, x): FogOp => ({ id: ids[next(ids.length)]!, mode: "reveal", shape: { kind: "cells", cells: [`${x},1`] } }));
+      seen.add(draft.map((o) => o.id).join(" "));
+      if (draft.length > 1) several++;
+      if (new Set(draft.map((o) => o.id)).size < draft.length) repeated++;
       const edits = draftEdits(draft);
       const owner = new Map<string, number>();
       edits.forEach((edit, e) => {
@@ -239,6 +242,10 @@ describe("a fog gesture in the draft is one edit", () => {
       const last = edits.find((edit) => edit.includes(draft.at(-1)!))!;
       assert.deepEqual(draft.filter((o) => !remove.has(o.id)), draft.filter((o) => !last.includes(o)), "the last op's edit, whole, and nothing else");
     }
+    // A generator that lost precision once gave 13 distinct drafts, nearly all of one op, and the loop checked little.
+    assert.ok(seen.size > 1000, `${seen.size} distinct drafts`);
+    assert.ok(several > 1500, `${several} drafts of several ops`);
+    assert.ok(repeated > 1000, `${repeated} drafts with a repeated id`);
   });
 
   test("the publish button counts the DM's edits: one Builder room tap is one, on hexes and on squares", () => {
