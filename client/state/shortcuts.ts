@@ -1100,13 +1100,13 @@ export const BEHAVIORS: readonly Behavior[] = [
     device: "keys",
     surface: "Dice",
   },
-  // A throw of your own dice: features/dice/throw/store.ts, through DicePanel.tsx's capture-phase listeners (docs/design/design-v1-roll-animation.md 3.5). A tap is listed with the key, as the two do the same.
+  // A throw of your own dice: features/dice/throw/store.ts, through the capture-phase listeners of each rolling surface, DicePanel.tsx and a stat block's panel (BlockHeader.tsx, docs/design/design-v1-roll-animation.md 3.5, docs/design/design-v1-token-roll-header.md 4.3). A tap is listed with the key, as the two do the same.
   {
     id: "diceThrowEnd",
     input: "Any tap or key",
     does: "Show the result at once, then do its own job",
     roles: EVERYONE,
-    when: "in the Dice panel while your dice are in the air",
+    when: "in the Dice panel or a stat block's panel while your dice are in the air",
     device: "keys",
     surface: "Dice",
   },

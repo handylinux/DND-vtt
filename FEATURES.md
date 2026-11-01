@@ -713,7 +713,7 @@ Where the action bar opens as a window: on a screen 600 px or wider, or a phone 
 | --- | --- | --- |
 | Enter | Roll what the field holds | everyone, in the Dice panel's formula field |
 | Up, Down | Go back through the formulas this device rolled, newest first, or forward again to what was being typed | everyone, in the formula field |
-| Any tap or key | Show the result at once, then do its own job | everyone, in the Dice panel while your dice are in the air |
+| Any tap or key | Show the result at once, then do its own job | everyone, in the Dice panel or a stat block's panel while your dice are in the air |
 | Enter | Roll the parts, or take the typed numbers | DM, in the group save's damage field |
 | Left, Right, Home, End | Pick another creature to roll for | everyone, in the Dice panel's creature tabs |
 | ContextMenu, Shift+F10 | Open the roll's one-roll options, the first choice focused. Enter and Space still roll as before | everyone, on a focused roll button |

@@ -833,6 +833,11 @@ describe("the sheet's rows beside the keys", () => {
     assert.deepEqual([...tables.keys()], ["Keys", MOUSE_SECTION, POINTER_SECTION, "Android", ...SURFACES], "one table under each heading, in the sheet's order");
   });
 
+  test("a tap or key during a throw names both surfaces that throw: the Dice panel and a stat block's panel (docs/design/design-v1-token-roll-header.md 6)", () => {
+    const row = BEHAVIORS.find((b) => b.id === "diceThrowEnd");
+    assert.equal(row?.when, "in the Dice panel or a stat block's panel while your dice are in the air");
+  });
+
   test("FEATURES.md repeats the sheet's intros word for word", () => {
     const intros = shortcutIntros(readFileSync(new URL("../../FEATURES.md", import.meta.url), "utf8"));
     for (const role of ROLES) {
