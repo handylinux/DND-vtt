@@ -644,6 +644,16 @@ step makes an open page reload. Until it reloads, an old DM page applies a
 group save as before, once, but untracked: its page stays locked, and Undo
 takes the outcome back without ever opening that page again.
 
+The update that lets a square trip wire with older, finer end points be
+renamed or edited again changes no version, so an older build still reads
+every room it saves. One caution applies to going back. Stop the server
+cleanly first, with `docker compose -f docker-compose.server.yml stop raccoon`
+or an ordinary update, because that saves a snapshot of every room. An older
+build refuses a rename or an edit of such a trap that sits in the changes
+saved since a room's last snapshot, and a room that meets one opens read-only.
+A server that crashed or was killed before it saved can leave such changes. In
+that case restore the backup taken just before the update.
+
 Compose rebuilds the image and replaces only the containers that changed. On
 the way down the app closes every WebSocket with code 1012, finishes each
 room's current write and saves a snapshot, so phones reconnect on their own
