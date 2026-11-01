@@ -269,3 +269,38 @@ describe("useReceiptVoice, as a surface's render reads it", async () => {
     assert.equal(speaks(scope, "a", true), false, "said already, so its sender shown again says nothing either");
   });
 });
+
+describe("useReceipt in a hidden pane (HIDDEN-WATCHERS)", async () => {
+  const { createElement } = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { RoomProvider } = await import("../../state/view.ts");
+  const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
+  const { useReceipt } = await import("./useReceipt.ts");
+  const { PanelHere } = await import("../panels.ts");
+
+  /** What a surface reads for tag "a": in a panel shown or hidden, or outside the panels with `shown` undefined. */
+  function read(shown: boolean | undefined): string | null {
+    const scope = new RoomScope();
+    const t = scope.get(receiptsSlot);
+    t.env = { lookup: async () => ({ parts: [] }), log: () => [] };
+    t.sending("a", 0);
+    t.answer("a", 0, "taken");
+    const store = createStore(() => ({ view: null, roomId: "r1", connection: "open" }));
+    let out: string | null | undefined;
+    function Probe() {
+      out = useReceipt("a")?.state ?? null;
+      return null;
+    }
+    const probe = createElement(Probe);
+    const children = shown === undefined ? probe : createElement(PanelHere, { id: "dice", shown, children: probe });
+    renderToStaticMarkup(createElement(RoomProvider, { store: store as never, actions: {} as never, ui: {} as never, children: createElement(RoomScopeProvider, { scope, children: children as never }) }));
+    assert.ok(out !== undefined);
+    return out;
+  }
+
+  test("every surface in a hidden sheet or pane reads no receipt, so it watches none and the toast says the roll: a group save's rows and Watchers, its damage, Shared attacks, a cast's damage, Auto Initiative's card and the Dice field", () => {
+    assert.equal(read(true), "committed");
+    assert.equal(read(false), null);
+    assert.equal(read(undefined), "committed", "outside the panels a surface is always shown");
+  });
+});

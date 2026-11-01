@@ -6,6 +6,7 @@ import { scopeSlot } from "../../state/scope.ts";
 import type { OpAnswer, OpRefusal, UnknownCause } from "../../state/types.ts";
 import { useRoomStore, useRoomView } from "../../state/view.ts";
 import { useScoped } from "../../state/scope.ts";
+import { usePanelShown } from "../panels.ts";
 import { findRolls } from "./logic.ts";
 
 /**
@@ -400,9 +401,14 @@ export class SurfaceVoice {
 /**
  * The state of one tag for a surface (8.7), null for no tag. A tag this page
  * never sent, such as one a surface kept across a reload, is looked up once.
- * While mounted the surface shows its result, so no toast tells it again.
+ * While mounted and shown the surface shows its result, so no toast tells it
+ * again. A hidden sheet or pane keeps its panel mounted, so a surface there
+ * watches nothing and reads null until shown, and the toast says what lands
+ * meanwhile (docs/design-v1-stat-block-rolls.md 8). Gating here, not in each
+ * caller, keeps every surface in a panel to that rule.
  */
-export function useReceipt(tag: string | null): ReceiptState | null {
+export function useReceipt(watched: string | null): ReceiptState | null {
+  const tag = usePanelShown() ? watched : null;
   const tracker = useReceipts();
   useSyncExternalStore(tracker.subscribe, tracker.version, tracker.version);
   useEffect(() => {

@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, before, describe, test, type TestContext } from "node:test";
-import { chromium, type Browser, type BrowserContext, type Locator, type Page } from "playwright-core";
+import { chromium, type Browser, type BrowserContext, type Locator, type Page, type WebSocketRoute } from "playwright-core";
 import { FORMULA_ERRORS } from "#shared/dice/formula.ts";
 import { keptD20 } from "#shared/dice/roll.ts";
 import type { DiceRoll, LogEntry, LogEvent } from "#shared/model.ts";
@@ -1504,6 +1504,67 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
       await shots.take(page, "dpf1-d4-unknown");
     } finally {
       await context.close();
+    }
+  });
+
+  test("fu42b-hidden. a group save rolled in the side panel and hidden before its answer: a toast says it, and shown again the page holds the results and says nothing more (HIDDEN-WATCHERS)", async () => {
+    const sceneId = dmSocket.state!.meta.playerSceneId!;
+    const bounds = dmSocket.state!.scenes[sceneId]!.bounds;
+    const goblins = [{ id: randomUUID(), x: 6, y: 2 }, { id: randomUUID(), x: 8, y: 2 }];
+    for (const [i, g] of goblins.entries()) {
+      await ops!.send({ t: "token.create", token: { id: g.id, sceneId, kind: "monster", name: `Hidden goblin ${i + 1}`, size: "medium", x: g.x, y: g.y, visibility: "all", disposition: "hostile", actor: { inline: { ...THORN_ACTOR, srdId: "goblin-warrior" } } } });
+    }
+    // A second DM computer, its socket routed from the start so the save's roll can wait on the wire.
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" });
+    try {
+      await context.addCookies(await dmContext.cookies(server.origin));
+      const page = await context.newPage();
+      const wire: { hold: boolean; held: string[]; up: WebSocketRoute | null } = { hold: false, held: [], up: null };
+      await page.routeWebSocket(/\/ws\?room=/, (ws) => {
+        const upstream = ws.connectToServer();
+        wire.up = upstream;
+        ws.onMessage((m) => {
+          if (wire.hold && typeof m === "string" && m.includes('"dice.roll"')) wire.held.push(m);
+          else upstream.send(m);
+        });
+        upstream.onMessage((m) => ws.send(m));
+      });
+      await page.goto(`${server.origin}/r/${run.roomId}`);
+      await page.getByRole("status", { name: "Connected" }).first().waitFor();
+      await page.locator(".konvajs-content").first().waitFor();
+      await tapCell(page, bounds, goblins[0]!);
+      await page.keyboard.down("Shift");
+      await tapCell(page, bounds, goblins[1]!);
+      await page.keyboard.up("Shift");
+      await page.getByRole("dialog", { name: "2 selected tokens" }).waitFor();
+      await openSideTab(page, "Dice");
+      const rolls = page.locator('section[aria-label="Group rolls"]');
+      await rolls.waitFor();
+      const toasts = () => page.locator("[data-toast]").filter({ hasText: /^Rolled / }).count();
+      const before = await toasts();
+      wire.hold = true;
+      await rolls.getByRole("button", { name: "DEX save for 2", exact: true }).click();
+      await waitFor("the save's roll held on the wire", () => (wire.held.length > 0 ? true : null), 10_000);
+      const creatures = page.getByRole("group", { name: "Creatures" });
+      await creatures.waitFor();
+      await page.getByRole("button", { name: "Hide panels" }).click();
+      await creatures.waitFor({ state: "hidden" });
+      wire.hold = false;
+      for (const m of wire.held.splice(0)) wire.up?.send(m);
+      // The page's rows and its watcher of the roll are mounted but hidden, so they watch nothing and the toast says it.
+      await waitFor("a toast for the roll nobody sees", async () => ((await toasts()) > before ? true : null), 5_000);
+      const heard = (await toasts()) - before;
+      await shots.take(page, "fu42b-hidden-group-save-toast");
+      await page.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).click();
+      await creatures.waitFor();
+      // Shown again, the page takes the results it deferred.
+      await waitFor("both rows rolled", async () => ((await creatures.getByText(/^Rolled \d/).count()) === 2 ? true : null), 5_000);
+      await sleep(600);
+      assert.equal((await toasts()) - before, heard, "no second toast once shown");
+      await shots.take(page, "fu42b-hidden-group-save-shown");
+    } finally {
+      await context.close();
+      for (const g of goblins) await ops!.send({ t: "token.delete", tokenId: g.id }).catch(() => undefined);
     }
   });
 });
