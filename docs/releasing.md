@@ -30,6 +30,10 @@ repository to exist.
    docker run --rm -v "$PWD:/app" -w /app ghcr.io/orhun/git-cliff/git-cliff:2.14.2 --config cliff.toml --tag vX.Y.Z -o CHANGELOG.md
    ```
 
+   Leave out Docker's `--user` flag. The image's entrypoint already writes
+   the file as the owner of the mounted folder, and `--user` makes it fail
+   with a `setpriv` error on a Mac.
+
    Commit the version bump and all generated files, including CHANGELOG.md.
    Unit tests fail while the generated files or newest released changelog
    heading are out of date.
