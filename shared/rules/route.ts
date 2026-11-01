@@ -2,14 +2,16 @@ import { seatsFullBetweenEnds } from "../migrate.ts";
 import type { AttachKind, PathStop } from "../model.ts";
 import type { Blocker, BuildState } from "../ruleHooks.ts";
 import { legFeet, type DiagonalCounter, type DistanceSettings } from "./distance.ts";
-import { canSqueeze, footprintRect, footprintSize, isSqueezed, placedOnHex, rangeAtInto, snapStep, stopFootprint, tokenRefHex, type CellRange, type PlacedToken } from "./footprint.ts";
+import { convexHull } from "./aoe.ts";
+import { canSqueeze, footprintRect, footprintSize, isSqueezed, placedOnHex, rangeAtInto, snapStep, stopFootprint, storedCenter, tokenRefHex, type CellRange, type PlacedToken, type SizeCategory } from "./footprint.ts";
 import type { Point, Rect } from "./geom.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
-import { hexDistance, hexLine, type HexGrid } from "./hex.ts";
+import { hexDistance, hexKey, hexLine, hexNeighbors, type Hex, type HexGrid } from "./hex.ts";
 import { onHolder, seatedAt } from "./attach.ts";
 import { footing, footprintGround, sceneGround } from "./heights.ts";
 import {
   coreBlocked,
+  coreSize,
   groundUnder,
   hexEndStand,
   hexFitWall,
@@ -29,7 +31,9 @@ import {
   walkEnds,
   walkFrom,
   walkOn,
+  type HexLeg,
   type HexStand,
+  type HexWalls,
   type MovingToken,
   type WalkEnd,
   type Walker,
@@ -703,15 +707,90 @@ function walkSpots(route: readonly RoutePoint[], token: Walker, build: Pick<Buil
  * squeezed, where its trace and its area line keep the squeeze, so a spot
  * only a squeeze stands on is no stand: whether a narrow space pinches the
  * walker there is the walls' to say, walls under the fog among them
- * (D-261101-181, migrate.ts stopsStandFullSize).
+ * (D-261101-181, migrate.ts stopsStandFullSize). `publicGround`, from op
+ * version 37, judges a spot between the ends by the test above, squeezes
+ * included and without the whole piece's sweep, only where every cell or
+ * hex that test reads lies on the ground every player sees, and elsewhere
+ * stands only where the walk itself went (`PublicGround`, migrate.ts
+ * stopsOnPublicGround). The walk's ends are judged as before.
  */
 export function routeSpots(build: BuildState, route: readonly RoutePoint[], token: Walker, step?: number, opts: StandRule = {}): RouteSpot[] {
   const stands = routeStands(build, route, token, step, opts);
   return stands.walk.map((_, s) => stands.spot(s));
 }
 
-/** How `routeSpots` judges a walk's stands: the last spot's squeeze, as the op has it, and whether every spot between the ends stands only full size. */
-export type StandRule = { squeeze?: boolean; fullBetween?: boolean };
+/** How `routeSpots` judges a walk's stands: the last spot's squeeze, as the op has it, whether every spot between the ends stands only full size, and the ground that judges the spots between the ends from op version 37. */
+export type StandRule = { squeeze?: boolean; fullBetween?: boolean; publicGround?: PublicGround };
+
+/**
+ * The ground every player sees, as a stop between a walk's ends reads it
+ * (traps.ts stopGround): the shared class's live ground before the op,
+ * every cell of a scene with its fog off. A spot's stand test reads the
+ * walls only where all it reads lies on it. Built once an op, so each
+ * answer is kept for the op.
+ */
+export type PublicGround = {
+  /** Whether every square cell a closed convex hull touches lies on it, sides, corners and a hair included (held.ts convexLive). */
+  hull(points: readonly Point[]): boolean;
+  /**
+   * Whether every hex of these stands lies on it, and so does every
+   * neighbor of a stair hex among them: a raised side between two hexes
+   * reads the stairs beside a stair hex (movement.ts besideFlight). A hex
+   * off the scene counts, as it holds nothing.
+   */
+  stands(t: Pick<HexWalls, "g" | "walls">, groups: readonly StandGroup[]): boolean;
+};
+
+/** Stands of one size, by their reference hexes. */
+export type StandGroup = { readonly size: SizeCategory; readonly refs: readonly Hex[] };
+
+/**
+ * What a spot between a walk's ends reads on squares, and the spots the
+ * walk itself proves (`StandRule.publicGround`). The stand test reads the
+ * leg from the piece's start, its core swept with the shifted paths half a
+ * cell aside (none for a point core, which takes the straight path alone),
+ * the core at the spot and, for a squeeze, the full footprint there. A
+ * player's stored walk passed the leg test piece by piece, so a corner of
+ * its route is a stand without reading a wall, and so is a spot exactly on
+ * its piece's line for a point core. The straight walk's own route may
+ * have passed only as its one whole leg (`routeStop`), so there only a
+ * point core's spot on that whole leg's line is.
+ */
+function squareProof(token: Walker, route: readonly RoutePoint[], start: Walker): { reach(from: Point, at: Point): Point[]; proven(i: number, end: boolean, at: Point): boolean } {
+  const core = coreSize(token);
+  const point = core.w === 0 && core.h === 0;
+  const grow = point ? 0 : 0.5;
+  const fp = footprintSize(token);
+  const hx = core.w / 2 + grow;
+  const hy = core.h / 2 + grow;
+  const fx = Math.max(hx, fp.w / 2);
+  const fy = Math.max(hy, fp.h / 2);
+  // As `routeStop` reads it, from the walk's own start.
+  const whole = route.length > 2 && !start.offHolder && alongStraightLeg(start, route.slice(1).map((p) => [p.x, p.y, 0, 0] as const));
+  const first = route[0]!;
+  const last = route[route.length - 1]!;
+  const onLine = (a: Point, b: Point, w: Point) => Math.abs((b.x - a.x) * (w.y - a.y) - (b.y - a.y) * (w.x - a.x)) < SLACK;
+  return {
+    reach(from, at) {
+      const a = storedCenter({ ...token, x: from.x, y: from.y });
+      const c = storedCenter({ ...token, x: at.x, y: at.y });
+      return convexHull([
+        { x: a.x - hx, y: a.y - hy },
+        { x: a.x + hx, y: a.y - hy },
+        { x: a.x + hx, y: a.y + hy },
+        { x: a.x - hx, y: a.y + hy },
+        { x: c.x - fx, y: c.y - fy },
+        { x: c.x + fx, y: c.y - fy },
+        { x: c.x + fx, y: c.y + fy },
+        { x: c.x - fx, y: c.y + fy },
+      ]);
+    },
+    proven(i, end, at) {
+      if (!end && !(point && onLine(route[i]!, route[i + 1]!, at))) return false;
+      return !whole || (point && onLine(first, last, at));
+    },
+  };
+}
 
 /**
  * `routeSpots` a spot at a time: the walk's spots and its trace, and each
@@ -737,6 +816,8 @@ export function routeStands(build: BuildState, route: readonly RoutePoint[], tok
     // A spot as the end of the walk up to it, judged from where its piece starts (movement.ts WalkEnd).
     return (pieces[i] ??= { endAt: walkEnds(build, trace[i]!), exact: latticePiece(b.x - a.x, b.y - a.y, lattice) });
   };
+  const ground = opts.publicGround;
+  const proof = ground ? squareProof(token, route, trace[0]!) : null;
   const known: RouteSpot[] = [];
   const spot = (s: number): RouteSpot => {
     const hit = known[s];
@@ -752,8 +833,17 @@ export function routeStands(build: BuildState, route: readonly RoutePoint[], tok
     const p = { x: w.x, y: w.y };
     let ended: WalkEnd | undefined;
     const spotEnd = () => (ended ??= piece.endAt(p));
-    const squeezed = last && opts.squeeze !== undefined ? opts.squeeze : (last || !opts.fullBetween) && squeezes && squeezeFits(build, spotEnd());
     const onGrid = multipleOf(w.x - token.x, grid) && multipleOf(w.y - token.y, grid);
+    if (ground && proof && !last) {
+      if (ground.hull(proof.reach(at, w))) {
+        // The stand test of op version 35, squeezes included, with the leg cut at the spot: the whole piece's sweep reads past it.
+        const sq = squeezes && squeezeFits(build, spotEnd());
+        const ok = (sq || onGrid) && !coreBlocked(build, spotEnd()) && (!blocks || legStop(build, at, { x: w.x, y: w.y, elevation: w.elevation }) === null);
+        return (known[s] = { ...w, squeezed: sq, stand: ok });
+      }
+      return (known[s] = { ...w, squeezed: false, stand: onGrid && proof.proven(i, end, w) });
+    }
+    const squeezed = last && opts.squeeze !== undefined ? opts.squeeze : (last || !opts.fullBetween) && squeezes && squeezeFits(build, spotEnd());
     const sweepClear = () => (piece.sweep ??= !blocks || straightClear(build, at, { x: b.x, y: b.y, elevation: b.elevation }));
     const stand =
       (squeezed || onGrid) &&
@@ -762,6 +852,13 @@ export function routeStands(build: BuildState, route: readonly RoutePoint[], tok
     return (known[s] = { ...w, squeezed, stand });
   };
   return { walk, trace, spot };
+}
+
+/** Whether a full-size cut leg walks its piece's own hexes: the piece walks full size and the cut's hex line is the piece's so far. */
+function provenOnHexes(piece: HexLeg, cut: HexLeg, full: HexStand): boolean {
+  if (piece.squeezed || cut.squeezed || piece.walk !== full.size || cut.line.length > piece.line.length) return false;
+  for (let j = 0; j < cut.line.length; j++) if (hexKey(cut.line[j]!) !== hexKey(piece.line[j]!)) return false;
+  return true;
 }
 
 /**
@@ -773,6 +870,16 @@ export function routeStands(build: BuildState, route: readonly RoutePoint[], tok
  * line to a hex partway along another may step beside it (hex.ts hexLine),
  * and behind a wall the piece never met. So the cut leg is judged itself,
  * with the squeeze the cut stores there (review H2-ASTRA-04).
+ *
+ * With `publicGround` (op version 37) a spot between the ends takes that
+ * test, squeezed where its walk squeezes and that is a real narrow space,
+ * only where every hex the test reads lies on that ground: each walk-size
+ * stand on the cut leg from its first step, since a walk the DM made was
+ * never tested, the stand there and the full one, and for a squeeze the
+ * full stands within two steps that could hold it (`hexNarrow`).
+ * Elsewhere it stands only full size, and only where its piece's own leg
+ * test proves it: the piece walks full size and the cut leg's hex line is
+ * the piece's own so far, so each step was clear and each stand fit.
  */
 function hexStands(
   build: BuildState,
@@ -785,6 +892,15 @@ function hexStands(
 ): { walk: readonly WalkSpot[]; trace: WalkTrace; spot: (s: number) => RouteSpot } {
   const walk = spots ?? routeWalk(t.g, trace, build, undefined, opts.squeeze !== undefined ? { endSqueezed: opts.squeeze } : {});
   const blocks = build.scenes[token.sceneId]?.blockMovement === true;
+  const ground = opts.publicGround;
+  // Each piece's own leg, as its walk took it (hexPiece): the last ends squeezed as the op does.
+  const pieceLegs: HexLeg[] = [];
+  const pieceLeg = (i: number): HexLeg => {
+    const at = trace[i]!;
+    const b = route[i + 1]!;
+    const to = i === route.length - 2 && opts.squeeze !== undefined ? hexStandAt(t.g, at, b, opts.squeeze) : hexEndStand(t.g, at, b);
+    return (pieceLegs[i] ??= hexLegOf(t.g, hexStartStand(t.g, at), to));
+  };
   const known: RouteSpot[] = [];
   const spot = (s: number): RouteSpot => {
     const hit = known[s];
@@ -793,6 +909,25 @@ function hexStands(
     if (s === 0) return (known[0] = { x: w.x, y: w.y, elevation: w.elevation, progress: w.progress, squeezed: isSqueezed(token), stand: true });
     const [i, k, n] = w.progress;
     const last = k === n && i === route.length - 2;
+    if (ground && !last) {
+      const at = trace[i]!;
+      const from = hexStartStand(t.g, at);
+      const sq = w.squeezed ?? false;
+      const stand = hexStandAt(t.g, token, w, sq);
+      const full = sq ? hexStandAt(t.g, token, w, false) : stand;
+      const cut = hexLegOf(t.g, from, stand);
+      const reach: StandGroup[] = [
+        { size: cut.walk, refs: cut.line },
+        { size: stand.size, refs: [stand.ref] },
+        { size: full.size, refs: sq ? [full.ref, stand.ref, ...hexNeighbors(t.g, stand.ref).flatMap((h) => [h, ...hexNeighbors(t.g, h)])] : [full.ref] },
+      ];
+      if (ground.stands(t, reach)) {
+        const fits = sq ? hexNarrow(t, token, stand) : hexFitWall(t, stand) < 0;
+        const ok = fits && (!blocks || legStop(build, at, { x: w.x, y: w.y, elevation: w.elevation, squeeze: sq }) === null);
+        return (known[s] = { x: w.x, y: w.y, elevation: w.elevation, progress: w.progress, squeezed: sq, stand: ok });
+      }
+      return (known[s] = { x: w.x, y: w.y, elevation: w.elevation, progress: w.progress, squeezed: sq, stand: !sq && provenOnHexes(pieceLeg(i), cut, full) });
+    }
     const squeezed = last && opts.squeeze !== undefined ? opts.squeeze : (w.squeezed ?? false);
     const stand: HexStand = hexStandAt(t.g, token, w, squeezed);
     // Between the walk's ends a stand judged full size is never on a squeeze's anchors (`StandRule`).

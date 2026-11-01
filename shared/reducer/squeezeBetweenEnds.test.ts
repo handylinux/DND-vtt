@@ -144,7 +144,7 @@ describe("a trap's stop between the walk's ends (D-261101-181)", () => {
   const route: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 18, y: 9, route: [[7.5, 9.5, 0, 0], [11.5, 9.5, 0, 0], [15.5, 9.5, 0, 0], [18, 9, 0, 0]] };
   const where = (s: RoomState) => [s.tokens.horse!.x, s.tokens.horse!.y, s.tokens.horse!.squeeze === true];
 
-  test("the warhorse stops where it first stands full size in both rooms, and Pat's copies match, by Pat's move and the DM's", () => {
+  test("the warhorse stops where it first stands full size in both rooms at op 36, and from 37 at its walk's end, its route's corners off its grid, and Pat's copies match, by Pat's move and the DM's", () => {
     const open = netted();
     const closed = walled(open);
     assert.deepEqual(copies(closed, [P1]), copies(open, [P1]));
@@ -152,8 +152,10 @@ describe("a trap's stop between the walk's ends (D-261101-181)", () => {
       for (const opVersion of LIVE) {
         const a = played(open, route, who, opVersion);
         const b = played(closed, route, who, opVersion);
-        assert.deepEqual(where(b), [17, 9, false], `${who.role} at op ${opVersion ?? "live"}`);
-        assert.deepEqual(where(a), [17, 9, false]);
+        // From op 37 only the row it walks along is revealed, so it stands only where its walk itself went (stopsPublic.test.ts).
+        const stop = opVersion === 36 ? [17, 9, false] : [18, 9, false];
+        assert.deepEqual(where(b), stop, `${who.role} at op ${opVersion ?? "live"}`);
+        assert.deepEqual(where(a), stop);
         assert.deepEqual(copies(b, [P1]), copies(a, [P1]));
       }
     }
@@ -179,8 +181,10 @@ describe("a trap's stop between the walk's ends (D-261101-181)", () => {
       assert.equal(a.tokens.horse!.squeeze, undefined);
       assert.deepEqual(copies(b, [P1]), copies(a, [P1]));
     }
-    // It stops at 9.5,9.5, a spot on its own grid (it started half a square off), full size from 36 in both rooms.
-    assert.deepEqual(where(played(open, on, DM, undefined)), [9.5, 9.5, false]);
+    // It stops at 9.5,9.5, a spot on its own grid (it started half a square off), full size at 36 in both rooms, and from 37 at its
+    // route's corner 15.5,9.5, the first spot past the net its walk itself proves.
+    assert.deepEqual(where(played(open, on, DM, 36)), [9.5, 9.5, false]);
+    assert.deepEqual(where(played(open, on, DM, undefined)), [15.5, 9.5, false]);
     assert.deepEqual(where(played(closed, on, DM, 35)), [9.5, 9.5, true], "at op 35 the walls squeezed it there");
     assert.deepEqual(where(played(open, on, DM, 35)), [9.5, 9.5, false]);
   });
@@ -199,14 +203,34 @@ describe("a pit in a corridor narrower than the walker (review FU43P-OPUS-1, D-2
   }
   const op: OpOf<"token.move"> = { t: "token.move", tokenId: "ogre", x: 9.5, y: 4.5, squeeze: true, route: [[1.5, 4.5, 0, 0], [9.5, 4.5, 0, 0]] };
 
-  test("an op stored at 35 drops it in squeezed, and from 36 it squeezes on across the open pit to its walk's end", () => {
-    const old = played(corridor(), op, DM, 35).tokens.ogre!;
-    assert.deepEqual([old.x, old.y, old.squeeze, old.elevation], [5.5, 4.5, true, -10]);
-    for (const opVersion of LIVE) {
-      const after = played(corridor(), op, DM, opVersion);
-      const ogre = after.tokens.ogre!;
-      assert.deepEqual([ogre.x, ogre.y, ogre.squeeze, ogre.elevation], [9.5, 4.5, true, 0], `op ${opVersion ?? "live"}`);
-      assert.equal(after.traps.pit?.state, "sprung");
+  /** The corridor with its fog on: every square revealed, or only the three columns west of it, where the ogre starts. */
+  function fogged(seen: boolean): RoomState {
+    const s = corridor();
+    s.scenes.s1 = { ...s.scenes.s1!, fogEnabled: true };
+    lift(s, "dm", seen ? { x: 0, y: 0, w: 30, h: 20 } : { x: 0, y: 0, w: 3, h: 20 });
+    return s;
+  }
+  const fell = [5.5, 4.5, true, -10];
+  const crossed = [9.5, 4.5, true, 0];
+  const end = (s: RoomState, opVersion: number | undefined) => {
+    const after = played(s, op, DM, opVersion);
+    const ogre = after.tokens.ogre!;
+    assert.equal(after.traps.pit?.state, "sprung");
+    return [ogre.x, ogre.y, ogre.squeeze, ogre.elevation];
+  };
+
+  test("an op stored at 35 drops it in squeezed, and at 36 it squeezes on across the open pit to its walk's end", () => {
+    for (const s of [corridor(), fogged(true), fogged(false)]) {
+      assert.deepEqual(end(s, 35), fell);
+      assert.deepEqual(end(s, 36), crossed);
+    }
+  });
+
+  test("from 37 it drops in squeezed where every player sees the corridor, fog off or revealed, and squeezes on across where the fog covers it", () => {
+    for (const opVersion of [37, undefined]) {
+      assert.deepEqual(end(corridor(), opVersion), fell, `fog off, op ${opVersion ?? "live"}`);
+      assert.deepEqual(end(fogged(true), opVersion), fell, `revealed, op ${opVersion ?? "live"}`);
+      assert.deepEqual(end(fogged(false), opVersion), crossed, `under the fog, op ${opVersion ?? "live"}`);
     }
   });
 });

@@ -3,6 +3,7 @@ import { describe, test } from "node:test";
 import { chunkKey } from "../keys.ts";
 import type { BuildChunk, RoomState, Token, Trap, TrapRig } from "../model.ts";
 import type { Op } from "../protocol.ts";
+import { lift } from "../discoveryTestutil.ts";
 import { DM, P1, actor, room, token } from "../testutil.ts";
 import { sizeCategory } from "./footprint.ts";
 import { encodeHeights } from "./heights.ts";
@@ -417,6 +418,13 @@ describe("stops (5.5)", () => {
           // No spot past the snare it may stop at lies outside the closet, so it walks to its end, which is no stop.
           assert.equal(p.op, op, `a ${size} goblin, the snare on ${x},1`);
         }
+        // Fogged, with its row and everything east of x 7 revealed, it walks on to its end too, by the spots its walk itself proves.
+        const fogged = { ...state, scenes: { s1: { ...state.scenes.s1!, fogEnabled: true } } };
+        lift(fogged, "dm", { x: 0, y: 0, w: 40, h: 1 });
+        lift(fogged, "dm", { x: 7, y: 0, w: 33, h: 30 });
+        const p = plan(fogged, op);
+        assert.deepEqual(summary(p.springings), ["snare:enter:public:gob"], `fogged, a ${size} goblin, the snare on ${x},1`);
+        assert.equal(p.op, op, `fogged, a ${size} goblin, the snare on ${x},1`);
       }
     }
   });
@@ -431,7 +439,7 @@ describe("stops (5.5)", () => {
     assert.equal(plan(state, op).op, op);
   });
 
-  test("a stop squeezed in a corridor lands on the ground under its squeezed footprint, not the raised ground its full one would cover, at op version 35, and from 36 the walk goes on to its end", () => {
+  test("a stop squeezed in a corridor lands on the ground under its squeezed footprint, not the raised ground its full one would cover, at op version 35 and from 37 with the fog off, and at 36 the walk goes on to its end", () => {
     // A one-square corridor along row 5, walled above and below, with the row south of it raised 10 ft past x = 3.
     const ogre = token("ogre", { name: "Ogre", size: "large", x: 0, y: 5 });
     const heights = new Array(256).fill(0);
@@ -457,10 +465,14 @@ describe("stops (5.5)", () => {
     assert.deepEqual(summary(p.springings), ["snare:enter:public:ogre"]);
     assert.ok(p.op.t === "token.move");
     assert.deepEqual([p.op.x, p.op.y, p.op.squeeze, p.op.elevation], [3.5, 4.5, true, 0], "its full footprint first reaches the plate there");
-    // From op version 36 a stop between the walk's ends stands only full size (migrate.ts stopsStandFullSize), which the corridor never lets it.
+    // At op version 36 a stop between the walk's ends stands only full size (migrate.ts stopsStandFullSize), which the corridor never lets it.
+    const at36 = planTrapMove(op, state, DM, { opVersion: 36 });
+    assert.deepEqual(summary(at36.springings), ["snare:enter:public:ogre"]);
+    assert.equal(at36.op, op, "no stand before the walk's end, so no stop");
+    // From 37 the ground every player sees takes op 35's stand, squeezes included (migrate.ts stopsOnPublicGround), and with the fog off that is every cell.
     const live = plan(state, op);
     assert.deepEqual(summary(live.springings), ["snare:enter:public:ogre"]);
-    assert.equal(live.op, op, "no stand before the walk's end, so no stop");
+    assert.deepEqual(live.op.t === "token.move" ? [live.op.x, live.op.y, live.op.squeeze, live.op.elevation] : null, [3.5, 4.5, true, 0]);
   });
 
   test("a trap that does not stop leaves the move as it is", () => {

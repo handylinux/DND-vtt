@@ -2,19 +2,20 @@ import { CHUNK_CELLS, FOG_SUBCELLS, MIN_HEIGHT_FT, type BuildChunk, type CellRec
 import { chunkKey, wallMidpoint } from "../keys.ts";
 import { gridOfScene, playersToken, seenByNonOwners } from "../project.ts";
 import type { Op } from "../protocol.ts";
-import { stopsOnTrap, stopsStandFullSize } from "../migrate.ts";
+import { stopsOnPublicGround, stopsOnTrap, stopsStandFullSize } from "../migrate.ts";
 import { isWritable } from "../writable.ts";
 import { creaturesInArea, type AreaToken } from "./aoe.ts";
 import { holderOf, insideHolder, onHolder, walkerFor } from "./attach.ts";
 import { footprintRect, footprintSize, isSqueezed, occupiedHexes, occupiedRange, rangeAtInto, sizeCategory, type CellRange, type PlacedToken } from "./footprint.ts";
 import { footing, footprintGround, groundAt, sceneGround, standing } from "./heights.ts";
+import { pendingGround } from "./held.ts";
 import { planMove, type MovedToken } from "./moveLeg.ts";
-import { groundUnder, storedBuild } from "./movement.ts";
-import { onTrace, routeLattice, routeStands, routeWalk, type RoutePiece, type RoutePoint, type RouteSpot, type WalkSpot } from "./route.ts";
+import { groundUnder, hexStandHexes, storedBuild, type HexWalls } from "./movement.ts";
+import { onTrace, routeLattice, routeStands, routeWalk, type PublicGround, type RoutePiece, type RoutePoint, type RouteSpot, type StandGroup, type StandRule, type WalkSpot } from "./route.ts";
 import { APART, contact, orient } from "./segments.ts";
 import { sceneWalls } from "./walls.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
-import { cornerAt, hexAt, hexCorners, hexKey, hexNeighbors, hexSubcells, sceneHexSpan, type Hex, type HexGrid } from "./hex.ts";
+import { cornerAt, hexAt, hexCorners, hexInScene, hexKey, hexNeighbors, hexSubcells, sceneHexSpan, type Hex, type HexGrid } from "./hex.ts";
 
 /**
  * Triggers and traps (docs/design/design-v1-traps.md section 5): which creatures
@@ -629,7 +630,8 @@ function twoSpots(route: readonly RoutePoint[]): WalkSpot[] {
 
 /** An op's walks, by token and by group, and each walker's spots with `stand` once a stop has read them (standSpots). */
 /** `opVersion` is the op's, which a walk off a holder starts by (attach.ts walkerFor). */
-type Walks = { all: Walk[]; byId: Map<string, Walk>; groups: Map<string, Group>; stands: Map<Walk, Stands>; opVersion: number | undefined };
+/** `grounds` is the ground every player sees on each scene, built once an op where a stop reads it (stopGround). */
+type Walks = { all: Walk[]; byId: Map<string, Walk>; groups: Map<string, Group>; stands: Map<Walk, Stands>; opVersion: number | undefined; grounds: Map<string, PublicGround> };
 
 /** A walk's spots, and each with `stand` as asked (route.ts routeStands). */
 type Stands = { walk: readonly { progress: Progress }[]; spot: (i: number) => RouteSpot };
@@ -701,7 +703,7 @@ function walksOf(op: Op, before: RoomState, entries: readonly MovedToken[], seen
       byId.set(e.tokenId, walk);
     }
   }
-  return { all, byId, groups, stands: new Map(), opVersion };
+  return { all, byId, groups, stands: new Map(), opVersion, grounds: new Map() };
 }
 
 /**
@@ -1444,11 +1446,24 @@ function standSpots(walks: Walks, walk: Walk, before: RoomState, seen: (id: stri
     const token = walk.holder ? walk.entry.trace[0]! : walkerFor(before, walk.token, (t) => seen(t.id), { opVersion: walks.opVersion, to: walk.entry.to });
     // The group's head walks its group's own walk at its step, so its spots are already there.
     const head = walk.entry === walk.group.head && walk.step === walk.group.step;
-    const full = { fullBetween: stopsStandFullSize(walks.opVersion) };
+    const full = standRule(walks, before, walk.token.sceneId);
     stands = routeStands(storedBuild(before, walks.opVersion), walk.entry.route, token, walk.group.step, walk.holder ? full : { ...full, squeeze: walk.squeezeAtEnd }, head ? walk.group.base(walk.group.step) : undefined);
   }
   walks.stands.set(walk, stands);
   return stands;
+}
+
+/**
+ * How a stop judges a walk's spots between its ends, by the op's version:
+ * from 36 only full size, and from 37 by the ground every player sees
+ * (route.ts StandRule, migrate.ts stopsOnPublicGround).
+ */
+function standRule(walks: Walks, before: RoomState, sceneId: string): StandRule {
+  const rule: StandRule = { fullBetween: stopsStandFullSize(walks.opVersion) };
+  if (!stopsOnPublicGround(walks.opVersion)) return rule;
+  let ground = walks.grounds.get(sceneId);
+  if (!ground) walks.grounds.set(sceneId, (ground = groundMaker(before, sceneId)));
+  return { ...rule, publicGround: ground };
 }
 
 /**
@@ -1517,7 +1532,7 @@ function cutOp(op: Op, walks: Walks, stops: ReadonlyMap<string, Stop>, before: R
     const token = walkerFor(before, walk.token, (t) => seen(t.id), { opVersion: walks.opVersion, to: walk.entry.to });
     const squeeze = op.t === "token.move" && op.tokenId === named && op.squeeze === true;
     // The named token's own walk, as its stop's search read it when it walks as the group's head.
-    const stands = walk.holder ? routeStands(storedBuild(before, walks.opVersion), group.head.route, token, group.step, { squeeze, fullBetween: stopsStandFullSize(walks.opVersion) }) : standSpots(walks, walk, before, seen);
+    const stands = walk.holder ? routeStands(storedBuild(before, walks.opVersion), group.head.route, token, group.step, { squeeze, ...standRule(walks, before, walk.token.sceneId) }) : standSpots(walks, walk, before, seen);
     if (stands.walk.length === 0) return null;
     const i = latestIndex(stands.walk, stop.s);
     const at = stands.spot(i);
@@ -1757,4 +1772,115 @@ export function planHand(room: TrapRoom, trap: Trap, tokenIds: readonly string[]
     return t?.sceneId === trap.sceneId && trapCreature(room, t);
   });
   return { ...springingAt(trap, "hand", "public", by, room, env), perceived: true };
+}
+
+/**
+ * The ground every player sees on a scene before an op, as a stop between
+ * a walk's ends reads it from op version 37 (route.ts PublicGround): the
+ * shared class's live ground (held.ts pendingGround), the shared sight and
+ * the DM's reveals, and every cell where the scene's fog is off. Made once
+ * an op. Each cell, hex and stand is asked once for the op under a numeric
+ * key, since a walk's cut legs share most of what they read.
+ */
+export function stopGround(before: RoomState, sceneId: string): PublicGround {
+  const ground = pendingGround(before, sceneId, null);
+  if (!ground) return { hull: () => false, stands: () => false };
+  if (!ground.fogged) return { hull: () => true, stands: () => true };
+  const { w, h } = ground.bounds;
+  // -1 unknown, then 0 or 1.
+  const cells = new Int8Array(w * h).fill(-1);
+  const cellLive = (x: number, y: number): boolean => {
+    const i = y * w + x;
+    let v = cells[i]!;
+    if (v < 0) cells[i] = v = ground.live(x, y) ? 1 : 0;
+    return v === 1;
+  };
+  // A scene is at most 200 cells a side, so a hex's offset column and row each fit under KEY_SPAN with room for stands past its edge.
+  const hexes = new Map<number, boolean>();
+  const hexLive = (g: HexGrid, hx: Hex): boolean => {
+    const key = (hx.col + KEY_OFFSET) * KEY_SPAN + hx.row + KEY_OFFSET;
+    let v = hexes.get(key);
+    if (v === undefined) hexes.set(key, (v = !hexInScene(g, ground.bounds, hx) || ground.keyLive(hexKey(hx))));
+    return v;
+  };
+  const stands = new Map<number, boolean>();
+  const standLive = (t: Pick<HexWalls, "g" | "walls">, size: StandGroup["size"], ref: Hex): boolean => {
+    const key = (SIZE_KEYS[size] * KEY_SPAN + ref.col + KEY_OFFSET) * KEY_SPAN + ref.row + KEY_OFFSET;
+    let v = stands.get(key);
+    if (v !== undefined) return v;
+    const own = hexStandHexes(t.g, { size, ref });
+    v = own.every((hx) => hexLive(t.g, hx));
+    for (let j = 0; v && j < own.length; j++) {
+      const hx = own[j]!;
+      const facing = t.walls.stairAt(hx.col, hx.row);
+      if (facing !== undefined && facing !== null) v = hexNeighbors(t.g, hx).every((n) => hexLive(t.g, n));
+    }
+    stands.set(key, v);
+    return v;
+  };
+  return {
+    hull: (points) => rowHullLive(cellLive, w, h, points),
+    stands: (t, groups) => {
+      for (const { size, refs } of groups) for (const ref of refs) if (!standLive(t, size, ref)) return false;
+      return true;
+    },
+  };
+}
+
+const KEY_OFFSET = 4096;
+const KEY_SPAN = 8192;
+const SIZE_KEYS: Record<StandGroup["size"], number> = { tiny: 0, small: 1, medium: 2, large: 3, huge: 4, gargantuan: 5 };
+
+/** What builds a stop's ground for an op: `stopGround`, or a test's own to hold it against. */
+let groundMaker: (before: RoomState, sceneId: string) => PublicGround = stopGround;
+
+/** For tests: plans read `make`'s ground in place of `stopGround`'s, until set back with null. */
+export function setStopGroundForTests(make: ((before: RoomState, sceneId: string) => PublicGround) | null): void {
+  groundMaker = make ?? stopGround;
+}
+
+/**
+ * Whether every square cell inside a w by h scene that a closed convex
+ * hull touches is live, a hair past touching included (held.ts
+ * convexLive), asked a row at a time: a closed convex hull meets a row's
+ * cells exactly where its part inside the row's band, grown a hair,
+ * spans them, so each row asks only the cells in that span.
+ */
+export function rowHullLive(live: (x: number, y: number) => boolean, w: number, h: number, hull: readonly { x: number; y: number }[]): boolean {
+  const E = 1e-9;
+  const n = hull.length;
+  if (n === 0) return true;
+  let ymin = Infinity;
+  let ymax = -Infinity;
+  for (const p of hull) {
+    if (p.y < ymin) ymin = p.y;
+    if (p.y > ymax) ymax = p.y;
+  }
+  const r0 = Math.max(0, Math.floor(ymin - E));
+  const r1 = Math.min(h - 1, Math.floor(ymax + E));
+  for (let y = r0; y <= r1; y++) {
+    const lo = y - E;
+    const hi = y + 1 + E;
+    let xmin = Infinity;
+    let xmax = -Infinity;
+    for (let i = 0; i < n; i++) {
+      const a = hull[i]!;
+      const b = hull[(i + 1) % n]!;
+      if (a.y >= lo && a.y <= hi) {
+        if (a.x < xmin) xmin = a.x;
+        if (a.x > xmax) xmax = a.x;
+      }
+      for (const edge of [lo, hi]) {
+        if ((a.y - edge) * (b.y - edge) >= 0) continue;
+        const x = a.x + ((b.x - a.x) * (edge - a.y)) / (b.y - a.y);
+        if (x < xmin) xmin = x;
+        if (x > xmax) xmax = x;
+      }
+    }
+    if (xmin > xmax) continue;
+    const c0 = Math.max(0, Math.floor(xmin - E));
+    const c1 = Math.min(w - 1, Math.floor(xmax + E));
+    for (let x = c0; x <= c1; x++) if (!live(x, y)) return false;
+  }
+  return true;
 }
