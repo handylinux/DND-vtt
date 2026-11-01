@@ -297,6 +297,22 @@ export function replacement(old: SceneMap | undefined, asset: MapAsset, gridShap
   return { map: scaled, search: !sameFile, kept };
 }
 
+/**
+ * Whether a new image that takes its file name's scale refits the scene's
+ * bounds to itself. A first image always does. Over an old map it does only
+ * when the bounds are still the old map's fit: a grid that restarts at the
+ * name's scale (other art, or a kept grid that disagreed) leaves bounds
+ * fitted to the old cells, but bounds the DM set by hand are left alone.
+ * A kept grid that agrees with the name refits to the same cells, so
+ * nothing changes there either.
+ */
+export function refitsToNamedMap(old: SceneMap | undefined, next: SceneMap, named: number | undefined, bounds: { w: number; h: number }): boolean {
+  if (named === undefined || next.cellPx !== named) return false;
+  if (!old) return true;
+  const fit = fitBounds(old);
+  return fit.w === bounds.w && fit.h === bounds.h;
+}
+
 /** A kept grid within 1% of a name's scale is that grid, lined up by hand, so it keeps its origin. */
 const NAME_AGREES = 0.01;
 

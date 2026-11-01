@@ -34,7 +34,7 @@ import { isoOffered, suggestedKind, SUGGESTED_VIEW, SUGGESTED_VIEW_HELP, VIEW_NA
 import { VisionSettings } from "../vision/VisionSettings.tsx";
 import { deleteBlocked, sceneAfterDelete } from "./afterDelete.ts";
 import { ColorInput, ConfirmButton, NumberInput, Select, Slider } from "./controls.tsx";
-import { fogsWithFirstMap, nameCellPx, replacement, viewFromCamera } from "./create.ts";
+import { fogsWithFirstMap, nameCellPx, refitsToNamedMap, replacement, viewFromCamera } from "./create.ts";
 import { useStartFraming } from "./FrameView.tsx";
 import { sceneGroupSummary } from "./sceneSummary.ts";
 import { SCENE_GROUP_ICONS, SCENE_GROUP_LABELS, useSceneFolds, type SceneGroup } from "./settingsFolds.ts";
@@ -531,9 +531,10 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
       // goes on past the wait, which Line up grid shows. A first image
       // either knows its scale from its name, so the scene fits it now, or
       // the grid tool comes up to find the scale (and fits the scene when
-      // applied).
+      // applied). Over an old map, a name's scale that restarts the grid
+      // refits bounds that were fitted to the old one (refitsToNamedMap).
       const fallback = { cellPx: next.cellPx, originPx: next.originPx };
-      if (!map && named !== undefined && next.cellPx === named && !found && !wait.later) {
+      if (!found && !wait.later && refitsToNamedMap(map, next, named, scene.bounds)) {
         const bounds = fitBounds(next);
         if (bounds.w !== scene.bounds.w || bounds.h !== scene.bounds.h) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { bounds } });
       } else if (!map || found || wait.later) {

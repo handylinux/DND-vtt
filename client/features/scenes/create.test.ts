@@ -18,6 +18,7 @@ import {
   newSceneShape,
   pickNow,
   playersSeeFields,
+  refitsToNamedMap,
   replaceMap,
   replacement,
   sameImageShape,
@@ -25,6 +26,7 @@ import {
   viewFromCamera,
   withPlayersSee,
 } from "./create.ts";
+import { fitBounds } from "../grid/calibrate.ts";
 import { TOP_DOWN } from "../../lib/view.ts";
 
 function valid(scene: unknown) {
@@ -160,6 +162,24 @@ describe("new scenes", () => {
     // A name for another grid is no scale for this one: the grid is kept and searched.
     assert.equal(replacement(old, rows).map.cellPx, 35);
     assert.equal(replacement(old, rows).search, true);
+  });
+
+  test("a name's scale that restarts a grid refits the bounds fitted to the old one, and leaves bounds set by hand", () => {
+    const old = { assetId: "a", widthPx: 1435, heightPx: 869, cellPx: 35, originPx: { x: 3, y: 4 } };
+    const fitted = fitBounds(old);
+    assert.deepEqual(fitted, { w: 40, h: 24 });
+    const rows = { id: "b", width: 1435, height: 869, hexCellPx: { rows: 70 } };
+    const restarted = replacement(old, rows, "hexRows").map;
+    assert.equal(refitsToNamedMap(old, restarted, nameCellPx(rows, "hexRows"), fitted), true, "70 px art over a 35 px grid: the bounds were twice the cells");
+    assert.equal(refitsToNamedMap(old, restarted, nameCellPx(rows, "hexRows"), { w: 12, h: 9 }), false, "bounds the DM set by hand stay");
+    // Larger art at the name's scale keeps the grid in cells: the same bounds, so a refit would change nothing.
+    const bigger = { id: "c", width: 2870, height: 1738, cellPx: 70 };
+    const scaled = replacement(old, bigger).map;
+    assert.equal(scaled.cellPx, 70);
+    assert.deepEqual(fitBounds(scaled), fitted);
+    assert.equal(refitsToNamedMap(old, scaled, nameCellPx(bigger), { w: 12, h: 9 }), false, "and bounds set by hand stay there too");
+    assert.equal(refitsToNamedMap(undefined, restarted, 70, { w: 30, h: 20 }), true, "a first image always fits");
+    assert.equal(refitsToNamedMap(old, replacement(old, { id: "d", width: 1435, height: 869 }).map, undefined, fitted), false, "no name, no refit");
   });
 });
 

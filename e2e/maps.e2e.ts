@@ -1143,6 +1143,41 @@ describe("raccoon-vtt maps run", { timeout: 300_000 }, () => {
     }
   });
 
+  test("fu43fix3-1: other art named for twice the scale refits the scene's bounds, and bounds set by hand stay", async () => {
+    // 1400 by 980 art named for 35 px squares is a 40 by 28 scene, then other art of that size named for 70 px squares is 20 by 14.
+    const first = path.join(work, "yard_40x28.png");
+    const second = path.join(work, "vault_20x14.png");
+    const third = path.join(work, "keep_10x7.png");
+    await sharp({ create: { width: 1400, height: 980, channels: 3, background: "#456843" } }).png().toFile(first);
+    await sharp({ create: { width: 1400, height: 980, channels: 3, background: "#436468" } }).png().toFile(second);
+    await sharp({ create: { width: 1400, height: 980, channels: 3, background: "#684364" } }).png().toFile(third);
+    await pickTool(dm, "Select");
+    await openSideTab(dm, "Scenes");
+    const panel = dm.getByRole("tabpanel", { name: sideTabName("Scenes") });
+    await panel.getByRole("radio", { name: "Map image", exact: true }).click();
+    const known = new Set(Object.keys(dmSocket.state?.scenes ?? {}));
+    await panel.getByRole("button", { name: "Choose a map image" }).setInputFiles(first);
+    await panel.getByRole("button", { name: "Upload and create" }).click();
+    const scene = await waitFor("fu43fix3-1 map", () => Object.values(dmSocket.state?.scenes ?? {}).find((s) => s?.map && !known.has(s.id)), 30_000);
+    await waitFor("the DM on the named map", () => dmSocket.you?.sceneId === scene.id || null);
+    assert.equal(scene.map?.cellPx, 35);
+    await waitFor("the first image's fit", () => { const b = sceneOf(dmSocket.state, scene.id)?.bounds; return b?.w === 40 && b.h === 28 ? b : null; });
+    const group = await openSceneGroup(panel, "Map image and grid");
+    await group.getByLabel("Replace map image", { exact: true }).setInputFiles(second);
+    await waitFor("the replacement's scale", () => sceneOf(dmSocket.state, scene.id)?.map?.cellPx === 70 || null, 30_000);
+    const refit = await waitFor("the bounds refit to the new scale", () => { const b = sceneOf(dmSocket.state, scene.id)?.bounds; return b?.w === 20 && b.h === 14 ? b : null; });
+    assert.deepEqual({ w: refit.w, h: refit.h }, { w: 20, h: 14 });
+    // Bounds the DM set by hand stay when other art named for another scale restarts the grid.
+    const across = (await openSceneGroup(panel, "Size and view")).getByLabel("Squares across");
+    await across.fill("12");
+    await across.blur();
+    await waitFor("the hand-set width", () => sceneOf(dmSocket.state, scene.id)?.bounds.w === 12 || null);
+    await (await openSceneGroup(panel, "Map image and grid")).getByLabel("Replace map image", { exact: true }).setInputFiles(third);
+    await waitFor("the third image's scale", () => sceneOf(dmSocket.state, scene.id)?.map?.cellPx === 140 || null, 30_000);
+    await dm.waitForTimeout(500);
+    assert.equal(sceneOf(dmSocket.state, scene.id)?.bounds.w, 12, "bounds the DM set by hand stay");
+  });
+
   test("fu43h-1: a name's counts read as hexes skip alignment on the scene's own orientation, and only there", async () => {
     // 20 x 14 hexes of 70 px: hex rows are 20.5 hexes wide, hex columns 20 hexes tall plus the half hex their odd columns stand out (D-261101-190).
     const art = [
