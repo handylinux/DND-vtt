@@ -402,6 +402,25 @@ describe("stops (5.5)", () => {
     assert.deepEqual(p.op.t === "token.move" ? [p.op.x, p.op.y, p.op.route] : null, [4, 5, [[2, 4, 0, 0], [4, 5, 1, 0]]]);
   });
 
+  test("a stop never lands across a wall: a goblin whose taut line passes a sealed closet walks on past a snare inside it, at op version 35 and live (review FU43P-OPUS-8)", () => {
+    // The closet is sealed on every side, below the line from 0,0 to 8,1. The walk's spots at x 4 and 5 snap into it, onto the snare.
+    const closet: [number, number, number, number][] = [[1, 1.25, 6.25, 1.25], [1, 1.25, 1, 3], [6.25, 1.25, 6.25, 3], [1, 3, 6.25, 3]];
+    const op: Op = { t: "token.move", tokenId: "gob", x: 8, y: 1, route: [[8, 1, 0, 0]] };
+    for (const size of ["medium", "small"] as const) {
+      for (const x of [4, 5]) {
+        const state = world([token("gob", { x: 0, y: 0, size })], [trap("snare", square(x, 1), { stops: true })], (s) => {
+          s.scenes.s1 = { ...s.scenes.s1!, blockMovement: true, autoWalls: "off" };
+          s.buildChunks[chunkKey("s1", 0, 0)] = { sceneId: "s1", cx: 0, cy: 0, rev: 1, cells: {}, edges: {}, walls: closet.map(([ax, ay, bx, by], i) => ({ id: `closetwall0${i}`, a: [ax, ay], b: [bx, by], f: { kind: "wall" } })) };
+        });
+        for (const p of [planTrapMove(op, state, DM, { opVersion: 35 }), plan(state, op)]) {
+          assert.deepEqual(summary(p.springings), ["snare:enter:public:gob"], `a ${size} goblin, the snare on ${x},1`);
+          // No spot past the snare it may stop at lies outside the closet, so it walks to its end, which is no stop.
+          assert.equal(p.op, op, `a ${size} goblin, the snare on ${x},1`);
+        }
+      }
+    }
+  });
+
   test("with no spot it may stop at past the trap, the walk goes on to its end, so a stop never refuses the op", () => {
     const gob = token("gob", { x: 1, y: 0 });
     const state = world([gob], [trap("snare", square(1, 1), { stops: true })], (s) => {
