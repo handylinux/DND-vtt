@@ -155,6 +155,19 @@ describe("upload", () => {
     assert.deepEqual(res.json().variants, ["full", "mobile", "thumb"]);
   });
 
+  test("a map upload also reads a 20x14 name as hex rows or columns when the image is that hexes' span (D-261101-190)", async () => {
+    const roomId = await room();
+    const dm = auth.allow(roomId, "dm");
+    const rows = await upload(app, roomId, dm, "map", await solid(1435, 869).jpeg().toBuffer(), { "content-type": "image/jpeg" }, "&name=crypt_20x14.jpg");
+    assert.equal(rows.statusCode, 200, rows.body);
+    assert.equal(rows.json().cellPx, undefined);
+    assert.equal(Math.round(rows.json().hexCellPx.rows), 70);
+    assert.equal(rows.json().hexCellPx.columns, undefined);
+    const columns = await upload(app, roomId, dm, "map", await solid(1233, 1015).jpeg().toBuffer(), { "content-type": "image/jpeg" }, "&name=crypt_20x14.jpg");
+    assert.equal(Math.round(columns.json().hexCellPx.columns), 70);
+    assert.equal(columns.json().hexCellPx.rows, undefined);
+  });
+
   test("SVG is refused by its content type and by its bytes", async () => {
     const roomId = await room();
     const player = auth.allow(roomId, "player");

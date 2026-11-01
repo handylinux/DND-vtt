@@ -12,8 +12,12 @@ import { lightOf } from "../vision/settings.ts";
 
 export type SceneInput = OpOf<"scene.create">["scene"];
 
-/** What an upload answers with for a map: its canonical size and, from a name like `crypt_30x20.jpg`, a cellPx. */
-export type MapAsset = { id: string; width: number; height: number; cellPx?: number };
+/**
+ * What an upload answers with for a map: its canonical size and, from a name
+ * like `crypt_30x20.jpg`, a cellPx for squares and a `hexCellPx` for each hex
+ * orientation the counts fit.
+ */
+export type MapAsset = { id: string; width: number; height: number; cellPx?: number; hexCellPx?: { rows?: number; columns?: number } };
 
 export const DEFAULT_GRID: Scene["grid"] = { show: true, color: "#ffffff", opacity: 0.25, lineWidth: 1 };
 export const MAT_BACKGROUND = "#2b2b31";
@@ -103,10 +107,17 @@ function validHint(v: number | undefined): v is number {
   return typeof v === "number" && Number.isFinite(v) && v >= MIN_CELL_PX && v <= MAX_CELL_PX;
 }
 
-/** The map placement for a fresh upload: a square-count hint on squares only, otherwise a guess. */
-export function initialMap(asset: MapAsset, hex = false): { map: SceneMap; hinted: boolean } {
-  const hinted = !hex && validHint(asset.cellPx);
-  const cellPx = hinted ? asset.cellPx! : guessCellPx(asset.width, asset.height);
+/** The scale a file name gives a scene of this grid: the counts read as its own lattice, or none. */
+export function nameCellPx(asset: Pick<MapAsset, "cellPx" | "hexCellPx">, gridShape?: GridShape): number | undefined {
+  const px = gridShape === undefined ? asset.cellPx : gridShape === "hexRows" ? asset.hexCellPx?.rows : asset.hexCellPx?.columns;
+  return validHint(px) ? px : undefined;
+}
+
+/** The map placement for a fresh upload: the file name's scale for the scene's grid, otherwise a guess. */
+export function initialMap(asset: MapAsset, gridShape?: GridShape): { map: SceneMap; hinted: boolean } {
+  const named = nameCellPx(asset, gridShape);
+  const hinted = named !== undefined;
+  const cellPx = named ?? guessCellPx(asset.width, asset.height);
   return {
     map: { assetId: asset.id, widthPx: asset.width, heightPx: asset.height, cellPx, originPx: { x: 0, y: 0 } },
     hinted,
@@ -125,7 +136,7 @@ export function initialMap(asset: MapAsset, hex = false): { map: SceneMap; hinte
  * blank mat or a builder scene says nothing and keeps the older rule.
  */
 export function mapScene(input: { id: string; name: string; asset: MapAsset; gridShape?: GridShape }): { scene: SceneInput; hinted: boolean } {
-  const { map, hinted } = initialMap(input.asset, input.gridShape !== undefined);
+  const { map, hinted } = initialMap(input.asset, input.gridShape);
   return {
     scene: {
       id: input.id,
@@ -240,8 +251,8 @@ export function withPlayersSee(scene: SceneInput, pick: NewScenePick, light?: Li
  * shape, the old alignment still fits once scaled by the width ratio, so
  * tokens and builds stay on their squares.
  */
-export function replaceMap(old: SceneMap | undefined, asset: MapAsset, hex = false): SceneMap {
-  if (!old || !sameImageShape(old, asset)) return initialMap(asset, hex).map;
+export function replaceMap(old: SceneMap | undefined, asset: MapAsset, gridShape?: GridShape): SceneMap {
+  if (!old || !sameImageShape(old, asset)) return initialMap(asset, gridShape).map;
   const k = asset.width / old.widthPx;
   return {
     assetId: asset.id,
@@ -269,14 +280,14 @@ export function sameImageShape(old: SceneMap, asset: MapAsset): boolean {
  * old one's shape keeps the grid, scaled, and is searched all the same,
  * but a find that differs from that grid is only offered (`kept`): the DM
  * may have lined it up by hand. Other art starts over, as a first image
- * does. A size in the file name wins on squares, so such a file is not
- * searched.
+ * does. A size in the file name wins on every grid (D-261101-190), so
+ * such a file is not searched.
  */
-export function replacement(old: SceneMap | undefined, asset: MapAsset, hex: boolean): { map: SceneMap; search: boolean; kept: KeptGrid | null } {
-  const map = replaceMap(old, asset, hex);
+export function replacement(old: SceneMap | undefined, asset: MapAsset, gridShape?: GridShape): { map: SceneMap; search: boolean; kept: KeptGrid | null } {
+  const map = replaceMap(old, asset, gridShape);
   const sameFile = old?.assetId === asset.id;
   const kept = old && !sameFile && sameImageShape(old, asset) ? { cellPx: map.cellPx, originPx: map.originPx, scale: asset.width / old.widthPx } : null;
-  return { map, search: !sameFile && (asset.cellPx === undefined || hex), kept };
+  return { map, search: !sameFile && nameCellPx(asset, gridShape) === undefined, kept };
 }
 
 /**

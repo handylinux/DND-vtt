@@ -10,6 +10,7 @@ import {
   likeGoneText,
   mapScene,
   matScene,
+  nameCellPx,
   nameFromFile,
   newSceneIntent,
   newScenePick,
@@ -32,22 +33,32 @@ function valid(scene: unknown) {
 }
 
 describe("new scenes", () => {
-  test("FU38-B: a square-count file name gives no scale to either hex shape", () => {
-    const asset = { id: "a", width: 1400, height: 980, cellPx: 70 };
-    for (const gridShape of ["hexRows", "hexColumns"] as const) {
+  test("a file name's counts give each grid its own scale, read as that grid's cells (D-261101-190)", () => {
+    // 20 x 14 named art: squares of 70 on a 1400 x 980 image, hex rows of 70 on 1435 x 869, hex columns of 70 on 1233 x 1015.
+    const squares = { id: "a", width: 1400, height: 980, cellPx: 70 };
+    const rows = { id: "b", width: 1435, height: 869, hexCellPx: { rows: 70 } };
+    const columns = { id: "c", width: 1233, height: 1015, hexCellPx: { columns: 70 } };
+    for (const [asset, gridShape, cellPx] of [[squares, undefined, 70], [rows, "hexRows", 70], [columns, "hexColumns", 70]] as const) {
       const made = mapScene({ id: "s", name: "crypt 20x14", asset, gridShape });
       valid(made.scene);
-      assert.equal(made.hinted, false, "a guessed scale must open Line up grid");
+      assert.equal(made.hinted, true, `${gridShape ?? "squares"} takes the name`);
+      assert.equal(made.scene.map?.cellPx, cellPx);
+      assert.deepEqual(made.scene.map?.originPx, { x: 0, y: 0 });
+    }
+    // A reading for another grid is no scale for this one: the guess stands and Line up grid opens.
+    for (const [asset, gridShape] of [[squares, "hexRows"], [squares, "hexColumns"], [rows, undefined], [rows, "hexColumns"], [columns, "hexRows"]] as const) {
+      const made = mapScene({ id: "s", name: "crypt 20x14", asset, gridShape });
+      assert.equal(made.hinted, false, `${gridShape ?? "squares"} reads another grid's counts`);
       assert.equal(made.scene.map?.cellPx, guessCellPx(asset.width, asset.height));
     }
-    assert.equal(initialMap(asset, true).hinted, false, "a first image on a hex scene also needs alignment");
-    const old = { ...initialMap(asset).map, assetId: "old", widthPx: 700, heightPx: 700 };
+    assert.equal(nameCellPx({ hexCellPx: { rows: 20000 } }, "hexRows"), undefined, "a hint outside the cell size limits is no hint");
+    const old = { ...initialMap(squares).map, assetId: "old", widthPx: 700, heightPx: 700 };
     for (const previous of [undefined, old]) {
-      const next = replacement(previous, asset, true);
-      assert.equal(next.map.cellPx, guessCellPx(asset.width, asset.height));
-      assert.equal(next.search, true);
+      assert.equal(replacement(previous, rows, "hexRows").map.cellPx, 70);
+      assert.equal(replacement(previous, rows, "hexRows").search, false, "a name's scale on hexes is not searched");
+      assert.equal(replacement(previous, squares, "hexRows").search, true);
+      assert.equal(replacement(previous, squares, "hexRows").map.cellPx, guessCellPx(squares.width, squares.height));
     }
-    assert.equal(initialMap(asset).map.cellPx, 70, "squares still take the file name's scale");
   });
 
   test("a battle mat has fog off and a builder scene has fog on", () => {
@@ -116,20 +127,21 @@ describe("new scenes", () => {
   test("a new image keeps the grid unsearched when it is the same file, keeps it scaled and is searched when it has the old shape, and starts over otherwise (D-261029-50)", () => {
     const old = { assetId: "a", widthPx: 2440, heightPx: 1690, cellPx: 80, originPx: { x: 40, y: 50 } };
     // A room stores a file once, so the same file uploads as the same image.
-    for (const hex of [false, true]) assert.deepEqual(replacement(old, { id: "a", width: 2440, height: 1690 }, hex), { map: old, search: false, kept: null }, `the same file, hex ${hex}`);
+    for (const shape of [undefined, "hexRows"] as const) assert.deepEqual(replacement(old, { id: "a", width: 2440, height: 1690 }, shape), { map: old, search: false, kept: null }, `the same file, ${shape ?? "squares"}`);
     // Other art of the old shape, or the old art at another size: the grid kept, scaled, and the new art searched.
     const half = { cellPx: 40, originPx: { x: 20, y: 25 } };
-    assert.deepEqual(replacement(old, { id: "b", width: 1220, height: 845 }, false), { map: { assetId: "b", widthPx: 1220, heightPx: 845, ...half }, search: true, kept: { ...half, scale: 0.5 } });
-    assert.deepEqual(replacement(old, { id: "b", width: 2440, height: 1690 }, true).kept, { cellPx: 80, originPx: { x: 40, y: 50 }, scale: 1 });
+    assert.deepEqual(replacement(old, { id: "b", width: 1220, height: 845 }), { map: { assetId: "b", widthPx: 1220, heightPx: 845, ...half }, search: true, kept: { ...half, scale: 0.5 } });
+    assert.deepEqual(replacement(old, { id: "b", width: 2440, height: 1690 }, "hexRows").kept, { cellPx: 80, originPx: { x: 40, y: 50 }, scale: 1 });
     // Art twice the size: the kept grid's errors doubled with it (D-261029-54).
-    assert.equal(replacement(old, { id: "b", width: 4880, height: 3380 }, false).kept?.scale, 2);
+    assert.equal(replacement(old, { id: "b", width: 4880, height: 3380 }).kept?.scale, 2);
     // Another shape starts over, searched, with nothing kept.
-    assert.deepEqual(replacement(old, { id: "c", width: 1000, height: 1000 }, false), { map: replaceMap(old, { id: "c", width: 1000, height: 1000 }), search: true, kept: null });
-    assert.equal(replacement(undefined, { id: "c", width: 1000, height: 1000 }, false).search, true, "a first image");
-    // A size in the file name wins on squares, so nothing is searched. On hexes names are not read.
-    assert.equal(replacement(old, { id: "c", width: 1000, height: 1000, cellPx: 50 }, false).search, false);
-    assert.equal(replacement(old, { id: "b", width: 1220, height: 845, cellPx: 50 }, false).search, false);
-    assert.equal(replacement(old, { id: "c", width: 1000, height: 1000, cellPx: 50 }, true).search, true);
+    assert.deepEqual(replacement(old, { id: "c", width: 1000, height: 1000 }), { map: replaceMap(old, { id: "c", width: 1000, height: 1000 }), search: true, kept: null });
+    assert.equal(replacement(undefined, { id: "c", width: 1000, height: 1000 }).search, true, "a first image");
+    // A size in the file name wins, so nothing is searched, when it reads as the scene's own cells (D-261101-190).
+    assert.equal(replacement(old, { id: "c", width: 1000, height: 1000, cellPx: 50 }).search, false);
+    assert.equal(replacement(old, { id: "b", width: 1220, height: 845, cellPx: 50 }).search, false);
+    assert.equal(replacement(old, { id: "c", width: 1000, height: 1000, cellPx: 50 }, "hexRows").search, true, "squares' counts are no scale for hexes");
+    assert.equal(replacement(old, { id: "c", width: 1000, height: 1000, hexCellPx: { columns: 50 } }, "hexColumns").search, false);
   });
 });
 

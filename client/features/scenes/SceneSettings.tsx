@@ -34,7 +34,7 @@ import { isoOffered, suggestedKind, SUGGESTED_VIEW, SUGGESTED_VIEW_HELP, VIEW_NA
 import { VisionSettings } from "../vision/VisionSettings.tsx";
 import { deleteBlocked, sceneAfterDelete } from "./afterDelete.ts";
 import { ColorInput, ConfirmButton, NumberInput, Select, Slider } from "./controls.tsx";
-import { fogsWithFirstMap, replacement, viewFromCamera } from "./create.ts";
+import { fogsWithFirstMap, nameCellPx, replacement, viewFromCamera } from "./create.ts";
 import { useStartFraming } from "./FrameView.tsx";
 import { sceneGroupSummary } from "./sceneSummary.ts";
 import { SCENE_GROUP_ICONS, SCENE_GROUP_LABELS, useSceneFolds, type SceneGroup } from "./settingsFolds.ts";
@@ -493,14 +493,15 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
     // image's shape, which keeps the grid scaled and only offers a find
     // (create.ts `replacement`).
     const device = thisDevice();
-    const hex = isHex(sceneGrid(scene));
-    // Squares and hexes are both looked for. A name's size wins only on squares: on hexes names are not read (D-261028-05).
-    let search = searchOnImport({ source: "image", named: !hex && nameGivesSize(file.name) }) ? importSearch(file, device) : null;
+    const shape = scene.gridShape;
+    // Squares and hexes are both looked for. A name's size wins on every grid, read as that grid's cells (D-261101-190).
+    let search = searchOnImport({ source: "image", named: nameGivesSize(file.name) }) ? importSearch(file, device) : null;
     abort.signal.addEventListener("abort", () => search?.cancel());
     try {
       const asset = await uploadMap(roomId, file, { pasted, signal: abort.signal, onWaiting: (waiting) => setUpload((u) => ({ ...u, waiting })) });
       let wait: ImportWait = { answer: null, later: null };
-      const { map: next, search: searched, kept } = replacement(map, asset, hex);
+      const { map: next, search: searched, kept } = replacement(map, asset, shape);
+      const named = nameCellPx(asset, shape);
       if (searched) {
         search ??= importSearch(file, device);
         setUpload({ busy: true, waiting: false, finding: true, error: null });
@@ -512,7 +513,7 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
       }
       setUpload({ busy: false, waiting: false, error: null });
       setArmed(false);
-      const { found, ownGrid } = replacementFound(wait.answer, asset.cellPx !== undefined && !hex, next, scene, kept);
+      const { found, ownGrid } = replacementFound(wait.answer, named !== undefined, next, scene, kept);
       // Fog first, so players on this scene never see the map before it.
       if (firstFog && (!playersHere || fogIt)) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { fogEnabled: true } });
       actions.dispatch({ t: "scene.setMap", sceneId: scene.id, map: next });
@@ -532,7 +533,7 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
       // the grid tool comes up to find the scale (and fits the scene when
       // applied).
       const fallback = { cellPx: next.cellPx, originPx: next.originPx };
-      if (!map && !hex && asset.cellPx !== undefined && next.cellPx === asset.cellPx && !found && !wait.later) {
+      if (!map && named !== undefined && next.cellPx === named && !found && !wait.later) {
         const bounds = fitBounds(next);
         if (bounds.w !== scene.bounds.w || bounds.h !== scene.bounds.h) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { bounds } });
       } else if (!map || found || wait.later) {

@@ -39,6 +39,8 @@ export type AssetRow = {
   variants: AssetVariant[];
   /** Upload responses for maps only: a suggested cellPx from a hint such as `30x20` in the file name, or a starter map's measured grid. */
   cellPx?: number;
+  /** Upload responses for maps only: the same file-name counts read as hexes, by the orientation they fit (server/assets/kinds.ts `nameGrid`). */
+  hexCellPx?: { rows?: number; columns?: number };
   /** A starter map pick's answer only: where its measured grid's lines cross, when the build found it, on the image as stored. */
   originPx?: { x: number; y: number };
   /** An Openverse image's credit, with the original's size (docs/design/design-v1-dm-tools.md 3.13). */

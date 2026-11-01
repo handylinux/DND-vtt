@@ -6,7 +6,7 @@ import { starterAssetCredit, type FoundWork, type StarterKind } from "#shared/st
 import type { Config } from "../config.ts";
 import { createEgress, type Egress } from "./egress.ts";
 import { AssetError } from "./errors.ts";
-import { KINDS, PIPELINE, cellPxHint, type AssetKind, type UploadResult } from "./kinds.ts";
+import { KINDS, PIPELINE, nameGrid, type AssetKind, type UploadResult } from "./kinds.ts";
 import { WindowLimiter, hourlyChecks, starterHourlyChecks } from "./limits.ts";
 import { ProcessingQueue, configureSharp, processImage, removeFiles, sniffImage } from "./process.ts";
 import { RoomQuota, assertFreeDisk, hasFreeDisk, roomStoredBytes, type Reservation } from "./quota.ts";
@@ -337,6 +337,7 @@ function withCreated(result: UploadResult, created: boolean): UploadResult {
 
 function withHint(view: ReturnType<typeof toView>, nameHint: string | undefined): UploadResult {
   if (view.kind !== "map") return view;
-  const cellPx = cellPxHint(nameHint, view.width, view.height);
-  return cellPx === undefined ? view : { ...view, cellPx };
+  const { squares, hexes } = nameGrid(nameHint, view.width, view.height);
+  if (squares === undefined && hexes === undefined) return view;
+  return { ...view, ...(squares === undefined ? {} : { cellPx: squares }), ...(hexes === undefined ? {} : { hexCellPx: hexes }) };
 }

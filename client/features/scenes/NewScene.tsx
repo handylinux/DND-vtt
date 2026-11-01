@@ -26,7 +26,7 @@ import { StarterDialog } from "../starter/StarterDialog.tsx";
 import { thisDevice } from "../uvtt/limits.ts";
 import { NewScenePlayersSee, type PlayersSeeValue } from "../vision/PlayersSee.tsx";
 import { ColorInput, NumberInput } from "./controls.tsx";
-import { builderScene, MAT_BACKGROUND, mapScene, matScene, nameFromFile, newSceneIntent, newScenePreset, newSceneShape, pickNow, withPlayersSee, type MapAsset, type NewSceneIntent, type SceneInput } from "./create.ts";
+import { builderScene, MAT_BACKGROUND, mapScene, matScene, nameCellPx, nameFromFile, newSceneIntent, newScenePreset, newSceneShape, pickNow, withPlayersSee, type MapAsset, type NewSceneIntent, type SceneInput } from "./create.ts";
 import { uploadErrorText, uploadMap } from "./upload.ts";
 import type { PanelClose } from "../panels.ts";
 
@@ -207,8 +207,8 @@ export function NewScene(props: { sceneCount: number; close: PanelClose }) {
     // back to it in one step, and Use default puts it back.
     const map = scene.map!;
     const fallback = { cellPx: map.cellPx, originPx: map.originPx };
-    // A name's size wins only on squares: on hexes names are not read (D-261028-05).
-    const named = hinted && shape === undefined;
+    // A name's size wins on every grid, read as that grid's cells (D-261101-190).
+    const named = hinted;
     const found = importFound(wait.answer, named, map, shape);
     const later = wait.later && !named ? wait.later : null;
     if (found) {
@@ -249,7 +249,7 @@ export function NewScene(props: { sceneCount: number; close: PanelClose }) {
     setPasted(fromPaste);
     setStatus({ busy: false, waiting: false, error: null });
     stopSearch();
-    if (next && searchOnImport({ source: "image", named: !hexFor("map") && nameGivesSize(next.name) })) searchRef.current = { file: next, search: importSearch(next, thisDevice()) };
+    if (next && searchOnImport({ source: "image", named: nameGivesSize(next.name) })) searchRef.current = { file: next, search: importSearch(next, thisDevice()) };
   };
 
   // The room's "Use the pasted image" hands its picture here: Map image opens with it picked, and the grid search starts (docs/design/design-v1-paste.md 4).
@@ -276,7 +276,7 @@ export function NewScene(props: { sceneCount: number; close: PanelClose }) {
       // gets a short wait, or one starts now: for a name whose counts the
       // server refused, or an upload tried again after a cancel.
       let wait: ImportWait | undefined;
-      if (asset.cellPx !== undefined && gridShape === "squares") stopSearch();
+      if (nameCellPx(asset, storedShape(gridShape)) !== undefined) stopSearch();
       else {
         if (searchRef.current?.file !== file) searchRef.current = { file, search: importSearch(file, thisDevice()) };
         setStatus({ busy: true, waiting: false, finding: true, error: null });
@@ -382,8 +382,9 @@ export function NewScene(props: { sceneCount: number; close: PanelClose }) {
               </div>
               <PasteStatus paste={paste} />
               {hexFor("map") ? (
-                // No file-name scale here: the server reads a name's size as square cells, which hex art named by its hexes never matches (D-261028-05).
-                <Help>A grid drawn on the map is looked for, and you check it or line up the hexes next.</Help>
+                <Help>
+                  A name like <code>crypt_30x20.jpg</code> sets the scale for 30 hexes across and 20 down. Otherwise a grid drawn on the map is looked for, and you check it or line up the hexes next.
+                </Help>
               ) : (
                 <Help>
                   A name like <code>crypt_30x20.jpg</code> sets the scale for 30 by 20 squares. Otherwise a grid drawn on the map is looked for, and you check it or line up the grid next.

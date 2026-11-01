@@ -967,8 +967,8 @@ describe("raccoon-vtt hex grids: the board", { timeout: 600_000 }, () => {
     await panel.getByRole("radio", { name: "Map image", exact: true }).click();
     assert.equal(await grid.getByRole("radio", { name: "Hex rows" }).isChecked(), true, "a map image starts on the room's hex rows");
     await panel.getByText(HEX_LIMITS.starter, { exact: true }).waitFor();
-    // A file name's size counts squares, so the hex help promises no scale from it (D-261028-05).
-    await panel.getByText("A grid drawn on the map is looked for, and you check it or line up the hexes next.", { exact: true }).waitFor();
+    // A file name's counts set the scale on hexes too, read as hexes across and down (D-261101-190).
+    await panel.getByText("sets the scale for 30 hexes across and 20 down. Otherwise a grid drawn on the map is looked for, and you check it or line up the hexes next.", { exact: false }).waitFor();
     await panel.getByRole("radio", { name: "Battle mat", exact: true }).click();
     assert.equal(await grid.getByRole("radio", { name: "Hex rows" }).isChecked(), true, "a battle mat starts on the room's hex rows");
     // The form's and, below it, the hex scene on screen's.

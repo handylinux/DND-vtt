@@ -1143,6 +1143,60 @@ describe("raccoon-vtt maps run", { timeout: 300_000 }, () => {
     }
   });
 
+  test("fu43h-1: a name's counts read as hexes skip alignment on the scene's own orientation, and only there", async () => {
+    // 20 x 14 hexes of 70 px: hex rows are 20.5 hexes wide, hex columns 20 hexes tall plus the half hex their odd columns stand out (D-261101-190).
+    const art = [
+      { file: "hexrows_20x14.png", width: 1435, height: 869, own: "hexRows" },
+      { file: "hexcolumns_20x14.png", width: 1233, height: 1015, own: "hexColumns" },
+    ] as const;
+    for (const { file, width, height } of art) {
+      await sharp({ create: { width, height, channels: 3, background: "#685443" } }).png().toFile(path.join(work, file));
+    }
+    for (const [label, shape] of [["Hex rows", "hexRows"], ["Hex columns", "hexColumns"]] as const) {
+      for (const { file, own } of art) {
+        await pickTool(dm, "Select");
+        await openSideTab(dm, "Scenes");
+        const panel = dm.getByRole("tabpanel", { name: sideTabName("Scenes") });
+        await panel.getByRole("radio", { name: "Map image", exact: true }).click();
+        await panel.getByRole("radiogroup", { name: "Grid", exact: true }).getByRole("radio", { name: label, exact: true }).check();
+        await panel.getByText("sets the scale for 30 hexes across and 20 down", { exact: false }).waitFor();
+        const known = new Set(Object.keys(dmSocket.state?.scenes ?? {}));
+        await panel.getByRole("button", { name: "Choose a map image" }).setInputFiles(path.join(work, file));
+        await panel.getByRole("button", { name: "Upload and create" }).click();
+        const scene = await waitFor(`fu43h-1 ${label} ${file}`, () => Object.values(dmSocket.state?.scenes ?? {}).find((s) => s?.map && !known.has(s.id)), 30_000);
+        await waitFor("the DM on the named map", () => dmSocket.you?.sceneId === scene.id || null);
+        assert.equal(scene.gridShape, shape);
+        const grid = dm.getByRole("toolbar", { name: "Line up grid options" });
+        if (own === shape) {
+          assert.ok(Math.abs((scene.map?.cellPx ?? 0) - 70) < 0.1, `${file} on ${label} takes the name's 70 px, got ${scene.map?.cellPx}`);
+          assert.deepEqual(scene.map?.originPx, { x: 0, y: 0 });
+          assert.equal(await grid.count(), 0, "the hex name supplies its scale, so Line up grid stays closed");
+        } else {
+          await grid.waitFor();
+          assert.notEqual(Math.round(scene.map?.cellPx ?? 0), 70, `${file} on ${label} reads another orientation's counts, so the guess stands`);
+        }
+      }
+    }
+  });
+
+  test("fu43h-2: a hex mat's first image named by its hex counts takes the scale and leaves Line up grid closed", async () => {
+    const file = path.join(work, "hexrows_20x14.png");
+    await pickTool(dm, "Select");
+    await openSideTab(dm, "Scenes");
+    const panel = dm.getByRole("tabpanel", { name: sideTabName("Scenes") });
+    await panel.getByRole("radio", { name: "Battle mat", exact: true }).click();
+    await panel.getByRole("radiogroup", { name: "Grid", exact: true }).getByRole("radio", { name: "Hex rows", exact: true }).check();
+    const known = new Set(Object.keys(dmSocket.state?.scenes ?? {}));
+    await panel.getByRole("button", { name: "Create", exact: true }).click();
+    const scene = await waitFor("fu43h-2 hex mat", () => Object.values(dmSocket.state?.scenes ?? {}).find((s) => s && !known.has(s.id)));
+    await waitFor("the DM on the hex mat", () => dmSocket.you?.sceneId === scene.id || null);
+    const group = await openSceneGroup(panel, "Map image and grid");
+    await group.getByLabel("Add a map image", { exact: true }).setInputFiles(file);
+    const map = await waitFor("the hex mat's named image", () => sceneOf(dmSocket.state, scene.id)?.map, 30_000);
+    assert.ok(Math.abs(map.cellPx - 70) < 0.1, `the name's 70 px, got ${map.cellPx}`);
+    assert.equal(await dm.getByRole("toolbar", { name: "Line up grid options" }).count(), 0, "a name that fits the hexes leaves alignment closed");
+  });
+
   test("FU38-B: a hex mat's first image opens alignment even when its name's hint equals the guessed scale", async () => {
     const file = path.join(work, "crypt_30x20.png");
     await sharp({ create: { width: 2100, height: 1400, channels: 3, background: "#594533" } }).png().toFile(file);

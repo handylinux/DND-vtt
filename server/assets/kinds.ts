@@ -1,5 +1,6 @@
 import { LIMITS } from "#shared/limits.ts";
 import type { AssetCredit } from "#shared/protocol.ts";
+import { HEX_R, HEX_S } from "#shared/rules/hex.ts";
 
 /**
  * What each kind of image becomes, in one table (design section 11.1).
@@ -124,24 +125,53 @@ export type AssetView = {
  * rather than reusing the room's row of the same bytes
  * (docs/design/design-v1-pdf-handouts.md 3.9).
  */
-export type UploadResult = AssetView & { cellPx?: number; created?: boolean };
+export type UploadResult = AssetView & { cellPx?: number; hexCellPx?: HexCellPx; created?: boolean };
+
+/** A name's counts read as hexes, by the orientation they would fit (docs/design/design-v1-grid-detect.md 10.7). */
+export type HexCellPx = { rows?: number; columns?: number };
+
+/** What a file name's counts say, each as the cell size of the lattice they fit. */
+export type NameGrid = { squares?: number; hexes?: HexCellPx };
 
 /**
  * Owlbear's trick: a map file named like `crypt_30x20.jpg` is 30 cells wide
- * and 20 tall, so its cell size is known without the alignment tool. The
- * suggestion is kept only when both axes agree within 2%, because a name such
+ * and 20 tall, so its cell size is known without the alignment tool. A
+ * reading is kept only when both axes agree within 2%, because a name such
  * as `cave-2x3-final` is just as likely to mean something else. Counts above
  * the 200-cell scene limit are pixel sizes, not cell counts.
+ *
+ * The same counts are read three ways, as squares and as hexes on each
+ * orientation, each by the span its own lattice gives (a hex map is as
+ * wide as its columns plus the half hex its odd rows stand out, and as
+ * tall as its rows' spacing plus the first hex's overhang). Their shapes
+ * differ by about 13%, so one reading agrees in practice, and a scene
+ * takes the one for its own grid. A hex span must be the art's exact edge:
+ * the scene's first hex stands at the image's corner, so a looser span
+ * would claim a grid that is not lined up.
  */
-export function cellPxHint(name: string | undefined, width: number, height: number): number | undefined {
-  if (!name) return undefined;
+export function nameGrid(name: string | undefined, width: number, height: number): NameGrid {
+  if (!name) return {};
   const match = /(?:^|[^0-9])(\d{1,3})\s*[x×]\s*(\d{1,3})(?![0-9])/i.exec(name);
-  if (!match) return undefined;
+  if (!match) return {};
   const cols = Number(match[1]);
   const rows = Number(match[2]);
-  if (cols < 1 || rows < 1 || cols > 200 || rows > 200) return undefined;
-  const byWidth = width / cols;
-  const byHeight = height / rows;
-  if (Math.abs(byWidth - byHeight) / byWidth > 0.02) return undefined;
-  return Math.round(byWidth * 100) / 100;
+  if (cols < 1 || rows < 1 || cols > 200 || rows > 200) return {};
+  const fit = (acrossCells: number, downCells: number): number | undefined => {
+    const byWidth = width / acrossCells;
+    const byHeight = height / downCells;
+    if (Math.abs(byWidth - byHeight) / byWidth > 0.02) return undefined;
+    return Math.round(byWidth * 100) / 100;
+  };
+  const squares = fit(cols, rows);
+  const onRows = fit(cols + 0.5, 2 * HEX_R + (rows - 1) * HEX_S);
+  const onColumns = fit(2 * HEX_R + (cols - 1) * HEX_S, rows + 0.5);
+  return {
+    ...(squares === undefined ? {} : { squares }),
+    ...(onRows === undefined && onColumns === undefined ? {} : { hexes: { ...(onRows === undefined ? {} : { rows: onRows }), ...(onColumns === undefined ? {} : { columns: onColumns }) } }),
+  };
+}
+
+/** The squares reading of a name (`nameGrid`), which the upload's `cellPx` carries. */
+export function cellPxHint(name: string | undefined, width: number, height: number): number | undefined {
+  return nameGrid(name, width, height).squares;
 }

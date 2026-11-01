@@ -138,10 +138,10 @@ export function importFound(answer: SearchDone | null, named: boolean, map: { wi
  * Whether a new map's grid is looked for while it uploads, whatever the
  * room's shape, since squares and hexes are both looked for. A size from
  * the file name wins, so a file that names one is not searched. The
- * caller says `named` only on squares: on hexes names are not read
- * (D-261028-05). A Universal VTT file states its grid, so it is never
- * searched on import. Find the grid, which the DM asks for, runs whatever
- * the scene came from.
+ * caller says `named` when the server read the name's counts as the
+ * scene's own cells, hexes included (D-261101-190). A Universal VTT file
+ * states its grid, so it is never searched on import. Find the grid, which
+ * the DM asks for, runs whatever the scene came from.
  */
 export function searchOnImport(input: { source: "image" | "uvtt"; named: boolean }): boolean {
   return input.source === "image" && !input.named;
@@ -295,9 +295,9 @@ export function offeredOnly(answer: SearchDone): SearchDone {
 }
 
 /**
- * Whether a file name looks like it gives the map's size in squares, as
+ * Whether a file name looks like it gives the map's size in cells, as
  * `crypt_30x20.jpg` does. The server decides (server/assets/kinds.ts
- * `cellPxHint`), and may still refuse counts that do not fit the image, so
+ * `nameGrid`), and may still refuse counts that do not fit the image, so
  * this only says whether to wait for its answer before searching.
  */
 export function nameGivesSize(fileName: string): boolean {
