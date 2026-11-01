@@ -135,10 +135,10 @@ The host listens as `useThrowPanel` does (capture phase, never stopping the even
 | Event | Result | The tap's own job |
 |---|---|---|
 | A tap anywhere in the panel, the open list included (React's capture reaches through Popover) | Dice go at pointer down, result at the click | A box opens its list, a field focuses |
-| A key in the panel | At once | Its own |
+| A key in the panel, a key that scrolls included | At once | Its own |
 | A scroll by touch | Dice go at pointer down, result at pointer up plus 300 ms | The scroll |
 | A sheet drag, a rotation, the keyboard, a split moved (the pane's size moves off its baseline) | At once | |
-| A wheel or keyboard scroll | No change, as in the Dice panel: the tray hangs under the sticky line and stays in view | |
+| A wheel scroll | No change, as in the Dice panel: the tray hangs under the sticky line and stays in view | |
 | Switching tokens or pages, a swipe back, Close, another panel in its place (the host unmounts) | The result was never seen, so it goes to the own roll's toast | |
 | Hide, or the pane hidden behind another tab (`usePanelShown` false) | As an unmount for the throw: it ends and the unseen result toasts. The header stays mounted, and its receipt watch stops (FU42-B) | |
 | The page hidden, reduced motion or Low power turned on, a lost context, a newer roll | As in the Dice panel | |
@@ -186,11 +186,13 @@ As the Dice panel's (`Tray.tsx`): under the line's bottom border, a scrim of the
 | A second roll | Replaced in place, no scroll, no move, and it throws (released by the header's effect) | trh-5, `store.test.ts` |
 | Dice panel beside the Token panel, a block roll | Canvas, scrim and rings in the token panel only. The Dice panel's line shows it at the landing and says nothing | trh-3, sbr-16 |
 | A Dice panel roll with the token panel beside | Throws in the Dice panel only. The token header is unchanged | trh-3 |
-| The Dice panel closed during a block throw | The block's throw goes on | trh-3, `store.test.ts` |
+| The Dice panel taken away during a block throw, another panel put in its pane | The block's throw goes on. Closing the Dice pane instead grows the token pane, a resize that ends the throw (D-261101-122) | trh-3, `store.test.ts` |
 | A tap on a box mid-throw | Result at once, the list opens | trh-4 |
 | Another token selected mid-throw | One own-roll toast, the new token's panel has no line | trh-4 |
 | Hide the sheet mid-throw, then show it | One toast. The line shows the roll again on return, silent | trh-4 |
 | Fold the stat block after a roll | The line stays | trh-5, sbr-12 |
+| Fold the stat block mid-throw | The line stays and shows the result at once. No toast then or when the panel closes | trh-5, `store.test.ts`, `receiptVoice.test.ts` |
+| Another token selected mid-throw with the Dice panel beside | The Dice panel's line shows the result. No toast then or when that line moves on | trh-5b, `store.test.ts` |
 | Close and reopen the panel, or switch from Thorn's page to Vex's | No line | trh-5 |
 | Reduced motion | The total at once, the landed dice drawn once on a canvas | trh-6, ra-2 |
 | Low power, the switch off, no WebGL | The total at once, no canvas | trh-6 |
@@ -283,7 +285,7 @@ Commits: 1. `feat(dice): the throw's store takes a host per rolling surface` (A)
 14. **D-261101-093: the line and the tray's scrim cover the pane's side padding with `paneSides`.** Rejected: the column's width alone, which left the portrait's ring showing beside them in the prototype.
 15. **D-261101-094: the new e2e steps go in `dice.e2e.ts` as `trh-`.** Rejected: `blockrolls.e2e.ts`, whose contexts turn the dice off. Rejected: a new file, a new port offset for nine steps.
 16. **D-261101-095: the host is keyed by the panel's creature.** Rejected: one host for the Characters panel, which would carry Thorn's roll onto Vex's page.
-17. **D-261101-096: a wheel or keyboard scroll does not end a throw**, as in the Dice panel. Rejected: ending it on any scroll, which the Dice panel does not do and which lets a stray wheel nudge cut a 1 s throw short.
+17. **D-261101-096: a wheel scroll does not end a throw, and any key does, a key that scrolls included**, as in the Dice panel. Rejected: ending it on any scroll, which the Dice panel does not do and which lets a stray wheel nudge cut a 1 s throw short.
 18. **D-261101-097: the header shows whatever the animation settings.** Rejected: the header only with dice, which would leave Low power with no result in view.
 
 From round 1:
@@ -343,7 +345,7 @@ Where the build went its own way from the design above, by part.
 
 - The settle runs in `BlockHeaderHost`'s layout effect, the parent of the line and the content, so it runs after the tray's attach and every child's effect, as 1.2 orders. Only a change of outcome settles and releases. Every other render only keeps the scroll padding.
 - `hold()` and the release of a pick that drew nothing are the host's (`hold`, `picked`), called by `pickRow` and `pickChoice` around the send. A stale choice the control drops before sending holds nothing.
-- The panel joins the throw's store only while a grid in it rolls: a `ThrowBinding` child mounts with the first rolling grid and calls `useThrowSurface("block", …)` (D-261101-110). Folding the stat block unbinds it, so a throw in the air ends unseen and the line stays (D-261101-111). A rolling grid outside any host rolls with no line and no throw (D-261101-112).
+- The panel joins the throw's store only while a grid in it rolls: a `ThrowBinding` child mounts with the first rolling grid and calls `useThrowSurface("block", …)` (D-261101-110). Folding the stat block unbinds it, so a throw in the air ends and the line stays (D-261101-111). The line, still mounted, then shows the result, so it never goes to a toast (review fixes, below). A rolling grid outside any host rolls with no line and no throw (D-261101-112).
 - The spacer's shortfall is a whole px, rounded up (D-261101-113). A click with any `detail` other than 0 is a pointer's pick (D-261101-114).
 - `CharacterPage` keys the host inside itself, since `CharactersPanel.tsx` was not in the lane. The rolling grid lost the wrapper that only spaced the old line under it.
 
@@ -356,3 +358,8 @@ Where the build went its own way from the design above, by part.
 - `sbr-12` closes the panel before the roll lands for its toast and checks that a fold keeps the line. `sbr-16`'s folded roll now has the header say it once and the Dice panel's line say nothing. The alignment sweep's result check finds the header from the grid's host and checks it at the host's width inside the pane, where it checked a line under the grid.
 - `blockrolls.e2e.ts` stores the Roll animation switch off with an init script, and `alignmentRoom.ts`'s `openAt` takes stored settings for the block roll sweep.
 - `sbr-8` starts Thorn's Initiative row at 40, a value no roll reaches.
+
+**Review fixes (round 1).**
+
+- FL21-OPUS-01: a host that goes mid-throw, or before its let-go result painted, hands the tag to the toasts (`tracker.unseen`), and the toast came only once no surface watched it. A fold leaves the header line watching, and a token panel closed beside the Dice panel leaves the Dice panel's line watching, so the toast came minutes later, when that line went, for a roll it had shown. Now a surface that shows thrown results passes `useReceipt(tag, held)`, and after every commit that renders the tag committed and not held it calls `tracker.rendered(tag, held)`, which takes the unseen mark back and puts back whether the roll was said. A surface that closes never renders again, so its own unseen result still toasts. Only the header line and the Dice panel's line pass `held`: a row or a button that only watches a tag shows no result, so it never takes a toast back (D-261101-126, D-261101-127).
+- `trh-5` folds the block mid-throw and closes the panel with no toast. It fails without the fix. `trh-5b` selects another token mid-throw with the Dice panel below, then rolls from the Dice panel, with no toast for the first roll (D-261101-128). It passes without the fix too: once the header goes, the Dice panel's line may speak, says the roll, and marks it said, which already kept the toast away. The store test covers the tracker's rule for that case.
