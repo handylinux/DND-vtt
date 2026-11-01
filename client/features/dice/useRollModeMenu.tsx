@@ -61,6 +61,8 @@ export type RollPressControl = {
   node(): HTMLElement | null;
   /** A menu of its own stands open, which a scroll that keeps it in view leaves alone (handleRollModeScroll). */
   menuOpen(): boolean;
+  /** The finger or button that pressed it has lifted, whether its press went on to a hold or was cancelled. */
+  lifted?(): void;
 };
 
 /** A control's own handlers from its binding. A click stays the control's, gated by `click`. */
@@ -97,7 +99,7 @@ export class RollPressRegistry {
   #slot(key: string): Slot {
     let slot = this.#slots.get(key);
     if (slot) return slot;
-    const made: Slot = { control: IDLE, detach: null, unwatchEnd: null, touchId: null, shadow: null, press: null as unknown as RollPress };
+    const made: Slot = { control: IDLE, detach: null, unwatchEnd: null, touchId: null, pointer: null, shadow: null, press: null as unknown as RollPress };
     made.press = new RollPress({
       releaseTouch: () => clearTouch(made),
       open: () => made.control.open(),
@@ -146,6 +148,8 @@ export class RollPressRegistry {
       const ended = (event: Event) => {
         const ids = Array.from((event as TouchEvent).changedTouches ?? [], (t) => t.identifier);
         if (s.touchId !== null && !ids.includes(s.touchId)) return;
+        // A finger whose control went while it was down lifts where the control no longer is, so the mouse events a browser makes of the lift would press whatever stands there now.
+        if ((control as Partial<Node>).isConnected === false && event.cancelable) event.preventDefault();
         s.touchId = null;
         if (s.press.activeId === null) clearTouch(s);
         s.unwatchEnd?.();
@@ -161,6 +165,7 @@ export class RollPressRegistry {
     return {
       onPointerDown: (e) => {
         const s = slot();
+        s.pointer = e.button === 0 ? e.pointerId : null;
         s.press.down({ id: e.pointerId, x: e.clientX, y: e.clientY }, e.pointerType, e.isPrimary, e.button);
         if (e.pointerType === "touch" && s.press.activeId !== null) {
           clearTouch(s);
@@ -229,7 +234,8 @@ export class RollPressRegistry {
   /** Drops idle machines the owner no longer keeps, once a new press or a key has spent what they held. */
   prune(keep: (key: string) => boolean): void {
     for (const [key, s] of this.#slots) {
-      if (keep(key) || s.press.activeId !== null) continue;
+      // A finger still down on a control that went keeps its machine, which hears it lift.
+      if (keep(key) || s.press.activeId !== null || s.pointer !== null) continue;
       s.press.dispose();
       clearTouch(s);
       s.unwatchEnd?.();
@@ -266,10 +272,14 @@ export class RollPressRegistry {
     const end = (e: Event) => {
       const { pointerId, type } = e as PointerEvent;
       for (const s of slots()) {
-        if (s.press.activeId !== pointerId) continue;
-        if (type === "pointerup") s.press.up(pointerId);
-        else s.press.cancel();
+        if (s.pointer !== pointerId) continue;
+        if (s.press.activeId === pointerId) {
+          if (type === "pointerup") s.press.up(pointerId);
+          else s.press.cancel();
+        }
         clearTouch(s);
+        s.pointer = null;
+        s.control.lifted?.();
       }
     };
     const key = () => {
@@ -330,7 +340,8 @@ export class RollPressRegistry {
 
 type ListenTarget = Pick<EventTarget, "addEventListener" | "removeEventListener">;
 type TouchTarget = Pick<EventTarget, "addEventListener" | "removeEventListener">;
-type Slot = { press: RollPress; control: RollPressControl; detach: (() => void) | null; unwatchEnd: (() => void) | null; touchId: number | null; shadow: { node: HTMLElement; before: string; painted: string } | null };
+/** `pointer` is the one that last pressed the control, until it lifts, even where its press was cancelled meanwhile. */
+type Slot = { press: RollPress; control: RollPressControl; detach: (() => void) | null; unwatchEnd: (() => void) | null; touchId: number | null; pointer: number | null; shadow: { node: HTMLElement; before: string; painted: string } | null };
 
 const IDLE: RollPressControl = { open: () => false, show: () => undefined, close: () => undefined, node: () => null, menuOpen: () => false };
 

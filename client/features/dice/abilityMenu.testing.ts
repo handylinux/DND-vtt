@@ -90,6 +90,8 @@ export function harness(rows: AbilityRow[] = [row("check", { kind: "check" }), r
       const style = {} as { boxShadow: string };
       style.boxShadow = "";
       n = Object.assign(new Target(), { style, focus: () => void (state.focus = name), getBoundingClientRect: () => ({ left: 10, top: 10, right: 54, bottom: 54 }) });
+      // In the page while drawn, as a node's own isConnected says.
+      Object.defineProperty(n, "isConnected", { get: () => attached(name as Point) });
       nodes.set(name, n);
     }
     return n;
@@ -169,6 +171,8 @@ export function harness(rows: AbilityRow[] = [row("check", { kind: "check" }), r
     }
   };
   const api = {
+    /** Whether the last lifted finger's touchend was marked used, which keeps the browser from making mouse events and a click of it. */
+    liftPrevented: false,
     /** A pointer is down. */
     pressing: () => pressed !== null,
     /** The finger down now, if any. */
@@ -215,7 +219,7 @@ export function harness(rows: AbilityRow[] = [row("check", { kind: "check" }), r
       win.fire("pointerup", { pointerId: id });
       if (touch) {
         if (attached(started)) handlers(started).onTouchEnd?.(reactEvent({}));
-        touchEvent("touchend", started, id);
+        api.liftPrevented = touchEvent("touchend", started, id);
       }
       if (click) api.click(point, 1);
     },

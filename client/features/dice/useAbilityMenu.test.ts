@@ -81,7 +81,7 @@ describe("a row's tap and its options (4, 5)", () => {
     const h = harness();
     h.tap("box");
     h.hold("row:save");
-    assert.deepEqual(h.state.drawn, { kind: "options", row: "save", source: "save@1" });
+    assert.deepEqual(h.state.drawn, { kind: "options", row: "save", source: "save@1", fit: false });
     assert.equal(h.state.focus, "box", "a pointer swap puts focus on the box, before the row goes");
     assert.equal(h.move(30), true, "the held finger's drag scrolls nothing after the swap");
     h.up();
@@ -410,8 +410,56 @@ describe("the box's own attributes, as a grid spreads them", async () => {
   });
 });
 
-test("the popover is placed again once the rows take the loading line's place, and never for a roll's options, which take the rows' box", () => {
-  const keys = [abilityContent({ loading: true, failed: false }), abilityContent({ loading: false, failed: false }), abilityContent({ loading: false, failed: true })];
+test("the popover is placed again for the rows after the loading line, and for a roll's options once they have their own box, never for options a held finger still holds", () => {
+  const rows = { loading: false, failed: false };
+  const held = { kind: "options" as const, row: "save", source: "s", fit: false };
+  const keys = [abilityContent({ loading: true, failed: false }, { kind: "list" }), abilityContent(rows, { kind: "list" }), abilityContent(rows, { ...held, fit: true }), abilityContent(rows, { ...held, row: "check", fit: true }), abilityContent({ loading: false, failed: true }, { kind: "list" })];
   assert.equal(new Set(keys).size, keys.length);
-  assert.equal(abilityContent.length, 1, "it reads nothing of the options view");
+  assert.equal(abilityContent(rows, held), abilityContent(rows, { kind: "list" }), "held: the rows' box as it stands");
+});
+
+describe("the options' own box (D-261031-212)", () => {
+  test("options a held finger opened keep the rows' box until it lifts, then fit, and its lift makes no mouse events where the row was", () => {
+    const h = harness();
+    h.tap("box");
+    h.hold("row:save");
+    assert.deepEqual(h.state.drawn, { kind: "options", row: "save", source: "save@1", fit: false });
+    h.move(30);
+    assert.equal((h.state.drawn as { fit?: boolean }).fit, false, "still held");
+    h.up();
+    assert.equal((h.state.drawn as { fit?: boolean }).fit, true, "lifted: a box of their own");
+    assert.equal(h.liftPrevented, true, "the lift's touchend is used, so no click lands on the page behind");
+    assert.deepEqual(h.log.rolls, []);
+    h.tap("choice:adv");
+    assert.deepEqual(h.log.rolls, [["save", "adv"]]);
+  });
+
+  test("options opened with no finger down fit at once: right-click and the context keys", () => {
+    for (const how of ["right", "contextmenu"] as const) {
+      const h = harness();
+      h.tap("box");
+      h.state.focus = "row:save";
+      if (how === "right") h.rightClick("row:save");
+      else h.key("ContextMenu");
+      assert.equal((h.state.drawn as { fit?: boolean }).fit, true, how);
+    }
+  });
+
+  test("a held press a key cancelled still fits once its finger lifts", () => {
+    const h = harness();
+    h.tap("box");
+    h.hold("row:save");
+    h.key("a");
+    assert.equal((h.state.drawn as { fit?: boolean }).fit, false, "the finger is still down");
+    h.up(false);
+    assert.equal((h.state.drawn as { fit?: boolean }).fit, true);
+  });
+
+  test("an ordinary tap's lift on a row still in the page is left to the browser, so its click picks", () => {
+    const h = harness();
+    h.tap("box");
+    h.tap("row:check");
+    assert.equal(h.liftPrevented, false);
+    assert.deepEqual(h.log.rolls, [["check", undefined]]);
+  });
 });

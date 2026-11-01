@@ -46,8 +46,13 @@ export type AbilityMenuBinding = {
   pressStyle: CSSProperties;
 };
 
-/** What the popover shows: the ability's list, or one roll's options in its place (5.1). */
-export type AbilityView = { kind: "list" } | { kind: "options"; row: string; source: string };
+/**
+ * What the popover shows: the ability's list, or one roll's options in its
+ * place (5.1). `fit` options have their own box. Options a held finger
+ * opened keep the list's box until that finger lifts, so the finger stays
+ * inside it and its lift presses nothing (D-261031-212).
+ */
+export type AbilityView = { kind: "list" } | { kind: "options"; row: string; source: string; fit: boolean };
 
 const LIST: AbilityView = { kind: "list" };
 export const BOX = "box";
@@ -112,7 +117,16 @@ export class AbilityMenuControl {
       close: () => undefined,
       node: () => this.#env.row(id),
       menuOpen: () => false,
+      lifted: () => this.lifted(id),
     };
+  }
+
+  /** The finger that held a row lifted: its options take a box of their own now. */
+  lifted(id: string): void {
+    const view = this.view;
+    if (view.kind !== "options" || view.row !== id || view.fit) return;
+    this.view = { ...view, fit: true };
+    this.#env.draw(this.view, true);
   }
 
   /** The machines kept while idle: the box's, and the rows drawn now. */
@@ -150,7 +164,9 @@ export class AbilityMenuControl {
     const row = this.#env.rows().find((r) => r.id === id);
     if (!this.#env.isOpen() || !this.#ready(row) || !row.capability || !hasRollModeMenu(row.capability)) return;
     this.#env.box()?.focus({ preventScroll: true });
-    this.view = { kind: "options", row: id, source: row.source };
+    // A finger still on the row that is going: right-click and the keys open with none down.
+    const held = this.presses.machine(rowPress(id))?.activeId != null;
+    this.view = { kind: "options", row: id, source: row.source, fit: !held };
     this.#env.draw(this.view);
     if (by === "key") this.#env.focusInside("first");
   }
@@ -327,7 +343,7 @@ export function useAbilityMenu(options: UseAbilityMenuOptions): AbilityMenuBindi
         <span hidden id={descriptionId}>
           {boxDescription(ability)}
         </span>
-        <Popover handle={handle} side="above" flip bound={rollModeBound} stepBack={(reason) => ctl.stepBack(reason)} contentKey={abilityContent(loaded)}>
+        <Popover handle={handle} side="above" flip bound={rollModeBound} stepBack={(reason) => ctl.stepBack(reason)} contentKey={abilityContent(loaded, view)}>
           {shown?.capability ? (
             <RollModeMenuBody name={shown.title} title={shown.title} capability={shown.capability} dm={dm} onPick={(override) => ctl.pickChoice(override)} />
           ) : (
@@ -410,11 +426,12 @@ export function sendAbilityRow(deps: SendDeps, row: AbilityRow, override?: RollM
 
 /**
  * What the ability's popover shows, as its `contentKey`: its rows, its
- * loading line or its failure, so the rows are never drawn in the loading
- * line's box (4.6). A roll's options take the rows' box as it stands: a
- * box placed again for them would leave the held finger outside it, and
- * its lift would land on the page behind, closing everything (5.1).
+ * loading line or its failure, or a roll's options once they have their
+ * own box, so each is drawn in a box placed for it (4.6, 5.1). Options a
+ * held finger opened keep the rows' box until it lifts: a box placed again
+ * under it would leave the finger outside (D-261031-212).
  */
-export function abilityContent(loaded: { loading: boolean; failed: boolean }): string {
+export function abilityContent(loaded: { loading: boolean; failed: boolean }, view: AbilityView): string {
+  if (view.kind === "options" && view.fit) return `options:${view.row}`;
   return loaded.failed ? "failed" : loaded.loading ? "loading" : "rows";
 }

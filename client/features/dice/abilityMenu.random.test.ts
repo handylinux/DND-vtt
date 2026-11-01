@@ -55,7 +55,10 @@ test("random sequences: one view, one roll per activation, no roll from a hold's
         case "move": {
           const kept = h.move(int(random, 0, 20));
           if (held && h.pressing()) assert.equal(kept, true, `a held finger scrolls nothing until it lifts: ${where}`);
-          if (held && h.pressing() && h.state.drawn.kind === "options") seen.add("drag after a swap");
+          if (held && h.pressing() && h.state.drawn.kind === "options") {
+            seen.add("drag after a swap");
+            assert.equal(h.state.drawn.fit, false, `a held finger keeps the rows' box: ${where}`);
+          }
           if (h.pressing() && !held) assert.equal(kept, false, `an unheld finger scrolls: ${where}`);
           break;
         }
@@ -155,6 +158,7 @@ test("random sequences: one view, one roll per activation, no roll from a hold's
       if (!h.state.open) assert.equal(h.control.view.kind, "list", `a closed list holds no options: ${where}`);
       assert.deepEqual(h.state.drawn, h.control.view, `the drawn view is the control's: ${where}`);
       if (!h.pressing()) {
+        if (h.state.open && h.state.drawn.kind === "options") assert.equal(h.state.drawn.fit, true, `with no finger down, the options have their own box: ${where}`);
         assert.equal(h.clock.timers.size, 0, `no timer without a press: ${where}`);
         assert.equal((h.doc.listeners.get("touchmove")?.size ?? 0), 0, `no consumed touch without a finger down: ${where}`);
       }
