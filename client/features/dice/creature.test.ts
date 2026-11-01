@@ -5,7 +5,7 @@ import type { PcStats, RoomState } from "#shared/model.ts";
 import { loadMonsters, type SrdMonster } from "#shared/srd/monsters.ts";
 import { loadSrdRolls } from "#shared/srd/rolls.ts";
 import { actor, character, companionBlock, customMonster, effect, room, token } from "#shared/testutil.ts";
-import { creatureRolls, type DiceView } from "./creature.ts";
+import { creatureLevelsKnown, creatureRolls, type DiceView } from "./creature.ts";
 
 /** One creature's rolls from each source, and only from a block the viewer reads (docs/design-v1-roll-options.md 3.4). */
 
@@ -188,5 +188,28 @@ describe("a creature's rolls", () => {
     const statue = creatureRolls(dice(DM, {}), { tokenId: "plain" })!;
     assert.deepEqual([statue.numbers, statue.named, statue.defenses], [null, [], []]);
     assert.equal(creatureRolls(dice(DM), { tokenId: "gone" }), null);
+  });
+});
+
+describe("whether a creature's proficiency levels are its own record (FL-18, R1-03)", () => {
+  test("only a character whose stat block this viewer reads, out of any shape, knows its levels: the rest list skills by the bonus above the check", () => {
+    const s = state();
+    s.characters.bree!.stats = THORN;
+    const bree = { characterId: "bree" };
+    assert.equal(creatureLevelsKnown(dice(P1, {}, s), bree), true, "its own player");
+    assert.equal(creatureLevelsKnown(dice(DM, {}, s), bree), true, "the DM");
+    assert.equal(creatureLevelsKnown(dice({ memberId: "p2", role: "player" }, {}, s), bree), false, "a viewer who cannot read the character");
+    s.tokens.lent = token("lent", { kind: "pc", name: "Bree", ownerIds: ["p2"], actor: { ref: "bree" } });
+    assert.equal(creatureLevelsKnown(dice({ memberId: "p2", role: "player" }, {}, s), { tokenId: "lent" }), false, "a player lent only a token of it");
+    for (const tokenId of ["gob", "lurk", "moth", "bear", "plain"]) assert.equal(creatureLevelsKnown(dice(DM, {}, s), { tokenId }), false, `${tokenId}: a monster, companion or other token`);
+    delete s.characters.bree!.stats;
+    assert.equal(creatureLevelsKnown(dice(P1, {}, s), bree), false, "no stat block, no record");
+    s.characters.bree!.stats = THORN;
+    s.characters.bree!.actor.srdId = "brown-bear";
+    assert.equal(creatureLevelsKnown(dice(P1, {}, s), bree), false, "Polymorph, an SRD shape");
+    s.characters.bree!.actor.wildShape = true;
+    assert.equal(creatureLevelsKnown(dice(P1, {}, s), bree), false, "Wild Shape");
+    delete s.characters.bree!.actor.srdId;
+    assert.equal(creatureLevelsKnown(dice(P1, {}, s), bree), false, "Wild Shape flag alone");
   });
 });
