@@ -3901,14 +3901,32 @@ export function projectEntity(key: EntityKey, state: RoomState, viewer: Viewer, 
  * project live, for sockets, previews and devices.
  */
 
+/*
+ * Below op version 37 the projection carried no `seenAll` mark, so for such
+ * an op these leave it out, as the projection the op was applied under did:
+ * a mark the build's walls move would otherwise make a trap step look seen,
+ * or send a correction a copy, where the op as written did neither.
+ */
+
 /** projectEntity for the op `env` stores. */
 export function projectEntityForOp(key: EntityKey, state: RoomState, viewer: Viewer, opts: ProjectOpts, env: Pick<Env, "opVersion">): unknown {
-  return projectEntityCtx(ctxOf(state, viewer, opts, clipsByHeldWalls(env.opVersion)), key);
+  const held = clipsByHeldWalls(env.opVersion);
+  const out = projectEntityCtx(ctxOf(state, viewer, opts, held), key);
+  return held || out === null || parseKey(key)?.kind !== "token" ? out : unmarked(out as ProjectedToken);
 }
 
 /** projectState for the op `env` stores. */
 export function projectStateForOp(state: RoomState, viewer: Viewer, opts: ProjectOpts, env: Pick<Env, "opVersion">): ProjectedState {
-  return projectStateCtx(ctxOf(state, viewer, opts, clipsByHeldWalls(env.opVersion)));
+  const held = clipsByHeldWalls(env.opVersion);
+  const out = projectStateCtx(ctxOf(state, viewer, opts, held));
+  return held ? out : { ...out, tokens: Object.fromEntries(Object.entries(out.tokens).map(([id, t]) => [id, unmarked(t)])) };
+}
+
+/** A projected token without the `seenAll` mark: the same object when it has none. */
+function unmarked(token: ProjectedToken): ProjectedToken {
+  if (token.seenAll === undefined) return token;
+  const { seenAll: _seenAll, ...rest } = token;
+  return rest;
 }
 
 function projectEntityCtx(ctx: Ctx, key: EntityKey): unknown {

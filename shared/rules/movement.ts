@@ -714,7 +714,7 @@ declare const ended: unique symbol;
  * judges the spot on the ground's rule, as its last leg does, and a walk
  * that started squeezed judges it full size from its first corner on
  * (review AT-ASTRA-22). Every check of a walk's end takes only this: the
- * squeeze (`squeezeFits`), a drag preview's footprint (`previewSqueezed`)
+ * squeeze (`squeezeFits`), the unsnapped squeeze check (`previewSqueezed`)
  * and the core's fit (`coreBlocked`). `walkEnd` makes one.
  */
 export type WalkEnd = { readonly walker: Walker; readonly at: Point; readonly [ended]: true };
