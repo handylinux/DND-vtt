@@ -12,6 +12,7 @@ import { signed } from "#shared/statBlock.ts";
 import { Button } from "../../components/Button.tsx";
 import { Checkbox } from "../../components/Checkbox.tsx";
 import { Dialog, DiscardQuestion } from "../../components/Dialog.tsx";
+import { Held } from "../../components/Held.tsx";
 import { Icon } from "../../components/Icon.tsx";
 import { Field, Input, Select, TextArea } from "../../components/Field.tsx";
 import { Notice } from "../../components/Notice.tsx";
@@ -440,7 +441,7 @@ export function PcStatsEditor(props: { characterId: string; onClose(): void }) {
   return (
     <Dialog title={`${whose(name.current)} stat block`} onClose={close} footer={footer} status={status} phone="fill" width="lg">
       {/* While a save waits, the draft it sent is the draft: the fields hold still until its answer. */}
-      <fieldset disabled={held} style={{ display: "grid", gap: theme.space(4), fontSize: theme.font.body14, border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+      <Held held={held} style={{ display: "grid", gap: theme.space(4), fontSize: theme.font.body14 }}>
         {gone ? (
           <Notice tone="warning" role="alert">
             This stat block was deleted or is no longer yours, so it cannot be saved.
@@ -473,7 +474,7 @@ export function PcStatsEditor(props: { characterId: string; onClose(): void }) {
             </Notice>
           </div>
         ) : null}
-      </fieldset>
+      </Held>
     </Dialog>
   );
 }

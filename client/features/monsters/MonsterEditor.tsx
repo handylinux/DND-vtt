@@ -19,6 +19,7 @@ import {
 } from "#shared/statBlock.ts";
 import { Button } from "../../components/Button.tsx";
 import { Dialog, DiscardQuestion } from "../../components/Dialog.tsx";
+import { Held } from "../../components/Held.tsx";
 import { Input, Select, TextArea } from "../../components/Field.tsx";
 import { Markdown } from "../../components/Markdown.tsx";
 import { Notice } from "../../components/Notice.tsx";
@@ -275,7 +276,7 @@ export function MonsterEditor(props: {
   return (
     <Dialog title={title} onClose={imageOpen ? () => {} : close} footer={footer} status={status} phone="fill" width="lg">
       {/* While a save waits, the draft it sent is the draft: the fields hold still until its answer, so nothing typed meanwhile is lost to a close. */}
-      <fieldset disabled={held} style={{ display: "grid", gap: theme.space(4), fontSize: theme.font.body14, border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+      <Held held={held} style={{ display: "grid", gap: theme.space(4), fontSize: theme.font.body14 }}>
         {gone ? (
           <Notice tone="warning" role="alert">
             {target ? "This stat block was deleted or is no longer yours, so it cannot be saved." : "This monster was deleted, so it cannot be saved."}
@@ -335,7 +336,7 @@ export function MonsterEditor(props: {
             ))}
           </>
         )}
-      </fieldset>
+      </Held>
     </Dialog>
   );
 }
