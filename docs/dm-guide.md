@@ -613,7 +613,7 @@ This part covers what you use once the dice come out: monsters and encounters, t
 
 ## Monsters
 
-The **Monsters** panel (DM only) holds the 330 monsters of the SRD 5.2.1, along with any your room has added. Use it to look up a stat block or to put monsters on the map. In a stat block, an outline around one of the six ability boxes means the creature is proficient in that saving throw.
+The **Monsters** panel (DM only) holds the 330 monsters of the SRD 5.2.1, along with any your room has added. Use it to look up a stat block or to put monsters on the map. In a stat block, an outline around one of the six ability boxes means the creature is proficient in that saving throw. The boxes here stay plain, since no creature stands behind them. Once a monster is on the map, the boxes in its token's stat block roll (see [Roll options](#roll-options)).
 
 ![A monster's page in the Monsters panel: the Goblin Warrior's place card, with CR 1/4 on its first line, then How many, Hidden from players and Place 4 on the map, then its token image and credit.](dm-guide/monsters.webp)
 
@@ -929,6 +929,10 @@ Your players see the same panel for their own creatures. A player with more than
 For a creature a player plays, **Ask Thorn to roll** (on by default) changes what a tap on a save or check does: instead of rolling it yourself, it opens [Request a roll](#asking-for-rolls) for that player. Turn it off when you would rather roll for them.
 
 Every roll in a creature's options has the one-roll menu, from a save to a weapon's damage and **Initiative**. Two don't: **Recharge**, whose one roll has nothing to choose, and a save or check that asks the player while **Ask Thorn to roll** is on.
+
+**Rolling from a stat block.** For a quick save or check you don't need the Dice panel. In a creature's stat block, tap one of the six ability boxes, the ones with a small mark in the corner. A short list opens with that ability's check, its save and its skills, and under Dexterity, Initiative. Tap one to roll it, and the result shows under the boxes. For Advantage, Disadvantage or a secret roll, hold the roll for half a second or right-click it, or press `Shift+F10` on it, then pick. A monster's rolls are already hidden from players, so for a monster you'll only see Advantage and Disadvantage there. `Escape`, or Back on Android, takes you back to the list. For a creature a player plays, a save or check asks that player while its **Ask Thorn to roll** switch in the Dice panel is on. Boxes in the Monsters panel stay plain, since no creature stands behind them.
+
+![The DM's screen with a goblin's stat block open in the side panel and the Dexterity box's list open over it: Check, Save, Acrobatics, Sleight of Hand, Stealth and Initiative, each with its bonus, Stealth outlined as one the goblin is proficient in.](dm-guide/stat-block-rolls.webp)
 
 ### Several creatures
 

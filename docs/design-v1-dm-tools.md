@@ -410,7 +410,7 @@ The request: "Full stat blocks."
 - A token with neither link offers "Attach a stat block", which opens the monster browser to pick one, and suggests the room monster or SRD monster of exactly its name. Attaching sets only the link, never the token's numbers.
 - A tracker row's options gain "Stat block", which opens the token panel there.
 - A token's owner who plays a monster from the SRD, such as a druid's Wild Shape, sees its block too: the SRD is openly licensed and the owner already receives `srdId`. The SRD chunk loads on that device only then. A room monster's block never reaches a player, since it may be text from a book the group owns.
-- The block is read only on the token, and nothing in it rolls.
+- The block is read only on the token. Its six ability boxes open their rolls (docs/design-v1-stat-block-rolls.md), and nothing else in it rolls.
 
 **Model.** `Actor.monsterId?: MonsterId`, set by `monsterToken` when a token is placed from a room monster (the monster browser, the Add token tool and the encounter builder, which today carry the id in the pending placement and drop it). A link to a monster deleted since reads "This token's stat block was deleted from this room."
 

@@ -120,7 +120,7 @@ Labels name the roll, never the creature (doc 1 5.5): "Dexterity save", "Stealth
 
 **A creature a player plays, for the DM**: the list starts with "Ask Bree to roll", on, as players roll their own (16). While on, a save or check tap opens doc 4's sheet with that test (`openAsk` with a fill, doc 4 4.8). Off, it rolls on the server. Attacks, damage and the rest always roll.
 
-A creature with no numbers lists Initiative alone, with "No stat block. Roll from the field above.", and for a character "Add a stat block" (`openPcStats`, doc 2). A preview as a player, or no connection, disables every button with doc 1's words (doc 1 4.5). The stat block views stay text this wave (the project owner's decision, 16).
+A creature with no numbers lists Initiative alone, with "No stat block. Roll from the field above.", and for a character "Add a stat block" (`openPcStats`, doc 2). A preview as a player, or no connection, disables every button with doc 1's words (doc 1 4.5). The stat block views stayed text that wave (16), until their ability boxes opened their rolls (docs/design-v1-stat-block-rolls.md).
 
 ### 4.3 What a result does
 
@@ -417,7 +417,7 @@ No other key or key with pointer is added or changed.
 
 1. **"Save ends" for a player's creature**: the DM's reminder card sends that player a roll request, so the DC stays the DM's (6.1). Such a request keeps its DC private unless the DM shows it, with its switches set explicitly.
 2. **A group save with players' creatures**: each player gets a roll request by default, and the DM can roll any row on the server with one tap (5.2).
-3. **Tap to roll in the stat block**: not this wave. The Dice panel stays the one place to roll, and its options show the Multiattack line (4.2).
+3. **Tap to roll in the stat block**: not that wave. Since docs/design-v1-stat-block-rolls.md the ability boxes roll a creature's checks, saves, skills and Initiative through these options' path. Everything else rolls here, and the options show the Multiattack line (4.2).
 4. **The DM's bar for a creature a player plays**: Roll stays and Request a roll goes. Ask is Roll's default there (4.5).
 
 ## Appendix A. Sizes

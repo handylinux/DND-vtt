@@ -409,4 +409,36 @@ From round 2's fixes:
 
 ## As built
 
-To be written by lane C in commit 7.
+Where the build went its own way from the design above, or from the code it was written against.
+
+**Against the base (FL-17 and Undo B), following the design's intent on the new code**
+
+- `useRollPresses(creatures)` judges Secret against the roll's own creatures, and the roll mode menu offers Normal only where a tap differs, so the options here offer no Normal at all (section 5.2).
+- Popover closes any popover "gone" once its anchor scrolls out of view, so the list closes on that through Popover. `handleRollModeScroll` only cancels a press, and the press registry uses it so.
+- The host raise (`raiseRollModeHosts`) runs only where `showPopover` is missing, and the ability menu calls it as the roll menus do.
+- Touch rules start fresh on each primary touch. Back registers as 5.3 says, through `useBackClose("popover:<n>")`, raised only on a Back that `stepBack` kept open.
+
+**Lane A: contract and the list**
+
+- Receipts: `spoken(tag)` is the mark and `maySpeak(tag, claimant)` the query, with a hook, `useReceiptVoice(tag, claim)`, that a surface calls (D-261031-200). Other additions to section 10's list: `PanelChoices = "none"`, `MenuItem.busy`, `pressStyle` on `useAbilityMenu`, `RollModeTitle` and `rollModeBound` exports, `boxDescription`, `AbilityRow` and `AbilityRowsInput` from `blockRolls.ts`.
+- A row's name reads "Stealth +10, expertise", "Dexterity check +4" and "Dexterity save +7, proficient", then the route and preset words (D-261031-201). The box also names `ContextMenu Shift+F10` in `aria-keyshortcuts`, since those keys open its list (D-261031-202).
+- `secretByDefault` drops Secret only where visibility is selectable (D-261031-203). Objects never roll from a block, for the DM too (D-261031-204).
+- The SRD rolls table loads when a list opens, not when a rolling grid mounts (D-261031-205). A lost connection or a preview while a roll's options are open sends them back to the list, which shows the blocked line (D-261031-206). A changed roll sends its options back and moves focus to the row only if focus was inside (D-261031-207).
+- In a score room "Initiative score" has no tag and "Roll initiative" is tagged "replaces the score" (D-261031-209). A key open with every row disabled lands on the first row so its reason is heard (D-261031-211).
+- The held touch's consumed listener and the watch for its end are on the row element too, since a touch keeps the element it started on as its target after that element leaves the page and its events never reach the document (5.1 said the document).
+- **The options keep the list's box only until the held finger lifts** (D-261031-212). Placing the box again for the options while the finger is down shrank it under the finger, and the lift then closed everything. So options a held finger opened keep the box as it stands, and once that finger's release is heard they are fitted to their rows and placed again, the box shrinking and widening to its rows. Options opened with no finger down (right-click, ContextMenu, Shift+F10) are placed for themselves at once. The box is also placed again when the rows take the loading line's place, and when the options step back to the list from fitted options. A held finger's touchend on a row that has left the page is prevented, since Chrome would otherwise send the click for that touch to whatever lies under the finger once the box has shrunk.
+- Blocked rows carry the reason as their description, and the line under the title says it too (4.6).
+- A row's press machine is dropped once it is idle and its row is undrawn, at the next press or key (D-261031-210).
+
+**Lane B: the grid, mounts and result**
+
+- `useBlockRoller(from)` lives in `AbilityGrid.tsx` and wraps `blockRoller` with the view, the viewer and the scene, keeping one object while the creature is the same. The mounts pass `from` to it, rather than each computing `blockRoller`. `PcStatBlock` takes `from` as a required prop.
+- The result line sits in one wrapper with the grid, so the PC sheet's grid gap does not add to the line's own margin. The mode words are a last flex item outside the label and dice box, `aria-hidden`, so where they do not fit they wrap out of the one-row line first and whole. The line's description sits on its body (`aria-description`) and carries the returned roll's mode and Secret.
+- Markers: `data-block-result`, `data-ability-mark`, `data-result-mode`, `data-ability-abbr`, `data-ability-score` and `data-ability-save`.
+
+**Lane C: tests**
+
+- The e2e alignment roots (`blockRollTests`) run from `proficiency.e2e.ts`, which reaches the six sizes and the tablet at 100% and 130% and the two landscape sizes at 130%.
+- sbr-16 puts the Dice panel under the Token panel with Two panels, so both lines are mounted at once on a computer.
+- A refused block roll is covered by unit tests (`BlockResult.test.ts`, `Roller.test.ts`), not by an e2e step: no gesture in the browser makes the server refuse one.
+- sbr-2 checks that Adv stays pressed. It cannot read the option store's version.
