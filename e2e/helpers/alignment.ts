@@ -976,6 +976,12 @@ function measureInPage(roots: DomElement[], opts: PageOptions): Finding[] {
     return r.width > 1.5 && r.height > 1.5;
   }
 
+  /**
+   * Whether the element lays out no box of its own, so its children sit in its parent's layout (display: contents). It reads as
+   * zero-sized, so `shown` would hide it and everything it holds from the content walk.
+   */
+  const boxless = (el: DomElement) => style(el).display === "contents" && style(el).visibility !== "hidden";
+
   const placedApart = (el: DomElement) => ["absolute", "fixed"].includes(style(el).position);
 
   /** Whether the element draws a box of its own: a fill, or a border on three sides or more. */
@@ -1137,7 +1143,7 @@ function measureInPage(roots: DomElement[], opts: PageOptions): Finding[] {
         if (ch.nodeType === 3) {
           const words = (ch.textContent ?? "").trim();
           const parent = ch.parentElement;
-          if (!words || !parent || !shown(parent)) continue;
+          if (!words || !parent || !(shown(parent) || boxless(parent))) continue;
           const range = doc!.createRange();
           range.selectNodeContents(ch);
           for (const r of Array.from(range.getClientRects())) {
@@ -1149,6 +1155,11 @@ function measureInPage(roots: DomElement[], opts: PageOptions): Finding[] {
             else add(line, clip);
           }
         } else if (isEl(ch)) {
+          // A display: contents element draws nothing itself. Its children are measured as if they were its parent's own.
+          if (boxless(ch)) {
+            walk(ch, clip, wrap);
+            continue;
+          }
           if (!shown(ch) || (placedApart(ch) && !(placed && style(ch).position === "absolute"))) continue;
           const start = setAtStart(node, container);
           if (isPicture(ch)) add({ kind: "icon", ...rectOf(ch), what: ch.getAttribute("role") === "img" ? `img "${ch.getAttribute("aria-label") ?? ""}"` : tag(ch), start, wrap }, clip);

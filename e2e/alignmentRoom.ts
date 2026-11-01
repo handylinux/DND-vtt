@@ -3228,6 +3228,30 @@ export function helperTest(): void {
     }
   });
 
+  test("fu43a-1. the centering check measures what a display: contents element holds, as a passed save's Saved line sits in one", async () => {
+    const page = await dmContext.newPage();
+    try {
+      for (const scale of [1, 1.3]) {
+        // The wrapper draws no box, so the words and the button inside it belong to the painted card around it.
+        await page.setContent(`<style>
+          * { box-sizing: border-box }
+          #card { width: 240px; height: 80px; padding: 0 12px; display: flex; flex-direction: column; justify-content: center; background: #333; font: 14px/20px sans-serif; color: #eee; zoom: ${scale} }
+          .wrap { display: contents }
+          #saved { display: block; height: 20px }
+        </style><div id="card"><div class="wrap"><span id="saved">Saved</span></div></div>`);
+        const card = page.locator("#card");
+        const lines = async () => alignmentLines(await measureAlignment(card), `fu43a-1 ${scale}`);
+        assert.deepEqual(await lines(), [], "the words in the wrapper sit in the middle of the card");
+        for (const shift of [-12, 12]) {
+          await page.locator("#saved").evaluate((el, y) => { (el as unknown as { style: { transform: string } }).style.transform = `translateY(${y}px)`; }, shift);
+          assert.ok((await lines()).some((line) => line.includes(": center ")), `words in a display: contents wrapper moved ${shift}px must fail`);
+        }
+      }
+    } finally {
+      await page.close();
+    }
+  });
+
   test("fl5-a. the menu word check catches a word squeezed below the menu's width, but accepts word boundaries and an oversized word", async () => {
     const page = await dmContext.newPage();
     try {
