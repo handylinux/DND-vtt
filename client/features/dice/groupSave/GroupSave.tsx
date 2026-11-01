@@ -165,6 +165,15 @@ export function pageTitle(page: Pick<Page, "fill" | "test" | "rows" | "source">)
   return `${what} for ${n}`;
 }
 
+/**
+ * What Discard asks: "Discard the Dexterity save for 6?", and with no
+ * "the" before a name, "Discard Fireball's save?", since a filled page's
+ * title already names whose save it is.
+ */
+export function discardQuestion(page: Pick<Page, "fill" | "test" | "rows" | "source">): string {
+  return `Discard ${page.fill ? "" : "the "}${pageTitle(page)}?`;
+}
+
 export function GroupSave(props: { parent: "Dice" | "Areas"; onBack(): void; areaIds?: (templateId: string) => string[] }) {
   const store = useGroupSaveStore();
   const page = useGroupSave((s) => s.page);
@@ -744,7 +753,7 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
       {page.phase !== "applying" && page.phase !== "applied" || stranded ? (
         confirmDiscard ? (
           <div style={{ display: "flex", gap: theme.space(2), flexWrap: "wrap", alignItems: "center" }}>
-            <span>{`Discard the ${title}?`}</span>
+            <span>{discardQuestion(shown)}</span>
             <Button variant="danger" onClick={close}>
               Discard
             </Button>

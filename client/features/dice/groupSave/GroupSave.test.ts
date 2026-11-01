@@ -532,3 +532,11 @@ test("a total committed as the connection drops reaches the page, and Apply afte
   const guard = outcome?.targets.find((target) => "tokenId" in target.target && target.target.tokenId === "g1");
   assert.equal(guard?.damage?.save?.result, "pass", JSON.stringify(outcome));
 });
+
+test("Discard asks with no \"the\" before a name, which already says whose save it is (LP27-A-GS-1)", () => {
+  assert.equal(groupSave.discardQuestion(PAGE), "Discard the Dexterity save for 2?");
+  const fill = { name: "Fireball" } as unknown as NonNullable<Page["fill"]>;
+  assert.equal(groupSave.discardQuestion({ ...PAGE, fill }), "Discard Fireball's save?");
+  assert.equal(groupSave.discardQuestion({ ...PAGE, fill, test: { kind: "none" } }), "Discard Fireball?");
+  assert.equal(groupSave.discardQuestion({ ...damagePage("9 fire") }), "Discard the Damage for 1?");
+});

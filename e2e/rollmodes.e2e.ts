@@ -1587,9 +1587,9 @@ describe("raccoon-vtt one-roll mode menu", { timeout: 600_000 }, () => {
     const discardPage = async () => {
       const panel = dmDice();
       await panel.getByRole("button", { name: "Discard", exact: true }).first().click();
-      await panel.getByText(/^Discard the .*\?$/).waitFor();
+      await panel.getByText(/^Discard .*\?$/).waitFor();
       await panel.getByRole("button", { name: "Discard", exact: true }).last().click();
-      await panel.getByText(/^Discard the .*\?$/).waitFor({ state: "detached" });
+      await panel.getByText(/^Discard .*\?$/).waitFor({ state: "detached" });
     };
     const buttonsOf = async (scope: Locator) => JSON.stringify(await scope.getByRole("button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label") ?? (e as unknown as { innerText: string }).innerText)));
     const batch = ["Roll secretly: hide the dice from players.", "All choices: apply to server rolls only. Players choose their own modes."];

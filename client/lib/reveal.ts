@@ -92,6 +92,30 @@ export function startInScrollBox(target: HTMLElement | Node, margin: number, smo
   else box.scrollTop = top;
 }
 
+/**
+ * Scrolls `el`'s scroll box just enough that `el` shows whole, clear of the
+ * box's scroll-padding, as scrollIntoView's "nearest" would, and moves
+ * nothing else. Unlike revealInScrollBox it reads the screen, so it works
+ * where the box is not on `el`'s offset chain, as in a panel's body, and
+ * divides out the interface size's zoom as startInScrollBox does.
+ */
+export function nearInScrollBox(target: HTMLElement | Node, style: StyleOf = styleOf): void {
+  const el = target as Node;
+  const box = scrollBox(el, style);
+  if (!box) return;
+  const b = box.getBoundingClientRect();
+  const zoom = box.offsetHeight > 0 ? (b.bottom - b.top) / box.offsetHeight : 1;
+  const s = style(box);
+  const viewTop = b.top + (parseFloat(s.scrollPaddingTop) || 0) * zoom;
+  const viewBottom = b.top + (box.clientHeight - (parseFloat(s.scrollPaddingBottom) || 0)) * zoom;
+  const r = el.getBoundingClientRect();
+  let by = 0;
+  if (r.top < viewTop || r.bottom - r.top > viewBottom - viewTop) by = r.top - viewTop;
+  else if (r.bottom > viewBottom) by = r.bottom - viewBottom;
+  if (by === 0) return;
+  box.scrollTop = Math.max(0, Math.min(box.scrollTop + by / zoom, box.scrollHeight - box.clientHeight));
+}
+
 /** Whether some of `el` shows inside its scroll box, or it has none. */
 export function visibleInScrollBox(el: Node, style: StyleOf = styleOf): boolean {
   const box = scrollBox(el, style);

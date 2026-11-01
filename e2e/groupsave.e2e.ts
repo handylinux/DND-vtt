@@ -8,6 +8,7 @@ import { chromium, type Browser, type BrowserContext, type Locator, type Page } 
 import type { DiceRoll, LogEntry, LogEvent } from "#shared/model.ts";
 import { uuidv7 } from "#shared/ids.ts";
 import { blockOf, customMonster } from "#shared/testutil.ts";
+import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
 import { OUTCOME_RESTORED, OUTCOME_UNDONE, OUTCOME_UNAVAILABLE, assertPrivateOutcome, openSaveDice, saveOutcomes } from "./helpers/saveOutcomes.ts";
 import { ConsoleWatch, diceFoldsOpen, multiSelect, OpSocket, reopenRoom, resultLine, Shots, SocketWatch, startServer, tapCell, waitFor, wholeInReach, type Server } from "./harness.ts";
 
@@ -887,6 +888,49 @@ describe("raccoon-vtt group save", { timeout: 300_000 }, () => {
     } finally {
       await dm.evaluate(() => (globalThis as unknown as { restoreSaveStorage: () => void }).restoreSaveStorage());
     }
+  });
+
+  test("fu42b-1. with the reopened save open, the wyrmling's Group save pressed at the panel's foot brings its question into view and focuses Keep it (LP27-A-GS-1)", async () => {
+    // Undo reopens the zero-change save, which holds its rolls, so another start asks first.
+    await ops.step("undo");
+    const sheet = diceSheet(dm);
+    await sheet.getByText(OUTCOME_UNDONE, { exact: true }).waitFor();
+    await sheet.getByRole("button", { name: "Close Dice" }).tap();
+    await sheet.waitFor({ state: "hidden" });
+    const none = dm.getByRole("button", { name: "Deselect all" }).first();
+    if (await none.isVisible()) await none.tap();
+    const done = dm.getByRole("button", { name: "Done", exact: true });
+    if (await done.isVisible()) await done.tap();
+    await dismissToasts(dm);
+    await tapCell(dm, run.bounds, run.dragon);
+    const bar = dm.getByRole("dialog", { name: `${run.dragon.name} actions` });
+    await bar.waitFor();
+    await bar.getByRole("button", { name: "Roll", exact: true }).tap();
+    await sheet.waitFor();
+    const groupSave = sheet.locator("[data-roll-options]").getByRole("button", { name: "Group save, DC 13 DEX" });
+    await groupSave.waitFor();
+    // The button's foot at the scroller's foot, so the question it opens below it starts out of sight.
+    const room = await groupSave.evaluate((el) => {
+      const styleOf = (e: unknown) => (globalThis as unknown as { getComputedStyle(e: unknown): { overflowY: string } }).getComputedStyle(e);
+      let box = el.parentElement;
+      while (box && !(/(auto|scroll)/.test(styleOf(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
+      if (!box) return null;
+      const zoom = box.getBoundingClientRect().height / box.offsetHeight;
+      box.scrollTop += (el.getBoundingClientRect().bottom - box.getBoundingClientRect().bottom) / zoom + 2;
+      return box.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom;
+    });
+    assert.ok(room !== null && room < 8, `the button sits at the panel's foot: ${room} px below it`);
+    await groupSave.tap();
+    const question = sheet.getByRole("alert").filter({ hasText: "Discard the Dexterity save for 2?" });
+    await question.waitFor();
+    await waitFor("the question whole in view", async () => ((await wholeInReach(question)) ? true : null), 3_000);
+    assert.equal(await question.evaluate((el) => el.ownerDocument.activeElement?.textContent ?? null), "Keep it", "focus on the choice that loses nothing");
+    assert.ok(await wholeInReach(sheet.getByRole("button", { name: "Close Dice" })), "the sheet's header stays in view");
+    assert.deepEqual(alignmentLines(await measureAlignment(question), "the replace question at 375 x 667 at 130%"), []);
+    await shots.take(dm, "fu42b-replace-confirm-in-view-130");
+    await dm.keyboard.press("Enter");
+    await question.waitFor({ state: "detached" });
+    await sheet.locator("[data-open-group-save]").getByText(/^Dexterity save for 2: /).waitFor();
   });
 
   test("8. nothing went wrong in the browsers", () => {

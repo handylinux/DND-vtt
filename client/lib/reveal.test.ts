@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { revealInScrollBox, scrollBox, startInScrollBox, visibleInScrollBox } from "./reveal.ts";
+import { nearInScrollBox, revealInScrollBox, scrollBox, startInScrollBox, visibleInScrollBox } from "./reveal.ts";
 
 /**
  * A column 200 px tall that holds cards 100 px tall, 8 px apart, laid out
@@ -90,5 +90,42 @@ describe("opening a panel on one of its sections (LP7-DICE-6)", () => {
     col.scrollTop = 20;
     startInScrollBox(card, 48, false, style);
     assert.equal(Math.round(col.scrollTop), 8 + 2 * 108 - 48);
+  });
+});
+
+describe("a question that opens out of sight in a panel's body (LP27-A-GS-1)", () => {
+  /** The cards, whose offset parent is not the column, as a panel body's rows are not its scroller's. */
+  function body(cards: number) {
+    const { col, items } = column(cards);
+    return { col, items: items.map((item) => ({ ...item, offsetParent: null })) };
+  }
+
+  test("one below the foot comes up just far enough to clear the foot's scroll-padding, read from the screen", () => {
+    const { col, items } = body(4);
+    nearInScrollBox(items[2]!, style);
+    assert.equal(col.scrollTop, 324 - 200 + 20);
+    assert.equal(visibleInScrollBox(items[2]!, style), true);
+  });
+
+  test("one above the head comes down to the head, clear of its scroll-padding", () => {
+    const { col, items } = body(4);
+    col.scrollTop = 300;
+    nearInScrollBox(items[0]!, style);
+    assert.equal(col.scrollTop, 0);
+  });
+
+  test("one already whole in view stays where it is", () => {
+    const { col, items } = body(4);
+    col.scrollTop = 100;
+    nearInScrollBox(items[1]!, style);
+    assert.equal(col.scrollTop, 100);
+  });
+
+  test("under the interface size's zoom the distance on screen is read back in the box's own pixels", () => {
+    const { col, items } = body(4);
+    col.getBoundingClientRect = () => ({ top: 60, bottom: 320, left: 0, right: 390 });
+    for (const card of items) card.getBoundingClientRect = () => ({ top: 60 + (card.offsetTop - col.scrollTop) * 1.3, bottom: 190 + (card.offsetTop - col.scrollTop) * 1.3, left: 0, right: 390 });
+    nearInScrollBox(items[2]!, style);
+    assert.equal(Math.round(col.scrollTop), 324 - 200 + 20);
   });
 });
