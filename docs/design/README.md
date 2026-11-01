@@ -152,3 +152,6 @@ and for how to use it, the [DM guide](../dm-guide.md).
 - [design-v1-icons-2.md](design-v1-icons-2.md): the second icon pass.
 - [design-v1-guide-look.md](design-v1-guide-look.md): the DM guide laid out
   like a printed guide.
+- [design-v1-look-pass-1.md](design-v1-look-pass-1.md): locked controls that
+  look locked, roll menus that fit a small screen, toasts kept clear of an
+  open sheet, and long damage formulas that break between terms.
