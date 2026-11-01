@@ -14,7 +14,7 @@ import type { PopoverHandle } from "./Popover.tsx";
 const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { Menu } = await import("./Menu.tsx");
-const { Popover } = await import("./Popover.tsx");
+const { Popover, usePopoverContext } = await import("./Popover.tsx");
 const { Held } = await import("./Held.tsx");
 const { theme } = await import("../lib/theme.ts");
 
@@ -25,13 +25,15 @@ function handle(closes: string[]): PopoverHandle {
   return { open: true, kind: "menu", contentId: "m", anchor: { current: null }, box: { current: null }, focusInside: { current: null }, how: { by: "key", from: "first" }, close: (reason: string) => closes.push(reason) } as unknown as PopoverHandle;
 }
 
-/** How the menu is drawn: inside a held group. */
-type Around = { held?: boolean };
+/** How the menu is drawn: inside a held group, or with the popover's placement already made, as Popover's place would make it. */
+type Around = { held?: boolean; placed?: Record<string, unknown> };
 
 /** Renders the menu in an open popover, and keeps the element tree Menu returned, whose handlers a test calls as React would. */
 function draw(props: Props, closes: string[] = [], around: Around = {}): { html: string; root: Node; items: Node[] } {
   let tree: ReactElement | null = null;
   function Probe() {
+    const context = usePopoverContext();
+    if (around.placed) (context.placed as { current: unknown }).current = around.placed;
     tree = Menu(props) as ReactElement;
     return tree;
   }
@@ -259,3 +261,67 @@ describe("a menu inside a held group", () => {
   });
 });
 
+/*
+ * A roll menu with no room on either side of its button slides back over
+ * it (popoverPlace's `covers`), so a fast second tap aimed at the button
+ * lands on a row. A press that starts within 350 ms of the menu's opening
+ * is ignored (D-261101-313). The clock is a stand-in.
+ */
+describe("a menu that covers its anchor", () => {
+  const rows: MenuItem[] = [{ id: "adv", title: "Roll with Advantage", kind: "action" }];
+  const covering = { left: 0, top: 270, width: 300, height: 287, scrolls: false, rose: false, covers: true };
+  const beside = { left: 0, top: 270, width: 300, height: 287, scrolls: false, rose: false };
+
+  function opened(t: { mock: { method(o: object, name: string, fn: () => number): unknown } }, placed: Record<string, unknown>, events?: MenuItem["events"]) {
+    const clock = { now: 1000 };
+    t.mock.method(performance, "now", () => clock.now);
+    const picks: string[] = [];
+    const closes: string[] = [];
+    const drawn = draw({ label: "Roll options", sections: [{ key: "s", items: rows.map((r) => ({ ...r, events })) }], onPick: (id, by) => picks.push(`${id}:${by}`) }, closes, { placed });
+    const row = drawn.items[0]!.props as Record<string, (e: unknown) => void>;
+    const press = (at: number) => {
+      clock.now = at;
+      row.onPointerDown!({ button: 0 });
+      row.onClick!({ detail: 1 });
+    };
+    return { drawn, row, press, picks, closes, clock };
+  }
+
+  test("a press within 350 ms of its opening neither picks nor closes, and one after it picks", (t) => {
+    const menu = opened(t, covering);
+    menu.press(1100);
+    menu.press(1349);
+    assert.deepEqual(menu.picks, []);
+    assert.deepEqual(menu.closes, []);
+    menu.press(1400);
+    assert.deepEqual(menu.picks, ["adv:pointer"]);
+    assert.deepEqual(menu.closes, ["pick"]);
+  });
+
+  test("the press it ignores never starts the row's press binding", (t) => {
+    const pressed: string[] = [];
+    const menu = opened(t, covering, { onPointerDown: () => pressed.push("down") });
+    menu.press(1100);
+    assert.deepEqual(pressed, []);
+    menu.press(1400);
+    assert.deepEqual(pressed, ["down"]);
+  });
+
+  test("a key and a reader's activation pick at once", (t) => {
+    withFocus((focusOn) => {
+      const menu = opened(t, covering);
+      focusOn(menu.drawn, ["adv"], "adv");
+      menu.clock.now = 1050;
+      (menu.drawn.root.props.onKeyDown as (e: unknown) => void)(key({ key: "Enter" }));
+      menu.row.onPointerDown!({ button: 0 });
+      menu.row.onClick!({ detail: 0 });
+      assert.deepEqual(menu.picks, ["adv:key", "adv:key"]);
+    });
+  });
+
+  test("a menu that stands beside its anchor picks at once, as before", (t) => {
+    const menu = opened(t, beside);
+    menu.press(1050);
+    assert.deepEqual(menu.picks, ["adv:pointer"]);
+  });
+});

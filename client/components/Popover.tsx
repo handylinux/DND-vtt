@@ -24,7 +24,7 @@ import { useScoped } from "../state/scope.ts";
 import { isTextField } from "../state/shortcuts.ts";
 import { sectionLabelLook } from "./Panel.tsx";
 import { KeyOpening } from "./popoverFocus.ts";
-import { anchorInView, chromeRect, clipToVisible, needsPlace, popoverPlace, type PlaceFrame, type PopoverSide, type Rect } from "./popoverPlace.ts";
+import { anchorInView, chromeRect, clipToVisible, needsPlace, popoverPlace, type Place, type PlaceFrame, type PopoverSide, type Rect } from "./popoverPlace.ts";
 import {
   closesAfterTab,
   escapeCloses,
@@ -225,7 +225,13 @@ export function usePopover(options: {
   };
 }
 
-type PopoverContextValue = { handle: PopoverHandle; setInsideFocus(focus: FocusInside | null): void; setFitContent(fit: FitContent | null): void };
+type PopoverContextValue = {
+  handle: PopoverHandle;
+  setInsideFocus(focus: FocusInside | null): void;
+  setFitContent(fit: FitContent | null): void;
+  /** Where the box stands now, or null before it is placed: a menu reads whether it covers its anchor (Menu.tsx). */
+  placed: { readonly current: Place | null };
+};
 
 const PopoverContext = createContext<PopoverContextValue | null>(null);
 
@@ -331,10 +337,11 @@ function OpenPopover(props: PopoverProps) {
     },
   });
   const fitContent = useRef<FitContent | null>(null);
+  const placed = useRef<Place | null>(null);
   // The field inside it follows, until a scroll of the viewer's own (lib/keyboardInset.ts followField).
   const follower = useRef<ReturnType<typeof followField> | null>(null);
   const context = useMemo<PopoverContextValue>(
-    () => ({ handle, setInsideFocus: (focus) => void (menuFocus.current = focus), setFitContent: (fit) => void (fitContent.current = fit) }),
+    () => ({ handle, setInsideFocus: (focus) => void (menuFocus.current = focus), setFitContent: (fit) => void (fitContent.current = fit), placed }),
     [handle],
   );
 
@@ -382,6 +389,7 @@ function OpenPopover(props: PopoverProps) {
         content: { width: natural.width / scale, height: natural.height / scale },
         flip: p.flip,
       });
+      placed.current = at;
       Object.assign(box.style, { maxWidth: "", minWidth: "", left: `${at.left}px`, top: `${at.top}px`, width: `${at.width}px`, height: `${at.height}px` });
       box.scrollTop = scrolled;
       const short = visible !== null && at.height < (p.minHeight ?? 0);

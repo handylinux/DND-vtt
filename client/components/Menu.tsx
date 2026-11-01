@@ -1,4 +1,4 @@
-import { Fragment, useId, useLayoutEffect, useRef, type CSSProperties, type DOMAttributes, type KeyboardEvent, type ReactNode } from "react";
+import { Fragment, useId, useLayoutEffect, useRef, useState, type CSSProperties, type DOMAttributes, type KeyboardEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { effectiveZoom } from "../features/device/layout.ts";
 import { theme } from "../lib/theme.ts";
@@ -90,6 +90,9 @@ export type MenuSection = {
 /** How an item was picked. */
 export type MenuPickBy = "pointer" | "key";
 
+/** A double tap's span: a menu that covers its anchor ignores a press that starts this soon after it opens (D-261101-313). */
+export const COVER_GUARD_MS = 350;
+
 export function Menu(props: {
   /** The menu's name: "More panels", "Setup tools", "Tools". */
   label: string;
@@ -108,7 +111,7 @@ export function Menu(props: {
   /** Data attributes for the menu element, such as the side panel's `data-tabs-menu`. */
   data?: Readonly<Record<`data-${string}`, string>>;
 }) {
-  const { handle, setInsideFocus, setFitContent } = usePopoverContext();
+  const { handle, setInsideFocus, setFitContent, placed } = usePopoverContext();
   const held = useHeld();
   const tiles = props.tiles === true;
   const ids = useId();
@@ -116,6 +119,8 @@ export function Menu(props: {
   const nodes = useRef(new Map<string, HTMLDivElement>());
   const root = useRef<HTMLDivElement | null>(null);
   const typed = useRef<Typed | null>(null);
+  const [openedAt] = useState(() => performance.now());
+  const guarded = useRef(false);
 
   const focusItem = (index: number) => {
     const item = items[index];
@@ -216,6 +221,20 @@ export function Menu(props: {
     }
   };
 
+  /*
+   * A menu slid back over its anchor to stand whole (popoverPlace's
+   * `covers`) puts a row where the anchor was, so a fast second tap aimed
+   * at the anchor would pick that row. A press that starts that soon after
+   * the menu opens neither picks nor starts the row's press binding. A key,
+   * and any later press, acts as ever. `covers` is read only where the
+   * placement gives it.
+   */
+  const coverGuards = () => {
+    const at = placed.current;
+    const covers = at !== null && "covers" in at && at.covers === true;
+    return covers && performance.now() - openedAt < COVER_GUARD_MS;
+  };
+
   const item = (it: MenuItem) => {
     const checked = it.checked === true;
     const checkbox = it.kind === "checkbox";
@@ -230,6 +249,10 @@ export function Menu(props: {
         key={it.id}
         {...it.data}
         {...events}
+        onPointerDown={(e) => {
+          guarded.current = coverGuards();
+          if (!guarded.current) events?.onPointerDown?.(e);
+        }}
         ref={(node) => {
           if (node) nodes.current.set(it.id, node);
           else nodes.current.delete(it.id);
@@ -243,7 +266,12 @@ export function Menu(props: {
         aria-keyshortcuts={it.keys?.aria}
         title={it.keys?.title}
         tabIndex={-1}
-        onClick={(e) => pick(it.id, e.detail === 0 ? "key" : "pointer")}
+        onClick={(e) => {
+          const by = e.detail === 0 ? "key" : "pointer";
+          const ignored = guarded.current && by === "pointer";
+          guarded.current = false;
+          if (!ignored) pick(it.id, by);
+        }}
         style={tiles ? { ...TILE, ...look, ...it.style } : { ...ROW, ...look, ...(disabled || it.busy ? { cursor: "default" } : null), ...it.style }}
       >
         {tiles ? (
