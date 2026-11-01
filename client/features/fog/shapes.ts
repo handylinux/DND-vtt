@@ -153,19 +153,45 @@ export function fogOps(shapes: readonly FogShape[], mode: FogMode, newId: () => 
  */
 const GESTURE_OP = /^([0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\.(0|[1-9][0-9]?|[1-4][0-9]{2})$/;
 
-/** The edit a draft op belongs to (fogOps): its gesture's id, or for an op of one shape, its own. */
+/** The gesture an op id names by its form (GESTURE_OP), or the id itself. Whether the op is one of that gesture's edit is the draft's to say (draftEdits). */
 export function fogEditOf(id: string): string {
   return GESTURE_OP.exec(id)?.[1] ?? id;
 }
 
 /**
- * A draft's ops as the edits the DM made, each edit's ops together, in the
- * order the edits began. An op without an id is an edit of its own.
+ * Each draft op's edit, in draft order. A gesture's ops are one edit only
+ * as fogOps numbers them: from .0 up, in draft order. So an imported
+ * draft's crafted ids, such as `<gesture>.1` and `<gesture>.2`, or a plain
+ * id beside its own `.0`, stay edits of their own (H3-DATA-5), and every
+ * draft the app wrote reads as it always did: its gestures start at .0,
+ * and another DM's edit can only land between their ops. An op without an
+ * id is an edit of its own.
  */
+function editKeys(ops: readonly { id?: string }[]): string[] {
+  const open = new Map<string, { key: string; last: number }>();
+  return ops.map((op, i) => {
+    if (op.id === undefined) return `#${i}`;
+    const gesture = GESTURE_OP.exec(op.id);
+    if (!gesture) return `=${op.id}`;
+    const n = Number(gesture[2]);
+    const edit = open.get(gesture[1]!);
+    if (edit && n > edit.last) {
+      edit.last = n;
+      return edit.key;
+    }
+    if (n !== 0) return `=${op.id}`;
+    const key = `~${i}`;
+    open.set(gesture[1]!, { key, last: 0 });
+    return key;
+  });
+}
+
+/** A draft's ops as the edits the DM made, each edit's ops together, in the order the edits began. */
 export function draftEdits<T extends { id?: string }>(ops: readonly T[]): T[][] {
   const edits = new Map<string, T[]>();
+  const keys = editKeys(ops);
   ops.forEach((op, i) => {
-    const key = op.id === undefined ? `#${i}` : `=${fogEditOf(op.id)}`;
+    const key = keys[i]!;
     const edit = edits.get(key);
     if (edit) edit.push(op);
     else edits.set(key, [op]);
@@ -175,10 +201,10 @@ export function draftEdits<T extends { id?: string }>(ops: readonly T[]): T[][] 
 
 /** The ids the fog bar's Undo takes out of a draft: every op of the edit its last op belongs to, so a room sent in several ops goes whole. */
 export function lastEditIds(ops: readonly FogOp[]): string[] {
-  const last = ops[ops.length - 1];
-  if (!last) return [];
-  const edit = fogEditOf(last.id);
-  return ops.filter((o) => fogEditOf(o.id) === edit).map((o) => o.id);
+  if (ops.length === 0) return [];
+  const keys = editKeys(ops);
+  const last = keys[keys.length - 1];
+  return ops.filter((_, i) => keys[i] === last).map((o) => o.id);
 }
 
 /**

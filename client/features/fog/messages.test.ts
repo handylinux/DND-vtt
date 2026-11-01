@@ -171,6 +171,29 @@ describe("a fog gesture in the draft is one edit", () => {
     assert.deepEqual(rooms.get("room.2"), cellsOutline(["1,2"]));
   });
 
+  test("a gesture's ops are one edit only as fogOps numbers them, from .0 up in draft order, so crafted ids stay edits of their own (H3-DATA-5)", () => {
+    const v7 = "0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b";
+    const other = "0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6c";
+    const op = (id: string, x = 1): FogOp => ({ id, mode: "reveal", shape: { kind: "cells", cells: [`${x},1`] } });
+    const crafted = [op(`${v7}.1`, 1), op(`${v7}.2`, 3)];
+    assert.equal(publishShort(crafted), "Reveal (2)", "a gesture never starts past .0");
+    assert.deepEqual(lastEditIds(crafted), [`${v7}.2`]);
+    assert.deepEqual(draftOutlines(crafted, SQUARES).get(`${v7}.2`), cellsOutline(["3,1"]), "each keeps its own outline");
+    const plain = [op(v7, 1), op(`${v7}.0`, 3)];
+    assert.equal(publishShort(plain), "Reveal (2)", "a plain id is not its own .0's gesture");
+    assert.deepEqual(lastEditIds(plain), [`${v7}.0`]);
+    assert.deepEqual(lastEditIds([op(v7, 1), op(`${v7}.0`, 3), op(`${v7}.1`, 5)]), [`${v7}.0`, `${v7}.1`]);
+    const backwards = [op(`${v7}.0`, 1), op(`${v7}.2`, 3), op(`${v7}.1`, 5)];
+    assert.equal(publishShort(backwards), "Reveal (2)", "a number that does not climb is an edit of its own");
+    assert.deepEqual(lastEditIds(backwards), [`${v7}.1`]);
+    const again = [op(`${v7}.0`, 1), op(`${v7}.1`, 3), op(`${v7}.0`, 5), op(`${v7}.1`, 7)];
+    assert.equal(publishShort(again), "Reveal (2)", "a second .0 starts a second edit");
+    // Another DM's edit landing between a gesture's messages leaves it one edit, as the app sends it.
+    const between = [op(`${v7}.0`, 1), op(other, 3), op(`${v7}.1`, 5), op(`${v7}.2`, 7)];
+    assert.equal(publishShort(between), "Reveal (2)");
+    assert.deepEqual(lastEditIds(between), [`${v7}.0`, `${v7}.1`, `${v7}.2`]);
+  });
+
   test("the publish button counts the DM's edits: one Builder room tap is one, on hexes and on squares", () => {
     const hexRoom = fogOps(largestHexRoom(ROWS), "reveal", newId);
     assert.equal(publishLabel(hexRoom), "Reveal to players (1)");
