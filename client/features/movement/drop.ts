@@ -8,7 +8,7 @@ import { isHex, sceneGrid, SQUARES, type Grid } from "#shared/rules/grid.ts";
 import { hexAt, hexKey, hexNeighbors, type Hex } from "#shared/rules/hex.ts";
 import { deviceGround } from "#shared/rules/held.ts";
 import { footing } from "#shared/rules/heights.ts";
-import { coreBlocked, groundUnder, hexEndStand, hexFitWall, hexLegOf, hexLegStand, hexNarrow, hexStandHexes, hexStandInside, hexStandPlace, hexStartStand, hexWallsOf, landedElevation, landing, legStop, onSqueezedLattice, ownWalk, previewChunks, previewSqueezed, squeezeFits, walkEnd, walkFrom, type DropMode, type HexStand, type Walker } from "#shared/rules/movement.ts";
+import { coreBlocked, groundUnder, hexEndStand, hexFitWall, hexLegOf, hexLegStand, hexNarrow, hexStandHexes, hexStandInside, hexStandPlace, hexStartStand, hexWallsOf, landedElevation, landing, legSpots, legStop, offGridWallThrough, onSqueezedLattice, ownWalk, previewChunks, previewSqueezed, squeezeFits, walkEnd, walkFrom, type DropMode, type HexStand, type Walker } from "#shared/rules/movement.ts";
 import { followedHeight, followerTrace, routeLattice, routePoints, routeStop, routeWalkers, seatShift, walkSqueezes, walkTrace, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "#shared/rules/route.ts";
 import { checkSetReach } from "#shared/rules/moveLeg.ts";
 import type { WalkRoute } from "#shared/rules/walk.ts";
@@ -363,12 +363,44 @@ export function planOne(state: DropView, token: DropToken, raw: Aim, mode: Exclu
   if (to.x === token.x && to.y === token.y) return { moves: [], stop: null, held: [] };
   const elevation = dropLanding(state, token, to);
   // Walked as the route search, the server's check and the route walk it (walkerOf): on the ground, crossing only the inner ledges of a holder every player sees that stands on the ground.
-  const land = landing(state, walkerOf(state, token), { x: to.x, y: to.y, elevation }, mode);
-  const at = { x: land.x, y: land.y, squeeze: land.squeeze };
+  const walker = walkerOf(state, token);
+  const land = landing(state, walker, { x: to.x, y: to.y, elevation }, mode);
+  const at = land.stopped ? standingBack(state, walker, { x: to.x, y: to.y, elevation }, land) : { x: land.x, y: land.y, squeeze: land.squeeze };
   const moves = moved(token, at) ? [landed(state, token, at)] : [];
   const named = land.stopped ? heardStop(state, walkerOf(state, token), { x: to.x, y: to.y, elevation }, land.stopped) : null;
-  const stop: Stop | null = named ? { tokenId: token.id, sceneId: token.sceneId, ...named, ghost: to, aim: { x: raw.x, y: raw.y }, at: { x: land.x, y: land.y } } : null;
+  const stop: Stop | null = named ? { tokenId: token.id, sceneId: token.sceneId, ...named, ghost: to, aim: { x: raw.x, y: raw.y }, at: { x: at.x, y: at.y } } : null;
   return { moves, stop, held: [] };
+}
+
+/**
+ * Whether a walk may end full size at `at` as the server's stand check
+ * takes it (permissions.ts standCheck): on a scene that stops moves, no
+ * wall through the box of a creature that stands off its own snap grid
+ * there (movement.ts offGridWallThrough). `corners` are the walk's stops
+ * before it, as `walkEnd` reads them.
+ */
+function fullStandClear(state: BuildState, walker: Walker, at: Point, corners: readonly Point[] = []): boolean {
+  return state.scenes[walker.sceneId]?.blockMovement !== true || !offGridWallThrough(state, walkEnd(state, walker, at, corners));
+}
+
+/**
+ * A walk held at a wall, at the landing's last clear spot, or where that
+ * spot stands full size off the creature's own grid with a wall through
+ * its box, the spot before it on the leg that the server's stand check
+ * takes, squeezed where the creature squeezes there (LP28-B-RIDE-1). Only a
+ * creature that walks off its grid, as one that came out of a squeeze, meets
+ * it: the leg's spots step from where it stands.
+ */
+function standingBack(state: DropView, walker: Walker, to: LegEnd, land: { x: number; y: number; squeeze: boolean }): Point & { squeeze: boolean } {
+  if (land.squeeze || fullStandClear(state, walker, land)) return { x: land.x, y: land.y, squeeze: land.squeeze };
+  const spots = legSpots(walker, to);
+  for (let k = spots.findIndex((p) => p.x === land.x && p.y === land.y) - 1; k > 0; k--) {
+    const spot = spots[k]!;
+    if (legStop(state, walker, { ...spot, elevation: to.elevation }) !== null) continue;
+    if (squeezeFits(state, walkEnd(state, walker, spot))) return { ...spot, squeeze: true };
+    if (fullStandClear(state, walker, spot)) return { ...spot, squeeze: false };
+  }
+  return { x: walker.x, y: walker.y, squeeze: walker.squeeze === true };
 }
 
 /**
@@ -419,7 +451,9 @@ export function routeTarget(state: DropView, token: DropToken, raw: Aim): Point 
  * piece end, no later than the 64th, where the creature stands as a drop
  * would, squeezed only where the squeeze is a real one (`squeezeFits`), and
  * where nothing pinches it only on its own snap grid from where it stands,
- * as `routeSpots` counts a stand. Null when the route needs no cut, or no
+ * as `routeSpots` counts a stand, and on a player's walk the server checks
+ * not where a wall passes through its box off the grid of squares
+ * (permissions.ts standCheck). Null when the route needs no cut, or no
  * piece end is such a spot.
  */
 export function cutRoute(state: DropView, token: DropToken, pieces: readonly RoutePiece[]): { pieces: RoutePiece[]; at: Point & { squeeze: boolean } } | null {
@@ -430,6 +464,8 @@ export function cutRoute(state: DropView, token: DropToken, pieces: readonly Rou
   const walking = walkerOf(state, token);
   const points = routePoints(state.buildChunks, walking, pieces.slice(0, MAX_ROUTE_PIECES), walking.elevation);
   const g = dropGrid(state, token);
+  // A full stand off the grid of squares, as a creature that came out of a squeeze stands, takes no wall through its box on a walk the server checks (permissions.ts standCheck).
+  const walks = dropMode(state.role, state.scenes[token.sceneId]) === "walk";
   for (let k = MAX_ROUTE_PIECES; k > 0; k--) {
     const [x, y] = pieces[k - 1]!;
     const at = { x, y };
@@ -441,7 +477,7 @@ export function cutRoute(state: DropView, token: DropToken, pieces: readonly Rou
       continue;
     }
     if (!previewSqueezed(state, end)) {
-      if (onGrid(x, token.x) && onGrid(y, token.y)) return { pieces: pieces.slice(0, k), at: { ...at, squeeze: false } };
+      if (onGrid(x, token.x) && onGrid(y, token.y) && (!walks || !offGridWallThrough(state, end))) return { pieces: pieces.slice(0, k), at: { ...at, squeeze: false } };
       continue;
     }
     if (squeezeFits(state, end)) return { pieces: pieces.slice(0, k), at: { ...at, squeeze: true } };
@@ -785,6 +821,9 @@ export function walkersStop(
     return legStop(state, trace[0]!, c) === null && followersOf(state, lead, [start, c], walkers, false).stop(1, c) === null ? { plain: true } : null;
   };
   const hex = hexWallsOf(state, lead)?.g ?? null;
+  // A cut lands full, so off the grid of squares it ends only where no wall passes through the holder's box, as the server
+  // takes a full stand there (permissions.ts standCheck, LP28-B-RIDE-1): its core alone can be clear by a corridor's mouth.
+  const standsAt = (c: Point, kept: { plain?: true }, whole: number) => hex !== null || fullStandClear(state, lead, c, kept.plain ? [] : points.slice(1, whole + 1));
   // The spots a cut of the piece from `a` to `b` may end at, from its end back: on squares its lattice steps, and on hexes the
   // stands of its hex line, where the walk is full size along it, since a cut lands full (review DP34-ASTRA-04).
   const spots = (a: RoutePoint, b: RoutePoint, at: Walker): Point[] => {
@@ -807,13 +846,13 @@ export function walkersStop(
         const c = { ...spot, elevation: landedElevation(state.buildChunks, at, spot) };
         if (legStop(state, at, c) !== null || followers.stop(j, c) !== null) continue;
         const kept = taken(c, j - 1);
-        if (kept) return { at: c, pieces: kept.plain ? 0 : j - 1, blocker: stopped.blocker, ...kept };
+        if (kept && standsAt(c, kept, j - 1)) return { at: c, pieces: kept.plain ? 0 : j - 1, blocker: stopped.blocker, ...kept };
       }
       // A cut at a waypoint ends there full, as it lands (`cutForWalkers`), so what the holder drags is read with the holder full there,
       // on the seat that gives a rider, not as it stood there on the way (review DP34-ASTRA-04).
       const endsFull = () => (!hex || !onSqueezedLattice(hex, lead, a)) && followersOf(state, lead, points.slice(0, j), walkers, false).stop(j - 1, a) === null;
       const kept = j === 1 ? {} : endsFull() ? taken(a, j - 1) : null;
-      if (kept) return { at: a, pieces: kept.plain ? 0 : j - 1, blocker: stopped.blocker, ...kept };
+      if (kept && (j === 1 || standsAt(a, kept, j - 2))) return { at: a, pieces: kept.plain ? 0 : j - 1, blocker: stopped.blocker, ...kept };
     }
     return { at: start, pieces: 0, blocker: stopped.blocker };
   }
