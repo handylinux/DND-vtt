@@ -178,7 +178,7 @@ export function FoldedParty(props: { entries: readonly PartyEntry[]; onFrame(ent
             {...PILL_FOCUS}
             style={{ ...pill, cursor: e.tokenId ? "pointer" : "default" }}
           >
-            <strong style={{ maxWidth: CHIP_NAME_MAX, overflow: "hidden", textOverflow: "ellipsis", color: e.tokenId ? theme.color.text : theme.color.textMuted }}>{e.character.name}</strong>
+            <strong style={{ maxWidth: CHIP_NAME_MAX, overflow: "hidden", textOverflow: "ellipsis", color: e.tokenId ? theme.color.text : theme.color.textDisabled }}>{e.character.name}</strong>
             <span style={{ color: LABEL_COLOR[e.label], fontVariantNumeric: "tabular-nums" }}>{lifeWord(e.life) ?? hpLine(e.hp)}</span>
             <Pill look={{ background: theme.color.surfaceRaised, border: `${theme.line.border}px solid ${theme.color.border}` }} />
           </button>
@@ -213,7 +213,8 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
         borderRadius: theme.radius.sm,
         border: "none",
         background: theme.color.surfaceRaised,
-        color: theme.color.text,
+        // A character off this scene has nothing to show on the map, so the row reads as off, not as a live button (D-261101-302).
+        color: here ? theme.color.text : theme.color.textDisabled,
         fontFamily: theme.font.body,
         textAlign: "left",
         cursor: here ? "pointer" : "default",
@@ -236,12 +237,12 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
             <span style={{ display: "block", width: `${Math.round(entry.fraction * 100)}%`, height: "100%", background: color }} />
           </span>
         )}
-        <span style={{ display: "flex", alignItems: "center", gap: theme.space(2), fontSize: theme.font.small, color: theme.color.textMuted }}>
+        <span style={{ display: "flex", alignItems: "center", gap: theme.space(2), fontSize: theme.font.small, color: here ? theme.color.textMuted : theme.color.textDisabled }}>
           {/* Both say what they are on screen, not in a tooltip a touch screen never shows (docs/design/design-v1-layout-hierarchy.md M9). */}
           {ac !== null ? <AcBadge ac={ac} size="sm" /> : null}
           <span style={{ position: "relative", whiteSpace: "nowrap" }}>
             <span aria-hidden>
-              PP <span style={{ color: theme.color.text, fontVariantNumeric: "tabular-nums" }}>{entry.passivePerception}</span>
+              PP <span style={{ color: here ? theme.color.text : theme.color.textDisabled, fontVariantNumeric: "tabular-nums" }}>{entry.passivePerception}</span>
             </span>
             <span style={VISUALLY_HIDDEN}>Passive Perception {entry.passivePerception}</span>
           </span>
@@ -274,7 +275,7 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
           })}
           {entry.more > 0 ? <span>+{entry.more}</span> : null}
         </span>
-        {!here ? <span style={{ fontSize: theme.font.small, color: theme.color.textMuted }}>Not on this scene</span> : null}
+        {!here ? <span style={{ fontSize: theme.font.small, color: theme.color.textDisabled }}>Not on this scene</span> : null}
       </span>
     </button>
   );

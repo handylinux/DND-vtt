@@ -4,6 +4,7 @@ import { describe, test } from "node:test";
 import { createStore } from "zustand/vanilla";
 import type { Effect } from "#shared/model.ts";
 import { actor, character, effect, room, token } from "#shared/testutil.ts";
+import { theme } from "../../lib/theme.ts";
 import { partyEntries } from "./party.ts";
 
 /*
@@ -60,6 +61,18 @@ describe("the folded party bar", () => {
     assert.equal(framed, 0);
   });
 
+  // An off-scene chip does nothing when pressed, so its name draws the disabled color and a chip on the scene keeps the bright one (LOCKED-LOOK).
+  test("a chip's name draws the disabled color when its character is off the scene", () => {
+    const state = room({
+      characters: { ayla: character("ayla", { name: "Ayla", ownerIds: ["p1"] }), bram: character("bram", { name: "Bram", ownerIds: ["p2"] }) },
+      tokens: { a1: token("a1", { kind: "pc", sceneId: "s1", actor: { ref: "ayla" } }) },
+    });
+    const markup = renderToStaticMarkup(createElement(FoldedParty, { entries: partyEntries(state, "s1"), onFrame: () => {} }));
+    const nameColor = (name: string) => new RegExp(`color:([^;"]+)">${name}</strong>`).exec(markup)?.[1];
+    assert.equal(nameColor("Bram"), theme.color.textDisabled);
+    assert.equal(nameColor("Ayla"), theme.color.text);
+  });
+
   test("a long name is cut on its chip and kept whole in its name and tooltip", () => {
     const name = "Bartholomew Underhill of the Long Barrow";
     const state = room({
@@ -105,6 +118,19 @@ describe("a party member's row", () => {
     const row = createElement(Entry, { entry, onFrame: () => {} });
     return renderToStaticMarkup(createElement(RoomProvider, { store: store as never, actions: {} as never, ui: {} as never, children: createElement(RoomScopeProvider, { scope: new RoomScope(), children: row }) }));
   };
+
+  test("a row for a character off the scene is disabled and draws its words in the disabled color", () => {
+    const state = room({ characters: { bram: character("bram", { name: "Bram", ownerIds: ["p1"], actor: actor({ passivePerception: 11 }) }) }, tokens: {} });
+    const [entry] = partyEntries(state, "s1");
+    assert.ok(entry);
+    const store = createStore(() => ({ view: state, you: { role: "dm" } }));
+    const markup = renderToStaticMarkup(createElement(RoomProvider, { store: store as never, actions: {} as never, ui: {} as never, children: createElement(RoomScopeProvider, { scope: new RoomScope(), children: createElement(Entry, { entry, onFrame: () => {} }) }) }));
+    const button = /<button[^>]*>/.exec(markup)?.[0] ?? "";
+    assert.match(button, /\sdisabled=""/);
+    assert.match(button, new RegExp(`color:${theme.color.textDisabled}`, "i"));
+    assert.match(markup, new RegExp(`color:${theme.color.textDisabled}[^>]*>Not on this scene`, "i"));
+    assert.match(markup, new RegExp(`PP <span style="color:${theme.color.textDisabled}`, "i"), "the Passive Perception figure dims with its label");
+  });
 
   test("shows AC on the shield and Passive Perception as PP", () => {
     const markup = rowOf("alive");
