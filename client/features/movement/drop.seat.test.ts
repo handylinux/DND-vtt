@@ -23,7 +23,10 @@ import { seenRoom } from "./testing.ts";
  * cut for the creatures a drag takes along read each of them where the
  * server's move puts it (moveLeg.ts planMove), never at its offset from the
  * mount (review DP34-ASTRA-01). The player owns all three, so the walls
- * stop each of them.
+ * stop each of them. On squares, from op version 36, the mount stands full
+ * size between its walk's ends, so the rider keeps his own seat there and
+ * squeezes onto the mount's square only where the walk ends squeezed
+ * (D-261101-180).
  */
 
 /** The server's move, and where it leaves the rider and what it drags. */
@@ -35,15 +38,19 @@ function served(s: RoomState, op: OpOf<"token.move">): RoomState {
   return r.state;
 }
 
-/** The device's judgment of the mount's walk to `to`: its route search finds a way, and no creature it takes along cuts the walk. */
-function deviceTakes(s: RoomState, to: { x: number; y: number }, squeeze: boolean): void {
+/**
+ * The device's judgment of the mount's walk to `to`: its route search finds a way, or with `straight` finds none and the drop
+ * goes as the plain straight leg (docs/design/design-v1-movement.md 5.6), and no creature it takes along cuts the walk.
+ */
+function deviceTakes(s: RoomState, to: { x: number; y: number }, squeeze: boolean, straight = false): void {
   const horse = s.tokens.horse!;
   const world = groupWalkWorld(s, ownWalk(horse), { role: "player" });
   assert.ok(world.input.towed?.some((t) => t.id === "gob"), "the goblin walks with the search");
   const found = findRouteOn(world.input, to);
-  assert.ok(found !== "none", "the route search finds a way in");
+  if (straight) assert.equal(found, "none", "no route the goblin can follow between the ends");
+  else assert.ok(found !== "none", "the route search finds a way in");
   const walkers = [s.tokens.gob!];
-  const route = found ? found.pieces : undefined;
+  const route = found && found !== "none" ? found.pieces : undefined;
   const points = route ? routePoints(s.buildChunks, ownWalk(horse), route, horse.elevation) : [{ x: horse.x, y: horse.y, elevation: 0 }, { x: to.x, y: to.y, elevation: 0 }];
   assert.equal(walkersStop(s, ownWalk(horse), points, walkers, { ...(route ? { route } : {}), squeeze }), null, "no cut for the goblin");
 }
@@ -86,7 +93,8 @@ describe("squares: a rider on a Large mount drags a goblin into a corridor one s
     assert.deepEqual([after.tokens.brom!.x, after.tokens.brom!.y], [12, 10]);
     assert.deepEqual([after.tokens.gob!.x, after.tokens.gob!.y], [11, 10]);
     assert.equal(after.tokens.gob!.attached?.to, "brom");
-    deviceTakes(s, inside, true);
+    // Every corner of a route into the corridor seats Brom on his own seat, so the goblin beside him meets its wall: the drop goes straight.
+    deviceTakes(s, inside, true, true);
   });
 
   test("a walk through the corridor the goblin cannot follow out of is cut where the server takes it, Brom on his own seat there", () => {
@@ -98,18 +106,21 @@ describe("squares: a rider on a Large mount drags a goblin into a corridor one s
     cutTaken(s, { x: 20, y: 9 }, [[6, 9.5, 0, 0], [7.5, 9.5, 1, 0], [11.5, 9.5, 1, 0], [17, 9.5, 1, 0], [20, 9, 0, 0]]);
   });
 
-  test("a route that stops half a square off the grid in the corridor seats Brom on the mount's square there, for the server and the device's cut alike", () => {
+  test("a route that stops half a square off the grid in the corridor seats Brom on the mount's square there at op version 35, and on his own seat from 36, for the server and the device's cut alike", () => {
     const s = keep();
     // Each point past the start squeezes, the middle one off the grid, where only the walk's own pinch reads the squeeze.
     const route: [number, number, number, 0 | 1][] = [[6, 9.5, 0, 0], [7.5, 9.5, 0, 0], [9, 9.5, 0, 0], [11.5, 9.5, 0, 0]];
     const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 11.5, y: 9.5, squeeze: true, route };
-    const at = (id: string) => planMove(op, s, P1, {}).find((m) => m.tokenId === id)!.route.map((p) => [p.x, p.y]);
-    assert.deepEqual(at("brom")[3], [9.5, 10], "on the mount's square, off the grid as the mount is");
-    assert.deepEqual(at("gob")[3], [8.5, 10], "behind him in the corridor");
-    served(s, op);
-    const horse = s.tokens.horse!;
-    const points = routePoints(s.buildChunks, ownWalk(horse), route, horse.elevation);
-    assert.equal(walkersStop(s, ownWalk(horse), points, [s.tokens.gob!], { route, squeeze: true }), null, "no cut for the goblin");
+    const at = (id: string, opVersion?: number) => planMove(op, s, P1, opVersion === undefined ? {} : { opVersion }).find((m) => m.tokenId === id)!.route.map((p) => [p.x, p.y]);
+    assert.deepEqual(at("brom", 35)[3], [9.5, 10], "on the mount's square, off the grid as the mount is");
+    assert.deepEqual(at("gob", 35)[3], [8.5, 10], "behind him in the corridor");
+    const replayed = applyOp(s, op, P1, { ...env(1), opVersion: 35 });
+    assert.ok(replayed.ok && replayed.state.tokens.gob!.attached?.to === "brom", "an op stored at 35 replays as it was taken");
+    // Between the ends the mount stands full size, so Brom keeps his own seat and the goblin beside him meets the corridor's wall.
+    assert.deepEqual(at("brom")[3], [10, 10.5], "on his own seat between the ends");
+    assert.deepEqual(at("gob")[3], [9, 10.5], "beside him, across the corridor's wall");
+    assert.equal(canApply(op, P1, s, { canUseAsset: () => true }).ok, false, "the server refuses the route the goblin cannot follow");
+    cutTaken(s, { x: 11.5, y: 9.5 }, route);
   });
 });
 

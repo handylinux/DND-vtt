@@ -2,7 +2,7 @@ import { CHUNK_CELLS, FOG_SUBCELLS, MIN_HEIGHT_FT, type BuildChunk, type CellRec
 import { chunkKey, wallMidpoint } from "../keys.ts";
 import { gridOfScene, playersToken, seenByNonOwners } from "../project.ts";
 import type { Op } from "../protocol.ts";
-import { stopsOnTrap } from "../migrate.ts";
+import { stopsOnTrap, stopsStandFullSize } from "../migrate.ts";
 import { isWritable } from "../writable.ts";
 import { creaturesInArea, type AreaToken } from "./aoe.ts";
 import { holderOf, insideHolder, onHolder, walkerFor } from "./attach.ts";
@@ -1322,7 +1322,12 @@ function picker(events: ReadonlyMap<number, readonly TrapEvent[]>, spent: Readon
  * group's step. So a walker that sets a trap off on a spot it may not stop
  * at, a Large creature's half step onto a stopping trap, goes on to the
  * next it may stop at (review LP13-TR-2). With no such spot before the
- * walk's end, the group walks to its end, which is no stop.
+ * walk's end, the group walks to its end, which is no stop. From op
+ * version 36 a walker stands there only full size, as its trace has it
+ * between its walk's ends, never on a squeeze, since walls under the fog
+ * decide where a narrow space lets it squeeze (D-261101-181, migrate.ts
+ * stopsStandFullSize). So a Large creature on a stopping trap in a
+ * corridor narrower than it walks on to where it stands full size.
  *
  * A pit that opens (`pit`) first asks for the first such progress where
  * the walker that set it off lies wholly over the opening, so a creature
@@ -1438,7 +1443,8 @@ function standSpots(walks: Walks, walk: Walk, before: RoomState, seen: (id: stri
     const token = walk.holder ? walk.entry.trace[0]! : walkerFor(before, walk.token, (t) => seen(t.id), { opVersion: walks.opVersion, to: walk.entry.to });
     // The group's head walks its group's own walk at its step, so its spots are already there.
     const head = walk.entry === walk.group.head && walk.step === walk.group.step;
-    stands = routeStands(storedBuild(before, walks.opVersion), walk.entry.route, token, walk.group.step, walk.holder ? {} : { squeeze: walk.squeezeAtEnd }, head ? walk.group.base(walk.group.step) : undefined);
+    const full = { fullBetween: stopsStandFullSize(walks.opVersion) };
+    stands = routeStands(storedBuild(before, walks.opVersion), walk.entry.route, token, walk.group.step, walk.holder ? full : { ...full, squeeze: walk.squeezeAtEnd }, head ? walk.group.base(walk.group.step) : undefined);
   }
   walks.stands.set(walk, stands);
   return stands;
@@ -1510,7 +1516,7 @@ function cutOp(op: Op, walks: Walks, stops: ReadonlyMap<string, Stop>, before: R
     const token = walkerFor(before, walk.token, (t) => seen(t.id), { opVersion: walks.opVersion, to: walk.entry.to });
     const squeeze = op.t === "token.move" && op.tokenId === named && op.squeeze === true;
     // The named token's own walk, as its stop's search read it when it walks as the group's head.
-    const stands = walk.holder ? routeStands(storedBuild(before, walks.opVersion), group.head.route, token, group.step, { squeeze }) : standSpots(walks, walk, before, seen);
+    const stands = walk.holder ? routeStands(storedBuild(before, walks.opVersion), group.head.route, token, group.step, { squeeze, fullBetween: stopsStandFullSize(walks.opVersion) }) : standSpots(walks, walk, before, seen);
     if (stands.walk.length === 0) return null;
     const i = latestIndex(stands.walk, stop.s);
     const at = stands.spot(i);

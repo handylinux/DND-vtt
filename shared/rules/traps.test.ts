@@ -412,7 +412,7 @@ describe("stops (5.5)", () => {
     assert.equal(plan(state, op).op, op);
   });
 
-  test("a stop squeezed in a corridor lands on the ground under its squeezed footprint, not the raised ground its full one would cover", () => {
+  test("a stop squeezed in a corridor lands on the ground under its squeezed footprint, not the raised ground its full one would cover, at op version 35, and from 36 the walk goes on to its end", () => {
     // A one-square corridor along row 5, walled above and below, with the row south of it raised 10 ft past x = 3.
     const ogre = token("ogre", { name: "Ogre", size: "large", x: 0, y: 5 });
     const heights = new Array(256).fill(0);
@@ -433,10 +433,15 @@ describe("stops (5.5)", () => {
         ],
       };
     });
-    const p = plan(state, { t: "token.move", tokenId: "ogre", x: 8.5, y: 4.5, squeeze: true, route: [[1.5, 4.5, 0, 0], [8.5, 4.5, 0, 0]] });
+    const op: Op = { t: "token.move", tokenId: "ogre", x: 8.5, y: 4.5, squeeze: true, route: [[1.5, 4.5, 0, 0], [8.5, 4.5, 0, 0]] };
+    const p = planTrapMove(op, state, DM, { opVersion: 35 });
     assert.deepEqual(summary(p.springings), ["snare:enter:public:ogre"]);
     assert.ok(p.op.t === "token.move");
     assert.deepEqual([p.op.x, p.op.y, p.op.squeeze, p.op.elevation], [3.5, 4.5, true, 0], "its full footprint first reaches the plate there");
+    // From op version 36 a stop between the walk's ends stands only full size (migrate.ts stopsStandFullSize), which the corridor never lets it.
+    const live = plan(state, op);
+    assert.deepEqual(summary(live.springings), ["snare:enter:public:ogre"]);
+    assert.equal(live.op, op, "no stand before the walk's end, so no stop");
   });
 
   test("a trap that does not stop leaves the move as it is", () => {

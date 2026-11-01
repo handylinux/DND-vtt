@@ -22,7 +22,10 @@ import { DM, P1, character, env, member, room, scene, token } from "../testutil.
  * corridor one square wide sits on its mount's square there, never
  * straddling the corridor's wall, and its torch lights the corridor for
  * the party from every seat. Get off from a squeezed mount lands in the
- * corridor. Ops stored before version 29 replay by the offset.
+ * corridor. Ops stored before version 29 replay by the offset. From op
+ * version 36 the holder stands full size between its walk's ends, as its
+ * trace has it, so there the rider keeps its own seat, and only a walk's
+ * ends squeeze it (D-261101-180).
  */
 
 /** Rock from x 8 to 16 but for a corridor along rows `top` to `top + wide`, walled round, on a dark scene with fog and party vision. */
@@ -87,9 +90,11 @@ function squares(t: { x: number; y: number; w: number; h: number }): string[] {
 /**
  * Every point of the carried token's walk is out of the rock, and where the walk ends it sits on its own snap grid inside
  * its holder's full box. Past the start a route may bend half a square off the grid in open ground, which no seat reads.
+ * Between the walk's ends that holds for ops stored before version 36 (`opVersion`): from 36 the carried token keeps its own
+ * seat there (`ownSeatBetween`).
  */
-function sitsClear(s: RoomState, op: OpOf<"token.move">, who: string, rock: (x: number, y: number) => boolean): void {
-  const plan = planMove(op, s, DM, {});
+function sitsClear(s: RoomState, op: OpOf<"token.move">, who: string, rock: (x: number, y: number) => boolean, opVersion?: number): void {
+  const plan = planMove(op, s, DM, opVersion === undefined ? {} : { opVersion });
   const holder = plan.find((m) => m.tokenId === "horse")!;
   const carried = plan.find((m) => m.tokenId === who)!;
   assert.equal(carried.route.length, holder.route.length);
@@ -104,6 +109,22 @@ function sitsClear(s: RoomState, op: OpOf<"token.move">, who: string, rock: (x: 
   assert.ok(end.x >= full.x && end.y >= full.y && end.x + size.w <= full.x + full.w && end.y + size.h <= full.y + full.h, "on its holder");
 }
 
+/** From op version 36 the carried token sits on its own seat at every point between its holder's walk's ends, and at the ends as `sitsClear` reads them at 35. */
+function ownSeatBetween(s: RoomState, op: OpOf<"token.move">, who: string): void {
+  const live = planMove(op, s, DM, {});
+  const old = planMove(op, s, DM, { opVersion: 35 });
+  const holder = live.find((m) => m.tokenId === "horse")!;
+  const carried = live.find((m) => m.tokenId === who)!.route;
+  const seat = s.tokens[who]!;
+  const horse = s.tokens.horse!;
+  carried.slice(1, -1).forEach((q, k) => {
+    const p = holder.route[k + 1]!;
+    assert.deepEqual([q.x, q.y], [p.x + seat.x - horse.x, p.y + seat.y - horse.y], `point ${k + 1} on its own seat`);
+  });
+  const end = old.find((m) => m.tokenId === who)!.route.at(-1)!;
+  assert.deepEqual([carried.at(-1)!.x, carried.at(-1)!.y], [end.x, end.y], "its end as before");
+}
+
 describe("squares: a rider on a Large mount in a corridor one square wide", () => {
   const inside = { x: 11.5, y: 9.5 };
 
@@ -115,16 +136,18 @@ describe("squares: a rider on a Large mount in a corridor one square wide", () =
         const state = seated(s, who, size, x, y, kind);
         const route = routeTo(state, inside);
         for (const op of [{ t: "token.move", tokenId: "horse", ...inside, squeeze: true, ...(route ? { route } : {}) }, { t: "token.move", tokenId: "horse", ...inside, squeeze: true }] as OpOf<"token.move">[]) {
-          sitsClear(state, op, who, rock);
+          sitsClear(state, op, who, rock, 35);
+          ownSeatBetween(state, op, who);
           const after = run(state, op);
           assert.deepEqual(squares({ ...after.tokens[who]!, ...footprintSize(after.tokens[who]!) }), ["12,10"], `${who} from ${x}, ${y} on the mount's square`);
           assert.equal(after.tokens[who]!.attached?.to, "horse", "never let go");
         }
         // A route that stops in the corridor on its way, by the squeeze rule there, and on out of it.
         const through: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 18, y: 9, route: [[11.5, 9.5, 0, 0], [18, 9, 0, 0]] };
-        sitsClear(state, through, who, rock);
-        const mid = planMove(through, state, DM, {}).find((m) => m.tokenId === who)!.route[1]!;
-        assert.deepEqual([mid.x, mid.y], [12, 10], `${who} from ${x}, ${y} on the mount's square where the route stops in the corridor`);
+        sitsClear(state, through, who, rock, 35);
+        ownSeatBetween(state, through, who);
+        const mid = planMove(through, state, DM, { opVersion: 35 }).find((m) => m.tokenId === who)!.route[1]!;
+        assert.deepEqual([mid.x, mid.y], [12, 10], `${who} from ${x}, ${y} on the mount's square where the route stops in the corridor, at op 35`);
         // Along the corridor and out of it from there.
         const there = run(state, { t: "token.move", tokenId: "horse", ...inside, squeeze: true });
         const along: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 13.5, y: 9.5, squeeze: true };

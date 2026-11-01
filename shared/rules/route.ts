@@ -1,3 +1,4 @@
+import { seatsFullBetweenEnds } from "../migrate.ts";
 import type { AttachKind, PathStop } from "../model.ts";
 import type { Blocker, BuildState } from "../ruleHooks.ts";
 import { legFeet, type DiagonalCounter, type DistanceSettings } from "./distance.ts";
@@ -196,17 +197,23 @@ export function seatedOn(lead: { id?: string | undefined }, memberOf: (id: strin
  * Whether a walker stands squeezed at each point of its walk along
  * `points`, its trace `trace`: as it stands where the walk starts, as the
  * move leaves it where the walk ends (`end`, else as below), and between
- * by where it stands as it walks past: on hexes by its lattice, on squares
- * where a narrow space pinches it there, on the grid or off it, as a drag
- * preview's squeeze is judged (movement.ts previewSqueezed) and as the
- * route search walks it (walk.ts WalkWorld), so a seat that moves with the
- * squeeze moves where the search finds it does (review DP34-ASTRA-01).
+ * by where it stands as it walks past: on hexes by its lattice, and on
+ * squares full size, as its trace has it there (`walkOn`). So a seat that
+ * moves with the squeeze moves where the search finds it does (walk.ts
+ * WalkWorld, review DP34-ASTRA-01), and on squares never by the walls
+ * between the walk's ends, which may be walls under the fog (D-261101-180,
+ * migrate.ts seatsFullBetweenEnds). `opVersion` is the op's stored
+ * version, none for a live move or a device's walk: an op stored before 36
+ * reads a point on squares squeezed where a narrow space pinches the
+ * walker there, on the grid or off it, as a drag preview's squeeze is
+ * judged (movement.ts previewSqueezed).
  */
-export function walkSqueezes(build: BuildState, token: PlacedToken & Pick<Walker, "sceneId">, points: readonly Point[], trace: WalkTrace, end?: boolean): boolean[] {
+export function walkSqueezes(build: BuildState, token: PlacedToken & Pick<Walker, "sceneId">, points: readonly Point[], trace: WalkTrace, end?: boolean, opVersion?: number): boolean[] {
   const scene = build.scenes[token.sceneId];
   const g = scene ? sceneGrid(scene) : SQUARES;
   const last = points.length - 1;
-  const where = (p: Point, i: number) => (isHex(g) ? onSqueezedLattice(g, token, p) : previewSqueezed(build, walkEnds(build, trace[i - 1]!)(p)));
+  const full = seatsFullBetweenEnds(opVersion);
+  const where = (p: Point, i: number) => (isHex(g) ? onSqueezedLattice(g, token, p) : !full && previewSqueezed(build, walkEnds(build, trace[i - 1]!)(p)));
   return points.map((p, i) => (i === 0 ? isSqueezed(token) : i === last && end !== undefined ? end : where(p, i)));
 }
 
@@ -690,12 +697,19 @@ function walkSpots(route: readonly RoutePoint[], token: Walker, build: Pick<Buil
  * only by a shifted path, since a clear segment does not make a snapped
  * part of it clear. On a scene that stops no moves, nothing cuts a walk.
  * The start is a stand by definition. `squeeze` says whether the last spot
- * squeezes, as the op does.
+ * squeezes, as the op does. `fullBetween` judges every spot between the
+ * walk's ends full size, as the walk's trace and its own area line do, so a
+ * spot only a squeeze stands on is no stand: whether a narrow space pinches
+ * the walker there is the walls' to say, walls under the fog among them
+ * (D-261101-181, migrate.ts stopsStandFullSize).
  */
-export function routeSpots(build: BuildState, route: readonly RoutePoint[], token: Walker, step?: number, opts: { squeeze?: boolean } = {}): RouteSpot[] {
+export function routeSpots(build: BuildState, route: readonly RoutePoint[], token: Walker, step?: number, opts: StandRule = {}): RouteSpot[] {
   const stands = routeStands(build, route, token, step, opts);
   return stands.walk.map((_, s) => stands.spot(s));
 }
+
+/** How `routeSpots` judges a walk's stands: the last spot's squeeze, as the op has it, and whether every spot between the ends stands only full size. */
+export type StandRule = { squeeze?: boolean; fullBetween?: boolean };
 
 /**
  * `routeSpots` a spot at a time: the walk's spots and its trace, and each
@@ -704,7 +718,7 @@ export function routeSpots(build: BuildState, route: readonly RoutePoint[], toke
  * `routeSpots` at every spot. `spots` are the walk's spots when the caller
  * has them already, as `routeWalk` gives them on this route at this step.
  */
-export function routeStands(build: BuildState, route: readonly RoutePoint[], token: Walker, step?: number, opts: { squeeze?: boolean } = {}, spots?: readonly WalkSpot[]): { walk: readonly WalkSpot[]; trace: WalkTrace; spot: (s: number) => RouteSpot } {
+export function routeStands(build: BuildState, route: readonly RoutePoint[], token: Walker, step?: number, opts: StandRule = {}, spots?: readonly WalkSpot[]): { walk: readonly WalkSpot[]; trace: WalkTrace; spot: (s: number) => RouteSpot } {
   // The walker where each piece starts, as the walk carries it (`WalkTrace`): ledges, the squeeze and the leg test count from here.
   const trace = walkTrace(build.buildChunks, token, route);
   const hex = hexWallsOf(build, token);
@@ -736,7 +750,7 @@ export function routeStands(build: BuildState, route: readonly RoutePoint[], tok
     const p = { x: w.x, y: w.y };
     let ended: WalkEnd | undefined;
     const spotEnd = () => (ended ??= piece.endAt(p));
-    const squeezed = last && opts.squeeze !== undefined ? opts.squeeze : squeezes && squeezeFits(build, spotEnd());
+    const squeezed = last && opts.squeeze !== undefined ? opts.squeeze : (last || !opts.fullBetween) && squeezes && squeezeFits(build, spotEnd());
     const onGrid = multipleOf(w.x - token.x, grid) && multipleOf(w.y - token.y, grid);
     const sweepClear = () => (piece.sweep ??= !blocks || straightClear(build, at, { x: b.x, y: b.y, elevation: b.elevation }));
     const stand =
@@ -751,7 +765,8 @@ export function routeStands(build: BuildState, route: readonly RoutePoint[], tok
 /**
  * `routeStands` on hexes: a spot is a stand where the creature's hexes
  * there fit (movement.ts HX-D8), squeezed only where that is a real
- * narrow space, and the walk cut there is allowed. A cut route ends with
+ * narrow space and, by `fullBetween`, only at the walk's end, and the walk
+ * cut there is allowed. A cut route ends with
  * the leg from its piece's start to the spot, whose hex line is not always
  * the piece's line so far: a line to a hex partway along another may step
  * beside it (hex.ts hexLine), and behind a wall the piece never met. So
@@ -764,7 +779,7 @@ function hexStands(
   route: readonly RoutePoint[],
   token: Walker,
   trace: WalkTrace,
-  opts: { squeeze?: boolean },
+  opts: StandRule,
   spots?: readonly WalkSpot[],
 ): { walk: readonly WalkSpot[]; trace: WalkTrace; spot: (s: number) => RouteSpot } {
   const walk = spots ?? routeWalk(t.g, trace, build, undefined, opts.squeeze !== undefined ? { endSqueezed: opts.squeeze } : {});
@@ -779,7 +794,8 @@ function hexStands(
     const last = k === n && i === route.length - 2;
     const squeezed = last && opts.squeeze !== undefined ? opts.squeeze : (w.squeezed ?? false);
     const stand: HexStand = hexStandAt(t.g, token, w, squeezed);
-    const fits = squeezed ? hexNarrow(t, token, stand) : hexFitWall(t, stand) < 0;
+    // Between the walk's ends a stand judged full size is never on a squeeze's anchors (`StandRule`).
+    const fits = squeezed ? (last || !opts.fullBetween) && hexNarrow(t, token, stand) : hexFitWall(t, stand) < 0;
     const ok = fits && (!blocks || legStop(build, trace[i]!, { x: w.x, y: w.y, elevation: w.elevation, squeeze: squeezed }) === null);
     return (known[s] = { x: w.x, y: w.y, elevation: w.elevation, progress: w.progress, squeezed, stand: ok });
   };

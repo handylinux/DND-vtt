@@ -11,7 +11,7 @@ import type { Op } from "./protocol.ts";
  * no old ops at all. The op pipeline is here for the crash case.
  */
 export const SNAPSHOT_VERSION = 31;
-export const OP_VERSION = 35;
+export const OP_VERSION = 36;
 
 export type MigrationStep = {
   from: number;
@@ -952,6 +952,24 @@ export const opMigrations: MigrationStep[] = [
   { from: 33, to: 34, apply: (op) => op },
   // Save lifecycle, page request replacement and embedded recharge keep older replay behavior intact.
   { from: 34, to: 35, apply: (op) => op },
+  {
+    // Follow-up batch 43 (docs/design/design-v1-hex-grids.md, As built,
+    // D-261101-180 and D-261101-181): no op changes shape, so the step is
+    // the identity. From this version nothing players see of a walk
+    // between its ends reads a squeeze from the walls: on squares what sits
+    // on a holder keeps its own seat there (`seatsFullBetweenEnds`), and on
+    // both grids a trap stops a walker there only where it stands full size
+    // (`stopsStandFullSize`). Older ops replay by the rules they were
+    // written under, so they put each token where they put it then, and a
+    // stored restore's hash guards still match.
+    // Deploy: back up first and reload open pages, since an old page
+    // searches the way for what a rider drags by the old seat. Rollback
+    // needs the backup only for a room with version 36 ops after its last
+    // snapshot, which an older build refuses to migrate down.
+    from: 35,
+    to: 36,
+    apply: (op) => op,
+  },
 ];
 
 /** Historical restores keep their original log entries and numbering. */
@@ -1288,6 +1306,37 @@ export function attaches(opVersion: number | undefined): boolean {
  */
 export function seatsOnSqueeze(opVersion: number | undefined): boolean {
   return !(opVersion !== undefined && opVersion < 29);
+}
+
+/**
+ * Whether, on squares, what sits on a holder sits on its own seat at every
+ * point of the holder's walk between its ends, where the walk's trace has
+ * the holder full size, and moves onto the squares a squeeze stands on only
+ * where the walk ends squeezed (D-261101-180, route.ts
+ * walkSqueezes). Whether a narrow space pinches the holder between its ends
+ * is the walls' to say, walls under the fog among them, so a seat moved
+ * there let walls no player had seen decide where the area and trap sweeps
+ * found the rider. Ops stored before version 36 moved the seat wherever a
+ * narrow space pinched the holder, and replay so. Hexes read a squeeze from
+ * the walk's own anchors, never the walls, so they keep that rule. Live ops
+ * carry no stored version and take today's rule.
+ */
+export function seatsFullBetweenEnds(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 36);
+}
+
+/**
+ * Whether a trap stops a walker between its walk's ends only at a spot
+ * where it stands full size, on squares and hexes, as its trace and its own
+ * area line judge it there (D-261101-181, route.ts routeStands). A squeezed
+ * stand needs a real narrow space, which walls under the fog decide, so a
+ * stop there let them decide where every player saw the walker stop. Ops
+ * stored before version 36 stopped it squeezed wherever a narrow space let
+ * it stand, and replay so. The walk's own end keeps the op's squeeze. Live
+ * ops carry no stored version and take today's rule.
+ */
+export function stopsStandFullSize(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 36);
 }
 
 /**

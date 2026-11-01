@@ -474,17 +474,19 @@ export class WalkWorld {
    * Where a creature the walker drags beside it stands with the walker's
    * stored box at `x`, `y`: where it stands at the walk's start, past it
    * offset by its place, and moved with the seat of a token sitting on the
-   * walker that drags it, as a rider drags a goblin, where the walker
-   * squeezes (route.ts seatShift, review DP34-ASTRA-01), as the move takes
-   * it along (moveLeg.ts follow).
+   * walker that drags it, as a rider drags a goblin (route.ts seatShift,
+   * review DP34-ASTRA-01), as the move takes it along (moveLeg.ts follow).
+   * Past the start the walker stands full size for the seat, as the
+   * server's move reads every point of a walk on squares between its ends
+   * (route.ts walkSqueezes, D-261101-180). Only a drop that ends squeezed
+   * seats it on the squeeze, at its end, which the drop's own check of the
+   * route reads (drop.ts followersOf).
    */
   #towedPlace(t: Towed, x: number, y: number): Point {
     const { token } = this.input;
     if (Math.abs(x - token.x) < EPS && Math.abs(y - token.y) < EPS) return { x: t.walker.x, y: t.walker.y };
     if (!t.seated) return { x: x + t.dx, y: y + t.dy };
-    // Squeezed where the search's own footprint is (`#box`), as the server's move reads a point of its route (route.ts walkSqueezes).
-    const squeezed = this.squeezes && this.#pinched(x, y, this.nodeAt({ x, y }));
-    const by = seatShift(SQUARES, token as Walker & { id?: string }, (m) => this.#members.get(m), t.walker.id, { x, y }, squeezed);
+    const by = seatShift(SQUARES, token as Walker & { id?: string }, (m) => this.#members.get(m), t.walker.id, { x, y }, false);
     return { x: x + t.dx + by.x, y: y + t.dy + by.y };
   }
 

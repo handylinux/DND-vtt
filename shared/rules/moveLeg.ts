@@ -218,7 +218,11 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
  * nearest that on the squares or hexes it squeezes onto. So a rider sits
  * on its mount's square or hex through a corridor one wide, its light and
  * sight with it, and is on its own seat again past it, and the walk's
- * route, sweeps and ruler read it there. A device's route search and cut
+ * route, sweeps and ruler read it there. On squares, from op version 36,
+ * the holder stands squeezed only at the walk's ends, full size between as
+ * its trace has it, never squeezed there by the walls (route.ts
+ * walkSqueezes, D-261101-180), so the area and trap sweeps find a rider
+ * between the ends where no wall decides. A device's route search and cut
  * read what the rider drags by the same seat (route.ts seatShift). On
  * hexes its own seat is the anchor nearest its place, so every walk there
  * seats it, and one nudged off its anchor sits on it again, as a device
@@ -231,7 +235,7 @@ function squeezedSeats(before: RoomState, member: Token, holder: MovedToken, env
   const scene = before.scenes[member.sceneId];
   const standing = before.tokens[holder.tokenId];
   if (!scene || !standing) return null;
-  const squeezedAt = walkSqueezes(before, standing, holder.route, holder.trace, holder.squeezed === true);
+  const squeezedAt = walkSqueezes(before, standing, holder.route, holder.trace, holder.squeezed === true, env.opVersion);
   const g = sceneGrid(scene);
   if (!isHex(g) && !squeezedAt.some((s) => s)) return null;
   return holder.route.map((p, i) => (i === 0 ? null : seatedAt(g, member, standing, p, squeezedAt[i]!, env.opVersion)));
