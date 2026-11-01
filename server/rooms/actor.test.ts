@@ -1956,20 +1956,33 @@ describe("a walk on the scene where traps go off ends the batch staged before it
    * The DM's ops sent one after another in one turn of the queue, so they
    * would share a batch, and the stored ops of each commit in order.
    */
-  async function sentTogether(state: RoomState, dm: Member, send: (actor: RoomActor, conn: Connection) => number): Promise<{ batches: { t: string; tokenId?: string }[][]; actor: RoomActor; db: FakeDb }> {
+  async function sentTogether(
+    state: RoomState,
+    dm: Member,
+    send: (actor: RoomActor, conn: Connection) => number,
+    options: Partial<ActorDeps["options"]> = {},
+  ): Promise<{ batches: { t: string; tokenId?: string }[][]; actor: RoomActor; db: FakeDb; sent: ServerMessage[] }> {
     const db = new FakeDb({ state, dmGrants: [dm.id] });
     const commits: number[] = [];
     db.hooks.commit = () => commits.push(db.storedOps.length);
-    const actor = await RoomActor.load(deps(db));
+    const base = deps(db);
+    const actor = await RoomActor.load({ ...base, options: { ...base.options, ...options } });
     assert.ok(actor);
     const table = connect(actor, dm);
     await actor.hello(table.conn, { clientId: "c1", resumeFrom: 1 });
     const last = send(actor, table.conn);
     assert.notEqual(await answerTo(table.sent, last), "stuck");
-    const ops = db.storedOps as { t: string; tokenId?: string }[];
-    const batches = commits.map((end, i) => ops.slice(commits[i - 1] ?? 0, end)).filter((b) => b.length > 0);
-    return { batches, actor, db };
+    return { batches: batchesOf(db, commits), actor, db, sent: table.sent };
   }
+
+  /** The stored ops of each commit, in order, from the op counts the commits saw. */
+  function batchesOf(db: FakeDb, commits: readonly number[]): { t: string; tokenId?: string }[][] {
+    const ops = db.storedOps as { t: string; tokenId?: string }[];
+    return commits.map((end, i) => ops.slice(commits[i - 1] ?? 0, end)).filter((b) => b.length > 0);
+  }
+
+  /** The op numbers a socket was acked, in the order it heard them, one list an `ev`. */
+  const acksOf = (sent: readonly ServerMessage[]) => sent.flatMap((m) => (m.t === "ev" && m.acks && m.acks.length > 0 ? [m.acks] : []));
 
   const batchOf = (batches: { t: string; tokenId?: string }[][], t: string, tokenId?: string) => batches.findIndex((b) => b.some((op) => op.t === t && (tokenId === undefined || op.tokenId === tokenId)));
 
@@ -2014,6 +2027,92 @@ describe("a walk on the scene where traps go off ends the batch staged before it
       void actor.shutdown({ code: 1012, snapshot: false });
     }
   });
+
+  test("a moveMany walk ends the batch too, and the acks keep their order across each commit, ops queued behind the walk after it", async () => {
+    const dm = member("DM", "dm");
+    const player = member("Ayla", "player");
+    const { state, pcId, goblinId } = darkRoom(dm, player);
+    // Ops 2 to 5 queue while the first commit is out. Once it lands, the walk at 4 ends the batch holding 2 and 3 with 5 queued behind it.
+    const { batches, actor, db, sent } = await sentTogether(state, dm, (actor, conn) => {
+      void actor.op(conn, 1, { t: "token.move", tokenId: pcId, x: 20, y: 2 });
+      void actor.op(conn, 2, { t: "token.moveMany", moves: [{ tokenId: goblinId, x: 6, y: 2 }] });
+      void actor.op(conn, 3, { t: "log.chat", text: "one" });
+      void actor.op(conn, 4, { t: "token.move", tokenId: goblinId, x: 7, y: 2 });
+      void actor.op(conn, 5, { t: "log.chat", text: "two" });
+      return 5;
+    });
+    try {
+      assert.deepEqual(batches[0]!.map((op) => op.t), ["token.move", "sys.explore"]);
+      assert.equal(batchOf(batches, "token.moveMany"), 1);
+      assert.equal(batchOf(batches, "token.move", goblinId), 2);
+      assert.deepEqual(acksOf(sent), [[1], [2, 3], [4, 5]], "each acked with its batch, in the order sent");
+      assert.ok(!sent.some((m) => m.t === "retry"), "no op was answered out of turn");
+    } finally {
+      db.freeze();
+      void actor.shutdown({ code: 1012, snapshot: false });
+    }
+  });
+
+  test("a walk on the room's last rate token ends the batch and is still staged after the commit, its rate counted once", async () => {
+    const dm = member("DM", "dm");
+    const player = member("Ayla", "player");
+    const { state, pcId, goblinId } = darkRoom(dm, player);
+    // One op a second with a burst of two: the eye's step takes the first token, and the walk needs the last.
+    const { batches, actor, db, sent } = await sentTogether(
+      state,
+      dm,
+      (actor, conn) => {
+        void actor.op(conn, 1, { t: "token.move", tokenId: pcId, x: 20, y: 2 });
+        void actor.op(conn, 2, { t: "token.move", tokenId: goblinId, x: 6, y: 2 });
+        return 2;
+      },
+      { roomOpsPerSec: 1 },
+    );
+    try {
+      assert.equal(batchOf(batches, "token.move", pcId), 0);
+      assert.equal(batchOf(batches, "token.move", goblinId), 1, "the walk forced the commit and was staged after it");
+      assert.ok(!sent.some((m) => m.t === "retry"), "never answered busy");
+      assert.deepEqual(acksOf(sent), [[1], [2]]);
+    } finally {
+      db.freeze();
+      void actor.shutdown({ code: 1012, snapshot: false });
+    }
+  });
+
+  for (const rate of ["socket's", "room's"] as const) {
+    test(`a walk over its ${rate} rate is answered busy and forces no commit`, async () => {
+      const dm = member("DM", "dm");
+      const player = member("Ayla", "player");
+      const { state, pcId, goblinId } = darkRoom(dm, player);
+      const db = new FakeDb({ state, dmGrants: [dm.id] });
+      const commits: number[] = [];
+      db.hooks.commit = () => commits.push(db.storedOps.length);
+      const base = deps(db);
+      // A slow batch, so a commit before its timer is the walk's. The room's rate, one a second with a burst of two, is spent by two ops.
+      const actor = await RoomActor.load({ ...base, options: { ...base.options, batchMs: 400, ...(rate === "room's" ? { roomOpsPerSec: 1 } : {}) } });
+      assert.ok(actor);
+      try {
+        const table = connect(actor, dm);
+        const laptop = connect(actor, dm);
+        await actor.hello(table.conn, { clientId: "c1", resumeFrom: 1 });
+        await actor.hello(laptop.conn, { clientId: "c2", resumeFrom: 1 });
+        void actor.op(table.conn, 1, { t: "token.move", tokenId: pcId, x: 20, y: 2 });
+        void actor.op(laptop.conn, 1, { t: "log.chat", text: "hi" });
+        if (rate === "socket's") while (table.conn.opRate.wouldAllow()) table.conn.opRate.allow();
+        void actor.op(table.conn, 2, { t: "token.move", tokenId: goblinId, x: 6, y: 2 });
+        assert.ok(table.sent.some((m) => m.t === "retry" && m.n === 2 && m.code === "busy"), "the walk is answered busy");
+        await new Promise((r) => setTimeout(r, 100));
+        assert.deepEqual(commits, [], "nothing committed before the batch's own timer");
+        assert.notEqual(await answerTo(table.sent, 1), "stuck");
+        const batches = batchesOf(db, commits);
+        assert.equal(batchOf(batches, "log.chat"), batchOf(batches, "token.move", pcId), "the eye's step and the chat share one batch");
+        assert.equal(batchOf(batches, "token.move", goblinId), -1, "the walk was never staged");
+      } finally {
+        db.freeze();
+        void actor.shutdown({ code: 1012, snapshot: false });
+      }
+    });
+  }
 
   for (const where of ["a prep scene", "a blackout", "a scene with fog and no party vision"] as const) {
     test(`a walk on ${where} keeps batching`, async () => {

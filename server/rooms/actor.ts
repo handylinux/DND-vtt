@@ -952,7 +952,9 @@ export class RoomActor {
    * party's sight as the room has it before the move (traps.ts
    * stopGround), so the batch's explore and map steps run first and that
    * sight is what players were sent. A prep scene, a blackout and a scene
-   * with fog alone keep batching. `raw` is the op as the client sent it,
+   * with fog alone keep batching. Every such walk ends the batch, with or
+   * without a trap armed on its way, since whether a trap is armed there
+   * is not every player's to know. `raw` is the op as the client sent it,
    * read only for its kind and token ids before it is parsed.
    */
   #walkEndsBatch(raw: unknown): boolean {
@@ -984,7 +986,8 @@ export class RoomActor {
     }
     const n = cmd.n;
     // Ahead of every count it takes, since it comes back to the front of the queue and is processed again once the commit lands.
-    if (n > wm.committed && n === wm.staged + 1 && this.#walkEndsBatch(cmd.raw)) {
+    // Only an op the rates below will let through ends the batch, so one answered `busy` forces no commit.
+    if (n > wm.committed && n === wm.staged + 1 && conn.opRate.wouldAllow() && this.#roomRate.tokens >= 1 && this.#walkEndsBatch(cmd.raw)) {
       this.#queue.unshift(cmd);
       this.#commitNow();
       return;
