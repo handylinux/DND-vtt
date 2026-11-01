@@ -2362,6 +2362,24 @@ describe("raccoon-vtt: swipe a phone's bottom sheet", { timeout: 1_500_000 }, ()
     await sheet.getByRole("button", { name: "Close Menu" }).click();
   });
 
+  test("fu43c-c. a touchcancel past the distance lets go of the glow at once and springs the sheet back, as a second finger does (GR2-O4)", async () => {
+    await setUp(dm, { width: 375, height: 667, scale: 1 });
+    const sheet = await openPanel(dm, "Log");
+    const rest = await steadyRect(sheet);
+    const f = new Finger(dmCdp, dm);
+    await f.down(await headerPoint(sheet));
+    await f.drag(closePast(rest.height) + 20);
+    await f.rest(100);
+    assert.notEqual(await sheet.getAttribute("data-sheet-held"), null, "GR2-O4: the finger holds the sheet");
+    // The browser takes the touch back, as for a system gesture: the sheet's own touchcancel listener, not the document's second finger one.
+    await f.cancel();
+    await waitFor("GR2-O4: the touchcancel to release the sheet", async () => ((await sheet.getAttribute("data-sheet-held")) === null ? true : null), 3_000);
+    assert.equal(await settled(sheet), "rest", "GR2-O4: a touchcancel let the sheet close");
+    assert.deepEqual(await rectOf(sheet), rest);
+    await expectGrabberRest(sheet);
+    await sheet.getByRole("button", { name: "Close Log" }).click();
+  });
+
   test("fu43c-clone. measure capture copies on a long Journal page and a full Initiative list, with the copy budget", { skip: process.env.FU41_CLONE_MEASURE !== "1", timeout: 180_000 }, async () => {
     const pageId = randomUUID();
     const records: { action: string; clones: number; ms: number; elements: number }[] = [];

@@ -754,7 +754,7 @@ describe("13. the held glow", () => {
     const cases: [string, (session: InstanceType<typeof SwipeSession>) => void][] = [
       ["a sideways move", (s) => s.move({ dx: 30, dy: 2, at: 30, cancelable: true })],
       ["a move the browser will not let the page cancel", (s) => s.move({ dx: 0, dy: 20, at: 30, cancelable: false })],
-      // Both DOM events use this cancel. swipe.e2e.ts checks the second finger's document listener.
+      // A second finger and a touchcancel both end in this cancel, from different listeners: swipe.e2e.ts test 5 checks the second finger's document listener and fu43c-c the surface's own touchcancel one.
       ["a cancelled touch", (s) => s.cancel()],
       ["a new item", (s) => s.stop()],
       ["an unmount", (s) => s.dispose()],
