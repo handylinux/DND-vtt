@@ -433,7 +433,7 @@ Where the build went its own way from the design above, or from the code it was 
 **Lane B: the grid, mounts and result**
 
 - `useBlockRoller(from)` lives in `AbilityGrid.tsx` and wraps `blockRoller` with the view, the viewer and the scene, keeping one object while the creature is the same. The mounts pass `from` to it, rather than each computing `blockRoller`. `PcStatBlock` takes `from` as a required prop.
-- The result line sits in one wrapper with the grid, so the PC sheet's grid gap does not add to the line's own margin. The mode words are a last flex item outside the label and dice box, `aria-hidden`, so where they do not fit they wrap out of the one-row line first and whole. The line's description sits on its body (`aria-description`) and carries the returned roll's mode and Secret.
+- The result line sits in one wrapper with the grid, so the PC sheet's grid gap does not add to the line's own margin. The mode words are a last flex item outside the label and dice box, `aria-hidden`, so where they do not fit they wrap out of the one-row line first and whole. FL-20 measures them instead (below). The line's description sits on its body (`aria-description`) and carries the returned roll's mode and Secret.
 - Markers: `data-block-result`, `data-ability-mark`, `data-result-mode`, `data-ability-abbr`, `data-ability-score` and `data-ability-save`.
 
 **Lane C: tests**
@@ -442,3 +442,9 @@ Where the build went its own way from the design above, or from the code it was 
 - sbr-16 puts the Dice panel under the Token panel with Two panels, so both lines are mounted at once on a computer.
 - A refused block roll is covered by unit tests (`BlockResult.test.ts`, `Roller.test.ts`), not by an e2e step: no gesture in the browser makes the server refuse one.
 - sbr-2 checks that Adv stays pressed. It cannot read the option store's version.
+
+**FL-20: fixes from live play 27**
+
+- **The line never widens the grid** (LP27-A-BLOCK-1). The result line has `contain: inline-size`, so its one nowrap row gives no width to the boxes around it, and the grid's wrapper has `minWidth: 0` as a grid item of the PC sheet. A shape's block nests the grid deeper, in StatBlockView's own grid, which the wrapper's `minWidth` alone did not reach. `containmentLines` (`e2e/helpers/alignment.ts`) checks that a root stays inside its container and lays out nothing past its own sides. The section 9 sweep runs it on every block root, closed and after a roll, and its PC sheet and Wild Shape screens roll Sleight of Hand, the longest label.
+- **The mode words go by measurement** (LP27-A-BLOCK-2). The middle box keeps `flex: 1 1 0` with mode words too, capped at its own width so the words sit beside it. `ResultRest` shows the words, checks whether any other part is cut (wrapped out of the row or clipped inside its box), and hides them if so, on the node in one layout. The rest then drops as the Dice panel's line does: the dice, then the label's "…". Markers `data-result-label` and `data-result-verdict` join `data-result-mode`.
+- **An answer names its roll** (LP27-A-BLOCK-3). `BlockSent` carries the row's `label`, and the line falls back to it where the returned roll has none, as an answer's has not. `useCommittedRoll(receipt, label)` passes the same fallback to `spokenResult`, so the Dice panel's newest line now says an answer's name too.
