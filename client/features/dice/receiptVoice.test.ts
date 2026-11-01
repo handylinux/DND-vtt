@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import type { LogEntry } from "#shared/model.ts";
 import { createStore } from "zustand/vanilla";
-import { receiptsSlot, ReceiptTracker } from "./useReceipt.ts";
+import { receiptsSlot, ReceiptTracker, SurfaceVoice } from "./useReceipt.ts";
 
 /*
  * One announcer per roll (docs/design-v1-stat-block-rolls.md 8,
@@ -178,6 +178,58 @@ describe("one announcer per roll tag", () => {
     t.unseen("a");
     panel.unmount();
     assert.deepEqual(t.unannounced().map((u) => u.tag), ["a"]);
+  });
+});
+
+describe("one mounted line across its showings (SurfaceVoice)", () => {
+  /** A result line as useReceiptVoice runs it: each frame renders `tag` (null while hidden) and commits, claiming while it shows the tag as the sender. */
+  function line(t: ReceiptTracker, claim: boolean) {
+    const voice = new SurfaceVoice();
+    let release: (() => void) | null = null;
+    return (tag: string | null): boolean => {
+      if (release && tag === null) {
+        release();
+        release = null;
+      }
+      if (claim && tag !== null && !release) release = t.claimVoice(tag);
+      const state = tag === null ? null : t.state(tag);
+      const settled = state !== null && state.state !== "sending" && state.state !== "checking";
+      const speaks = voice.speaks(t, tag, claim);
+      voice.committed(t, { tag, speaks, settled });
+      return speaks && settled;
+    };
+  }
+
+  for (const claim of [true, false]) {
+    for (const outcome of ["committed", "refused"] as const) {
+      const who = claim ? "the block's line, the sender" : "the Dice panel's line";
+      test(`${who}, hidden and shown again after it said a ${outcome} result, shows it silent: no live words, no alert (SBR-SOL-004)`, () => {
+        const log: LogEntry[] = [];
+        const t = new ReceiptTracker();
+        t.env = { lookup: async () => ({ parts: [] }), log: () => log };
+        t.sending("a", 0);
+        const frame = line(t, claim);
+        assert.equal(frame("a"), false, "nothing to say while it waits");
+        if (outcome === "committed") log.push({ id: "0001-a", kind: "event", data: { type: "dice", tag: "a", rolls: [] } } as unknown as LogEntry);
+        t.answer("a", 0, outcome === "committed" ? "taken" : "refused", outcome === "refused" ? ({ code: "invalid", message: "No.", text: "No." } as never) : undefined);
+        assert.deepEqual([frame("a"), frame("a")], [true, true], "said, and its words stay");
+        assert.equal(frame(null), false, "hidden");
+        assert.deepEqual([frame("a"), frame("a")], [false, false], "shown again: silent");
+      });
+    }
+  }
+
+  test("a line that showed another tag and then its first again does not say the first twice", () => {
+    const log: LogEntry[] = [{ id: "0001-a", kind: "event", data: { type: "dice", tag: "a", rolls: [] } } as unknown as LogEntry];
+    const t = new ReceiptTracker();
+    t.env = { lookup: async () => ({ parts: [] }), log: () => log };
+    t.sending("a", 0);
+    t.sending("b", 0);
+    t.answer("a", 0, "taken");
+    const frame = line(t, true);
+    assert.equal(frame("a"), true);
+    assert.equal(frame("b"), false, "b still waits");
+    assert.equal(frame("a"), false);
   });
 });
 

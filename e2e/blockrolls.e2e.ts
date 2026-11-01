@@ -1583,6 +1583,31 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     }
   });
 
+  test("sbr-27. a block's line that said its result, hidden with the panels and shown again, says nothing more: an empty live region, no alert and no toast (SBR-SOL-004)", async () => {
+    await dm.keyboard.press("Escape");
+    const panel = await dmPanel("Goblin", run.goblin);
+    const line = resultOf(panel);
+    const spoken = () => line.locator('[role="status"], [role="alert"]').allInnerTexts().then((t) => t.filter((x) => x.trim() !== ""));
+    const toastsNow = () => dm.locator("[data-toast]").count();
+    const toasts = await toastsNow();
+    const from = dmSent.ops.length;
+    await boxOf(panel, "Dexterity").click();
+    await listOf(dm, "Dexterity").getByRole("menuitem", { name: /^Dexterity check/ }).click();
+    await oneRoll(dmSent, from, "Dexterity check from a shown block");
+    await line.getByText(/Dexterity check/).first().waitFor();
+    // The line said it first, while shown, so its own record of saying it is what the showing below must not bring back.
+    await waitFor("the shown line says its result", async () => ((await spoken()).length > 0 ? true : null), 5_000);
+    await dm.getByRole("button", { name: "Hide panels" }).click();
+    await panel.first().waitFor({ state: "hidden" });
+    await sleep(300);
+    await dm.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).click();
+    await panel.first().waitFor();
+    await line.getByText(/Dexterity check/).first().waitFor();
+    await sleep(600);
+    assert.deepEqual(await spoken(), [], "shown again, the line announces nothing and raises no alert");
+    assert.equal(await toastsNow(), toasts, "and no toast told it");
+  });
+
   test("sbr-19. no page logged an error", async () => {
     assert.deepEqual(consoles.dm.errors, []);
     assert.deepEqual(consoles.pat.errors, []);

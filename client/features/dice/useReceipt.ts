@@ -361,18 +361,40 @@ export function useReceipts(): ReceiptTracker {
 export function useReceiptVoice(tag: string | null, claim: boolean): boolean {
   const tracker = useReceipts();
   useSyncExternalStore(tracker.subscribe, tracker.version, tracker.version);
-  const said = useRef<string | null>(null);
+  const voice = useRef<SurfaceVoice | null>(null);
+  voice.current ??= new SurfaceVoice();
   // Before paint, so a result that lands right after the send finds the claim made.
   useLayoutEffect(() => (tag !== null && claim ? tracker.claimVoice(tag) : undefined), [tracker, tag, claim]);
   const state = tag === null ? null : tracker.state(tag);
   const settled = state !== null && state.state !== "sending" && state.state !== "checking";
-  const speaks = tag !== null && (said.current === tag || tracker.maySpeak(tag, claim));
-  useEffect(() => {
-    if (tag === null || !speaks || !settled || said.current === tag) return;
-    said.current = tag;
-    tracker.spoken(tag);
-  });
+  const speaks = voice.current.speaks(tracker, tag, claim);
+  useEffect(() => voice.current!.committed(tracker, { tag, speaks, settled }));
   return speaks;
+}
+
+/**
+ * One surface's voice across its renders (useReceiptVoice), free of React
+ * so its rules are tested with the tracker alone. A surface that said a tag
+ * keeps saying it while it shows that tag, so its words never leave its
+ * live region. Once it showed no tag, hidden, or another tag, its words
+ * left the region, so the same tag shown again is a new showing, which the
+ * tracker silences once anyone said it (D-261031-166).
+ */
+export class SurfaceVoice {
+  #said: string | null = null;
+
+  /** In a render: whether the surface says the tag's settled state. */
+  speaks(tracker: Pick<ReceiptTracker, "maySpeak">, tag: string | null, claim: boolean): boolean {
+    return tag !== null && (this.#said === tag || tracker.maySpeak(tag, claim));
+  }
+
+  /** After each commit, with what its render showed. */
+  committed(tracker: Pick<ReceiptTracker, "spoken">, shown: { tag: string | null; speaks: boolean; settled: boolean }): void {
+    if (this.#said !== shown.tag) this.#said = null;
+    if (shown.tag === null || !shown.speaks || !shown.settled || this.#said === shown.tag) return;
+    this.#said = shown.tag;
+    tracker.spoken(shown.tag);
+  }
 }
 
 /**
