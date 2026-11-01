@@ -7079,11 +7079,13 @@ export function logHistoryTests(): void {
         const admin = await page.context().newPage();
         try {
           // fu43d-admin-storage: the archive warning (LOG-OPUS-18) at its longest wording, beside the Rooms card.
+          // Words added to the room's name move where the id falls in a line (fu44c-admin-id).
+          let extra = 0;
           await admin.route("**/api/admin/storage", (route) => route.fulfill({ json: {
             volume: null, databaseBytes: 0, images: { count: 0, bytes: 0 },
             cleanup: { waiting: { count: 0, bytes: 0 }, trash: { files: 0, bytes: 0 } },
             backup: { last: null, lastGood: null, warning: null },
-            archiveWarning: "Free space on the database's disk (3.0 GB) is near its 2.1 GB floor. Under it, log lines are not archived in any room. Image uploads stop at the same floor on the image volume, so they stop too when images are stored on this disk. The largest log archive is the room The Sunless Citadel, with a name long enough to wrap (ABCD-2345), at 1.2 GB.",
+            archiveWarning: `Free space on the database's disk (3.0 GB) is near its 2.1 GB floor. Under it, log lines are not archived in any room. Image uploads stop at the same floor on the image volume, so they stop too when images are stored on this disk. The largest log archive is the room The Sunless Citadel, with a name long enough to wrap${extra > 0 ? ` ${"x".repeat(extra)}` : ""} (ABCD-2345), at 1.2 GB.`,
           } }));
           await admin.route("**/api/admin/rooms", (route) => route.fulfill({ json: { rooms: [
             { id: run.roomId, name: "The Sunless Citadel, with a name long enough to wrap", createdAt: "2026-09-01T19:00:00Z", lastActiveAt: "2026-10-29T22:48:00Z", bytes: 1_234_567_890, images: 42, loaded: true, sockets: 3, pinned: true, readOnly: true },
@@ -7101,6 +7103,27 @@ export function logHistoryTests(): void {
           if (scale !== 1) await storage.evaluate((el, z) => { (el as unknown as { style: { zoom: string } }).style.zoom = String(z); }, scale);
           await sweep.measure(admin, "fu43d-admin-storage", storage);
           await shots.take(admin, `fu43d-${at}-admin-storage`);
+          // LP28-B-ADMIN-1: the room's id stays on one line wherever the line would have broken, at its hyphen above all.
+          for (extra = 0; extra < 10; extra++) {
+            await admin.reload();
+            const warning = storage.getByRole("alert").filter({ hasText: /^Free space on the database's disk/ });
+            await warning.waitFor();
+            if (scale !== 1) await storage.evaluate((el, z) => { (el as unknown as { style: { zoom: string } }).style.zoom = String(z); }, scale);
+            const lines = await warning.evaluate((el) => {
+              const doc = (el as unknown as { ownerDocument: { createTreeWalker(root: unknown, what: number): { nextNode(): { data: string; textContent: string } | null }; createRange(): { setStart(n: unknown, o: number): void; setEnd(n: unknown, o: number): void; getClientRects(): { length: number } } } }).ownerDocument;
+              const walker = doc.createTreeWalker(el, 4);
+              for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                const at = node.data.indexOf("ABCD-2345");
+                if (at < 0) continue;
+                const range = doc.createRange();
+                range.setStart(node, at);
+                range.setEnd(node, at + 9);
+                return range.getClientRects().length;
+              }
+              return 0;
+            });
+            assert.equal(lines, 1, `fu44c-admin-id: the room id is on one line at ${at} with ${extra} extra letters`);
+          }
         } finally {
           await admin.close();
           sweep.tally();

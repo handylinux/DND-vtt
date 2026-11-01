@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { ApiError } from "../../lib/api.ts";
 import type { AdminRoom, BackupRun } from "./api.ts";
-import { ago, backupLines, confirmsRoom, loginErrorText, sortRooms } from "./format.ts";
+import { ago, backupLines, confirmsRoom, loginErrorText, sortRooms, splitRoomIds } from "./format.ts";
 
 const room = (id: string, name: string, bytes: number, lastActiveAt: string): AdminRoom => ({
   id,
@@ -71,5 +71,20 @@ describe("the admin page's wording", () => {
     assert.equal(loginErrorText(new ApiError(429, "x", "rate_limited", 3_600_000)), "Too many wrong passwords. Try again in 60 minutes.");
     assert.match(loginErrorText(new ApiError(403, "x", "turnstile_failed", null)), /human check/);
     assert.equal(loginErrorText(new Error("boom")), "Something went wrong. Try again.");
+  });
+
+  test("a room ID in a sentence is cut out whole, so the page can keep it on one line (LP28-B-ADMIN-1)", () => {
+    assert.deepEqual(splitRoomIds("The room LP28B log (PTNQ-SEJY) has a log archive of 2 MB."), [
+      { text: "The room LP28B log (", id: false },
+      { text: "PTNQ-SEJY", id: true },
+      { text: ") has a log archive of 2 MB.", id: false },
+    ]);
+    assert.deepEqual(splitRoomIds("No ID here, and not-an-id either."), [{ text: "No ID here, and not-an-id either.", id: false }]);
+    assert.deepEqual(splitRoomIds("AB12-CD34 and WXYZ-0123"), [
+      { text: "AB12-CD34", id: true },
+      { text: " and ", id: false },
+      { text: "WXYZ-0123", id: true },
+    ]);
+    assert.deepEqual(splitRoomIds(""), []);
   });
 });

@@ -3,7 +3,7 @@ import { Card } from "../../components/Field.tsx";
 import { Notice } from "../../components/Notice.tsx";
 import { theme } from "../../lib/theme.ts";
 import type { AdminStorage } from "./api.ts";
-import { backupLines, formatBytes, plural } from "./format.ts";
+import { backupLines, formatBytes, plural, splitRoomIds } from "./format.ts";
 
 /**
  * What the server holds (docs/design/design-v1-dm-tools.md 3.18): the image
@@ -39,7 +39,15 @@ export function StorageCard(props: { storage: AdminStorage }) {
       ) : null}
       {props.storage.archiveWarning ? (
         <Notice tone="warning" role="alert">
-          {props.storage.archiveWarning}
+          {splitRoomIds(props.storage.archiveWarning).map((part, i) =>
+            part.id ? (
+              <span key={i} style={{ whiteSpace: "nowrap" }}>
+                {part.text}
+              </span>
+            ) : (
+              part.text
+            ),
+          )}
         </Notice>
       ) : null}
     </Card>

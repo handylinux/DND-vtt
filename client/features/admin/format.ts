@@ -97,3 +97,22 @@ export function loginErrorText(err: unknown): string {
       return err.message;
   }
 }
+
+/** A room ID as the server words it (`XXXX-XXXX`, Crockford base32), found inside a sentence. */
+const ROOM_ID_IN_TEXT = /\b[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}\b/g;
+
+/**
+ * A sentence cut at its room IDs, so the page can keep each ID whole: the
+ * hyphen is a place to break a line, and half an ID is hard to read back.
+ */
+export function splitRoomIds(text: string): { text: string; id: boolean }[] {
+  const parts: { text: string; id: boolean }[] = [];
+  let from = 0;
+  for (const match of text.matchAll(ROOM_ID_IN_TEXT)) {
+    if (match.index > from) parts.push({ text: text.slice(from, match.index), id: false });
+    parts.push({ text: match[0], id: true });
+    from = match.index + match[0].length;
+  }
+  if (from < text.length) parts.push({ text: text.slice(from), id: false });
+  return parts;
+}
