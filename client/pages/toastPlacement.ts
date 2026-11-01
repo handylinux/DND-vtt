@@ -1,4 +1,4 @@
-import { EDGE, inToastLayer, nextToastPlaces, restFloor, type ToastPlace, type ToastPlaces } from "../canvas/barDock.ts";
+import { EDGE, inToastLayer, nextToastPlaces, restFloor, toastTop, type ColumnFacts, type ToastPlace, type ToastPlaces } from "../canvas/barDock.ts";
 
 /** Places portal hosts in display order without remounting their toast contents. */
 export function putToastHosts(stack: HTMLElement, hosts: readonly HTMLElement[]): void {
@@ -57,10 +57,26 @@ export function toastLists<T extends { id: number }>(a: { overBars: boolean; sho
   return { overMap, inSheet, low, mapToasts, drawn };
 }
 
-/** The toasts still in the sheet when its slot has closed, which are dismissed with it. */
-export function sheetToastsToDismiss(inSlot: boolean, places: ReadonlyMap<number, ToastPlace>): number[] {
+/**
+ * The toasts still in the sheet when its slot has closed that were drawn
+ * there, which are dismissed with it. A toast that waited undrawn behind the
+ * slot's one row was never seen, so it is kept and placed as a new toast
+ * (`unseenOutOfSheet`, D-261101-390).
+ */
+export function sheetToastsToDismiss(inSlot: boolean, places: ReadonlyMap<number, ToastPlace>, shown: ReadonlySet<number>): number[] {
   if (inSlot) return [];
-  return [...places].flatMap(([id, place]) => (place === "sheet" ? [id] : []));
+  return [...places].flatMap(([id, place]) => (place === "sheet" && shown.has(id) ? [id] : []));
+}
+
+/** The places with the sheet's place taken off every toast not drawn yet, once the slot is gone: they are placed as new toasts, over the map. */
+function unseenOutOfSheet(was: ToastPlaces, shown: ReadonlySet<number>): ToastPlaces {
+  if (![...was.places].some(([id, place]) => place === "sheet" && !shown.has(id))) return was;
+  return { ...was, places: new Map([...was.places].filter(([id, place]) => place !== "sheet" || shown.has(id))) };
+}
+
+/** The lower of two floors, where either may be unset: what is left above both is the toasts' room. */
+export function lowerFloor(a: number | null, b: number | null): number | null {
+  return a === null ? b : b === null ? a : Math.min(a, b);
 }
 
 /**
@@ -118,13 +134,16 @@ export function placeRoomToasts(a: {
   mapFoot: number | null;
   overBar: { ids: ReadonlySet<number>; at: number | null; opening: number | null } | undefined;
   turnStarted: boolean;
+  /** The toasts that have been drawn (`shownAt`), so a toast that only waited in the very short sheet's slot is not lost with it. */
+  shown: ReadonlySet<number>;
 }): ToastPlaces {
+  const was = a.slot ? a.was : unseenOutOfSheet(a.was, a.shown);
   // As resting begins, and each time the strip's top rises, a stack in the layer whose foot as last drawn is lower than the room's new foot takes its place anew (barDock.ts nextToastPlaces `anew`, 3.5).
   const rose = a.restFloor !== null && (a.floorWas === null || a.restFloor < a.floorWas - 0.5);
   const anew = rose && a.layerFoot !== null && a.layerFoot > a.restFloor! ? new Set(a.ids) : undefined;
-  const mapBefore = a.spanning && a.measured ? mapToastBox(a.measured.boxes.filter((b) => a.ids.includes(b.id)), new Set([...a.was.awaitCard].filter((id) => a.recent.has(id))), a.zoom, a.measured.clip) : null;
+  const mapBefore = a.spanning && a.measured ? mapToastBox(a.measured.boxes.filter((b) => a.ids.includes(b.id)), new Set([...was.awaitCard].filter((id) => a.recent.has(id))), a.zoom, a.measured.clip) : null;
   const cardSettled = mapBefore?.keptBottom == null || (a.columnTop !== null && a.columnTop + 0.5 >= mapBefore.keptBottom + EDGE);
-  return nextToastPlaces(a.was, {
+  return nextToastPlaces(was, {
     ids: a.ids,
     pane: a.pane,
     paneStands: a.paneStands,
@@ -172,13 +191,23 @@ export function measureMapToasts(a: {
  * The foot of the room a phone's open sheet leaves the toasts, in the
  * chrome's own px, or null where the sheet sets none (UNDOB-FIN-2). Over a
  * bottom sheet it is a resting strip's rule (barDock.ts restFloor), 60 px
- * above the sheet's top, which sits on the toolbar. Beside a sideways sheet
+ * above the sheet's top. The sheet's foot stands on the toolbar, or on the
+ * on-screen keyboard where that reaches higher (`keyboard`, the px of the
+ * layout's foot it hides, as sheetCap.ts sheetFoot). Beside a sideways sheet
  * there is no room, so the newest shows as the one row over the top bar.
  * A full sheet holds its own toasts (modalSlot.tsx), and a wide screen has
  * no sheet. Until the toolbar and the sheet are measured it sets nothing.
  */
-export function sheetToastFloor(a: { mode: "none" | "bottom" | "side" | "full"; height: number; toolbar: number | null; sheetHeight: number }): number | null {
+export function sheetToastFloor(a: { mode: "none" | "bottom" | "side" | "full"; height: number; toolbar: number | null; sheetHeight: number; keyboard: number | null }): number | null {
   if (a.mode === "side") return 0;
   if (a.mode !== "bottom" || a.toolbar === null || a.sheetHeight <= 0) return null;
-  return restFloor(a.height - a.toolbar - a.sheetHeight);
+  return restFloor(a.height - Math.max(a.toolbar, a.keyboard ?? 0) - a.sheetHeight);
+}
+
+/**
+ * Where a toast that shows now starts below the alert cards (barDock.ts toastTop), kept clear of an open sheet: it starts there only where a
+ * whole toast fits above the sheet's floor too, else it stays at the top of the notices, above the cards. The token bar's options keep their own top (D-261101-310).
+ */
+export function toastStartTop(a: { spanning: boolean; column: ColumnFacts | null; cards: boolean; optionsTop: number; sheetFloor: number | null }): number | null {
+  return toastTop({ spanning: a.spanning, column: a.column, cards: a.cards, optionsTop: Math.min(a.optionsTop, a.sheetFloor ?? Infinity) });
 }

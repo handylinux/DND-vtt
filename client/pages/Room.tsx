@@ -20,7 +20,6 @@ import {
   toastsOverBars,
   toastLayerPlace,
   toastsUnderHead,
-  toastTop,
   type Chrome,
   type ToastEdges,
   type ToastPlaces,
@@ -40,7 +39,7 @@ import { SheetHeader } from "../components/SheetHeader.tsx";
 import { addsWords, useTooltip } from "../components/Tooltip.tsx";
 import { QuietLoadNotice } from "./QuietLoadNotice.tsx";
 import { ToastNote, toastPortals, toastRow, toastStacks, useToastStack } from "./ToastParts.tsx";
-import { measureMapToasts, noticesDock, placeRoomToasts, settleToastHosts, sheetToastFloor, sheetToastsToDismiss, toastHostOf, toastLists } from "./toastPlacement.ts";
+import { measureMapToasts, noticesDock, placeRoomToasts, settleToastHosts, lowerFloor, sheetToastFloor, sheetToastsToDismiss, toastHostOf, toastLists, toastStartTop } from "./toastPlacement.ts";
 import { BlackoutChip } from "./BlackoutChip.tsx";
 import { Loading } from "../components/Loading.tsx";
 import { ScrollStrip } from "../components/ScrollStrip.tsx";
@@ -881,12 +880,13 @@ function RoomPage() {
   const stripTop = useStore(barDock, (s) => (s.bar?.rests ? s.bar.box.top : null));
   const toastFloor = stripTop === null ? null : restFloor(stripTop);
   // The toasts alone take a phone's open sheet as their floor too (toastPlacement.ts sheetToastFloor). The token bar's options and the alerts keep the strip's.
-  const sheetFloor = sheetToastFloor({ mode: !sheetOpen || wide ? "none" : full ? "full" : sheetModeNow === "side" ? "side" : "bottom", height, toolbar: chrome?.toolbar ?? null, sheetHeight });
+  const sheetFloor = sheetToastFloor({ mode: !sheetOpen || wide ? "none" : full ? "full" : sheetModeNow === "side" ? "side" : "bottom", height, toolbar: chrome?.toolbar ?? null, sheetHeight, keyboard: sheetKeys?.inset ?? null });
   const optionsTop = chrome ? Math.min(height - chrome.bottom, toastFloor ?? Infinity) : 0;
   // The alerts column's width as it works it out (features/encounter/InitiativeStrip.tsx): it steps left of a phone's sideways sheet, and beside the side panel no right safe area is the map's.
   const columnSheet = !wide && width > height && sheetOpen ? sideWidth : 0;
   const columnWidth = { mapWidth, sheet: columnSheet, safe: { left: safe.left, right: sideShown ? 0 : safe.right } };
-  const toastLow = chrome && !underPane ? toastTop({ spanning: !besideLane, column: columnNow, cards: cardsShow, optionsTop }) : null;
+  // A toast starts below the cards only where a whole toast fits above the sheet too, so one never shows over a sheet that is open already.
+  const toastLow = chrome && !underPane ? toastStartTop({ spanning: !besideLane, column: columnNow, cards: cardsShow, optionsTop, sheetFloor }) : null;
   const toastEdges = columnEdges(columnWidth);
   const toastUnderPane = chrome && underPane ? paneToastTop({ head: paneHead, optionsTop }) : null;
   const [toastLayer, setToastLayer] = useState<HTMLDivElement | null>(null);
@@ -1754,7 +1754,7 @@ function Toasts(props: {
    * the row then.
    */
   // The lower of the strip's floor and the sheet's: what is left above both is the toasts' room.
-  const floor = props.restFloor === null ? props.sheetFloor : props.sheetFloor === null ? props.restFloor : Math.min(props.restFloor, props.sheetFloor);
+  const floor = lowerFloor(props.restFloor, props.sheetFloor);
   const overBars = floor !== null && props.top !== null && slot === null && !props.paneStands && props.layer !== null && toastsOverBars({ restFloor: floor, top: props.top });
   const [whole, setWhole] = useState<number | null>(null);
   const wholeToast = overBars && whole !== null ? showing.find((t) => t.id === whole) : undefined;
@@ -1824,16 +1824,18 @@ function Toasts(props: {
    * layer whose foot as last drawn is lower than the room's new foot takes
    * its place anew (barDock.ts nextToastPlaces `anew`, 3.5).
    */
+  // The toasts drawn at least once: one that only waited in the very short sheet's slot is neither dismissed with it nor placed there again.
+  const shownIds: ReadonlySet<number> = new Set(toasts.flatMap((t) => (t.shownAt === undefined ? [] : [t.id])));
   const floorWas = useRef<number | null>(null);
   const layerFoot = useRef<number | null>(null);
   placed.current = placeRoomToasts({
-    was: placed.current, ids, recent, spanning: props.spanning, restFloor: props.restFloor, floorWas: floorWas.current, layerFoot: layerFoot.current, measured: mapMeasured.current, zoom,
-    pane: props.pane, paneStands: props.paneStands, low: props.low, columnTop: props.columnTop, layer: props.layer !== null, slot: slot !== null, turned, mapFoot: mapFoot.current, overBar, turnStarted,
+    was: placed.current, ids, recent, spanning: props.spanning, restFloor: floor, floorWas: floorWas.current, layerFoot: layerFoot.current, measured: mapMeasured.current, zoom,
+    pane: props.pane, paneStands: props.paneStands, low: props.low, columnTop: props.columnTop, layer: props.layer !== null, slot: slot !== null, turned, mapFoot: mapFoot.current, overBar, turnStarted, shown: shownIds,
   });
-  floorWas.current = props.restFloor;
+  floorWas.current = floor;
   const { places } = placed.current;
   useEffect(() => {
-    for (const id of sheetToastsToDismiss(slot !== null, placed.current.places)) ui.dismissToast(id);
+    for (const id of sheetToastsToDismiss(slot !== null, placed.current.places, shownIds)) ui.dismissToast(id);
   }, [slot, ui]);
   // Each toast's time counts from when it was first drawn (store.ts toastsLeft), so one that comes or goes, or a blackout that takes them all off screen, never restarts it. One not drawn yet, or shown whole, has no timer.
   useEffect(() => {
@@ -1877,7 +1879,7 @@ function Toasts(props: {
       [stacks.notices, overMap],
       [stacks.layer, low],
     ] as const) {
-      const drop = stack.fit(list, height, props.foot === null || props.sheetFloor === null ? props.foot : Math.min(props.foot, props.sheetFloor), zoom);
+      const drop = stack.fit(list, height, lowerFloor(props.foot, props.sheetFloor), zoom);
       for (const id of drop) ui.dismissToast(id);
     }
     const notices = stacks.notices.box.current;

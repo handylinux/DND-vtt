@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import { test } from "node:test";
 import * as React from "react";
-import { keptMapFoot, mapToastBox, measureMapToasts, noticesDock, placeRoomToasts, putToastHosts, sheetToastFloor } from "./toastPlacement.ts";
+import { keptMapFoot, mapToastBox, measureMapToasts, lowerFloor, noticesDock, placeRoomToasts, putToastHosts, sheetToastFloor, sheetToastsToDismiss, toastStartTop } from "./toastPlacement.ts";
 import { columnFacts, columnTop, EDGE, nextToastPlaces, NO_TOAST_PLACES, raisedRow, SHADOW_ROOM, SUMMARY_ROW, toastTop, type ColumnFacts } from "../canvas/barDock.ts";
 import { theme } from "../lib/theme.ts";
 
@@ -480,7 +480,7 @@ function roomToasts(zoom: number, ids: number[], overMap: { id: number; top: num
   };
   const frame = (props: { low: number | null; columnTop: number | null }) => {
     state.placed = placeRoomToasts({
-      was: state.placed, ids, recent: state.recent, spanning: true, restFloor: null, floorWas: state.floorWas, layerFoot: null, measured: state.measured, zoom,
+      was: state.placed, ids, recent: state.recent, spanning: true, restFloor: null, floorWas: state.floorWas, layerFoot: null, shown: new Set<number>(), measured: state.measured, zoom,
       pane: null, paneStands: false, low: props.low, columnTop: props.columnTop, layer: true, slot: false, turned: false, mapFoot: state.mapFoot, overBar: undefined, turnStarted: false,
     });
     state.floorWas = null;
@@ -552,7 +552,7 @@ test("FU39-B: an older toast that ages out as the card arrives waits for the col
     const measured = { boxes: [{ id: 1, top: 68 * zoom, bottom: keptBottom * zoom }], clip: { top: 68 * zoom, bottom: keptBottom * zoom } };
     const run = () => {
       placed = placeRoomToasts({
-        was: placed, ids: [1, 2], recent, spanning: true, restFloor: null, floorWas: null, layerFoot: null, measured, zoom,
+        was: placed, ids: [1, 2], recent, spanning: true, restFloor: null, floorWas: null, layerFoot: null, shown: new Set<number>(), measured, zoom,
         pane: null, paneStands: false, low: props.low, columnTop: props.columnTop, layer: true, slot: false, turned: false, mapFoot: null, overBar: undefined, turnStarted: false,
       });
     };
@@ -573,7 +573,7 @@ test("FU39-B: an older toast that ages out as the card arrives waits for the col
 });
 
 test("FU39-B: the room hands a resting strip and a turn's start on to the placement", () => {
-  const base = { was: NO_TOAST_PLACES, ids: [1], recent: new Set<number>(), spanning: true, restFloor: null, floorWas: null, layerFoot: null, measured: null, zoom: 1, pane: null, paneStands: false, low: null, columnTop: null, layer: true, slot: false, turned: false, mapFoot: null, overBar: undefined, turnStarted: false };
+  const base = { was: NO_TOAST_PLACES, ids: [1], recent: new Set<number>(), spanning: true, restFloor: null, floorWas: null, layerFoot: null, shown: new Set<number>(), measured: null, zoom: 1, pane: null, paneStands: false, low: null, columnTop: null, layer: true, slot: false, turned: false, mapFoot: null, overBar: undefined, turnStarted: false };
   const low = placeRoomToasts({ ...base, recent: new Set([1]), low: 150 });
   assert.deepEqual(low.places.get(1), { low: 150, column: true });
   // As resting begins, a stack drawn lower than the room's new foot takes its place anew, and one drawn above it stays.
@@ -590,11 +590,56 @@ test("FU39-B: the room hands a resting strip and a turn's start on to the placem
 
 // UNDOB-FIN-2: 320 x 568 at 130% is 246 x 437 in the chrome's own px, the toolbar 60.
 test("a phone's open sheet sets the toasts' floor as a resting strip would, and only the toasts'", () => {
-  const at = (mode: "none" | "bottom" | "side" | "full", toolbar: number | null = 60, sheetHeight = 280) => sheetToastFloor({ mode, height: 437, toolbar, sheetHeight });
+  const at = (mode: "none" | "bottom" | "side" | "full", toolbar: number | null = 60, sheetHeight = 280, keyboard: number | null = null) => sheetToastFloor({ mode, height: 437, toolbar, sheetHeight, keyboard });
   assert.equal(at("bottom"), 437 - 60 - 280 - EDGE - 44 - EDGE, "a bottom sheet: 60 px above its top, which sits on the toolbar");
   assert.equal(at("side"), 0, "beside a sideways sheet no room, so the one row");
   assert.equal(at("full"), null, "a full sheet holds its own toasts");
   assert.equal(at("none"), null, "no sheet, or a wide screen's side panel");
   assert.equal(at("bottom", null), null, "the toolbar not measured yet");
   assert.equal(at("bottom", 60, 0), null, "the sheet not measured yet");
+});
+
+// LOOK1-SOL-001: Sheet stands its foot on the keyboard where that reaches higher than the toolbar (sheetCap.ts sheetFoot).
+test("with the on-screen keyboard open the sheet's floor follows the sheet's real top", () => {
+  const floor = (keyboard: number | null, toolbar = 60) => sheetToastFloor({ mode: "bottom", height: 844, toolbar, sheetHeight: 468, keyboard });
+  assert.equal(floor(300), 16, "the sheet starts at 76 on the keyboard, so the floor is 60 above that, not 256");
+  assert.equal(floor(null), 844 - 60 - 468 - 60, "no keyboard: on the toolbar");
+  assert.equal(floor(40), floor(null), "a keyboard under the toolbar's top changes nothing");
+  assert.equal(floor(60), floor(null));
+  assert.equal(floor(300, null as unknown as number), null, "the toolbar not measured yet");
+});
+
+// LOOK1-SOL-002: Room hands placement the combined floor, so a stack drawn below the alert cards when a sheet opens takes its place anew.
+test("a toast placed below the alert cards takes its place anew as a sheet opens over it", () => {
+  const base = { was: NO_TOAST_PLACES, ids: [1], recent: new Set<number>(), spanning: true, restFloor: null as number | null, floorWas: null as number | null, layerFoot: null as number | null, shown: new Set([1]), measured: null, zoom: 1, pane: null, paneStands: false, low: null as number | null, columnTop: null, layer: true, slot: false, turned: false, mapFoot: null, overBar: undefined, turnStarted: false };
+  const below = placeRoomToasts({ ...base, recent: new Set([1]), low: 240 });
+  assert.deepEqual(below.places.get(1), { low: 240, column: true });
+  // The sheet's floor is 217, and the toast, drawn from 240 and 44 tall at least, ends at 284.
+  const sheet = sheetToastFloor({ mode: "bottom", height: 437, toolbar: 60, sheetHeight: 100, keyboard: null });
+  assert.equal(sheet, 217);
+  const open = lowerFloor(null, sheet);
+  const column = { top: 60, content: 150, first: 150 };
+  assert.equal(toastStartTop({ spanning: true, column, cards: true, optionsTop: 400, sheetFloor: sheet }), null, "no whole toast fits below the cards above the sheet, so a new one stays above them");
+  const after = placeRoomToasts({ ...base, was: below, restFloor: open, floorWas: lowerFloor(null, null), layerFoot: 284, low: null });
+  assert.equal(after.places.get(1), "map", "the stack drawn past the floor is placed again, above the cards");
+  assert.deepEqual(placeRoomToasts({ ...base, was: below, restFloor: open, floorWas: open, layerFoot: 284 }).places.get(1), { low: 240, column: true }, "a floor that did not rise places nothing anew");
+  // The strip's own floor, when it is the lower, still rules.
+  assert.equal(lowerFloor(200, sheet), 200);
+  assert.equal(lowerFloor(300, sheet), sheet);
+  assert.equal(lowerFloor(null, null), null);
+});
+
+// LOOK1-OPUS-01 (D-261101-390): the very short sheet draws one toast and the older ones wait with the sheet's place.
+test("toasts that waited undrawn in the very short sheet outlive it and are placed as new, and only the drawn one goes", () => {
+  const base = { was: NO_TOAST_PLACES, ids: [1, 2, 3], recent: new Set<number>(), spanning: true, restFloor: null, floorWas: null, layerFoot: null, measured: null, zoom: 1, pane: null, paneStands: false, low: null, columnTop: null, layer: true, slot: true, turned: false, mapFoot: null, overBar: undefined, turnStarted: false };
+  const inSlot = placeRoomToasts({ ...base, shown: new Set([3]) });
+  assert.deepEqual([...inSlot.places.values()], ["sheet", "sheet", "sheet"]);
+  assert.deepEqual(sheetToastsToDismiss(true, inSlot.places, new Set([3])), [], "an open slot dismisses nothing");
+  const closed = placeRoomToasts({ ...base, was: inSlot, slot: false, shown: new Set([3]) });
+  assert.equal(closed.places.get(3), "sheet", "the drawn toast keeps the sheet's place until the room dismisses it");
+  assert.equal(closed.places.get(1), "map", "a toast never drawn is placed over the map as new");
+  assert.equal(closed.places.get(2), "map");
+  assert.deepEqual(sheetToastsToDismiss(false, closed.places, new Set([3])), [3]);
+  // The sheet closing for a toast with a button: it waits behind a whisper and is never lost.
+  assert.deepEqual(sheetToastsToDismiss(false, new Map([[1, "sheet"], [2, "sheet"]]), new Set()), [], "nothing drawn, nothing dismissed");
 });

@@ -145,6 +145,6 @@ test("FU39 confer: sheet toasts stay assigned to the sheet and are dismissed whe
   const sheet = nextToastPlaces(NO_TOAST_PLACES, input);
   const closed = nextToastPlaces(sheet, { ...input, slot: false });
   assert.equal(closed.places.get(1), "sheet", "closing a sheet never relocates its toast to the map");
-  assert.deepEqual(sheetToastsToDismiss(true, closed.places), [], "an open slot dismisses nothing");
-  assert.deepEqual(sheetToastsToDismiss(false, closed.places), [1]);
+  assert.deepEqual(sheetToastsToDismiss(true, closed.places, new Set([1])), [], "an open slot dismisses nothing");
+  assert.deepEqual(sheetToastsToDismiss(false, closed.places, new Set([1])), [1]);
 });
