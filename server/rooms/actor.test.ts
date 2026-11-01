@@ -1951,6 +1951,97 @@ describe("the explore step (docs/design/design-v1-maps-vision.md 4.3.3)", () => 
   });
 });
 
+describe("a walk on the scene where traps go off ends the batch staged before it", () => {
+  /**
+   * The DM's ops sent one after another in one turn of the queue, so they
+   * would share a batch, and the stored ops of each commit in order.
+   */
+  async function sentTogether(state: RoomState, dm: Member, send: (actor: RoomActor, conn: Connection) => number): Promise<{ batches: { t: string; tokenId?: string }[][]; actor: RoomActor; db: FakeDb }> {
+    const db = new FakeDb({ state, dmGrants: [dm.id] });
+    const commits: number[] = [];
+    db.hooks.commit = () => commits.push(db.storedOps.length);
+    const actor = await RoomActor.load(deps(db));
+    assert.ok(actor);
+    const table = connect(actor, dm);
+    await actor.hello(table.conn, { clientId: "c1", resumeFrom: 1 });
+    const last = send(actor, table.conn);
+    assert.notEqual(await answerTo(table.sent, last), "stuck");
+    const ops = db.storedOps as { t: string; tokenId?: string }[];
+    const batches = commits.map((end, i) => ops.slice(commits[i - 1] ?? 0, end)).filter((b) => b.length > 0);
+    return { batches, actor, db };
+  }
+
+  const batchOf = (batches: { t: string; tokenId?: string }[][], t: string, tokenId?: string) => batches.findIndex((b) => b.some((op) => op.t === t && (tokenId === undefined || op.tokenId === tokenId)));
+
+  test("an eye that steps in and out around a walk: the batch before the walk commits first, so the ground it saw is explored", async () => {
+    const dm = member("DM", "dm");
+    const player = member("Ayla", "player");
+    const { state, sceneId, pcId, goblinId } = darkRoom(dm, player);
+    const { batches, actor, db } = await sentTogether(state, dm, (actor, conn) => {
+      void actor.op(conn, 1, { t: "token.move", tokenId: pcId, x: 20, y: 2 });
+      void actor.op(conn, 2, { t: "token.move", tokenId: goblinId, x: 6, y: 2 });
+      void actor.op(conn, 3, { t: "token.move", tokenId: pcId, x: 2, y: 2 });
+      return 3;
+    });
+    try {
+      assert.deepEqual(
+        batches[0]!.map((op) => op.t),
+        ["token.move", "sys.explore"],
+        "the eye's step in, and what it saw, explored before the walk",
+      );
+      assert.equal(batchOf(batches, "token.move", goblinId), 1);
+      assert.ok(actor.committed.state.exploredTiles[`${sceneId}:1,0`], "the ground the eye saw was explored and sent");
+    } finally {
+      db.freeze();
+      void actor.shutdown({ code: 1012, snapshot: false });
+    }
+  });
+
+  test("a batch that holds only a server op commits before the walk too", async () => {
+    const dm = member("DM", "dm");
+    const player = member("Ayla", "player");
+    const { state, goblinId } = darkRoom(dm, player);
+    const { batches, actor, db } = await sentTogether(state, dm, (actor, conn) => {
+      void actor.sys({ t: "sys.memberJoin", member: { id: uuidv7(), name: "Pip", color: "#336699", kind: "player", createdAt: new Date().toISOString() } });
+      void actor.op(conn, 1, { t: "token.move", tokenId: goblinId, x: 6, y: 2 });
+      return 1;
+    });
+    try {
+      assert.equal(batchOf(batches, "sys.memberJoin"), 0);
+      assert.equal(batchOf(batches, "token.move", goblinId), 1);
+    } finally {
+      db.freeze();
+      void actor.shutdown({ code: 1012, snapshot: false });
+    }
+  });
+
+  for (const where of ["a prep scene", "a blackout", "a scene with fog and no party vision"] as const) {
+    test(`a walk on ${where} keeps batching`, async () => {
+      const dm = member("DM", "dm");
+      const player = member("Ayla", "player");
+      const { state, sceneId, otherSceneId, pcId, goblinId } = darkRoom(dm, player);
+      let walker = goblinId;
+      if (where === "a prep scene") {
+        walker = uuidv7();
+        state.tokens[walker] = testToken(walker, { sceneId: otherSceneId, x: 5, y: 2 });
+      }
+      if (where === "a blackout") state.meta = { ...state.meta, view: { ...state.meta.view, blackout: true } };
+      if (where === "a scene with fog and no party vision") state.scenes[sceneId] = { ...state.scenes[sceneId]!, vision: { on: false, light: "dark" } };
+      const { batches, actor, db } = await sentTogether(state, dm, (actor, conn) => {
+        void actor.op(conn, 1, { t: "token.move", tokenId: pcId, x: 20, y: 2 });
+        void actor.op(conn, 2, { t: "token.move", tokenId: walker, x: 6, y: 2 });
+        return 2;
+      });
+      try {
+        assert.equal(batchOf(batches, "token.move", walker), batchOf(batches, "token.move", pcId), "one batch");
+      } finally {
+        db.freeze();
+        void actor.shutdown({ code: 1012, snapshot: false });
+      }
+    });
+  }
+});
+
 /** One DM driving a loaded room, op by op, with the refusal or null each op got. */
 async function withRoom(
   state: RoomState,
@@ -3648,10 +3739,12 @@ describe("map discovery on the actor (docs/design/design-v1-map-discovery.md 5.3
   test("ground a reminder rests on is explored, though a later op in its batch looks away (MD2's review, pendingGround)", async () => {
     const dm = member("DM", "dm");
     const player = member("Ayla", "player");
-    const { state, sceneId, pcId, goblinId } = darkRoom(dm, player);
+    const { state, sceneId, pcId, characterId, goblinId } = darkRoom(dm, player);
     // An area out past Ayla's darkvision from (2, 2), in a running turn, so a creature entering it is a reminder.
     state.templates.sg = testTemplate("sg", { sceneId, shape: "sphere", size: 10, origin: { x: 14.5, y: 2.5, z: 0 }, spell: "Spirit Guardians", visibility: "all", ownerId: dm.id, triggers: ["enter"] });
     state.encounter = { rev: 0, round: 1, activeEntryId: "e-gob", entries: [testEntry("e-gob", { tokenId: goblinId, value: 10 })] };
+    // Ayla stands where she sees the area: a walk there commits the batch before it, so she is placed rather than walked.
+    state.tokens[pcId] = { ...state.tokens[pcId]!, x: 10 };
     const db = new FakeDb({ state, dmGrants: [dm.id] });
     const base = deps(db);
     const actor = await RoomActor.load({ ...base, options: { ...base.options, batchMs: 200 } });
@@ -3659,13 +3752,12 @@ describe("map discovery on the actor (docs/design/design-v1-map-discovery.md 5.3
     try {
       const table = connect(actor, dm);
       await actor.hello(table.conn, { clientId: "c1", resumeFrom: 1 });
-      // One batch: Ayla steps where she sees the area, the goblin walks into it, and she steps back.
-      void actor.op(table.conn, 1, { t: "token.move", tokenId: pcId, x: 10, y: 2 });
-      void actor.op(table.conn, 2, { t: "token.move", tokenId: goblinId, x: 14, y: 2 });
-      await actor.op(table.conn, 3, { t: "token.move", tokenId: pcId, x: 2, y: 2 });
-      const ev = await answerTo(table.sent, 3);
+      // One batch: the goblin walks into the area, and Ayla is blinded, so the party sees nothing by the batch's end.
+      void actor.op(table.conn, 1, { t: "token.move", tokenId: goblinId, x: 14, y: 2 });
+      await actor.op(table.conn, 2, { t: "actor.effect.add", target: { characterId }, effect: { id: "b", key: "blinded" } });
+      const ev = await answerTo(table.sent, 2);
       assert.ok(ev !== "stuck");
-      assert.deepEqual(ev.acks, [1, 2, 3], "the three ops went in one batch");
+      assert.deepEqual(ev.acks, [1, 2], "the two ops went in one batch");
       const now = actor.committed.state;
       const line = now.log.find((e) => e.data?.type === "area");
       assert.ok(line && line.data?.type === "area" && line.data.hidden !== true, "the reminder reaches players, judged on Ayla's sight then");

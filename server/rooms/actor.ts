@@ -18,6 +18,7 @@ import { CHANGED_SINCE, DEPENDED_ON, PARENT_GONE, restoreReferenceConflicts } fr
 import { stampedAt } from "#shared/reducer/tokens.ts";
 import { splitCheck } from "#shared/rules/walls.ts";
 import { pitsMoved, withPitsCounted } from "#shared/rules/pitCount.ts";
+import { liveTrapScene } from "#shared/rules/traps.ts";
 import { renewOpenDisplay } from "../auth/displaySessions.ts";
 import { checkDisplayGrant, checkGrant } from "../auth/grants.ts";
 import type { RoomGateway } from "./gateway.ts";
@@ -943,6 +944,33 @@ export class RoomActor {
     }
   }
 
+  /**
+   * Whether a move must wait for the batch staged so far to commit: one
+   * that walks a token on the scene where traps go off (traps.ts
+   * liveTrapScene), with fog and party vision on there, while the batch
+   * holds any work, a server op's or a staged change. Its stop reads the
+   * party's sight as the room has it before the move (traps.ts
+   * stopGround), so the batch's explore and map steps run first and that
+   * sight is what players were sent. A prep scene, a blackout and a scene
+   * with fog alone keep batching. `raw` is the op as the client sent it,
+   * read only for its kind and token ids before it is parsed.
+   */
+  #walkEndsBatch(raw: unknown): boolean {
+    const batch = this.#batch;
+    if (!batch || this.#inFlight !== null) return false;
+    const state = this.#staged.state;
+    if (batch.ops.length === 0 && state === this.#committed.state) return false;
+    const sceneId = liveTrapScene(state);
+    const scene = sceneId === null ? undefined : state.scenes[sceneId];
+    if (!scene || !scene.fogEnabled || scene.vision?.on !== true) return false;
+    if (raw === null || typeof raw !== "object") return false;
+    const op = raw as { t?: unknown; tokenId?: unknown; moves?: unknown };
+    const on = (id: unknown) => typeof id === "string" && state.tokens[id]?.sceneId === sceneId;
+    if (op.t === "token.move") return on(op.tokenId);
+    if (op.t === "token.moveMany" && Array.isArray(op.moves)) return op.moves.some((m: unknown) => m !== null && typeof m === "object" && on((m as { tokenId?: unknown }).tokenId));
+    return false;
+  }
+
   // The op pipeline of design 7.2, in its order.
 
   #processOp(cmd: Extract<Command, { t: "op" }>, facts: Map<string, AssetFact>): void {
@@ -955,6 +983,12 @@ export class RoomActor {
       return;
     }
     const n = cmd.n;
+    // Ahead of every count it takes, since it comes back to the front of the queue and is processed again once the commit lands.
+    if (n > wm.committed && n === wm.staged + 1 && this.#walkEndsBatch(cmd.raw)) {
+      this.#queue.unshift(cmd);
+      this.#commitNow();
+      return;
+    }
     // Every op message counts toward the sustained-abuse rule, duplicates and gaps included.
     if (conn.opRate.count()) {
       conn.close(CLOSE.abuse, "op rate");
