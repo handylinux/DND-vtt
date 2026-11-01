@@ -493,15 +493,16 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
     // image's shape, which keeps the grid scaled and only offers a find
     // (create.ts `replacement`).
     const device = thisDevice();
-    const shape = scene.gridShape;
     // Squares and hexes are both looked for. A name's size wins on every grid, read as that grid's cells (D-261101-190).
     let search = searchOnImport({ source: "image", named: nameGivesSize(file.name) }) ? importSearch(file, device) : null;
     abort.signal.addEventListener("abort", () => search?.cancel());
     try {
       const asset = await uploadMap(roomId, file, { pasted, signal: abort.signal, onWaiting: (waiting) => setUpload((u) => ({ ...u, waiting })) });
       let wait: ImportWait = { answer: null, later: null };
-      const { map: next, search: searched, kept } = replacement(map, asset, shape);
-      const named = nameCellPx(asset, shape);
+      // The scene as the room holds it as the upload ends: another device may have replaced the map or changed the grid meanwhile, and the new art scales from what is there now.
+      const uploaded = room.getState().view?.scenes[scene.id] ?? scene;
+      const { map: next, search: searched, kept } = replacement(uploaded.map, asset, uploaded.gridShape);
+      const named = nameCellPx(asset, uploaded.gridShape);
       if (searched) {
         search ??= importSearch(file, device);
         setUpload({ busy: true, waiting: false, finding: true, error: null });
@@ -513,11 +514,16 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
       }
       setUpload({ busy: false, waiting: false, error: null });
       setArmed(false);
-      const { found, ownGrid } = replacementFound(wait.answer, named !== undefined, next, scene, kept);
+      // The scene as the room holds it now, read before the replacement lands: the grid found and the refit below ask about it, not about the scene as the upload began.
+      const held = room.getState().view?.scenes[scene.id] ?? scene;
+      const oldMap = held.map;
+      const { found, ownGrid } = replacementFound(wait.answer, named !== undefined, next, held, kept);
       // Fog first, so players on this scene never see the map before it.
       if (firstFog && (!playersHere || fogIt)) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { fogEnabled: true } });
-      // The map the room holds as the upload ends, read before the replacement lands: the refit below asks whether the bounds still follow it.
-      const oldMap = room.getState().view?.scenes[scene.id]?.map;
+      // Bounds as the room holds them now: another DM may have resized the scene during the upload, and that edit must not be refit away.
+      const bounds0 = held.bounds;
+      const refitTo = !found && !wait.later && refitsToNamedMap(oldMap, next, named, bounds0, held.gridShape) ? fitBounds(next, sceneGrid(held)) : null;
+      const refit = refitTo && (refitTo.w !== bounds0.w || refitTo.h !== bounds0.h) ? refitTo : null;
       actions.dispatch({ t: "scene.setMap", sceneId: scene.id, map: next });
       // A scene with map phases takes new art only in its map's shape, and this device's own
       // prediction has already refused any other with the reducer's words (NOT_SAME_SHAPE). A grid
@@ -536,12 +542,9 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
       // applied). Over an old map, a name's scale that restarts the grid
       // refits bounds that were fitted to the old one (refitsToNamedMap).
       const fallback = { cellPx: next.cellPx, originPx: next.originPx };
-      // Bounds as the room holds them now: another DM may have resized the scene during the upload, and that edit must not be refit away.
-      const bounds0 = room.getState().view?.scenes[scene.id]?.bounds ?? scene.bounds;
-      if (!found && !wait.later && refitsToNamedMap(oldMap, next, named, bounds0, scene.gridShape)) {
-        const bounds = fitBounds(next, sceneGrid(scene));
-        if (bounds.w !== bounds0.w || bounds.h !== bounds0.h) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { bounds } });
-      } else if (!map || found || wait.later) {
+      if (refitTo) {
+        if (refit) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { bounds: refit } });
+      } else if (!oldMap || found || wait.later) {
         // The shape the room holds now, not as the upload began: Grid shape may have changed meanwhile, here or on another device.
         const gridShape = room.getState().view?.scenes[scene.id]?.gridShape;
         const landing = { id: scene.id, bounds: bounds0, gridShape, map: next };

@@ -2301,6 +2301,44 @@ describe("raccoon-vtt hex grids: the board", { timeout: 600_000 }, () => {
     await waitFor("the hex scene holds 8 rows of 12 hexes", () => { const b = dmSocket.state?.scenes[scene.id]?.bounds; return b?.w === 13 && b.h === 8 ? b : null; });
   });
 
+  test("fu44c-2: art uploaded while another device changes the map scales from the map the room holds when the upload ends", async () => {
+    const first = path.join(work, "dock_40x28.png");
+    const second = path.join(work, "pier.png");
+    await sharp({ create: { width: 1400, height: 980, channels: 3, background: "#554368" } }).png().toFile(first);
+    await sharp({ create: { width: 1400, height: 980, channels: 3, background: "#436855" } }).png().toFile(second);
+    await pickTool(dm, "Select");
+    const panel = await openScenes(dm);
+    await panel.getByRole("radio", { name: "Map image", exact: true }).click();
+    const known = new Set(Object.keys(dmSocket.state?.scenes ?? {}));
+    await panel.getByRole("button", { name: "Choose a map image" }).setInputFiles(first);
+    await panel.getByRole("button", { name: "Upload and create" }).click();
+    const scene = await waitFor("fu44c-2 map", () => Object.values(dmSocket.state?.scenes ?? {}).find((s) => s?.map && !known.has(s.id)), 30_000);
+    await waitFor("the DM on the named map", () => dmSocket.you?.sceneId === scene.id || null);
+    const firstMap = scene.map!;
+    assert.equal(firstMap.cellPx, 35);
+    const cookie = (await dmContext.cookies(server.origin)).map((c) => `${c.name}=${c.value}`).join("; ");
+    const other = await OpSocket.open({ origin: server.origin, roomId: run.roomId, cookie });
+    // The upload is held while another device lines the grid up at 90 px, the grid a same-shaped replacement keeps.
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const held = /\/api\/rooms\/[^/]+\/assets\?kind=map/;
+    await dm.route(held, async (route) => {
+      if (route.request().method() === "PUT") await gate;
+      await route.continue();
+    });
+    try {
+      await (await openSceneGroup(panel, "Map image and grid")).getByLabel("Replace map image", { exact: true }).setInputFiles(second);
+      await other.send({ t: "scene.setGrid", sceneId: scene.id, cellPx: 90, originPx: { x: 0, y: 0 } });
+      await waitFor("the grid set during the upload", () => dmSocket.state?.scenes[scene.id]?.map?.cellPx === 90 || null);
+    } finally {
+      release();
+    }
+    const replaced = await waitFor("the replacement", () => { const m = dmSocket.state?.scenes[scene.id]?.map; return m && m.assetId !== firstMap.assetId ? m : null; }, 30_000);
+    await dm.unroute(held);
+    other.close();
+    assert.equal(replaced.cellPx, 90, "the new art keeps the grid the room held when the upload ended, not the one from when it began");
+  });
+
   test("HX-12. no page logged an error", () => {
     for (const c of Object.values(consoles)) assert.deepEqual(c.errors, [], `${c.label}'s console`);
   });
