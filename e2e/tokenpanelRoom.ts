@@ -180,12 +180,13 @@ export async function setUp(page: Page, cdp: CDPSession, view: View, folds?: str
     },
     [view.scale, FOLDS_KEY, folds] as const,
   );
-  // A reload that meets a navigation the page started itself is aborted, so it gets one more try.
   /*
    * A fresh load of the room's address rather than a reload: a page
    * reloaded with a sheet open finds the sheet's history entry on top and
    * steps back off it (lib/backClose.ts), which a run that reloads often
-   * can catch mid-navigation, landing on the page before the room.
+   * can catch mid-navigation, landing on the page before the room. A load
+   * that meets a navigation the page started itself is aborted, and
+   * openPage retries it.
    */
   await openPage(page, `${server.origin}/r/${run.roomId.slice(0, 4)}-${run.roomId.slice(4)}`);
   await page.getByRole("status", { name: "Connected" }).first().waitFor();
