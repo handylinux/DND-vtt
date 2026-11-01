@@ -10,7 +10,7 @@ import { handoutPages } from "./handouts.ts";
 import { movementRules, type Blocker, type LegEnd } from "./ruleHooks.ts";
 import { carriedIndex, holderOf, isCreature, landsAt, linkHolds, onHolder, walkerFor, withinReach } from "./rules/attach.ts";
 import { boxDistanceFt, pointCellBox, tokenCellBox } from "./rules/distance.ts";
-import { checkSetReach, planMove } from "./rules/moveLeg.ts";
+import { checkSetReach, planMove, planWalks, takesAlong } from "./rules/moveLeg.ts";
 import { footprintRect, footprintSize, occupiedHexes, snapStep, storedCenter, type FootprintToken } from "./rules/footprint.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "./rules/grid.ts";
 import { hexAt, hexInScene, hexKey, hexNeighbors, type HexGrid } from "./rules/hex.ts";
@@ -1592,10 +1592,11 @@ function draggedWalls(c: Check, op: Op): Decision {
   const token = first !== undefined ? c.state.tokens[first] : undefined;
   if (!token || c.state.scenes[token.sceneId]?.blockMovement !== true) return OK;
   if (op.t === "token.move" && op.teleport !== undefined) return OK;
-  const plan = planMove(op, c.state, c.actor, {});
-  for (const moved of plan) {
+  // Every walk, those that end where they start too, which the reach in single file reads though the move writes none of them.
+  const walks = planWalks(op, c.state, c.actor, {});
+  for (const moved of walks) {
     const member = c.state.tokens[moved.tokenId];
-    if (moved.carriedBy === undefined || moved.pass !== "public" || !member || member.attached?.kind !== "drag") continue;
+    if (moved.carriedBy === undefined || !takesAlong(moved) || moved.pass !== "public" || !member || member.attached?.kind !== "drag") continue;
     for (let i = 1; i < moved.route.length; i++) {
       // A creature a holder drags beside it walks as itself, since a drag is no seat: as the move's trace has it (route.ts followerTrace),
       // full size at each point, as it is stored wherever it stops (moveLeg.ts stoppedAtWalls).
@@ -1610,8 +1611,8 @@ function draggedWalls(c: Check, op: Op): Decision {
     const n = moved.route.length;
     if (c.stands && (op.t === "token.move" || op.t === "token.moveMany") && n > 1 && offGridWallThrough(c.state, walkEnd(c.state, moved.trace[n - 2]!, moved.route[n - 1]!))) return refuse("forbidden", standWords(c, member, moved.route[n - 1]!));
   }
-  const filed = plan.filter((m) => m.file === true && m.pass === "public" && c.state.tokens[m.tokenId]?.attached?.kind === "drag");
-  const lead = plan.find((m) => m.tokenId === first);
+  const filed = walks.filter((m) => m.file === true && m.pass === "public" && c.state.tokens[m.tokenId]?.attached?.kind === "drag");
+  const lead = walks.find((m) => m.tokenId === first);
   if (filed.length === 0 || !lead) return OK;
   const far = fileOutOfReach(gridOfToken(c.state, token), c.state.meta.settings, token, lead.to, (id) => c.state.tokens[id], new Map(filed.map((m) => [m.tokenId, m.to])));
   const left = far !== null ? c.state.tokens[far] : undefined;

@@ -215,4 +215,15 @@ describe("squares: what a holder drags follows it in single file where its move 
       assert.deepEqual(behind(-1), gaps, `${size} west`);
     }
   });
+
+  test("a goblin the file would leave where it stands, out of the horse's reach, is judged as one that moves (review FU45B-ASTRA-04)", () => {
+    const base = corridor();
+    let s: RoomState = { ...base, tokens: { ...base.tokens, horse: { ...base.tokens.horse!, x: 8.5, y: 5.5, squeeze: true } } };
+    s = towing(s, "imp", { x: 9, y: 6 });
+    s = towing(s, "gob", { x: 8, y: 6 });
+    const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 9.5, y: 5.5, squeeze: true, route: [[9.5, 5.5, 1, 0]] };
+    // Each ends where it starts, so the move writes neither, and the goblin, 10 ft from the horse there, would let go.
+    assert.deepEqual([walkOf(s, op, "imp"), walkOf(s, op, "gob")], [undefined, undefined], "the plan moves neither");
+    assert.deepEqual(canApply(op, P1, s, { canUseAsset: () => true }), { ok: false, code: "forbidden", message: "gob can't follow through there." });
+  });
 });

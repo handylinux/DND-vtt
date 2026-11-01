@@ -160,6 +160,21 @@ function seenIn(state: RoomState, env: Versioned): (t: { id: string }) => boolea
 }
 
 export function planMove(op: Op, before: RoomState, actor: Viewer, env: Versioned): MovedToken[] {
+  return planWalks(op, before, actor, env).filter(takesAlong);
+}
+
+/** Whether the move writes a token of its plan: every token it names, and one it takes along that ends somewhere else. */
+export function takesAlong(moved: MovedToken): boolean {
+  return moved.carriedBy === undefined || !samePose(moved.from, moved.to);
+}
+
+/**
+ * `planMove` with the tokens a move takes along that end where they
+ * started kept in: what judges where each ends reads them too, as the
+ * permission rule's reach of a creature in single file does (review
+ * FU45B-ASTRA-04), though the move writes none of them.
+ */
+export function planWalks(op: Op, before: RoomState, actor: Viewer, env: Versioned): MovedToken[] {
   const named = namedMoves(op, before, env);
   if (named.length === 0) return [];
   const seen = seenIn(before, env);
@@ -176,7 +191,7 @@ export function planMove(op: Op, before: RoomState, actor: Viewer, env: Versione
     const members = groups.get(n.token.id) ?? [];
     if (members.length <= 1) continue;
     const shown = new Set(publicMembers(before.tokens, n.token.id, seen, names));
-    out.push(...followGroup(before, out[out.length - 1]!, members, (id, holderId) => shown.has(id) && shown.has(holderId), actor.role !== "dm", env, stands, (op as FileCut)[FILE_CUT]).filter((m) => !samePose(m.from, m.to)));
+    out.push(...followGroup(before, out[out.length - 1]!, members, (id, holderId) => shown.has(id) && shown.has(holderId), actor.role !== "dm", env, stands, (op as FileCut)[FILE_CUT]));
   }
   return out.sort((a, b) => (a.tokenId < b.tokenId ? -1 : a.tokenId > b.tokenId ? 1 : 0));
 }
