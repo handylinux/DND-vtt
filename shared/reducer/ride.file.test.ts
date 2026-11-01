@@ -279,4 +279,28 @@ describe("squares: what a holder drags follows it in single file where its move 
     const seen = walks.find((w) => w.tokenId === "imp")!.spots.filter((p) => compareProgress(p.progress, stop) <= 0).at(-1)!;
     assert.deepEqual([r.state.tokens.imp!.x, r.state.tokens.imp!.y, r.state.tokens.imp!.attached?.to], [seen.x, seen.y, "horse"], "where the trap step had it, still in tow");
   });
+
+  test("what carries one in the file is walked with it, moved or not, so the file is one trap group and a trap stops the horse (review FU45B-ASTRA-07)", () => {
+    const base = corridor();
+    let s: RoomState = { ...base, tokens: { ...base.tokens, horse: { ...base.tokens.horse!, x: 9.5, y: 5.5, squeeze: true } } };
+    s = towing(s, "imp", { x: 9, y: 6, ownerIds: ["p1"] });
+    s = { ...s, tokens: { ...s.tokens, owl: token("owl", { size: "tiny", x: 9, y: 6, name: "owl", kind: "npc", ownerIds: ["p1"], attached: { to: "imp", kind: "carry" } }), rat: token("rat", { x: 8, y: 6, name: "rat", kind: "npc", attached: { to: "owl", kind: "drag" } }) } };
+    s.traps.t1 = trap("t1", { zone: { cells: [{ x: 6, y: 6, w: 1, h: 1 }] }, rig: { on: ["enter"], who: "others", floor: true, resets: "never", stops: true, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } });
+    // Out of the corridor and back in, ending squeezed where the horse started: the imp, the owl and the rat end where they started.
+    const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 9.5, y: 5.5, squeeze: true, route: [[4, 5.5, 1, 0], [9.5, 5.5, 2, 0]] };
+    assert.deepEqual(new Set(trapWalks(op, s, P1, {}).map((w) => w.group)), new Set(["horse"]), "one trap group");
+    const after = served(s, op);
+    assert.equal(after.traps.t1!.state, "sprung");
+    assert.notDeepEqual([after.tokens.horse!.x, after.tokens.horse!.y], [9.5, 5.5], "the trap stops the walk");
+    for (const id of ["imp", "owl", "rat"]) assert.ok(after.tokens[id]!.attached, `${id} still held`);
+  });
+
+  test("one in the file whose walk ends where it started meets the walls on the way all the same (review FU45B-ASTRA-08)", () => {
+    const base = corridor();
+    let s: RoomState = { ...base, tokens: { ...base.tokens, horse: { ...base.tokens.horse!, x: 4.5, y: 5.5, squeeze: true } } };
+    s = towing(s, "imp", { x: 4, y: 5 });
+    wall(s, "fu45bf000013", [3.75, 5.5], [3.75, 6]);
+    const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 4.5, y: 5.5, squeeze: true, route: [[1, 5.5, 1, 0], [2, 3, 1, 0], [4.5, 5.5, 1, 0]] };
+    assert.deepEqual(canApply(op, P1, s, { canUseAsset: () => true }), { ok: false, code: "forbidden", message: "A wall is in the way." });
+  });
 });

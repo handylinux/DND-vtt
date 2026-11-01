@@ -9,7 +9,7 @@ import { holderOf, insideHolder, onHolder, walkerFor } from "./attach.ts";
 import { footprintRect, footprintSize, isSqueezed, occupiedHexes, occupiedRange, rangeAtInto, sizeCategory, type CellRange, type PlacedToken } from "./footprint.ts";
 import { footing, footprintGround, groundAt, sceneGround, standing } from "./heights.ts";
 import { pendingGround } from "./held.ts";
-import { planWalks, takesAlong, withFileCut, type MovedToken } from "./moveLeg.ts";
+import { planWalks, walkedIn, withFileCut, type MovedToken } from "./moveLeg.ts";
 import { groundUnder, hexStandHexes, storedBuild, type HexWalls } from "./movement.ts";
 import { onTrace, routeLattice, routeStands, routeWalk, type PublicGround, type RoutePiece, type RoutePoint, type RouteSpot, type StandGroup, type StandRule, type WalkSpot } from "./route.ts";
 import { APART, contact, orient } from "./segments.ts";
@@ -1312,15 +1312,16 @@ function trapMoveParts(op: Op, before: TrapRoom, actor: Viewer, env: { opVersion
 }
 
 /**
- * The walks of a move the trap step reads: each token the move writes
- * (moveLeg.ts planMove), and each in single file too, from op version 38,
- * though its walk ends where it started, since it walks its holder's line
- * on the way and a stop between the ends leaves it there (moveLeg.ts
- * withFileCut). By its place such a walk keeps its holder's loop, which
- * ends where it started, as before.
+ * The walks of a move the trap step reads (moveLeg.ts walkedIn): each
+ * token the move writes, and from op version 38 each in single file and
+ * what carries it, though its walk ends where it started, since it walks
+ * its holder's line on the way, a stop between the ends leaves it there,
+ * and the trap group is the lead's whatever moved. By its place such a
+ * walk keeps its holder's loop, which ends where it started, as before.
  */
 function trapPlan(op: Op, before: RoomState, actor: Viewer, env: { opVersion?: number }): MovedToken[] {
-  return planWalks(op, before, actor, env).filter((m) => takesAlong(m) || m.file === true);
+  const plan = planWalks(op, before, actor, env);
+  return plan.filter(walkedIn(plan));
 }
 
 /**

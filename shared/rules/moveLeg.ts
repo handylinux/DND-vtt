@@ -169,6 +169,25 @@ export function takesAlong(moved: MovedToken): boolean {
 }
 
 /**
+ * Which tokens of a plan (`planWalks`) the move walks, whatever their final
+ * pose: each it writes (`takesAlong`), and from op version 38 each in
+ * single file and each that links one to its lead, as what carries it
+ * (review FU45B-ASTRA-07 and FU45B-ASTRA-08). A walk in the file that ends
+ * where it started still walks its holder's line on the way, so the
+ * walls, the reach, the trap step and a cut read it as any walk, and only
+ * the writes skip it.
+ */
+export function walkedIn(plan: readonly MovedToken[]): (moved: MovedToken) => boolean {
+  const byId = new Map(plan.map((m) => [m.tokenId, m]));
+  const chain = new Set<string>();
+  for (const m of plan) {
+    if (m.file !== true) continue;
+    for (let at: MovedToken | undefined = m; at && !chain.has(at.tokenId); at = at.carriedBy !== undefined ? byId.get(at.carriedBy) : undefined) chain.add(at.tokenId);
+  }
+  return (moved) => takesAlong(moved) || chain.has(moved.tokenId);
+}
+
+/**
  * `planMove` with the tokens a move takes along that end where they
  * started kept in: what judges where each ends reads them too, as the
  * permission rule's reach of a creature in single file does (review
