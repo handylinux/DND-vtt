@@ -4,6 +4,7 @@ import { Button } from "../../components/Button.tsx";
 import { PINNED_FOOT } from "../../components/Dialog.tsx";
 import { Empty } from "../../components/Empty.tsx";
 import { Input } from "../../components/Field.tsx";
+import { useHeld } from "../../components/Held.tsx";
 import { Icon } from "../../components/Icon.tsx";
 import { browserProbe, LoadFailureNotice } from "../../components/LoadBoundary.tsx";
 import { Loading } from "../../components/Loading.tsx";
@@ -106,7 +107,7 @@ export function StarterBrowser(props: {
   const chosen = packs ? findShown(packs, selected) : null;
   // A place with one pack opens on it.
   const openPack = packs?.length === 1 ? (packs[0]?.id ?? null) : open;
-  const disabled = props.disabled === true;
+  const disabled = useHeld(props.disabled);
 
   const tiles = (works: readonly StarterWork[], label: string) => (
     <ul aria-label={label} style={TILES}>
@@ -287,7 +288,7 @@ function PackFold(props: { pack: StarterPack; open: boolean; single: boolean; fi
 }
 
 /** One work: its preview in the library's tile, its name under it, the chosen look once tapped. */
-function WorkTile(props: { work: StarterWork; selected: boolean; disabled: boolean; floor?: string; onSelect(key: string): void }) {
+export function WorkTile(props: { work: StarterWork; selected: boolean; disabled: boolean; floor?: string; onSelect(key: string): void }) {
   const { work } = props;
   return (
     <>
@@ -302,13 +303,14 @@ function WorkTile(props: { work: StarterWork; selected: boolean; disabled: boole
           ...tileStyle,
           position: "relative",
           background: props.floor ?? tileStyle.background,
-          border: props.selected ? `${theme.line.strong}px solid ${theme.color.accent}` : tileStyle.border,
+          // A stopped tile keeps its place with a dim ring, as a chosen option does (components/looks.ts), so it never reads as live.
+          border: props.selected ? `${theme.line.strong}px solid ${props.disabled ? theme.color.textDisabled : theme.color.accent}` : tileStyle.border,
           cursor: props.disabled ? "default" : "pointer",
         }}
       >
         <Preview key={tileSource(work)} src={tileSource(work)} />
       </button>
-      <span aria-hidden style={{ fontSize: theme.font.tiny, color: props.selected ? theme.color.accent : theme.color.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <span aria-hidden style={{ fontSize: theme.font.tiny, color: props.disabled ? theme.color.textDisabled : props.selected ? theme.color.accent : theme.color.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {work.name}
       </span>
     </>

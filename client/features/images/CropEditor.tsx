@@ -249,7 +249,7 @@ export function CropEditor(props: {
             <Loading text="Loading the image…" style={{ position: "absolute", inset: 0, justifyContent: "center" }} />
           )}
         </div>
-        <label style={{ display: "grid", gap: theme.space(1), width: "100%", maxWidth: 320, fontSize: theme.font.body14 }}>
+        <label style={{ display: "grid", gap: theme.space(1), width: "100%", maxWidth: 320, fontSize: theme.font.body14, color: image ? undefined : theme.color.textDisabled }}>
           Zoom {crop.zoom.toFixed(1)}x
           <input
             type="range"
