@@ -2177,7 +2177,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
     await closeAll(player);
   });
 
-  test("trh-5b. two panels on a computer, Dice below the Token panel: the token panel closed mid-throw leaves the Dice panel's line showing the roll, so the Dice panel's next roll gives no toast for it", async (t) => {
+  test("trh-5b. two panels on a computer, Dice below the Token panel: another token selected mid-throw takes the token panel's line, the Dice panel's line shows the roll, and the Dice panel's next roll gives no toast for it", async (t) => {
     if (!(await needsWebGL(dm, t))) return;
     await warmDice(dm, dmSocket);
     const panel = await tokenPanel(dm, "Sprite", trh.sprite.at);
@@ -2200,26 +2200,25 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
       await watchHeader(box);
       await pickRow(dm, panel, "Intelligence", /^Intelligence check/, "click");
       await headerSeen(dm, "the block's dice in the air", midThrow);
-      await dm.getByRole("button", { name: "Close Token", exact: true }).click();
-      await panel.waitFor({ state: "detached" });
-      // The Dice panel's line shows the roll the token panel took with it.
-      const line = dm.locator("[data-dice-last]").filter({ visible: true });
-      await line.locator('[aria-label="Show this roll in Recent rolls"]').filter({ hasText: /Intelligence check/ }).waitFor();
+      // No Escape first: a key in the panel would end the throw itself. The Sprite's panel goes, and the Dice panel stays mounted beside.
+      const bramble = await tokenPanel(dm, "Bramble", trh.bramble.at, false);
+      assert.equal(await headerOf(bramble).count(), 0, "the new token's panel has no line");
+      const result = dice.locator('[data-dice-last] [aria-label="Show this roll in Recent rolls"]');
+      await result.filter({ hasText: /Intelligence check/ }).waitFor();
       await sleep(600);
       assert.equal(await toasts(), quiet, "the Dice panel's line shows it, so no toast");
       // The Dice panel's next roll moves its line on, and the roll it showed is still no toast.
       const count = diceLines(dmSocket.state?.log).length;
-      const formula = field(dm).filter({ visible: true });
-      await formula.fill("1d20 trh-5b");
-      await formula.press("Enter");
+      await field(dice).fill("1d20 trh-5b");
+      await field(dice).press("Enter");
       await waitFor("the Dice panel's roll", () => (diceLines(dmSocket.state?.log).length > count ? true : null));
-      await line.locator('[aria-label="Show this roll in Recent rolls"]').filter({ hasText: /Intelligence check/ }).waitFor({ state: "detached" });
+      await result.filter({ hasText: /Intelligence check/ }).waitFor({ state: "detached" });
       await settled(dm);
       await sleep(800);
       assert.equal(await toasts(), quiet, "no late toast for the roll the line showed");
     } finally {
       if ((await bar.count()) > 0) {
-        for (const name of ["Close Token", "Close Dice"]) await dm.getByRole("button", { name, exact: true }).click({ timeout: 2_000 }).catch(() => undefined);
+        await dm.getByRole("button", { name: "Close Dice", exact: true }).click({ timeout: 2_000 }).catch(() => undefined);
         await bar.waitFor({ state: "detached", timeout: 3_000 }).catch(() => undefined);
       }
     }
