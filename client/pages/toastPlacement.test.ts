@@ -4,10 +4,11 @@ import { readFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import { test } from "node:test";
 import * as React from "react";
-import { transformWithOxc } from "vite";
-import { keptMapFoot, mapToastBox, putToastHosts } from "./toastPlacement.ts";
+import { keptMapFoot, mapToastBox, measureMapToasts, noticesDock, placeRoomToasts, putToastHosts } from "./toastPlacement.ts";
 import { columnFacts, columnTop, EDGE, nextToastPlaces, NO_TOAST_PLACES, raisedRow, SHADOW_ROOM, toastTop, type ColumnFacts } from "../canvas/barDock.ts";
 import { theme } from "../lib/theme.ts";
+
+const { toastStacks } = await import("./ToastParts.tsx");
 
 // Read the actual measurement so a first-card-only clearance cannot pass.
 const alertsSource = readFileSync(new URL("../features/encounter/InitiativeStrip.tsx", import.meta.url), "utf8");
@@ -133,14 +134,18 @@ function page() {
   return { doc, stack, other, first, moved, action, place: (hosts: Host[]) => putToastHosts(stack as unknown as HTMLElement, hosts as unknown as HTMLElement[]) };
 }
 
-// Run the stack portion of Toasts' JSX. The fake commit removes omitted stacks
-// before the real placement helper runs, matching React's mutation/layout order.
-const room = readFileSync(new URL("./Room.tsx", import.meta.url), "utf8");
-const start = room.indexOf("\n", room.indexOf("<ToastVoice toasts=", room.indexOf("function Toasts(")));
-const end = room.indexOf("\n      {drawn.map", start);
-assert.ok(start > 0 && end > start, "Toasts must expose its stack rendering for the lifecycle check");
-const { code } = await transformWithOxc(`function renderStacks(props, overMap, lowAt, stacks) { return <>${room.slice(start, end)}</>; }`, "toast-stacks.tsx", { jsx: { runtime: "classic" } });
-const renderStacks = new Function("React", "createPortal", "ToastStack", "theme", `${code}\nreturn renderStacks;`)(React, (node: unknown) => node, "toast-stack", { space: (n: number) => 4 * n }) as (props: object, overMap: unknown[], lowAt: object | null, stacks: object) => React.ReactElement<{ children: React.ReactNode }>;
+// The fake commit removes omitted stacks before the real placement helper
+// runs, matching React's mutation/layout order.
+type Rendered = { props: { children?: React.ReactNode; stack?: unknown } };
+function keptStacks(rendered: Rendered): unknown[] {
+  return React.Children.toArray(rendered.props.children).flatMap((node) => {
+    const element = isElement(node) ? node : isElement((node as { children?: unknown }).children) ? ((node as { children: Rendered }).children) : null;
+    return element ? [element.props.stack] : [];
+  });
+}
+function isElement(node: unknown): node is Rendered {
+  return React.isValidElement(node);
+}
 
 for (const direction of ["notices to layer", "layer to notices"] as const) test(`FU39-ASTRA-01: a focused sole toast survives ${direction} through the commit`, () => {
   const p = page();
@@ -150,8 +155,8 @@ for (const direction of ["notices to layer", "layer to notices"] as const) test(
   const target = toLayer ? p.other : p.stack;
   source.insertBefore(p.moved, null);
   p.action.focus();
-  const rendered = renderStacks({ layer: {} }, toLayer ? [] : [{}], toLayer ? { top: 100, edges: null } : null, { notices: p.stack, layer: p.other });
-  const kept = React.Children.toArray(rendered.props.children).map((node) => (node as React.ReactElement<{ stack: typeof p.stack }>).props.stack);
+  const rendered = toastStacks({ layer: { nodeType: 1 } as unknown as HTMLElement, lowAt: toLayer ? { top: 100, edges: null } : null, stacks: { notices: p.stack, layer: p.other } as never }) as Rendered;
+  const kept = keptStacks(rendered);
   for (const stack of [p.stack, p.other]) if (!kept.includes(stack)) stack.remove();
   putToastHosts(target as unknown as HTMLElement, [p.moved as unknown as HTMLElement]);
   assert.equal(p.doc.activeElement, p.action, "the source stack must stay connected until its focused toast moves");
@@ -398,16 +403,10 @@ test("FU40B-OPUS-2: roll publications track the IDs drawn, including same-count 
 });
 
 test("FU40B-OPUS-2: a rotation publishes beside-lane placement even with no lasting notice", () => {
-  const start = room.indexOf("      const notices = besideLane ? null : bottom;");
-  const end = room.indexOf("\n    };", start);
-  assert.ok(start > 0 && end > start);
-  const state = { notices: null, lasting: null, noticesSpanning: true };
-  const dock = { getState: () => state, setState: (patch: object) => Object.assign(state, patch) };
-  const measure = new Function("besideLane", "bottom", "barDock", stripTypeScriptTypes(room.slice(start, end)));
-  measure(true, null, dock);
-  assert.equal(state.noticesSpanning, false);
-  measure(false, null, dock);
-  assert.equal(state.noticesSpanning, true);
+  assert.equal(noticesDock(true, null).noticesSpanning, false);
+  assert.equal(noticesDock(false, null).noticesSpanning, true);
+  assert.deepEqual(noticesDock(true, 90), { notices: null, lasting: 90, noticesSpanning: false }, "beside the lane the notices leave the column be, but the bar still keeps clear");
+  assert.deepEqual(noticesDock(false, 90), { notices: 90, lasting: 90, noticesSpanning: true });
 });
 
 test("FU39-ASTRA-04 and FU39-S-2: a turn keeps its pushed top after the aged toast moves or expires", () => {
@@ -427,9 +426,6 @@ test("FU39-ASTRA-04 and FU39-S-2: a turn keeps its pushed top after the aged toa
 });
 
 test("FU39-B: the room publishes visible spanning toasts and the column uses only the kept foot", () => {
-  const measureStart = room.indexOf("    const notices = stacks.notices.box.current;");
-  const measureEnd = room.indexOf("    // The foot of the toasts over the map", measureStart);
-  assert.ok(measureStart > 0 && measureEnd > measureStart);
   const alerts = readFileSync(new URL("../features/encounter/InitiativeStrip.tsx", import.meta.url), "utf8");
   const rulesStart = alerts.indexOf("    const rules = {");
   const rulesEnd = alerts.indexOf("\n    };", rulesStart);
@@ -440,16 +436,10 @@ test("FU39-B: the room publishes visible spanning toasts and the column uses onl
     const state: { mapToasts: ReturnType<typeof mapToastBox> } = { mapToasts: null };
     const props = { spanning: true };
     const overMap = [kept, waiting];
-    const bindings = {
-      props, overMap, zoom, mapToastBox, keptMapFoot,
-      stacks: { notices: { box: { current: { getBoundingClientRect: () => ({ top: 68 * zoom, bottom: 226 * zoom }) } } } },
-      hosts: { current: new Map(overMap.map((b) => [b.id, { firstElementChild: { getBoundingClientRect: () => b } }])) },
-      placed: { current: { awaitCard: new Set([2]) } }, mapFoot: { current: null },
-      mapMeasured: { current: null },
-      dockStore: { getState: () => state, setState: (patch: typeof state) => Object.assign(state, patch) },
+    const measure = () => {
+      const now = measureMapToasts({ notices: { getBoundingClientRect: () => ({ top: 68 * zoom, bottom: 226 * zoom }) }, overMap, boxOf: (id) => overMap.find((b) => b.id === id), awaitCard: new Set([2]), zoom, spanning: props.spanning, wasMap: state.mapToasts });
+      if (now.changed) state.mapToasts = now.mapBox;
     };
-    const publish = new Function(...Object.keys(bindings), stripTypeScriptTypes(room.slice(measureStart, measureEnd)));
-    const measure = () => publish(...Object.values(bindings));
     measure();
     assert.ok(state.mapToasts, "the room must publish clearance before the first card is placed");
     const placeColumn = alertColumnRender();
@@ -477,12 +467,27 @@ test("FU39-B: the room publishes visible spanning toasts and the column uses onl
   }
 });
 
+/** The Room's frames for the toasts over the map: places in render, then the boxes read after the hosts are placed. */
+function roomToasts(zoom: number, ids: number[], overMap: { id: number; top: number; bottom: number }[]) {
+  const state = {
+    placed: NO_TOAST_PLACES, floorWas: null as number | null, measured: null as ReturnType<typeof measureMapToasts>["measured"], mapFoot: null as number | null,
+    mapToasts: null as ReturnType<typeof mapToastBox>, recent: new Set<number>(),
+  };
+  const frame = (props: { low: number | null; columnTop: number | null }) => {
+    state.placed = placeRoomToasts({
+      was: state.placed, ids, recent: state.recent, spanning: true, restFloor: null, floorWas: state.floorWas, layerFoot: null, measured: state.measured, zoom,
+      pane: null, paneStands: false, low: props.low, columnTop: props.columnTop, layer: true, slot: false, turned: false, mapFoot: state.mapFoot, overBar: undefined, turnStarted: false,
+    });
+    state.floorWas = null;
+    const now = measureMapToasts({ notices: { getBoundingClientRect: () => overMap[0]! }, overMap, boxOf: (id) => overMap.find((b) => b.id === id), awaitCard: state.placed.awaitCard, zoom, spanning: true, wasMap: state.mapToasts });
+    state.mapFoot = now.mapFoot;
+    state.measured = now.measured;
+    if (now.changed) state.mapToasts = now.mapBox;
+  };
+  return { state, frame };
+}
+
 test("FU40-B pl2-b: a toast above a full measured column reserves space immediately", () => {
-  const placeStart = room.indexOf("  floorWas.current = props.restFloor;");
-  const placeEnd = room.indexOf("  const { places } = placed.current;", placeStart);
-  const publishStart = room.indexOf("    const notices = stacks.notices.box.current;");
-  const publishEnd = room.indexOf("    // The foot of the toasts over the map", publishStart);
-  assert.ok(placeStart > 0 && placeEnd > placeStart && publishStart > 0 && publishEnd > publishStart);
   let seed = 320568;
   const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32);
   for (let sequence = 0; sequence < 100; sequence++) {
@@ -494,39 +499,29 @@ test("FU40-B pl2-b: a toast above a full measured column reserves space immediat
     const facts = { top: 108, content: 389, cover: 389, first: 124 };
     const low = toastTop({ spanning: true, column: facts, cards: true, optionsTop: 508 });
     assert.equal(low, null, "the full column leaves under 44 px below it");
-    const props = { restFloor: null, pane: null, paneStands: false, low, columnTop: unmeasured ? null : 108, layer: {}, spanning: true };
-    const state: { mapToasts: ReturnType<typeof mapToastBox> } = { mapToasts: null };
-    const bindings = {
-      props, placed: { current: NO_TOAST_PLACES }, floorWas: { current: null }, ids: [1], slot: null, turned: false,
-      mapFoot: { current: null }, recent: new Set([1]), overBar: undefined, anew: undefined, turnStarted: false,
-      mapMeasured: { current: null }, zoom, nextToastPlaces, mapToastBox, keptMapFoot, EDGE,
-      overMap: [toast],
-      stacks: { notices: { box: { current: { getBoundingClientRect: () => toast } } } },
-      hosts: { current: new Map([[1, { firstElementChild: { getBoundingClientRect: () => toast } }]]) },
-      dockStore: { getState: () => state, setState: (patch: typeof state) => Object.assign(state, patch) },
-    };
-    const place = new Function(...Object.keys(bindings), stripTypeScriptTypes(room.slice(placeStart, placeEnd)));
-    const publish = new Function(...Object.keys(bindings), stripTypeScriptTypes(room.slice(publishStart, publishEnd)));
-    const frame = () => { place(...Object.values(bindings)); publish(...Object.values(bindings)); };
+    const props = { low, columnTop: unmeasured ? null : 108 };
+    const room = roomToasts(zoom, [1], [toast]);
+    room.state.recent = new Set([1]);
+    const frame = () => room.frame(props);
     if (unmeasured) {
       for (let i = 0, count = 1 + Math.floor(random() * 4); i < count; i++) {
         frame();
-        assert.equal(state.mapToasts?.keptBottom, null, "an unmeasured card must not be pushed by its waiting toast");
-        assert.ok(bindings.placed.current.awaitCard.has(1));
+        assert.equal(room.state.mapToasts?.keptBottom, null, "an unmeasured card must not be pushed by its waiting toast");
+        assert.ok(room.state.placed.awaitCard.has(1));
       }
       props.columnTop = 108;
     }
     frame();
-    const top = columnTop(108, null, state.mapToasts?.keptBottom ?? null, 108);
+    const top = columnTop(108, null, room.state.mapToasts?.keptBottom ?? null, 108);
     assert.equal(top, 168, "a measured full column must clear the fallback toast before it ages out");
     assert.equal(top - toast.bottom / zoom, EDGE, "the first card stands exactly 8 px below the toast");
-    assert.equal(bindings.placed.current.awaitCard.size, 0, "no room under a measured card ends the provisional exclusion");
+    assert.equal(room.state.placed.awaitCard.size, 0, "no room under a measured card ends the provisional exclusion");
     props.columnTop = top;
     for (let i = 0, count = 1 + Math.floor(random() * 4); i < count; i++) {
-      if (random() < 0.5) bindings.recent.clear();
+      if (random() < 0.5) room.state.recent.clear();
       frame();
-      assert.equal(columnTop(108, null, state.mapToasts?.keptBottom ?? null, top), top, "repeated measurement and aging must not push the cards again");
-      assert.equal(bindings.placed.current.places.get(1), "map", "the fallback toast stays where it was read");
+      assert.equal(columnTop(108, null, room.state.mapToasts?.keptBottom ?? null, top), top, "repeated measurement and aging must not push the cards again");
+      assert.equal(room.state.placed.places.get(1), "map", "the fallback toast stays where it was read");
     }
   }
 });
@@ -539,9 +534,6 @@ test("FU39-B: only the visible part of a scrolling toast reserves column space",
 });
 
 test("FU39-B: an older toast that ages out as the card arrives waits for the column's corrected top", () => {
-  const start = room.indexOf("  floorWas.current = props.restFloor;");
-  const end = room.indexOf("  const { places } = placed.current;", start);
-  assert.ok(start > 0 && end > start);
   let seed = 359;
   const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32);
   for (let sequence = 0; sequence < 200; sequence++) {
@@ -549,27 +541,44 @@ test("FU39-B: an older toast that ages out as the card arrives waits for the col
     const keptBottom = 100 + Math.floor(random() * 120);
     const cardHeight = 44 + Math.floor(random() * 100);
     const input = { ids: [1, 2], pane: null, paneStands: false, low: null, layer: true, slot: false, recent: new Set([1, 2]) };
-    const placed = { current: nextToastPlaces(NO_TOAST_PLACES, input) };
-    const props = { restFloor: null, pane: null, paneStands: false, low: 60 + cardHeight + EDGE, columnTop: 60, layer: {}, spanning: true };
-    const bindings = {
-      props, placed, floorWas: { current: null }, ids: [1, 2], slot: null, turned: false,
-      mapFoot: { current: null }, recent: new Set([2]), overBar: undefined, anew: undefined, turnStarted: false,
-      mapMeasured: { current: { boxes: [{ id: 1, top: 68 * zoom, bottom: keptBottom * zoom }], clip: { top: 68 * zoom, bottom: keptBottom * zoom } } }, zoom,
-      nextToastPlaces, mapToastBox, EDGE,
+    let placed = nextToastPlaces(NO_TOAST_PLACES, input);
+    const props = { low: 60 + cardHeight + EDGE, columnTop: 60 };
+    const recent = new Set([2]);
+    const measured = { boxes: [{ id: 1, top: 68 * zoom, bottom: keptBottom * zoom }], clip: { top: 68 * zoom, bottom: keptBottom * zoom } };
+    const run = () => {
+      placed = placeRoomToasts({
+        was: placed, ids: [1, 2], recent, spanning: true, restFloor: null, floorWas: null, layerFoot: null, measured, zoom,
+        pane: null, paneStands: false, low: props.low, columnTop: props.columnTop, layer: true, slot: false, turned: false, mapFoot: null, overBar: undefined, turnStarted: false,
+      });
     };
-    const run = new Function(...Object.keys(bindings), stripTypeScriptTypes(room.slice(start, end)));
     for (let pending = 0, count = 1 + Math.floor(random() * 4); pending < count; pending++) {
-      run(...Object.values(bindings));
-      assert.equal(placed.current.places.get(2), "map", `sequence ${sequence}: the new toast cannot commit to the card's stale top`);
+      run();
+      assert.equal(placed.places.get(2), "map", `sequence ${sequence}: the new toast cannot commit to the card's stale top`);
     }
     props.columnTop = keptBottom + EDGE;
     props.low = props.columnTop + cardHeight + EDGE;
-    run(...Object.values(bindings));
-    assert.equal(placed.current.places.get(1), "map", "the toast being read stays put");
+    run();
+    assert.equal(placed.places.get(1), "map", "the toast being read stays put");
     const settled = { low: props.low, column: true };
-    assert.deepEqual(placed.current.places.get(2), settled);
-    bindings.recent.clear();
-    run(...Object.values(bindings));
-    assert.deepEqual(placed.current.places.get(2), settled, "the new toast moves only once across delayed measurements and aging");
+    assert.deepEqual(placed.places.get(2), settled);
+    recent.clear();
+    run();
+    assert.deepEqual(placed.places.get(2), settled, "the new toast moves only once across delayed measurements and aging");
   }
+});
+
+test("FU39-B: the room hands a resting strip and a turn's start on to the placement", () => {
+  const base = { was: NO_TOAST_PLACES, ids: [1], recent: new Set<number>(), spanning: true, restFloor: null, floorWas: null, layerFoot: null, measured: null, zoom: 1, pane: null, paneStands: false, low: null, columnTop: null, layer: true, slot: false, turned: false, mapFoot: null, overBar: undefined, turnStarted: false };
+  const low = placeRoomToasts({ ...base, recent: new Set([1]), low: 150 });
+  assert.deepEqual(low.places.get(1), { low: 150, column: true });
+  // As resting begins, a stack drawn lower than the room's new foot takes its place anew, and one drawn above it stays.
+  const lower = placeRoomToasts({ ...base, was: low, restFloor: 400, layerFoot: 500 });
+  assert.equal(lower.places.get(1), "map");
+  assert.deepEqual(placeRoomToasts({ ...base, was: low, restFloor: 400, layerFoot: 300 }).places.get(1), { low: 150, column: true });
+  assert.deepEqual(placeRoomToasts({ ...base, was: low, restFloor: 400, floorWas: 400, layerFoot: 500 }).places.get(1), { low: 150, column: true }, "a floor that did not rise places nothing anew");
+  // A turn's first card takes an aged toast under it, which a card that comes at another time does not.
+  const aged = placeRoomToasts({ ...base });
+  assert.equal(aged.places.get(1), "map");
+  assert.deepEqual(placeRoomToasts({ ...base, was: aged, low: 183, turnStarted: true }).places.get(1), { low: 183, column: true });
+  assert.equal(placeRoomToasts({ ...base, was: aged, low: 183 }).places.get(1), "map");
 });
