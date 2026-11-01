@@ -1030,6 +1030,45 @@ export function coreBlocked(state: BuildState, end: WalkEnd): boolean {
   return coreTouchesAt(wallsAt(walls, token, at), token, at, ledgeFloor(walls, scene, token, token.elevation), pieceTestOf(state.buildChunks));
 }
 
+/**
+ * Whether a wall passes through the full footprint of a creature that
+ * stands full size off its own snap grid at the walk's end, outside a real
+ * narrow space (live play LP28-B-RIDE-1). The core rule alone judges a
+ * stand on the grid, where every grid line through a creature's box but
+ * its edges runs through its core. Half a square off, the lines half a
+ * square in from its edges miss the core, so a Large creature's box could
+ * reach half a square into the rock beside a corridor's mouth while its
+ * core stayed clear. Only a creature with a side a squeeze shrinks walks a
+ * lattice that stops it there: any other keeps its own grid from where it
+ * stands. In a real narrow space (`squeezeFits`) it stands where a squeeze
+ * may, as a walk cut there lands full (D-261029-83). Walls, doors, windows
+ * and pillars count, not ledges: on the grid a ledge through the box meets
+ * the core too, and the stand on raised ground is the ground rule's. A
+ * permission rule's test, never the reducer's, so a stored move replays as
+ * it was made. A held build's pieces count as a squeeze's fit counts them:
+ * by the gate test, only past their band.
+ */
+export function offGridWallThrough(state: BuildState, end: WalkEnd): boolean {
+  const { walker: token, at } = end;
+  if (!canSqueeze(token)) return false;
+  const scene = state.scenes[token.sceneId];
+  if (!scene || isHex(sceneGrid(scene))) return false;
+  const step = snapStep(token);
+  const onGrid = (v: number) => Math.abs(v / step - Math.round(v / step)) < 1e-9;
+  if (onGrid(at.x) && onGrid(at.y)) return false;
+  const walls = sceneWalls(scene, state.buildChunks);
+  const inset = pieceTestOf(state.buildChunks) === "gate" ? PIECE_BAND * (1 + 1e-9) : 0;
+  const { w, h } = footprintSize(token);
+  const xy = walls.stored.xy;
+  // Gathered by the band, which takes in every piece that can meet the footprint, as a squeeze's fit gathers them. A floor of
+  // Infinity leaves the ledges out.
+  for (const k of touching(walls, at.x + w / 2, at.y + h / 2, at.x + w / 2, at.y + h / 2, w / 2, h / 2, Infinity, "preview")) {
+    const d = walls.stored.free[k] === PIECE ? inset : 0;
+    if (crossesInterior(at.x + d, at.y + d, at.x + w - d, at.y + h - d, xy[4 * k]!, xy[4 * k + 1]!, xy[4 * k + 2]!, xy[4 * k + 3]!)) return !squeezeFits(state, end);
+  }
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // Resizing
 

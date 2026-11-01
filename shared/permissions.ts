@@ -31,6 +31,7 @@ import {
   legSpots,
   legStop,
   legStopPart,
+  offGridWallThrough,
   onSqueezedLattice,
   ownWalk,
   straightClear,
@@ -871,7 +872,9 @@ function forPlayer(op: Op, c: Check): Decision {
       if (!stops.ok) return stops;
       // A route of no walk's shape is refused as such before its pieces meet the walls.
       const walked = op.route ? routeCheck(c, op.tokenId, [op.route], op) : OK;
-      return walked.ok ? draggedWalls(c, op) : walked;
+      if (!walked.ok) return walked;
+      const stands = op.teleport === undefined ? standCheck(c, op.tokenId, op, op.route) : OK;
+      return stands.ok ? draggedWalls(c, op) : stands;
     }
     case "token.moveMany": {
       for (const move of op.moves) {
@@ -882,6 +885,8 @@ function forPlayer(op: Op, c: Check): Decision {
       for (const move of op.moves) {
         const d = legCheck(c, move.tokenId, move, false);
         if (!d.ok) return d;
+        const stands = standCheck(c, move.tokenId, move);
+        if (!stands.ok) return stands;
       }
       return draggedWalls(c, op);
     }
@@ -2415,6 +2420,28 @@ function routeCheck(c: Check, tokenId: string, routes: readonly (readonly RouteP
   if (at.x === to.x && at.y === to.y && !squeezeChangesInPlace(scene, at, end)) return OK;
   const blocker = movementRules.legBlocker(c.state, at, end);
   return blocker === null ? OK : refuse("forbidden", walkWords(c, at, end, blocker));
+}
+
+/**
+ * A player's move that ends full size off the creature's own snap grid, on
+ * a scene that blocks movement, is refused where a wall passes through its
+ * full footprint there outside a real narrow space (live play
+ * LP28-B-RIDE-1, movement.ts offGridWallThrough), though the core the leg
+ * test reads is clear of it. A squeeze is judged by its own checks, and a
+ * teleport walks no leg. The walker is the one the walk ends with, as for a
+ * squeeze (`squeezeFits`). Words as a resize's: the wall named only where
+ * the sender sees the whole footprint live.
+ */
+function standCheck(c: Check, tokenId: string, to: StoredEnd, route?: readonly RoutePiece[]): Decision {
+  const token = c.state.tokens[tokenId];
+  const scene = token ? c.state.scenes[token.sceneId] : undefined;
+  if (!token || !scene || scene.blockMovement !== true || to.squeeze === true || (to.x === token.x && to.y === token.y)) return OK;
+  const walker = walkerFor(c.state, token, seenAllIn(c), { to });
+  const points = route ? routePoints(c.state.buildChunks, walker, route, to.elevation ?? token.elevation) : [];
+  if (!offGridWallThrough(c.state, walkEnd(c.state, walker, { x: to.x, y: to.y }, points.slice(1, -1)))) return OK;
+  const ground = c.liveGround(token.sceneId);
+  const { squeeze: _squeeze, ...full } = token;
+  return refuse("forbidden", ground && !footprintLive(ground, { ...full, x: to.x, y: to.y }) ? SOMETHING_BLOCKS : WALL_IN_THE_WAY);
 }
 
 /** Where a move, an attach or a restore puts a token, with the squeeze it stores there (absent for none). */
