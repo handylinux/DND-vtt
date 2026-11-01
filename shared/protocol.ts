@@ -1747,8 +1747,8 @@ const cellRects = z
 /**
  * A wire's end, on the free walls' 1/64 lattice, where hex corners lie
  * (docs/design/design-v1-hex-grids.md H2). Every end stored before is a half cell,
- * which lies on it too, so no op changes meaning. The reducer keeps a
- * square scene's ends on cell corners and edge midpoints.
+ * which lies on it too, so no op changes meaning. The reducer keeps the
+ * ends an op gives a square scene's wire on cell corners and edge midpoints.
  */
 const wireEnd = z
   .number()

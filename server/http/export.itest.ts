@@ -5,7 +5,7 @@ import yauzl from "yauzl";
 import yazl from "yazl";
 import { uuidv7 } from "#shared/ids.ts";
 import { SNAPSHOT_VERSION } from "#shared/migrate.ts";
-import type { CustomMonster, LogEntry, RoomState, SrdImage } from "#shared/model.ts";
+import type { CustomMonster, LogEntry, RoomState, SrdImage, Trap } from "#shared/model.ts";
 import type { ProjectedState } from "#shared/project.ts";
 import { blockOf, customMonster } from "#shared/testutil.ts";
 import { variantPath } from "../assets/store.ts";
@@ -522,6 +522,33 @@ describe("room export and import", () => {
     const { rows } = await t.pool.query<{ state: RoomState; schema_version: number }>("select state, schema_version from room_snapshots where room_id = $1", [newId]);
     assert.deepEqual(rows[0]!.state.monsters, {});
     assert.equal(rows[0]!.schema_version, SNAPSHOT_VERSION);
+  });
+
+  test("a square scene's trip wire with ends on the 1/64 lattice, as an import after hex phase H2 left one, imports, takes the DM's edit, and its room's export imports again (FU43-DATA-01)", async () => {
+    const dm = t.client();
+    const { roomId } = await dm.createRoom("Old wire");
+    const res = await dm.get(`/api/rooms/${roomId}/export`);
+    const room = JSON.parse((await unzip(res.rawPayload)).get("room.json")!.toString()) as RoomExport;
+    const sceneId = room.state.meta.playerSceneId!;
+    assert.equal(room.state.scenes[sceneId]!.gridShape, undefined, "a square scene");
+    const zone = { wire: { a: [3, 5 + 40 / 64] as [number, number], b: [3, 9] as [number, number] } };
+    const rig = { on: [], who: "any", floor: true, resets: "never", stops: true, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } satisfies Trap["rig"];
+    room.state.traps = { w1: { id: "w1", rev: 0, sceneId, name: "Tripwire", zone, state: "armed", found: false, rig } };
+    const importer = t.client();
+    const imported = await importZip(importer, await zipOf({ "room.json": JSON.stringify(room) }));
+    assert.equal(imported.statusCode, 201, imported.body);
+    const { roomId: newId } = imported.json<{ roomId: string }>();
+    t.track(newId);
+    const copy = await t.connect(newId, importer);
+    const [wire] = Object.values(((await copy.snapshot("i")).state as ProjectedState).traps ?? {});
+    assert.deepEqual(wire?.zone, zone);
+    assert.deepEqual((await copy.apply({ t: "trap.update", trapId: wire!.id, patch: { name: "Bell wire" } })).rejects ?? [], []);
+    copy.close();
+    const again = await importer.get(`/api/rooms/${newId}/export`);
+    assert.equal(again.statusCode, 200, again.body);
+    const second = await importZip(t.client(), again.rawPayload);
+    assert.equal(second.statusCode, 201, second.body);
+    t.track(second.json<{ roomId: string }>().roomId);
   });
 
   test("a backup from before SRD monster images imports with none", async () => {

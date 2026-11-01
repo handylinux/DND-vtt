@@ -178,7 +178,7 @@ describe("roomStateSchema, hex grids (docs/design/design-v1-hex-grids.md section
     assert.equal(parseRoomState(s).ok, false);
   });
 
-  test("square trap wires keep half-cell ends while hex wires keep the 1/64 lattice (H2-OPUS-01)", () => {
+  test("a trap wire's ends import on the 1/64 lattice on every grid, a square scene's included, as rooms imported after H2 hold them (H2-OPUS-01, FU43-DATA-01)", () => {
     for (const gridShape of [undefined, "hexRows", "hexColumns"] as const) {
       for (const coordinate of [0, 1, 2, 3]) {
         const s = room({ scenes: { s1: scene("s1", { gridShape }) } });
@@ -187,11 +187,10 @@ describe("roomStateSchema, hex grids (docs/design/design-v1-hex-grids.md section
         const wire = { a: [ends[0], ends[1]] as [number, number], b: [ends[2], ends[3]] as [number, number] };
         s.traps.t1 = trap("t1", { ...(gridShape ? { grid: gridShape } : {}), zone: { wire } });
         const parsed = parseRoomState(s);
-        assert.equal(parsed.ok, gridShape === "hexRows" || gridShape === "hexColumns", `${gridShape}, coordinate ${coordinate}`);
-        if (!parsed.ok) assert.match(parsed.message, /traps.t1.*wire.*corners and edge midpoints/);
-        ends[coordinate]! += 31 / 64;
+        assert.ok(parsed.ok, `${gridShape}, coordinate ${coordinate}: ${parsed.ok ? "" : parsed.message}`);
+        ends[coordinate]! += 1 / 128;
         s.traps.t1.zone = { wire: { a: [ends[0], ends[1]], b: [ends[2], ends[3]] } };
-        assert.ok(parseRoomState(s).ok, "half-cell ends remain valid");
+        assert.match((parseRoomState(s) as { message?: string }).message ?? "", /1\/64 cell lattice/, "an end off the lattice is refused");
       }
     }
   });

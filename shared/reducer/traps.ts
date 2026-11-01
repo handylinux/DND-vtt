@@ -53,9 +53,15 @@ export function trapOwnBytes(trap: Trap): number {
  * key, inside the columns and rows the keys run over but off the scene, is
  * refused (docs/design/design-v1-hex-grids.md H2), and its wire's ends may lie anywhere on
  * the 1/64 lattice, as hex corners do. A square scene's wire keeps to cell
- * corners and edge midpoints, as before.
+ * corners and edge midpoints, as before, wherever the op sets the zone
+ * (`zoneSet`). A room imported between H2 and the import's halves check
+ * can hold a square wire on the 1/64 lattice (FU38-ASTRA-PARSER-NOTE).
+ * No stored step moves those ends, since its stored ops would then replay
+ * against other ends (FU43-DATA-01), so an edit that leaves the zone as
+ * it is takes the wire as it stands. Every stored op passed the stricter
+ * check, so the looser one replays each the same, with no op version.
  */
-function trapProblem(tx: Tx, trap: Trap): string | null {
+function trapProblem(tx: Tx, trap: Trap, zoneSet: boolean): string | null {
   const scene = tx.scene(trap.sceneId);
   const g = sceneGrid(scene);
   const { w, h } = isHex(g) ? hexKeySpan(g, scene.bounds) : scene.bounds;
@@ -75,7 +81,7 @@ function trapProblem(tx: Tx, trap: Trap): string | null {
   } else if ("wire" in zone) {
     const { a, b } = zone.wire;
     if (Math.max(a[0], b[0]) > scene.bounds.w || Math.max(a[1], b[1]) > scene.bounds.h) return "a trip wire lies inside its scene";
-    if (!isHex(g) && ![a[0], a[1], b[0], b[1]].every((v) => Number.isInteger(v * 2))) return "a wire's ends are on cell corners and edge midpoints";
+    if (zoneSet && !isHex(g) && ![a[0], a[1], b[0], b[1]].every((v) => Number.isInteger(v * 2))) return "a wire's ends are on cell corners and edge midpoints";
   }
   if (!rig) return null;
   const squares = "cells" in zone;
@@ -130,7 +136,7 @@ export function trapCreate(tx: Tx, op: OpOf<"trap.create">): void {
   // A trap on a hex scene is stamped with its shape, which its keys are of (docs/design/design-v1-hex-grids.md HX-D14).
   const shape = shapeOfGrid(sceneGrid(tx.scene(input.sceneId)));
   const trap: Trap = { id: input.id, rev: 0, sceneId: input.sceneId, name: input.name, zone: input.zone, state: "armed", found: input.found ?? false, rig: { ...input.rig }, ...(shape ? { grid: shape } : {}) };
-  const why = trapProblem(tx, trap) ?? refProblem(tx, trap, true, true);
+  const why = trapProblem(tx, trap, true) ?? refProblem(tx, trap, true, true);
   if (why) throw invalid(why);
   tx.write(keys.trap(trap.id), trap);
 }
@@ -162,7 +168,7 @@ export function trapUpdate(tx: Tx, op: OpOf<"trap.update">): void {
     next.rig = rig as TrapRig;
   }
   if (p.state === "armed" && next.rig?.usesLeft === 0) throw invalid(GIVE_IT_USES);
-  const why = trapProblem(tx, next) ?? refProblem(tx, next, p.zone !== undefined, p.rig?.actions !== undefined, trap.rig?.actions);
+  const why = trapProblem(tx, next, p.zone !== undefined) ?? refProblem(tx, next, p.zone !== undefined, p.rig?.actions !== undefined, trap.rig?.actions);
   if (why) throw invalid(why);
   tx.write(keys.trap(trap.id), next);
 }
