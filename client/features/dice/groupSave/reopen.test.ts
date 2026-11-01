@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { describe, test } from "node:test";
 import type { SaveOutcomeLedger, SaveOutcomeRecord } from "#shared/saveOutcomeContract.ts";
 import { castSeen, closeSettled, closeTheAsk, newPage, setDc, type Page } from "./chain.ts";
 import { castAsk } from "#shared/testutil.ts";
 import { rowResult } from "./rows.ts";
-import { reconcileSave, prepareSave, resumeSaveEdits, OUTCOME_UNDONE, OUTCOME_RESTORED, OUTCOME_UNAVAILABLE } from "./reopen.ts";
+import { draftOf, reconcileSave, prepareSave, resumeSaveEdits, sessionOfDraft, noticeWords, OUTCOME_APPLIED, OUTCOME_UNDONE, OUTCOME_RESTORED, OUTCOME_UNAVAILABLE, type SaveHistory } from "./reopen.ts";
+import { saveDraftSchema } from "./reopenContract.ts";
 
 const A = "019a3df0-1000-7000-8000-000000000001";
 const B = "019a3df0-1000-7000-8000-000000000002";
@@ -236,4 +237,62 @@ test("a final Close the ask after Undo is its own step: pending, closed and refu
   assert.equal(back.page.dc, 19);
   assert.equal(back.page.applySays, "The ask changed.");
   assert.equal(back.reopen?.check, "undone");
+});
+
+describe("Outcome restored once no Play step for it remains (LP27-A-GS-2, D-261101-051)", () => {
+  const E1 = "epoch-before-restart";
+  const E2 = "epoch-after-restart";
+  const withHistory = (ledger: SaveOutcomeLedger, history?: SaveHistory) => ({ ...authority(ledger), ...(history ? { history } : {}) });
+  const restoredIn = (history?: SaveHistory) => {
+    const undone = reconcileSave(reconcileSave(start(), withHistory({ [A]: record("applied", 1) }, history)), withHistory({ [A]: record("undone", 2) }, history));
+    return reconcileSave(undone, withHistory({ [A]: record("applied", 3) }, history));
+  };
+
+  test("a Redo's restored page keeps the history epoch its step lives in, and points at Undo while Undo can reach it", () => {
+    const redone = restoredIn({ epoch: E1, undoSteps: 1 });
+    assert.equal(redone.reopen?.notice, OUTCOME_RESTORED);
+    assert.equal(redone.reopen?.observed?.epoch, E1);
+    assert.equal(noticeWords(redone.reopen, { epoch: E1, undoSteps: 1 }), OUTCOME_RESTORED);
+    assert.equal(noticeWords(redone.reopen, { epoch: E1, undoSteps: 4 }), OUTCOME_RESTORED, "later steps bury it, and Undo still reaches it");
+    assert.equal(noticeWords(redone.reopen, undefined), OUTCOME_RESTORED, "with no summary yet the notice stands");
+  });
+
+  test("after a restart cleared Undo the page says it is applied, also once new steps fill the new history", () => {
+    const redone = restoredIn({ epoch: E1, undoSteps: 1 });
+    assert.equal(noticeWords(redone.reopen, { epoch: E2, undoSteps: 0 }), OUTCOME_APPLIED);
+    assert.equal(noticeWords(redone.reopen, { epoch: E2, undoSteps: 3 }), OUTCOME_APPLIED, "steps made since the restart are not this outcome's");
+    // The restart's summary reaches reconciliation too, which keeps the epoch the step lived in.
+    const after = reconcileSave(redone, withHistory({ [A]: record("applied", 3) }, { epoch: E2, undoSteps: 0 }));
+    assert.equal(after.reopen?.observed?.epoch, E1);
+    assert.equal(noticeWords(after.reopen, { epoch: E2, undoSteps: 2 }), OUTCOME_APPLIED);
+  });
+
+  test("an empty Undo says it is applied in any epoch", () => {
+    assert.equal(noticeWords(restoredIn({ epoch: E1, undoSteps: 1 }).reopen, { epoch: E1, undoSteps: 0 }), OUTCOME_APPLIED);
+    assert.equal(noticeWords(restoredIn().reopen, { epoch: E1, undoSteps: 0 }), OUTCOME_APPLIED, "with no epoch known");
+  });
+
+  test("a page restored before the summary came takes its epoch once it does, once, and keeps it through a reload", () => {
+    const redone = restoredIn();
+    assert.equal(redone.reopen?.observed?.restored, true);
+    assert.equal(redone.reopen?.observed?.epoch, undefined);
+    const known = reconcileSave(redone, withHistory({ [A]: record("applied", 3) }, { epoch: E1, undoSteps: 1 }));
+    assert.equal(known.reopen?.observed?.epoch, E1);
+    assert.equal(known.reopen?.notice, OUTCOME_RESTORED);
+    const again = reconcileSave(known, withHistory({ [A]: record("applied", 3) }, { epoch: E1, undoSteps: 1 }));
+    assert.equal(again.reopen, known.reopen, "nothing new, so the same session and no draft write");
+    // Reloaded after a restart: the draft keeps the epoch, and the new history's first step is not the outcome's.
+    const reloaded = reconcileSave(sessionOfDraft(saveDraftSchema.parse(draftOf(known))), withHistory({ [A]: record("applied", 3) }, { epoch: E2, undoSteps: 1 }));
+    assert.equal(reloaded.reopen?.observed?.epoch, E1);
+    assert.equal(reloaded.reopen?.notice, OUTCOME_RESTORED);
+    assert.equal(noticeWords(reloaded.reopen, { epoch: E2, undoSteps: 1 }), OUTCOME_APPLIED);
+  });
+
+  test("other notices read as they are, and a second Undo after it brings Outcome undone back", () => {
+    const redone = restoredIn({ epoch: E1, undoSteps: 1 });
+    const undone = reconcileSave(redone, withHistory({ [A]: record("undone", 4) }, { epoch: E1, undoSteps: 0 }));
+    assert.equal(noticeWords(undone.reopen, { epoch: E2, undoSteps: 0 }), OUTCOME_UNDONE);
+    assert.equal(undone.reopen?.observed?.epoch, undefined, "an undone outcome keeps no epoch");
+    assert.equal(noticeWords({ check: "unavailable", notice: OUTCOME_UNAVAILABLE }, { epoch: E2, undoSteps: 0 }), OUTCOME_UNAVAILABLE);
+  });
 });

@@ -48,9 +48,12 @@ export type SaveCheckpoint = {
 /**
  * The outcome status a page last read. `restored` marks an applied status
  * reached from an undone one, by Redo, so the page says "Outcome restored"
- * for it, and only for it, again after a reload.
+ * for it, and only for it, again after a reload. `epoch` is the Undo
+ * history's epoch when the page first read it restored, where the Redo's
+ * step lives: a restart starts a new epoch with no steps, so a page that
+ * reads another one knows no Undo can reach its outcome (D-261101-051).
  */
-export type SaveObservation = { revision: number; state: "applied" | "undone"; restored?: true };
+export type SaveObservation = { revision: number; state: "applied" | "undone"; restored?: true; epoch?: string };
 
 export type SaveDraft = {
   version: 2;
@@ -288,6 +291,6 @@ export const saveDraftSchema = z.strictObject({
   tracking: z.strictObject({ id: z.uuidv7(), plan: z.uuidv7(), revision: counter }).optional(),
   beforeApply: saveCheckpointSchema.optional(),
   redoHeld: saveChoicesSchema.optional(),
-  observed: z.strictObject({ revision: counter, state: z.enum(["applied", "undone"]), restored: z.literal(true).optional() }).optional(),
+  observed: z.strictObject({ revision: counter, state: z.enum(["applied", "undone"]), restored: z.literal(true).optional(), epoch: z.string().min(1).max(64).optional() }).optional(),
   announced: z.array(z.string().max(1_000)).max(SAVE_ANNOUNCED).optional(),
 }).refine(withinDraftBytes, byteLimit) satisfies z.ZodType<SaveDraft>;

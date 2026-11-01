@@ -6,6 +6,8 @@ import { saveChoicesSchema, saveCheckpointSchema, type SaveChoices, type SaveDra
 
 export const OUTCOME_UNDONE = "Outcome undone. Change the DC, roll again, or apply again.";
 export const OUTCOME_RESTORED = "Outcome restored. Undo it before changing this save.";
+/** What OUTCOME_RESTORED says once no Play step for the outcome remains, so no Undo can reach it (D-261101-051). */
+export const OUTCOME_APPLIED = "Applied. Start a new group save to change it.";
 export const OUTCOME_UNAVAILABLE = "This save's outcome cannot be checked. Start a new group save to continue.";
 export const SAVE_MEMORY_ONLY = "This save can reopen here until this tab closes.";
 
@@ -17,6 +19,8 @@ export type SaveReopen = Omit<SaveDraft, "version" | "page"> & {
   memoryOnly?: boolean;
 };
 export type SaveSession = { page: Page; reopen: SaveReopen | null };
+/** This DM's Play history as the server last summed it up: its epoch, which a restart renews, and how many steps Undo holds. */
+export type SaveHistory = { epoch: string; undoSteps: number };
 export type SaveAuthority = {
   ready: boolean;
   seq: number;
@@ -27,6 +31,8 @@ export type SaveAuthority = {
   now?: number;
   /** Plans of outcomes still in this device's queue, which may yet be answered. */
   pendingPlans?: ReadonlySet<string>;
+  /** Undefined until the server's summary for the current state has come. */
+  history?: SaveHistory;
 };
 
 function copiedChoices(page: Page): SaveChoices {
@@ -153,7 +159,9 @@ export function reconcileSave(input: SaveSession, authority: SaveAuthority): Sav
   // Redo restores an outcome from undone: an editable page, or a newer applied status read after an undone one. A page locked
   // by its own later Apply was never undone in between, and keeps no "Outcome restored" line through a reload or reconnect.
   const restored = current.state === "applied" && !attempt && (wasEditable || (newer ? reopen.observed?.state === "undone" : reopen.observed?.revision === current.revision && reopen.observed.restored === true));
-  const metadata: SaveReopen = { ...reopen, tracking: nextTracking, check: current.state, observed: { revision: current.revision, state: current.state, ...(restored ? { restored: true as const } : {}) }, ...(replaceAttempt ? { redoHeld: undefined } : {}) };
+  // The Redo's step lives in the history epoch the page first read the outcome restored in.
+  const epoch = restored ? (reopen.observed?.restored && reopen.observed.revision === current.revision ? reopen.observed.epoch : undefined) ?? authority.history?.epoch : undefined;
+  const metadata: SaveReopen = { ...reopen, tracking: nextTracking, check: current.state, observed: { revision: current.revision, state: current.state, ...(restored ? { restored: true as const } : {}), ...(epoch !== undefined ? { epoch } : {}) }, ...(replaceAttempt ? { redoHeld: undefined } : {}) };
   if (current.state === "undone") {
     if (newer || page.phase === "applying" || page.phase === "applied" || page.apply === "taken") return { page: restoreChoices(page.id, checkpoint.choices), reopen: { ...metadata, notice: OUTCOME_UNDONE } };
     if (reopen.check === "undone" && !newer && reopen.notice !== OUTCOME_UNAVAILABLE) return { page, reopen };
@@ -168,12 +176,30 @@ export function reconcileSave(input: SaveSession, authority: SaveAuthority): Sav
     const edits = copiedChoices(page);
     if (stableStringify(edits) !== stableStringify(checkpoint.choices)) held = edits;
   }
-  if (!newer && reopen.check === "applied" && page.phase === "applied") return { page, reopen };
+  if (!newer && reopen.check === "applied" && page.phase === "applied") {
+    // A restored outcome read before the history's summary came takes its epoch once the summary does.
+    if (epoch === undefined || !reopen.observed || reopen.observed.epoch === epoch) return { page, reopen };
+    return { page, reopen: { ...reopen, observed: { ...reopen.observed, epoch } } };
+  }
   // A page relocked from editable shows the confirmed outcome's own choices, whatever it was edited to meanwhile, and the
   // edits live on only in redoHeld (D-261031-180). An applying page could not be edited, so it shows them already, with
   // the plan that says what it applied.
   const shown = wasEditable ? restoreChoices(page.id, checkpoint.choices) : page;
   return { page: { ...shown, phase: "applied", apply: "taken" }, reopen: { ...metadata, redoHeld: held, notice: restored ? OUTCOME_RESTORED : undefined } };
+}
+
+/**
+ * The page's notice as it reads now. "Outcome restored" points at Undo, so
+ * once no Play step for the outcome remains it says the outcome stands
+ * instead (D-261101-051): Undo holds no steps, or the history is a new
+ * epoch, as after a restart cleared it. While the summary is still to come
+ * the notice stands as it is.
+ */
+export function noticeWords(reopen: SaveReopen | null | undefined, history: SaveHistory | undefined): string | undefined {
+  const notice = reopen?.notice;
+  if (notice !== OUTCOME_RESTORED || !history) return notice;
+  const epoch = reopen?.observed?.epoch;
+  return history.undoSteps === 0 || (epoch !== undefined && epoch !== history.epoch) ? OUTCOME_APPLIED : notice;
 }
 
 export function saveEditable(input: SaveSession, authority: SaveAuthority): boolean {

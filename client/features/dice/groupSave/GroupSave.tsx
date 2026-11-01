@@ -87,8 +87,8 @@ import { parseDamageOverride } from "./damageInput.ts";
 import { Loading } from "../../../components/Loading.tsx";
 import { saveRechargeSpendSchema } from "#shared/saveOutcomeContract.ts";
 import { LIMITS, serializedBytes } from "#shared/limits.ts";
-import { prepareSave, reconcileSave, resumeSaveEdits, saveEditable, SAVE_MEMORY_ONLY, OUTCOME_UNAVAILABLE, type SaveSession } from "./reopen.ts";
-import { authorityOf, serverTime } from "./lifecycle.ts";
+import { noticeWords, prepareSave, reconcileSave, resumeSaveEdits, saveEditable, SAVE_MEMORY_ONLY, OUTCOME_UNAVAILABLE, type SaveSession } from "./reopen.ts";
+import { authorityOf, saveHistoryOf, serverTime } from "./lifecycle.ts";
 import { askAgain, rerollSaves } from "./reroll.ts";
 
 export function RowDamageField(props: { name: string; value: number | string | undefined; computed: number | null; summary?: DamageSummaryLines; onChange(value: string | null): void }) {
@@ -186,6 +186,8 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
   const groupStore = useGroupSaveStore();
   const roomStore = useRoomStore();
   const reopen = useGroupSave(s => s.reopen);
+  const history = useRoomView((s) => s.history?.summary);
+  const notice = noticeWords(reopen, saveHistoryOf(history));
   const confirmedRoom = () => roomStore.getState().you?.role === "dm" ? roomStore.getState().confirmed as RoomState | null | undefined : null;
   const currentSession = (): SaveSession => ({ page: groupStore.getState().page ?? pageRef.current, reopen: groupStore.getState().reopen });
   const roomId = useRoomView((s) => s.roomId);
@@ -704,7 +706,7 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
     <div data-save-lifecycle={reopen?.check ?? "draft"} style={{ display: "grid", gap: theme.space(3) }}>
       <Watchers page={page} settle={(tag, receipt) => { if (groupStore.getState().reopen?.tracking && tag === pageRef.current.plan?.plan) return; update(settleTag(pageRef.current, tag, settledOf(receipt), key)); }} />
       {reopen?.check === "checking" ? <Loading text="Checking this save's outcome…" /> : null}
-      {reopen?.notice ? <Note tone={reopen.check === "unavailable" ? "error" : "info"}>{reopen.notice}</Note> : null}
+      {notice ? <Note tone={reopen?.check === "unavailable" ? "error" : "info"}>{notice}</Note> : null}
       {reopen?.memoryOnly ? <Note tone="info">{SAVE_MEMORY_ONLY}</Note> : null}
       {/* A page that can no longer be checked offers none of the steps a refused request asks for. */}
       {reopen?.check !== "unavailable" ? page.requests.filter(request => request.state === "refused" && request.selected && request.says).map(request => <Note key={request.rollId} tone="error">{request.says}</Note>) : null}

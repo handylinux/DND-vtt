@@ -41,7 +41,7 @@ function damagePage(damage: string): Page {
   const test = { kind: "none" } as const;
   return { ...newPage({ id: "damage", sceneId: "s1", source: { kind: "selection", tokenIds: ["g1"] }, test, dc: null, secret: false, spell: false, switches: { dcShown: true, resultShown: true }, outcome: { damage, conditions: ["prone"] } }), rows: groupRows(DICE, ["g1"], test, false) };
 }
-function drawPage(page: Page, lines: import("#shared/model.ts").LogEntry[] = [], connection = "open", reopen: SaveReopen | null = null, choices: Partial<import("../useDicePanel.ts").DiceState> = {}): string {
+function drawPage(page: Page, lines: import("#shared/model.ts").LogEntry[] = [], connection = "open", reopen: SaveReopen | null = null, choices: Partial<import("../useDicePanel.ts").DiceState> = {}, history?: { epoch: string; undo: number }): string {
   const scope = new RoomScope();
   const panel = scope.get(panelModule.diceChoicesSlot);
   panel.setState(choices);
@@ -59,7 +59,9 @@ function drawPage(page: Page, lines: import("#shared/model.ts").LogEntry[] = [],
   }
   saves.setState({ page, reopen });
   saves.getInitialState = saves.getState;
-  const store = createStore(() => ({ view: VIEW, roomId: "r1", connection, you: DM, sceneId: "s1", local: { selectedIds: ["g1"], multi: false } }));
+  const stack = (depth: number) => ({ head: depth > 0 ? { id: "step", label: "a step" } : null, depth });
+  const summary = history ? { t: "history", epoch: history.epoch, seq: 1, serial: 1, watermark: 1, play: { undo: stack(history.undo), redo: stack(0) } } : null;
+  const store = createStore(() => ({ view: VIEW, roomId: "r1", connection, you: DM, sceneId: "s1", local: { selectedIds: ["g1"], multi: false }, history: { summary, ready: summary !== null, pending: 0, slow: false, result: null } }));
   return renderToStaticMarkup(createElement(RoomProvider, {
     store: store as never, actions: { dispatch: () => 1 } as never, ui: {} as never, assets: { url: () => "" } as never,
     children: createElement(RoomScopeProvider, { scope, children: createElement(groupSave.GroupSave, { parent: "Dice", onBack() {} }) }),
@@ -381,6 +383,12 @@ test("reopened and relocked pages use the exact lifecycle words and existing con
   const restored = drawPage({ ...page, phase: "applied", apply: "taken" }, [], "open", { check: "applied", notice: OUTCOME_RESTORED });
   assert.match(restored, /Outcome restored\. Undo it before changing this save\./);
   assert.match(restored, /<fieldset disabled=""/);
+  // D-261101-051: once a restart's new history holds no step for it, the page stops pointing at Undo.
+  const restart = drawPage({ ...page, phase: "applied", apply: "taken" }, [], "open", { check: "applied", notice: OUTCOME_RESTORED, observed: { revision: 3, state: "applied", restored: true, epoch: "before" } }, {}, { epoch: "after", undo: 2 });
+  assert.match(restart, /Applied\. Start a new group save to change it\./);
+  assert.doesNotMatch(restart, /Undo it before/);
+  const same = drawPage({ ...page, phase: "applied", apply: "taken" }, [], "open", { check: "applied", notice: OUTCOME_RESTORED, observed: { revision: 3, state: "applied", restored: true, epoch: "before" } }, {}, { epoch: "before", undo: 2 });
+  assert.match(same, /Outcome restored\. Undo it before changing this save\./);
 });
 
 test("checking and unverifiable pages lock editing and storage failure retains the page", () => {

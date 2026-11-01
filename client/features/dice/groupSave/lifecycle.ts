@@ -1,6 +1,7 @@
 import type { StoreApi } from "zustand/vanilla";
 import type { RoomState } from "#shared/model.ts";
 import type { SaveOutcomeLedger } from "#shared/saveOutcomeContract.ts";
+import type { HistoryMessage } from "#shared/undoContract.ts";
 import type { RoomView } from "../../../state/types.ts";
 import { realClock, type Clock } from "../../../state/timing.ts";
 import type { RoomViewStore } from "../../../state/view.ts";
@@ -9,7 +10,7 @@ import { creatureKey } from "../options.ts";
 import { askAnswered, markGone, syncRequests, type Page } from "./chain.ts";
 import { writeSaveDraft } from "./draftStorage.ts";
 import { SAVE_ANNOUNCED, type SaveDraft } from "./reopenContract.ts";
-import { draftOf, reconcileSave, SAVE_MEMORY_ONLY, type SaveAuthority, type SaveReceipt, type SaveReopen, type SaveSession } from "./reopen.ts";
+import { draftOf, reconcileSave, SAVE_MEMORY_ONLY, type SaveAuthority, type SaveHistory, type SaveReceipt, type SaveReopen, type SaveSession } from "./reopen.ts";
 import type { GroupSaveState } from "./store.ts";
 
 export type SaveLifecycleOptions = {
@@ -29,7 +30,13 @@ export function serverTime(room: Pick<RoomView, "serverOffset">, clock: Pick<Clo
   return room.serverOffset === undefined ? clock.now() : clock.elapsed() + room.serverOffset;
 }
 
+/** The DM's Play history from the server's summary, undefined until one for the current state has come. */
+export function saveHistoryOf(summary: HistoryMessage | null | undefined): SaveHistory | undefined {
+  return summary ? { epoch: summary.epoch, undoSteps: summary.play.undo.depth } : undefined;
+}
+
 export function authorityOf(room: RoomView, page: Page): SaveAuthority {
+  const history = saveHistoryOf(room.history?.summary);
   const confirmed = room.confirmed as (NonNullable<RoomView["confirmed"]> & { saveOutcomes?: SaveOutcomeLedger }) | null | undefined;
   const seq = room.seq;
   return {
@@ -40,6 +47,7 @@ export function authorityOf(room: RoomView, page: Page): SaveAuthority {
     sceneAvailable: room.sceneId === page.sceneId && !!confirmed?.scenes[page.sceneId] && !room.sceneLoad?.requested,
     now: serverTime(room),
     pendingPlans: new Set(room.pending?.flatMap(pending => pending.op.t === "actor.outcome" ? [pending.op.plan] : []) ?? []),
+    ...(history ? { history } : {}),
   };
 }
 
