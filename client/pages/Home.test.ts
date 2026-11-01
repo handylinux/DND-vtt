@@ -6,7 +6,7 @@ import { forgetRoom, readKnownRooms, type KnownRoom, type RoomStanding } from ".
 
 const { Children, createElement, isValidElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
-const { KnownRoomRow } = await import("./Home.tsx");
+const { ForgetRoomDialog, KnownRoomRow, knownRoomFacts } = await import("./Home.tsx");
 const { Button } = await import("../components/Button.tsx");
 const { Dialog } = await import("../components/Dialog.tsx");
 
@@ -28,45 +28,44 @@ describe("forgetting a saved room from Home", () => {
       let value = JSON.stringify([room, other]);
       let writes = 0;
       const storage = { getItem: () => value, setItem: (_key: string, next: string) => { value = next; writes++; } };
-      let step = 0;
-      // Render-phase updates exercise the real callbacks and React state without mounting the portal in a DOM.
-      function Probe() {
-        const tree = KnownRoomRow({ room, standing, onForget: () => forgetRoom(room.roomId, storage) });
-        const nodes = elements(tree);
-        const question = nodes.find((el) => el.type === Dialog) as ReactElement<Parameters<typeof Dialog>[0]> | undefined;
-        const open = nodes.find((el) => el.type === Button && el.props.children === "Forget");
-        assert.ok(open);
-        const current = step++;
-        if (current === 0 || current === 2 || current === 4) {
-          assert.equal(question, undefined, "closed before a new tap");
-          open.props.onClick!();
-          assert.equal(writes, 0, "the first tap cannot forget the room");
-        } else if (current === 1 || current === 3 || current === 5) {
-          assert.ok(question, "the first tap opens the app's confirmation dialog");
-          assert.equal(question.props.title, "Forget this room?");
-          const words = renderToStaticMarkup(createElement("div", null, question.props.children));
-          assert.match(words, /Tuesday/);
-          assert.match(words, /only removes.*this device(?:'|&#x27;)s list/);
-          assert.match(words, /room itself stays/);
-          assert.equal(writes, 0);
-          const buttons = elements(question.props.footer);
-          if (current === 1) buttons.find((el) => el.props.children === "Cancel")!.props.onClick!();
-          else if (current === 3) question.props.onClose();
-          else {
-            buttons.find((el) => el.props.children === "Forget room")!.props.onClick!();
-            assert.equal(writes, 1);
-            assert.deepEqual(readKnownRooms(storage), [other], "only the confirmed room leaves this device's list");
-          }
-        } else {
-          assert.equal(question, undefined, "confirmation closes after Forget");
-          assert.equal(writes, 1);
-        }
-        return null;
-      }
-      renderToStaticMarkup(createElement(Probe));
-      assert.equal(step, 7, "open, cancel, reopen, dismiss, reopen, confirm, closed");
+      // The row starts with its question closed, so a tap on the row or the page alone can never forget.
+      const closed = renderToStaticMarkup(createElement(KnownRoomRow, { room, standing, onForget: () => forgetRoom(room.roomId, storage) }));
+      assert.doesNotMatch(closed, /Forget this room/);
+      assert.match(closed, />Forget</);
+      assert.equal(writes, 0);
+
+      let closes = 0;
+      const question = ForgetRoomDialog({ name: knownRoomFacts(room, standing).name, onClose: () => closes++, onForget: () => forgetRoom(room.roomId, storage) }) as ReactElement<Parameters<typeof Dialog>[0]>;
+      assert.equal(question.type, Dialog, "the question is the app's confirmation dialog");
+      assert.equal(question.props.title, "Forget this room?");
+      const words = renderToStaticMarkup(createElement("div", null, question.props.children));
+      assert.match(words, /Tuesday/);
+      assert.match(words, /only removes.*this device(?:'|&#x27;)s list/);
+      assert.match(words, /room itself stays/);
+      assert.equal(writes, 0, "opening the question changes nothing");
+      const buttons = elements(question.props.footer);
+      buttons.find((el) => el.props.children === "Cancel")!.props.onClick!();
+      question.props.onClose();
+      assert.equal(closes, 2, "Cancel and dismissing both close the question");
+      assert.equal(writes, 0, "neither forgets the room");
+      buttons.find((el) => el.props.children === "Forget room")!.props.onClick!();
+      assert.equal(closes, 3, "Forget room closes the question");
+      assert.equal(writes, 1);
+      assert.deepEqual(readKnownRooms(storage), [other], "only the confirmed room leaves this device's list");
     });
   }
+});
+
+describe("a saved room's row", () => {
+  test("says the room's standing on this device", () => {
+    assert.deepEqual(knownRoomFacts(room, null), { name: "Tuesday", who: "DM, as Dana", status: "Checking…" });
+    assert.deepEqual(knownRoomFacts(room, { kind: "in", role: "player", memberName: "Pat", roomName: "Tuesday night" }), { name: "Tuesday night", who: "as Pat", status: null }, "a live standing wins over what was saved");
+    assert.match(knownRoomFacts(room, { kind: "out", roomName: "Renamed" }).status ?? "", /Use your DM link/);
+    assert.equal(knownRoomFacts(room, { kind: "out", roomName: "Renamed" }).name, "Renamed");
+    assert.match(knownRoomFacts({ ...room, role: "player" }, { kind: "out", roomName: null }).status ?? "", /Join again with the password/);
+    assert.equal(knownRoomFacts(room, { kind: "unknown" }).status, "Could not check just now.");
+    assert.equal(knownRoomFacts({ ...room, name: "  " }, null).name, "Room K7QH-2MXA", "an unnamed room reads by its ID");
+  });
 });
 
 test("dialog bodies reserve classic scrollbar space only when requested", () => {

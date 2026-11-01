@@ -136,9 +136,8 @@ function YourRooms() {
   );
 }
 
-export function KnownRoomRow(props: { room: KnownRoom; standing: RoomStanding | null; onForget(): void }) {
-  const { room, standing } = props;
-  const [forgetting, setForgetting] = useState(false);
+/** What a saved room's row says: the room's name and role as the server last said them, else as saved, and how its standing on this device reads. */
+export function knownRoomFacts(room: KnownRoom, standing: RoomStanding | null): { name: string; who: string; status: string | null } {
   const s = standing?.kind === "in" ? standing : null;
   const role = s?.role ?? room.role;
   const memberName = s?.memberName ?? room.memberName;
@@ -154,6 +153,45 @@ export function KnownRoomRow(props: { room: KnownRoom; standing: RoomStanding | 
         : standing.kind === "unknown"
           ? "Could not check just now."
           : null;
+  return { name, who, status };
+}
+
+/** The question before a saved room leaves this device's list. Cancel and dismissing keep it, and Forget room closes the question and then forgets. */
+export function ForgetRoomDialog(props: { name: string; onClose(): void; onForget(): void }) {
+  return (
+    <Dialog
+      title="Forget this room?"
+      phone="sheet"
+      width="sm"
+      onClose={props.onClose}
+      footer={
+        <>
+          <Button onClick={props.onClose} style={{ flex: "1 1 auto" }}>Cancel</Button>
+          <Button
+            variant="danger"
+            armed
+            style={{ flex: "1 1 auto" }}
+            onClick={() => {
+              props.onClose();
+              props.onForget();
+            }}
+          >
+            Forget room
+          </Button>
+        </>
+      }
+    >
+      <p style={{ margin: 0, overflowWrap: "anywhere" }}>
+        Forgetting {props.name} only removes it from this device's list. The room itself stays.
+      </p>
+    </Dialog>
+  );
+}
+
+export function KnownRoomRow(props: { room: KnownRoom; standing: RoomStanding | null; onForget(): void }) {
+  const { room, standing } = props;
+  const [forgetting, setForgetting] = useState(false);
+  const { name, who, status } = knownRoomFacts(room, standing);
   return (
     <li style={{ display: "flex", alignItems: "stretch", gap: theme.space(2) }}>
       <button
@@ -186,34 +224,7 @@ export function KnownRoomRow(props: { room: KnownRoom; standing: RoomStanding | 
       <Button variant="danger" size="sm" onClick={() => setForgetting(true)} aria-label={`Forget ${name} on this device`} style={{ alignSelf: "center" }}>
         Forget
       </Button>
-      {forgetting ? (
-        <Dialog
-          title="Forget this room?"
-          phone="sheet"
-          width="sm"
-          onClose={() => setForgetting(false)}
-          footer={
-            <>
-              <Button onClick={() => setForgetting(false)} style={{ flex: "1 1 auto" }}>Cancel</Button>
-              <Button
-                variant="danger"
-                armed
-                style={{ flex: "1 1 auto" }}
-                onClick={() => {
-                  setForgetting(false);
-                  props.onForget();
-                }}
-              >
-                Forget room
-              </Button>
-            </>
-          }
-        >
-          <p style={{ margin: 0, overflowWrap: "anywhere" }}>
-            Forgetting {name} only removes it from this device's list. The room itself stays.
-          </p>
-        </Dialog>
-      ) : null}
+      {forgetting ? <ForgetRoomDialog name={name} onClose={() => setForgetting(false)} onForget={props.onForget} /> : null}
     </li>
   );
 }
