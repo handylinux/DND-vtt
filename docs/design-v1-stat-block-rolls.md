@@ -1,6 +1,6 @@
 # raccoon-vtt v1: rolling from a stat block's ability boxes
 
-Status: draft 3, with design review rounds 1 and 2's findings, 2026-10-31. Code references are from main at `19dc9e7a`. The build starts after FL-17 merges and refreshes these references against that tip, since FL-17 changes files this design reads or extends: `client/features/dice/rollMode.ts`, `RollModeMenu.tsx`, `useRollModeMenu.tsx`, `useDicePanel.ts`, `RollOptions.tsx`, `Roller.tsx` and `RecentRolls.tsx`, and `client/components/Popover.tsx`, `popoverPlace.ts` and `popoverRules.ts`. Client only: no server, protocol, projection or stored state changes. No implementation or browser measurements are claimed here.
+Status: built. Draft 3 reached consensus at design review round 3, and the build follows it with the differences under As built.
 
 The project owner asked on 2026-10-31: "So I'm aware the roll panel is independently useful because it allows rolling for multiple tokens at once, but it does feel a bit clunky to have to go to a separate roll panel to do so while in the stat block. Please come up with a design that allows players to do basic character based rolls from the stat block (skills, saves, initiative, etc). We don't need a whole dice selector like we have in the roll tab though. Open to ideas here so please mock a few up for me". Then: "The stat block rolls should also obviously have the long press/right click shortcut". Shown four mockups, they picked: "I like C but we should only implement the rolls in the ability boxes and not mess with the skills row (leave as text) or add weapons".
 
@@ -428,7 +428,7 @@ Where the build went its own way from the design above, or from the code it was 
 - The held touch's consumed listener and the watch for its end are on the row element too, since a touch keeps the element it started on as its target after that element leaves the page and its events never reach the document (5.1 said the document).
 - **The options keep the list's box only until the held finger lifts** (D-261031-212). Placing the box again for the options while the finger is down shrank it under the finger, and the lift then closed everything. So options a held finger opened keep the box as it stands, and once that finger's release is heard they are fitted to their rows and placed again, the box shrinking and widening to its rows. Options opened with no finger down (right-click, ContextMenu, Shift+F10) are placed for themselves at once. The box is also placed again when the rows take the loading line's place, and when the options step back to the list from fitted options. A held finger's touchend on a row that has left the page is prevented, since Chrome would otherwise send the click for that touch to whatever lies under the finger once the box has shrunk.
 - Blocked rows carry the reason as their description, and the line under the title says it too (4.6).
-- A row's press machine is dropped once it is idle and its row is undrawn, at the next press or key (D-261031-210).
+- The press listeners live with the box (`useRollPressBinding` with `enabled: true`, which the box's own hold needs), not only while a list is open. Only idle row machines are dropped: a row's machine goes once it is idle and its row is undrawn, at the next press or key (D-261031-210).
 
 **Lane B: the grid, mounts and result**
 
