@@ -1,5 +1,6 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
 import { theme } from "../lib/theme.ts";
+import { useHeld } from "./Held.tsx";
 import { Help } from "./Panel.tsx";
 
 export type RadioCardOption<V extends string> = { value: V; label: string; help?: ReactNode };
@@ -58,7 +59,7 @@ export function RadioCards<V extends string>(props: {
   const helpId = useId();
   const noneId = useId();
   const optionId = useId();
-  const { disabled } = props;
+  const disabled = useHeld(props.disabled);
   const chosen = props.options.findIndex((o) => o.value === props.value);
   const chosenHelp = chosen >= 0 && props.options[chosen]?.help ? `${optionId}-help-${chosen}` : null;
   const describedBy = [props.help ? helpId : null, chosen >= 0 ? chosenHelp : props.none ? noneId : null].filter(Boolean).join(" ") || undefined;

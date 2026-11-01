@@ -1,6 +1,7 @@
 import { useId, type CSSProperties } from "react";
 import { contrast } from "../lib/accent.ts";
 import { MEMBER_COLOR_NAMES, theme } from "../lib/theme.ts";
+import { useHeld } from "./Held.tsx";
 import { useMeasuring } from "./measuring.ts";
 
 export type SwatchOption = {
@@ -49,7 +50,7 @@ export function Swatches(props: {
   // A measuring copy draws the disks alone, as Segmented's does.
   const measuring = useMeasuring();
   const value = props.value?.toLowerCase() ?? null;
-  const disabled = props.disabled === true;
+  const disabled = useHeld(props.disabled);
   return (
     <div
       role="radiogroup"

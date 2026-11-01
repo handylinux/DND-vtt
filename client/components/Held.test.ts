@@ -12,6 +12,11 @@ const { Field, Input, Select, TextArea } = await import("./Field.tsx");
 const { Segmented } = await import("./Segmented.tsx");
 const { Switch } = await import("./Switch.tsx");
 const { Checkbox } = await import("./Checkbox.tsx");
+const { Chip } = await import("./Chip.tsx");
+const { RadioCards } = await import("./RadioCards.tsx");
+const { Swatches } = await import("./Swatches.tsx");
+const { Section } = await import("./Panel.tsx");
+const { TextField, NumberField } = await import("../features/tokens/ui.tsx");
 
 /*
  * LOCKED-LOOK: a held group's fieldset stops its native controls, and each
@@ -29,6 +34,14 @@ const controls = {
   Segmented: () => h(Segmented<"half" | "none">, { label: "On a pass", value: "none", options: [{ value: "half", label: "Half" }, { value: "none", label: "None" }], onChange: nothing }),
   Switch: () => h(Switch, { label: "Against a spell", checked: true, onChange: nothing }),
   Checkbox: () => h(Checkbox, { label: "Players see the DC", checked: true, onChange: nothing }),
+  Chip: () => h(Chip, { pressed: true, onClick: nothing, children: "Frightened" }),
+  RadioCards: () => h(RadioCards<"a" | "b">, { legend: "Map images", value: "a", options: [{ value: "a", label: "Keep" }, { value: "b", label: "Drop", help: "Frees room." }], onChange: nothing }),
+  "RadioCards as a radio group": () => h(RadioCards<"a" | "b">, { legend: "Players see", radiogroup: true, value: "a", options: [{ value: "a", label: "All" }, { value: "b", label: "None" }], onChange: nothing }),
+  // A disk's color is its content and never dims, so the badge's words carry the look.
+  Swatches: () => h(Swatches, { label: "Color", value: "#2e7d32", options: [{ color: "#2e7d32", badge: "DM" }], onChange: nothing }),
+  "Section fold": () => h(Section, { label: "Conditions", fold: { open: true, onToggle: nothing }, children: "inside" }),
+  TextField: () => h(TextField, { label: "Name", value: "Goblin", onCommit: nothing }),
+  NumberField: () => h(NumberField, { label: "Bonus", value: 2, min: -10, max: 20, onCommit: nothing }),
 };
 const held = (on: boolean, child: ReturnType<typeof h>) => h(Held, { held: on, children: child });
 const dim = new RegExp(`color:${theme.color.textDisabled}`, "i");

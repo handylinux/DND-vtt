@@ -1,5 +1,6 @@
 import type { ReactNode, Ref } from "react";
 import { theme } from "../lib/theme.ts";
+import { useHeld } from "./Held.tsx";
 import { Icon } from "./Icon.tsx";
 import { choiceLook } from "./looks.ts";
 
@@ -49,7 +50,8 @@ export function Chip(props: {
   const remove = props.remove === true;
   const circle = props.circle === true;
   const on = remove || props.pressed === true;
-  const off = props.disabled === true || props.unavailable === true;
+  const disabled = useHeld(props.disabled);
+  const off = disabled || props.unavailable === true;
   const data = Object.fromEntries(Object.entries(props).filter(([key]) => key.startsWith("data-")));
   return (
     <button
@@ -58,13 +60,13 @@ export function Chip(props: {
       type="button"
       aria-pressed={remove ? undefined : props.pressed}
       aria-label={props["aria-label"]}
-      aria-disabled={props.unavailable && !props.disabled ? true : undefined}
+      aria-disabled={props.unavailable && !disabled ? true : undefined}
       aria-describedby={props.describedBy}
       title={props.title}
-      disabled={props.disabled}
+      disabled={disabled}
       onClick={() => {
         if (!off) props.onClick();
-        else if (props.unavailable && !props.disabled) props.onUnavailable?.();
+        else if (props.unavailable && !disabled) props.onUnavailable?.();
       }}
       style={{
         display: "inline-flex",

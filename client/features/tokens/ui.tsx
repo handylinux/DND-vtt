@@ -3,6 +3,7 @@ import { Button } from "../../components/Button.tsx";
 import type { IconName } from "../../components/Icon.tsx";
 import { buttonLook } from "../../components/looks.ts";
 import { FieldRow as PanelFieldRow, fieldStyle, NUMBER_FIELD_WIDTH, Select as FieldSelect, useRowHint } from "../../components/Field.tsx";
+import { useHeld } from "../../components/Held.tsx";
 import { Help, Section as PanelSection } from "../../components/Panel.tsx";
 import { theme } from "../../lib/theme.ts";
 
@@ -116,6 +117,7 @@ export function TextField(props: {
   };
   leave.current = commit;
   const describedBy = useRowHint();
+  const disabled = useHeld(props.disabled);
   const common = {
     id: props.id,
     "aria-label": props.label,
@@ -123,7 +125,7 @@ export function TextField(props: {
     value: draft,
     placeholder: props.placeholder,
     maxLength: props.maxLength,
-    disabled: props.disabled,
+    disabled,
     onFocus: focus.onFocus,
     onBlur: () => {
       if (focus.onBlur()) commit();
@@ -135,7 +137,7 @@ export function TextField(props: {
         {...common}
         rows={props.rows ?? 3}
         onChange={(e) => setDraft(e.target.value)}
-        style={{ ...fieldStyle({ disabled: props.disabled }), width: "100%", padding: theme.space(3), resize: "vertical", lineHeight: theme.leading.body, ...props.style }}
+        style={{ ...fieldStyle({ disabled }), width: "100%", padding: theme.space(3), resize: "vertical", lineHeight: theme.leading.body, ...props.style }}
       />
     );
   }
@@ -149,7 +151,7 @@ export function TextField(props: {
         if (e.key === "Enter") e.currentTarget.blur();
         if (e.key === "Escape") focus.discard(e.currentTarget);
       }}
-      style={{ ...fieldStyle({ disabled: props.disabled }), flex: 1, width: "100%", ...props.style }}
+      style={{ ...fieldStyle({ disabled }), flex: 1, width: "100%", ...props.style }}
     />
   );
 }
@@ -226,6 +228,7 @@ function DraftNumber(props: NumberFieldProps & { align: "right" | "center" }) {
   }, [pending]);
   useEffect(() => () => onPending.current?.(undefined), []);
   const describedBy = useRowHint(props.describedBy);
+  const disabled = useHeld(props.disabled);
   return (
     <input
       id={props.id}
@@ -235,9 +238,9 @@ function DraftNumber(props: NumberFieldProps & { align: "right" | "center" }) {
       enterKeyHint="done"
       value={draft}
       placeholder={props.placeholder}
-      disabled={props.disabled}
+      disabled={disabled}
       readOnly={props.unavailable}
-      aria-disabled={props.unavailable && !props.disabled ? true : undefined}
+      aria-disabled={props.unavailable && !disabled ? true : undefined}
       aria-describedby={describedBy}
       onFocus={focus.onFocus}
       onChange={(e) => {
@@ -253,7 +256,7 @@ function DraftNumber(props: NumberFieldProps & { align: "right" | "center" }) {
         if (e.key === "Enter") e.currentTarget.blur();
         if (e.key === "Escape") focus.discard(e.currentTarget);
       }}
-      style={{ ...fieldStyle({ disabled: props.disabled || props.unavailable }), width: props.width ?? NUMBER_FIELD_WIDTH, textAlign: props.align, fontVariantNumeric: "tabular-nums" }}
+      style={{ ...fieldStyle({ disabled: disabled || props.unavailable }), width: props.width ?? NUMBER_FIELD_WIDTH, textAlign: props.align, fontVariantNumeric: "tabular-nums" }}
     />
   );
 }

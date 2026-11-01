@@ -1,5 +1,6 @@
 import { createContext, useContext, useId, type CSSProperties, type ReactNode, type Ref } from "react";
 import { theme } from "../lib/theme.ts";
+import { useHeld } from "./Held.tsx";
 import { Icon, type IconName } from "./Icon.tsx";
 
 /**
@@ -169,6 +170,7 @@ export function Section(props: {
 function FoldLabel(props: { id: string; label: ReactNode; tone?: "danger"; fold: NonNullable<Parameters<typeof Section>[0]["fold"]>; level: 3 | 4 }) {
   const { fold } = props;
   const Heading = props.level === 4 ? "h4" : "h3";
+  const held = useHeld();
   return (
     <div data-section-label="" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: theme.space(2) }}>
       <Heading id={props.id} style={{ flex: "1 1 auto", minWidth: 0, margin: 0, display: "flex" }}>
@@ -176,6 +178,7 @@ function FoldLabel(props: { id: string; label: ReactNode; tone?: "danger"; fold:
           ref={fold.foldRef}
           type="button"
           aria-expanded={fold.open}
+          disabled={held || undefined}
           onClick={(e) => {
             // Focus first, so a field being typed in blurs and commits before the fold hides or unmounts it, even when the press moved no focus (an assistive technology's click, or Safari, whose buttons take no focus on a click).
             e.currentTarget.focus();
@@ -190,7 +193,7 @@ function FoldLabel(props: { id: string; label: ReactNode; tone?: "danger"; fold:
             padding: 0,
             background: "transparent",
             border: "none",
-            color: props.tone === "danger" ? theme.color.dangerText : theme.color.textMuted,
+            color: held ? theme.color.textDisabled : props.tone === "danger" ? theme.color.dangerText : theme.color.textMuted,
             fontSize: theme.font.small,
             fontWeight: theme.weight.bold,
             letterSpacing: theme.caps,
@@ -198,7 +201,7 @@ function FoldLabel(props: { id: string; label: ReactNode; tone?: "danger"; fold:
             lineHeight: theme.leading.tight,
             fontFamily: theme.font.body,
             textAlign: "left",
-            cursor: "pointer",
+            cursor: held ? "default" : "pointer",
           }}
         >
           <Icon name={fold.open ? "chevronDown" : "chevronRight"} size="sm" />
