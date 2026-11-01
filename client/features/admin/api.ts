@@ -43,6 +43,8 @@ export type AdminStorage = {
   images: { count: number; bytes: number };
   cleanup: { waiting: { count: number; bytes: number }; trash: { files: number; bytes: number } };
   backup: { last: BackupRun | null; lastGood: BackupRun | null; warning: string | null };
+  /** One room's log archive growing toward the disk's floor (server/http/admin.ts archiveWarning). Older servers omit it. */
+  archiveWarning?: string | null;
 };
 
 async function call<T>(method: string, path: string, json?: unknown): Promise<T> {

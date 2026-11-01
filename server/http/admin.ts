@@ -4,9 +4,10 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type pg from "pg";
 import { z } from "zod";
 import { ROOM_ARCHIVE_BYTES_SQL, ROOM_QUOTA_BYTES_SQL } from "../assets/quota.ts";
+import { MIN_FREE_BYTES } from "../assets/service.ts";
 import { AdminLoginLimits, AdminSessions, adminCookieSettings } from "../auth/adminSessions.ts";
 import { enforce, HttpError, parseBody, roomParam, type AuthKit, accessRoutes } from "../auth/http.ts";
-import { parseRoomId } from "../auth/roomId.ts";
+import { formatRoomId, parseRoomId } from "../auth/roomId.ts";
 import { verifyTurnstile } from "../auth/turnstile.ts";
 import { deleteRoomAndFiles } from "./rooms.ts";
 
@@ -71,7 +72,12 @@ export type AdminStorage = {
   /** Scene thumbnails marked unused, which cleanup deletes after a day, and deleted files in the trash. */
   cleanup: { waiting: { count: number; bytes: number }; trash: { files: number; bytes: number } };
   backup: { last: BackupRun | null; lastGood: BackupRun | null; warning: string | null };
+  /** What the page warns about the log archive (archiveWarning), or null. */
+  archiveWarning: string | null;
 };
+
+/** The room whose log archive is largest, as archiveWarning names it. */
+export type LargestArchive = { id: string; name: string; bytes: number };
 
 /**
  * Every room with what the admin page shows of it, newest activity first.
@@ -120,6 +126,38 @@ export function backupWarning(last: BackupRun | null, lastGood: BackupRun | null
   const at = Date.parse(lastGood.finishedAt ?? lastGood.startedAt);
   if (now - at > 36 * HOUR_MS) return "No good backup in the last 36 hours.";
   return null;
+}
+
+/**
+ * What the page warns about the log archive (LOG-OPUS-18), or null. The
+ * archive is kept outside every room's quota, so one room's history can
+ * grow until the database's disk reaches its free-disk floor, where log
+ * lines stop being archived and images stop uploading in every room. The
+ * page warns once that disk is within a floor's width of the floor, or
+ * once one room's archive is past a room's whole quota, which no ordinary
+ * game's history comes near, and names the largest archive so the
+ * operator knows where to look. A budget per member would bound one
+ * member's chat in one room only: anyone can make rooms, and a DM can
+ * add members, so the floor stays the bound and the operator acts on it.
+ */
+export function archiveWarning(largest: LargestArchive | null, quotaBytes: number, freeBytes: number | null, floorBytes: number): string | null {
+  const room = largest && largest.bytes > 0 ? `The largest log archive is the room ${largest.name} (${formatRoomId(largest.id)}), at ${bytesText(largest.bytes)}.` : null;
+  if (freeBytes !== null && freeBytes < 2 * floorBytes) {
+    const where = freeBytes < floorBytes ? "is under its" : "is near its";
+    return [`Free space on the database's disk (${bytesText(freeBytes)}) ${where} ${bytesText(floorBytes)} floor. Under it, log lines are not archived and images cannot be uploaded in any room.`, room].filter(Boolean).join(" ");
+  }
+  if (largest && largest.bytes > quotaBytes) {
+    return `The room ${largest.name} (${formatRoomId(largest.id)}) has a log archive of ${bytesText(largest.bytes)}, more than a room's storage quota of ${bytesText(quotaBytes)}. Log archives are kept outside the quota, so one can grow until free disk reaches its floor, where log archiving and image uploads stop for every room.`;
+  }
+  return null;
+}
+
+/** Sizes as the admin page words them (client/features/settings/backup.ts formatBytes). */
+function bytesText(bytes: number): string {
+  if (bytes >= 1_000_000_000) return `${(bytes / 1_000_000_000).toFixed(1)} GB`;
+  if (bytes >= 1_000_000) return `${Math.round(bytes / 1_000_000)} MB`;
+  if (bytes >= 1_000) return `${Math.round(bytes / 1_000)} KB`;
+  return `${bytes} bytes`;
 }
 
 type RunRow = {
@@ -180,7 +218,9 @@ async function storage(app: FastifyInstance): Promise<AdminStorage> {
     (s) => ({ totalBytes: s.blocks * s.bsize, usedBytes: (s.blocks - s.bfree) * s.bsize, freeBytes: s.bavail * s.bsize }),
     () => null,
   );
-  const [db, images, waiting, runs, good, trash] = await Promise.all([
+  const databaseDisk = app.hasDecorator("assets") ? app.assets.databaseDiskDir : (app.config.DATABASE_DISK_DIR ?? assetDir);
+  const floorBytes = app.hasDecorator("assets") ? app.assets.minFreeBytes : MIN_FREE_BYTES;
+  const [db, images, waiting, runs, good, trash, archive, databaseFree] = await Promise.all([
     pool.query<{ bytes: string }>("select pg_database_size(current_database()) as bytes"),
     pool.query<{ count: number; bytes: string }>(
       `select count(*)::int as count, coalesce(sum(bytes), 0) as bytes
@@ -192,15 +232,32 @@ async function storage(app: FastifyInstance): Promise<AdminStorage> {
     pool.query<RunRow>("select * from backup_runs order by started_at desc limit 1"),
     pool.query<RunRow>("select * from backup_runs where outcome = 'good' order by started_at desc limit 1"),
     trashSize(assetDir),
+    // Each room's archive as ROOM_ARCHIVE_BYTES_SQL sums it, in one pass over both tables rather than a pass a room.
+    pool.query<{ id: string; name: string; bytes: string }>(
+      `select room.id, room.name, sizes.bytes from (
+         select room_id, sum(bytes) as bytes from (
+           select room_id, pg_column_size(l.*) as bytes from room_log l
+           union all select room_id, pg_column_size(x.*) from room_log_access x
+         ) rows group by room_id
+       ) sizes join rooms room on room.id = sizes.room_id
+       order by sizes.bytes desc, room.id limit 1`,
+    ),
+    statfs(databaseDisk).then(
+      (s) => s.bavail * s.bsize,
+      () => null,
+    ),
   ]);
   const last = toRun(runs.rows[0]);
   const lastGood = toRun(good.rows[0]);
+  const top = archive.rows[0];
+  const largest = top ? { id: top.id, name: top.name, bytes: Number(top.bytes) } : null;
   return {
     volume,
     databaseBytes: Number(db.rows[0]?.bytes ?? 0),
     images: { count: images.rows[0]?.count ?? 0, bytes: Number(images.rows[0]?.bytes ?? 0) },
     cleanup: { waiting: { count: waiting.rows[0]?.count ?? 0, bytes: Number(waiting.rows[0]?.bytes ?? 0) }, trash },
     backup: { last, lastGood, warning: backupWarning(last, lastGood, Date.now()) },
+    archiveWarning: archiveWarning(largest, app.config.ROOM_QUOTA_MB * 1024 * 1024, databaseFree, floorBytes),
   };
 }
 

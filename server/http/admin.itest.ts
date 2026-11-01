@@ -337,6 +337,36 @@ describe("the admin page", () => {
   });
 });
 
+describe("the archive warning", () => {
+  let t: Engine;
+  before(async () => {
+    t = await startEngine({ env: { ADMIN_PASSWORD_HASH: await hasher.hash(PASSWORD), ROOM_QUOTA_MB: "1" } });
+  });
+  after(async () => {
+    await t.pool.query("delete from admin_sessions");
+    await t.close();
+  });
+
+  test("storage names a room whose log archive is past a room's quota (LOG-OPUS-18)", async () => {
+    const admin = new AdminBrowser(() => t);
+    await admin.login();
+    const { roomId } = await t.client().createRoom("Endless Chat");
+    try {
+      // Random text, so the archive's TOAST cannot compress it under the 1 MB quota.
+      for (let i = 0; i < 15; i++) {
+        await t.pool.query("insert into room_log (room_id, id, at, entry) values ($1, $2, now(), $3)", [roomId, `${i + 1}:0`, { kind: "chat", text: randomBytes(150_000).toString("base64") }]);
+      }
+      const body = (await admin.request("GET", "/api/admin/storage")).json<AdminStorage>();
+      // On a disk short of space the warning leads with the disk, and still names the largest archive.
+      assert.ok(body.archiveWarning?.includes(`Endless Chat (${roomId.slice(0, 4)}-${roomId.slice(4)})`), body.archiveWarning ?? "no warning");
+      const rooms = (await admin.request("GET", "/api/admin/rooms")).json<{ rooms: AdminRoom[] }>().rooms;
+      assert.ok((rooms.find((r) => r.id === roomId)?.bytes ?? 0) > 1024 * 1024, "the listing's size on disk counts the same archive");
+    } finally {
+      await t.pool.query("delete from rooms where id = $1", [roomId]);
+    }
+  });
+});
+
 describe("the backup warning", () => {
   const now = Date.parse("2026-10-14T12:00:00Z");
   const at = (hoursAgo: number, outcome: BackupRun["outcome"]): BackupRun => ({

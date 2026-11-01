@@ -8,7 +8,7 @@ import { backupLines, formatBytes, plural } from "./format.ts";
 /**
  * What the server holds (docs/design/design-v1-dm-tools.md 3.18): the image
  * volume, the database, the images on disk counted once each, what waits
- * for cleanup, and the backups.
+ * for cleanup, the backups, and a log archive growing toward the disk's floor.
  */
 export function StorageCard(props: { storage: AdminStorage }) {
   const { volume, databaseBytes, images, cleanup, backup } = props.storage;
@@ -35,6 +35,11 @@ export function StorageCard(props: { storage: AdminStorage }) {
       {backup.warning ? (
         <Notice tone="warning" role="alert">
           {backup.warning}
+        </Notice>
+      ) : null}
+      {props.storage.archiveWarning ? (
+        <Notice tone="warning" role="alert">
+          {props.storage.archiveWarning}
         </Notice>
       ) : null}
     </Card>
