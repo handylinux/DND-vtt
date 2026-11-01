@@ -1,3 +1,4 @@
+import { LIMITS } from "./limits.ts";
 import type { RoomSettings, RoomState, SceneMark, ShareMark } from "./model.ts";
 import type { Op } from "./protocol.ts";
 
@@ -10,7 +11,7 @@ import type { Op } from "./protocol.ts";
  * A deploy writes snapshots on shutdown, so a version bump normally replays
  * no old ops at all. The op pipeline is here for the crash case.
  */
-export const SNAPSHOT_VERSION = 31;
+export const SNAPSHOT_VERSION = 32;
 export const OP_VERSION = 36;
 
 export type MigrationStep = {
@@ -213,7 +214,56 @@ export const snapshotMigrations: MigrationStep[] = [
   { from: 29, to: 30, apply: (state) => state },
   // Save outcome status is optional. Older readers must refuse this boundary even without a ledger.
   { from: 30, to: 31, apply: (state) => state },
+  // A trip wire on a square scene keeps its ends on cell corners and edge midpoints, as the reducer has always kept it,
+  // but an import between hex phase H2 and the check beside it (FU38-ASTRA-PARSER-NOTE) let ends on the 1/64 lattice
+  // through. Such a room loads, yet its export fails import and its trap cannot be edited. Each end moves to the
+  // nearest half cell that keeps the wire inside its scene and within its length limits (squareWiresOnHalves).
+  // Rollback: an older build refuses a v32 snapshot, so it needs the backup from before the deploy.
+  { from: 31, to: 32, apply: squareWiresOnHalves },
 ];
+
+/**
+ * Every trip wire on a square scene with its ends on half cells: of the
+ * ways to round each coordinate down or up to a half, the one that moves
+ * the ends least and leaves the wire inside its scene and within its
+ * length limits, so the trap stays where the DM drew it, near enough to a
+ * half cell. A hex scene's wires, and anything not shaped like a room, are
+ * left as they were, and so is a wire no rounding fits, which no wire
+ * within the limits can be.
+ */
+export function squareWiresOnHalves(state: unknown): unknown {
+  if (state === null || typeof state !== "object") return state;
+  const room = state as { traps?: unknown; scenes?: unknown };
+  if (room.traps === null || typeof room.traps !== "object" || room.scenes === null || typeof room.scenes !== "object") return state;
+  const scenes = room.scenes as Record<string, { gridShape?: unknown; bounds?: { w: number; h: number } } | undefined>;
+  let traps: Record<string, unknown> | null = null;
+  for (const [id, trap] of Object.entries(room.traps as Record<string, unknown>)) {
+    const t = trap as { sceneId?: string; zone?: { wire?: { a: [number, number]; b: [number, number] } } } | null;
+    const wire = t?.zone?.wire;
+    const scene = t?.sceneId === undefined ? undefined : scenes[t.sceneId];
+    if (!wire || !scene?.bounds || scene.gridShape !== undefined) continue;
+    const ends = [...wire.a, ...wire.b];
+    if (ends.every((v) => Number.isInteger(v * 2))) continue;
+    const rounded = nearestHalfWire(ends, scene.bounds);
+    if (!rounded) continue;
+    traps ??= { ...(room.traps as Record<string, unknown>) };
+    traps[id] = { ...t, zone: { wire: { a: [rounded[0], rounded[1]], b: [rounded[2], rounded[3]] } } };
+  }
+  return traps ? { ...room, traps } : state;
+}
+
+function nearestHalfWire(ends: readonly number[], bounds: { w: number; h: number }): [number, number, number, number] | null {
+  let best: { ends: [number, number, number, number]; moved: number } | null = null;
+  for (let pick = 0; pick < 16; pick++) {
+    const at = ends.map((v, i) => ((pick >> i) & 1 ? Math.ceil(v * 2) : Math.floor(v * 2)) / 2) as [number, number, number, number];
+    if (at.some((v, i) => v < 0 || v > (i % 2 === 0 ? bounds.w : bounds.h))) continue;
+    const length = Math.hypot(at[2] - at[0], at[3] - at[1]);
+    if (length < LIMITS.trapWireMin || length > LIMITS.trapWireMax) continue;
+    const moved = Math.hypot(at[0] - ends[0]!, at[1] - ends[1]!) + Math.hypot(at[2] - ends[2]!, at[3] - ends[3]!);
+    if (!best || moved < best.moved) best = { ends: at, moved };
+  }
+  return best?.ends ?? null;
+}
 
 /**
  * Settings from before RoomSettings.playersMoveAny, with the switch turned
