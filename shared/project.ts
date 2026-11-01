@@ -675,10 +675,20 @@ type Screen = Pick<Ctx, "state" | "viewer" | "fogged" | "sight" | "held">;
 /**
  * Whether a viewer's screen withholds a token where it stands
  * (docs/design/design-v1-per-player-vision.md 6.2): by their own sight and fog,
- * a creature's outline on hexes clipped by the walls they hold.
+ * a creature's outline on hexes clipped by the walls they hold. On a
+ * per-player hex scene a sight holder's screen also shows every creature
+ * the shared class's copy shows, which every other player's screen shows,
+ * so each screen shows whatever is seen by all. A device clips by the
+ * walls its copy holds and adds nothing.
  */
 function withheldOnScreen(screen: Screen, token: Token, revealedSeen: boolean): boolean {
-  return withheldFromPlayers(screen.state, screen.fogged, screen.sight, token, revealedSeen, clipOfScreen(screen, token.sceneId));
+  const { state } = screen;
+  if (!withheldFromPlayers(state, screen.fogged, screen.sight, token, revealedSeen, clipOfScreen(screen, token.sceneId))) return false;
+  const scene = state.scenes[token.sceneId];
+  if (!screen.held || screen.viewer.role !== "player" || sightOf(state) !== undefined || !perPlayerScene(scene) || !scene || !isHex(sceneGrid(scene))) return true;
+  if (fogClassOf(state, scene.id, screen.viewer.memberId) === null) return true;
+  const shared = sharedOf(state);
+  return withheldFromPlayers(state, shared.fogged, shared.sight, token, revealedSeen, SHARED_COPY);
 }
 
 /** The walls that clip a creature's outline on a viewer's screen: their fog class's copy, and for a DM, who holds it, the build. */

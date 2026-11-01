@@ -31,6 +31,9 @@ import { chance, DM, int, member, P1, pick, rng, room, scene, template } from ".
  * (docs/design/design-v1-hex-grids.md HX-D10). Each fog class's copy of the
  * sight walls is built from its own chunks with their remembered versions,
  * where ops stored before op version 37 read the build's walls.
+ * Seen by all on a per-player hex scene is what the shared class's copy
+ * shows, and every screen shows it (docs/design/design-v1-per-player-vision.md
+ * decision 10).
  */
 
 const SHAPES = [
@@ -411,4 +414,107 @@ describe("ops stored before op version 37 judge a creature's outline by the buil
       assert.equal(lineReader(s, 36)(line).audience, "dm");
     });
   }
+});
+
+describe("seen by all on a per-player hex scene is what the shared class's copy shows, and every screen shows it", () => {
+  for (const [name, g] of SHAPES) {
+    test(`${name}: a wall through a Gargantuan creature's dark middle on ground only P1 holds`, () => {
+      const s = hexRoom(g, { vision: true, holders: ["p1", "p2"] });
+      s.meta = { ...s.meta, playerSceneId: "s1" };
+      const ogre = onHex(g, "ogre", "gargantuan", { col: 8, row: 8 }, { name: "Ogre", kind: "npc" });
+      s.tokens.lamp = onHex(g, "lamp", "medium", { col: 10, row: 8 }, { name: "Lamp", kind: "npc", disposition: "ally", partyVision: true, light: { bright: 5, dim: 0 } });
+      const c = hexCenter(g, { col: 8, row: 8 });
+      const a: [number, number] = [q(c.x + 0.6), q(c.y - 2.2)];
+      const b: [number, number] = [q(c.x + 0.6), q(c.y + 2.2)];
+      const all = sceneHexes(g, s.scenes.s1!.bounds);
+      const strip = new Set<string>();
+      for (let t = 0; t <= 200; t++) {
+        const y = a[1] + ((b[1] - a[1]) * t) / 200;
+        for (const dx of [-0.02, 0, 0.02]) strip.add(hexKey(hexAt(g, { x: a[0] + dx, y })));
+      }
+      liftSubs(s, "party", subsOf(g, all.filter((h) => !strip.has(hexKey(h)))));
+      liftSubs(s, { holder: "p1" }, subsOf(g, all.filter((h) => strip.has(hexKey(h)))));
+      wall(s, "a2w000000001", a, b);
+      s.tokens.ogre = ogre;
+      assert.equal(withheldWhereItStands(s, ogre), false, "seen by all");
+      const p1Copy = projectState(s, P1, { sceneId: "s1" }) as unknown as RoomState;
+      assert.equal(withheldFromViewer(p1Copy, { memberId: "", role: "player" }, ogre), true, "P1's own copy withholds it");
+      for (const v of [P1, P2, P3, DISPLAY]) assert.ok(projectState(s, v, { sceneId: "s1" }).tokens.ogre, `${v.memberId}'s screen shows it`);
+      assert.equal(withheldFromViewer(s, P1, ogre), false, "and so does P1's drag frame");
+    });
+  }
+
+  test("one wall whose held pieces round off the eye's step: not seen by all, and no screen shows it", () => {
+    const s = hexRoom(ROWS, { holders: ["p1", "p2"] });
+    s.meta = { ...s.meta, playerSceneId: "s1" };
+    liftSubs(s, "dm", [[46, 19]]);
+    wall(s, "a7w000000001", [11.625, 4.84375], [12.453125, 4.984375]);
+    const ogre = onHex(ROWS, "ogre", "huge", { col: 11, row: 5 }, { name: "Ogre", kind: "npc" });
+    s.tokens.ogre = ogre;
+    assert.equal(withheldWhereItStands(s, ogre), true);
+    for (const v of [P1, P2, P3, DISPLAY]) assert.equal(projectState(s, v, { sceneId: "s1" }).tokens.ogre, undefined, v.memberId);
+  });
+
+  for (const vision of [false, true]) {
+    test(`random rooms, ${vision ? "with vision and memory" : "with fog alone"}: seen by all is on every player's screen, a table display's too`, () => {
+      let seen = 0;
+      let onlyShared = 0;
+      for (let n = 0; n < (vision ? 300 : 200); n++) {
+        const { s, ogre, holders } = randomRoom(n, { vision, perPlayer: true, seed: vision ? 0xb17 : 0xa17 });
+        s.meta = { ...s.meta, playerSceneId: "s1" };
+        if (withheldWhereItStands(s, ogre)) continue;
+        seen++;
+        for (const v of [P1, P2, P3, DISPLAY]) assert.ok(projectState(s, v, { sceneId: "s1" }).tokens.ogre, `room ${n}: ${v.memberId}'s screen`);
+        for (const h of holders) {
+          const copy = projectState(s, { memberId: h, role: "player" }, { sceneId: "s1" }) as unknown as RoomState;
+          if (withheldFromViewer(copy, { memberId: "", role: "player" }, ogre)) onlyShared++;
+        }
+      }
+      assert.ok(seen > 150, `${seen} seen by all`);
+      if (vision) assert.ok(onlyShared > 0, `${onlyShared} holder screens show it only by the shared answer`);
+    });
+  }
+
+  test("seen by all reads neither the roster of holders nor which layer revealed the ground", () => {
+    let pairs = 0;
+    for (let n = 0; n < 120; n++) {
+      const r = rng(0x8a8 + n);
+      const g = chance(r, 0.5) ? ROWS : COLUMNS;
+      const vision = chance(r, 0.5);
+      const at = { col: int(r, 6, 13), row: int(r, 5, 10) };
+      const subs = subsOf(g, sceneHexes(g, { w: 20, h: 16 }).filter(() => chance(r, 0.4)));
+      const c = hexCenter(g, at);
+      const walls: [number, number, number, number][] = [];
+      for (let i = int(r, 1, 5); i > 0; i--) {
+        const x = c.x + (r() - 0.5) * 5;
+        const y = c.y + (r() - 0.5) * 5;
+        walls.push([q(x), q(y), q(x + (r() - 0.5) * 2), q(y + (r() - 0.5) * 2)]);
+      }
+      const make = (holders: string[], layer: "dm" | "party") => {
+        const s = hexRoom(g, { vision, holders });
+        s.meta = { ...s.meta, playerSceneId: "s1" };
+        liftSubs(s, layer, subs);
+        walls.forEach((w, i) => wall(s, `pr${String(n).padStart(4, "0")}${i}00000`.slice(0, 12), [w[0], w[1]], [w[2], w[3]]));
+        if (vision) s.tokens.lamp = onHex(g, "lamp", "medium", { col: at.col + 3, row: at.row }, { name: "Lamp", kind: "npc", disposition: "ally", partyVision: true, light: { bright: 15, dim: 10 } });
+        s.tokens.ogre = onHex(g, "ogre", "gargantuan", at, { name: "Ogre", kind: "npc" });
+        return s;
+      };
+      const copyWithout = (s: RoomState, v: Viewer) => {
+        const t = structuredClone(s);
+        delete t.tokens.ogre;
+        return stableStringify(projectState(t, v, { sceneId: "s1" }));
+      };
+      // Zero holders against p1 as the first, and the DM's reveals against the party's explored layer.
+      for (const [x, y, v] of [
+        [make([], "dm"), make(["p1"], "dm"), P2],
+        [make(["p1"], "dm"), make(["p1"], "party"), P3],
+      ] as const) {
+        if (copyWithout(x, v) !== copyWithout(y, v)) continue;
+        pairs++;
+        assert.equal(withheldWhereItStands(y, y.tokens.ogre!), withheldWhereItStands(x, x.tokens.ogre!), `room ${n}`);
+        assert.equal(stableStringify(projectState(y, v, { sceneId: "s1" })), stableStringify(projectState(x, v, { sceneId: "s1" })), `room ${n}: ${v.memberId}'s copy`);
+      }
+    }
+    assert.ok(pairs > 100, `${pairs} pairs`);
+  });
 });
