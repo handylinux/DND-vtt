@@ -1124,9 +1124,12 @@ function measureInPage(roots: DomElement[], opts: PageOptions): Finding[] {
    * two. What a scroller or a cut inside `container` hides is not seen,
    * and what it cuts is seen as far as it shows. The page's own scrollers
    * around `container` are left alone, so a row scrolled out of view is
-   * still measured.
+   * still measured. With `through`, what a display: contents element holds
+   * counts as its parent's own. Only the centering check asks for that: the
+   * edge and wrap checks read rows and columns the contents wrappers of a
+   * damage summary lay out on purpose, which its own check judges.
    */
-  function atomsOf(container: DomElement, placed = false): Atom[] {
+  function atomsOf(container: DomElement, placed = false, through = false): Atom[] {
     const out: Atom[] = [];
     const add = (a: Atom, clip: Box | null) => {
       if (!clip) return out.push(a);
@@ -1143,7 +1146,7 @@ function measureInPage(roots: DomElement[], opts: PageOptions): Finding[] {
         if (ch.nodeType === 3) {
           const words = (ch.textContent ?? "").trim();
           const parent = ch.parentElement;
-          if (!words || !parent || !(shown(parent) || boxless(parent))) continue;
+          if (!words || !parent || !(shown(parent) || (through && boxless(parent)))) continue;
           const range = doc!.createRange();
           range.selectNodeContents(ch);
           for (const r of Array.from(range.getClientRects())) {
@@ -1156,7 +1159,7 @@ function measureInPage(roots: DomElement[], opts: PageOptions): Finding[] {
           }
         } else if (isEl(ch)) {
           // A display: contents element draws nothing itself. Its children are measured as if they were its parent's own.
-          if (boxless(ch)) {
+          if (through && boxless(ch)) {
             walk(ch, clip, wrap);
             continue;
           }
@@ -1358,8 +1361,8 @@ function measureInPage(roots: DomElement[], opts: PageOptions): Finding[] {
       const open = el.querySelector('[aria-expanded="true"]') !== null;
       if (!container && !band && !open && !FIELD.includes(t) && ((control && height <= 200) || (painted && height <= 120))) {
         // A control whose only content is placed absolutely is measured by that content. Beside content in the flow, such a part (a badge, a ring) is placed against its containing block on purpose.
-        const flowing = atomsOf(el);
-        const atoms = flowing.length ? flowing : atomsOf(el, true);
+        const flowing = atomsOf(el, false, true);
+        const atoms = flowing.length ? flowing : atomsOf(el, true, true);
         if (atoms.length) {
           const stacks = stacksOf(atoms);
           // Where a stack runs over several lines, the stacks beside it are placed against it by the row check, so the content is centered as one.
