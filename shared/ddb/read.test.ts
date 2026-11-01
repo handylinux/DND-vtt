@@ -18,7 +18,7 @@ type J = Record<string, unknown>;
 const mod = (type: string, subType: string, value: number | null, extra: J = {}): J => ({ type, subType, fixedValue: value, value, statId: null, componentId: 0, requiresAttunement: false, ...extra });
 const stats = (values: number[]) => values.map((value, i) => ({ id: i + 1, name: null, value }));
 const nulls = () => stats([0, 0, 0, 0, 0, 0]).map((s) => ({ ...s, value: null }));
-const feature = (name: string, requiredLevel: number): J => ({ definition: { name, requiredLevel } });
+const feature = (name: string, requiredLevel: number): J => ({ definition: { name, requiredLevel, entityTypeId: 12168134 } });
 
 /** Wren Ashdown, an invented rogue 7 and fighter 3 (Champion). */
 function wren(over: J = {}): J {
@@ -118,11 +118,11 @@ describe("readDdbCharacter: the character", () => {
   });
 
   test("Jack of All Trades: the plain half proficiency on ability checks, from a reached feature, with no restriction", () => {
-    const jack = (extra: J = {}) => mod("half-proficiency", "ability-checks", null, extra);
+    const jack = (extra: J = {}) => mod("half-proficiency", "ability-checks", null, { componentTypeId: 12168134, ...extra });
     const bard = (level: number, mods: J[]) =>
       readDdbCharacter(
         wren({
-          classes: [{ level, definition: { name: "Bard", spellCastingAbilityId: 6 }, subclassDefinition: null, classFeatures: [{ definition: { id: 777, name: "Jack of All Trades", requiredLevel: 2 } }] }],
+          classes: [{ level, definition: { name: "Bard", spellCastingAbilityId: 6 }, subclassDefinition: null, classFeatures: [{ definition: { id: 777, name: "Jack of All Trades", requiredLevel: 2, entityTypeId: 12168134 } }] }],
           modifiers: { race: [], class: mods, background: [], feat: [], item: [], condition: [] },
         }),
         ids,
@@ -134,9 +134,51 @@ describe("readDdbCharacter: the character", () => {
     assert.equal(bard(5, [jack({ componentId: 777, restriction: "to a skill proficiency you lack" })]), true, "the Jack feature counts with any restriction text, as the 2024 wording may sit there");
     assert.equal(bard(5, [jack({ componentId: 888, restriction: "while you are holding an instrument" })]), false, "a restricted half proficiency from another feature is not the sheet's Jack");
     assert.equal(bard(5, [jack({ componentId: 888 })]), true, "an unrestricted one from any source is");
-    assert.equal(bard(5, [mod("half-proficiency", "initiative", null, { componentId: 777 })]), false, "the 2014 initiative half is not an ability-check half");
+    assert.equal(bard(5, [mod("half-proficiency", "initiative", null, { componentId: 777, componentTypeId: 12168134 })]), false, "the 2014 initiative half is not an ability-check half");
     assert.equal(bard(5, [mod("half-proficiency-round-up", "strength-ability-checks", null)]), false, "Remarkable Athlete is not Jack");
     assert.equal(bard(5, [mod("half-proficiency", "stealth", null)]), false, "one skill's half is not Jack");
+  });
+
+  describe("class features and their modifiers", () => {
+    const CLASS_FEATURE = 12168134;
+    const OPTION = 258900837;
+    const feat = (id: number, name: string, requiredLevel: number | null, extra: J = {}): J => ({ definition: { id, name, ...(requiredLevel === null ? {} : { requiredLevel }), entityTypeId: CLASS_FEATURE, ...extra } });
+    const of = (classes: J[], mods: J[]) =>
+      readDdbCharacter(wren({ classes, modifiers: { race: [], class: mods, background: [], feat: [], item: [], condition: [] } }), ids)!;
+    const klass = (name: string, level: number, classFeatures: J[]): J => ({ level, definition: { name, spellCastingAbilityId: null }, subclassDefinition: null, classFeatures });
+    const atFeature = (id: number, type: number | null = CLASS_FEATURE): J => ({ componentId: id, ...(type === null ? {} : { componentTypeId: type }) });
+
+    test("a locked feature's other modifiers are dropped too, a reached one's and an unleveled one's kept", () => {
+      const classes = [klass("Rogue", 3, [feat(1, "Expertise", 6), feat(2, "Cunning Action", 2), feat(3, "Odd", null)])];
+      const fill = of(classes, [mod("proficiency", "stealth", null, atFeature(1)), mod("proficiency", "athletics", null, atFeature(2)), mod("proficiency", "arcana", null, atFeature(3))]);
+      assert.deepEqual(fill.stats.skills, { athletics: "prof", arcana: "prof" });
+    });
+
+    test("multiclass: a feature is locked by its own class's level, not the character's", () => {
+      const classes = [klass("Bard", 1, [feat(10, "Jack of All Trades", 2)]), klass("Fighter", 10, [feat(11, "Action Surge", 2)])];
+      assert.equal(of(classes, [mod("half-proficiency", "ability-checks", null, atFeature(10))]).stats.jack, false, "Bard 1 has no Jack though the character is level 11");
+      assert.deepEqual(of(classes, [mod("proficiency", "stealth", null, atFeature(11))]).stats.skills, { stealth: "prof" });
+    });
+
+    test("ids are told by entity type: an option sharing a feature's id is neither locked by it nor Jack through it", () => {
+      const classes = [klass("Bard", 1, [feat(20, "Expertise", 3), feat(21, "Jack of All Trades", 2)])];
+      assert.deepEqual(of(classes, [mod("proficiency", "stealth", null, atFeature(20, OPTION))]).stats.skills, { stealth: "prof" }, "an option with a locked feature's id stays");
+      assert.equal(of([klass("Bard", 5, [feat(21, "Jack of All Trades", 2)])], [mod("half-proficiency", "ability-checks", null, { ...atFeature(21, OPTION), restriction: "only on Tuesdays" })]).stats.jack, false, "a restricted option with Jack's id is not Jack");
+      assert.equal(of([klass("Bard", 5, [feat(21, "Jack of All Trades", 2)])], [mod("half-proficiency", "ability-checks", null, { ...atFeature(21, null), restriction: "a skill proficiency you lack" })]).stats.jack, false, "a modifier with no component type is not told to be the feature");
+    });
+
+    test("classes cut: the Jack flag is left out and a re-sync keeps the stored one", () => {
+      const many = Array.from({ length: 301 }, (_, i) => feat(1000 + i, `Filler ${i}`, 1));
+      const classes = [klass("Bard", 5, [feat(21, "Jack of All Trades", 2), ...many])];
+      const json = wren({ classes, modifiers: { race: [], class: [mod("half-proficiency", "ability-checks", null, atFeature(21))], background: [], feat: [], item: [], condition: [] } });
+      const fill = readDdbCharacter(json, ids)!;
+      assert.equal("jack" in fill.stats, false);
+      const stored: SyncCharacter = { name: "Wren Ashdown", level: 5, stats: { ...(readDdbCharacter(wren(), ids)!.stats as PcStats), jack: true } as PcStats, actor: actor({ sheetUrl: "https://www.dndbeyond.com/characters/12345678" }) };
+      const p = planSync({ mode: "resync", stats: stored.stats, level: stored.level, character: stored, fill });
+      const sent = syncPatch(stored, syncResult(p, defaultTicks(p)));
+      const after = sent ? afterSync(stored, sent.patch, "2026-10-24T10:00:00.000Z") : stored;
+      assert.equal(after.stats?.jack, true);
+    });
   });
 
   test("adjustments: every save from Charisma's modifier (min 1) and an attuned item, Passive Perception, spell attacks only from an equipped item", () => {
@@ -400,7 +442,7 @@ describe("readDdbCharacter: a source D&D Beyond did not send (docs/design-v1-res
   const names = (fill: PcFill) => fill.stats.rolls.map((r) => r.name);
 
   test("no classes: no level, spellcasting, class features, max HP, weapons or spells", () => {
-    const leftOut = ["level", "spellAbility", "evasion", "critOn", "actor.hpMax"];
+    const leftOut = ["level", "spellAbility", "evasion", "critOn", "actor.hpMax", "jack"];
     for (const partial of [without(rich(), "classes"), rich({ classes: { level: 7 } }), rich({ classes: [{ level: "7", definition: { name: "Rogue" } }, { level: 3, definition: "Fighter" }, null] })]) {
       const fill = leavesOut(rich(), partial, leftOut, WARN.classes);
       assert.deepEqual(names(fill), ["Second Wind"]);
@@ -408,7 +450,7 @@ describe("readDdbCharacter: a source D&D Beyond did not send (docs/design-v1-res
       assert.ok(!fill.warnings.some((w) => /No class was read/.test(w)), "the level is left out, never read as 1");
     }
     // An override is the whole maximum, so it reads without the classes.
-    const override = leavesOut(rich({ overrideHitPoints: 99 }), without(rich({ overrideHitPoints: 99 }), "classes"), ["level", "spellAbility", "evasion", "critOn"], WARN.classes);
+    const override = leavesOut(rich({ overrideHitPoints: 99 }), without(rich({ overrideHitPoints: 99 }), "classes"), ["level", "spellAbility", "evasion", "critOn", "jack"], WARN.classes);
     assert.equal(override.actor.hpMax, 99);
   });
 
@@ -516,7 +558,7 @@ describe("readDdbCharacter: a source D&D Beyond did not send (docs/design-v1-res
     const wrenClasses = wren().classes as J[];
 
     test("classes past 20, or a class's features past 300 or not a list: nothing the classes give is read", () => {
-      const leftOut = ["level", "spellAbility", "evasion", "critOn", "actor.hpMax"];
+      const leftOut = ["level", "spellAbility", "evasion", "critOn", "actor.hpMax", "jack"];
       const extra = Array.from({ length: 19 }, () => ({ level: 0, definition: { name: "Commoner", spellCastingAbilityId: null }, subclassDefinition: null, classFeatures: [] }));
       const cuts = [rich({ classes: [...wrenClasses, ...extra] }), rich({ classes: [{ ...wrenClasses[0]!, classFeatures: [...(wrenClasses[0]!.classFeatures as J[]), ...features(298)] }, wrenClasses[1]] }), rich({ classes: [{ ...wrenClasses[0]!, classFeatures: { 0: "Evasion" } }, wrenClasses[1]] })];
       for (const partial of cuts) {

@@ -96,6 +96,14 @@ function diceTerms(f: Formula): DiceTerm[] {
   return f.filter((t): t is DiceTerm => t.kind === "dice");
 }
 
+/** D&D Beyond's entity type of a class feature. Options and items number from their own ids, so a feature is told by type and id together. */
+const CLASS_FEATURE = 12168134;
+
+/** A class feature's key from its type and id, or null for another kind of thing or one with no type. Real data always carries the type. */
+function featureKey(typeId: unknown, id: number): string | null {
+  return num(typeId) === CLASS_FEATURE ? String(id) : null;
+}
+
 type Modifier = { type: string; subType: string; value: number | null; statId: AbilityKey | null; restriction: string | null; jackFeature: boolean };
 
 /**
@@ -103,32 +111,32 @@ type Modifier = { type: string; subType: string; value: number | null; statId: A
  * class's later features on the sheet too, and their modifiers must not count
  * (a level 1 bard has no Jack of All Trades yet).
  */
-function lockedFeatureIds(data: Obj): Set<number> {
-  const locked = new Set<number>();
+function lockedFeatureIds(data: Obj): Set<string> {
+  const locked = new Set<string>();
   for (const raw of arr(data.classes, MAX.classes)) {
     const c = obj(raw);
     const level = num(c?.level);
     if (!c || level === null) continue;
-    const lists = [c.classFeatures, obj(c.subclassDefinition)?.classFeatures];
-    for (const list of lists) {
-      for (const f of arr(list, MAX.features)) {
-        const fdef = obj(obj(f)?.definition);
-        const id = num(fdef?.id);
-        if (id !== null && (num(fdef?.requiredLevel) ?? 1) > level) locked.add(id);
-      }
+    // The subclass's features are in this list too, as the other importers read it.
+    for (const f of arr(c.classFeatures, MAX.features)) {
+      const fdef = obj(obj(f)?.definition);
+      const id = num(fdef?.id);
+      const key = id === null ? null : featureKey(fdef?.entityTypeId, id);
+      if (key !== null && (num(fdef?.requiredLevel) ?? 1) > level) locked.add(key);
     }
   }
   return locked;
 }
 
 /** The ids of the class features named Jack of All Trades. A locked one's modifiers are dropped before they are asked about. */
-function jackFeatureIds(data: Obj): Set<number> {
-  const ids = new Set<number>();
+function jackFeatureIds(data: Obj): Set<string> {
+  const ids = new Set<string>();
   for (const raw of arr(data.classes, MAX.classes)) {
     for (const f of arr(obj(raw)?.classFeatures, MAX.features)) {
       const fdef = obj(obj(f)?.definition);
       const id = num(fdef?.id);
-      if (id !== null && name(fdef?.name, 60)?.toLowerCase() === "jack of all trades") ids.add(id);
+      const key = id === null ? null : featureKey(fdef?.entityTypeId, id);
+      if (key !== null && name(fdef?.name, 60)?.toLowerCase() === "jack of all trades") ids.add(key);
     }
   }
   return ids;
@@ -154,12 +162,14 @@ function modifiersOf(data: Obj): Modifier[] {
     for (const raw of arr(list, MAX.modifiers)) {
       const m = obj(raw);
       if (!m || typeof m.type !== "string" || typeof m.subType !== "string") continue;
-      if (group === "class" && locked.has(num(m.componentId) ?? -1)) continue;
+      const componentId = num(m.componentId);
+      const featureAt = componentId === null ? null : featureKey(m.componentTypeId, componentId);
+      if (group === "class" && featureAt !== null && locked.has(featureAt)) continue;
       if (group === "item") {
         const holder = equipped.get(num(m.componentId) ?? -1);
         if (!holder || (m.requiresAttunement === true && !holder.attuned)) continue;
       }
-      out.push({ type: m.type, subType: m.subType, value: num(m.fixedValue) ?? num(m.value), statId: abilityOf(m.statId), restriction: typeof m.restriction === "string" ? m.restriction.trim() : null, jackFeature: group === "class" && jackIds.has(num(m.componentId) ?? -1) });
+      out.push({ type: m.type, subType: m.subType, value: num(m.fixedValue) ?? num(m.value), statId: abilityOf(m.statId), restriction: typeof m.restriction === "string" ? m.restriction.trim() : null, jackFeature: group === "class" && featureAt !== null && jackIds.has(featureAt) });
     }
   }
   return out;
@@ -190,7 +200,6 @@ function has(mods: readonly Modifier[], type: string, subType: string): boolean 
 function hasJack(mods: readonly Modifier[]): boolean {
   return mods.some((m) => m.type === "half-proficiency" && m.subType === "ability-checks" && (m.jackFeature || (m.restriction ?? "") === ""));
 }
-
 
 /** Each ability's value in a list of `{ id, value }`, the shape of the sheet's scores, their bonuses and their overrides. */
 function byAbility(list: unknown): Partial<Record<AbilityKey, number>> {
@@ -681,11 +690,12 @@ function read(json: unknown, newId: () => string): PcFill | null {
   const resourceLinesAt = warnings.length;
 
   // The modifiers' needs, then the scores' needs (2.5): every output below that reads a modifier or a score is read only when these are.
+  const classesWhole = sent.classes && !partial.classes;
   const mods = sent.modifiers && !partial.modifiers && (sent.inventory ? !partial.itemsPast : !sent.itemModifiers) ? modifiersOf(data) : null;
   const scores = mods && sent.scoreChanges && !partial.scoreChanges ? scoresOf(base, data, mods, warnings) : null;
   const scoreMods = scores ? (Object.fromEntries(ABILITY_KEYS.map((a) => [a, abilityMod(scores[a])])) as Record<AbilityKey, number>) : null;
   // The level is null exactly when the classes were not read, so each output that needs the classes tests it.
-  const level = sent.classes && !partial.classes ? levelOf(classes, warnings) : null;
+  const level = classesWhole ? levelOf(classes, warnings) : null;
   const hasFeature = (feature: string) => classes.find((c) => c.features.has(feature.toLowerCase()));
 
   const stats: PcFillStats = { rolls: [] };
@@ -694,7 +704,8 @@ function read(json: unknown, newId: () => string): PcFill | null {
     stats.saves = savesOf(mods);
     stats.skills = skillsOf(mods);
     stats.defenses = defensesOf(mods);
-    stats.jack = hasJack(mods);
+    // Jack of All Trades is a class feature gated by level (lockedFeatureIds), so without the whole classes the gate is unknown and the stored flag stays.
+    if (classesWhole) stats.jack = hasJack(mods);
     stats.alert = has(mods, "proficiency", "initiative");
   }
   if (mods && scoreMods) stats.adjust = adjustOf(mods, scoreMods);
