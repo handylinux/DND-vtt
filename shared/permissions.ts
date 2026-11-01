@@ -1595,6 +1595,11 @@ function draggedWalls(c: Check, op: Op): Decision {
       const blocker = movementRules.legBlocker(c.state, moved.trace[i - 1]!, to);
       if (blocker !== null) return refuse("forbidden", walkWords(c, moved.trace[i - 1]!, to, blocker));
     }
+    // Where a move stops it, it stands full size, so off its grid a wall through its box refuses the move, as the mover's own stand
+    // does (`standCheck`, FU44-OPUS-1). One some player cannot see stops in the private pass, which judges no stand yet. A seat's
+    // step and a get-off are judged as before, as the device that sends them judges them.
+    const n = moved.route.length;
+    if (c.stands && (op.t === "token.move" || op.t === "token.moveMany") && n > 1 && offGridWallThrough(c.state, walkEnd(c.state, moved.trace[n - 2]!, moved.route[n - 1]!))) return refuse("forbidden", standWords(c, member, moved.route[n - 1]!));
   }
   return OK;
 }

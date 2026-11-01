@@ -67,6 +67,28 @@ describe("a player's move that ends full size off the grid meets the walls throu
   });
 });
 
+/** A dragged Large brute half a square off the grid behind a PC east of the rock, a wall at x 19 from y 14 to 16, and a warhorse left squeezed at 19.5, 0.5 by a wall at x 21 that no longer pinches it. */
+function besides(): RoomState {
+  const s = corridor();
+  wall(s, "fu44fx000001", [19, 14], [19, 16]);
+  wall(s, "fu44fx000002", [21, 0], [21, 2]);
+  s.tokens.pc = token("pc", { x: 16, y: 13, name: "Pc", kind: "pc", ownerIds: ["p1"] });
+  s.tokens.brute = token("brute", { size: "large", x: 16.5, y: 14, name: "Brute", kind: "npc", attached: { to: "pc", kind: "drag" } });
+  s.tokens.stale = { ...token("stale", { size: "large", x: 19.5, y: 0.5, name: "Warhorse", kind: "npc", ownerIds: ["p1"] }), squeeze: true };
+  return s;
+}
+
+describe("the stand test beside the mover (review FU44-OPUS-1)", () => {
+  test("a creature the mover drags that would stand off the grid with a wall through its box refuses the move, which its core alone would pass", () => {
+    const s = besides();
+    // The brute ends at 17.5, 14, its box over the wall at x 19 and its core clear of it.
+    assert.equal(decide({ t: "token.move", tokenId: "pc", x: 17, y: 13 }, s), `forbidden: ${WALL_IN_THE_WAY}`);
+    assert.equal(decide({ t: "token.moveMany", moves: [{ tokenId: "pc", x: 17, y: 13 }] }, s), `forbidden: ${WALL_IN_THE_WAY}`);
+    assert.equal(decide({ t: "token.move", tokenId: "pc", x: 16, y: 12 }, s), "ok", "north, clear of it");
+  });
+
+});
+
 /** Sol's room (review FU44-SOL-01): fog on, a Large warhorse at 0.5, 9.5, a short wall through its box at x 2.5 and 3.5 but not its core, and a wall at x 10. */
 function shortWall(lit: boolean): RoomState {
   const s = room({ scenes: { s1: scene("s1", { bounds: { w: 22, h: 16 }, blockMovement: true, autoWalls: "off", fogEnabled: true }) } });

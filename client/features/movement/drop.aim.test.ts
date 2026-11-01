@@ -14,7 +14,7 @@ import { P1, room, scene, token } from "#shared/testutil.ts";
 import { WorkBudget } from "#shared/rules/walk.ts";
 import { RoomScope } from "../../state/scope.ts";
 import { measureWalk } from "../measure/walkRuler.ts";
-import { cutRoute, moveOpsOf, planOne, pressedAim, routeTarget, stopText, walkersStop, type DropPlan } from "./drop.ts";
+import { cutRoute, moveOpsOf, planGroup, planOne, pressedAim, routeTarget, stopText, walkersStop, type DropPlan } from "./drop.ts";
 import { RouteWork, type Frames } from "./routeWork.ts";
 import { dragStops, type DragDeps } from "./stageHooks.ts";
 import { seenRoom } from "./testing.ts";
@@ -233,6 +233,23 @@ describe("squares: a walk that ends full size where its box would reach through 
     assert.deepEqual(plan.moves.map((m) => [m.x, m.y, m.squeeze]), [[3.5, 9.5, undefined]], "its core stays clear a square further, at 4.5, where its box would reach over the wall at x 6");
     assert.deepEqual(plan.stop?.at, { x: 3.5, y: 9.5 });
     assert.ok(takes(s, plan));
+  });
+
+  test("a creature the walker drags stands where the walk ends as the server takes it: a Large brute off the grid is never left with a wall through its box (review FU44-OPUS-1)", () => {
+    const s = room({ scenes: { s1: scene("s1", { bounds: { w: 22, h: 16 }, blockMovement: true, autoWalls: "off" }) } });
+    s.buildChunks = {};
+    // The brute half a square east of its holder's grid, so a square east it stands at 17.5, its box over this wall and its core clear.
+    wall(s, "fu44fd000000", [19, 14], [19, 16]);
+    s.tokens.pc = token("pc", { x: 16, y: 13, name: "Pc", kind: "pc", ownerIds: ["p1"] });
+    s.tokens.brute = token("brute", { size: "large", x: 16.5, y: 14, name: "Brute", kind: "npc", attached: { to: "pc", kind: "drag" } });
+    const cut = walkersStop(s, ownWalk(s.tokens.pc), [{ x: 16, y: 13, elevation: 0 }, { x: 20, y: 13, elevation: 0 }], [s.tokens.brute]);
+    assert.deepEqual([cut?.at.x, cut?.at.y, cut?.blocker], [16, 13, "wall"], "held where it stands");
+    const view = seenRoom(s);
+    const group = planGroup(view, [view.tokens.pc!], 1, 0, "walk", () => [view.tokens.brute!]);
+    assert.deepEqual([group.moves.length, group.held.map((h) => h.token.id)], [0, ["pc"]], "a group drag a square east holds it");
+    const north = planGroup(view, [view.tokens.pc!], 0, -1, "walk", () => [view.tokens.brute!]);
+    assert.deepEqual(north.moves.map((m) => [m.x, m.y]), [[16, 12]]);
+    assert.ok(takes(s, north) && !canApply({ t: "token.moveMany", moves: [{ tokenId: "pc", x: 17, y: 13 }] }, P1, s, { canUseAsset: () => true }).ok, "as the server judges both");
   });
 
   test("a walk past 64 pieces from half a square off the grid is cut where the mount's box is clear of the wall, on a player's walk", () => {

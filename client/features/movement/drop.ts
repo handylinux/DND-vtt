@@ -688,7 +688,7 @@ export function planGroup(state: DropView, tokens: readonly DropToken[], dx: num
     // A group move stores no squeeze, so on hexes its leg ends full size wherever it lies (LegEnd), as the server judges it.
     const end = { x: to.x, y: to.y, elevation, ...(isHex(g) ? { squeeze: false } : {}) };
     const own = mode === "walk" ? legStop(state, walking, end) : null;
-    const stopped = own ? heardStop(state, walking, end, own) : mode === "walk" ? followersOf(state, walking, [from, end], walkersOf(token), false).stop(1, end) : null;
+    const stopped = own ? heardStop(state, walking, end, own) : mode === "walk" ? followersOf(state, walking, [from, end], walkersOf(token), false).stop(1, end, true) : null;
     if (stopped) held.push({ token, blocker: stopped.blocker });
     else moves.push(landed(state, token, { ...to, squeeze: false }));
   }
@@ -710,9 +710,11 @@ type WalkersState = BuildState & { tokens?: Readonly<Record<string, Token | unde
  * review DP34-ASTRA-01). `end` is whether the walk ends squeezed, as the
  * op says, else as where it stands: a cut along a piece ends it full.
  * `stop` is the first of them whose leg from the holder's piece `i`'s
- * start a wall or a ledge stops, with the holder at `to` on that piece.
+ * start a wall or a ledge stops, with the holder at `to` on that piece,
+ * and with `ends`, where the walk ends there, the first that would stand
+ * full size off its grid with a wall through its box.
  */
-function followersOf(state: WalkersState, lead: Walker, points: readonly RoutePoint[], walkers: readonly DropToken[], end?: boolean): { stop: (i: number, to: RoutePoint) => { blocker: Blocker } | null } {
+function followersOf(state: WalkersState, lead: Walker, points: readonly RoutePoint[], walkers: readonly DropToken[], end?: boolean): { stop: (i: number, to: RoutePoint, ends?: boolean) => { blocker: Blocker } | null } {
   // As the holder's walk stands where it starts (route.ts WalkTrace).
   const grounded = footing(state.buildChunks, walkFrom(state.buildChunks, lead)) === "ground";
   // Each walker comes as the token it is (attach/walk.ts walkersFor), and its holders up to the lead, riders and carried creatures
@@ -738,11 +740,14 @@ function followersOf(state: WalkersState, lead: Walker, points: readonly RoutePo
     return { spot, trace: followerTrace(w, [{ x: w.x, y: w.y, elevation: w.elevation }, ...points.slice(1).map((p, k) => spot(p, squeezes[k + 1]!))]) };
   });
   return {
-    stop: (i, to) => {
+    stop: (i, to, ends = false) => {
       for (const f of follows) {
         // Full size at each point, as the server stores it wherever it stops (moveLeg.ts stoppedAtWalls).
-        const stop = legStop(state, f.trace[i - 1]!, { ...f.spot(to, squeezedAt(i, to)), squeeze: false });
+        const at = f.spot(to, squeezedAt(i, to));
+        const stop = legStop(state, f.trace[i - 1]!, { ...at, squeeze: false });
         if (stop) return stop;
+        // Where the walk ends it stands there, off its grid only with no wall through its box (permissions.ts draggedWalls, FU44-OPUS-1).
+        if (ends && !fullStandClear(state, f.trace[i - 1]!, at)) return { blocker: "wall" as const, door: null };
       }
       return null;
     },
@@ -818,7 +823,7 @@ export function walkersStop(
   const taken = (c: RoutePoint, whole: number): { plain?: true } | null => {
     if (!route) return {};
     if (routeStop(state, lead, cutPieces(points, route, { at: c, pieces: whole }), walk.landing ? walk.landing(c) : c.elevation) === null) return {};
-    return legStop(state, trace[0]!, c) === null && followersOf(state, lead, [start, c], walkers, false).stop(1, c) === null ? { plain: true } : null;
+    return legStop(state, trace[0]!, c) === null && followersOf(state, lead, [start, c], walkers, false).stop(1, c, true) === null ? { plain: true } : null;
   };
   const hex = hexWallsOf(state, lead)?.g ?? null;
   // A cut lands full, so off the grid of squares it ends only where no wall passes through the holder's box, as the server
@@ -836,7 +841,7 @@ export function walkersStop(
     return Array.from({ length: n - 1 }, (_, m) => ({ x: a.x + along(b.x - a.x, n - 1 - m), y: a.y + along(b.y - a.y, n - 1 - m) }));
   };
   for (let i = 1; i < points.length; i++) {
-    const stopped = followers.stop(i, points[i]!);
+    const stopped = followers.stop(i, points[i]!, i === points.length - 1);
     if (!stopped) continue;
     for (let j = i; j >= 1; j--) {
       const a = points[j - 1]!;
@@ -844,13 +849,13 @@ export function walkersStop(
       const at = trace[j - 1]!;
       for (const spot of spots(a, b, at)) {
         const c = { ...spot, elevation: landedElevation(state.buildChunks, at, spot) };
-        if (legStop(state, at, c) !== null || followers.stop(j, c) !== null) continue;
+        if (legStop(state, at, c) !== null || followers.stop(j, c, true) !== null) continue;
         const kept = taken(c, j - 1);
         if (kept && standsAt(c, kept, j - 1)) return { at: c, pieces: kept.plain ? 0 : j - 1, blocker: stopped.blocker, ...kept };
       }
       // A cut at a waypoint ends there full, as it lands (`cutForWalkers`), so what the holder drags is read with the holder full there,
       // on the seat that gives a rider, not as it stood there on the way (review DP34-ASTRA-04).
-      const endsFull = () => (!hex || !onSqueezedLattice(hex, lead, a)) && followersOf(state, lead, points.slice(0, j), walkers, false).stop(j - 1, a) === null;
+      const endsFull = () => (!hex || !onSqueezedLattice(hex, lead, a)) && followersOf(state, lead, points.slice(0, j), walkers, false).stop(j - 1, a, true) === null;
       const kept = j === 1 ? {} : endsFull() ? taken(a, j - 1) : null;
       if (kept && (j === 1 || standsAt(a, kept, j - 2))) return { at: a, pieces: kept.plain ? 0 : j - 1, blocker: stopped.blocker, ...kept };
     }
