@@ -527,7 +527,8 @@ function LightsLead(props: { text: string; action: string; disabled: boolean; on
   );
 }
 
-function Options(props: {
+/** Exported for UvttLightChoice.test.ts, which renders it to check its choices are named in one style. */
+export function Options(props: {
   read: Read;
   objects: boolean;
   onObjects(v: boolean): void;
