@@ -4549,13 +4549,29 @@ async function openTokenBlock(page: Page, name: string, at: { x: number; y: numb
   await page.getByRole("button", { name: "Fit the map to the screen", exact: true }).click();
   const bar = await selectToken(page, name, at);
   assert.ok(bar, `sbr: ${name}'s token bar opens`);
-  await expandBar(bar);
-  const panel = await openPanel(page, "Token");
+  // Details opens the panel from the bar itself: on a 480 x 320 screen the expanded bar covers the Tools row.
+  if (!(await visible(bar.getByRole("button", { name: "Details", exact: true })))) await expandBar(bar);
+  await (await barControl(bar, "Details")).click();
+  const panel = page.getByRole("tabpanel", { name: "Token", exact: true }).or(page.getByRole("region", { name: "Token", exact: true }));
   const fold = panel.getByRole("button", { name: "Stat block", exact: true });
   await fold.waitFor();
   if ((await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
   await panel.locator("[data-ability-grid]").first().waitFor();
   return panel;
+}
+
+/**
+ * What the sweep measures of an open list or options. Where the box scrolls its
+ * content on a short screen (design 9), the content column is taller than the
+ * box and no centering inside it is meant, so each row and the title are
+ * measured on their own instead.
+ */
+async function blockMenuRoot(popover: Locator): Promise<Locator> {
+  const scrolls = await popover.first().evaluate((el) => {
+    const box = el as unknown as { scrollHeight: number; clientHeight: number; querySelectorAll(s: string): ArrayLike<{ scrollHeight: number; clientHeight: number }> };
+    return box.scrollHeight > box.clientHeight + 1 || Array.from(box.querySelectorAll("*")).some((n) => n.scrollHeight > n.clientHeight + 1 && n.clientHeight > 40);
+  });
+  return scrolls ? popover.locator('[role="menuitem"], [data-roll-mode-title]') : popover;
 }
 
 type BlockRollsAt = {
@@ -4593,8 +4609,9 @@ async function blockRollScreens(sweep: Sweep, page: Page, screen: string, root: 
   const popover = page.locator("[data-rvtt-popover]").filter({ has: menu });
   await box.click();
   await menu.waitFor();
-  await sweep.measure(page, `sbr-${screen}-list`, popover);
+  await sweep.measure(page, `sbr-${screen}-list`, await blockMenuRoot(popover));
   await sweep.add(page, `sbr-${screen}-list`, await rollRowLines(popover, `${where}-list`));
+  await sweep.add(page, `sbr-${screen}-list`, await popoverScrollbarLines(popover, `${where}-list`));
   if (at.marked) await sweep.add(page, `sbr-${screen}-list`, await proficiencyHeightLines(popover, `${where}-list`, true));
   // The open box wears FL-17's ring while its list is open (useRollModeMenu.tsx markRollModeSource).
   const ring = await box.evaluate((el) => (el as unknown as { style: { boxShadow: string } }).style.boxShadow);
@@ -4607,8 +4624,9 @@ async function blockRollScreens(sweep: Sweep, page: Page, screen: string, root: 
   const options = page.getByRole("menu", { name: new RegExp(`^Roll options for ${at.row.source.replace(/^\^/, "")}`) });
   await options.waitFor();
   const optionsPopover = page.locator("[data-rvtt-popover]").filter({ has: options });
-  await sweep.measure(page, `sbr-${screen}-options`, optionsPopover);
+  await sweep.measure(page, `sbr-${screen}-options`, await blockMenuRoot(optionsPopover));
   await sweep.add(page, `sbr-${screen}-options`, await rollRowLines(optionsPopover, `${where}-options`));
+  await sweep.add(page, `sbr-${screen}-options`, await popoverScrollbarLines(optionsPopover, `${where}-options`));
   // Escape steps back to the list, and the second closes it on the box (5.3).
   await page.keyboard.press("Escape");
   await menu.waitFor();
@@ -4654,19 +4672,25 @@ export function blockRollTests(): void {
       try {
         const shot = (on: Page, what: string) => shots.take(on, `sbr-${size.name}-${Math.round(scale * 100)}-${what}`);
         await resetThorn();
+        // A fight's turn cards would cover the Tools row on the smallest screens, and nothing here needs a fight.
+        if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
         const page = await dmPageFor(size);
         page.setDefaultTimeout(10_000);
         await openAt(page, size, scale);
         await openAt(pat, size, scale);
         pat.setDefaultTimeout(10_000);
-        // The DM's taps for a creature a player plays ask that player, so those blocks show the list and the options, not a roll.
+        // The page may come back with a token's bar open, which on a 480 x 320 screen covers the Tools row.
+        await escapeAll(page);
+        const open = page.getByRole("dialog", { name: / actions$/ }).getByRole("button", { name: "Close", exact: true });
+        if (await visible(open)) await open.first().click();
+        // The DM's taps for a creature a player plays ask that player, so those blocks show Initiative's options, which never ask, and roll nothing.
         const thorn = await openTokenBlock(page, "Thorn", { x: 5, y: 5 });
-        await blockRollScreens(sweep, page, "pc-token", thorn.locator("[data-pc-stats]"), { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: null });
+        await blockRollScreens(sweep, page, "pc-token", thorn.locator("[data-pc-stats]"), { ability: "Dexterity", row: /^Initiative/, marked: true, roll: null });
         const monster = await openTokenBlock(page, "FL7 Monster", FL7_MONSTER_AT);
         await blockRollScreens(sweep, page, "monster", monster, { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: /^Dexterity save/ });
         await shot(page, "monster");
         const companion = await openTokenBlock(page, "FL7 Companion", FL7_COMPANION_AT);
-        await blockRollScreens(sweep, page, "companion", companion, { ability: "Dexterity", row: /^Dexterity save/, marked: true, roll: null });
+        await blockRollScreens(sweep, page, "companion", companion, { ability: "Dexterity", row: /^Initiative/, marked: true, roll: null });
 
         const sheet = await thornsPage(pat);
         const fold = sheet.getByRole("button", { name: "Stat block", exact: true });
@@ -4686,6 +4710,10 @@ export function blockRollTests(): void {
           await sheet.locator("[data-pc-stats]").waitFor();
         }
         console.log(`${sweep.at}: measured ${[...sweep.seen].join(", ")}`);
+      } catch (err) {
+        await shots.take(dm, `sbr-fail-${size.name}-dm`).catch(() => undefined);
+        await shots.take(pat, `sbr-fail-${size.name}-pat`).catch(() => undefined);
+        throw err;
       } finally {
         sweep.tally();
       }

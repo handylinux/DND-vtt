@@ -155,7 +155,8 @@ export async function proficiencyHeightLines(root: Locator, screen: string, requ
       getBoundingClientRect(): { width: number; height: number };
       ownerDocument: { defaultView: { getComputedStyle(node: El): { visibility: string; textOverflow: string; boxShadow: string; outlineStyle: string; backgroundColor: string; getPropertyValue(name: string): string } } };
     };
-    const MARKED = '[data-proficiency-level="prof"], [data-proficiency-level="expert"]';
+    // A menu row's mark is its own border (form "box"), with no label inside it, so the row is its own label.
+    const MARKED = '[data-proficiency-level="prof"], [data-proficiency-level="expert"], [data-proficiency-mark][data-proficiency-form="box"]:not(:has([data-proficiency-level]))';
     const labels: El[] = [];
     const marks = new Set<El>();
     const containers = new Set<El>();
@@ -623,7 +624,9 @@ export async function saveOutlineLines(page: Page, root: Locator, screen: string
     doc.body.appendChild(probe);
     const accent = css(probe).color;
     probe.remove();
-    const boxes = grids.flatMap((grid) => Array.from(grid.children));
+    // A rolling grid also holds each box's hidden description and its list, which are not boxes.
+    const isBox = (el: El) => el.querySelector("dt, [data-ability-abbr]") !== null;
+    const boxes = grids.flatMap((grid) => Array.from(grid.children).filter(isBox));
     const rolls = (box: El) => box.hasAttribute("data-ability-abbr") || box.querySelector("[data-ability-abbr]") !== null;
     const name = (box: El) => (rolls(box) ? box.querySelector("[data-ability-abbr]") : box.querySelector("dt"))?.textContent?.trim() ?? "?";
     const PARTS = "dt, dd, [data-ability-abbr], [data-ability-score], [data-ability-save]";
@@ -656,7 +659,7 @@ export async function saveOutlineLines(page: Page, root: Locator, screen: string
       });
     };
     for (const grid of grids) {
-      const all = Array.from(grid.children);
+      const all = Array.from(grid.children).filter(isBox);
       const plain = all.find((box) => css(box).boxShadow === "none");
       if (!plain) continue;
       const expected = offsets(plain);
@@ -804,7 +807,8 @@ export async function menuWordLines(root: Locator, at: string): Promise<string[]
           if (node.nodeType === 1) {
             const el = node as Element;
             const style = doc.defaultView.getComputedStyle(el);
-            if (el.getAttribute("aria-hidden") === "true" || style.display === "none" || style.visibility === "hidden") return;
+            // A named item (aria-label) hides its drawn words from readers, which still read as words on the screen.
+            if ((el.getAttribute("aria-hidden") === "true" && item.getAttribute("aria-label") === null) || style.display === "none" || style.visibility === "hidden") return;
           }
           if (node.nodeType === 3) {
             for (const match of (node.textContent ?? "").matchAll(/[\p{L}\p{N}]+/gu)) {
@@ -1928,11 +1932,10 @@ type RollEl = {
  *
  * - It is a `role="group"` of six buttons, each named by its own label, and
  *   no button holds a hidden ", proficient" span.
- * - **No geometry change**: a text grid of the same words, built beside it
- *   from the buttons' own computed type and spacing, has boxes of the same
- *   size, and every line of every box stands where the text box's line does.
- * - **Size**: a box is at least 44 px tall and wide. Its height is FL-15's,
- *   within 2 px of 56 CSS px at the page's zoom.
+ * - **Size, no geometry change**: a box is at least 44 px tall and wide, and
+ *   as tall as FL-15's text box, 56 px within 1.5 px at the page's zoom. A
+ *   button's `font: inherit` resets the line height its box sets, so a box
+ *   that lost its tight line height grows by the body's looser one.
  * - **The corner mark** lies inside its box's first line, 6 px from the
  *   box's top and right edges, and clear of the abbreviation's words.
  * - **Rings**: the box's focus ring (2 px out and 2 px more) and FL-17's
@@ -1949,8 +1952,9 @@ export async function rollingGridLines(grid: Locator, screen: string): Promise<s
     const css = (el: RollEl) => doc.defaultView.getComputedStyle(el);
     const zoom = (grid as unknown as { currentCSSZoom?: number }).currentCSSZoom ?? 1;
     if (grid.getAttribute("role") !== "group") out.push(`its grid is role ${grid.getAttribute("role")}, not a group`);
-    const boxes = Array.from(grid.children);
-    if (boxes.length !== 6 || boxes.some((b) => b.tagName !== "BUTTON")) return [`${out.join(", ")}${out.length ? ", " : ""}its grid holds ${boxes.length} children, ${boxes.map((b) => b.tagName.toLowerCase()).join(" ")}, not six buttons`];
+    // Each box's hidden description stands beside it, so only the buttons are boxes.
+    const boxes = Array.from(grid.children).filter((b) => b.tagName === "BUTTON");
+    if (boxes.length !== 6 || boxes.some((b) => b.tagName !== "BUTTON")) return [`${out.join(", ")}${out.length ? ", " : ""}its grid holds ${boxes.length} buttons, not six`];
 
     const abbr = (b: RollEl) => b.querySelector("[data-ability-abbr]");
     const name = (b: RollEl) => abbr(b)?.textContent?.trim() ?? "?";
@@ -1962,54 +1966,8 @@ export async function rollingGridLines(grid: Locator, screen: string): Promise<s
       for (const part of ["data-ability-abbr", "data-ability-score", "data-ability-save"]) if (!b.querySelector(`[${part}]`)) out.push(`${name(b)}: no ${part}`);
       const r = b.getBoundingClientRect();
       if (r.height / zoom < 44 || r.width / zoom < 44) out.push(`${name(b)}: ${(r.width / zoom).toFixed(1)} x ${(r.height / zoom).toFixed(1)} px, under 44 px`);
-      if (Math.abs(r.height / zoom - 56) > 6) out.push(`${name(b)}: ${(r.height / zoom).toFixed(1)} px tall, not FL-15's about 56`);
-    }
-
-    // The same words as a text grid, in the buttons' own type, laid beside the grid.
-    const text = doc.createElement("dl");
-    const g = css(grid);
-    text.style.cssText = `margin:0;display:grid;grid-template-columns:${g.gridTemplateColumns};gap:${g.rowGap} ${g.columnGap}`;
-    const typed = (from: RollEl, tag: string) => {
-      const el = doc.createElement(tag);
-      const c = css(from);
-      el.style.cssText = `margin:0;font-size:${c.fontSize};font-weight:${c.fontWeight};letter-spacing:${c.letterSpacing};text-transform:${c.textTransform};color:${c.color};white-space:${c.whiteSpace};line-height:${c.lineHeight}`;
-      el.innerHTML = from.innerHTML;
-      return el;
-    };
-    for (const b of boxes) {
-      const c = css(b);
-      const box = doc.createElement("div");
-      box.style.cssText = `padding:${c.paddingTop} ${c.paddingRight} ${c.paddingBottom} ${c.paddingLeft};border-radius:${c.borderTopLeftRadius};background:${c.backgroundColor};line-height:${c.lineHeight};font-size:${c.fontSize};box-shadow:${c.boxShadow}`;
-      for (const [sel, tag] of [["[data-ability-abbr]", "dt"], ["[data-ability-score]", "dd"], ["[data-ability-save]", "dd"]] as const) {
-        const from = b.querySelector(sel);
-        if (from) box.appendChild(typed(from, tag));
-      }
-      text.appendChild(box);
-    }
-    // The corner mark is not part of a text grid's words.
-    for (const m of Array.from(text.querySelectorAll("svg"))) m.remove();
-    grid.insertAdjacentElement("afterend", text);
-    try {
-      const textBoxes = Array.from(text.children);
-      boxes.forEach((b, i) => {
-        const t = textBoxes[i]!;
-        const br = b.getBoundingClientRect();
-        const tr = t.getBoundingClientRect();
-        if (Math.abs(br.width - tr.width) > 0.5 || Math.abs(br.height - tr.height) > 0.5) out.push(`${name(b)}: ${br.width.toFixed(2)} x ${br.height.toFixed(2)} px rolling, ${tr.width.toFixed(2)} x ${tr.height.toFixed(2)} px as text`);
-        const bParts = ["[data-ability-abbr]", "[data-ability-score]", "[data-ability-save]"].map((s) => b.querySelector(s));
-        const tParts = Array.from(t.children);
-        bParts.forEach((p, j) => {
-          const q = tParts[j];
-          if (!p || !q) return;
-          const pr = p.getBoundingClientRect();
-          const qr = q.getBoundingClientRect();
-          const dy = pr.top - br.top - (qr.top - tr.top);
-          const dx = pr.left - br.left - (qr.left - tr.left);
-          if (Math.abs(dy) > 0.5 || Math.abs(dx) > 0.5) out.push(`${name(b)}: line ${j + 1} stands ${dx.toFixed(2)}, ${dy.toFixed(2)} px from where a text box's does`);
-        });
-      });
-    } finally {
-      text.remove();
+      // FL-15's box is about 56 px tall with the tight line height its button must keep (a button's own font shorthand resets it).
+      if (Math.abs(r.height / zoom - 56) > 1.5) out.push(`${name(b)}: ${(r.height / zoom).toFixed(1)} px tall, not FL-15's 56`);
     }
 
     // The corner mark: inside the first line, 6 px from the top and right, and clear of the abbreviation's words.

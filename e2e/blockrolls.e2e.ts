@@ -894,7 +894,8 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await pat.locator("[data-ability-blocked]").filter({ hasText: "Rolling needs a connection." }).waitFor();
       const rows = list.getByRole("menuitem");
       for (let i = 0; i < (await rows.count()); i++) assert.equal(await rows.nth(i).getAttribute("aria-disabled"), "true", `row ${i} is disabled`);
-      await rows.first().tap({ force: true });
+      // A click on the element itself, since a finger at its coordinates could land outside the list if the offline notice moved the page.
+      await readerClick(rows.first());
       await noRoll(patSent, from, "a tap on a disabled row");
       assert.ok(await list.isVisible(), "a disabled row closes nothing");
       await closeLists(pat);
@@ -922,7 +923,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     const list = listOf(dm, "Dexterity");
     await list.waitFor();
     await dm.locator("[data-ability-blocked]").filter({ hasText: "Rolls are not sent from a preview." }).waitFor();
-    await list.getByRole("menuitem").first().click({ force: true });
+    await readerClick(list.getByRole("menuitem").first());
     await noRoll(dmSent, dmFrom, "a tap in a preview");
     await dm.keyboard.press("Escape");
     await preview.getByRole("button", { name: "Exit", exact: true }).click();
@@ -1170,6 +1171,57 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await reopenRoom(pat);
     } finally {
       await ops.send({ t: "actor.effect.remove", target: { characterId: run.thornChar }, effectId }).catch(() => undefined);
+      await closeSheets(pat);
+    }
+  });
+
+  test("sbr-20. the visual pass: the PC sheet closed, its list, its options and a result on a phone, and a monster, a companion and Wild Shape on a computer", async () => {
+    const sheet = await patSheet();
+    const view = sheet.locator("[data-pc-stats]");
+    await gridOf(view).scrollIntoViewIfNeeded();
+    await sleep(400);
+    await shots.take(pat, "vp-pc-sheet-closed");
+    await boxOf(view, "Dexterity").tap();
+    const list = listOf(pat, "Dexterity");
+    await list.waitFor();
+    await sleep(400);
+    await shots.take(pat, "vp-pc-sheet-list");
+    await hold(patCdp, list.getByRole("menuitem", { name: /^Dexterity save/ }));
+    await optionsOf(pat, /^Roll options for Dexterity save/).waitFor();
+    await sleep(400);
+    await shots.take(pat, "vp-pc-sheet-options");
+    await pat.keyboard.press("Escape");
+    await list.getByRole("menuitem", { name: /^Stealth/ }).tap();
+    await resultOf(view).first().waitFor();
+    await sleep(400);
+    await sleep(400);
+    await shots.take(pat, "vp-pc-sheet-result");
+    await closeSheets(pat);
+    // A monster and a companion for the DM, whose rolls are secret and asked.
+    const goblin = await dmPanel("Goblin", run.goblin);
+    await boxOf(goblin, "Dexterity").click();
+    await listOf(dm, "Dexterity").waitFor();
+    await sleep(400);
+    await shots.take(dm, "vp-monster-list");
+    await closeLists(dm);
+    const wolf = await dmPanel("Wolf", run.wolf);
+    await boxOf(wolf, "Dexterity").click();
+    await listOf(dm, "Dexterity").waitFor();
+    await sleep(400);
+    await shots.take(dm, "vp-companion-list");
+    await closeLists(dm);
+    // Wild Shape, on the phone.
+    try {
+      await ops.send({ t: "character.update", characterId: run.thornChar, patch: { actor: { srdId: "wolf", wildShape: true } } });
+      const shaped = await patSheet();
+      await shaped.locator("[data-shape-numbers]").waitFor();
+      await boxOf(shaped, "Wisdom").tap();
+      await listOf(pat, "Wisdom").waitFor();
+      await sleep(400);
+    await shots.take(pat, "vp-wild-shape-list");
+      await closeLists(pat);
+    } finally {
+      await ops.send({ t: "character.update", characterId: run.thornChar, patch: { actor: { srdId: null } } });
       await closeSheets(pat);
     }
   });
