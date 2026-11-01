@@ -171,4 +171,19 @@ describe("squares: what a holder drags follows it in single file where its move 
     assert.deepEqual([both.tokens.ogre!.x, both.tokens.ogre!.y], [alone.tokens.ogre!.x, alone.tokens.ogre!.y]);
     for (const who of [P1, P2]) assert.equal(stableStringify(projectState(both, who, { sceneId: "s1" })), stableStringify(projectState(alone, who, { sceneId: "s1" })), `${who.memberId} is sent the same`);
   });
+
+  test("a hidden creature in the file that a wall stops takes the one it drags no further than itself along the walk (review FU45B-ASTRA-03)", () => {
+    let s = towing(corridor(), "imp", { x: 1, y: 4, visibility: "dm" });
+    s = { ...s, tokens: { ...s.tokens, rat: token("rat", { x: 0, y: 4, name: "rat", kind: "npc", visibility: "dm", attached: { to: "imp", kind: "drag" } }) } };
+    // Across the imp's way down onto the horse's line.
+    wall(s, "fu45bf000011", [2.25, 4.75], [2.25, 5]);
+    const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 9.5, y: 5.5, squeeze: true, route: [[4, 5.5, 1, 0], [9.5, 5.5, 2, 0]] };
+    const after = served(s, op);
+    const imp = after.tokens.imp!;
+    const rat = after.tokens.rat!;
+    // Left behind by the horse, so out of its reach, as any hidden creature in tow a wall stops.
+    assert.deepEqual([imp.x, imp.y, imp.attached], [2, 5, undefined], "the imp stops at the wall");
+    assert.equal(rat.attached?.to, "imp", `the rat still in the imp's tow, at ${rat.x}, ${rat.y}`);
+    assert.ok(rat.x <= imp.x, `no further along than the imp: ${rat.x}, ${rat.y}`);
+  });
 });

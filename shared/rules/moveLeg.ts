@@ -7,7 +7,7 @@ import { carriedGroup, moveGroups, onHolder, publicMembers, seatedAt, squeezedSe
 import type { Point } from "./geom.ts";
 import { isHex, sceneGrid } from "./grid.ts";
 import { footing } from "./heights.ts";
-import { groundUnder, hexFullStop, landing, legSpots, legStop, offGridWallThrough, storedBuild, walkEnd } from "./movement.ts";
+import { groundUnder, hexFullStop, landing, legSpots, legStop, offGridWallThrough, storedBuild, walkEnd, type MovingToken } from "./movement.ts";
 import { fileRoutes, followerTrace, pieceReach, routeWalkers, walkSqueezes, type RoutePoint, type WalkTrace } from "./route.ts";
 
 /**
@@ -208,7 +208,11 @@ function followGroup(before: RoomState, lead: MovedToken, members: readonly stri
     const member = before.tokens[id]!;
     const holderMove = walked.get(member.attached!.to);
     if (!holderMove) continue;
-    const moved = follow(before, member, holderMove, pub(id), byPlayer, env, { file: file?.get(id), seats: seatsOn, stands });
+    const own = file?.get(id);
+    const holderOwn = file?.get(holderMove.tokenId);
+    // Behind a holder in the file that a wall stopped, no further along than it (review FU45B-ASTRA-03).
+    const walk = own && holderOwn ? behindStop(member, own, holderOwn, holderMove.route) : own;
+    const moved = follow(before, member, holderMove, pub(id), byPlayer, env, { file: walk, seats: seatsOn, stands });
     if (!moved) continue;
     walked.set(id, moved);
     out.push(moved);
@@ -248,6 +252,29 @@ function endSeatsApart(before: RoomState, holder: MovedToken, members: readonly 
   const seated = members.map((id) => before.tokens[id]!).filter((t) => t.attached?.to === holder.tokenId && onHolder(t.attached.kind));
   if (seated.length < 2) return null;
   return squeezedSeatsApart(sceneGrid(scene), standing, holder.route[holder.route.length - 1]!, [seated.filter((t) => pub(t.id)), seated.filter((t) => !pub(t.id))], env.opVersion);
+}
+
+/**
+ * A walk in single file (`own`) cut where its holder, whose own walk in the
+ * file is `holderOwn`, stopped (`stoppedAtWalls`), as it walked `walked`:
+ * the walks are index by index with the lead's, so the holder stopped a
+ * share of the way along its piece, and this walk stops as far along its
+ * own, on its own lattice, short rather than past it. Taken whole where
+ * the holder walked its whole walk.
+ */
+function behindStop(member: MovingToken, own: readonly Point[], holderOwn: readonly Point[], walked: readonly Point[]): readonly Point[] {
+  const m = walked.length - 1;
+  if (m === 0) return own.slice(0, 1);
+  const end = walked[m]!;
+  if (m === holderOwn.length - 1 && end.x === holderOwn[m]!.x && end.y === holderOwn[m]!.y) return own;
+  const reach = (a: Point, b: Point) => Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y));
+  const whole = reach(holderOwn[m - 1]!, holderOwn[m]!);
+  const share = whole === 0 ? 1 : reach(holderOwn[m - 1]!, end) / whole;
+  const from = own[m - 1]!;
+  const to = own[m]!;
+  let at: Point = from;
+  for (const spot of legSpots({ ...member, x: from.x, y: from.y }, to)) if (reach(from, spot) <= share * reach(from, to) + 1e-9) at = spot;
+  return [...own.slice(0, m), at];
 }
 
 /** How a member follows: its single-file walk where it has one, the holder's squeezed seats apart, and whether a hidden one takes the stand test. */
