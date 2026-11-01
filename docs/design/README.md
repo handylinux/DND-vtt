@@ -104,6 +104,9 @@ and for how to use it, the [DM guide](../dm-guide.md).
   request, made shorter.
 - [design-v1-stat-block-rolls.md](design-v1-stat-block-rolls.md): rolling
   from a stat block's ability boxes.
+- [design-v1-token-roll-header.md](design-v1-token-roll-header.md): the
+  Dice panel's result line and dice on a token's panel and a character's
+  page.
 - [design-v1-player-save-spell.md](design-v1-player-save-spell.md): a
   player casting a spell that calls for a save.
 - [design-v1-combat-flow.md](design-v1-combat-flow.md): changes to running a
