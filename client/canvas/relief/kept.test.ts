@@ -176,11 +176,37 @@ describe("the self-copy probe (D-261030-537)", () => {
     assert.equal(again.reads, 0, "a board mounted again reads nothing back");
     assert.equal(again.kept.probe, "ok");
     assert.deepEqual(again.plans, ["first", "scroll"], "and scrolls from its second draw");
-    const offMemo: ProbeMemo = { answer: "off" };
-    const off = new KeptRelief(offMemo);
-    const c = new TestCanvas(20, 10);
-    off.draw({ g: c.g, width: 20, height: 10, ratio: 2 }, { at: { ...AT, width: 20, height: 10 }, clean: true, whole: () => {}, tonedNow: () => [], regions: () => {} });
-    assert.equal(off.probe, "off", "a wrong read holds for the page too");
+  });
+
+  test("a wrong read turns scrolling off for its own board only, so a board mounted later probes again and recovers (review HXPERF2B-OPUS-09)", () => {
+    const memo: ProbeMemo = { answer: null };
+    const mount = (wrong: boolean) => {
+      const kept = new KeptRelief(memo);
+      const c = new TestCanvas(20, 10);
+      // A lost GPU context reads back as zeros, which a broken copy stands in for.
+      c.brokenCopy = wrong;
+      let reads = 0;
+      const getImageData = c.g.getImageData.bind(c.g);
+      c.g.getImageData = (...a: Parameters<typeof getImageData>) => {
+        reads++;
+        return getImageData(...a);
+      };
+      const plans = [0, 1].map((i) => {
+        const plan = kept.draw({ g: c.g, width: 20, height: 10, ratio: 2 }, { at: { ...AT, width: 20, height: 10, x: AT.x + i }, clean: true, whole: () => {}, tonedNow: () => [], regions: () => {} });
+        return plan.kind === "whole" ? plan.why : plan.kind;
+      });
+      return { kept, reads, plans };
+    };
+    const off = mount(true);
+    assert.equal(off.kept.probe, "off");
+    assert.deepEqual(off.plans, ["probe", "probe"], "the board that read wrong repaints whole");
+    assert.equal(memo.answer, null, "and the page keeps no answer from it");
+    const next = mount(false);
+    assert.equal(next.reads, 1, "the next board probes for itself");
+    assert.equal(next.kept.probe, "ok");
+    assert.deepEqual(next.plans, ["first", "scroll"]);
+    assert.equal(memo.answer, "ok", "a right read holds for the page");
+    assert.equal(mount(true).kept.probe, "ok", "and a board after it takes that answer without a readback");
   });
 });
 

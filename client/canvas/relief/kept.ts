@@ -236,8 +236,13 @@ export type KeptDraw = {
  * trip to the map builder) skips the probe's readback, which waits on the
  * GPU (review HXPERF2B-OPUS-06). Empty until a probe answers: a 0 by 0 draw
  * or a thrown readback leaves the probe to the next draw with a size.
+ *
+ * Only "ok" is kept. A right read cannot come by chance, but a wrong one
+ * can, such as a lost GPU context reading zeros, so a wrong read turns
+ * scrolling off for its own board only and the next board probes again
+ * (review HXPERF2B-OPUS-09).
  */
-export type ProbeMemo = { answer: "ok" | "off" | null };
+export type ProbeMemo = { answer: "ok" | null };
 
 /** The page's own probe answer, which every kept picture shares unless a test hands it another. */
 export const PAGE_PROBE: ProbeMemo = { answer: null };
@@ -295,7 +300,8 @@ export class KeptRelief {
       return;
     }
     const read = probeSelfCopy(c.g);
-    if (read !== "again") this.#probe = this.#memo.answer = read;
+    if (read !== "again") this.#probe = read;
+    if (read === "ok") this.#memo.answer = read;
     this.forget();
   }
 
