@@ -1,5 +1,6 @@
 import "./testing/register.ts";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, test } from "node:test";
 import { theme } from "../lib/theme.ts";
 
@@ -74,5 +75,12 @@ describe("a held group gives every shared control the disabled look (LOCKED-LOOK
   test("HeldScope ends it, as Dialog's portal does", () => {
     const markup = renderToStaticMarkup(held(true, h(HeldScope, { children: controls.Button() })));
     assert.doesNotMatch(markup, dim);
+  });
+
+  test("an off field's placeholder draws textDisabled, from the one rule an inline style cannot write", () => {
+    const css = readFileSync(new URL("../globals.css", import.meta.url), "utf8");
+    const rule = /:is\(input, textarea\):is\(:disabled, \[aria-disabled="true"\]\)::placeholder \{\s*color: (#[0-9a-f]{6});\s*\}/.exec(css);
+    assert.ok(rule, "globals.css dims an off field's placeholder");
+    assert.equal(rule[1], theme.color.textDisabled);
   });
 });
