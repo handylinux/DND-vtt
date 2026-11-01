@@ -168,10 +168,14 @@ export function pageTitle(page: Pick<Page, "fill" | "test" | "rows" | "source">)
 /**
  * What Discard asks: "Discard the Dexterity save for 6?", and with no
  * "the" before a name, "Discard Fireball's save?", since a filled page's
- * title already names whose save it is.
+ * title already names whose save it is. An unfilled damage page reads
+ * "Discard the damage for 3?".
  */
 export function discardQuestion(page: Pick<Page, "fill" | "test" | "rows" | "source">): string {
-  return `Discard ${page.fill ? "" : "the "}${pageTitle(page)}?`;
+  if (page.fill) return `Discard ${pageTitle(page)}?`;
+  // Only "Damage for 3" starts with a common word. The ability and skill names of the other titles stay capitalized.
+  const title = pageTitle(page);
+  return `Discard the ${page.test.kind === "none" ? title.charAt(0).toLowerCase() + title.slice(1) : title}?`;
 }
 
 export function GroupSave(props: { parent: "Dice" | "Areas"; onBack(): void; areaIds?: (templateId: string) => string[] }) {
