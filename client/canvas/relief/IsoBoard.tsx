@@ -4,6 +4,7 @@ import { Ellipse, Group, Layer, Rect, Shape, Stage } from "react-konva";
 import { CHUNK_CELLS, DEFAULT_SETTINGS, type BuildChunk, type Label, type RoomState, type Scene, type TerrainId, type Token } from "#shared/model.ts";
 import { SAMPLES } from "#shared/rules/aoe.ts";
 import { onHolder } from "#shared/rules/attach.ts";
+import { sightClipOf } from "#shared/rules/vision.ts";
 import { sceneWalls } from "#shared/rules/walls.ts";
 import type { TexturedTerrain } from "../../features/builder/geometry.ts";
 import { drawLabel, measureLabel } from "../../features/builder/draw.ts";
@@ -181,6 +182,8 @@ function IsoBoardImpl(props: IsoBoardProps) {
 
   // The standing walls and pillars, by bucket, each bucket's list kept while its pieces stay the same.
   const walls = useMemo(() => sceneWalls(scene, chunks), [scene, chunks]);
+  // The walls a hex creature's sub-cells are clipped by, as the server withholds it (HX-D10), for the DM's dimming.
+  const sightClip = useMemo(() => (isHex(grid) ? sightClipOf(walls) : null), [grid, walls]);
   const wallGroups = useRef<Map<string, readonly WallPiece[]> | null>(null);
   const grouped = useMemo(() => {
     // Pillars are painted ground, which stays square.
@@ -417,7 +420,7 @@ function IsoBoardImpl(props: IsoBoardProps) {
       if (item.kind !== "standee") continue;
       const s = byStandee.get(item.id)!;
       const t = byId.get(item.id)!;
-      const dim = props.role === "dm" && dimmedForDm(dmFog, grid, t);
+      const dim = props.role === "dm" && dimmedForDm(dmFog, grid, t, sightClip);
       const spot = spots[item.id];
       const placed = spot ? movedIso(t, spot, { rise: s.rise, inset: s.inset }) : s;
       const fresh: IsoToken = { turn, base: placed.base, ground: placed.ground, drawn: placed.drawn, capped: placed.capped, rise: placed.rise, inset: placed.inset, pits: item.pits.map((p) => p.poly), dim, pressOnly: false, press: [], rings: rings?.byToken.get(item.id) ?? NO_RINGS };
@@ -426,7 +429,7 @@ function IsoBoardImpl(props: IsoBoardProps) {
     }
     isoCache.current = next;
     return next;
-  }, [items, byStandee, byId, turn, props.role, dmFog, grid, spots, movedIso, rings]);
+  }, [items, byStandee, byId, turn, props.role, dmFog, grid, sightClip, spots, movedIso, rings]);
   const silhouettes = useMemo(() => items.filter((i): i is Extract<Item, { kind: "standee" }> => i.kind === "standee" && i.silhouette), [items]);
 
   // The lift margin: the highest drawn lift in view, in steps, at most one canvas height.

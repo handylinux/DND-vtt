@@ -3,7 +3,9 @@ import { flatHeights } from "../../lib/view.ts";
 import { describe, test } from "node:test";
 import { FOG_SUBCELLS, type FogTile, type SightTile, type Token } from "#shared/model.ts";
 import { tileKey } from "#shared/keys.ts";
-import { encodeTile, TILE_BYTES, TILE_SUB } from "#shared/rules/fog.ts";
+import { encodeTile, isTokenFullyFogged, TILE_BYTES, TILE_SUB } from "#shared/rules/fog.ts";
+import { clipFootprint, sightClipOf } from "#shared/rules/vision.ts";
+import { sceneWalls } from "#shared/rules/walls.ts";
 import { footprintRect } from "#shared/rules/footprint.ts";
 import { rng, token as makeToken } from "#shared/testutil.ts";
 import { revealedMask } from "../../lib/fogTiles.ts";
@@ -460,11 +462,11 @@ describe("the stand rule", () => {
     const goblin = makeToken("g", { x: 6, y: 4 }) as ViewToken;
     const imp = makeToken("i", { x: 1, y: 1 }) as ViewToken;
     const ghoul = makeToken("h", { x: 3, y: 6 }) as ViewToken;
-    assert.equal(dimmedForDm(drawn, SQUARES, goblin), false, "on explored ground: bright, as the DM's map shows it");
-    assert.equal(dimmedForDm(drawn, SQUARES, imp), false, "on ground the DM revealed");
-    assert.equal(dimmedForDm(drawn, SQUARES, ghoul), true, "on ground nobody revealed: dimmed");
-    assert.equal(dimmedForDm(new FogView(dmLayer, id, bounds), SQUARES, goblin), true, "the shared fog alone would dim it");
-    assert.equal(dimmedForDm(null, SQUARES, ghoul), false, "a scene without fog dims nothing");
+    assert.equal(dimmedForDm(drawn, SQUARES, goblin, null), false, "on explored ground: bright, as the DM's map shows it");
+    assert.equal(dimmedForDm(drawn, SQUARES, imp, null), false, "on ground the DM revealed");
+    assert.equal(dimmedForDm(drawn, SQUARES, ghoul, null), true, "on ground nobody revealed: dimmed");
+    assert.equal(dimmedForDm(new FogView(dmLayer, id, bounds), SQUARES, goblin, null), true, "the shared fog alone would dim it");
+    assert.equal(dimmedForDm(null, SQUARES, ghoul, null), false, "a scene without fog dims nothing");
   });
 
   test("a tile filed under another tile's key reveals nothing", () => {
@@ -619,8 +621,8 @@ describe("the stand rule on a hex scene (hex grids 4.2, ISOREB-OPUS-01)", () => 
     bits[i >> 3] = bits[i >> 3]! | (1 << (i & 7));
     const fog = new FogView({ [tileKey("s1", 0, 0)]: { sceneId: "s1", tx: 0, ty: 0, rev: 1, bits: encodeTile(bits) } }, "s1", { w: 16, h: 16 });
     assert.ok(footprintSubcells(g, goblin).some(([sx, sy]) => sx === sub[0] && sy === sub[1]), "the point is the goblin's");
-    assert.equal(dimmedForDm(fog, g, goblin), false, "a revealed point of its hex keeps it bright");
-    assert.equal(dimmedForDm(fog, SQUARES, goblin), true, "on squares nothing under it is revealed");
+    assert.equal(dimmedForDm(fog, g, goblin, null), false, "a revealed point of its hex keeps it bright");
+    assert.equal(dimmedForDm(fog, SQUARES, goblin, null), true, "on squares nothing under it is revealed");
     const box = tokenBox(g, goblin);
     assert.ok(box.x0 <= sub[0] / FOG_SUBCELLS && box.x0 < goblin.x, "the clip's box reaches the hex's sub-cells past the drawn box");
     // A sub-cell in the box round its hex but outside the hex and its drawn body: the server withholds the goblin, so the DM's standee dims.
@@ -640,7 +642,7 @@ describe("the stand rule on a hex scene (hex grids 4.2, ISOREB-OPUS-01)", () => 
     const outside = new FogView({ [tileKey("s1", 0, 0)]: { sceneId: "s1", tx: 0, ty: 0, rev: 1, bits: encodeTile(near) } }, "s1", { w: 16, h: 16 });
     assert.ok(!footprintSubcells(g, goblin).some(([sx, sy]) => sx === corner[0] && sy === corner[1]), "the point is not the goblin's");
     assert.ok(outside.boxAny(box), "and lies in the box round its hex");
-    assert.equal(dimmedForDm(outside, g, goblin), true, "a revealed point beside its hex keeps it dimmed");
+    assert.equal(dimmedForDm(outside, g, goblin, null), true, "a revealed point beside its hex keeps it dimmed");
     // A snapped Medium's drawn body reaches past its hex at the corners: a sub-cell revealed there alone, the server withholds it, so it dims (HX3-VIEW-01).
     const medium = makeToken("m", { size: "medium", ...placedOnHex(g, { size: "medium", x: 0, y: 0 }, { col: 8, row: 8 }) }) as ViewToken;
     const mine = new Set(footprintSubcells(g, medium).map(([sx, sy]) => `${sx},${sy}`));
@@ -651,7 +653,53 @@ describe("the stand rule on a hex scene (hex grids 4.2, ISOREB-OPUS-01)", () => 
     corner2[k >> 3] = corner2[k >> 3]! | (1 << (k & 7));
     const bodyCorner = new FogView({ [tileKey("s1", 0, 0)]: { sceneId: "s1", tx: 0, ty: 0, rev: 1, bits: encodeTile(corner2) } }, "s1", { w: 16, h: 16 });
     assert.ok(bodyCorner.boxAny(tokenBoxes(g, medium)[0]), "the body holds the revealed sub-cell");
-    assert.equal(dimmedForDm(bodyCorner, g, medium), true, "dimmed, as players are withheld it");
+    assert.equal(dimmedForDm(bodyCorner, g, medium, null), true, "dimmed, as players are withheld it");
+  });
+
+  test("the DM's dimming reads the sub-cells the wall clip keeps, so a standee dims exactly when the server withholds it (HX5-FOLLOWUPS)", () => {
+    const g: HexGrid = { shape: "hex", orient: "rows" };
+    const scene = { id: "s1", bounds: { w: 16, h: 16 }, gridShape: "hexRows" as const };
+    const walled = (walls: [number, number, number, number][]) =>
+      sightClipOf(sceneWalls(scene, { "s1:0,0": { sceneId: "s1", cx: 0, cy: 0, rev: 0, cells: {}, edges: {}, walls: walls.map(([ax, ay, bx, by], i) => ({ id: `w${i}`, a: [ax, ay], b: [bx, by], f: { kind: "wall" } })) } }));
+    const fogOf = (subs: readonly (readonly [number, number])[]) => {
+      const bits = new Uint8Array(TILE_BYTES);
+      for (const [sx, sy] of subs) {
+        const i = sy * TILE_SUB + sx;
+        bits[i >> 3] = bits[i >> 3]! | (1 << (i & 7));
+      }
+      return { [tileKey("s1", 0, 0)]: { sceneId: "s1", tx: 0, ty: 0, rev: 1, bits: encodeTile(bits) } };
+    };
+    // A Medium at (5.49, 0.2) with a wall down its hex at x = 5.4375, as project.hex.test.ts has it.
+    const gob = makeToken("gob", { x: 5.49, y: 0.2 }) as ViewToken;
+    const clip = walled([[5.4375, 0, 5.4375, 3]]);
+    const { subs, kept, keep } = clipFootprint(g, gob, clip);
+    const behind = subs.filter((_, i) => keep?.[i] !== 1);
+    assert.ok(behind.length > 0 && kept.length > 0, "the wall cuts the hex");
+    const tiles = fogOf(behind);
+    assert.equal(isTokenFullyFogged(g, tiles, "s1", gob, clip), true, "the server withholds it");
+    assert.equal(dimmedForDm(new FogView(tiles, "s1", scene.bounds), g, gob, clip), true, "so its standee dims");
+    assert.equal(dimmedForDm(new FogView(tiles, "s1", scene.bounds), g, gob, null), false, "with no walls the revealed sub-cells keep it bright");
+    const own = fogOf([kept[0]!]);
+    assert.equal(dimmedForDm(new FogView(own, "s1", scene.bounds), g, gob, clip), false, "a revealed sub-cell on its own side keeps it bright");
+    // Over random walls, creatures and fog, it dims exactly when the server's footprint test withholds.
+    const random = rng(1101);
+    let dims = 0;
+    let cut = 0;
+    for (let k = 0; k < 300; k++) {
+      const walls: [number, number, number, number][] = [];
+      for (let n = 1 + Math.floor(random() * 3); n > 0; n--) walls.push([2 + random() * 12, 2 + random() * 12, 2 + random() * 12, 2 + random() * 12].map((v) => Math.round(v * 64) / 64) as [number, number, number, number]);
+      const c = walled(walls);
+      const size = (["tiny", "medium", "large", "huge"] as const)[Math.floor(random() * 4)]!;
+      const t = makeToken("t", { size, ...placedOnHex(g, { size, x: 0, y: 0 }, { col: 3 + Math.floor(random() * 8), row: 3 + Math.floor(random() * 8) }) }) as ViewToken;
+      const all = footprintSubcells(g, t);
+      const lit = all.filter(() => random() < 0.08);
+      const tilesK = fogOf(lit);
+      const withheld = isTokenFullyFogged(g, tilesK, "s1", t, c);
+      if (clipFootprint(g, t, c).keep) cut++;
+      if (withheld) dims++;
+      assert.equal(dimmedForDm(new FogView(tilesK, "s1", scene.bounds), g, t, c), withheld, `case ${k}`);
+    }
+    assert.ok(cut > 20 && dims > 20 && dims < 280, `${cut} cut by walls, ${dims} withheld`);
   });
 
   test("no footprint read of the isometric view passes squares (ISOREB-OPUS-01)", () => {

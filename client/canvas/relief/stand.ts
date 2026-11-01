@@ -2,6 +2,8 @@ import { FOG_SUBCELLS } from "#shared/model.ts";
 import { footprintRect, footprintSubcells } from "#shared/rules/footprint.ts";
 import type { Grid } from "#shared/rules/grid.ts";
 import type { Ground } from "#shared/rules/held.ts";
+import type { SegmentIndex } from "#shared/rules/segments.ts";
+import { clipFootprint } from "#shared/rules/vision.ts";
 import type { Footprint } from "../../features/areas/volume.ts";
 import { footprint, type ViewToken } from "../../lib/scene.ts";
 import { pillReach } from "../../features/measure/pillPlace.ts";
@@ -23,9 +25,12 @@ import type { CellBox, FogView } from "./fogView.ts";
  *
  * On a hex scene a creature's footprint is its hexes (docs/design/design-v1-hex-grids.md
  * 4.2), which reach past its drawn box at their points, so the rule reads
- * the fog sub-cells inside those hexes, the very ones the server's
- * footprint test reads (footprint.ts footprintSubcells), beside the box
- * its art is drawn in.
+ * the fog sub-cells inside those hexes (footprint.ts footprintSubcells),
+ * beside the box its art is drawn in. It reads every one of them, not
+ * only those the server's wall clip keeps (HX-D10): a creature with a wall
+ * through its hexes then needs more of its ground revealed to stand, never
+ * less, so the rule fails closed whatever walls a player's device holds.
+ * The DM's dimming reads the clipped ones, as the server withholds by them.
  */
 
 /** Whether a box in cells stands for this viewer: every sub-cell it touches is revealed. */
@@ -77,15 +82,16 @@ function subcellBox(subs: readonly (readonly [number, number])[]): CellBox {
  * where the scene has no fog (null). That fog holds the party's explored
  * ground on a per-player scene, so a creature on ground a player explored
  * stays bright, as the DM's map shows that ground (D-261026-18). On hexes
- * it reads the sub-cells of the creature's hexes alone, the server's
- * footprint test (project.ts footprintFogged), so a standee dims exactly
- * when players are withheld it, whatever the corners of its drawn body
- * hold (D-261026-24).
+ * it reads the sub-cells of the creature's hexes alone, those the scene's
+ * sight walls `clip` keeps (vision.ts sightClipOf and clipFootprint), the
+ * server's footprint test (project.ts footprintFogged). So a standee dims
+ * exactly when players are withheld it, whatever the corners of its drawn
+ * body or the ground past a wall through its hex hold (D-261026-24).
  */
-export function dimmedForDm(fog: FogView | null, g: Grid, token: BoxToken): boolean {
+export function dimmedForDm(fog: FogView | null, g: Grid, token: BoxToken, clip: SegmentIndex | null): boolean {
   if (fog === null) return false;
   if (g.shape !== "hex") return !fog.boxAny(tokenBox(g, token));
-  return !footprintSubcells(g, token).some(([sx, sy]) => fog.revealed(sx, sy));
+  return !clipFootprint(g, token, clip).kept.some(([sx, sy]) => fog.revealed(sx, sy));
 }
 
 /**
