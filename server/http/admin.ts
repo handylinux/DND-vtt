@@ -132,11 +132,15 @@ export function backupWarning(last: BackupRun | null, lastGood: BackupRun | null
  * What the page warns about the log archive (LOG-OPUS-18), or null. The
  * archive is kept outside every room's quota, so one room's history can
  * grow until the database's disk reaches its free-disk floor, where log
- * lines stop being archived and images stop uploading in every room. The
- * page warns once that disk is within a floor's width of the floor, or
- * once one room's archive is past a room's whole quota, which no ordinary
- * game's history comes near, and names the largest archive so the
- * operator knows where to look. A budget per member would bound one
+ * lines stop being archived in every room. Uploads check the same floor
+ * on the image volume (ASSET_DIR), and the archive on the database's disk
+ * (DATABASE_DISK_DIR, ASSET_DIR unless set). Two paths can lie on one disk
+ * whatever their names, so the words tie uploads to images stored on that
+ * disk rather than compare the paths (FU43-DATA-05). The page warns once
+ * that disk is within a floor's width of the floor, or once one room's
+ * archive is past a room's whole quota, which no ordinary game's history
+ * comes near, and names the largest archive so the operator knows where
+ * to look. A budget per member would bound one
  * member's chat in one room only: anyone can make rooms, and a DM can
  * add members, so the floor stays the bound and the operator acts on it.
  */
@@ -144,10 +148,10 @@ export function archiveWarning(largest: LargestArchive | null, quotaBytes: numbe
   const room = largest && largest.bytes > 0 ? `The largest log archive is the room ${largest.name} (${formatRoomId(largest.id)}), at ${bytesText(largest.bytes)}.` : null;
   if (freeBytes !== null && freeBytes < 2 * floorBytes) {
     const where = freeBytes < floorBytes ? "is under its" : "is near its";
-    return [`Free space on the database's disk (${bytesText(freeBytes)}) ${where} ${bytesText(floorBytes)} floor. Under it, log lines are not archived and images cannot be uploaded in any room.`, room].filter(Boolean).join(" ");
+    return [`Free space on the database's disk (${bytesText(freeBytes)}) ${where} ${bytesText(floorBytes)} floor. Under it, log lines are not archived in any room. Image uploads stop at the same floor on the image volume, so they stop too when images are stored on this disk.`, room].filter(Boolean).join(" ");
   }
   if (largest && largest.bytes > quotaBytes) {
-    return `The room ${largest.name} (${formatRoomId(largest.id)}) has a log archive of ${bytesText(largest.bytes)}, more than a room's storage quota of ${bytesText(quotaBytes)}. Log archives are kept outside the quota, so one can grow until free disk reaches its floor, where log archiving and image uploads stop for every room.`;
+    return `The room ${largest.name} (${formatRoomId(largest.id)}) has a log archive of ${bytesText(largest.bytes)}, more than a room's storage quota of ${bytesText(quotaBytes)}. Log archives are kept outside the quota, so one can grow until the database's disk reaches its floor, where log lines stop being archived in every room. Image uploads stop there too when images are stored on that disk.`;
   }
   return null;
 }
