@@ -239,8 +239,6 @@ type Host = {
   mounted: boolean;
   visible: boolean;
   held: boolean;
-  /** Moves on every mount, hide and unmount, so a tap made before one never throws after it. */
-  era: number;
   tray: TrayHost | null;
   /** The control this host's last pointer or key went to, and when: a roll from it throws from there. */
   pressedEl: Element | null;
@@ -248,8 +246,13 @@ type Host = {
   baseline: PaneSize | null;
 };
 
-/** A tap on its way. `answeredAt` is set while its committed answer waits for its host's tray or release. */
-type Pending = { origin: ThrowOrigin; host: Host | null; era: number; checked: boolean; seq: number; answeredAt: number | null };
+/**
+ * A tap on its way, bound to its host as it registered. A host's hide or
+ * unmount drops its taps, so a tap made before one never throws after it.
+ * `answeredAt` is set while its committed answer waits for its host's tray
+ * or release.
+ */
+type Pending = { origin: ThrowOrigin; host: Host | null; checked: boolean; seq: number; answeredAt: number | null };
 
 const QUIET: ThrowView = { held: null, rolling: false, shown: null };
 
@@ -395,7 +398,7 @@ export class ThrowStore {
    * which attaches in a child's layout effect, finds it before it mounts.
    */
   host(spec: PanelHost): ThrowHost {
-    const host: Host = { id: ++this.#hostIds, surface: spec.surface ?? "dice", kinds: () => spec.kinds(), mounted: false, visible: true, held: false, era: 0, tray: null, pressedEl: null, pressedAt: Number.NEGATIVE_INFINITY, baseline: null };
+    const host: Host = { id: ++this.#hostIds, surface: spec.surface ?? "dice", kinds: () => spec.kinds(), mounted: false, visible: true, held: false, tray: null, pressedEl: null, pressedAt: Number.NEGATIVE_INFINITY, baseline: null };
     return {
       id: host.id,
       surface: host.surface,
@@ -441,7 +444,6 @@ export class ThrowStore {
     const env = this.#env;
     if (host.mounted) return;
     host.mounted = true;
-    host.era++;
     this.#hosts.add(host);
     if (this.#disposeTimer !== null && env) env.clock.clearTimeout(this.#disposeTimer);
     this.#disposeTimer = null;
@@ -453,7 +455,6 @@ export class ThrowStore {
     const env = this.#env;
     if (!host.mounted) return;
     host.mounted = false;
-    host.era++;
     this.#hosts.delete(host);
     this.#dropPending(host);
     this.#endFor(host);
@@ -466,7 +467,6 @@ export class ThrowStore {
     if (host.visible === visible) return;
     host.visible = visible;
     if (visible) return;
-    host.era++;
     this.#dropPending(host);
     this.#endFor(host);
   }
@@ -502,7 +502,7 @@ export class ThrowStore {
     this.#end();
     // A few taps are in flight at most. An old one that never settled is forgotten.
     if (this.#pending.size > 20) this.#pending.delete(this.#pending.keys().next().value!);
-    this.#pending.set(tag, { origin, host, era: host?.era ?? -1, checked: false, seq: ++this.#seq, answeredAt: null });
+    this.#pending.set(tag, { origin, host, checked: false, seq: ++this.#seq, answeredAt: null });
     // An answer that came inside the send is this tap's commit.
     this.#check();
   }
@@ -573,10 +573,7 @@ export class ThrowStore {
     for (const stop of this.#unsubscribe) stop();
     this.#unsubscribe = [];
     this.#pending.clear();
-    for (const host of this.#hosts) {
-      host.mounted = false;
-      host.era++;
-    }
+    for (const host of this.#hosts) host.mounted = false;
     this.#hosts.clear();
     this.#env = null;
   }
@@ -610,7 +607,7 @@ export class ThrowStore {
    */
   #waits(pending: Pending): boolean {
     const host = pending.host;
-    if (!host || !host.mounted || !host.visible || pending.era !== host.era || pending.checked) return false;
+    if (!host || !host.mounted || !host.visible || pending.checked) return false;
     if (!host.held && host.tray) return false;
     const now = this.#env!.clock.now();
     if (now - pending.origin.tapAt > LATE_MS) return false;
@@ -625,7 +622,8 @@ export class ThrowStore {
     const host = pending.host;
     const tray = host?.tray ?? null;
     if (!this.#allowed() || this.#warm !== "warm" || !this.#stage) return;
-    if (!host || !tray || !host.mounted || !host.visible || host.held || pending.era !== host.era || pending.checked || env.hidden()) return;
+    // A held host's taps wait (#waits), so one decided here is never held.
+    if (!host || !tray || !host.mounted || !host.visible || pending.checked || env.hidden()) return;
     if (now - pending.origin.tapAt > LATE_MS || now - answered >= LAND_MS) return;
     // A newer tap is on its way, and would end this throw as soon as it began.
     if ([...this.#pending.values()].some((p) => p.seq > pending.seq)) return;
