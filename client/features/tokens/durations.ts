@@ -86,7 +86,7 @@ export function anchorOptions(view: View | null | undefined, self: SelfRef, self
 /**
  * How the effect's own creature reads among the choices: "this creature",
  * or for a companion that acts on its character's turn, whose turn its
- * durations count (docs/design-v1-combat-flow.md 3.6.8), "on Bree's turn".
+ * durations count (docs/design/design-v1-combat-flow.md 3.6.8), "on Bree's turn".
  */
 function selfWords(view: View | null | undefined, self: SelfRef): string {
   const companion = "tokenId" in self ? view?.tokens[self.tokenId]?.companion : undefined;

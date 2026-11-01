@@ -10,7 +10,7 @@ import { onTurn, recordedCost } from "./testing.ts";
 
 /**
  * A player's drag on a hex scene that stops moves, as the board takes it
- * (docs/design-v1-hex-grids.md phase H2): the search's route, the drop's
+ * (docs/design/design-v1-hex-grids.md phase H2): the search's route, the drop's
  * landing held at a wall or squeezed into a narrow space, and the op it
  * sends. The server takes every op the board sends, and the drag's label
  * reads what the move records on the turn, as on squares (review MV-O-24,

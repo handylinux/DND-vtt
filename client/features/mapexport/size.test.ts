@@ -85,7 +85,7 @@ describe("mapVariantFor", () => {
   });
 });
 
-describe("the export's words on a hex scene (docs/design-v1-hex-grids.md 4, Words shown)", () => {
+describe("the export's words on a hex scene (docs/design/design-v1-hex-grids.md 4, Words shown)", () => {
   test("pixels per hex, hexes at 70 px, and the switch Hex lines, while a square scene's words stay", () => {
     const size = exportSize({ w: 30, h: 20 }, 70);
     for (const orient of ["rows", "columns"] as const) {

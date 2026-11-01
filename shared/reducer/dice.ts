@@ -13,7 +13,7 @@ import { gone, invalid, type Tx } from "./tx.ts";
 import { checkPrompt, markOf, rechargeLabel, withSettled, withUses } from "./uses.ts";
 
 /**
- * Dice rolled on the server (docs/design-v1-dice.md 4.1 and 5.1). The room
+ * Dice rolled on the server (docs/design/design-v1-dice.md 4.1 and 5.1). The room
  * actor resolves a dice op into `sys.dice`, holding every die it drew, and
  * these branches only copy those results into the state, so the reducer
  * reads no bonus, parses no formula and draws nothing, and replay rebuilds
@@ -62,7 +62,7 @@ function diceLine(tx: Tx, op: Sys, asked: Asked<"dice.roll">): void {
       if (initiativeHidden(tx.state, roll.creature)) out.hidden = true;
     }
     if (roll.save !== undefined && roll.creature) out.save = roll.save;
-    // A damage roll's type as its roller asked it, which an HP entry filled from the roll sends on (docs/design-v1-combat-controls.md 3.4).
+    // A damage roll's type as its roller asked it, which an HP entry filled from the roll sends on (docs/design/design-v1-combat-controls.md 3.4).
     if (roll.type !== undefined) out.type = roll.type;
     return out;
   });
@@ -128,19 +128,19 @@ function rolledAnswer(tx: Tx, op: Sys, asked: Asked<"roll.dice">): void {
 }
 
 /**
- * A death save rolled on the server (docs/design-v1-roll-options.md 4.3):
+ * A death save rolled on the server (docs/design/design-v1-roll-options.md 4.3):
  * its `dice` line, then the save counted from the creature as it stands
  * now, so no later write can overwrite newer counts. 10 or more is a
  * success and less a failure, a natural 1 two failures, and a natural 20
  * regains 1 HP (SRD 5.2.1). A creature no longer dying gets the line and no
  * change. A DM's roll for a monster is secret, and every other roll open,
- * as a roll's Secret starts (docs/design-v1-dice.md 17).
+ * as a roll's Secret starts (docs/design/design-v1-dice.md 17).
  */
 function deathRoll(tx: Tx, op: Sys, asked: Asked<"actor.deathRoll">): void {
   const result = op.results[0];
   if (!result || op.results.length !== 1) throw invalid("a death save rolls once");
   const resolved = tx.resolveActor(asked.target);
-  // A roll of an open death save settles it, from whichever surface (docs/design-v1-combat-controls.md 2.3).
+  // A roll of an open death save settles it, from whichever surface (docs/design/design-v1-combat-controls.md 2.3).
   if (asked.record !== undefined) checkPrompt(tx, resolved, asked.record, "deathSave");
   const roll: DiceRoll = { ...result, label: "Death save", ...rollCreature(tx, asked.target) };
   const to = startsSecret(tx.state, tx.actor.role === "dm", [asked.target]) ? "dm" : "all";
@@ -166,7 +166,7 @@ function deathRoll(tx: Tx, op: Sys, asked: Asked<"actor.deathRoll">): void {
 }
 
 /**
- * A recharge roll on the server (docs/design-v1-combat-controls.md 3.1):
+ * A recharge roll on the server (docs/design/design-v1-combat-controls.md 3.1):
  * one `dice` line, "Fire Breath recharge", secret for the DM's monster as a
  * roll's Secret starts. `min` or more makes the ability ready, its mark
  * gone. With `record` it settles that turn's prompt for the key with its

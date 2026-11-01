@@ -8,7 +8,7 @@ import { chromium, type Browser, type BrowserContext, type CDPSession, type Loca
 import { ConsoleWatch, OpSocket, readCamera, reopenRoom, Shots, sleep, SocketWatch, startServer, Touches, touchSwipe, waitFor, type Server } from "./harness.ts";
 
 /**
- * The resting token bar's room (docs/design-v1-bar-compact.md section 1)
+ * The resting token bar's room (docs/design/design-v1-bar-compact.md section 1)
  * and the frame steps' helpers, shared by barrest.e2e.ts and the files
  * that run br-f-5's edge and corner sweep, one pass each, so the CI
  * shards can run them side by side: barrest-edges-pat.e2e.ts,
@@ -129,7 +129,7 @@ export async function openPanel(page: Page, name: string): Promise<Locator> {
  * `part` names the file's share after the suite's own name.
  */
 export function restFile(part: string | null, steps: () => void): void {
-  describe(`raccoon-vtt: the token bar rests on an upright phone (docs/design-v1-bar-compact.md)${part === null ? "" : `: ${part}`}`, { timeout: 900_000 }, () => {
+  describe(`raccoon-vtt: the token bar rests on an upright phone (docs/design/design-v1-bar-compact.md)${part === null ? "" : `: ${part}`}`, { timeout: 900_000 }, () => {
     before(async () => {
       server = await startServer({ port: PORT, assetDir, databaseUrl: DATABASE_URL });
       browser = await chromium.launch({ channel: "chrome", headless: process.env.E2E_HEADED !== "1" });

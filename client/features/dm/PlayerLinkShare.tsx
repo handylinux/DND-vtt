@@ -31,7 +31,7 @@ export function PlayerLinkShare(props: { roomId: string; password: string; size?
 /**
  * The room ID and password in plain text, folded until asked for. A
  * disclosure is not a link, so it takes the text color, not the accent
- * (docs/design-v1-visual.md F24), as the DM link page's own disclosure
+ * (docs/design/design-v1-visual.md F24), as the DM link page's own disclosure
  * does (pages/Home.tsx). A flex summary draws no marker of its own, and
  * the chevron turns down while it is open.
  */

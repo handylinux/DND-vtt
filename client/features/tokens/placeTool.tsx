@@ -73,7 +73,7 @@ export const placeTool: ToolDef = {
 
 /**
  * What the next tap will place, and the ways to pick something else
- * (docs/design-v1-tool-options.md 9.7): the blank kind as a chip, then
+ * (docs/design/design-v1-tool-options.md 9.7): the blank kind as a chip, then
  * Monster… and Character…, or Cancel once something is chosen.
  */
 function PlaceOptions() {

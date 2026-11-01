@@ -6,7 +6,7 @@ import { room } from "#shared/testutil.ts";
 import type { FoundNote } from "./store.ts";
 
 /*
- * Line up grid's options line (docs/design-v1-design-pass.md 2.4 rules 5
+ * Line up grid's options line (docs/design/design-v1-design-pass.md 2.4 rules 5
  * and 6, LP24-B-FIND-4): a search past the shared delay is a muted wait in
  * the small loading line that keeps a reading's place, never the success
  * green, which is for a grid applied or saved.

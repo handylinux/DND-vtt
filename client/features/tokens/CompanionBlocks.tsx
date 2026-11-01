@@ -35,7 +35,7 @@ import { ConfirmButton, NumberField } from "./ui.tsx";
 
 /**
  * A companion's stat blocks in the interface
- * (docs/design-v1-companion-stat-blocks.md 5 and 6): the attach dialog
+ * (docs/design/design-v1-companion-stat-blocks.md 5 and 6): the attach dialog
  * with its numbers step, the picker a new companion's form opens, and
  * "Bree's stat blocks", the character's own list. A block made from the
  * picker is saved first and used only once its save is taken, so a refused
@@ -317,7 +317,7 @@ export function ChooseBlockDialog(props: { character: Pick<Character, "id" | "na
 /**
  * "Bree's stat blocks" (6.4), a subpage of the Characters panel for the DM
  * and the character's players, opened from the character's page and named
- * in the panel's header with "Back to Bree" (docs/design-v1-look-pass.md
+ * in the panel's header with "Back to Bree" (docs/design/design-v1-look-pass.md
  * 3.1): "Paste a stat block" and "New stat block", then each block as a
  * disclosure row that opens its view with Edit and Delete. A delete takes
  * two taps, and the companions that used it keep their numbers and show

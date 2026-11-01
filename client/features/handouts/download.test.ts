@@ -10,7 +10,7 @@ describe("handoutFileName", () => {
     assert.equal(handoutFileName("Letter", "IMAGE/WEBP; charset=binary"), "Letter.webp");
   });
 
-  test("a handout of pages saves as <title>.pdf (docs/design-v1-pdf-handouts.md 6)", () => {
+  test("a handout of pages saves as <title>.pdf (docs/design/design-v1-pdf-handouts.md 6)", () => {
     assert.equal(handoutFileName("Strange letter", "application/pdf"), "Strange letter.pdf");
     assert.equal(handoutFileName("CON", "application/pdf"), "CON handout.pdf");
   });
@@ -114,7 +114,7 @@ describe("downloadAction (P3R-7)", () => {
   });
 });
 
-describe("a handout of pages built as a PDF: its lifecycle (docs/design-v1-pdf-handouts.md 6)", () => {
+describe("a handout of pages built as a PDF: its lifecycle (docs/design/design-v1-pdf-handouts.md 6)", () => {
   const file = new File(["%PDF-"], "Strange letter.pdf", { type: "application/pdf" });
   const run = (events: PdfBuildEvent[], from: PdfBuild | null = null) => events.reduce<PdfBuild | null>(pdfBuildStep, from);
   const building = run([{ t: "start", key: "a", op: 1, pages: 12 }]);

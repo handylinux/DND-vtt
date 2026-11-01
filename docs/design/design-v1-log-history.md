@@ -16,7 +16,7 @@ It changes archive retention and retrieval, not the reducer's live rings or who 
 - Party copies contain only their reader's data. The original belongs to the DM. Whispers belong only to sender and recipients, including for DMs (`shared/project.ts:3539`).
 - The live rings retain 200 shared lines, 200 DM lines, and separately bounded whispers and party copies (`shared/logRings.ts:55`, `:70`, `:281`).
 - Their bounds and byte budgets are reducer rules. Changing them needs an op version (`shared/logRings.ts:50`). This design leaves them alone.
-- Read-time projection can narrow a previously readable line when a creature disappears or leaves sight, ownership changes, a handout closes, or blackout begins (`docs/design.md:647`).
+- Read-time projection can narrow a previously readable line when a creature disappears or leaves sight, ownership changes, a handout closes, or blackout begins (`docs/design/design.md:647`).
 - `projectArchivedLog` applies those rules without applying the live rings. It strips obsolete HP Undo records (`shared/project.ts:3497`).
 - Players never receive `parts` or `copyOf`. Displays receive no log (`shared/project.ts:3536`).
 
@@ -284,7 +284,7 @@ Own `e2e/tools.e2e.ts`, `e2e/alignmentRoom.ts`, `client/features/admin/api.ts` a
 Keep live view as today. Browsing history renders/retains at most 500 rows with Show older, Show newer and Back to latest. Handle an empty live tail in the owned helper without changing shared/logText.ts.
 Keep only the current bounded window, discard wrong-room/viewer/scene/preview replies, and preserve reverse navigation when an attempted page is empty.
 Page 25 sessions using canonical summary slices and firstId/lastId keys/ranges. Preserve total lines and the 8 MiB share/native-download behavior. Older sessions requests count against the same hourly budget.
-This lane owns staged updates to `FEATURES.md`, `docs/dm-guide.md`, `docs/design.md` and `docs/design-v1-dm-tools.md`, plus this note when the coordinator moves it. Publish those files only after deployment, never in pre-deploy public commits.
+This lane owns staged updates to `FEATURES.md`, `docs/dm-guide.md`, `docs/design/design.md` and `docs/design/design-v1-dm-tools.md`, plus this note when the coordinator moves it. Publish those files only after deployment, never in pre-deploy public commits.
 Replace stale archive cap/cache/scoping text in design.md:1285/:1852 and dm-tools.md:535/:540/:883/:886, and explain bounded room ZIP versus full archive backup. Every expected file belongs to a lane, not an unowned integration step.
 
 ### 5.4 UI checklist

@@ -2,7 +2,7 @@ import type { Pixels } from "./detect.ts";
 
 /**
  * Map images drawn by code for the grid finder's tests
- * (docs/design-v1-grid-detect.md section 4). Never third-party art: each
+ * (docs/design/design-v1-grid-detect.md section 4). Never third-party art: each
  * image is procedural noise, gradients and patterns, with a grid of known
  * size and offset drawn over it. Only the tests and the evaluation script
  * import this.
@@ -31,7 +31,7 @@ export type SynthGrid = {
 
 /**
  * A hex grid drawn over the art, laid as the app lays its hexes
- * (docs/design-v1-hex-grids.md section 4.1): on hex rows the tops are
+ * (docs/design/design-v1-hex-grids.md section 4.1): on hex rows the tops are
  * pointed and a row runs straight across, and hex columns are the same
  * with x and y swapped.
  */

@@ -8,7 +8,7 @@ import { gone, invalid, type Tx } from "./tx.ts";
 import { linkOf, relinked } from "./uses.ts";
 
 /**
- * The companion rules (docs/design-v1-combat-flow.md 3.6) the token,
+ * The companion rules (docs/design/design-v1-combat-flow.md 3.6) the token,
  * character, encounter and restore reducers call, kept in one place. A
  * companion is a token that belongs to a character: its owners are always
  * the character's, it never carries a number, an effect takes no turn of
@@ -25,7 +25,7 @@ export const ON_ITS_TURN_NOW = "a companion in it now acts on its character's tu
 export const BLOCK_OF_ITS_CHARACTER = "a stat block belongs to its character's companions";
 export const ONE_LINK = "an actor links one stat block";
 
-/** An actor's stat block links, of which it holds at most one (docs/design-v1-companion-stat-blocks.md 3.2, rule 1). */
+/** An actor's stat block links, of which it holds at most one (docs/design/design-v1-companion-stat-blocks.md 3.2, rule 1). */
 export const BLOCK_LINKS = ["srdId", "monsterId", "blockId"] as const;
 
 /** Whether the token is a companion that acts on its character's turn, listed under it or not, and so has no row. */
@@ -55,7 +55,7 @@ export function checkCompanion(tx: Tx, token: Token): void {
 
 /**
  * A companion stat block a token's actor is given, checked against the
- * token as the op leaves it (docs/design-v1-companion-stat-blocks.md 3.2,
+ * token as the op leaves it (docs/design/design-v1-companion-stat-blocks.md 3.2,
  * rule 2): only a companion's own actor holds one, and it names a block of
  * the character the companion belongs to. Called only where an op sets the
  * link, so a link to a block deleted since stays (rule 4).
@@ -149,7 +149,7 @@ function characterRow(state: Pick<RoomState, "tokens">, entries: readonly InitEn
 
 /**
  * A saved step of the history without the companion's rows
- * (docs/design-v1-combat-flow.md 3.6.8), its saved effects that counted
+ * (docs/design/design-v1-combat-flow.md 3.6.8), its saved effects that counted
  * them rebound to the character's row of that step when the companion now
  * acts on its character's turn (`rebind`), else paused on the companion.
  *
@@ -187,7 +187,7 @@ function stepWithout(state: Pick<RoomState, "tokens">, step: EncounterSnapshot, 
 
 /**
  * Takes a companion's rows out of the fight and its history
- * (docs/design-v1-combat-flow.md 3.6.7 and 3.6.8), when it comes to act on
+ * (docs/design/design-v1-combat-flow.md 3.6.7 and 3.6.8), when it comes to act on
  * its character's turn (`rebind`) or is deleted. The live rows leave as
  * Remove from the fight takes them, an active one passing its turn on with
  * its turn line. Then, with `rebind`, the durations paused on the companion
@@ -222,7 +222,7 @@ export function rowsForSharedCompanions(state: Pick<RoomState, "tokens">, encoun
 
 /**
  * The companion rules over a whole state, pure, for an imported room
- * (docs/design-v1-combat-flow.md 4.7), so a hand-made or older file comes
+ * (docs/design/design-v1-combat-flow.md 4.7), so a hand-made or older file comes
  * within them: a companion whose character is missing, or that is a PC or
  * has no stats of its own, becomes a plain token. Each other companion
  * takes its character's owners and loses any number, an effect with its
@@ -232,7 +232,7 @@ export function rowsForSharedCompanions(state: Pick<RoomState, "tokens">, encoun
  * duration that counted them rebound as dropRows rebinds it.
  *
  * Stat block links come within rules 1 to 3 of
- * docs/design-v1-companion-stat-blocks.md 3.2: an actor holding `blockId`
+ * docs/design/design-v1-companion-stat-blocks.md 3.2: an actor holding `blockId`
  * with another link keeps `blockId` alone, and a `blockId` on an actor
  * that is not a companion's, or naming a block of another character, goes.
  * A link to a block the file does not hold stays, as a deleted block's does.
@@ -282,7 +282,7 @@ function withLinkRules(state: RoomState, token: Token): Token {
   const { srdId: _srd, monsterId: _monster, ...one } = token.actor.inline;
   const block = state.companionBlocks[one.blockId!];
   const belongs = token.companion !== undefined && (block === undefined || block.characterId === token.companion.of);
-  // Marks keyed by a link that goes go with it (docs/design-v1-combat-controls.md 2.4).
+  // Marks keyed by a link that goes go with it (docs/design/design-v1-combat-controls.md 2.4).
   if (belongs) return linksSet(token.actor.inline) > 1 ? { ...token, actor: { inline: relinked(one, linkOf(token.actor.inline)) } } : token;
   const { blockId: _gone, ...unlinked } = token.actor.inline;
   return { ...token, actor: { inline: relinked(unlinked, linkOf(token.actor.inline)) } };

@@ -13,7 +13,7 @@ export const TURN_BAND_PX = 48;
  * Below this layout height a phone in landscape keeps the turn strip in
  * its top bar when the bar has room for it: a band of its own would take
  * 48 of about 390 px while the bar's row stood mostly empty
- * (docs/design-v1-visual.md F22).
+ * (docs/design/design-v1-visual.md F22).
  */
 export const SHORT_LANDSCAPE_MAX = 500;
 
@@ -21,7 +21,7 @@ export const SHORT_LANDSCAPE_MAX = 500;
 export type TurnPlacement = "bar" | "band";
 
 /**
- * Where the turn strip goes (docs/design-v1-visual.md 3.2), in the
+ * Where the turn strip goes (docs/design/design-v1-visual.md 3.2), in the
  * chrome's own pixels (features/device/layout.ts layoutSize), so the
  * interface size moves it as it moves everything else.
  *

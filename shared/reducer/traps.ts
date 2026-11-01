@@ -13,7 +13,7 @@ import { doorSet } from "./map.ts";
 import { gone, invalid, Refuse, type Tx } from "./tx.ts";
 
 /**
- * Traps (docs/design-v1-traps.md 6), the DM's: making, changing and
+ * Traps (docs/design/design-v1-traps.md 6), the DM's: making, changing and
  * deleting them, doing a waiting springing's effects, and settling it. What
  * a trap does when it goes off by itself is the trap step's, which writes
  * through the helpers here.
@@ -51,7 +51,7 @@ export function trapOwnBytes(trap: Trap): number {
  * its scene and the rig fitting the zone. On a hex scene its rectangles are
  * of hex keys, each key one of the scene's hexes, so a short line's last
  * key, inside the columns and rows the keys run over but off the scene, is
- * refused (docs/design-v1-hex-grids.md H2), and its wire's ends may lie anywhere on
+ * refused (docs/design/design-v1-hex-grids.md H2), and its wire's ends may lie anywhere on
  * the 1/64 lattice, as hex corners do. A square scene's wire keeps to cell
  * corners and edge midpoints, as before.
  */
@@ -127,7 +127,7 @@ export function trapCreate(tx: Tx, op: OpOf<"trap.create">): void {
   const input = op.trap;
   tx.scene(input.sceneId);
   if (tx.state.traps[input.id]) throw invalid("a trap with that id is already on the map");
-  // A trap on a hex scene is stamped with its shape, which its keys are of (docs/design-v1-hex-grids.md HX-D14).
+  // A trap on a hex scene is stamped with its shape, which its keys are of (docs/design/design-v1-hex-grids.md HX-D14).
   const shape = shapeOfGrid(sceneGrid(tx.scene(input.sceneId)));
   const trap: Trap = { id: input.id, rev: 0, sceneId: input.sceneId, name: input.name, zone: input.zone, state: "armed", found: input.found ?? false, rig: { ...input.rig }, ...(shape ? { grid: shape } : {}) };
   const why = trapProblem(tx, trap) ?? refProblem(tx, trap, true, true);

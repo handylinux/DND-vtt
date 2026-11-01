@@ -32,7 +32,7 @@ import { followedHeight, seatShift, type FollowLead, type Follower, type RoutePi
 import { LegCheck, MAX_SETTLED, WalkSearch, WalkWorld, WorkBudget, worldUnits, type SettleResult, type Slice, type WalkInput, type WalkRoute } from "./walk.ts";
 
 /**
- * Finding the way a creature walks on a hex scene (docs/design-v1-hex-grids.md
+ * Finding the way a creature walks on a hex scene (docs/design/design-v1-hex-grids.md
  * phase H2): walk.ts's search on the six-neighbor anchor lattice. A node
  * is a reference hex and whether the creature squeezes there (movement.ts
  * HexStand). A step goes to one of the six neighbors at the same squeeze
@@ -40,7 +40,7 @@ import { LegCheck, MAX_SETTLED, WalkSearch, WalkWorld, WorkBudget, worldUnits, t
  * full and squeezed in place for nothing, the squeezed hexes of a
  * reference hex lying among the full ones, standing up only where the full
  * footprint fits. Each step costs one hex times one plus its extra, which
- * the square search's rules give (docs/design-v1-movement.md 4.1): ground
+ * the square search's rules give (docs/design/design-v1-movement.md 4.1): ground
  * difficult or under a slowing area newly entered, another creature's
  * space where heights overlap, a squeezed step (HX-D17), crawling and
  * dragging, times the step's length with its rise by the room's rule, as
@@ -50,7 +50,7 @@ import { LegCheck, MAX_SETTLED, WalkSearch, WalkWorld, WorkBudget, worldUnits, t
  * so nothing swims.
  * Where walls stop moves, each creature it drags beside it takes every
  * step with it by the same rule, so a found way is one they all fit
- * through (docs/design-v1-attach.md 4.2).
+ * through (docs/design/design-v1-attach.md 4.2).
  *
  * A walk off a holder crosses the raised sides between the holder's hexes
  * until it first stands clear of them (movement.ts OffHolder), so a state
@@ -178,7 +178,7 @@ export class HexWalkWorld {
     }
   }
 
-  /** Difficult ground by hex keys in the scene's chunks (docs/design-v1-movement.md 6.3), and the areas that slow a walk, on seen ground only. */
+  /** Difficult ground by hex keys in the scene's chunks (docs/design/design-v1-movement.md 6.3), and the areas that slow a walk, on seen ground only. */
   #markGround(sceneId: string): void {
     for (const chunk of Object.values(this.input.build.buildChunks) as (BuildChunk | undefined)[]) {
       if (!chunk || chunk.sceneId !== sceneId || !chunk.rough) continue;
@@ -368,7 +368,7 @@ export class HexWalkWorld {
   /**
    * Whether every creature dragged beside the walker takes the walker's step
    * from `a` to `b` with it, by the step rule the walker's own step takes,
-   * so a found way is one they all fit through (docs/design-v1-attach.md 4.2).
+   * so a found way is one they all fit through (docs/design/design-v1-attach.md 4.2).
    */
   #towedStep(a: HexStand, b: HexStand, d: number, first: boolean): boolean {
     if (this.#towed.length === 0) return true;
@@ -489,7 +489,7 @@ export class HexWalkWorld {
   }
 
   /**
-   * A step's extra feet per foot (docs/design-v1-movement.md 4.1): by
+   * A step's extra feet per foot (docs/design/design-v1-movement.md 4.1): by
    * entry, on the hexes `b` holds that `a` does not, ground sources for a
    * walker alone (3 for a quarter-speed area, else 1 for difficult ground or
    * a slowing area), else another creature's space where heights overlap,
@@ -595,7 +595,7 @@ export class HexWalkWorld {
   }
 
   /**
-   * A walk's nodes as route pieces (docs/design-v1-movement.md 5.2, "Pieces"),
+   * A walk's nodes as route pieces (docs/design/design-v1-movement.md 5.2, "Pieces"),
    * each the hex line between its ends that the server walks (route.ts
    * hexPiece): from each corner the piece runs to the farthest later node
    * whose hex line takes as many steps as the walk did, every step of it
@@ -723,7 +723,7 @@ class Heap {
 }
 
 /**
- * The cheapest walks from where the creature stands (docs/design-v1-movement.md
+ * The cheapest walks from where the creature stands (docs/design/design-v1-movement.md
  * 5.2): a uniform-cost search over the world's nodes, grown on demand,
  * by cost in hexes times their multipliers, then by corners, then by the
  * order found, so every device settles the same walk. Capped at

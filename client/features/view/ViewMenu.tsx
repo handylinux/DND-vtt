@@ -42,7 +42,7 @@ import { usePreview } from "../dm/previewContext.ts";
 import { FOLLOW_THE_SCENE, pickView, settledView, shownView, turnView, useStoredView, viewKey, withPick, withTurn, type StoredView, type ViewPick } from "./store.ts";
 
 /*
- * The view choice's parts (docs/design-v1-isometric-view.md 7 and 8): the
+ * The view choice's parts (docs/design/design-v1-isometric-view.md 7 and 8): the
  * view a page shows, the menu's rows, and the polite status. The View
  * button that opens the menu is the top bar's (pages/RoomChrome.tsx), and
  * the table display draws its own rows (features/display/DisplayRoom.tsx).

@@ -12,7 +12,7 @@ import { COPY_HELP, COPY_UNDO, copiedAll, copiesNothing, copyButtonText, copyLin
 
 /**
  * "Use these settings on other scenes…" at the end of What players see
- * (docs/design-v1-map-discovery.md 8.3): a sheet, from the bottom on a
+ * (docs/design/design-v1-map-discovery.md 8.3): a sheet, from the bottom on a
  * phone, listing every other scene by folder with what players see there
  * now and what the copy would do there, so a room already full of scenes
  * takes one setup in one step. Only in a room with another scene.
@@ -103,7 +103,7 @@ function CopySheet(props: { source: Scene; scenes: Scene[]; opener: RefObject<HT
       bodyStyle={{ fontSize: theme.font.body14 }}
       footer={
         <>
-          {/* Both grow to share the line they stand on (docs/design-v1-polish.md R6), so Copy wrapped under Close fills its line. */}
+          {/* Both grow to share the line they stand on (docs/design/design-v1-polish.md R6), so Copy wrapped under Close fills its line. */}
           <Button ref={closeButton} onClick={props.onClose} style={{ flex: "1 1 auto" }}>
             Close
           </Button>

@@ -59,7 +59,7 @@ import { parseRoomState } from "./stateSchema.ts";
 /*
  * An export writes every variant as an entry, two for each handout page, so
  * the entry and manifest caps leave room for a room at its handout pages
- * (docs/design-v1-pdf-handouts.md 3.6). What bounds an import is the body
+ * (docs/design/design-v1-pdf-handouts.md 3.6). What bounds an import is the body
  * cap, the inflated total and reading one entry at a time: an entry costs a
  * few hundred bytes in the entries map, so 10,000 cost a few MB.
  */
@@ -253,7 +253,7 @@ export async function importRoom(deps: ImportDeps, zipPath: string, form: Import
       const memberIds = new Map(Object.keys(parsed.state.members).map((id) => [id, uuidv7()]));
       const assetIds = await importImages(deps, zip, entries, manifest, roomId, counter, memberIds);
       // The remap carries the file's memory and marks under the new ids, and a file from before map discovery then takes
-      // the upgrade step, so every scene it brings is marked played (docs/design-v1-map-discovery.md 5.5).
+      // the upgrade step, so every scene it brings is marked played (docs/design/design-v1-map-discovery.md 5.5).
       const remapped = finishState(withDiscoveryUpgrade(remapState(parsed.state, { assets: assetIds, memberIds }), header.data.schemaVersion), dmMember, roomName);
       // The log's rings hold here as in any room, each ring its own newest (shared/logRings.ts), and the archive takes
       // the whole log, so Show older and a session's export reach every imported line.
@@ -295,7 +295,7 @@ export async function importRoom(deps: ImportDeps, zipPath: string, form: Import
 
 /**
  * A file's state with the map discovery upgrade step when the file is from
- * before it (docs/design-v1-map-discovery.md 5.5), after its migration, as
+ * before it (docs/design/design-v1-map-discovery.md 5.5), after its migration, as
  * a stored room takes the step at load: the room is stored at today's
  * version, which loadRoom never upgrades. A newer file holds its own memory
  * and marks, which the remap carries, and the step would give a share mark
@@ -313,7 +313,7 @@ function parseJson(buffer: Buffer, name: string): unknown {
   }
 }
 
-/** The refusal of a file whose players' memory of a scene is larger than the room keeps it (docs/design-v1-map-discovery.md 5.5). */
+/** The refusal of a file whose players' memory of a scene is larger than the room keeps it (docs/design/design-v1-map-discovery.md 5.5). */
 export const MEMORY_TOO_LARGE = "Players' remembered map of a scene in this file is larger than a room keeps.";
 
 /** The room limits of design 10.5 over the whole imported state. */
@@ -321,7 +321,7 @@ export function assertWithinLimits(state: RoomState): void {
   const over = (reason: string) => new HttpError(413, "over_room_limits", { extra: { reason } });
   const room = checkLimits(state);
   if (!room.ok) throw over(room.message);
-  // The reducer keeps a room's waiting springings to its cap, and the size guard reserves exactly that many (docs/design-v1-traps.md 6.7).
+  // The reducer keeps a room's waiting springings to its cap, and the size guard reserves exactly that many (docs/design/design-v1-traps.md 6.7).
   let waiting = 0;
   for (const trap of Object.values(state.traps ?? {})) waiting += trap.rig?.due?.length ?? 0;
   if (waiting > LIMITS.trapDuePerRoom) throw over(`at most ${LIMITS.trapDuePerRoom} trap springings can wait for the DM at once`);
@@ -329,8 +329,8 @@ export function assertWithinLimits(state: RoomState): void {
     const scene = checkLimits(state, sceneId);
     if (!scene.ok) throw over(scene.message);
     // No op's limits step ever saw an imported scene's walls, so the split's caps are checked here
-    // (docs/design-v1-maps-vision.md 2.1), with every pit's border counted ahead as the limits step
-    // counts it, so no pit the room holds can open past them (docs/design-v1-traps.md 6.7).
+    // (docs/design/design-v1-maps-vision.md 2.1), with every pit's border counted ahead as the limits step
+    // counts it, so no pit the room holds can open past them (docs/design/design-v1-traps.md 6.7).
     const counted = withPitsCounted(state, sceneId);
     const split = splitCheck(counted, sceneId);
     if (!split.ok) throw over(split.message);
@@ -339,9 +339,9 @@ export function assertWithinLimits(state: RoomState): void {
   }
   const bytes = measuredStateBytes(state);
   if (bytes > LIMITS.stateBytes) throw over("the room state is over 8 MiB");
-  // The player scene's explored layer must be able to grow to its full size (docs/design-v1-maps-vision.md 2.4).
+  // The player scene's explored layer must be able to grow to its full size (docs/design/design-v1-maps-vision.md 2.4).
   if (bytes + exploredReserve(state) > LIMITS.stateBytes) throw over(NO_ROOM_TO_EXPLORE);
-  // And players' memory to its caps where a scene takes its whole cap: shares shrink to fit (docs/design-v1-map-discovery.md 5.5).
+  // And players' memory to its caps where a scene takes its whole cap: shares shrink to fit (docs/design/design-v1-map-discovery.md 5.5).
   if (bytes + exploredReserve(state) + memoryReserves(state).whole > LIMITS.stateBytes) throw over(MEMORY_FULL);
   // No measure reads memory, which counts at its caps, so each layer the file holds must lie within a whole cap, and hold
   // nothing where memory is not reserved (MD3-D-4). The layers that share the room's space count at what they hold, which
@@ -374,7 +374,7 @@ export function assertWithinLimits(state: RoomState): void {
  *
  * A starter pick whose work this server ships with the same bytes comes
  * from the shipped file instead, as a pick here would
- * (docs/design-v1-starter-art.md 12.10). Every other image is an upload,
+ * (docs/design/design-v1-starter-art.md 12.10). Every other image is an upload,
  * whatever its manifest says.
  */
 async function importImages(
@@ -500,7 +500,7 @@ async function importFromZip(
         reservation,
         background: true,
       });
-      // An Openverse image keeps its credit (docs/design-v1-dm-tools.md 2.5), and so does a starter pick imported as an
+      // An Openverse image keeps its credit (docs/design/design-v1-dm-tools.md 2.5), and so does a starter pick imported as an
       // upload, checked as bounded text like any of the file's text, since the file is untrusted. A credit that does not
       // parse is left behind with a warning.
       if (asset.credit !== undefined) {

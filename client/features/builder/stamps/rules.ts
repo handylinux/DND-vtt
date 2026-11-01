@@ -5,7 +5,7 @@ import { STARTER_STAMPS } from "#shared/starterStamps.ts";
 import { STAMP_ART, type ShippedStamp } from "#shared/stamps.ts";
 
 /**
- * The rules of the builder's Stamp mode (docs/design-v1-maps-vision.md
+ * The rules of the builder's Stamp mode (docs/design/design-v1-maps-vision.md
  * section 3.5): where a tap places a stamp, which stamp a tap hits, how the
  * handles turn and resize one, and what an op carries. Plain functions, so
  * they run under node --test. pointer.ts feeds them the DM's gestures, and
@@ -228,7 +228,7 @@ export function duplicateOf(stamp: Stamp, id: string, z: number, bounds: SceneBo
 }
 
 /**
- * A starter pack's prop as the next tap places it (docs/design-v1-starter-art.md
+ * A starter pack's prop as the next tap places it (docs/design/design-v1-starter-art.md
  * 5): by the stamp key the catalog gives it, at its footprint, or null for a
  * work that is no stamp.
  */

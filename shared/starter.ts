@@ -1,5 +1,5 @@
 /**
- * The starter packs (docs/design-v1-starter-art.md): sets of openly
+ * The starter packs (docs/design/design-v1-starter-art.md): sets of openly
  * licensed art from one artist or project, which a DM picks from a Starter
  * tab of its own wherever art is chosen. The catalog itself is
  * shared/starterArt.ts and the stamps' list shared/starterStamps.ts, both
@@ -164,7 +164,7 @@ export function searchWorks(packs: readonly StarterPack[], query: string): Found
 /**
  * The license as an image credit names it: Openverse's codes, since a
  * picked image keeps its credit in the same shape as an Openverse import's
- * (docs/design-v1-dm-tools.md 3.13). A public domain dedication is not a
+ * (docs/design/design-v1-dm-tools.md 3.13). A public domain dedication is not a
  * Creative Commons tool, so it has a code of its own.
  */
 export const CREDIT_LICENSE: Record<LicenseId, { license: string; licenseVersion?: string }> = {

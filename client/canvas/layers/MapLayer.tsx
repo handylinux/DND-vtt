@@ -62,7 +62,7 @@ const SharedMapContext = createContext<SharedMap | null>(null);
 
 /**
  * Loads the scene's map image once for both of the board's drawing trees
- * (docs/design-v1-isometric-view.md 5.1, ISO-D15). A map decodes to as much
+ * (docs/design/design-v1-isometric-view.md 5.1, ISO-D15). A map decodes to as much
  * as 256 MiB, so each tree loading its own would hold it twice. The trees'
  * map layers read this one through context, which reaches the frozen tree
  * past its memo. A tree on another map, as a frozen one can be, draws
@@ -196,7 +196,7 @@ function MapImage(props: {
  * The whole grid is one shape with one path, so it is one draw call however
  * large the scene. Lines keep their width on screen at any zoom.
  *
- * A hex scene's lines (docs/design-v1-hex-grids.md HX-D18) are drawn in the
+ * A hex scene's lines (docs/design/design-v1-hex-grids.md HX-D18) are drawn in the
  * same redraws, but only the hexes in view and only while a hex is at
  * least HEX_LINES_MIN_PX across, so a pan costs the hexes on screen and not
  * the 46,000 of the largest scene. What is in view is read from the

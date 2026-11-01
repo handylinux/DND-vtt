@@ -4,7 +4,7 @@ import { describe, test } from "node:test";
 import type { Effect } from "#shared/model.ts";
 
 /*
- * A small chip's face (docs/design-v1-icons-2.md 4). The art and a number
+ * A small chip's face (docs/design/design-v1-icons-2.md 4). The art and a number
  * side by side came to 27 px, past the 20 px box a chip of letters keeps,
  * so a chip with a number keeps its letters (ICONS2-ASTRA-02).
  */

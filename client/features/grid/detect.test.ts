@@ -5,7 +5,7 @@ import { drawMap, toRgba, type SynthMap } from "./synthetic.ts";
 
 // Every map here is drawn by code (synthetic.ts): noise, patterns and a
 // grid of known size and offset. The wider evaluation, with textures and
-// openly licensed real maps, is in docs/design-v1-grid-detect.md.
+// openly licensed real maps, is in docs/design/design-v1-grid-detect.md.
 const W = 760;
 const H = 600;
 const ART = [{ kind: "noise" as const, scale: 40, amp: 60 }];

@@ -160,7 +160,7 @@ export async function registerAssetRoutes(app: FastifyInstance, opts: AssetRoute
       const grant = await requireGrant(req, reply, roomId);
       if (grant.role === "dm") {
         const assets = await listRoomAssets(app.pool, roomId);
-        // The library marks what the room's state does not use (docs/design-v1-dm-tools.md 3.19).
+        // The library marks what the room's state does not use (docs/design/design-v1-dm-tools.md 3.19).
         return { assets: app.hasDecorator("rooms") ? await withInUse(app.pool, app.rooms, roomId, assets) : assets };
       }
       const assets = (await listRoomAssets(app.pool, roomId, await service.visibleAssets(roomId, grant.memberId), grant.memberId)).filter((a) => KINDS[a.kind].playersRead);
@@ -235,7 +235,7 @@ export async function registerAssetRoutes(app: FastifyInstance, opts: AssetRoute
         releaseFetch();
         // An image from an Openverse result keeps that result's credit, read
         // from the server's own cache by what was fetched. A credit in the
-        // request body is never read (docs/design-v1-dm-tools.md 3.13).
+        // request body is never read (docs/design/design-v1-dm-tools.md 3.13).
         const credit = await creditForImport(app.pool, fetchedFrom, path);
         const result = await service.ingest({
           roomId,
@@ -256,7 +256,7 @@ export async function registerAssetRoutes(app: FastifyInstance, opts: AssetRoute
     });
 
     /*
-     * A starter pick (docs/design-v1-starter-art.md 5) is an upload whose
+     * A starter pick (docs/design/design-v1-starter-art.md 5) is an upload whose
      * bytes come from the server's own build: the same role rule, room
      * checks and intake slot as an upload of its kind, and the work looked
      * up in the shipped catalog, which names the file and the credit. It

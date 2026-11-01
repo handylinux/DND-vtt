@@ -28,7 +28,7 @@ export function deathSaveRow(target: { tokenId: string } | { characterId: string
 }
 
 /**
- * A death save at a dying creature's turn start (docs/design-v1-combat-controls.md
+ * A death save at a dying creature's turn start (docs/design/design-v1-combat-controls.md
  * 4.4): "Thorn is dying. Death save: 1 success, 2 failures." with its pips
  * to read, Roll, Skip and Dismiss. Roll goes as the Dice panel's does, on
  * the server, and names the turn's record, so the first roll from any
@@ -67,7 +67,7 @@ export function DeathSaveCard(props: { card: PromptCard<DeathSavePrompt>; waits:
     if (action === "roll") {
       if (props.waits || blocked || !dice || roll.waiting) return;
       if (override && (send.busy || settled || !valid())) return;
-      // Its preset is read at the tap, from the creature's effects then, with none of the Dice panel's choices (docs/design-v1-roll-options.md 6.3).
+      // Its preset is read at the tap, from the creature's effects then, with none of the Dice panel's choices (docs/design/design-v1-roll-options.md 6.3).
       const preset = presetFor(dice, target, { kind: "deathSave" });
       const extra = preset.extra.join("").replace(/^\+/, "");
       roll.send({ t: "actor.deathRoll", tag: uuidv7(), target, ...resolveRollMode(preset.sources, [], override), ...(extra ? { extra } : {}), record: card.record });

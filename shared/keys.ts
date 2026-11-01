@@ -116,7 +116,7 @@ export const keys = {
   /** A tile of the party's sight, derived and never stored: only projections hold it (SightTile). */
   sight: (sceneId: string, tx: number, ty: number): EntityKey => `sight:${sceneId}:${tx},${ty}`,
   /**
-   * Per-player vision (docs/design-v1-per-player-vision.md 7.5), each
+   * Per-player vision (docs/design/design-v1-per-player-vision.md 7.5), each
    * derived and never stored: a tile of the shared sight, the same for
    * every viewer of a per-player scene, of the shared fog (the DM's and the
    * party's layers merged) as players get it there, and of every holder's
@@ -130,7 +130,7 @@ export const keys = {
   /** A per-player scene's sight holder list (RoomState.holders), the DM's. */
   holders: (sceneId: string): EntityKey => `holders:${sceneId}`,
   fogDraft: (sceneId: string): EntityKey => `fogDraft:${sceneId}`,
-  /** A chunk of the party's memory (RoomState.memory, docs/design-v1-map-discovery.md 5.3). No projection holds it. */
+  /** A chunk of the party's memory (RoomState.memory, docs/design/design-v1-map-discovery.md 5.3). No projection holds it. */
   memory: (sceneId: string, cx: number, cy: number): EntityKey => `memory:${sceneId}:${cx},${cy}`,
   /** A chunk of a holder's own memory (RoomState.memoryBy). No projection holds it. */
   memoryBy: (sceneId: string, memberId: string, cx: number, cy: number): EntityKey => `memoryBy:${sceneId}:${memberId}:${cx},${cy}`,
@@ -174,7 +174,7 @@ export function wallMidpoint(wall: Pick<FreeWall, "a" | "b">): [number, number] 
 
 /**
  * The chunk a free wall lives in: the one that holds its midpoint
- * (docs/design-v1-maps-vision.md section 2.2). Ops name a free wall by its
+ * (docs/design/design-v1-maps-vision.md section 2.2). Ops name a free wall by its
  * chunk, so the imports and fixtures that build chunks themselves must file
  * each wall exactly where the reducer does.
  */
@@ -210,7 +210,7 @@ export function holderChunkKey(sceneId: string, memberId: string, cx: number, cy
 
 /**
  * A projected state's sight tiles, keyed like fog tiles. The server's
- * RoomState never holds them, since sight is derived (docs/design-v1-maps-vision.md
+ * RoomState never holds them, since sight is derived (docs/design/design-v1-maps-vision.md
  * 4.3.4), and a client's confirmed state always does, perhaps empty. So the
  * same reducer can tell where it runs: with them it reads what the server
  * sent, without them it computes.
@@ -224,7 +224,7 @@ export function sightOf(state: RoomState): SightMap | undefined {
 
 /**
  * The maps only a projection of a per-player scene holds
- * (docs/design-v1-per-player-vision.md 6.2), keyed like fog tiles: the
+ * (docs/design/design-v1-per-player-vision.md 6.2), keyed like fog tiles: the
  * shared sight, the shared fog as players get it, and every holder's layer
  * joined, the DM's. Each is absent from every other state.
  */

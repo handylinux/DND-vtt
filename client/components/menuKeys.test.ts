@@ -3,9 +3,9 @@ import { describe, test } from "node:test";
 import { menuAction, openingIndex, TYPEAHEAD_MS, typeahead, type MenuKey, type OpeningItem } from "./menuKeys.ts";
 
 /*
- * The menu's keys (docs/design-v1-panel-tabs.md 5.2), for the side
+ * The menu's keys (docs/design/design-v1-panel-tabs.md 5.2), for the side
  * panel's More and for Setup and Tools, which draw it as tiles
- * (docs/design-v1-tool-options.md 5.1).
+ * (docs/design/design-v1-tool-options.md 5.1).
  */
 
 const key = (k: string, over: Partial<MenuKey> = {}): MenuKey => ({ key: k, letter: /^[a-z]$/i.test(k) ? k.toLowerCase() : null, ctrlKey: false, metaKey: false, altKey: false, ...over });
@@ -72,7 +72,7 @@ describe("the item a key open focuses", () => {
     assert.equal(openingIndex([], "first"), -1, "an empty menu");
   });
 
-  // docs/design-v1-split-panel.md 6: "Two panels" heads More's menu and never takes the place a key open lands on.
+  // docs/design/design-v1-split-panel.md 6: "Two panels" heads More's menu and never takes the place a key open lands on.
   test("the opening item skips a checkbox, checked or not", () => {
     const withSplit = (on: boolean, checked: number): OpeningItem[] => [{ kind: "checkbox", checked: on }, ...radios(checked)];
     assert.equal(openingIndex(withSplit(true, -1), "first"), 1, "the first panel, not Two panels");

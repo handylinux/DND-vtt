@@ -12,7 +12,7 @@ import { legGeometry } from "../rules/path.ts";
 import { DM, env, template } from "../testutil.ts";
 
 /**
- * A walk on hexes as the reducer records it (docs/design-v1-hex-grids.md
+ * A walk on hexes as the reducer records it (docs/design/design-v1-hex-grids.md
  * phase H2): a route's feet are its hex steps, each squeezed step paying
  * its extra foot, and an area along a route's pieces is met on their hex
  * lines.

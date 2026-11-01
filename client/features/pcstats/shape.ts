@@ -5,7 +5,7 @@ import type { SrdMonster } from "#shared/srd/monsters.ts";
 import { whose } from "../tokens/companionBlocks.ts";
 
 /**
- * A shape on a character's own token (docs/design-v1-pc-stats.md 3.6 and
+ * A shape on a character's own token (docs/design/design-v1-pc-stats.md 3.6 and
  * 7.3), as plain functions for node --test: the patch that takes or ends
  * one, and the words the section says while it lasts.
  */
@@ -25,7 +25,7 @@ export function effectiveShapeKind(character: Pick<Character, "actor">, chosen: 
  * level for Wild Shape, and the creature's HP for Polymorph. The Druid level
  * is the one this device remembers picking in Take a shape when there is
  * one, since a multiclassed Druid's differs from the character's, and else
- * the character's level (docs/design-v1-known-forms.md 5.5).
+ * the character's level (docs/design/design-v1-known-forms.md 5.5).
  */
 export function shapeTempHp(kind: ShapeKind, character: Pick<Character, "level">, creature: Pick<SrdMonster, "hp">, druidLevel?: number): number {
   return kind === "wild" ? (druidLevel ?? character.level ?? 1) : creature.hp.average;
@@ -50,7 +50,7 @@ export const END_SHAPE: ActorPatch = { srdId: null };
 /**
  * What a character keeps in Wild Shape. Its Intelligence, Wisdom, Charisma
  * and proficiencies are its stat block's, so a character with none takes all
- * of the creature's numbers (docs/design-v1-pc-stats.md 3.6), and the words
+ * of the creature's numbers (docs/design/design-v1-pc-stats.md 3.6), and the words
  * say so, pointing at the stat block where the viewer may add one.
  */
 function noBlockWords(name: string, creature: string, canAdd: boolean): string {

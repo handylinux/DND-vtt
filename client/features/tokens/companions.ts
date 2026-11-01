@@ -10,7 +10,7 @@ import type { OpAnswer, OpRefusal } from "../../state/types.ts";
 import { blankActor, firstFreeSpot, occupiedBoxes, sizeFootprint, spreadPositions, type Point } from "./factory.ts";
 
 /**
- * Companions as the forms build them (docs/design-v1-combat-flow.md 3.6),
+ * Companions as the forms build them (docs/design/design-v1-combat-flow.md 3.6),
  * as plain functions for node --test: the turn choices with their help,
  * the form's checks, the `token.create` input, and where a new one goes.
  * The server checks a player's companion by the same reach and wall rules
@@ -20,7 +20,7 @@ import { blankActor, firstFreeSpot, occupiedBoxes, sizeFootprint, spreadPosition
 export type CompanionWhat = "creature" | "effect";
 
 /**
- * A stat block chosen in the add form (docs/design-v1-companion-stat-blocks.md
+ * A stat block chosen in the add form (docs/design/design-v1-companion-stat-blocks.md
  * 5.6): what it links, the block in the SRD monsters' shape, and a stored
  * block's picture, or an SRD monster's shipped icon, which a new companion
  * starts with.
@@ -164,7 +164,7 @@ export function draftError(draft: CompanionDraft): string | null {
  * on the creatures layer, plain and bare, owned by whoever plays the
  * character, standing at the character's elevation. A creature with a
  * stat block links it and takes its speeds, initiative bonus, Passive
- * Perception and senses (docs/design-v1-companion-stat-blocks.md 5.6). An
+ * Perception and senses (docs/design/design-v1-companion-stat-blocks.md 5.6). An
  * effect sends no block, though its draft keeps one.
  */
 export function companionInput(

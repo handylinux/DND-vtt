@@ -12,7 +12,7 @@ import { DM, entry, env, member, room, scene, token } from "#shared/testutil.ts"
 import { growthBound, measuredFromStored, measuredStateBytes, PER_PLAYER_FULL, projectedSceneBytes, roomLevelBytes, sceneOwnBytes, SizeGuard, touchedScenes } from "./sizeGuard.ts";
 
 /**
- * The size guard on per-player vision (docs/design-v1-per-player-vision.md
+ * The size guard on per-player vision (docs/design/design-v1-per-player-vision.md
  * 6.8, lane PV3): no measure reads a list of who saw or a layer's
  * contents, each counts at its widest instead, the widest covers the real
  * bytes, the switch to Per player is refused in the DM's words when the
@@ -158,7 +158,7 @@ describe("the switch to Per player and the room's limits", () => {
 });
 
 /**
- * The differential measure row (docs/design-v1-per-player-vision.md
+ * The differential measure row (docs/design/design-v1-per-player-vision.md
  * section 10): two rooms a few bytes under the room's limit that differ
  * only in what Thorn's player explored and whom their lists name. Bree's
  * player's ops get the same answers in both, refusals included.

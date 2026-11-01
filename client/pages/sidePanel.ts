@@ -1,7 +1,7 @@
 import { SHORT_LANDSCAPE_MAX } from "../features/encounter/band.ts";
 
 /*
- * Whether the side panel shows from 900 px up (docs/design-v1-layout-hierarchy.md
+ * Whether the side panel shows from 900 px up (docs/design/design-v1-layout-hierarchy.md
  * 4.1), as this device remembers it: "hidden" or "shown", one value for every
  * room and both roles. Hide panels, Panels and the S key write it. Opening a
  * panel from anywhere shows a hidden side panel and leaves the stored choice

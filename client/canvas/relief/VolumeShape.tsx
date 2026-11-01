@@ -10,7 +10,7 @@ import { sideOf, wholeVolume, type VolumeWorld, type WholeRequest } from "./volu
 
 /**
  * An area's bands drawn as one run outside the depth list
- * (docs/design-v1-iso-area-shapes.md 4.5): in the drag layer while it is
+ * (docs/design/design-v1-iso-area-shapes.md 4.5): in the drag layer while it is
  * aimed or moves with its token, or on the overlay for another member's
  * drag or preview. It draws in view units from its stage's camera,
  * whatever group holds it, and takes no presses.

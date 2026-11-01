@@ -15,7 +15,7 @@ import { alignmentLines, measureAlignment, toastsUnderCards } from "./helpers/al
 import { barControl, ConsoleWatch, expandBar, OpSocket, openPage, Shots, SocketWatch, startServer, tapCell, untilReady, waitFor, type Server } from "./harness.ts";
 
 /**
- * Combat uses (docs/design-v1-combat-controls.md 4 to 6 and 11), on the
+ * Combat uses (docs/design/design-v1-combat-controls.md 4 to 6 and 11), on the
  * real server serving the production build. The DM runs the fight from a
  * desk and a phone at once, and Pat plays Thorn on a phone:
  * - On Thorn's turn the DM's phone takes Fiery Rays from the dragon's
@@ -42,7 +42,7 @@ import { barControl, ConsoleWatch, expandBar, OpSocket, openPage, Shots, SocketW
  * - Where the SRD's stat blocks did not load, In lair and every join
  *   stay off beside the failure's reload.
  * - Each count shows as pips on its row's title line, to read only
- *   (docs/design-v1-monster-uses.md): Restore corrects it, off while full,
+ *   (docs/design/design-v1-monster-uses.md): Restore corrects it, off while full,
  *   Undo takes back exactly a mis-tap, Pat lent an Aboleth reads the same
  *   rows, and the title lines keep their rule at every size, for the
  *   Aboleth, the dragon, a Tarrasque's 6 and Thorn's class resources.
@@ -194,7 +194,7 @@ async function barUses(page: Page, name = DRAGON, at = DRAGON_AT): Promise<Locat
   await tapCell(page, run.bounds, at);
   const bar = page.getByRole("dialog", { name: `${name} actions` });
   await bar.waitFor();
-  // An upright phone's strip draws Uses only where it fits, else Expand shows it (docs/design-v1-bar-compact.md 6).
+  // An upright phone's strip draws Uses only where it fits, else Expand shows it (docs/design/design-v1-bar-compact.md 6).
   const uses = await barControl(bar, "Uses");
   await waitFor("the Uses button ready", async () => ((await uses.isEnabled()) ? true : null));
   if ((await uses.getAttribute("aria-pressed")) !== "true") await uses.click();
@@ -326,7 +326,7 @@ function combatSections(panel: Locator): Promise<string[]> {
 /**
  * A folded group's row and its summary: the row's height, the summary's
  * words, the width it takes and the width its words need, whether its
- * words are cut, and its floor, 4em of its own font (docs/design-v1-icons-2.md 3.3).
+ * words are cut, and its floor, 4em of its own font (docs/design/design-v1-icons-2.md 3.3).
  */
 function foldedSummary(panel: Locator, name: string): Promise<{ text: string; width: number; needs: number; cut: boolean; floor: number; row: number }> {
   type Box = { width: number; height: number };
@@ -528,7 +528,7 @@ describe("raccoon-vtt: combat uses", { timeout: 900_000 }, () => {
       ],
     );
 
-    // At 440 x 956 the strip holds Uses: from there the bar expands with the drawer, and the drawer's own close, Escape in it, rests the bar again with focus back on the strip's Uses (docs/design-v1-bar-compact.md 5.3, review BB-OPUS-5).
+    // At 440 x 956 the strip holds Uses: from there the bar expands with the drawer, and the drawer's own close, Escape in it, rests the bar again with focus back on the strip's Uses (docs/design/design-v1-bar-compact.md 5.3, review BB-OPUS-5).
     await setUp(phone, phoneCdp, { width: 440, height: 956, scale: 1 });
     try {
       await closeSheets(phone);
@@ -613,7 +613,7 @@ describe("raccoon-vtt: combat uses", { timeout: 900_000 }, () => {
     await waitFor("the original used-breath fixture restored", () => dragon()?.uses?.[BREATH]?.used === 1 || null);
   });
 
-  test("ic2-bar-2. the bar's play row leads Uses with its icon and Conditions keeps its words alone, on no more lines than without the icon, and the strip's Uses keeps its words alone, at 1280 x 800 at 85% to 115%, on phones at 100% and 130% and on a phone held sideways (docs/design-v1-icons-2.md 8)", async () => {
+  test("ic2-bar-2. the bar's play row leads Uses with its icon and Conditions keeps its words alone, on no more lines than without the icon, and the strip's Uses keeps its words alone, at 1280 x 800 at 85% to 115%, on phones at 100% and 130% and on a phone held sideways (docs/design/design-v1-icons-2.md 8)", async () => {
     const views = [
       [desk, deskCdp, { width: 1280, height: 800, scale: 1 }],
       [desk, deskCdp, { width: 1280, height: 800, scale: 0.85 }],
@@ -679,7 +679,7 @@ describe("raccoon-vtt: combat uses", { timeout: 900_000 }, () => {
     await phoneCard.waitFor();
     const turn = alerts(desk, "turn");
     await turn.getByText(`${DRAGON}'s turn`, { exact: true }).waitFor();
-    // The card's Legendary Actions: the title with its pips and when they come, with no buttons (docs/design-v1-monster-uses.md 3.2).
+    // The card's Legendary Actions: the title with its pips and when they come, with no buttons (docs/design/design-v1-monster-uses.md 3.2).
     await countShows(turn, "legendary", "3 of 3");
     await turn.locator('[data-use-row="legendary"]').getByText("After other creatures' turns", { exact: true }).waitFor();
     assert.equal(await turn.locator('[data-use-row="legendary"] button').count(), 0, "no legendary action on the card");
@@ -712,7 +712,7 @@ describe("raccoon-vtt: combat uses", { timeout: 900_000 }, () => {
     assert.equal(await deskCard.count(), 1, "Done hides it on this device alone");
   });
 
-  test("ic2-cu. the turn card's fold leads with its chevron and its Dismiss is the close, their names keep their words: folded on the phone, Show and its count, open, Collapse and Dismiss, and on the desk Dismiss (docs/design-v1-icons-2.md 4)", async () => {
+  test("ic2-cu. the turn card's fold leads with its chevron and its Dismiss is the close, their names keep their words: folded on the phone, Show and its count, open, Collapse and Dismiss, and on the desk Dismiss (docs/design/design-v1-icons-2.md 4)", async () => {
     const lead = (button: Locator) => button.evaluate((el) => (el as unknown as { firstElementChild: { tagName: string } | null }).firstElementChild?.tagName.toLowerCase() ?? null);
     const close = async (button: Locator, why: string) => {
       assert.equal((await button.innerText()).trim(), "", `${why} draws no words`);
@@ -1123,7 +1123,7 @@ describe("raccoon-vtt: combat uses", { timeout: 900_000 }, () => {
     assert.deepEqual(patConsole.errors, [], "Pat's page");
   });
 
-  test("mu-a. the dragon's row shows its counts as pips on their title lines, to read only: a most of 1 to 6 as pips at the line's right end and on its buttons' right edge, beside the name where its longest word fits and as one part on the next line where not, and 7 in words, in line at 320 x 568 and 390 x 844 at 130% (docs/design-v1-monster-uses.md 3.1)", async () => {
+  test("mu-a. the dragon's row shows its counts as pips on their title lines, to read only: a most of 1 to 6 as pips at the line's right end and on its buttons' right edge, beside the name where its longest word fits and as one part on the next line where not, and 7 in words, in line at 320 x 568 and 390 x 844 at 130% (docs/design/design-v1-monster-uses.md 3.1)", async () => {
     const before = dragon()!.legendary!;
     const seen: string[] = [];
     try {
@@ -1235,7 +1235,7 @@ describe("raccoon-vtt: combat uses", { timeout: 900_000 }, () => {
     assert.deepEqual(patConsole.errors, [], "Pat's page");
   });
 
-  test("s2-cu-a. the DM on the dragon's Token panel: Combat runs Hit Points, Conditions, Uses with Fiery Rays and its counts as pips, Reaction, Range rings and Rest; its Uses waits under Loading the uses while the block loads; Fiery Rays from there spends a Legendary Action the row and the bar's drawer show; counts of 3, 6 and 7 at 320 x 568 and 390 x 844 at 130%; and Combat in line, with its heights (docs/design-v1-token-sections.md 3, docs/design-v1-monster-uses.md 3.1)", async () => {
+  test("s2-cu-a. the DM on the dragon's Token panel: Combat runs Hit Points, Conditions, Uses with Fiery Rays and its counts as pips, Reaction, Range rings and Rest; its Uses waits under Loading the uses while the block loads; Fiery Rays from there spends a Legendary Action the row and the bar's drawer show; counts of 3, 6 and 7 at 320 x 568 and 390 x 844 at 130%; and Combat in line, with its heights (docs/design/design-v1-token-sections.md 3, docs/design/design-v1-monster-uses.md 3.1)", async () => {
     const before = dragon()!.legendary!;
     const seen: string[] = [];
     try {
@@ -1384,7 +1384,7 @@ describe("raccoon-vtt: combat uses", { timeout: 900_000 }, () => {
     assert.deepEqual(sweep, [], "out of line by more than 1 px");
   });
 
-  test("mu-b. Restore is the hand correction: off while full and saying why on a tap, keeping its focus after the last restore; on another creature's turn it frees a spent Fiery Rays first, as before, and Undo takes back exactly the mis-tap; on the dragon's own turn it gives back one (docs/design-v1-monster-uses.md 3.3)", async () => {
+  test("mu-b. Restore is the hand correction: off while full and saying why on a tap, keeping its focus after the last restore; on another creature's turn it frees a spent Fiery Rays first, as before, and Undo takes back exactly the mis-tap; on the dragon's own turn it gives back one (docs/design/design-v1-monster-uses.md 3.3)", async () => {
     await setUp(desk, deskCdp, DESK);
     // The dragon's turn starts with its actions back and its marks gone, then another creature's turn lets it take them.
     await turnTo("fu26-dragon");
@@ -1449,7 +1449,7 @@ describe("raccoon-vtt: combat uses", { timeout: 900_000 }, () => {
     await deselect(desk);
   });
 
-  test("mu-c. Pat, lent an Aboleth in the fight, reads its rows as the DM does: its counts as pips, with Use and Restore, and his Restore lands (docs/design-v1-monster-uses.md 3.5)", async () => {
+  test("mu-c. Pat, lent an Aboleth in the fight, reads its rows as the DM does: its counts as pips, with Use and Restore, and his Restore lands (docs/design/design-v1-monster-uses.md 3.5)", async () => {
     await ops.send({ t: "token.create", token: { id: run.aboleth, sceneId: run.sceneId, visibility: "all", kind: "monster", name: "Aboleth", size: "large", x: ABOLETH_AT.x, y: ABOLETH_AT.y, disposition: "hostile", ownerIds: [run.patId], actor: { inline: srdActor("aboleth") } } });
     await ops.send({ t: "token.create", token: { id: run.tarrasque, sceneId: run.sceneId, visibility: "all", kind: "monster", name: "Tarrasque", size: "gargantuan", x: TARRASQUE_AT.x, y: TARRASQUE_AT.y, disposition: "hostile", actor: { inline: srdActor("tarrasque") } } });
     await ops.send({ t: "encounter.add", entries: [{ id: "mu-aboleth", tokenId: run.aboleth, value: 6 }, { id: "mu-tarrasque", tokenId: run.tarrasque, value: 4 }] });
@@ -1485,7 +1485,7 @@ describe("raccoon-vtt: combat uses", { timeout: 900_000 }, () => {
     await pat.goto("about:blank");
   });
 
-  test("mu-d. every Uses title line in line at 1440 x 900, 390 x 844 and 320 x 568, at 100% and 130%: the Aboleth's, the dragon's, the Tarrasque's 6 and Thorn's class resources (a count over 6 and a pool, in words at the right end) in their Token panels, and the Tarrasque's, the Aboleth's and Thorn's with Rage at 6 in their tracker rows, and at 320 x 568 at 130% Thorn's turn card and his bar's Uses drawer with Lay on Hands on Pat's phone (docs/design-v1-monster-uses.md 3.1, 3.7, XOFY-OPUS-03)", async () => {
+  test("mu-d. every Uses title line in line at 1440 x 900, 390 x 844 and 320 x 568, at 100% and 130%: the Aboleth's, the dragon's, the Tarrasque's 6 and Thorn's class resources (a count over 6 and a pool, in words at the right end) in their Token panels, and the Tarrasque's, the Aboleth's and Thorn's with Rage at 6 in their tracker rows, and at 320 x 568 at 130% Thorn's turn card and his bar's Uses drawer with Lay on Hands on Pat's phone (docs/design/design-v1-monster-uses.md 3.1, 3.7, XOFY-OPUS-03)", async () => {
     const resources = deskSocket.state!.characters[run.thorn]!.resources!;
     const legendary = dragon()!.legendary!;
     const seen: string[] = [];
@@ -1597,7 +1597,7 @@ function shownCount(scope: Locator, kind: string): Promise<string | null> {
     });
 }
 
-/** Waits for a row's count to show `count`, as its pips and the words spoken after its name both say (docs/design-v1-monster-uses.md 3.1). */
+/** Waits for a row's count to show `count`, as its pips and the words spoken after its name both say (docs/design/design-v1-monster-uses.md 3.1). */
 async function countShows(scope: Locator, kind: string, count: string): Promise<void> {
   const row = scope.locator(`[data-use-row="${kind}"]`).first();
   await waitFor(`${kind} shows ${count}`, async () => ((await shownCount(scope, kind)) === count && ((await row.textContent()) ?? "").includes(`, ${count} left`) ? true : null), 10_000).catch(async () =>
@@ -1607,7 +1607,7 @@ async function countShows(scope: Locator, kind: string, count: string): Promise<
 
 /**
  * Each counted row's title line under `root` as laid out
- * (docs/design-v1-monster-uses.md 3.1): its name, its pips' count and
+ * (docs/design/design-v1-monster-uses.md 3.1): its name, its pips' count and
  * width, whether they share the name's line or stand on the next, how far
  * their right end stands from the title line's and from the row's
  * buttons', and whether they should share it: the name's longest word,

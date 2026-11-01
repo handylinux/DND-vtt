@@ -18,7 +18,7 @@ import { variantPath } from "../assets/store.ts";
 export const EXPORT_FORMAT = "raccoon-vtt-room";
 export const EXPORT_FORMAT_VERSION = 1;
 /**
- * 2 adds `starter` to an asset (docs/design-v1-starter-art.md 12.10). Import
+ * 2 adds `starter` to an asset (docs/design/design-v1-starter-art.md 12.10). Import
  * reads 1 and 2 alike, a version 1 asset being an upload. A server from
  * before 2 ignores the field it does not know, and drops only the credit
  * of a pick, whose `changes` its strict credit schema refuses.
@@ -33,7 +33,7 @@ export type ManifestAsset = {
   height: number;
   variants: Variant[];
   uploaders: string[];
-  /** An Openverse image's or a starter pick's credit (docs/design-v1-dm-tools.md 3.13), which the import keeps after checking it. */
+  /** An Openverse image's or a starter pick's credit (docs/design/design-v1-dm-tools.md 3.13), which the import keeps after checking it. */
   credit?: AssetCredit;
   /** A starter pick's work key. The import keeps it only where its own catalog has that work with these bytes. */
   starter?: string;

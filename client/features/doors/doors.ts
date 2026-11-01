@@ -8,7 +8,7 @@ import { isHex, sceneGrid, SQUARES, type Grid } from "#shared/rules/grid.ts";
 import { hexAt, hexSubcells, type HexGrid } from "#shared/rules/hex.ts";
 
 /**
- * Doors in play (docs/design-v1-maps-vision.md 4.1), as plain functions for
+ * Doors in play (docs/design/design-v1-maps-vision.md 4.1), as plain functions for
  * node --test: finding the door under a tap, the doors a token reaches, and
  * what a door's pill offers. They read the viewer's own projection, where a
  * secret door not yet found is the wall players see and a locked door is
@@ -99,7 +99,7 @@ export function doorSeen(d: DoorOnMap, sceneId: string, fog: Fog, grid: Grid = S
 
 /**
  * Whether a free door on a hex scene shows: one of the two hexes beside it
- * holds a fog sub-cell out of the fog (docs/design-v1-hex-grids.md phase
+ * holds a fog sub-cell out of the fog (docs/design/design-v1-hex-grids.md phase
  * H2), the hexes the server reads its reach from (shared/permissions.ts
  * doorPlace), each found from the point a step of 1/256 cell off the door's
  * middle along its normal.
@@ -204,7 +204,7 @@ export function doorsInReach(state: RoomState, token: Token, fog: Fog): DoorOnMa
 }
 
 /**
- * Who opens a door a player taps (docs/design-v1-traps.md 5.3): their own
+ * Who opens a door a player taps (docs/design/design-v1-traps.md 5.3): their own
  * token on the scene that reaches it by the server's rule, the nearest
  * first, then by id. Null when none does, which the pill answers "Too far".
  */
@@ -220,7 +220,7 @@ export function doorOpener(state: RoomState, memberId: string | undefined, d: Pi
 }
 
 /**
- * Who opens a door from its pill (docs/design-v1-traps.md 5.3): the token
+ * Who opens a door from its pill (docs/design/design-v1-traps.md 5.3): the token
  * selected when the door was tapped, any on the scene for the DM and the
  * player's own that reaches the door for a player, else for a player
  * their nearest own token that reaches it (`doorOpener`). The DM with none
@@ -243,7 +243,7 @@ export type DoorAction = { label: string; op: OpOf<"door.set"> };
  * A player sees a locked door as closed, so a player's Open on one is
  * answered "It's locked." by the server, which is how players learn of locks.
  * An open names `by`, the creature that opens it, whose door traps it sets
- * off (docs/design-v1-traps.md 5.3): a player's must, and the DM's may.
+ * off (docs/design/design-v1-traps.md 5.3): a player's must, and the DM's may.
  */
 export function doorActions(sceneId: string, d: Pick<DoorOnMap, "ref" | "door">, role: "dm" | "player", by?: string): DoorAction[] {
   const set = (state: Door["state"], found?: boolean): OpOf<"door.set"> => ({ t: "door.set", sceneId, door: d.ref, state, ...(found === undefined ? {} : { found }) });

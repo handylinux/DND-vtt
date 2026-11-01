@@ -20,7 +20,7 @@ export const SESSION_DAYS = 180;
 export const SESSION_MAX_AGE_S = SESSION_DAYS * 24 * 60 * 60;
 
 /**
- * A table display's session (docs/design-v1-dm-tools.md 3.1) ends 30 days
+ * A table display's session (docs/design/design-v1-dm-tools.md 3.1) ends 30 days
  * after its last socket closed, since a TV sits in a shared place. While a
  * socket is open the grant recheck renews it (server/auth/displaySessions.ts).
  */

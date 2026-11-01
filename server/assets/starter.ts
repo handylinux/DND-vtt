@@ -9,7 +9,7 @@ import { STARTER_PACKS } from "#shared/starterArt.ts";
 
 /**
  * The starter packs as the server copies them into a room
- * (docs/design-v1-starter-art.md 5): the shipped catalog, and the folder
+ * (docs/design/design-v1-starter-art.md 5): the shipped catalog, and the folder
  * its files are read from. A pick names a work by its key alone. The file
  * it reads and the credit it stores both come from here, never from the
  * request.

@@ -11,7 +11,7 @@ import { hexKey, hexNeighbors, hexSubcells, type HexGrid } from "../rules/hex.ts
 import { env, P1, room, scene, token } from "../testutil.ts";
 
 /**
- * Reveal room's fog on a hex scene in the reducer (docs/design-v1-hex-grids.md
+ * Reveal room's fog on a hex scene in the reducer (docs/design/design-v1-hex-grids.md
  * HX-D10 and HX-D14, phase H3): a draft of hex keys carries its scene's
  * shape and drops it with the last of them, and a published or live reveal
  * opens the hexes' sub-cells, so a creature standing in one reaches players.

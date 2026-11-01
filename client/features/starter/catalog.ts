@@ -2,7 +2,7 @@ import { indexWorks, type FoundWork, type StarterPack } from "#shared/starter.ts
 import { preloadInBackground } from "../../lib/retryableLazy.ts";
 
 /**
- * The starter packs' catalog for the room (docs/design-v1-starter-art.md
+ * The starter packs' catalog for the room (docs/design/design-v1-starter-art.md
  * 4): about 500 works with their credits, in a chunk of its own that the
  * room's first load never carries. It loads with the panels the room
  * preloads once connected, for both roles, since a player may pick a

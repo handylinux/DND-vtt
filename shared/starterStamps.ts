@@ -1,5 +1,5 @@
 /**
- * The starter packs' stamps (docs/design-v1-starter-art.md 5), drawn from
+ * The starter packs' stamps (docs/design/design-v1-starter-art.md 5), drawn from
  * `/stamps/<key>.webp` beside the shipped stamps of shared/stamps.ts, so
  * the board can draw one without loading the catalog. Written by
  * `node scripts/starter-art.ts`, so change the script, not this file.

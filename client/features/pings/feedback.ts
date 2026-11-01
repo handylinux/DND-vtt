@@ -12,7 +12,7 @@ const SOUND_KEY = "rvtt.pingSound";
 /*
  * One value for the whole page, read from storage once. The ping tool's
  * "Ping sound" and This device's switch are the same setting
- * (docs/design-v1-visual.md 3.7), so both subscribe to it: a change in one
+ * (docs/design/design-v1-visual.md 3.7), so both subscribe to it: a change in one
  * shows in the other while both are on screen, and a tap never flips a
  * stale copy.
  */

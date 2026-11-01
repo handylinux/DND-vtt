@@ -5,7 +5,7 @@ import { ellipseBox } from "./relief/standee.ts";
 
 /**
  * Where the HTML chrome over the map stands by what it is about
- * (docs/design-v1-isometric-view.md 5.3): the action bar, the stop note,
+ * (docs/design/design-v1-isometric-view.md 5.3): the action bar, the stop note,
  * the door pill and the height readout. Each takes the chrome's own camera
  * (features/device/layout.ts cameraInZoomed) and the board's view and drawn
  * heights (`pick`), so in Isometric it stands where the thing draws, raised

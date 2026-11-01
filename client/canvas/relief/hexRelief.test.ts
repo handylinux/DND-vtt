@@ -21,7 +21,7 @@ import { splitTokens } from "./stand.ts";
 import type { ViewToken } from "../../lib/scene.ts";
 
 /*
- * Raised hexes in the depth list (docs/design-v1-iso-hex-relief.md 6 and
+ * Raised hexes in the depth list (docs/design/design-v1-iso-hex-relief.md 6 and
  * 10.3): six-sided cells, center-depth keys, actual footprints, host keys
  * for walls, connected pit regions and the buckets a hex scene rebuilds.
  */

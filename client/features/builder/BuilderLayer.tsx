@@ -68,7 +68,7 @@ const BuildBoard = memo(function BuildBoard(props: {
   const paths = useMemo(() => buildPaths(chunks, role, { autoWalls, bounds: { w, h }, gridShape }), [chunks, role, autoWalls, w, h, gridShape]);
   const textures = useTextures(paths.floors.map(([t]) => t));
   const stamps = useStampDrawing(sceneId, role);
-  // On the isometric view's ground stage, what stands up there is left out here (docs/design-v1-isometric-view.md 5.3).
+  // On the isometric view's ground stage, what stands up there is left out here (docs/design/design-v1-isometric-view.md 5.3).
   const iso = useIsoGround();
   const flatLabels = useMemo(() => (iso ? labels.filter((l) => !iso.uprightLabels.has(l.id)) : labels), [iso, labels]);
   const standing = useMemo(() => {
@@ -87,7 +87,7 @@ const BuildBoard = memo(function BuildBoard(props: {
   );
 });
 
-/** The scene's lights, as suns for the DM (docs/design-v1-maps-vision.md section 3.6). */
+/** The scene's lights, as suns for the DM (docs/design/design-v1-maps-vision.md section 3.6). */
 function LightMarks(props: { sceneId: string; scale: number }) {
   const { sceneId, scale } = props;
   const lights = useSceneLights(sceneId);

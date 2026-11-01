@@ -14,7 +14,7 @@ import { Connection } from "./connection.ts";
 import { buildSnapshot, publishBatch } from "./fanout.ts";
 
 /**
- * A hex scene through the server's own fan-out (docs/design-v1-hex-grids.md
+ * A hex scene through the server's own fan-out (docs/design/design-v1-hex-grids.md
  * section 7): a player's and a table display's snapshot carry the scene's
  * shape, and so does the scene change a switch sends them.
  */

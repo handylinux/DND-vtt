@@ -12,7 +12,7 @@ function thorn(level: number | undefined, shape?: { srdId: string; wild: boolean
   return { ...(level !== undefined ? { level } : {}), actor, ...(block ? { stats: {} as PcStats } : {}) };
 }
 
-describe("the kind line (docs/design-v1-look-pass.md 2.11)", () => {
+describe("the kind line (docs/design/design-v1-look-pass.md 2.11)", () => {
   test("the size reads as today: its name and feet, a custom size its two sides", () => {
     assert.equal(MEDIUM, "Medium (5 ft)");
     assert.equal(sizeText("large", { w: 2, h: 2 }, 5), "Large (10 ft)");

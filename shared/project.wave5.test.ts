@@ -8,7 +8,7 @@ import { applyOp } from "./reducer.ts";
 import { DM, P1, P2, actor, character, env, imageRef, member, reveal, room, scene, token } from "./testutil.ts";
 
 /**
- * Projection of wave 5's state (docs/design-v1-dm-tools.md 2.1): journal
+ * Projection of wave 5's state (docs/design/design-v1-dm-tools.md 2.1): journal
  * pages with secret blocks, map pins, roll requests and their log lines,
  * the room monster a token was placed from, the derived `party` flag, and
  * icons in the visible asset set. A table display is a player who owns

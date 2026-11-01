@@ -1,6 +1,6 @@
 # raccoon-vtt v1: PDF handouts
 
-Status: draft 3, after design review round 2. Round 1's three reviewers found four P1s and many P2s, most of them sharing three roots. Every finding was adopted, P3s included, and each root is answered by one model: the upload job (4.1), rendering safety (4.2) and the viewer's controls and identity (5.1). Round 2 found three P2s and ten P3s, each fixed as a class: an `unknown` answer is checked only against a fresh snapshot, the page buttons step by the view's position, and Cancel waits a bounded grace. Section 15 maps every finding of both rounds to the rule that answers it. The project owner's decisions are in section 14. Code is cited from public main `e4ec8696`, after the bar dock and the session 1 feedback wave, where the handout viewer of docs/design-v1-layout-hierarchy.md section 5 is built. This design builds on that viewer and adds no second one.
+Status: draft 3, after design review round 2. Round 1's three reviewers found four P1s and many P2s, most of them sharing three roots. Every finding was adopted, P3s included, and each root is answered by one model: the upload job (4.1), rendering safety (4.2) and the viewer's controls and identity (5.1). Round 2 found three P2s and ten P3s, each fixed as a class: an `unknown` answer is checked only against a fresh snapshot, the page buttons step by the view's position, and Cancel waits a bounded grace. Section 15 maps every finding of both rounds to the rule that answers it. The project owner's decisions are in section 14. Code is cited from public main `e4ec8696`, after the bar dock and the session 1 feedback wave, where the handout viewer of docs/design/design-v1-layout-hierarchy.md section 5 is built. This design builds on that viewer and adds no second one.
 
 The project owner asked on 2026-10-15: "also how complicated would be adding pdf support to handouts?" Of three ways offered, the project owner chose the first: the DM's browser turns each PDF page into an image with pdf.js and uploads the pages as ordinary images, so the server stays images-only. Then: "would handouts be shown as pages one after the other from the pdf, as opposed to multiple handouts? id prefer if they could be viewed/scrolled as if they were still a pdf but just faked (dont need ocr i just want the interaction to be pdf-like)".
 
@@ -49,7 +49,7 @@ export type Handout = {
   rev: number;
   /** The first page. A handout without `pages` is this one image, as every handout from before PDFs is. */
   assetId: AssetId;
-  /** Every page in order, the first included (docs/design-v1-pdf-handouts.md 3.1). Absent for one image. */
+  /** Every page in order, the first included (docs/design/design-v1-pdf-handouts.md 3.1). Absent for one image. */
   pages?: HandoutPage[];
   title: string;
   to: "all" | MemberId[];
@@ -67,7 +67,7 @@ export type Handout = {
 ```ts
 export type HandoutDocId = string;
 
-/** A PDF the DM uploaded, kept in the library until the DM deletes it (docs/design-v1-pdf-handouts.md 3.2). */
+/** A PDF the DM uploaded, kept in the library until the DM deletes it (docs/design/design-v1-pdf-handouts.md 3.2). */
 export type HandoutDoc = {
   id: HandoutDocId;
   rev: number;
@@ -115,7 +115,7 @@ handoutDocs: Record<HandoutDocId, HandoutDoc>;
 ### 3.5 Cleanup and deletion
 
 - `entityAssetRefs` (`shared/referencedAssets.ts:58`) returns every page of a handout and of a document, kind `handout`, and `IMAGE_COLLECTIONS` gains `["handoutDocs", "handoutDoc"]`. Cleanup, the DM library's `inUse`, the delete route's `asset_in_use` check and `restoreAddedAssets` then all see them, with no other change. The file's own test fails until both are listed.
-- A document's pages are therefore in use while it exists. "Delete N not in use" never takes them, and automatic cleanup never takes handouts at all. A document is kept for later until the DM deletes it, which only the DM can judge, as docs/design-v1-dm-tools.md 3.19 says of images.
+- A document's pages are therefore in use while it exists. "Delete N not in use" never takes them, and automatic cleanup never takes handouts at all. A document is kept for later until the DM deletes it, which only the DM can judge, as docs/design/design-v1-dm-tools.md 3.19 says of images.
 - **Asset use protects images, nothing else.** Whether a document is showing (8.1) and whether its images may be deleted are separate questions. The delete route answers the second from the whole state, so an image another document or a showing handout names is always kept.
 - **Deleting a document** (8.1) dispatches `handoutDoc.delete`. Once it is `taken`, the client runs the existing `deleteImages(roomId, pageIds)` (`images/library.ts`), which keeps any page the route refuses as in use. If the op is refused, nothing is deleted. An `unknown` answer is settled by the checking rule of 4.1.5: the note says "Checking whether the handout was deleted…" until the current connection's snapshot is in, and only then does the document's absence mean deleted, so the images go, and its presence mean not deleted, which the note says with Try again. If the image delete fails (offline), the note keeps the page ids and offers Try again, and until then the pages are loose images marked "Not in use".
 - Undoing `handoutDoc.delete` after its pages are gone is refused ("that is not here"), the library's existing promise: "A deleted image is gone for good, from undo too." Undoing `handoutDoc.create` removes the document and leaves its pages loose. If a handout still shows those pages, they are "In use", and the Library names each "Strange letter, page 3" (8.1).
@@ -308,7 +308,7 @@ If the phone still runs out, the browser kills the tab and reloads it, and the l
 
 ## 5. The viewer
 
-The handout viewer as built (docs/design-v1-layout-hierarchy.md section 5), given every page. It stays one component, `HandoutViewer.tsx`, with its states in `zoom.ts`. Sections 5.2 to 5.7 apply to two or more pages. One page is 5.8.
+The handout viewer as built (docs/design/design-v1-layout-hierarchy.md section 5), given every page. It stays one component, `HandoutViewer.tsx`, with its states in `zoom.ts`. Sections 5.2 to 5.7 apply to two or more pages. One page is 5.8.
 
 ### 5.1 Controls and identity
 
@@ -778,7 +778,7 @@ Then:
 
 - `e2e/pdf.e2e.ts`, `e2e/pdfFixture.ts`, `e2e/fixtures/` with its note, the display steps in `e2e/display.e2e.ts`, and the `size.e2e.ts` cases: `test(e2e): pdf handouts from upload to the table display`.
 - The device checks and the rollback rehearsal of 11.4, recorded in the build's report.
-- Docs: `FEATURES.md` (section 12), `docs/features.md` section 16 and its table display line, `docs/design-v1-layout-hierarchy.md` 5.4 pointing here, and `docs/design.md` sections 6 (the model, near `:350`), 7.3 (handouts, `:567`), 8.1 (the ops catalog, `:729`), 10.5 (the limits table, `:1142`), 11.1 (the hourly budgets, `created`, and pages as ordinary handout uploads), 11.2 (the visible set, `:1288`) and 16.4 (the remap and the import caps, `:2043`): `docs: pdf handouts in the feature lists and the design`.
+- Docs: `FEATURES.md` (section 12), `docs/features.md` section 16 and its table display line, `docs/design/design-v1-layout-hierarchy.md` 5.4 pointing here, and `docs/design/design.md` sections 6 (the model, near `:350`), 7.3 (handouts, `:567`), 8.1 (the ops catalog, `:729`), 10.5 (the limits table, `:1142`), 11.1 (the hourly budgets, `created`, and pages as ordinary handout uploads), 11.2 (the visible set, `:1288`) and 16.4 (the remap and the import caps, `:2043`): `docs: pdf handouts in the feature lists and the design`.
 - README, Updating: this update changes the snapshot version, so going back to the older build means restoring the backup taken just before it, and rooms changed since lose those changes. Reload every open page, table displays included.
 - Deploy notes: back up first, as the README says. The snapshot step runs on load.
 

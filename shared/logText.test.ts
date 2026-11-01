@@ -22,7 +22,7 @@ test("FU23A-OPUS-9c: private turn-end lines precede the next turn without changi
   assert.deepEqual(displayLog([end, save]), [end, save], "a partial archive page retains its lines");
 });
 
-describe("roll lines (docs/design-v1-dm-tools.md 3.3)", () => {
+describe("roll lines (docs/design/design-v1-dm-tools.md 3.3)", () => {
   test("read the total, the test and what the viewer's line kept of the DC and the result", () => {
     assert.equal(rollText({ type: "roll", test: DEX, total: 17, dc: 15, dcShown: true, resultShown: true, result: "pass" }, "Thorn"), "Thorn rolled 17 on a Dexterity saving throw against DC 15: pass.");
     assert.equal(rollText({ type: "roll", test: DEX, total: 17 }, "Thorn"), "Thorn rolled 17 on a Dexterity saving throw.");
@@ -43,8 +43,8 @@ describe("roll lines (docs/design-v1-dm-tools.md 3.3)", () => {
   });
 });
 
-describe("teleport lines (docs/design-v1-maps-vision.md 4.1)", () => {
-  test("name what stopped the walk, or nothing past what the player could not see (docs/design-v1-map-discovery.md 6)", () => {
+describe("teleport lines (docs/design/design-v1-maps-vision.md 4.1)", () => {
+  test("name what stopped the walk, or nothing past what the player could not see (docs/design/design-v1-map-discovery.md 6)", () => {
     const names: LogNames = room({ tokens: { t1: token("t1", { name: "Thorn" }) } });
     assert.equal(describeEvent({ type: "teleport", tokenId: "t1", past: "wall" }, names), "Thorn teleported past a wall.");
     assert.equal(describeEvent({ type: "teleport", tokenId: "t1", past: "ledge" }, names), "Thorn teleported past a ledge.");

@@ -18,7 +18,7 @@ const SORTS = [
 ] as const;
 
 /**
- * Every room with its size and state, pin and delete (docs/design-v1-dm-tools.md
+ * Every room with its size and state, pin and delete (docs/design/design-v1-dm-tools.md
  * 3.18). Nothing here opens a room or shows what is in one.
  */
 export function RoomsCard(props: { rooms: AdminRoom[]; now: number; onChanged(): void; onSignedOut(): void }) {

@@ -5,7 +5,7 @@ import type { Point, UvttLight } from "./schema.ts";
 import { segmentDist2, snap } from "./simplify.ts";
 
 /**
- * Imported lights (docs/design-v1-maps-vision.md section 3.1 step 7). A
+ * Imported lights (docs/design/design-v1-maps-vision.md section 3.1 step 7). A
  * light's `range` is read as the Foundry importer reads it: dim light out to
  * `range` squares, bright to half of it, so bright `range / 2` and dim
  * `range / 2` beyond, in feet at the room's scale and capped at the SRD's

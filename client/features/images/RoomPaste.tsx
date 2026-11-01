@@ -23,7 +23,7 @@ import { roomPasteRows, roomPasteSlot, type RoomPasteRowId } from "./roomPaste.t
 type Offer = { file: File; images: number };
 
 /**
- * The DM's room-level offer (docs/design-v1-paste.md 4): a Ctrl+V that no
+ * The DM's room-level offer (docs/design/design-v1-paste.md 4): a Ctrl+V that no
  * entry took, with an image in it, asks what the picture is for before
  * anything uploads. A player has none, and neither has a "view as a
  * player" preview.
@@ -184,7 +184,7 @@ function UsePastedImage(props: { offer: Offer; onClose(): void; onToken(tokenId:
           </div>
         </div>
         {several ? <Help>{several}</Help> : null}
-        {/* Card rows, each named by its title and described by its line, as a list of actions in a sheet is (docs/design-v1-look-pass-2.md 2.5). */}
+        {/* Card rows, each named by its title and described by its line, as a list of actions in a sheet is (docs/design/design-v1-look-pass-2.md 2.5). */}
         <div role="group" aria-label="Use it for" style={{ display: "grid", gap: theme.space(1) }}>
           {rows.map((row) => (
             <Row key={row.id} title={row.label} detail={row.help} fullDetail disabled={row.disabled} onClick={() => choose(row.id)} />

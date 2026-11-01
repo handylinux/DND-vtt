@@ -62,7 +62,7 @@ export type AreaSpell = {
   /** How the preset differs from a plain template, such as "Four Spheres". */
   note?: string;
   /**
-   * What it does to the creatures it catches (docs/design-v1-roll-options.md
+   * What it does to the creatures it catches (docs/design/design-v1-roll-options.md
    * 5.6), read by hand from the spell and checked against its text by
    * scripts/srd-import.ts: the save it forces, or `noSave` where everyone
    * takes it, half on a pass or none, the damage by typed part with the dice
@@ -79,7 +79,7 @@ export type AreaSpell = {
   lasts?: { at: "start" | "end"; of: "target" | "self" };
   saveEnds?: true;
   /**
-   * How the area changes movement inside it (docs/design-v1-movement.md
+   * How the area changes movement inside it (docs/design/design-v1-movement.md
    * 3.5), as its text says, and a new area from the preset keeps it
    * (AreaTemplate.slows).
    */

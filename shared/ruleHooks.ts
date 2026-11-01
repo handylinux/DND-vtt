@@ -7,7 +7,7 @@ import { holderSight, partySight, sightFromTiles, type VisionWorld } from "./rul
 import { sceneWalls } from "./rules/walls.ts";
 
 /**
- * The wave 4 rules as the core calls them (docs/design-v1-maps-vision.md
+ * The wave 4 rules as the core calls them (docs/design/design-v1-maps-vision.md
  * section 4.5). Permissions call the movement rules (shared/rules/movement.ts),
  * and projection and the "seen" marks call the vision rules
  * (shared/rules/vision.ts), through the two objects below rather than by
@@ -71,7 +71,7 @@ export type PartySight = {
    * Whether the creature is in the party's sight (section 4.3.2): any
    * sub-cell whose center lies inside its footprint, the squeezed one while
    * it squeezes, has a level above 0. On a hex scene its footprint is its
-   * hexes (docs/design-v1-hex-grids.md HX-D10), so the scene's grid is the
+   * hexes (docs/design/design-v1-hex-grids.md HX-D10), so the scene's grid is the
    * second argument. Projection, drag frames and the "seen" marks call
    * seesCreature, which clips the footprint against walls before asking
    * seesSubcells, or uses seesToken where no clip is needed.
@@ -87,13 +87,13 @@ export type VisionRules = {
   /**
    * On the server: the party's sight on a scene whose vision is on, from
    * 4C's cache. On a per-player scene this is the union of every source,
-   * the DM's (docs/design-v1-per-player-vision.md 6.1), bit for bit what
+   * the DM's (docs/design/design-v1-per-player-vision.md 6.1), bit for bit what
    * the same scene sees as a whole-party one.
    */
   partySight(state: RoomState, sceneId: SceneId): PartySight;
   /**
    * On the server, for a per-player scene whose vision is on
-   * (docs/design-v1-per-player-vision.md 6.1). With a member, what that
+   * (docs/design/design-v1-per-player-vision.md 6.1). With a member, what that
    * sight holder sees: the sources marked to share sight with the party and
    * the sources they own, among the union's sources. With null, the shared
    * sight alone, which every other viewer has. The union's own source cap

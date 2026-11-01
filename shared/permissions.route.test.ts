@@ -8,7 +8,7 @@ import { encodeHeights } from "./rules/heights.ts";
 import { DM, P1, room, token } from "./testutil.ts";
 
 /**
- * Routes on moves (docs/design-v1-movement.md 7.1 and 7.4), on the real
+ * Routes on moves (docs/design/design-v1-movement.md 7.1 and 7.4), on the real
  * movement rules: the route's shape for every role, each piece's leg test
  * for a player on a scene that blocks moves, never for the DM, and a redo
  * meeting the walls along each kept piece.

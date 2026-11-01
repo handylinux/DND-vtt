@@ -390,7 +390,7 @@ function looked(squares: GridDetection, rows: HexDetection, columns: HexDetectio
   return { t: "done", result: squares, hex: { rows, columns }, width, height };
 }
 
-describe("the shape a search picks (docs/design-v1-grid-detect.md 10.5 to 10.7)", () => {
+describe("the shape a search picks (docs/design/design-v1-grid-detect.md 10.5 to 10.7)", () => {
   const map = { widthPx: 1000, heightPx: 800 };
 
   test("hexes found alone are the scene's grid, scaled to the map's pixels, whatever the scene's shape", () => {

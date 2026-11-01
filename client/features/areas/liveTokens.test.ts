@@ -42,7 +42,7 @@ describe("tokens where they are being dragged", () => {
   });
 });
 
-describe("tokens where they are being dragged on a hex scene (docs/design-v1-hex-grids.md HX-D11)", () => {
+describe("tokens where they are being dragged on a hex scene (docs/design/design-v1-hex-grids.md HX-D11)", () => {
   test("a drag counts at the hex anchor its scene's drop would snap it to", () => {
     for (const orient of ["rows", "columns"] as const) {
       const g = { shape: "hex", orient } as const;

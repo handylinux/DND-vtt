@@ -1,6 +1,6 @@
 /**
  * A D&D Beyond character's number from what a player pastes
- * (docs/design-v1-pc-stats.md 6.3), on the client and the server alike: a
+ * (docs/design/design-v1-pc-stats.md 6.3), on the client and the server alike: a
  * number of 1 to 12 digits, or the digits after `/characters/` in a link
  * on dndbeyond.com or its short host. Only the digits leave this function,
  * and the server builds its own address from them, so no member's URL is

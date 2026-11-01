@@ -3,7 +3,7 @@ import { effectiveZoom } from "../features/device/layout.ts";
 import { keyboardFocus } from "../lib/inputModality.ts";
 import { theme } from "../lib/theme.ts";
 
-/** Hover waits this long, so a pointer passing over a row of icons shows nothing (docs/design-v1-icons.md 3.2). */
+/** Hover waits this long, so a pointer passing over a row of icons shows nothing (docs/design/design-v1-icons.md 3.2). */
 export const HOVER_MS = 500;
 /** Keyboard focus waits less: the person is already on the control. */
 export const FOCUS_MS = 150;
@@ -241,7 +241,7 @@ const PAGE_TIPS = new TipStage();
 
 /**
  * The name of an icon-only control, shown beside it on hover, on keyboard
- * focus and on a long press (docs/design-v1-icons.md 3.2). It replaces the
+ * focus and on a long press (docs/design/design-v1-icons.md 3.2). It replaces the
  * native `title`, which a keyboard never shows and which waits a second.
  *
  * `anchor(own)` gives the control's handlers, each calling the control's

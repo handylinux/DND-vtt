@@ -3,7 +3,7 @@ import type { Rect } from "../../lib/camera.ts";
 import { scopeSlot, type RoomScope } from "../../state/scope.ts";
 
 /**
- * An outline that flashes on the map for a moment (docs/design-v1-dm-tools.md
+ * An outline that flashes on the map for a moment (docs/design/design-v1-dm-tools.md
  * 3.2): what the outliner frames when the item has no selection of its own,
  * a drawing, a door or a window. One at a time, per Room page.
  */

@@ -39,7 +39,7 @@ import { hexBallOutline } from "../../lib/scene.ts";
  * origin taken from a token is rounded here, once, and the preview uses the
  * rounded value too.
  *
- * On a hex scene (docs/design-v1-hex-grids.md HX-D11) a free origin snaps
+ * On a hex scene (docs/design/design-v1-hex-grids.md HX-D11) a free origin snaps
  * to the nearest hex corner or center, a cone, line or cube cast from a
  * token starts at the corner or side midpoint of its hexes' outline where
  * the aim leaves it, the 45 degree step reads 30, and a placed area moves
@@ -79,7 +79,7 @@ export type AreaDraft = {
   /**
    * The creature the area was last cast from, kept once its caster is
    * dropped, so the From control can offer to cast from it again
-   * (docs/design-v1-area-from-character.md 3.1).
+   * (docs/design/design-v1-area-from-character.md 3.1).
    */
   lastCaster?: string;
   /** An emanation around a token moves with it. */
@@ -826,7 +826,7 @@ export function pointHeight(token: AreaToken | undefined): number {
 
 /**
  * The ground under a point an area is dropped on in open map, its origin's
- * height when the area is first placed (docs/design-v1-maps-vision.md 4.2:
+ * height when the area is first placed (docs/design/design-v1-maps-vision.md 4.2:
  * "A free area placed on raised ground takes the ground there as its
  * origin height"). A point on a cell's edge or corner touches every cell
  * around it and takes the highest, as a footprint takes the highest ground

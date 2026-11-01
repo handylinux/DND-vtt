@@ -21,7 +21,7 @@ import {
 } from "./logic.ts";
 
 /**
- * Randomized: the card's answers (docs/design-v1-roll-request.md 11.1).
+ * Randomized: the card's answers (docs/design/design-v1-roll-request.md 11.1).
  * 2,000 sequences of 40 events over one creature's answer on the player's
  * card and the card's fold, against a fake server that holds the request:
  * typing, taps of Roll, Send, Fail, Ask and Withdraw, each op's answer

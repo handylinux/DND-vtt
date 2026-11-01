@@ -7,7 +7,7 @@ import type { RoomExport } from "../rooms/exportRoom.ts";
 import { startEngine, type Engine, type TestClient } from "../rooms/testing.ts";
 
 /**
- * A room import takes the map discovery upgrade step (docs/design-v1-map-discovery.md
+ * A room import takes the map discovery upgrade step (docs/design/design-v1-map-discovery.md
  * 5.5) for a file from before it: every scene it brings is marked played, and each with
  * fog and party vision on shares the room, since the room is stored at today's version
  * and loadRoom never upgrades it. A file from today carries its own marks instead.

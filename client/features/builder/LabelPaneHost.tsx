@@ -23,8 +23,8 @@ const LabelPane = retryableLazy(() => import("./LabelPane.tsx"), { roles: ["dm"]
  * no longer applies: its label is gone or on another scene, the tool or the
  * builder's mode moved on, or a token was tapped, whose bar takes its place.
  * In Isometric it stands by the label as the board shows it (`pick`,
- * docs/design-v1-isometric-view.md 6.2), at the camera the canvas last
- * drew, subscribed only while it shows (docs/design-v1-relief-pan.md 6.3).
+ * docs/design/design-v1-isometric-view.md 6.2), at the camera the canvas last
+ * drew, subscribed only while it shows (docs/design/design-v1-relief-pan.md 6.3).
  */
 export function LabelPaneHost(props: { scene: Scene; tool: string; chrome: ChromeCamera; viewport: Size; insets: Insets }) {
   const pane = useScoped(labelPaneSlot);

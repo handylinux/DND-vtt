@@ -117,7 +117,7 @@ import {
 } from "./barDock.ts";
 
 const NONE = { top: 0, right: 0, bottom: 0, left: 0 };
-/** Multi-select's row standing on the toolbar: 44 px controls, 4 px padding and a 1 px top edge (docs/design-v1-tool-options.md 4.2). */
+/** Multi-select's row standing on the toolbar: 44 px controls, 4 px padding and a 1 px top edge (docs/design/design-v1-tool-options.md 4.2). */
 const OPTIONS = 53;
 
 /**
@@ -263,7 +263,7 @@ describe("compact", () => {
   });
 });
 
-describe("the default width (docs/design-v1-token-window.md 3.3)", () => {
+describe("the default width (docs/design/design-v1-token-window.md 3.3)", () => {
   test("the narrowest that holds the three buttons on one line, rounded up plus a pixel, never under 304", () => {
     // Narrow buttons, as a small font draws them.
     assert.equal(defaultBarWidth([80, 60, 90]), BAR_WIDTH);
@@ -427,7 +427,7 @@ describe("the stored spot", () => {
   });
 });
 
-describe("the window's size on a computer (docs/design-v1-token-window.md 5 and 6)", () => {
+describe("the window's size on a computer (docs/design/design-v1-token-window.md 5 and 6)", () => {
   test("held by a drag or a resize, a window keeps the edge its corner anchors, so content that shrinks moves only its far edge (W5-ASTRA-05)", () => {
     const viewport = { width: 920, height: 800 };
     const box = { left: 400, top: 300, width: 500, height: 432 };
@@ -663,7 +663,7 @@ describe("the right lane", () => {
     assert.deepEqual({ at: clear.hang.at, room: clear.hang.room }, { at: 380, room: 40 }, "a bar already clear of the card stays where it is");
   });
 
-  test("an upright phone's strip stands at the free area's foot whatever its token and content, and the column stacks above it or shows its summary row (docs/design-v1-bar-compact.md 3)", () => {
+  test("an upright phone's strip stands at the free area's foot whatever its token and content, and the column stacks above it or shows its summary row (docs/design/design-v1-bar-compact.md 3)", () => {
     const chrome: Chrome = { top: 52, bottom: 60, controls: 60, toolbar: 60, safe: NONE, sheet: 0 };
     const phoneView = { width: 390, height: 844 };
     const at = (y: number, height: number, column: { top: number; content: number; first: number } | null, extra: Record<string, unknown> = {}) =>
@@ -763,7 +763,7 @@ describe("the right lane", () => {
   });
 });
 
-describe("a map pane drawn as a card and the lane (docs/design-v1-look-pass-2.md 2.8)", () => {
+describe("a map pane drawn as a card and the lane (docs/design/design-v1-look-pass-2.md 2.8)", () => {
   const chrome: Chrome = { top: 52, bottom: 60, controls: 60, toolbar: 60, safe: NONE, sheet: 0 };
   const column = { top: 60, content: 300, first: 160 };
 
@@ -810,7 +810,7 @@ describe("fit and find keep clear of the bar", () => {
     assert.deepEqual(at(8, 580, 900, 150), { top: 0, right: 0, bottom: 220, left: 0 });
   });
 
-  test("a window against the free area's right edge covers the right side from its own left edge when wider than the lane, and the lane when narrower, whatever its height (docs/design-v1-token-window.md 9.1)", () => {
+  test("a window against the free area's right edge covers the right side from its own left edge when wider than the lane, and the lane when narrower, whatever its height (docs/design/design-v1-token-window.md 9.1)", () => {
     const right = (width: number, top: number, height: number) => barCover(viewport, bars, { box: { left: 912 - width, top, width, height }, laneLeft: lane, freeRight: 912 });
     for (const [top, height] of [[60, 120], [400, 332], [60, 672]] as const) {
       assert.deepEqual(right(316, top, height), { top: 0, right: 920 - (912 - 316), bottom: 0, left: 0 });
@@ -832,7 +832,7 @@ describe("fit and find keep clear of the bar", () => {
     assert.deepEqual(clearAnchor({ x: 460, y: 400 }, viewport, bars, NONE), { x: 460, y: 400 });
   });
 
-  test("a bar about to open rests at its spot with the height it last had, and an upright phone's at the foot as the strip or its expanded bar (docs/design-v1-bar-compact.md 4)", () => {
+  test("a bar about to open rests at its spot with the height it last had, and an upright phone's at the foot as the strip or its expanded bar (docs/design/design-v1-bar-compact.md 4)", () => {
     const chrome: Chrome = { top: 52, bottom: 60, controls: 60, toolbar: 60, safe: NONE, sheet: 0 };
     const rest = restingBar({ layout: { width: 1280, height: 800 }, viewport, chrome, spot: DEFAULT_SPOT, height: 250, column: null });
     assert.deepEqual(rest, { box: { left: 920 - 8 - 304, top: 800 - 60 - 8 - 250, width: 304, height: 250 }, laneLeft: lane, freeRight: 912, mode: "dock" });
@@ -928,7 +928,7 @@ describe("the alerts column's cards", () => {
   });
 });
 
-describe("a summary row risen over the bars (follow-up to docs/design-v1-bar-dock.md 1.3)", () => {
+describe("a summary row risen over the bars (follow-up to docs/design/design-v1-bar-dock.md 1.3)", () => {
   test("the bar under a summary row that rose leaves its old place to the bar, never past the lane's top", () => {
     const lane = { laneTop: 122, laneHeight: 95, besideRoom: 0 };
     assert.deepEqual(laneChoice({ ...lane, column: { top: 122, content: 110, first: 110 } }), { lane: "summary", floor: 122 + SUMMARY_ROW + EDGE }, "the row at its place");
@@ -1012,7 +1012,7 @@ describe("a toast on a phone whose alerts column shows a card (fu16 item 8)", ()
     [360, 52],
     [320, 12],
   ] as const) {
-    test(`stands at the first card's left and right edges at ${mapWidth} px, not the map's (docs/design-v1-polish.md R9)`, () => {
+    test(`stands at the first card's left and right edges at ${mapWidth} px, not the map's (docs/design/design-v1-polish.md R9)`, () => {
       assert.deepEqual(columnEdges({ ...upright, mapWidth }), { left, right: EDGE });
       assert.equal(mapWidth - left - EDGE, columnCards({ ...upright, mapWidth }).card, "as wide as the card");
     });
@@ -1171,7 +1171,7 @@ describe("the toasts' places in the layer, around a map pane (LP15-FU-8, FU21B-A
     assert.ok(390 - now!.edges!.left - now!.edges!.right >= 300, "as wide as a card");
   });
 
-  test("a resting strip takes anew a stack placed low before it, a stack a pane left included, and leaves the notices' stack and the sheet's where they are (docs/design-v1-bar-compact.md 3.5, BAR-ASTRA-04)", () => {
+  test("a resting strip takes anew a stack placed low before it, a stack a pane left included, and leaves the notices' stack and the sheet's where they are (docs/design/design-v1-bar-compact.md 3.5, BAR-ASTRA-04)", () => {
     // An actionable toast placed under a column card at 600, before the strip opened with its top at 662: the floor is 602.
     let s = step(NO_TOAST_PLACES, [1], { low: 600 });
     s = step(s, [1, 2]);
@@ -1741,7 +1741,7 @@ describe("toasts already showing as the bar opens or its header goes down (revie
   });
 });
 
-describe("the stored Larger is removed once (docs/design-v1-bar-compact.md 5.3, R1)", () => {
+describe("the stored Larger is removed once (docs/design/design-v1-bar-compact.md 5.3, R1)", () => {
   test("the key goes, and storage that throws changes nothing", () => {
     const kept = new Map<string, string>([[LARGER_KEY, "1"]]);
     forgetLarger({ removeItem: (k: string) => void kept.delete(k) });
@@ -1756,7 +1756,7 @@ describe("the stored Larger is removed once (docs/design-v1-bar-compact.md 5.3, 
   });
 });
 
-describe("an upright phone's resting strip (docs/design-v1-bar-compact.md 2 and 3)", () => {
+describe("an upright phone's resting strip (docs/design/design-v1-bar-compact.md 2 and 3)", () => {
   /** An upright layout whose free area is `free` px tall under the default chrome's 52 px top bar and 60 px toolbar. */
   const upright = (free: number) => ({ width: 246, height: free + 128 });
 
@@ -1822,7 +1822,7 @@ describe("an upright phone's resting strip (docs/design-v1-bar-compact.md 2 and 
   });
 });
 
-describe("the strip's lane, its expanded bar, the clearing move and a card it folds (docs/design-v1-bar-compact.md 3 and 5)", () => {
+describe("the strip's lane, its expanded bar, the clearing move and a card it folds (docs/design/design-v1-bar-compact.md 3 and 5)", () => {
   const chrome: Chrome = { top: 52, bottom: 60, controls: 60, toolbar: 60, safe: NONE, sheet: 0 };
   /** 390 x 843: a free area from 60 to 775, 715 tall, as the design measured 390 x 844. */
   const tall = { width: 390, height: 843 };
@@ -1963,7 +1963,7 @@ describe("the strip's lane, its expanded bar, the clearing move and a card it fo
 
 });
 
-describe("the bar while someone types with the keyboard up (docs/design.md 14.4)", () => {
+describe("the bar while someone types with the keyboard up (docs/design/design.md 14.4)", () => {
   /** A phone held sideways at 130%, 844 x 390 with its insets, laid out at 649 x 300. */
   const sideways = { width: 649, height: 300 };
   const chrome = { top: 52, bottom: 81, controls: 81, toolbar: 81, safe: { top: 0, right: 47, bottom: 21, left: 47 }, sheet: 0 };

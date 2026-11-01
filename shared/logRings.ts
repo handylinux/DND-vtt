@@ -163,7 +163,7 @@ type RollLine = Extract<LogEvent, { type: "roll" }>;
  * nothing its creature's players may read, and its line alone would tell
  * them the DM judged it (LP5-ROLLS-4). A line written since wave 7 carries
  * its tag and says itself whether a mark wrote it
- * (docs/design-v1-roll-request.md 7.5). An older one is read by its values
+ * (docs/design/design-v1-roll-request.md 7.5). An older one is read by its values
  * (isMarkLine).
  */
 export function hiddenMark(data: RollLine): boolean {

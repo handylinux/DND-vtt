@@ -17,7 +17,7 @@ import { actorOf, actsNow, currentRecord, deathSaveWaits, holderKey, promptsOf, 
 /*
  * What this device keeps of a fight's combat uses, per Room page
  * (state/scope.ts): the cards it dismissed for this turn, which only Skip
- * settles for everyone (docs/design-v1-combat-controls.md 4.1), the turn
+ * settles for everyone (docs/design/design-v1-combat-controls.md 4.1), the turn
  * cards it unfolded, and the last Roll recharge its uses lists sent per
  * recharge (`rechargeRow`), with the turn they showed, whose result and
  * trouble those lists show. Of those rolls' failures it keeps the ones a
@@ -157,7 +157,7 @@ export function useActsNow(target: ActorTarget | null): boolean {
 export const WAITS_FOR_REGENERATION = "Waiting for Regeneration";
 
 /**
- * In lair's counts for a creature (docs/design-v1-combat-controls.md 3.1):
+ * In lair's counts for a creature (docs/design/design-v1-combat-controls.md 3.1):
  * from the block this viewer reads, its lair or base legendary counts and
  * XP, or none where it has no block or its block's counts never change in
  * a lair, which the switch then sets alone. `state` is "loading" while its

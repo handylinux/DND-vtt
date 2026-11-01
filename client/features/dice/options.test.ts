@@ -57,7 +57,7 @@ import type { UseMark } from "#shared/model.ts";
 import { abilityOp } from "../combat/logic.ts";
 import type { RollPreset } from "#shared/rules/rollReminders.ts";
 
-/** The roll options' rules (docs/design-v1-roll-options.md 4.2 and 4.3). */
+/** The roll options' rules (docs/design/design-v1-roll-options.md 4.2 and 4.3). */
 
 function table(rolls: Record<string, RollRequest> = {}): RoomState {
   return room({
@@ -203,7 +203,7 @@ describe("damage, critical hits and results", () => {
     ]);
   });
 
-  test("each roll carries its damage type on its line, whatever its label is cut to, and an untyped part carries none (docs/design-v1-combat-controls.md 3.4)", () => {
+  test("each roll carries its damage type on its line, whatever its label is cut to, and an untyped part carries none (docs/design/design-v1-combat-controls.md 3.4)", () => {
     const long: NamedRoll = { ...rapier, name: "A blade whose name runs on far past what a dice label can hold whole", damage: [rapier.damage[0]!, { formula: "2d6" }] };
     const rolls = damageRolls(long, { on: new Set(), critical: false });
     assert.deepEqual(
@@ -244,7 +244,7 @@ describe("damage, critical hits and results", () => {
     assert.equal(asSave(roll, { kind: "check", ability: "dex" }).save, undefined);
   });
 
-  test("initiative goes marked as initiative, so the server keeps a hidden-order creature's roll from players, and no other test does (docs/design-v1-combat-flow.md 11.3)", () => {
+  test("initiative goes marked as initiative, so the server keeps a hidden-order creature's roll from players, and no other test does (docs/design/design-v1-combat-flow.md 11.3)", () => {
     const roll = d20Roll({ tokenId: "gob" }, 2, { sources: [], extra: [], notes: [] }, "Initiative");
     assert.equal(asInitiative(roll, { kind: "initiative" }).initiative, true);
     for (const test of [{ kind: "save", ability: "dex" }, { kind: "check", ability: "dex" }, { kind: "deathSave" }, { kind: "attack" }] as const) {
@@ -264,7 +264,7 @@ describe("damage, critical hits and results", () => {
   });
 });
 
-describe("recharge and X/Day as room state (docs/design-v1-combat-controls.md 6)", () => {
+describe("recharge and X/Day as room state (docs/design/design-v1-combat-controls.md 6)", () => {
   const breath: NamedRoll = { key: "actions:fire-breath", name: "Fire Breath", section: "actions", save: { ability: "dex", dc: 21, onPass: "half" }, damage: [{ formula: "18d6", type: "fire" }], recharge: 5 };
   const dominate: NamedRoll = { key: "actions:dominate-mind", name: "Dominate Mind", section: "actions", save: { ability: "wis", dc: 15, onPass: "none" }, damage: [], uses: "2/Day" };
   const BLOCK_BREATH: RechargeUse = { kind: "recharge", key: "actions:fire-breath", name: "Fire Breath", min: 5, section: "actions" };
@@ -479,7 +479,7 @@ describe("a player's creatures", () => {
   });
 });
 
-describe("a group's shared tags, said once in its label (docs/design-v1-dice-ui.md 4.3)", () => {
+describe("a group's shared tags, said once in its label (docs/design/design-v1-dice-ui.md 4.3)", () => {
   const blessed = { sources: [], extra: ["+1d4"], extraFrom: ["blessed"], notes: [] };
   const restrainedDex = { sources: [{ kind: "dis" as const, from: "restrained" }], extra: ["+1d4"], extraFrom: ["blessed"], notes: [] };
   const plain = { sources: [], extra: [], notes: [] };
@@ -504,7 +504,7 @@ describe("a group's shared tags, said once in its label (docs/design-v1-dice-ui.
   });
 });
 
-describe("the folds' lines and openings (docs/design-v1-dice-pass.md 6)", () => {
+describe("the folds' lines and openings (docs/design/design-v1-dice-pass.md 6)", () => {
   const preset = (extra: string[] = [], adv = false): RollPreset => ({ sources: adv ? [{ kind: "adv", from: "hasted" }] : [], extra, notes: [] });
 
   test("Saves and checks: its notes, then the six saves, each named as a word and signed with the true minus", () => {
@@ -587,7 +587,7 @@ describe("the folds' lines and openings (docs/design-v1-dice-pass.md 6)", () => 
   });
 });
 
-describe("what waits in a creature's groups (docs/design-v1-dice-pass.md 6.4)", () => {
+describe("what waits in a creature's groups (docs/design/design-v1-dice-pass.md 6.4)", () => {
   const named = [
     { key: "a:rend", name: "Rend", section: "actions" as const },
     { key: "s:fireball", name: "Fireball", section: "spells" as const },

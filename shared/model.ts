@@ -3,7 +3,7 @@
  *
  * This file is the contract between the parts of the app, so it holds types
  * and the few constants that define them, and nothing that runs. The shapes
- * follow docs/design.md section 6. Where this file and the design disagree,
+ * follow docs/design/design.md section 6. Where this file and the design disagree,
  * fix one of them in the same change.
  *
  * Positions are in grid cells (floats), elevations and lengths of areas in
@@ -39,7 +39,7 @@ export type RollId = string;
 export type CastId = string;
 export type TrapId = string;
 /**
- * A shipped game-icons.net icon (docs/design-v1-dm-tools.md 3.12):
+ * A shipped game-icons.net icon (docs/design/design-v1-dm-tools.md 3.12):
  * `"<author>/<name>"`, such as "lorc/wolf-head". The author is part of the
  * key because some names exist under two authors. A key means the same in
  * every room, and one a client does not know draws as initials.
@@ -93,19 +93,19 @@ export type RoomState = {
    * writes it, by `sys.explore`, and only hides and resets clear it. It has
    * no undo. Players get one fog, each tile the two layers merged
    * (shared/project.ts), and the DM gets both. Empty in rooms from before it
-   * (docs/design-v1-maps-vision.md section 4.3.3).
+   * (docs/design/design-v1-maps-vision.md section 4.3.3).
    */
   exploredTiles: Record<TileKey, FogTile>;
   /**
    * DM only. Each per-player scene's sight holder list, keyed by scene
-   * (docs/design-v1-per-player-vision.md 6.1). Empty in rooms from before
+   * (docs/design/design-v1-per-player-vision.md 6.1). Empty in rooms from before
    * it, and on every scene that is not per player.
    */
   holders: Record<SceneId, SightHolders>;
   /**
    * DM only, and never projected under its own key. Each sight holder's own
    * explored layer, keyed `"<sceneId>:<memberId>:<tx>,<ty>"`
-   * (docs/design-v1-per-player-vision.md 6.3). A holder's fog merges the
+   * (docs/design/design-v1-per-player-vision.md 6.3). A holder's fog merges the
    * DM's layer, the party's and theirs. Only the server writes it, by
    * `sys.explore`, and hides, resets, the fold, unticking the holder and
    * removing the member clear it, none with an undo. Empty in rooms from
@@ -113,7 +113,7 @@ export type RoomState = {
    */
   exploredBy: Record<string, ExploredTile>;
   /**
-   * The DM's journal pages (wave 5, docs/design-v1-dm-tools.md 3.7), room
+   * The DM's journal pages (wave 5, docs/design/design-v1-dm-tools.md 3.7), room
    * level like the monsters. Players get the pages shared with them, without
    * the secret blocks the DM has not revealed. Empty in rooms from before it.
    */
@@ -127,27 +127,27 @@ export type RoomState = {
   rolls: Record<RollId, RollRequest>;
   /**
    * DM only. The PDFs the DM uploaded, each a document of handout pages kept
-   * in the library until the DM deletes it (docs/design-v1-pdf-handouts.md
+   * in the library until the DM deletes it (docs/design/design-v1-pdf-handouts.md
    * 3.2). Showing one copies its pages into a handout, so players never get
    * a document. Empty in rooms from before them.
    */
   handoutDocs: Record<HandoutDocId, HandoutDoc>;
   /**
    * The stat blocks each character keeps for its companions
-   * (docs/design-v1-companion-stat-blocks.md 3.1). The DM and the
+   * (docs/design/design-v1-companion-stat-blocks.md 3.1). The DM and the
    * character's owners receive them, and no one else. Empty in rooms from
    * before them.
    */
   companionBlocks: Record<CompanionBlockId, CompanionBlock>;
   /**
    * Players' open asks for saves against their creatures' spells
-   * (docs/design-v1-player-save-spell.md 5.2), room level as roll requests
+   * (docs/design/design-v1-player-save-spell.md 5.2), room level as roll requests
    * are. Closing one removes it, so every ask here is open. Empty in rooms
    * from before them.
    */
   casts: Record<CastId, CastAsk>;
   /**
-   * Traps (docs/design-v1-traps.md 6.1), scene-scoped as pins are. The DM
+   * Traps (docs/design/design-v1-traps.md 6.1), scene-scoped as pins are. The DM
    * gets every trap on its scene, a player only a found one, cut to its name
    * and zone. Empty in rooms from before them.
    */
@@ -166,7 +166,7 @@ export type RoomState = {
   /**
    * DM only, and never projected under its own key: what the party's
    * explored layer remembers of the build where it differs from the build
-   * now, keyed `"<sceneId>:<cx>,<cy>"` (docs/design-v1-map-discovery.md
+   * now, keyed `"<sceneId>:<cx>,<cy>"` (docs/design/design-v1-map-discovery.md
    * 5.3). Only the server writes it, by `sys.remember` after a batch, and
    * hides, resets, forgetting, vision or fog off, the shape switch and a
    * scene's deletion clear it, none with an undo. Every stored state holds
@@ -216,7 +216,7 @@ export type SceneMark = { sceneId: SceneId; rev: number };
 export type ShareMark = SceneMark & { party?: true };
 
 /**
- * One chunk of one layer's memory (docs/design-v1-map-discovery.md 5.3):
+ * One chunk of one layer's memory (docs/design/design-v1-map-discovery.md 5.3):
  * each element of the build as that layer last saw it, as players see it
  * (flattened: a hidden secret door as the wall players take it for, a lock
  * as closed), only where that differs from the build now. A `null` value
@@ -250,7 +250,7 @@ export type MemoryEntries = {
 
 /**
  * One version of a free wall a layer remembers, on the cells it covers
- * (docs/design-v1-map-discovery.md 5.3, free walls by cell): the wall as
+ * (docs/design/design-v1-map-discovery.md 5.3, free walls by cell): the wall as
  * the layer saw it there, or `null` where it was absent then. A wall's
  * versions cover cells apart, so each cell reads at most one.
  */
@@ -264,7 +264,7 @@ export type RememberedWall = { wall: FreeWall | null; cells: string[] };
 export type StairDir = "n" | "e" | "s" | "w" | HexFacing | ".";
 
 /**
- * What players see of a new scene (docs/design-v1-map-discovery.md 8.1):
+ * What players see of a new scene (docs/design/design-v1-map-discovery.md 8.1):
  * Explore (fog and party vision on), Reveal by hand (fog on, party vision
  * off) and Everything (both off).
  */
@@ -273,7 +273,7 @@ export type ScenePreset = (typeof SCENE_PRESETS)[number];
 
 /**
  * The fields only a player's copy of a chunk carries
- * (docs/design-v1-map-discovery.md 5.2), which the stored-state schema
+ * (docs/design/design-v1-map-discovery.md 5.2), which the stored-state schema
  * refuses in a stored chunk: `known`, the 256 cells the player holds as
  * base64 bits, `auto`, an automatic wall on each held north and west edge,
  * and `upDir`, the direction of each held stair cell, present only where
@@ -330,7 +330,7 @@ export type WhichPlayers = "none" | "all" | MemberId[];
 export type MoveAnyToken = WhichPlayers;
 
 /**
- * How a critical hit rolls its damage (docs/design-v1-dice.md, the critical
+ * How a critical hit rolls its damage (docs/design/design-v1-dice.md, the critical
  * hit rules addendum), for every attack in the room: the dice rolled twice,
  * the 2024 rule, or one of the common table rules. The server applies it
  * when it rolls, so every result records the rule it was rolled under.
@@ -340,7 +340,7 @@ export type CritRule = (typeof CRIT_RULES)[number];
 
 /**
  * Which creatures players see in the initiative order before each one's
- * first turn of the fight (docs/design-v1-combat-flow.md 11): only those
+ * first turn of the fight (docs/design/design-v1-combat-flow.md 11): only those
  * players play, those and the ones with the Ally ring, or every one. A
  * creature joins their order when its turn comes and stays for the fight.
  */
@@ -381,7 +381,7 @@ export type RoomSettings = {
    */
   turnTimerSec: number;
   /**
-   * Which players may draw (wave 5, docs/design-v1-dm-tools.md 3.9). A
+   * Which players may draw (wave 5, docs/design/design-v1-dm-tools.md 3.9). A
    * permission rule, so stored drawings replay as they were made. Kept
    * rulers, pings and the laser stay allowed. Absent reads as "all", so
    * every room from before it keeps letting everyone draw.
@@ -389,7 +389,7 @@ export type RoomSettings = {
   playersDraw?: WhichPlayers;
   /**
    * Healing a dead creature, or setting its current HP above 0, brings it
-   * back with that HP (docs/design-v1-combat-flow.md 3.4). Off follows the
+   * back with that HP (docs/design/design-v1-combat-flow.md 3.4). Off follows the
    * rules as written, where only the DM's Revive does. Absent reads as on,
    * so rooms from before it bring back the dead too. Rules read it through
    * `healRevivesDead` (shared/migrate.ts), which keeps ops stored before op
@@ -410,14 +410,14 @@ export type RoomSettings = {
   playersSeeOrder?: OrderReveal;
   /**
    * The grid shape a new Battle mat or Map image starts with
-   * (docs/design-v1-hex-grids.md HX-D19). Absent reads as squares, so every
+   * (docs/design/design-v1-hex-grids.md HX-D19). Absent reads as squares, so every
    * room from before it keeps making square scenes. Only the new scene form
    * reads it: a `scene.create` without a shape makes squares, so replay
    * never depends on it.
    */
   newScenes?: GridShape;
   /**
-   * What players see on a new scene by default (docs/design-v1-map-discovery.md
+   * What players see on a new scene by default (docs/design/design-v1-map-discovery.md
    * 8.2). New rooms start on Explore. Absent reads as each kind's default
    * from before it, so a room from before keeps making scenes as it did
    * until the DM picks one. Only the new scene form reads it: every
@@ -512,21 +512,21 @@ export type Scene = {
   /**
    * DM only. The scene's grid came exact with its file, a Universal VTT
    * import's, and its walls stand in that grid's squares, so Find the grid
-   * only offers what it finds there (docs/design-v1-grid-detect.md section
+   * only offers what it finds there (docs/design/design-v1-grid-detect.md section
    * 6). Only `scene.create` sets it, and nothing clears it. A scene
    * imported before it existed lacks it, and a first grid line before the
    * image, which only the import makes, stands in for it.
    */
   gridFromFile?: true;
   /**
-   * The scene's grid shape (docs/design-v1-hex-grids.md section 7). Absent
+   * The scene's grid shape (docs/design/design-v1-hex-grids.md section 7). Absent
    * reads as squares, the shape of every scene from before hex grids. Rules
    * read it through `sceneGrid` (shared/rules/grid.ts).
    */
   gridShape?: GridShape;
   /**
    * The view a device that follows the scene shows here
-   * (docs/design-v1-isometric-view.md 7). Absent reads as Top-down, the
+   * (docs/design/design-v1-isometric-view.md 7). Absent reads as Top-down, the
    * view of every scene from before it, and "topDown" in a patch removes
    * it, so a scene set back is stored as it was.
    */
@@ -534,7 +534,7 @@ export type Scene = {
 };
 
 /**
- * A hex grid's orientation (docs/design-v1-hex-grids.md 4.1): hex rows have
+ * A hex grid's orientation (docs/design/design-v1-hex-grids.md 4.1): hex rows have
  * pointed tops and run straight across, hex columns have flat tops and run
  * straight down. Squares have no stored shape.
  */
@@ -549,7 +549,7 @@ export type LightLevel = "bright" | "dim" | "dark";
  * scene's fog on too, since only fog remembers.
  *
  * `perPlayer` makes the scene a per-player one
- * (docs/design-v1-per-player-vision.md 6.1), whatever `on` says: each
+ * (docs/design/design-v1-per-player-vision.md 6.1), whatever `on` says: each
  * player on the sight holder list (RoomState.holders) sees what the
  * creatures they own see and the shared sight, and remembers what they
  * explored in a layer of their own. Stored only while true, so a scene
@@ -559,7 +559,7 @@ export type SceneVision = { on: boolean; light: LightLevel; perPlayer?: true };
 
 /**
  * One entry of a per-player scene's sight holder list
- * (docs/design-v1-per-player-vision.md 6.1): a player who owned a seeing
+ * (docs/design/design-v1-per-player-vision.md 6.1): a player who owned a seeing
  * creature there, `on` while they see and remember for themselves.
  */
 export type SightHolder = { memberId: MemberId; on: boolean };
@@ -575,7 +575,7 @@ export type SightHolders = { sceneId: SceneId; rev: number; entries: SightHolder
 
 /**
  * One tile of a sight holder's own explored layer
- * (docs/design-v1-per-player-vision.md 6.3), in the fog tile's shape, keyed
+ * (docs/design/design-v1-per-player-vision.md 6.3), in the fog tile's shape, keyed
  * `"<sceneId>:<memberId>:<tx>,<ty>"` in RoomState.exploredBy. It holds
  * what that player's own creatures saw that neither the party's layer nor
  * the DM's fog revealed then. Only the server writes it, by `sys.explore`.
@@ -584,7 +584,7 @@ export type ExploredTile = FogTile & { memberId: MemberId };
 
 /**
  * Which painted cells make an automatic wall toward an unpainted neighbor
- * (docs/design-v1-maps-vision.md section 2.1):
+ * (docs/design/design-v1-maps-vision.md section 2.1):
  * - "all": every painted cell. Blank mats and every scene from before wave 3.
  * - "floor": only floor terrains (stone, wood, grass, dirt, cave), for scenes
  *   made from a map image, where the art is the floor and painted water or
@@ -681,7 +681,7 @@ export type BuildChunk = {
    */
   up?: string;
   /**
-   * Difficult ground marks (docs/design-v1-movement.md 6.3): one character
+   * Difficult ground marks (docs/design/design-v1-movement.md 6.3): one character
    * per cell, row-major over the chunk's cells, ROUGH_CHARS long, "." none
    * and "d" difficult ground. A mark paints over whatever is under it,
    * floor or map art, without changing the cell's terrain. Absent when the
@@ -690,7 +690,7 @@ export type BuildChunk = {
   rough?: string;
   /**
    * The hex shape its grid-keyed content (cells, edges, heights, `up` and
-   * `rough`) was written under, absent for squares (docs/design-v1-hex-grids.md
+   * `rough`) was written under, absent for squares (docs/design/design-v1-hex-grids.md
    * HX-D14). Free walls are in world units and carry none.
    */
   grid?: GridShape;
@@ -705,7 +705,7 @@ export type BuildChunk = {
  */
 export type StairMark = "." | "a" | "n" | "e" | "s" | "w" | HexFacing;
 /**
- * A hex stair's facing (docs/design-v1-hex-grids.md H3): "0" to "5", the
+ * A hex stair's facing (docs/design/design-v1-hex-grids.md H3): "0" to "5", the
  * index of the neighbor it points up toward in rules/hex.ts hexNeighbors'
  * order, clockwise from east on hex rows and so counterclockwise from
  * south on hex columns, the mirror every rule with a handedness reads.
@@ -855,7 +855,7 @@ export type FogOp = { id: string; mode: "reveal" | "hide"; shape: FogShape };
 
 /**
  * `grid` is the hex shape its `cells` shapes were written under, absent for
- * squares and for a draft of world shapes only (docs/design-v1-hex-grids.md HX-D14).
+ * squares and for a draft of world shapes only (docs/design/design-v1-hex-grids.md HX-D14).
  */
 export type FogDraft = { sceneId: SceneId; rev: number; ops: FogOp[]; grid?: GridShape };
 
@@ -883,7 +883,7 @@ export type AssetImage = { assetId: AssetId; crop: { cx: number; cy: number; zoo
 
 /**
  * A shipped game-icons.net icon on a colored disk (wave 5,
- * docs/design-v1-dm-tools.md 3.12). It names no asset, so it needs no
+ * docs/design/design-v1-dm-tools.md 3.12). It names no asset, so it needs no
  * upload and no asset check. The glyph's color is worked out from `color`
  * on the device, never stored.
  */
@@ -971,14 +971,14 @@ export type Token = {
   /** DM only: a creature the DM runs that lends the party its sight and is always shown to players (section 4.3.2). */
   partyVision?: boolean;
   /**
-   * A creature or effect a character brings (docs/design-v1-combat-flow.md
+   * A creature or effect a character brings (docs/design/design-v1-combat-flow.md
    * 3.6): a familiar, a summon, a spell's weapon. Its owners are always its
    * character's owners, it has no number, and it is never a PC. Players
    * other than its owners get it only while the token is the party's.
    */
   companion?: Companion;
   /**
-   * The token this one is attached to, its holder (docs/design-v1-attach.md
+   * The token this one is attached to, its holder (docs/design/design-v1-attach.md
    * 5.1): a rider on a mount, a familiar on a shoulder, a torch in a hand,
    * a grappled creature dragged beside. Stored on the carried token, so a
    * holder's own data never says what it carries. Players get it only
@@ -989,7 +989,7 @@ export type Token = {
 
 /**
  * How a token is attached, fixed when it is attached and never worked out
- * again (docs/design-v1-attach.md 5.1): a `ride`, a `perch` and a `carry`
+ * again (docs/design/design-v1-attach.md 5.1): a `ride`, a `perch` and a `carry`
  * sit inside the holder's footprint and take its elevation, and a `drag`
  * walks beside it within 5 ft.
  */
@@ -998,7 +998,7 @@ export type AttachKind = "ride" | "perch" | "carry" | "drag";
 /** A link to a holder. `steer` marks a controlled ride, whose mount moves and acts on its rider's turn (7.1). */
 export type TokenLink = { to: TokenId; kind: AttachKind; steer?: true };
 
-/** Whose turn a companion acts on (docs/design-v1-combat-flow.md 3.6.2): its own row, its character's turn listed under it, or its character's turn and not listed. */
+/** Whose turn a companion acts on (docs/design/design-v1-combat-flow.md 3.6.2): its own row, its character's turn listed under it, or its character's turn and not listed. */
 export type CompanionTurn = "own" | "shared" | "none";
 
 /**
@@ -1043,7 +1043,7 @@ export type PathStop = {
   /**
    * DM only. On a per-player scene, the sight holders who do not own the
    * token and could see it here then, sorted, perhaps none
-   * (docs/design-v1-per-player-vision.md 6.5). A stop with `seen` holds no
+   * (docs/design/design-v1-per-player-vision.md 6.5). A stop with `seen` holds no
    * list, since every player saw it.
    */
   seenBy?: MemberId[];
@@ -1059,14 +1059,14 @@ export type PathStop = {
    * whether it was squeezed, where that differs from its footprint now: a
    * resize on its turn, or a move into or out of a squeeze, writes the old
    * one here on every earlier stop that holds none
-   * (docs/design-v1-token-window.md 8.7). A stop without it was made with
+   * (docs/design/design-v1-token-window.md 8.7). A stop without it was made with
    * the token's footprint now. So each leg is measured and drawn as it was
    * made, and no later change of the footprint changes the feet moved
    * before it.
    */
   footprint?: { w: number; h: number; squeeze?: true };
   /**
-   * Display only (docs/design-v1-movement.md 6.2): the corners of the walk
+   * Display only (docs/design/design-v1-movement.md 6.2): the corners of the walk
    * between the stop before and this one, flat x, y in cells, when the leg
    * bent around walls or terrain. Accounting never reads it.
    */
@@ -1085,7 +1085,7 @@ export type PathStop = {
   routeSeen?: true;
   /**
    * DM only, always with `uncounted`: the leg is one its holder's move took
-   * it along (docs/design-v1-attach.md 7.2), drawn on the holder's trail
+   * it along (docs/design/design-v1-attach.md 7.2), drawn on the holder's trail
    * instead. "Doesn't count" pressed on it counts it and drops the mark.
    */
   carried?: true;
@@ -1110,13 +1110,13 @@ export type Actor = {
   /**
    * DM only, in every projection, owners included: the room's own monster
    * the token was placed from, whose full stat block the DM reads on the
-   * token (wave 5, docs/design-v1-dm-tools.md 3.6). Absent for SRD monsters,
+   * token (wave 5, docs/design/design-v1-dm-tools.md 3.6). Absent for SRD monsters,
    * which keep `srdId`, and in rooms from before it.
    */
   monsterId?: MonsterId;
   /**
    * One of its character's companion stat blocks, on a companion's own
-   * actor only (docs/design-v1-companion-stat-blocks.md 3.2). An actor
+   * actor only (docs/design/design-v1-companion-stat-blocks.md 3.2). An actor
    * links at most one block: `srdId`, `monsterId` or this. Its owners
    * receive it, other players never. A link to a block deleted since reads
    * as deleted until someone attaches another or detaches.
@@ -1124,7 +1124,7 @@ export type Actor = {
   blockId?: CompanionBlockId;
   /**
    * On a character's own actor only, with `srdId`: the SRD creature is the
-   * character's Wild Shape (docs/design-v1-pc-stats.md 3.6), so its rolls
+   * character's Wild Shape (docs/design/design-v1-pc-stats.md 3.6), so its rolls
    * take the creature's Strength, Dexterity and Constitution and keep the
    * character's own Intelligence, Wisdom, Charisma and proficiencies. An
    * `srdId` without it is another shape, such as Polymorph, which takes
@@ -1148,7 +1148,7 @@ export type Actor = {
   deathSaves: { ok: number; fail: number };
   legendary?: { actionsMax: number; actionsUsed: number; resistMax: number; resistUsed: number };
   /**
-   * The creature's spent abilities (docs/design-v1-combat-controls.md 2.2),
+   * The creature's spent abilities (docs/design/design-v1-combat-controls.md 2.2),
    * by the ability's key in its stat block, at most `LIMITS.usesPerActor`.
    * Each mark keeps the ability's name, so it reads and can be given back
    * without the block. Absent when none. Its owners receive it, other
@@ -1175,7 +1175,7 @@ export type Actor = {
 export type UseKey = string;
 
 /**
- * A spent ability (docs/design-v1-combat-controls.md 2.2). `recharge` comes
+ * A spent ability (docs/design/design-v1-combat-controls.md 2.2). `recharge` comes
  * back on a roll of `min` or more at a turn start, or on any rest. `rest`
  * comes back on a Short or Long Rest. `day` counts its X uses in `used`, of
  * `max` 1 to 9, back on a Long Rest, or a Short Rest too with `short`.
@@ -1199,7 +1199,7 @@ export type UseMark = {
 export type PromptKey = "regeneration" | "deathSave" | `recharge:${UseKey}`;
 
 /**
- * What a creature's turn start stamped on it (docs/design-v1-combat-controls.md
+ * What a creature's turn start stamped on it (docs/design/design-v1-combat-controls.md
  * 2.3), so every device, a reload and a late join show the same prompt
  * cards with the same results. `id` is the seq of the op that started the
  * turn, which names it and no other, since seqs only grow. Its cards show
@@ -1234,7 +1234,7 @@ export type Settled = {
 
 /**
  * A class resource a character's player tracks
- * (docs/design-v1-combat-controls.md 7): Rage, Focus Points and the like.
+ * (docs/design/design-v1-combat-controls.md 7): Rage, Focus Points and the like.
  * `id` is a plain id, `name` 1 to `LIMITS.resourceNameChars` on one line.
  * `max` is 1 to 99, a pool's to `LIMITS.resourcePoolMax`, and `used` 0 to
  * `max`. `shortOne` gives one back on a Short Rest and all on a Long Rest.
@@ -1289,14 +1289,14 @@ export type Character = {
    */
   level?: number;
   /**
-   * The character's stat block (docs/design-v1-pc-stats.md 3.2), which the
+   * The character's stat block (docs/design/design-v1-pc-stats.md 3.2), which the
    * DM and its players read and edit. Absent until someone adds one, and in
    * rooms from before it. While it is there the actor's `initBonus` and
    * `passivePerception` follow it.
    */
   stats?: PcStats;
   /**
-   * A Druid's known forms for Wild Shape (docs/design-v1-known-forms.md 3.1):
+   * A Druid's known forms for Wild Shape (docs/design/design-v1-known-forms.md 3.1):
    * SRD ids, 1 to MAX_KNOWN_FORMS, each once, in the order chosen. On the
    * character, not its stat block, since a druid with no block still takes
    * shapes. Absent is none, never an empty list, and rooms from before it
@@ -1304,13 +1304,13 @@ export type Character = {
    */
   knownForms?: string[];
   /**
-   * What the last D&D Beyond sync read (docs/design-v1-resync.md 2.1), so
+   * What the last D&D Beyond sync read (docs/design/design-v1-resync.md 2.1), so
    * a re-sync tells a change made here from one made there. Absent until a
    * sync writes one, in rooms from before it, and once the block is removed.
    */
   ddbSync?: DdbSync;
   /**
-   * The character's class resources (docs/design-v1-combat-controls.md 7),
+   * The character's class resources (docs/design/design-v1-combat-controls.md 7),
    * at most `LIMITS.resourcesPerCharacter`, in the order added. Absent is
    * none. Its players and the DM read them, other players never.
    */
@@ -1318,7 +1318,7 @@ export type Character = {
 };
 
 /**
- * A character's record of its last D&D Beyond sync (docs/design-v1-resync.md
+ * A character's record of its last D&D Beyond sync (docs/design/design-v1-resync.md
  * 2.1). Every hash is 12 hex digits of `hash128`, so a roll's id or name in
  * any script costs the same few bytes, and the record stays small enough to
  * ride on the character, which every HP change sends whole.
@@ -1339,7 +1339,7 @@ export type DdbSync = {
    */
   rolls: Record<string, { k: string; h: string }>;
   /**
-   * One entry per synced class resource (docs/design-v1-ddb-resources.md
+   * One entry per synced class resource (docs/design/design-v1-ddb-resources.md
    * 4.1), keyed by the hash of the resource's id, as `rolls` is. `k` is
    * `r:` and the hash of the resource's key, its class first for a class
    * feature, and `h` the hash of D&D Beyond's name, count, rest and pool
@@ -1373,7 +1373,7 @@ export type DdbBase = {
 };
 
 /**
- * A player character's stat block (docs/design-v1-pc-stats.md 3.2): what
+ * A player character's stat block (docs/design/design-v1-pc-stats.md 3.2): what
  * the rules derive every save, check and attack from, and the adjustments
  * the derivation does not know. It is not a character sheet: no spell
  * slots, inventory or feature text.
@@ -1440,7 +1440,7 @@ export type PcRoll = {
   /**
    * Made by a D&D Beyond import or re-sync. Without a sync record, editing
    * the roll makes it the player's own. With one, the record decides
-   * (docs/design-v1-resync.md 2.4).
+   * (docs/design/design-v1-resync.md 2.4).
    */
   ddb?: true;
 };
@@ -1552,7 +1552,7 @@ export type StatBlock = Omit<CustomMonster, "id" | "rev">;
 
 /**
  * A stat block a character keeps for its companions
- * (docs/design-v1-companion-stat-blocks.md 3.1): text pasted from a book,
+ * (docs/design/design-v1-companion-stat-blocks.md 3.1): text pasted from a book,
  * one typed in, or an SRD block copied to be edited. Read by the DM and by
  * whoever owns the character, who are the owners of its companions. An SRD
  * block picked as it is stays a link (`Actor.srdId`) and is never copied
@@ -1668,15 +1668,15 @@ export type Effect = {
   duration?: { remaining: number; boundary: "turnStart" | "turnEnd"; anchor: DurationAnchor };
   /**
    * Wave 7: a save at the end of each of the creature's own turns ends it
-   * (docs/design-v1-roll-options.md 6.1), `spell` when it is against a
+   * (docs/design/design-v1-roll-options.md 6.1), `spell` when it is against a
    * spell. Only the DM sets it. Players keep the ability and lose the DC
    * (shared/project.ts playerSave), so a player's view has no `dc`.
    */
   save?: { ability: AbilityKey; dc: number; spell?: true };
   /**
    * Wave 7: the pending save of a "save ends" effect, one per turn end that
-   * asks it (docs/design-v1-roll-options.md 6.1 writes it). Closing the
-   * request linked to it settles it (docs/design-v1-roll-request.md 1.1).
+   * asks it (docs/design/design-v1-roll-options.md 6.1 writes it). Closing the
+   * request linked to it settles it (docs/design/design-v1-roll-request.md 1.1).
    * The DM's.
    */
   due?: { id: string; state: "pending" | "resolved" | "dismissed" };
@@ -1686,7 +1686,7 @@ export type AreaShape = "sphere" | "cylinder" | "cone" | "cube" | "line" | "eman
 
 /**
  * `size` is the size an emanation that stays put was cast from
- * (docs/design-v1-hex-grids.md HX-D11), read around its origin on hexes. It
+ * (docs/design/design-v1-hex-grids.md HX-D11), read around its origin on hexes. It
  * still stores w and h, its size's box, so a square scene reads the same
  * creature. An older one with only w and h reads as the size whose box that is.
  */
@@ -1750,7 +1750,7 @@ export type AreaTemplate = {
    */
   oncePerTurn?: true;
   /**
-   * How the area changes movement inside it (docs/design-v1-movement.md
+   * How the area changes movement inside it (docs/design/design-v1-movement.md
    * 3.5): difficult terrain, Spirit Guardians' halved Speed, or Plant
    * Growth's 4 ft per foot. `foes` leaves out the caster and creatures of its
    * disposition, and without a caster affects everyone. Absent means normal.
@@ -1801,7 +1801,7 @@ export type Drawing = {
    * later repaint or fog change leaves it as kept.
    */
   z?: number[];
-  /** Ruler only: it measures the walk between its stops, not straight lines (docs/design-v1-movement.md 3.3). */
+  /** Ruler only: it measures the walk between its stops, not straight lines (docs/design/design-v1-movement.md 3.3). */
   walk?: true;
 };
 
@@ -1860,7 +1860,7 @@ export type TurnStart = {
    */
   seq?: number;
   /**
-   * The controlled mounts sharing this turn (docs/design-v1-attach.md 7.1):
+   * The controlled mounts sharing this turn (docs/design/design-v1-attach.md 7.1):
    * each joined at the turn's start or at a controlled ride taken during
    * it, while every player saw the pair, and left in the op that ended
    * that ride. A mount on it moves on this turn's path while the turn's
@@ -1893,12 +1893,12 @@ export type InitEntry = {
   advantage?: "adv" | "dis";
   /**
    * The row's turn has started in this fight, so players see its place in
-   * the order whatever `playersSeeOrder` reads (docs/design-v1-combat-flow.md
+   * the order whatever `playersSeeOrder` reads (docs/design/design-v1-combat-flow.md
    * 11.2). Set when its turn starts, never by an op's input. DM only.
    */
   hadTurn?: true;
   /**
-   * Next passes over the row in this round (docs/design-v1-attach.md 7.1):
+   * Next passes over the row in this round (docs/design/design-v1-attach.md 7.1):
    * a controlled mount mounted after its own row had its turn, so its
    * durations never tick twice in one round. Left in place after the round.
    */
@@ -1921,7 +1921,7 @@ export type EncounterSnapshot = {
   legendary?: { holderId: TokenId | CharacterId; actionsUsed: number };
   /** The `shared` companions whose Reaction this `next` cleared, so `prev` can set them again. Absent when it cleared none. */
   companionReactions?: TokenId[];
-  /** What the turn start replaced for each participant (docs/design-v1-combat-controls.md 3.3). Absent when nothing. */
+  /** What the turn start replaced for each participant (docs/design/design-v1-combat-controls.md 3.3). Absent when nothing. */
   turnUses?: TurnUses[];
   /**
    * The flags of TURN_FLAGS this `next` changed on each row (design 9.4),
@@ -2021,7 +2021,7 @@ export type RollChoice = { ability: AbilityKey; skill?: SkillKey };
 export type RollTest = { kind: "save" | "check"; choices: RollChoice[] };
 
 /**
- * What the server drew for one roll (wave 7, docs/design-v1-dice.md 5.1).
+ * What the server drew for one roll (wave 7, docs/design/design-v1-dice.md 5.1).
  * The formula is text, so a line of 20 rolls stays within its bound, and
  * shared/dice/roll.ts reads it back to pair each dice term with its faces.
  */
@@ -2060,23 +2060,23 @@ export type RollAnswer = {
   noRoll?: true;
   /**
    * Wave 7. The client id of the op that wrote this answer, the key of its
-   * receipt (docs/design-v1-dice.md 1.2). An answer written before wave 7
-   * has none (docs/design-v1-roll-request.md 7.5).
+   * receipt (docs/design/design-v1-dice.md 1.2). An answer written before wave 7
+   * has none (docs/design/design-v1-roll-request.md 7.5).
    */
   tag?: string;
-  /** Present exactly when the total was rolled on the server, with `fails` on it when a condition failed it (docs/design-v1-dice.md 5.1). */
+  /** Present exactly when the total was rolled on the server, with `fails` on it when a condition failed it (docs/design/design-v1-dice.md 5.1). */
   dice?: DiceResult;
-  /** Rolled with a bonus the player typed, since the server knew none for the roll (docs/design-v1-dice.md 4.1). */
+  /** Rolled with a bonus the player typed, since the server knew none for the roll (docs/design/design-v1-dice.md 4.1). */
   typedBonus?: true;
-  /** The DM's own mark, kept apart from what a DC gives (docs/design-v1-roll-request.md 1.1). */
+  /** The DM's own mark, kept apart from what a DC gives (docs/design/design-v1-roll-request.md 1.1). */
   mark?: "pass" | "fail";
-  /** The ask an allowed change answered (docs/design-v1-dice.md 5.4). */
+  /** The ask an allowed change answered (docs/design/design-v1-dice.md 5.4). */
   changed?: RollChange;
 };
 
 /**
- * A player's ask to change a rolled answer (docs/design-v1-roll-request.md
- * 1.1, docs/design-v1-dice.md 5.4): its own id, the `tag` of the answer it
+ * A player's ask to change a rolled answer (docs/design/design-v1-roll-request.md
+ * 1.1, docs/design/design-v1-dice.md 5.4): its own id, the `tag` of the answer it
  * would change, the reason, and a reroll's face (an index into the
  * answer's `dice.faces`) or Bardic Inspiration's die.
  */
@@ -2097,10 +2097,10 @@ export type RollTarget = { tokenId?: TokenId; characterId?: CharacterId } & Roll
     by?: MemberId;
     /** The answer this one replaced, or the one a reopen cleared. */
     previous?: RollAnswer;
-    /** A player's pending ask to change the answer (docs/design-v1-roll-request.md 1.1), which the DM's Allow names by its id. */
+    /** A player's pending ask to change the answer (docs/design/design-v1-roll-request.md 1.1), which the DM's Allow names by its id. */
     change?: RollChange;
     /**
-     * An allowed "Fix my total" (docs/design-v1-roll-request.md 5.5): the
+     * An allowed "Fix my total" (docs/design/design-v1-roll-request.md 5.5): the
      * player types the answer again and may not roll it, so a fixed typed
      * total never turns into a fresh roll. The next answer clears it.
      */
@@ -2109,7 +2109,7 @@ export type RollTarget = { tokenId?: TokenId; characterId?: CharacterId } & Roll
 
 /**
  * A player's ask for saves against their creature's spell or save action
- * (docs/design-v1-player-save-spell.md 5.2). Open until the DM resolves or
+ * (docs/design/design-v1-player-save-spell.md 5.2). Open until the DM resolves or
  * dismisses it, or a player of its caster withdraws it. It holds
  * references, never numbers the DM trusts: the DC, the dice and the
  * conditions come from the DM's view of the caster's stat block. The one
@@ -2151,9 +2151,9 @@ export type CastRolled = { formula: string; total: number; type?: DamageType };
 export type CastEnd = "done" | "dismissed" | "withdrawn";
 
 /**
- * A roll the DM asked players for (wave 5, docs/design-v1-dm-tools.md
+ * A roll the DM asked players for (wave 5, docs/design/design-v1-dm-tools.md
  * 3.3): "DEX save, DC 15". Each player rolls the answer on the server or
- * types the total they rolled (docs/design-v1-roll-request.md). A player's projection holds only their own targets,
+ * types the total they rolled (docs/design/design-v1-roll-request.md). A player's projection holds only their own targets,
  * the DC only when shown, results only when shown, and `rev` 0.
  */
 export type RollRequest = {
@@ -2173,11 +2173,11 @@ export type RollRequest = {
   resultShown: boolean;
   /** Single-line text, at most 80 characters: "against the poison". */
   note?: string;
-  /** Wave 7: a save against a spell, which the roll's test carries (docs/design-v1-roll-request.md 1.1, docs/design-v1-dice.md 6.1). */
+  /** Wave 7: a save against a spell, which the roll's test carries (docs/design/design-v1-roll-request.md 1.1, docs/design/design-v1-dice.md 6.1). */
   spell?: true;
-  /** Wave 7: public, what the request is for (docs/design-v1-roll-request.md 1.1). */
+  /** Wave 7: public, what the request is for (docs/design/design-v1-roll-request.md 1.1). */
   cause?: "saveEnds";
-  /** Wave 7, the DM's: the effect a pass removes, and the save occurrence (`Effect.due.id`) it answers (docs/design-v1-roll-request.md 1.1). */
+  /** Wave 7, the DM's: the effect a pass removes, and the save occurrence (`Effect.due.id`) it answers (docs/design/design-v1-roll-request.md 1.1). */
   ends?: { effect: EffectId; occurrence: string };
   /** The envelope time it was asked. */
   at: string;
@@ -2191,7 +2191,7 @@ export type JournalAccess = "dm" | "all" | { member: MemberId };
 /**
  * One block of a page. A secret is a block with a flag, never a region
  * parsed out of text, so projection drops whole blocks and never reads
- * Markdown (docs/design-v1-dm-tools.md 3.7).
+ * Markdown (docs/design/design-v1-dm-tools.md 3.7).
  */
 export type JournalBlock = {
   /** 12 random characters, unique in the page. */
@@ -2215,7 +2215,7 @@ export type JournalPage = {
 
 /**
  * A marker on a scene, perhaps linked to a journal page (wave 5,
- * docs/design-v1-dm-tools.md 3.8). Players get it on the player scene
+ * docs/design/design-v1-dm-tools.md 3.8). Players get it on the player scene
  * when it is not DM only, not on a fully fogged cell, and its page, if any,
  * is one they may read.
  */
@@ -2234,7 +2234,7 @@ export type Pin = {
 };
 
 /**
- * A trap on a scene (docs/design-v1-traps.md 6.1): a zone, when it goes off
+ * A trap on a scene (docs/design/design-v1-traps.md 6.1): a zone, when it goes off
  * and for whom, what it does, and whether players have found it. The DM
  * gets every trap on its scene. A player gets only a found one, cut to its
  * name, zone and whether it is disarmed (shared/project.ts), so no player
@@ -2252,7 +2252,7 @@ export type Trap = {
   found: boolean;
   /** Always stored. A player's projection leaves it out whole. */
   rig?: TrapRig;
-  /** The hex shape its zone was written under, absent for squares (docs/design-v1-hex-grids.md HX-D14). */
+  /** The hex shape its zone was written under, absent for squares (docs/design/design-v1-hex-grids.md HX-D14). */
   grid?: GridShape;
 };
 
@@ -2367,7 +2367,7 @@ export type Handout = {
   /** The first page. A handout without `pages` is this one image, as every handout from before PDFs is. */
   assetId: AssetId;
   /**
-   * Every page in order, the first included (docs/design-v1-pdf-handouts.md
+   * Every page in order, the first included (docs/design/design-v1-pdf-handouts.md
    * 3.1). Absent for one image. The reducer writes `assetId` from the first,
    * so a reader that knows only `assetId` still shows the first page.
    */
@@ -2379,7 +2379,7 @@ export type Handout = {
 
 /**
  * A PDF the DM uploaded, kept in the library until the DM deletes it
- * (docs/design-v1-pdf-handouts.md 3.2). It is not a handout: a handout is a
+ * (docs/design/design-v1-pdf-handouts.md 3.2). It is not a handout: a handout is a
  * showing, and nothing links one back to the document it came from, so no
  * id of this DM-only entity reaches players.
  */
@@ -2408,7 +2408,7 @@ export type HandoutDoc = {
  *   scene stays hidden after a reveal. An event from before the mark existed
  *   counts as unseen. Events about a character need no mark, since every
  *   player knows every character.
- * - `seenBy`, on a per-player scene (docs/design-v1-per-player-vision.md
+ * - `seenBy`, on a per-player scene (docs/design/design-v1-per-player-vision.md
  *   6.5): the sight holders who do not own the token and could see it
  *   then, when not every player could, sorted, perhaps none. DM only: a
  *   line holding one settles as a party line, whose copies hold none.
@@ -2450,7 +2450,7 @@ export type HpRevert = {
   shapeTemp?: { before?: string; after?: string };
   /**
    * A Regeneration's heal names the turn record it settled
-   * (docs/design-v1-combat-controls.md 3.4), so taking it back reopens the
+   * (docs/design/design-v1-combat-controls.md 3.4), so taking it back reopens the
    * prompt while that record is current.
    */
   record?: number;
@@ -2481,7 +2481,7 @@ export type LogEvent =
   | (AboutCreature & { type: "concentration"; dc?: number; spell?: string; ended?: boolean; hidden?: true; exact?: true })
   /**
    * Wave 7: a creature ended its turn with an effect a save ends
-   * (docs/design-v1-roll-options.md 6.1). The line's id is the occurrence the
+   * (docs/design/design-v1-roll-options.md 6.1). The line's id is the occurrence the
    * effect's `due` names. DM only, as the DC is.
    */
   | (AboutCreature & { type: "saveEnds"; effectId: EffectId; key: Effect["key"]; ability: AbilityKey; dc: number })
@@ -2506,7 +2506,7 @@ export type LogEvent =
    * Players get `to` only with that mark or as the row's owners, and never
    * the mark itself. On a per-player scene `seenBy` and `toSeenBy` name the
    * sight holders whose tracker showed each row then, when not every
-   * player's did (docs/design-v1-per-player-vision.md 6.5), DM only.
+   * player's did (docs/design/design-v1-per-player-vision.md 6.5), DM only.
    */
   | { type: "turn"; entryId: EntryId; round: number; seen?: true; seenBy?: MemberId[]; back?: true; to?: EntryId; toSeen?: true; toSeenBy?: MemberId[] }
   /**
@@ -2520,7 +2520,7 @@ export type LogEvent =
    * `hidden` says the area itself was hidden from players then, so only the
    * DM gets the line. On a per-player scene `seenBy` names the players who
    * saw both the creature and the area then, its owners among them, when
-   * not every player did (docs/design-v1-per-player-vision.md 6.5).
+   * not every player did (docs/design/design-v1-per-player-vision.md 6.5).
    */
   | { type: "area"; templateId: TemplateId; tokenId: TokenId; trigger: AreaTrigger; area: string; moved?: true; seen?: true; seenBy?: MemberId[]; hidden?: true }
   | { type: "encounter"; action: "start" | "end" }
@@ -2532,12 +2532,12 @@ export type LogEvent =
    * section 4.1). DM only: the DM's devices show it as a toast, and no player
    * projection carries it, the token's owners included. `unknown` is a
    * stop by something on ground the player does not hold, which names no
-   * kind (docs/design-v1-map-discovery.md 6).
+   * kind (docs/design/design-v1-map-discovery.md 6).
    */
   | { type: "teleport"; tokenId: TokenId; past: "wall" | "ledge" | "unknown" }
   /**
    * A player added a companion beside their character
-   * (docs/design-v1-combat-flow.md 3.6.3). DM only, as the teleport line
+   * (docs/design/design-v1-combat-flow.md 3.6.3). DM only, as the teleport line
    * is. `name` is the companion's name then, so the line still reads once
    * it is renamed or dismissed.
    */
@@ -2552,7 +2552,7 @@ export type LogEvent =
   | { type: "characterDeleted"; characterId: CharacterId; memberId: MemberId; name: string; tokens: number; companions: number; rows: number }
   /**
    * An answer to a roll request, or a DM's mark of one (wave 5,
-   * docs/design-v1-dm-tools.md 3.3), as the target stood after it. It
+   * docs/design/design-v1-dm-tools.md 3.3), as the target stood after it. It
    * carries the test and the request's two switches, so the line keeps its
    * rules after the request is closed: it reaches the DM and the players
    * who own its creature now, with the DC only under `dcShown` and the
@@ -2571,17 +2571,17 @@ export type LogEvent =
       result?: "pass" | "fail";
       /** The player failed the save without rolling, which reaches the creature's players as a total does. */
       noRoll?: true;
-      /** Wave 7: the answer's dice when the server rolled it, and whether with a bonus the player typed (docs/design-v1-dice.md 5.1). */
+      /** Wave 7: the answer's dice when the server rolled it, and whether with a bonus the player typed (docs/design/design-v1-dice.md 5.1). */
       dice?: DiceResult;
       typedBonus?: true;
-      /** The op that wrote it (docs/design-v1-roll-request.md 7.5), and for an allowed change the ask it answered (5.4). */
+      /** The op that wrote it (docs/design/design-v1-roll-request.md 7.5), and for an allowed change the ask it answered (5.4). */
       tag?: string;
       changed?: RollChange;
-      /** A DM's mark wrote it, which the projection drops when pass or fail is hidden (docs/design-v1-roll-request.md 7.5). */
+      /** A DM's mark wrote it, which the projection drops when pass or fail is hidden (docs/design/design-v1-roll-request.md 7.5). */
       mark?: true;
     }
   /**
-   * A free roll on the server (wave 7, docs/design-v1-dice.md 5.1): one line
+   * A free roll on the server (wave 7, docs/design/design-v1-dice.md 5.1): one line
    * per `dice.roll`, every roll with what was drawn. `to: 'dm'` is a secret
    * roll, which other players read as the bare line `rolls: []` (5.2).
    * `tag` reaches only the roller, with `part`, the batch of the tag the line
@@ -2592,14 +2592,14 @@ export type LogEvent =
    */
   | { type: "dice"; tag?: string; part?: number; batch?: string; by: MemberId; to: "all" | "dm"; dc?: number; ac?: number; rolls: DiceRoll[] }
   /**
-   * A player's ask for saves (docs/design-v1-player-save-spell.md 5.2):
+   * A player's ask for saves (docs/design/design-v1-player-save-spell.md 5.2):
    * written first in the op that asks, and again with `end` first in the op
    * that closes it. It reaches the DM and the players who own its caster
    * now, as the ask does. Its end reads the same whatever the saves did.
    */
   | { type: "cast"; castId: CastId; tokenId: TokenId; spell: string; slot?: number; end?: CastEnd }
   /**
-   * A trap went off (docs/design-v1-traps.md 6.3), in the DM's trap log
+   * A trap went off (docs/design/design-v1-traps.md 6.3), in the DM's trap log
    * only: the trap's name then, how, who set it off (at most 10 plain ids,
    * the rest counted in `more`), how many it hits, what each of its actions
    * did (`action` its index, -1 the pit), the indexes in `by` of creatures
@@ -2620,7 +2620,7 @@ export type LogEvent =
   | { type: "trapNotice"; trapId: TrapId; sceneId: SceneId; tokenId: TokenId; passive: number; dc: number }
   /**
    * A creature used one of its limited abilities, or had one given back
-   * (docs/design-v1-combat-controls.md 8): a legendary action, Legendary
+   * (docs/design/design-v1-combat-controls.md 8): a legendary action, Legendary
    * Resistance, an ability of its block, or a class resource. `name` is the
    * ability's or the resource's, absent for Resistance and for a plain
    * legendary action spent by hand. The private parts are `cost` (a
@@ -2640,9 +2640,9 @@ export type LogEvent =
  * ability of a creature's save, so a roll made again from it is that save
  * again and a condition that fails it still records the fail. `hidden` marks the
  * initiative of a creature whose place in the order players did not know
- * then (docs/design-v1-combat-flow.md 11.3): only the DM and the creature's
+ * then (docs/design/design-v1-combat-flow.md 11.3): only the DM and the creature's
  * own players get that roll. `type` is a damage roll's damage type as the
- * roller asked it (docs/design-v1-combat-controls.md 3.4), since a label is
+ * roller asked it (docs/design/design-v1-combat-controls.md 3.4), since a label is
  * cut to fit or typed by hand and so names no type for certain. `seenBy`
  * is the token's list on a per-player scene, as other token events carry it.
  */

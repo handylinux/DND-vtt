@@ -241,7 +241,7 @@ describe("stairs and heights on the board", () => {
   });
 });
 
-describe("difficult ground (docs/design-v1-movement.md 3.4)", () => {
+describe("difficult ground (docs/design/design-v1-movement.md 3.4)", () => {
   test("each marked square is a rect of the hatch's path, inside a box around them all, players' and the DM's alike", () => {
     const c: BuildChunk = { ...chunk({}), rough: "d" + ".".repeat(16) + "d" + ".".repeat(238) };
     for (const role of ["player", "dm"] as const) {
@@ -270,7 +270,7 @@ describe("difficult ground (docs/design-v1-movement.md 3.4)", () => {
   });
 });
 
-describe("the isometric view's ground stage (docs/design-v1-isometric-view.md 5.3 and 5.5)", () => {
+describe("the isometric view's ground stage (docs/design/design-v1-isometric-view.md 5.3 and 5.5)", () => {
   /** A stand-in for a 2D context that records which path each fill and stroke draws. */
   function recorder() {
     const calls: { op: string; path: unknown }[] = [];

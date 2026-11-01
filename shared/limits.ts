@@ -17,7 +17,7 @@ export const LIMITS = {
   /** Characters one player may own when the room lets players create their own (shared/permissions.ts). */
   charactersPerPlayer: 3,
   /**
-   * A character's companions on one scene (docs/design-v1-combat-flow.md
+   * A character's companions on one scene (docs/design/design-v1-combat-flow.md
    * 3.6.3). Only a player's `token.create` counts them, and only on the
    * scene the new one goes to, so companions left on a scene the party
    * moved away from never block a new one.
@@ -33,7 +33,7 @@ export const LIMITS = {
   fogDraftOpsPerScene: 500,
   handoutsPerRoom: 200,
   /**
-   * Pages in one handout (docs/design-v1-pdf-handouts.md 3.7). A handout
+   * Pages in one handout (docs/design/design-v1-pdf-handouts.md 3.7). A handout
    * pack is a few pages and a player's guide a few dozen, and the largest
    * show of them, with long ids and every recipient, stays under a quarter
    * of the socket's frame.
@@ -76,7 +76,7 @@ export const LIMITS = {
    */
   encounterRows: 2_000,
   /**
-   * Companion stat blocks (docs/design-v1-companion-stat-blocks.md 3.4).
+   * Companion stat blocks (docs/design/design-v1-companion-stat-blocks.md 3.4).
    * One block has the monsters' bound. A character keeps at most 100 and
    * 512 KiB of them, so 32 long blocks fill its bytes before its count. A
    * room keeps six characters at their caps, since 50 characters at theirs
@@ -98,7 +98,7 @@ export const LIMITS = {
   companionBlockWriteBurst: 10,
   companionBlockWriteRefillMs: 6_000,
   /**
-   * A player character's stat block, serialized (docs/design-v1-pc-stats.md
+   * A player character's stat block, serialized (docs/design/design-v1-pc-stats.md
    * 3.5). It rides on the character, which is sent whole on every HP
    * change, so it stays small: a wizard's 32 rolls take about 6.3 KB, and
    * 50 characters at the cap are 600 KiB of a DM's 3 MiB scene.
@@ -106,7 +106,7 @@ export const LIMITS = {
   pcStatsBytes: 12 * 1024,
   /**
    * A character's record of its last D&D Beyond sync, serialized
-   * (docs/design-v1-resync.md 2.1). It rides on the character beside the
+   * (docs/design/design-v1-resync.md 2.1). It rides on the character beside the
    * block, and one at every bound is about 4.8 KB.
    */
   ddbSyncBytes: 6 * 1024,
@@ -119,7 +119,7 @@ export const LIMITS = {
   loadedRooms: 50,
   loadedRoomsPerCreatorIp: 10,
   /**
-   * Free walls (docs/design-v1-maps-vision.md section 2.4). A scene of them
+   * Free walls (docs/design/design-v1-maps-vision.md section 2.4). A scene of them
    * is about 300 KB. 500 doors serialize to about 73 KB, past the 64 KiB
    * frame, so the byte bound is the one that binds an op.
    */
@@ -137,7 +137,7 @@ export const LIMITS = {
   splitPairsPerScene: 100_000,
   splitPiecesPerScene: 5_000,
   /**
-   * Pillar cells per scene (docs/design-v1-maps-vision.md 2.4). Each is four
+   * Pillar cells per scene (docs/design/design-v1-maps-vision.md 2.4). Each is four
    * stored wall segments that every derive of the scene's walls and every
    * counting pass reads, and no other limit bounds how many a build paints:
    * a pillar in every cell is 160,000 segments, well past the geometry
@@ -147,7 +147,7 @@ export const LIMITS = {
   pillarsPerScene: 1_000,
   /**
    * Door and window edges per scene, on the grid or free, secret doors
-   * included (docs/design-v1-maps-vision.md 2.4). Plain walls merge into
+   * included (docs/design/design-v1-maps-vision.md 2.4). Plain walls merge into
    * runs, but a door or window stays one stored segment and one entry in
    * every derive's lookups, so only the scene's byte size bounded them: tens
    * of thousands fit, past the geometry budgets. A real map has a few
@@ -157,7 +157,7 @@ export const LIMITS = {
   /**
    * Drawn edges per scene: every edge entry a scene's chunks store, walls,
    * doors, windows and removed automatic walls alike, so doors and windows
-   * count here too (docs/design-v1-maps-vision.md 2.4). Each is an entry the
+   * count here too (docs/design/design-v1-maps-vision.md 2.4). Each is an entry the
    * derive merges into its lookups on every derive, whatever it holds, and
    * only the scene's byte size bounded them: a wall on all 80,000 edges of a
    * 200 x 200 scene fits. scripts/bench-walls.ts sizes it beside the pillar
@@ -176,7 +176,7 @@ export const LIMITS = {
   thumbUploadBytes: 512 * 1024,
   thumbMaxPx: 320,
   /**
-   * Party vision (wave 4, docs/design-v1-maps-vision.md 2.4). Past the
+   * Party vision (wave 4, docs/design/design-v1-maps-vision.md 2.4). Past the
    * source cap nothing is refused: the first sources in a fixed order lend
    * sight and the rest stay shown (shared/rules/vision.ts). Senses parsed
    * from an actor's senses line stop at the SRD's longest darkvision.
@@ -190,7 +190,7 @@ export const LIMITS = {
    * On a finer grid a light or a sense would cover more cells, and so sweep
    * more walls, than the server-box gate measured: at 1 ft per cell a
    * room's first snapshot took 368 ms on a laptop, about 550 ms on the
-   * reference server against 250 (docs/design-v1-maps-vision.md 2.4 and
+   * reference server against 250 (docs/design/design-v1-maps-vision.md 2.4 and
    * 4.3.6). So there they stop at these, and what they cost is the same at
    * every scale.
    */
@@ -218,7 +218,7 @@ export const LIMITS = {
   heightCellsPerOp: 2_000,
   /**
    * Players who see and remember for themselves on one per-player scene
-   * (docs/design-v1-per-player-vision.md 6.1): the entries of its holder
+   * (docs/design/design-v1-per-player-vision.md 6.1): the entries of its holder
    * list that are on. The rest have the shared sight. 6 if the server box
    * passes the design's timing rows at the worst legal ownership, else 5.
    * Only a live op meets it: checkLimits refuses one that turns on more
@@ -229,14 +229,14 @@ export const LIMITS = {
    */
   sightHoldersPerScene: 6,
   /**
-   * One layer's memory of one scene (docs/design-v1-map-discovery.md 5.5):
+   * One layer's memory of one scene (docs/design/design-v1-map-discovery.md 5.5):
    * the party's, or a holder's own, in charged bytes. The size guard
    * reserves each memory at this cap, or at its share of a full room,
    * never at its size, and past it the map step forgets whole fog tiles.
    */
   memoryBytesPerLayer: 64 * 1024,
 
-  // Wave 5 (docs/design-v1-dm-tools.md 2.4).
+  // Wave 5 (docs/design/design-v1-dm-tools.md 2.4).
 
   /**
    * Journal pages (section 3.7). They are room level, so they ride in every
@@ -254,7 +254,7 @@ export const LIMITS = {
   pinsPerScene: 200,
   /** Roll requests (section 3.3): open at once in a room, creatures each, and choices each. */
   openRollsPerRoom: 20,
-  /** A player's asks for saves (docs/design-v1-player-save-spell.md 5.4): waiting at once per member, and in a room. */
+  /** A player's asks for saves (docs/design/design-v1-player-save-spell.md 5.4): waiting at once per member, and in a room. */
   castsPerMember: 3,
   openCastsPerRoom: 20,
   rollTargets: 50,
@@ -268,7 +268,7 @@ export const LIMITS = {
   tokensPerManyOp: 100,
   effectsPerManyOp: 100,
   /**
-   * One `actor.outcome` (docs/design-v1-roll-options.md 8, Appendix A): the
+   * One `actor.outcome` (docs/design/design-v1-roll-options.md 8, Appendix A): the
    * most creatures one group save takes, the conditions and removals each
    * may carry, and its serialized bytes, so 100 creatures with two
    * conditions each fit under the socket's 64 KiB frame.
@@ -332,7 +332,7 @@ export const LIMITS = {
   trashHours: 48,
   libraryDeleteMax: 500,
 
-  // Wave 7: dice (docs/design-v1-dice.md 3.2 and 4.4).
+  // Wave 7: dice (docs/design/design-v1-dice.md 3.2 and 4.4).
 
   /**
    * One `dice.roll`: its rolls, its dice after every mode, and its size
@@ -372,7 +372,7 @@ export const LIMITS = {
   receiptsKeptOlder: 10_000,
   receiptDays: 7,
 
-  // Attached tokens (docs/design-v1-attach.md 5.1).
+  // Attached tokens (docs/design/design-v1-attach.md 5.1).
 
   /**
    * A chain of carried tokens, counted in tokens: a torch held by a rider
@@ -389,7 +389,7 @@ export const LIMITS = {
   /** The mounts sharing one turn (TurnStart.mounts). A chain is 3 deep, so a turn's creature rides at most two. */
   turnMounts: 8,
 
-  // Traps (docs/design-v1-traps.md 6.1 and 6.7).
+  // Traps (docs/design/design-v1-traps.md 6.1 and 6.7).
 
   /** Traps on one scene, and a trap's own fields serialized: everything but what the reducer writes on it. */
   trapsPerScene: 50,
@@ -486,7 +486,7 @@ export const LIMITS = {
   remindedPerPlayerBytes: 24 * 1024,
   remindedDmBytes: 128 * 1024,
   /**
-   * Combat uses (docs/design-v1-combat-controls.md 2.4): the spent marks an
+   * Combat uses (docs/design/design-v1-combat-controls.md 2.4): the spent marks an
    * actor holds, the keys a turn record's `due` names, an ability's key and
    * the characters of a mark's name, which a custom stat block's entry name
    * bounds. A spend that would add a mark past the cap is refused.
@@ -598,7 +598,7 @@ export function checkLimits(state: RoomState, sceneId?: string | null, before?: 
 
 /**
  * The most players the design ever lets see for themselves on one scene
- * (docs/design-v1-per-player-vision.md 6.1), the bound of every stored list
+ * (docs/design/design-v1-per-player-vision.md 6.1), the bound of every stored list
  * of who saw, a holder list's entries that are on, and an explore op's
  * holders (reviews SEC-PV1-4, PV1-O4), and the reducer's own bound on a
  * pick and on joins. `LIMITS.sightHoldersPerScene` is the cap in force, at
@@ -606,12 +606,12 @@ export function checkLimits(state: RoomState, sceneId?: string | null, before?: 
  */
 export const MOST_SIGHT_HOLDERS = 6;
 
-/** The refusal of a seventh player who would see for themselves (docs/design-v1-per-player-vision.md 7.1). */
+/** The refusal of a seventh player who would see for themselves (docs/design/design-v1-per-player-vision.md 7.1). */
 export const SIGHT_HOLDERS_FULL = `At most ${LIMITS.sightHoldersPerScene} players see for themselves here. Untick one first.`;
 
 /**
  * Whether the op turned on more of a scene's sight holders than the cap in
- * force allows (docs/design-v1-per-player-vision.md 6.1). Like the caps on
+ * force allows (docs/design/design-v1-per-player-vision.md 6.1). Like the caps on
  * pillars, only an op that raises a scene's count past it is refused, and
  * only live: replay never runs this, so a room stored under a higher cap
  * still loads and replays, and takes every other edit (review PV1-ASTRA-4).
@@ -626,7 +626,7 @@ function sightHoldersRaised(state: RoomState, before?: RoomState): boolean {
   return false;
 }
 
-/** The refusal of a save past the room's handout pages, with what frees some (docs/design-v1-pdf-handouts.md 3.7). */
+/** The refusal of a save past the room's handout pages, with what frees some (docs/design/design-v1-pdf-handouts.md 3.7). */
 export const HANDOUT_PAGES_FULL = `the room holds at most ${n(LIMITS.handoutPagesPerRoom)} handout pages. Delete a document or close a handout, then try again`;
 /** What a show adds, since showing a document is what passed the limit. */
 export const SHOWING_COUNTS_AGAIN = "Showing a document counts its pages again while it shows";
@@ -643,7 +643,7 @@ function checkHandoutPages(state: RoomState, before?: RoomState): LimitCheck {
 }
 
 /**
- * The wave 3 counts of one scene (docs/design-v1-maps-vision.md 2.4). The
+ * The wave 3 counts of one scene (docs/design/design-v1-maps-vision.md 2.4). The
  * split's caps on crossing walls are counted where geometry is written,
  * by the counting pass in shared/rules/segments.ts, which the server's
  * limits step runs after this.
@@ -792,7 +792,7 @@ export function journalPageBytes(page: JournalPage): number {
 }
 
 /**
- * The journal (docs/design-v1-dm-tools.md 3.7): a count, and bytes for each
+ * The journal (docs/design/design-v1-dm-tools.md 3.7): a count, and bytes for each
  * page and for all of them. An op that carries blocks is bounded on its way
  * in, but a stored block keeps its revealed state, which the op does not
  * carry, and an undo can bring a page back, so the stored result is what
@@ -811,13 +811,13 @@ function checkJournal(state: RoomState): LimitCheck {
   return { ok: true };
 }
 
-/** The refusal of a player's block save past their save budget (docs/design-v1-companion-stat-blocks.md 3.5). The editor knows it by these words. */
+/** The refusal of a player's block save past their save budget (docs/design/design-v1-companion-stat-blocks.md 3.5). The editor knows it by these words. */
 export const BLOCK_SAVES_TOO_FAST = "Too many stat block saves at once. Wait a few seconds, then save again.";
 /** A block save the room's state limit refuses, in place of the size guard's words (section 3.4). */
 export const BLOCKS_ROOM_TOO_FULL = "The room is too full to save this stat block. Ask the DM to free some space, then save again.";
 /**
  * The refusal of a `character.update` whose `expect` no longer matches the
- * character (docs/design-v1-resync.md 4): one code and these words whatever
+ * character (docs/design/design-v1-resync.md 4): one code and these words whatever
  * differed, so a refusal tells nothing of what changed. The re-sync knows
  * it by these words.
  */
@@ -826,7 +826,7 @@ export const CHARACTER_CHANGED = "This character changed since you looked. Check
 export const BLOCKS_AT_QUOTA = "The room is at its storage limit, so stat blocks cannot be saved until the DM frees space. Deleting a stat block still works.";
 
 /*
- * The admission refusals of a tagged op (docs/design-v1-dice.md 1.2 and
+ * The admission refusals of a tagged op (docs/design/design-v1-dice.md 1.2 and
  * 4.4), each with no receipt: the member's budget is spent, the room's day
  * of receipts is full, the player's share of it is, or the players' shares
  * together are, which keeps the DMs' floor of the day free whatever the
@@ -859,7 +859,7 @@ function companionBlockBytes(block: CompanionBlock): number {
 const blockVerdicts = new WeakMap<object, LimitCheck>();
 
 /**
- * Companion stat blocks (docs/design-v1-companion-stat-blocks.md 3.4): each
+ * Companion stat blocks (docs/design/design-v1-companion-stat-blocks.md 3.4): each
  * at most 16 KiB, each character's at most 100 and 512 KiB, and the room's
  * at most 600 and 3 MiB. Every refusal says what to do about blocks, since
  * the player who meets it can act on their own blocks. Blocks never change
@@ -902,7 +902,7 @@ function companionBlocksVerdict(state: RoomState): LimitCheck {
 
 /**
  * The refusal of an op that would leave the party no room to explore
- * (docs/design-v1-maps-vision.md 2.4): moving players to a vision scene,
+ * (docs/design/design-v1-maps-vision.md 2.4): moving players to a vision scene,
  * turning vision or fog on there, or a room import. Only the DM does any
  * of these, so the DM reads it.
  */
@@ -915,7 +915,7 @@ const FULL_BITS = "A".repeat(HEIGHTS_CHARS);
 /**
  * The scene whose explored layer can grow: the player scene, while it has
  * vision and fog on. A per-player scene explores by each holder's sight
- * and the shared sight (docs/design-v1-per-player-vision.md 6.3), which the
+ * and the shared sight (docs/design/design-v1-per-player-vision.md 6.3), which the
  * explore step does not work out yet, so until it does such a scene
  * explores nothing: the party's sight would write ground only some players
  * saw into the layer every player reads, and reserve nothing for the
@@ -928,7 +928,7 @@ export function exploringSceneId(state: Pick<RoomState, "meta" | "scenes">): str
 }
 
 /**
- * The bytes the explored layer may still grow by (docs/design-v1-maps-vision.md
+ * The bytes the explored layer may still grow by (docs/design/design-v1-maps-vision.md
  * 2.4), which every size check adds to what the state measures, since a
  * `sys.explore` is never refused. Only the exploring scene has any.
  *

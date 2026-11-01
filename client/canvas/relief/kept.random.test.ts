@@ -7,7 +7,7 @@ import { installPath2D, KeptRig, type RigScene } from "./keptTesting.ts";
 
 /*
  * The kept picture against a whole redraw, pixel by pixel
- * (docs/design-v1-relief-pan.md 10.2): seeded sequences of camera moves and
+ * (docs/design/design-v1-relief-pan.md 10.2): seeded sequences of camera moves and
  * edits on hex rows, hex columns and squares at pixel ratios 1.5 and 2,
  * through the board's real layout, drawRun and frame scheduler, on a canvas
  * that holds each pixel's paints in order (keptTesting.ts). Invariants after
@@ -194,7 +194,7 @@ function run(shape: "squares" | "hexRows" | "hexColumns", ratio: number, seed: n
   assert.ok(rig.scheduler.kept!.stats.scrolls > 0, "some frames scrolled");
 }
 
-describe("the kept relief picture against a whole redraw (docs/design-v1-relief-pan.md 10.2)", () => {
+describe("the kept relief picture against a whole redraw (docs/design/design-v1-relief-pan.md 10.2)", () => {
   for (const shape of ["hexRows", "hexColumns", "squares"] as const) {
     for (const ratio of [1.5, 2]) {
       test(`${SEQUENCES / 6} seeded sequences of ${EVENTS} pans and edits on ${shape} at a pixel ratio of ${ratio}: every frame equals a whole draw, a scroll paints only its strips and repairs, anything else repaints whole`, () => {

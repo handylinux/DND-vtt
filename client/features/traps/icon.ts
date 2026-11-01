@@ -2,7 +2,7 @@
  * The wolf trap from game-icons.net (lorc/wolf-trap, by Lorc, CC BY 3.0),
  * the same file the token icons ship in public/game-icons and credit by
  * author, as one path in its 512 box: the Trap tool's icon and a trap's
- * mark on the map (docs/design-v1-traps.md 2 and 4.1). rules.test.ts holds
+ * mark on the map (docs/design/design-v1-traps.md 2 and 4.1). rules.test.ts holds
  * it to the shipped file.
  */
 

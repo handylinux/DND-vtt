@@ -24,7 +24,7 @@ import { measureSpacing, spacingLines, type SpacingFinding } from "./helpers/spa
 import { moreMenuFixture } from "./helpers/menuFixture.ts";
 
 /**
- * The alignment sweep (docs/design-v1-polish.md 4): the screens the
+ * The alignment sweep (docs/design/design-v1-polish.md 4): the screens the
  * polish pass measured, at the sizes it measured them, each run through
  * the alignment helper (e2e/helpers/alignment.ts), so a part that drifts
  * off its middle, a label that wraps alone above its field, a pill that
@@ -49,7 +49,7 @@ import { moreMenuFixture } from "./helpers/menuFixture.ts";
  * roll from the needle trap's Ask to disarm at 390 and 320, and the group
  * save page a trap card's Save and damage opens there and at 1440.
  *
- * The combat controls' screens (docs/design-v1-combat-controls.md 9) are
+ * The combat controls' screens (docs/design/design-v1-combat-controls.md 9) are
  * measured at 390 x 844, 320 x 568 and 1440 x 900, at 100% and 130%, in a
  * fight of their own: Thorn dying with his class resources, an adult red
  * dragon with Fire Breath used, and a troll at 0 HP that took Fire, with
@@ -64,7 +64,7 @@ import { moreMenuFixture } from "./helpers/menuFixture.ts";
  * recharge card and its turn card folded and open, and the troll's
  * Regeneration card with its death save card waiting for it.
  *
- * The second icon pass (docs/design-v1-icons-2.md 15) is measured at its
+ * The second icon pass (docs/design/design-v1-icons-2.md 15) is measured at its
  * own seven sizes: 320 x 568 and 390 x 844 at 130%, 390 x 844 at 115% and
  * 85%, and 1280 x 800 at 100%, 115% and 85%, in a fight of its own: Thorn
  * at level 7 with a stat block and a counted Hex, Wren a druid with known
@@ -87,7 +87,7 @@ import { moreMenuFixture } from "./helpers/menuFixture.ts";
  * one showed at fewer sizes than the polish pass found, so no check passes
  * by measuring nothing.
  *
- * The group save page's lifecycle (docs/design-v1-undo-scope.md 8) is
+ * The group save page's lifecycle (docs/design/design-v1-undo-scope.md 8) is
  * measured at 390 x 844, 320 x 568 and 1440 x 900 at 100% and 130%, and at
  * 844 x 390 and 480 x 320 at 130%: Apply waiting for its status, the page
  * reopened by Undo, locked again by Redo, Ask again waiting, that request
@@ -98,11 +98,11 @@ import { moreMenuFixture } from "./helpers/menuFixture.ts";
  * a mouse context for the desktop, one at a time, beside Pat's touch
  * context, so no more than two contexts are open.
  *
- * The isometric view's choice (docs/design-v1-isometric-view.md 8) is
+ * The isometric view's choice (docs/design/design-v1-isometric-view.md 8) is
  * measured at follow-up batch 30's sizes: the top bar with the View button,
  * the View menu in Top-down and in Isometric, and Scene settings'
  * Suggested view. So is the scene settings page with its groups folded and
- * open (docs/design-v1-map-discovery.md 9), beside every other page with
+ * open (docs/design/design-v1-map-discovery.md 9), beside every other page with
  * the shared radio cards: Room settings, This device and Show a handout.
  *
  * The sweep runs as five files, each with its own server, browsers and
@@ -148,12 +148,12 @@ const SCALES = [1, 1.3];
 /** The sizes where the sweep also measures the older screens a trap's flows open (live play 17): Pat's ask card and Request a roll on phones, and the group save page there and on a computer. */
 const PHONE_ROOTS = new Set(["390x844", "320x568"]);
 const GROUP_SAVE_AT = new Set([...PHONE_ROOTS, "1440x900"]);
-/** The sizes where the sweep measures the Dice panel's pass (docs/design-v1-dice-pass.md 11.3). */
+/** The sizes where the sweep measures the Dice panel's pass (docs/design/design-v1-dice-pass.md 11.3). */
 const DICE_AT = new Set([...PHONE_ROOTS, "1440x900"]);
 /**
  * The sizes where the sweep measures the combat controls, as their own e2e
  * files do, and a phone held sideways, where the token bar docks beside the
- * alerts column and the turn card gives way to it (docs/design-v1-combat-controls.md 9).
+ * alerts column and the turn card gives way to it (docs/design/design-v1-combat-controls.md 9).
  */
 const COMBAT_AT = new Set([...PHONE_ROOTS, "844x390", "1440x900"]);
 /** The lane rule's smallest screen, measured for the combat controls alone (9): 480 x 320 at 130%. */
@@ -269,10 +269,10 @@ const SOME_SIZES: Record<string, Record<SizesFile, number>> = {
   // Setup on the phone layout (the upright phones, the tablet and 844 x 390 at 100%), Tools in the pair (844 x 390 at 130%).
   "setup-menu": { phones: 6, wide: 3 },
   "tools-menu": { phones: 0, wide: 1 },
-  // The token bar expanded from the strip, on the upright phones where Expand is drawn (docs/design-v1-bar-compact.md 5.1), and the group's.
+  // The token bar expanded from the strip, on the upright phones where Expand is drawn (docs/design/design-v1-bar-compact.md 5.1), and the group's.
   "window-expanded": { phones: 5, wide: 0 },
   "group-expanded": { phones: 5, wide: 0 },
-  // The dice pass's roots (docs/design-v1-dice-pass.md 11.3), at the three dice sizes at 100% and 130%.
+  // The dice pass's roots (docs/design/design-v1-dice-pass.md 11.3), at the three dice sizes at 100% and 130%.
   "dp-modes": { phones: 4, wide: 2 },
   "dp-card-dragon": { phones: 4, wide: 2 },
   "dp-groups-dragon": { phones: 4, wide: 2 },
@@ -287,7 +287,7 @@ const SOME_SIZES: Record<string, Record<SizesFile, number>> = {
   "fl6-skills-thorn": { phones: 4, wide: 2 },
   "fl6-skills-dragon": { phones: 4, wide: 2 },
   "fl6-skills-several": { phones: 4, wide: 2 },
-  // The one-roll menus open, and the host of each with its menu open (docs/design-v1-roll-mode-menu.md 6), at the three dice sizes at 100% and 130%.
+  // The one-roll menus open, and the host of each with its menu open (docs/design/design-v1-roll-mode-menu.md 6), at the three dice sizes at 100% and 130%.
   "dpf1-menu-formula": { phones: 4, wide: 2 },
   "dpf1-menu-formula-host": { phones: 4, wide: 2 },
   "dpf1-menu-again": { phones: 4, wide: 2 },
@@ -324,7 +324,7 @@ const SOME_SIZES: Record<string, Record<SizesFile, number>> = {
   // With the dragon's bar across the column, the turn card folds to its row, or leaves the column where even its row would meet the bar (4.2).
   // At 844 x 390 the recharge card and the fade's room under it leave the bar too little room to stack, so it docks beside the column (barDock.ts COLUMN_FADE).
   "cu-turn-fold-bar": { phones: 4, wide: 2 },
-  // Not on the upright phones, whose bar rests as the strip at the map's foot, clear of the card (docs/design-v1-bar-compact.md 3.1).
+  // Not on the upright phones, whose bar rests as the strip at the map's foot, clear of the card (docs/design/design-v1-bar-compact.md 3.1).
   "cu-turn-hidden-bar": { phones: 0, wide: 4 },
 };
 
@@ -653,7 +653,7 @@ async function selectToken(page: Page, name: string, cell: { x: number; y: numbe
 
 /**
  * A bar's header: its sticky header, or on a strip that scrolls, whose
- * header scrolls with it (docs/design-v1-bar-compact.md 5.4), the row that
+ * header scrolls with it (docs/design/design-v1-bar-compact.md 5.4), the row that
  * holds its Close (a group's Deselect all), marked for the measure.
  */
 async function barHeader(bar: Locator): Promise<Locator> {
@@ -677,7 +677,7 @@ async function barHeader(bar: Locator): Promise<Locator> {
  * Measures a token window's header, play row and group line (where it has
  * one), and keeps where its header stands. An upright phone's bar is
  * measured resting as the strip for its header, and expanded for the
- * rest (docs/design-v1-bar-compact.md 11), which it stays.
+ * rest (docs/design/design-v1-bar-compact.md 11), which it stays.
  */
 async function measureWindow(sweep: Sweep, page: Page, screen: string, bar: Locator, headers: HeaderPlace[], groupLine: boolean): Promise<void> {
   if ((await bar.getAttribute("data-bar-state")) === "expanded") {
@@ -694,7 +694,7 @@ async function measureWindow(sweep: Sweep, page: Page, screen: string, bar: Loca
 }
 
 /**
- * The toolbar's menu of tool tiles where it has one (docs/design-v1-tool-options.md
+ * The toolbar's menu of tool tiles where it has one (docs/design/design-v1-tool-options.md
  * 5.1 and 5.2): Setup tools on the phone layout, Tools in the pair, whose
  * second button opens it once its own tool is active.
  */
@@ -725,7 +725,7 @@ async function toolMenuScreen(sweep: Sweep, page: Page): Promise<void> {
 
 /**
  * The shortcut sheet's Toolbar section, whose row for the tool's key grew
- * with the tool cycle (docs/design-v1-tool-cycle.md 7). No other file
+ * with the tool cycle (docs/design/design-v1-tool-cycle.md 7). No other file
  * measures the sheet.
  */
 async function shortcutSheetScreen(sweep: Sweep, page: Page): Promise<void> {
@@ -957,7 +957,7 @@ async function dmScreens(sweep: Sweep, page: Page, size: Size): Promise<void> {
       await sweep.measure(page, screen, thorn.locator("[data-damage-summary]"));
     }
     await thorn.getByLabel("HP change", { exact: true }).fill("");
-    // An upright phone's bar expanded from the strip, whole (docs/design-v1-bar-compact.md 5), as measureWindow leaves it.
+    // An upright phone's bar expanded from the strip, whole (docs/design/design-v1-bar-compact.md 5), as measureWindow leaves it.
     if ((await thorn.getAttribute("data-bar-state")) === "expanded") await sweep.measure(page, "window-expanded", thorn);
     const attach = await barControl(thorn, "Attach");
     await attach.click();
@@ -1009,7 +1009,7 @@ async function dmScreens(sweep: Sweep, page: Page, size: Size): Promise<void> {
   await escapeAll(page);
   await resetThorn();
 
-  // A dying Thorn's strip, Crit in its quick row where it fits (docs/design-v1-bar-compact.md 3.3), on the upright phones the design measured. The row is the strip's content, measured wherever the strip draws one.
+  // A dying Thorn's strip, Crit in its quick row where it fits (docs/design/design-v1-bar-compact.md 3.3), on the upright phones the design measured. The row is the strip's content, measured wherever the strip draws one.
   if (PHONE_ROOTS.has(size.name)) {
     await ops.send({ t: "actor.hp", target: { characterId: run.ids.thornChar }, change: { kind: "damage", amount: 30 } });
     await waitFor("Thorn at 0 HP", () => (dmSocket.state?.characters[run.ids.thornChar]?.actor.hp.cur === 0 ? true : null));
@@ -1060,12 +1060,12 @@ async function openPanelOf(page: Page, title: string): Promise<Locator> {
   return sheet;
 }
 
-/** pv-a: the sizes where the sweep measures the whole What players see section on a per-player scene, as docs/design-v1-per-player-vision.md 11 asks. */
+/** pv-a: the sizes where the sweep measures the whole What players see section on a per-player scene, as docs/design/design-v1-per-player-vision.md 11 asks. */
 const VISION_SECTION_AT = new Set([...PHONE_ROOTS, "1440x900"]);
 
 /**
  * pv4: per-player vision's settings in What players see
- * (docs/design-v1-per-player-vision.md 7.1 and 11): the Sight row, and who
+ * (docs/design/design-v1-per-player-vision.md 7.1 and 11): the Sight row, and who
  * sees for themselves with Pat unticked, listed off, and asked about as the
  * DM unticks him. The scene is made per player with vision and fog off, so
  * nothing Pat sees changes, and whole party again after. At
@@ -1170,10 +1170,10 @@ async function previewWaitTextLines(words: Locator, scale: number, label: string
 }
 
 /**
- * pv4: View as a player's wait (docs/design-v1-per-player-vision.md 7.4
+ * pv4: View as a player's wait (docs/design/design-v1-per-player-vision.md 7.4
  * and 11): its socket is held unanswered (holdPreviews), so "Loading
  * what Pat sees…" stands, then closed, so it says it could not load, in
- * an alert with Try again (docs/design-v1-design-pass.md 4.4). Each time
+ * an alert with Try again (docs/design/design-v1-design-pass.md 4.4). Each time
  * its words' drawn size and fit are checked at `scale`.
  */
 async function previewWaitScreens(sweep: Sweep, page: Page, scale: number): Promise<void> {
@@ -1351,7 +1351,7 @@ async function rollMenuScreen(sweep: Sweep, page: Page, screen: string, button: 
 }
 
 /**
- * The dice pass's roots on Pat's page (docs/design-v1-dice-pass.md 11.3):
+ * The dice pass's roots on Pat's page (docs/design/design-v1-dice-pass.md 11.3):
  * his creatures' tabs across the card, Thorn's wolf picked, its card, and
  * every group of its options unfolded. The wolf joins Pat's creatures for
  * these screens only, so no other screen meets it.
@@ -1409,7 +1409,7 @@ async function patDiceScreens(sweep: Sweep, page: Page): Promise<void> {
 }
 
 /**
- * The dice pass's roots on the DM's page (docs/design-v1-dice-pass.md 11.3):
+ * The dice pass's roots on the DM's page (docs/design/design-v1-dice-pass.md 11.3):
  * an Adult Black Dragon's roll modes, card and every group unfolded,
  * Recent rolls, the sticky line after a roll, three selected with their
  * card and groups, and the notice of a group save left open. The dragon
@@ -1487,7 +1487,7 @@ async function dmDiceScreens(sweep: Sweep, page: Page): Promise<void> {
   }
 }
 
-// ------------------------------------------------------------ the combat controls (docs/design-v1-combat-controls.md 9)
+// ------------------------------------------------------------ the combat controls (docs/design/design-v1-combat-controls.md 9)
 
 const RED_DRAGON = "Adult Red Dragon";
 /** The troll's cells, in the board's corner, clear of the traps and the dragon. */
@@ -1849,7 +1849,7 @@ async function dmCombatScreens(sweep: Sweep, page: Page): Promise<void> {
     await closeBar(dragon.bar);
   } else await sweep.missing(page, "cu-bar-drawer", "a tap on the dragon opened no window");
 
-  // The dragon's Uses in its Token panel, each count as pips at its title line's right end (docs/design-v1-monster-uses.md 3.1).
+  // The dragon's Uses in its Token panel, each count as pips at its title line's right end (docs/design/design-v1-monster-uses.md 3.1).
   const dragonBar = await selectToken(page, RED_DRAGON, { x: DRAGON_AT.x + 1, y: DRAGON_AT.y + 1 });
   if (dragonBar) {
     await (await barControl(dragonBar, "Details")).click();
@@ -2233,7 +2233,7 @@ async function patScreens(sweep: Sweep, page: Page, size: Size): Promise<void> {
   await setWall(false);
   await resetThorn();
 
-  // Pat's strip after his own move, Undo move in Roll's place where it fits (docs/design-v1-bar-compact.md 3.3), on the upright phones the design measured. The row is the strip's content, measured wherever the strip draws one.
+  // Pat's strip after his own move, Undo move in Roll's place where it fits (docs/design/design-v1-bar-compact.md 3.3), on the upright phones the design measured. The row is the strip's content, measured wherever the strip draws one.
   if (PHONE_ROOTS.has(size.name)) {
     // A cell south, which no other token takes: dropped on the warhorse's cell, Thorn's release could land on the warhorse wherever the map's hit areas are drawn late, as on a slow runner, so nothing was selected, and the tap after it opened the warhorse.
     const start = await pagePoint(page, BOUNDS, { x: 5.5, y: 5.5 });
@@ -2270,16 +2270,16 @@ async function patScreens(sweep: Sweep, page: Page, size: Size): Promise<void> {
 
 /**
  * Drawn cases for the helper itself: each shape the polish pass found
- * (docs/design-v1-polish.md 1), and the shape its fix gives (section 2),
+ * (docs/design/design-v1-polish.md 1), and the shape its fix gives (section 2),
  * so the helper is shown to catch the one and pass the other without the
  * app. Each case is a root of its own, named by `data-case`. The doctype
  * lays them out in standards mode, as the app is: in quirks mode a line
  * that holds only a lowered span does not grow, so its words never move.
  */
-// ------------------------------------------------------------ the second icon pass (docs/design-v1-icons-2.md 15)
+// ------------------------------------------------------------ the second icon pass (docs/design/design-v1-icons-2.md 15)
 
 /**
- * The second icon pass's sizes (docs/design-v1-icons-2.md 1): the 130%
+ * The second icon pass's sizes (docs/design/design-v1-icons-2.md 1): the 130%
  * phones, an upright phone at 115% and 85%, and a computer at 100%, 115%
  * and 85%. Touch ones first, so the DM's touch context closes before the
  * mouse one opens.
@@ -2317,7 +2317,7 @@ async function ic2Start(): Promise<void> {
   await ops.send({ t: "character.update", characterId: run.ids.wrenChar, patch: { level: 4, knownForms: ["wolf", "brown-bear", "giant-spider", "riding-horse"], stats: stats(16) } });
   await ops.send({ t: "token.create", token: { id: run.ids.wren, sceneId: run.sceneId, size: "medium", visibility: "all", kind: "pc", name: "Wren", ...WREN_AT, disposition: "ally", actor: { ref: run.ids.wrenChar } } });
   await ops.send({ t: "actor.effect.add", target: { characterId: run.ids.wrenChar }, effect: { id: randomUUID(), key: "exhaustion", level: 2 } });
-  // A chip with no number, which draws its art (docs/design-v1-icons-2.md 4).
+  // A chip with no number, which draws its art (docs/design/design-v1-icons-2.md 4).
   await ops.send({ t: "actor.effect.add", target: { characterId: run.ids.wrenChar }, effect: { id: randomUUID(), key: "poisoned" } });
   await ops.send({ t: "token.update", tokenId: run.ids.goblin, patch: { visibility: "dm", locked: true, nameHidden: true } });
   // The goblin's turn comes at every size for the alert lines, and must leave it hidden.
@@ -2395,8 +2395,8 @@ async function groupOverflowLines(root: Locator, at: string, screen: string): Pr
  * Each group header's name on one line, a folded summary on its name's
  * line and cut only at its 4em floor or wider, since words fewer than the
  * floor show whole in less, and, where `actionInline`, every header's
- * action on its name's line (docs/design-v1-icons-2.md 3.3 and 5,
- * docs/design-v1-design-pass.md 4.1): lines naming each header that breaks
+ * action on its name's line (docs/design/design-v1-icons-2.md 3.3 and 5,
+ * docs/design/design-v1-design-pass.md 4.1): lines naming each header that breaks
  * a rule.
  */
 async function groupHeaderLines(panel: Locator, at: string, screen: string, actionInline: boolean): Promise<string[]> {
@@ -2438,7 +2438,7 @@ async function groupHeaderLines(panel: Locator, at: string, screen: string, acti
         const cut = summary.scrollWidth > summary.clientWidth || summary.getAttribute("data-summary-cut") !== null;
         if (cut && width < floor - 0.5) out.push(`${label}: its summary is cut at ${width.toFixed(1)} px, under its ${floor.toFixed(1)} px floor`);
       }
-      // A summary wraps under its name only where the name and its floor cannot share the row (docs/design-v1-design-pass.md 4.1): never a token panel's.
+      // A summary wraps under its name only where the name and its floor cannot share the row (docs/design/design-v1-design-pass.md 4.1): never a token panel's.
       if (summary && summary.getBoundingClientRect().top >= name.getBoundingClientRect().bottom - 0.5) out.push(`${label}: its summary wrapped under its name`);
       const heading = fold?.parentElement;
       const action = heading?.nextElementSibling ?? null;
@@ -2466,7 +2466,7 @@ async function groupHeaderLines(panel: Locator, at: string, screen: string, acti
 /**
  * Measures a part drawn with and without its lead, the icon before its
  * words: its height and its words' lines must match, so the icon grew
- * nothing (docs/design-v1-icons-2.md 15). The lead goes and comes back in
+ * nothing (docs/design/design-v1-icons-2.md 15). The lead goes and comes back in
  * one task, so the page never paints without it.
  */
 async function sameWithoutLead(part: Locator, lead: string, words: string): Promise<{ with: { h: number; lines: number }; without: { h: number; lines: number } } | null> {
@@ -2495,7 +2495,7 @@ async function sameWithoutLead(part: Locator, lead: string, words: string): Prom
   );
 }
 
-/** The sizes a chip's box keeps (docs/design-v1-icons-2.md 4): 20 x 18 at 100%, at most as wide where it holds letters. */
+/** The sizes a chip's box keeps (docs/design/design-v1-icons-2.md 4): 20 x 18 at 100%, at most as wide where it holds letters. */
 async function chipLines(chips: Locator, at: string, screen: string): Promise<string[]> {
   const boxes = await chips.evaluateAll((els) =>
     els.map((el) => {
@@ -2516,7 +2516,7 @@ async function chipLines(chips: Locator, at: string, screen: string): Promise<st
   return out;
 }
 
-/** The side panel's tab row at a computer's size: one line, each tab 44 px, no name cut (docs/design-v1-icons-2.md 15). */
+/** The side panel's tab row at a computer's size: one line, each tab 44 px, no name cut (docs/design/design-v1-icons-2.md 15). */
 async function tabRowLines(page: Page, at: string): Promise<string[]> {
   const row = await page.getByRole("tablist", { name: "Panels" }).evaluate((list) => {
     type El = { scrollWidth: number; clientWidth: number; getAttribute(n: string): string | null; querySelectorAll(s: string): ArrayLike<El>; getBoundingClientRect(): { top: number; height: number }; textContent: string | null; currentCSSZoom?: number };
@@ -2538,7 +2538,7 @@ async function tabRowLines(page: Page, at: string): Promise<string[]> {
   return out;
 }
 
-/** The pass's screens at one size, the DM's (docs/design-v1-icons-2.md 15). */
+/** The pass's screens at one size, the DM's (docs/design/design-v1-icons-2.md 15). */
 async function ic2Screens(sweep: Sweep, page: Page, size: Size, scale: number): Promise<void> {
   const wide = size.width / scale >= 900;
   const at = sweep.at;
@@ -2687,7 +2687,7 @@ async function ic2PlainGroups(sweep: Sweep, page: Page): Promise<void> {
  * lead and its close than as it was drawn before the pass: no lead, and
  * Dismiss in words, as wide as a small button with those words. The x
  * leaves the words more room than Dismiss did, and the lead takes some of
- * it back (docs/design-v1-icons-2.md 4).
+ * it back (docs/design/design-v1-icons-2.md 4).
  */
 async function ic2Line(sweep: Sweep, page: Page, line: Locator, screen: string): Promise<void> {
   const both = await line.evaluate((el) => {
@@ -3479,7 +3479,7 @@ export function helperTest(): void {
    * a page of its own that scrolls, so a root inside it is held against
    * the whole page. Each rule's shape as the audit found it fails, the
    * shape its fix leaves passes, and each exemption passes
-   * (docs/design-v1-spacing-pass.md 6).
+   * (docs/design/design-v1-spacing-pass.md 6).
    */
   test("sp-0. the spacing helper on drawn cases: names over cards, a field's label, section labels and their rows, settings sections and headings fail as the audit found them and pass as fixed, the exemptions pass, and a root with no scroller is measured alone, at 100% and 130%", async () => {
     const page = await dmContext.newPage();
@@ -3903,7 +3903,7 @@ async function noMarks(sweep: Sweep, page: Page, screen: string, root: Locator, 
 async function saveOutlines(sweep: Sweep, page: Page, screen: string, root: Locator, want: readonly string[]): Promise<void> {
   const grid = root.locator("[data-ability-grid]").first();
   await grid.waitFor();
-  // A rolling grid's boxes carry the abbreviation in a data-marked span, a text grid's in a dt (docs/design-v1-stat-block-rolls.md 3.1).
+  // A rolling grid's boxes carry the abbreviation in a data-marked span, a text grid's in a dt (docs/design/design-v1-stat-block-rolls.md 3.1).
   const outlined = (await grid.locator(":scope > [data-save-proficient] :is(dt, [data-ability-abbr])").allTextContents()).map((t) => t.trim().toUpperCase());
   assert.deepEqual(outlined, want, `fl15: ${sweep.at} ${screen} outlines the boxes of its proficient saves`);
   await sweep.add(page, `fl15-${screen}`, await saveOutlineLines(page, root, `${sweep.at} fl15-${screen}`, want.length > 0));
@@ -4431,7 +4431,7 @@ export function proficiencyTests(): void {
         assert.match(await lines("border"), /words stand 1\.\d\d px from where a plain box's do/, "a border moves the words in");
         assert.match(await lines("none-here"), /no outlined ability box/, "a check that finds nothing to check fails");
       }
-      // sbr: the same grid while it rolls (docs/design-v1-stat-block-rolls.md 3.1), its boxes buttons whose three lines carry data attributes and whose spoken words are the label.
+      // sbr: the same grid while it rolls (docs/design/design-v1-stat-block-rolls.md 3.1), its boxes buttons whose three lines carry data attributes and whose spoken words are the label.
       const rolling = (key: string, style: string, opts: { label: string; marked?: boolean; bold?: boolean }) =>
         `<button type="button" aria-label="${opts.label}" ${opts.marked ? "data-save-proficient" : ""} style="display:block;width:100%;text-align:left;font:inherit;color:inherit;border:0;padding:4px 8px;border-radius:6px;background:#2a2a32;line-height:1.2;${style}"><span data-ability-abbr style="display:block;font-size:11px;font-weight:700;color:#a7a5ad">${key}</span><span data-ability-score style="display:block;white-space:nowrap"><strong style="font-size:16px">10</strong> <span style="color:#a7a5ad">+0</span></span><span data-ability-save style="display:block;font-size:13px;white-space:nowrap${opts.bold ? ";font-weight:700" : ""}"><span style="color:#a7a5ad">Save </span>+4</span></button>`;
       const rollingGrid = (id: string, dex: string) => `<div id="${id}" style="width:330px;margin:0 0 24px"><div data-ability-grid role="group" aria-label="Abilities" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px">${rolling("STR", "", { label: "Strength 10, +0, save +0" })}${dex}${rolling("CON", "", { label: "Constitution 10, +0, save +0" })}</div></div>`;
@@ -4539,7 +4539,7 @@ export function proficiencyTests(): void {
   }
 }
 
-/** Lane B's marker for the result line under a rolling grid (docs/design-v1-stat-block-rolls.md 8). */
+/** Lane B's marker for the result line under a rolling grid (docs/design/design-v1-stat-block-rolls.md 8). */
 const BLOCK_RESULT = "[data-block-result]";
 
 /** The block of a token's panel, open: the token selected by a tap on its cell, as proficiencyToken opens it. */
@@ -4586,7 +4586,7 @@ type BlockRollsAt = {
 };
 
 /**
- * The stat block rolls' screens in `root` (docs/design-v1-stat-block-rolls.md 9),
+ * The stat block rolls' screens in `root` (docs/design/design-v1-stat-block-rolls.md 9),
  * all required: the grid closed, its list open, one roll's options in the
  * same popover, and the result line after a roll. A rolling grid that is
  * not there, a list that does not open and a result that does not land are
@@ -4658,7 +4658,7 @@ async function blockRollScreens(sweep: Sweep, page: Page, screen: string, root: 
 }
 
 /**
- * The stat block rolls' alignment roots (docs/design-v1-stat-block-rolls.md 9),
+ * The stat block rolls' alignment roots (docs/design/design-v1-stat-block-rolls.md 9),
  * run by proficiency.e2e.ts after the FL-7 fixtures it makes: the PC's sheet
  * in the token panel and on the character page, a monster's block, a
  * companion's and Wild Shape's creature block, at the sweep's six sizes and
@@ -5045,7 +5045,7 @@ export function combatSmallTest(): void {
 
 /** pl3-b14: the scrolling strip. */
 export function restScrollsTest(): void {
-  test(`pl3-b${SIZE_STEPS + 2}. the scrolling strip at its top and after Scroll for more, at 375 x 667 with a roll card and in 320 x 440 and 320 x 360 windows at 130%, within ${LIMIT_PX} px (docs/design-v1-bar-compact.md 5.4)`, async () => {
+  test(`pl3-b${SIZE_STEPS + 2}. the scrolling strip at its top and after Scroll for more, at 375 x 667 with a roll card and in 320 x 440 and 320 x 360 windows at 130%, within ${LIMIT_PX} px (docs/design/design-v1-bar-compact.md 5.4)`, async () => {
     const sweep = new Sweep("rest-scrolls");
     try {
       // No fight, whose turn band would leave these windows too short for the strip.
@@ -5120,7 +5120,7 @@ export function iconPassTests(): void {
 
   for (const [i, { size, scale }] of IC2_AT.entries()) {
     const at = `ic2-${size.name}-${Math.round(scale * 100)}`;
-    test(`ic2-b${i + 1}. at ${size.width} x ${size.height} at ${Math.round(scale * 100)}%: the pass's icons draw no new line, row or cut, within ${LIMIT_PX} px (docs/design-v1-icons-2.md 15)`, async () => {
+    test(`ic2-b${i + 1}. at ${size.width} x ${size.height} at ${Math.round(scale * 100)}%: the pass's icons draw no new line, row or cut, within ${LIMIT_PX} px (docs/design/design-v1-icons-2.md 15)`, async () => {
       const sweep = new Sweep(at);
       const page = await dmPageFor(size);
       page.setDefaultTimeout(10_000);
@@ -5324,7 +5324,7 @@ export function fu30Tests(): void {
     assert.deepEqual(lines, [], "the summary lines out of line");
   });
 
-  test(`fu30-c. the D&D Beyond review with class resources, 14 read and 12 kept, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, its Class resources group folded and open, within ${LIMIT_PX} px (docs/design-v1-ddb-resources.md 6.3, DDBRES-ALIGN)`, async () => {
+  test(`fu30-c. the D&D Beyond review with class resources, 14 read and 12 kept, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, its Class resources group folded and open, within ${LIMIT_PX} px (docs/design/design-v1-ddb-resources.md 6.3, DDBRES-ALIGN)`, async () => {
     // Thorn linked to D&D Beyond, whose answer Pat's page gets from here: no request leaves the machine.
     await ops.send({ t: "character.update", characterId: run.ids.thornChar, patch: { actor: { sheetUrl: ddbSheetUrl(DDB_THORN) } } });
     await pat.route("**/api/rooms/*/ddb-import", (route) => route.fulfill({ status: 200, json: { fill: readDdbCharacter(ddbThorn()) } }));
@@ -5492,7 +5492,7 @@ async function summaryScreen(sweep: Sweep, page: Page, c: { name: string; tap: {
   const bar = await selectToken(page, c.name, c.tap);
   if (!bar) return sweep.missing(page, screen, `a tap on ${c.name} opened no window`);
   await expandBar(bar);
-  // A short bar keeps speed, Passive Perception and the saves in More stats (docs/design-v1-token-panel.md 3.3).
+  // A short bar keeps speed, Passive Perception and the saves in More stats (docs/design/design-v1-token-panel.md 3.3).
   const more = bar.getByRole("button", { name: "More stats", exact: true });
   if ((await visible(more)) && (await more.getAttribute("aria-expanded")) !== "true") await more.click();
   if (c.saves && !(await showsWithin(bar.locator("[data-saves]").first(), 10_000))) await sweep.missing(page, screen, `${c.name}'s saves never showed`);
@@ -5778,7 +5778,7 @@ async function builderScreens(sweep: Sweep, page: Page): Promise<void> {
   await pickOption(page, "Map builder", "Builder mode", "Brush");
   const chip = bar.getByRole("button", { name: /^Builder mode: Brush/ });
   await chip.waitFor();
-  // By the chips' glyph rule (docs/design-v1-tool-options.md 6.2) the icon is the first thing to give way in a short row, so only the wide window's row must show it.
+  // By the chips' glyph rule (docs/design/design-v1-tool-options.md 6.2) the icon is the first thing to give way in a short row, so only the wide window's row must show it.
   const iconed = (await chip.locator("svg").count()) >= 2;
   if (!iconed && sweep.at.startsWith("1440x900")) await sweep.missing(page, "fu32-builder-row", "the mode chip shows no icon beside its caret");
   await sweep.measure(page, "fu32-builder-row", bar);
@@ -5853,13 +5853,13 @@ export function fu32Tests(): void {
 }
 
 /*
- * This device's Sheet handle (docs/design-v1-sheet-swipe.md 4.8): the
+ * This device's Sheet handle (docs/design/design-v1-sheet-swipe.md 4.8): the
  * Menu's This device row, whose detail names it among the page's settings,
  * and the section with its help, the select and the preview under it, at
  * FU30_AT's sizes. Neither was in a sweep before (GRAB-ALIGN).
  */
 export function grabberTests(): void {
-  test(`grab-e. the Menu's This device row, its detail whole with no word alone on its last line, and This device's Sheet handle section, its help, select and preview, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px (docs/design-v1-sheet-swipe.md 4.8)`, async () => {
+  test(`grab-e. the Menu's This device row, its detail whole with no word alone on its last line, and This device's Sheet handle section, its help, select and preview, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px (docs/design/design-v1-sheet-swipe.md 4.8)`, async () => {
     const lines: string[] = [];
     for (const at of FU30_AT) {
       const sweep = new Sweep(atName(at));
@@ -5926,7 +5926,7 @@ async function cryptScene(): Promise<string> {
   return id;
 }
 
-/** The crypt on hex rows (docs/design-v1-hex-grids.md section 8): its Grid shape, its Size row's hexes and its map's grid row on hexes. */
+/** The crypt on hex rows (docs/design/design-v1-hex-grids.md section 8): its Grid shape, its Size row's hexes and its map's grid row on hexes. */
 let hexCryptId: string | null = null;
 
 async function hexCryptScene(crypt: string): Promise<string> {
@@ -5948,7 +5948,7 @@ async function viewScene(panel: Locator, sceneId: string): Promise<void> {
 }
 
 /*
- * ms2-a: the scene settings page (docs/design-v1-map-discovery.md 8.4 and
+ * ms2-a: the scene settings page (docs/design/design-v1-map-discovery.md 8.4 and
  * 9), and every other page that shows the shared radio cards
  * (components/RadioCards.tsx), at FU30_AT's sizes. The page on
  * the players' scene as it opens, which starts the groups as 8.4 says,
@@ -5959,7 +5959,7 @@ async function viewScene(panel: Locator, sceneId: string): Promise<void> {
  * folded a group.
  */
 export function sceneSettingsTests(): void {
-  test(`ms2-a. the scene settings page as it opens, every group folded and every group open, the map image's question, a map scene's phases with one in edit, Room settings, This device's Map detail and Show a handout, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px (docs/design-v1-map-discovery.md 8.4 and 9)`, async () => {
+  test(`ms2-a. the scene settings page as it opens, every group folded and every group open, the map image's question, a map scene's phases with one in edit, Room settings, This device's Map detail and Show a handout, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px (docs/design/design-v1-map-discovery.md 8.4 and 9)`, async () => {
     await newDmSession();
     const crypt = await cryptScene();
     const lines: string[] = [];
@@ -5989,7 +5989,7 @@ export function sceneSettingsTests(): void {
           if ((await fold.getAttribute("aria-expanded")) === "true") await fold.click();
         }
         await sweep.measure(page, "scene-settings-folded", panel);
-        // Each folded group's header with its summary, on the name's line or under it (docs/design-v1-design-pass.md 4.1).
+        // Each folded group's header with its summary, on the name's line or under it (docs/design/design-v1-design-pass.md 4.1).
         await sweep.measure(page, "scene-groups-folded", panel.locator("[data-panel-group] > div:first-child"));
         await shots.take(page, `alignment-${sweep.at}-scene-settings-folded`);
         for (const group of SCENE_GROUP_NAMES) await openSceneGroup(panel, group);
@@ -6086,14 +6086,14 @@ export function sceneSettingsTests(): void {
   });
 
   /*
-   * hx4-a: a hex scene's settings (docs/design-v1-hex-grids.md section 8),
+   * hx4-a: a hex scene's settings (docs/design/design-v1-hex-grids.md section 8),
    * the crypt's map on hex rows, every group open: Grid shape, the Size row
    * in feet steps with the hexes it holds, and Find the grid and counting
    * off with their reasons. Then Room settings, which name squares or hexes
    * once the room holds a hex scene. A session of its own, since ms2-a's
    * scene switches fill one session's snapshot budget.
    */
-  test(`hx4-a. a hex scene's settings, every group open, and Room settings in a room with hexes, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px (docs/design-v1-hex-grids.md section 8)`, async () => {
+  test(`hx4-a. a hex scene's settings, every group open, and Room settings in a room with hexes, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px (docs/design/design-v1-hex-grids.md section 8)`, async () => {
     await newDmSession();
     const hexCrypt = await hexCryptScene(await cryptScene());
     const lines: string[] = [];
@@ -6176,7 +6176,7 @@ async function detailLines(row: Locator, ending: string): Promise<{ found: boole
 }
 
 /*
- * The isometric view's choice (docs/design-v1-isometric-view.md 8): the
+ * The isometric view's choice (docs/design/design-v1-isometric-view.md 8): the
  * top bar with the View button, the View menu in both views, and Scene
  * settings' Suggested view, at FU30_AT's sizes.
  */
@@ -6233,7 +6233,7 @@ async function viewNameWhole(root: Locator, at: string): Promise<string[]> {
 
 /** iso5-a, the last screen check in alignment-settings.e2e.ts, before its console check. */
 export function isoChoiceTests(): void {
-  test(`iso5-a. the top bar with the View button, for the DM and for Pat, or the room menu's View row where the bar folds it, the View menu in Top-down and in Isometric, and Scene settings' Suggested view, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px (docs/design-v1-isometric-view.md 8)`, async () => {
+  test(`iso5-a. the top bar with the View button, for the DM and for Pat, or the room menu's View row where the bar folds it, the View menu in Top-down and in Isometric, and Scene settings' Suggested view, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px (docs/design/design-v1-isometric-view.md 8)`, async () => {
     await newDmSession();
     if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
     const lines: string[] = [];
@@ -6286,7 +6286,7 @@ export function isoChoiceTests(): void {
       await menu.getByRole("radio", { name: "Follow the scene" }).check();
       await close();
       const scenes = await openDmPanel(page, "Scenes");
-      // A phone starts the Size and view group folded (docs/design-v1-map-discovery.md 8.4).
+      // A phone starts the Size and view group folded (docs/design/design-v1-map-discovery.md 8.4).
       await openSceneGroup(scenes, "Size and view");
       const row = scenes.getByRole("radiogroup", { name: "Suggested view" }).locator("xpath=../..");
       await row.scrollIntoViewIfNeeded();
@@ -6306,7 +6306,7 @@ export function isoChoiceTests(): void {
 
 /*
  * Map discovery's builder note and forget question
- * (docs/design-v1-map-discovery.md 9): the Map builder's row with the note
+ * (docs/design/design-v1-map-discovery.md 9): the Map builder's row with the note
  * it shows while the party sees the cells being built, on a lit scene with
  * fog and party vision on where Pat's scout stands, and the question a
  * change asks before it runs past what players' remembered map keeps, at
@@ -6328,7 +6328,7 @@ async function dmOnScene(page: Page, sceneId: string): Promise<void> {
 }
 
 export function md4Tests(): void {
-  test(`md4-a. the Map builder's row with its note that the party sees where the DM builds, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px (docs/design-v1-map-discovery.md 9)`, async () => {
+  test(`md4-a. the Map builder's row with its note that the party sees where the DM builds, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px (docs/design/design-v1-map-discovery.md 9)`, async () => {
     await newDmSession();
     if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
     const cave = randomUUID();
@@ -6385,7 +6385,7 @@ export function md4Tests(): void {
     withinSnapshotBudget("md4-a");
   });
 
-  test(`md4-b. the forget question, asked before Clear build clears a cavern the party saw past what players' remembered map can keep, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px, Escape answering no and the build left whole (docs/design-v1-map-discovery.md 9)`, async () => {
+  test(`md4-b. the forget question, asked before Clear build clears a cavern the party saw past what players' remembered map can keep, at 1440 x 900, 390 x 844 and 320 x 568 at 100% and 130%, within ${LIMIT_PX} px, Escape answering no and the build left whole (docs/design/design-v1-map-discovery.md 9)`, async () => {
     await newDmSession();
     if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
     const cavern = randomUUID();
@@ -6524,7 +6524,7 @@ export function undoScopeAlignmentTests(names: readonly string[]): void {
   }
 }
 
-/** The short landscape screens the design checks at 130% alone, for controls behind alerts or toasts (docs/design-v1-undo-scope.md 8). */
+/** The short landscape screens the design checks at 130% alone, for controls behind alerts or toasts (docs/design/design-v1-undo-scope.md 8). */
 const SAVE_LANDSCAPE = new Set(["844x390", "480x320"]);
 
 /**
@@ -6562,7 +6562,7 @@ async function heldFrames(page: Page): Promise<SocketHold> {
 let saveSweepSession = false;
 
 /**
- * The group save page's lifecycle states (docs/design-v1-undo-scope.md 5
+ * The group save page's lifecycle states (docs/design/design-v1-undo-scope.md 5
  * and 8), on a Scything Door springing whose save Pat answers for Thorn:
  * Apply waiting for its confirmed status, reopened by Undo from another of
  * the DM's devices, relocked by Redo, Ask again waiting for the server,
@@ -6808,7 +6808,7 @@ type LogBlackoutFixture = {
   release(index: number): Promise<void>;
 };
 
-/** The sizes where the sweep measures the Log's history, its export sheet and the admin Rooms card (docs/design-v1-log-history.md 5.4). */
+/** The sizes where the sweep measures the Log's history, its export sheet and the admin Rooms card (docs/design/design-v1-log-history.md 5.4). */
 const LOG_AT = new Set(["390x844", "320x568", "1440x900"]);
 
 /** New tabs inherit the context's original size, even after its room tab was resized. */
@@ -6819,7 +6819,7 @@ async function openAdminAt(page: Page, size: { width: number; height: number }):
   await page.goto(`${server.origin}/admin`);
 }
 
-/** A page of `archive` by the rules of GET /log (docs/design-v1-log-history.md 2.2): exclusive bounds, oldest first. */
+/** A page of `archive` by the rules of GET /log (docs/design/design-v1-log-history.md 2.2): exclusive bounds, oldest first. */
 function archivePage(archive: readonly { id: string }[], q: URLSearchParams): { entries: unknown[]; nextBefore: string | null; nextAfter: string | null } {
   const limit = Number(q.get("limit") ?? 50);
   const index = (id: string) => archive.findIndex((e) => e.id === id);
@@ -6841,7 +6841,7 @@ function archivePage(archive: readonly { id: string }[], q: URLSearchParams): { 
 }
 
 /**
- * logc: the Log's history and its export (docs/design-v1-log-history.md
+ * logc: the Log's history and its export (docs/design/design-v1-log-history.md
  * 5.4). The live Log, a page on its way, a window parted from the live log
  * with Show newer and Back to latest, a newer page that failed, the export
  * sheet finding its sessions, with Older sessions and a file too large to

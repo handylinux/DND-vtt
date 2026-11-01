@@ -377,7 +377,7 @@ describe("a room whose replay failed", () => {
     }
   });
 
-  test("a room at its storage quota still takes a Withdraw and a Dismiss of an ask for saves, but no new ask (docs/design-v1-player-save-spell.md 5.4)", async () => {
+  test("a room at its storage quota still takes a Withdraw and a Dismiss of an ask for saves, but no new ask (docs/design/design-v1-player-save-spell.md 5.4)", async () => {
     const dm = member("DM", "dm");
     const pc = member("Thorn's player", "player");
     const { state, tokenId } = roomWithGoblin(dm);
@@ -555,7 +555,7 @@ describe("op admission", () => {
   });
 });
 
-describe("handout pages (docs/design-v1-pdf-handouts.md 3.1)", () => {
+describe("handout pages (docs/design/design-v1-pdf-handouts.md 3.1)", () => {
   /** A room with two handout images and a map, by id. */
   function handoutRoom() {
     const dm = member("DM", "dm");
@@ -624,7 +624,7 @@ describe("handout pages (docs/design-v1-pdf-handouts.md 3.1)", () => {
     }
   });
 
-  test("a room at its storage quota deletes a document but saves none (docs/design-v1-pdf-handouts.md 3.3)", async () => {
+  test("a room at its storage quota deletes a document but saves none (docs/design/design-v1-pdf-handouts.md 3.3)", async () => {
     const { dm, ids, db } = handoutRoom();
     db.snapshot.state.handoutDocs.d1 = { id: "d1", rev: 0, title: "Strange letter", pages: [page(ids.first, 1584, 2048)], createdAt: new Date().toISOString() };
     const actor = await RoomActor.load(deps(db, { readOnly: true }));
@@ -1359,7 +1359,7 @@ describe("an area's damage", () => {
   });
 });
 
-describe("pit traps' walls counted ahead in the limits step (docs/design-v1-traps.md 6.7)", () => {
+describe("pit traps' walls counted ahead in the limits step (docs/design/design-v1-traps.md 6.7)", () => {
   test("a pit trap that would take a vision scene past its sight pieces is refused when made, and one without a pit never counts", async () => {
     const dm = member("DM", "dm");
     const state = createInitialState({ roomName: "Pits", dm });
@@ -1829,7 +1829,7 @@ function changedKeys(sent: ServerMessage[], from = 0): string[] {
   return sent.slice(from).flatMap((m) => (m.t === "ev" ? m.changes.map((c) => c.key) : []));
 }
 
-describe("the explore step (docs/design-v1-maps-vision.md 4.3.3)", () => {
+describe("the explore step (docs/design/design-v1-maps-vision.md 4.3.3)", () => {
   test("a move stores what the party explored right after it, in the same batch, and replay rebuilds the layer as stored", async () => {
     const dm = member("DM", "dm");
     const player = member("Ayla", "player");
@@ -1984,12 +1984,12 @@ async function withRoom(
   }
 }
 
-describe("the explored layer's reserve at a reduced room limit (docs/design-v1-maps-vision.md 2.4)", () => {
+describe("the explored layer's reserve at a reduced room limit (docs/design/design-v1-maps-vision.md 2.4)", () => {
   test("explore spends only what was reserved, ordinary ops keep fitting around it, and moving players needs the new scene's reserve", async () => {
     const dm = member("DM", "dm");
     const player = member("Ayla", "player");
     const { state, sceneId, otherSceneId, pcId, goblinId } = darkRoom(dm, player);
-    // Room for the player scene's whole layer and players' memory of it (docs/design-v1-map-discovery.md 5.5) and a few
+    // Room for the player scene's whole layer and players' memory of it (docs/design/design-v1-map-discovery.md 5.5) and a few
     // hundred bytes of play, and not for a second scene's layer.
     const stateLimit = serializedBytes(state) + exploredReserve(state) + memoryStateReserve(state) + 600;
     assert.ok(exploredReserve({ ...state, meta: { ...state.meta, playerSceneId: otherSceneId } }) > 1_200);
@@ -2044,7 +2044,7 @@ describe("the explored layer's reserve at a reduced room limit (docs/design-v1-m
   });
 });
 
-describe("explore's growth under a scene ID that JSON escapes (docs/design-v1-maps-vision.md 2.4)", () => {
+describe("explore's growth under a scene ID that JSON escapes (docs/design/design-v1-maps-vision.md 2.4)", () => {
   test("the guard counts an explored tile's escaped key, so an edit right after explore that would pass the limit is refused", async () => {
     const dm = member("DM", "dm");
     const player = member("Ayla", "player");
@@ -2215,7 +2215,7 @@ describe("a turn ended from two places at once", () => {
   });
 });
 
-describe("the lit token light cap in the limits step (docs/design-v1-maps-vision.md 2.4)", () => {
+describe("the lit token light cap in the limits step (docs/design/design-v1-maps-vision.md 2.4)", () => {
   const refused = { code: "quota", message: "This scene already has 20 lit token lights." };
   const lit = { bright: 20, dim: 20 };
   const dmOf = (dm: Member) => ({ memberId: dm.id, role: "dm" as const });
@@ -2320,7 +2320,7 @@ describe("the lit token light cap in the limits step (docs/design-v1-maps-vision
   });
 });
 
-describe("every op's growth counts on the scenes it wrote into (docs/design-v1-dm-tools.md 2.4)", () => {
+describe("every op's growth counts on the scenes it wrote into (docs/design/design-v1-dm-tools.md 2.4)", () => {
   /** A DM, a player who owns the second goblin, and three goblins with inline actors on the player scene. */
   function goblins(dm: Member, player: Member): { state: RoomState; sceneId: string; ids: string[] } {
     const { state: start, tokenId } = roomWithGoblin(dm);
@@ -2413,7 +2413,7 @@ describe("every op's growth counts on the scenes it wrote into (docs/design-v1-d
   });
 });
 
-describe("companion stat blocks at the room actor (docs/design-v1-companion-stat-blocks.md 3.4 to 3.6)", () => {
+describe("companion stat blocks at the room actor (docs/design/design-v1-companion-stat-blocks.md 3.4 to 3.6)", () => {
   /** Bree, the player's character, with her token on the players' scene and one block. */
   function breeRoom(dm: Member, player: Member): { state: RoomState; characterId: string; pcId: string } {
     const state = createInitialState({ roomName: "Familiars", dm });
@@ -2559,7 +2559,7 @@ describe("companion stat blocks at the room actor (docs/design-v1-companion-stat
   });
 
   /*
-   * A character's own stat block (docs/design-v1-pc-stats.md 4.1) spends the same budget: a create carrying one, and an
+   * A character's own stat block (docs/design/design-v1-pc-stats.md 4.1) spends the same budget: a create carrying one, and an
    * update naming it, removing it included. An update of anything else is not counted.
    */
   const pcStats = (stats: object | null, characterId: string): Op => ({ t: "character.update", characterId, patch: { stats } as never });
@@ -2628,7 +2628,7 @@ describe("companion stat blocks at the room actor (docs/design-v1-companion-stat
   });
 
   /*
-   * A re-sync's record rides with the block (docs/design-v1-resync.md 4): a patch naming it with nothing of the block, as
+   * A re-sync's record rides with the block (docs/design/design-v1-resync.md 4): a patch naming it with nothing of the block, as
    * an Apply that changed only the level sends, spends one and is refused in the block's words.
    */
   const hex12 = (n: number) => n.toString(16).padStart(12, "0");
@@ -2697,7 +2697,7 @@ describe("companion stat blocks at the room actor (docs/design-v1-companion-stat
   });
 });
 
-describe("a player's undo of getting on and off (docs/design-v1-attach.md 8.3)", () => {
+describe("a player's undo of getting on and off (docs/design/design-v1-attach.md 8.3)", () => {
   test("Ride, then Undo move on the same turn, and Get off, then its undo, through the room actor's own steps", async () => {
     const dm = member("DM", "dm");
     const player = member("Ayla", "player");
@@ -2750,7 +2750,7 @@ describe("a player's undo of getting on and off (docs/design-v1-attach.md 8.3)",
   });
 });
 
-describe("traps in the actor (docs/design-v1-traps.md 6.5 and 6.7)", () => {
+describe("traps in the actor (docs/design/design-v1-traps.md 6.5 and 6.7)", () => {
   const plate = (sceneId: string, over: Partial<Trap["rig"]> = {}, x = 4): Trap => ({
     id: "plate",
     rev: 0,
@@ -3025,7 +3025,7 @@ describe("a hidden line never changes whether a player's op passes (design 10.5,
   });
 });
 
-describe("map discovery on the actor (docs/design-v1-map-discovery.md 5.3 and 6)", () => {
+describe("map discovery on the actor (docs/design/design-v1-map-discovery.md 5.3 and 6)", () => {
   /**
    * A 100 x 60 dark scene with fog and party vision on and walls stopping
    * moves, its party layer holding every cell from (0, 0) to (95, 47), and

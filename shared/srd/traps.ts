@@ -4,7 +4,7 @@ import type { DamageType } from "../rules/damage.ts";
 /**
  * The SRD 5.2.1's example traps (Gameplay Toolbox, "Traps", pages 199 to
  * 201, CC-BY-4.0, see NOTICE.md) as presets for the Trap tool
- * (docs/design-v1-traps.md Appendix A), each at the four party level bands
+ * (docs/design/design-v1-traps.md Appendix A), each at the four party level bands
  * its "At Higher Levels" table scales it to. The DCs, damage and triggers
  * are the SRD's, which scripts/srd-import.ts checks against its text, and
  * each note retells the rest of its entry. The players' lines and sounds

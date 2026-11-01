@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { checkThree, closure, staticImports, type Chunk } from "./three-chunk.ts";
 
-/** The post-build check of the dice chunk (docs/design-v1-roll-animation.md 6), on made-up builds. */
+/** The post-build check of the dice chunk (docs/design/design-v1-roll-animation.md 6), on made-up builds. */
 
 const THREE = "../../node_modules/.pnpm/three@0.160.0/node_modules/three/build/three.module.js";
 

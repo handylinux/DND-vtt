@@ -14,7 +14,7 @@ import { DM, P1, P2, deepClone } from "./testutil.ts";
 import { markFinished, markWritable } from "./writable.ts";
 
 /*
- * The map as players discover it (docs/design-v1-map-discovery.md 5.1 and
+ * The map as players discover it (docs/design/design-v1-map-discovery.md 5.1 and
  * 5.2, section 10's rows for the projection): what a player's chunks hold
  * of the build on a scene with fog on.
  */
@@ -422,7 +422,7 @@ describe("free walls on hexes (5.5, ASTRA-29, ASTRA-33)", () => {
     for (const gridShape of ["hexRows", "hexColumns"] as const) {
       for (const live of [true, false]) {
         const state = fogRoom({ vision: !live, bounds: { w: 24, h: 24 }, scene: { gridShape } });
-        // Hex columns are hex rows mirrored across the diagonal (docs/design-v1-hex-grids.md 4.1), so the wall is too, and its split lines are x = 8 and 12.
+        // Hex columns are hex rows mirrored across the diagonal (docs/design/design-v1-hex-grids.md 4.1), so the wall is too, and its split lines are x = 8 and 12.
         const w = gridShape === "hexRows" ? wall(state, "abcdefghijkl", [5.1875, 5.375], [1.203125, 12.296875]) : wall(state, "abcdefghijkl", [5.375, 5.1875], [12.296875, 1.203125]);
         const grid = sceneGrid(state.scenes.s1!) as HexGrid;
         const crossed = wallSpans(grid, w).map((span) => span.cell);

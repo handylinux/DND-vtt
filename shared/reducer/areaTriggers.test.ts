@@ -198,7 +198,7 @@ describe("area reminders", () => {
     state.templates.mb = template("mb", { shape: "cylinder", size: 5, height: 40, origin: { x: 8.5, y: 5.5, z: 0 }, spell: "Moonbeam", triggers: ["enter"] });
     fogged(state);
     const crossed = play(state, [move("g1", 2)]);
-    // Not seen, it crossed in the dark, and the Moonbeam's rays to it run through fog, so the line is the DM's alone (docs/design-v1-map-discovery.md decision 13).
+    // Not seen, it crossed in the dark, and the Moonbeam's rays to it run through fog, so the line is the DM's alone (docs/design/design-v1-map-discovery.md decision 13).
     assert.deepEqual(crossed.reminders, [{ type: "area", templateId: "mb", tokenId: "g1", trigger: "enter", area: "Moonbeam", hidden: true }], "not seen: it crossed in the dark");
     assert.equal(projectState(crossed.state, P2, { sceneId: "s1" }).log.filter((e) => e.data?.type === "area").length, 0);
 
@@ -319,7 +319,7 @@ describe("a move that is a leg of the turn's path and an entry into an area", ()
   });
 });
 
-describe("getting on and off moves a creature into an area as a move does (docs/design-v1-attach.md 9)", () => {
+describe("getting on and off moves a creature into an area as a move does (docs/design/design-v1-attach.md 9)", () => {
   /** The goblin's turn, a warhorse just outside the cleric's Spirit Guardians, which reach x 8 on her row. */
   const mounted = (setup: (s: RoomState) => void) => {
     const state = fight();
@@ -346,7 +346,7 @@ describe("getting on and off moves a creature into an area as a move does (docs/
   });
 });
 
-describe("a teleport enters an area only where it lands (docs/design-v1-traps.md 6.6)", () => {
+describe("a teleport enters an area only where it lands (docs/design/design-v1-traps.md 6.6)", () => {
   /** Grease across the goblin's row, between where it stands and where it goes. */
   function greased(): RoomState {
     const state = fight();

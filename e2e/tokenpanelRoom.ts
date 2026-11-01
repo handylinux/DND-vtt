@@ -9,7 +9,7 @@ import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
 import { barControl, ConsoleWatch, openPage, OpSocket, pagePoint, Shots, SocketWatch, startServer, waitFor, wholeInReach, type Server } from "./harness.ts";
 
 /**
- * The token panel's room and helpers (docs/design-v1-token-panel.md
+ * The token panel's room and helpers (docs/design/design-v1-token-panel.md
  * section 7), shared by tokenpanel.e2e.ts and the lines, summaries and
  * words files, so the CI shards can run the four side by side. Each file builds its own
  * room in step 0 and checks the pages' errors in step 10.
@@ -215,7 +215,7 @@ export async function tapToken(page: Page, at: { x: number; y: number }, size = 
 /**
  * Fits the map to the screen, so a token stands where the scene puts it
  * again after an expanded bar's clearing move panned the map
- * (docs/design-v1-bar-compact.md 5.3).
+ * (docs/design/design-v1-bar-compact.md 5.3).
  */
 export async function fitMap(page: Page): Promise<void> {
   const fit = page.getByRole("button", { name: "Fit the map to the screen" });
@@ -234,7 +234,7 @@ export function tokenPanel(page: Page): Locator {
   return page.getByRole("tabpanel", { name: "Token", exact: true }).or(page.getByRole("region", { name: "Token", exact: true }));
 }
 
-/** Opens one of the panel's groups (docs/design-v1-token-panel-groups.md), which Image, Notes and Position start folded. */
+/** Opens one of the panel's groups (docs/design/design-v1-token-panel-groups.md), which Image, Notes and Position start folded. */
 export async function openGroup(panel: Locator, name: string): Promise<void> {
   const fold = panel.getByRole("button", { name, exact: true });
   if ((await fold.getAttribute("aria-expanded")) === "false") await fold.click();
@@ -439,7 +439,7 @@ export function combatSections(panel: Locator): Promise<string[]> {
   return groupIn(panel, "Combat").evaluate((el) => Array.from((el as unknown as El).querySelectorAll("h4")).map((h) => (h.textContent ?? "").trim()));
 }
 
-/** A folded group's row and its summary: the row's height, the summary's words, its width and the width its words need, whether they are cut, and its 4em floor (docs/design-v1-icons-2.md 3.3). */
+/** A folded group's row and its summary: the row's height, the summary's words, its width and the width its words need, whether they are cut, and its 4em floor (docs/design/design-v1-icons-2.md 3.3). */
 export function foldedSummary(panel: Locator, name: string): Promise<{ text: string; width: number; needs: number; cut: boolean; floor: number; row: number }> {
   return panel.getByRole("button", { name, exact: true }).evaluate((el) => {
     type Q = El & { querySelector(s: string): El | null };
@@ -454,7 +454,7 @@ export function foldedSummary(panel: Locator, name: string): Promise<{ text: str
 /**
  * Whether the HP field comes before the mode buttons in the page, the order
  * Tab and a screen reader follow: in the short layout, which draws the
- * field first (docs/design-v1-token-window.md 5.8, W5B-P-5).
+ * field first (docs/design/design-v1-token-window.md 5.8, W5B-P-5).
  */
 export function fieldBeforeModes(b: Locator): Promise<boolean> {
   return b.evaluate((el) => {
@@ -469,7 +469,7 @@ export function fieldBeforeModes(b: Locator): Promise<boolean> {
 
 /** Apply shows whole inside the bar's box with the bar at its top, so an HP change needs no scroll. */
 export async function applyInView(b: Locator, label: string): Promise<void> {
-  // The window scrolls inside its frame, in its scroller (docs/design-v1-token-window.md 5.7).
+  // The window scrolls inside its frame, in its scroller (docs/design/design-v1-token-window.md 5.7).
   assert.equal(await b.locator("[data-bar-scroll]").evaluate((el) => (el as unknown as El).scrollTop), 0, `${label}: the bar opened scrolled`);
   const frame = await rectOf(b);
   const apply = await rectOf(b.getByRole("button", { name: "Apply", exact: true }));
@@ -519,7 +519,7 @@ export async function steadyAboveSize(b: Locator, label: string): Promise<void> 
   assert.ok(steady.bottom <= size.top + 1, `${label}: Size stands above Conditions and Multi-select`);
 }
 
-/** Range rings in one block (docs/design-v1-token-panel.md 3.8): circle presets with their digits centered, and the field for another distance ending their row. */
+/** Range rings in one block (docs/design/design-v1-token-panel.md 3.8): circle presets with their digits centered, and the field for another distance ending their row. */
 export async function ringsCompact(panel: Locator, where: string): Promise<void> {
   const group = panel.getByRole("group", { name: "Range rings in feet", exact: true });
   const chips = await group.getByRole("button").evaluateAll((els) =>
@@ -556,7 +556,7 @@ export async function ringsCompact(panel: Locator, where: string): Promise<void>
 }
 
 /**
- * Max HP and Temp HP side by side at every width (docs/design-v1-token-panel.md 3.7): the fields share a line, and both
+ * Max HP and Temp HP side by side at every width (docs/design/design-v1-token-panel.md 3.7): the fields share a line, and both
  * labels stand beside or above alike, the way the doc's size table says for this width.
  */
 export async function hpPairSideBySide(panel: Locator, where: string, labels: "beside" | "above"): Promise<void> {
@@ -585,7 +585,7 @@ export async function hpPairSideBySide(panel: Locator, where: string, labels: "b
 }
 
 /**
- * With four rings on (docs/design-v1-token-panel.md 3.8), one muted line says so, and the presets that are off and the
+ * With four rings on (docs/design/design-v1-token-panel.md 3.8), one muted line says so, and the presets that are off and the
  * field stay in the tab order, aria-disabled and described by that line, doing nothing when pressed. Clear empties it again.
  */
 export async function ringsFull(panel: Locator, where: string): Promise<void> {

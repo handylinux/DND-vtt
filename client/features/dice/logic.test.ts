@@ -5,7 +5,7 @@ import { answerVerdict, askedFormula, askedRoll, collapseBare, findRolls, header
 import type { ReceiptLookup } from "../../lib/api.ts";
 import { ReceiptTracker, refusalWords } from "./useReceipt.ts";
 
-/** What the Dice panel reads from the log (docs/design-v1-dice.md 8.3 and 8.6). */
+/** What the Dice panel reads from the log (docs/design/design-v1-dice.md 8.3 and 8.6). */
 let seq = 0;
 function entry(data: LogEvent): LogEntry {
   return { id: `${++seq}:0`, at: "2026-10-17T20:00:00.000Z", kind: "event", data };
@@ -31,7 +31,7 @@ describe("Recent rolls", () => {
     assert.equal((rows[0] as Extract<RecentRow, { kind: "dice" }>).by, "p2");
   });
 
-  test("a roll whose dice are in the air stays out until they land, all its lines and only its own (docs/design-v1-roll-animation.md 3.4)", () => {
+  test("a roll whose dice are in the air stays out until they land, all its lines and only its own (docs/design/design-v1-roll-animation.md 3.4)", () => {
     const older = entry(dice({ tag: "older" }));
     const answer = entry({ type: "roll", test: { kind: "save", choices: [{ ability: "dex" }] }, characterId: "c1", total: 14, dice: { formula: "1d20+2", faces: [12], total: 14 }, tag: "held" });
     const part0 = entry(dice({ tag: "held", batch: "B", rolls: [{ ...ROLL, total: 1 }] }));
@@ -159,7 +159,7 @@ describe("the field", () => {
   });
 });
 
-describe("a tag's receipt (docs/design-v1-dice.md 8.7)", () => {
+describe("a tag's receipt (docs/design/design-v1-dice.md 8.7)", () => {
   function tracker(log: LogEntry[] = [], lookup: () => Promise<ReceiptLookup> = () => Promise.resolve({ parts: [] })) {
     const t = new ReceiptTracker();
     t.env = { lookup, log: () => log };
@@ -342,7 +342,7 @@ describe("a tag's receipt (docs/design-v1-dice.md 8.7)", () => {
   });
 });
 
-describe("the header line's roll (docs/design-v1-dice-ui.md 4.1)", () => {
+describe("the header line's roll (docs/design/design-v1-dice-ui.md 4.1)", () => {
   const bite = (type: string, extra: Partial<DiceRoll>): DiceRoll => ({ formula: "3d10+7", faces: [3, 6, 6], total: 22, label: `Bite critical damage, ${type}`, tokenId: "t1", ...extra });
 
   test("a damage of two types reads as its sum under their shared label, with both parts' dice and crit sums (LP8-COMBAT-1)", () => {
@@ -366,7 +366,7 @@ describe("the header line's roll (docs/design-v1-dice-ui.md 4.1)", () => {
   });
 });
 
-describe("an answer's verdict on the header line (docs/design-v1-dice-ui.md 4.1)", () => {
+describe("an answer's verdict on the header line (docs/design/design-v1-dice-ui.md 4.1)", () => {
   test("the pass or fail the viewer reads, after a natural 20 or 1 (LP8-COMBAT-3)", () => {
     assert.equal(answerVerdict({ formula: "1d20+1", faces: [12] }, "fail"), "Fail");
     assert.equal(answerVerdict({ formula: "1d20+7", faces: [10] }, "pass"), "Pass");

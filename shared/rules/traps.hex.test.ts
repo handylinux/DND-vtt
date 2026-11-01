@@ -10,7 +10,7 @@ import { cornerAt, hexAt, hexCenter, hexCorners, hexKey, hexLine, hexNeighbors, 
 import { planTrapMove, planTurn, rectHexes, trapHits, wireHexes, zoneHexes, zoneRanges, type Springing, type TrapRoom } from "./traps.ts";
 
 /**
- * Traps on hexes (docs/design-v1-hex-grids.md phase H2): zones are
+ * Traps on hexes (docs/design/design-v1-hex-grids.md phase H2): zones are
  * rectangles of hex keys, read for fog and reprojection by the sub-cells
  * inside their hexes, wires end on the 1/64 lattice and meet the hexes they
  * touch, and a walk sets a trap off by the hexes its footprint stands on.

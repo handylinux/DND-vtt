@@ -1,6 +1,6 @@
 # raccoon-vtt v1: keep the relief picture across a pan
 
-Status: built, after four design review rounds and the build review, in lane HXPERF-2 (section 11, As built). Code references are to main at `2d73a8a5` (no cited file differs at `677cf341`). This follows the hex relief design (`docs/design-v1-iso-hex-relief.md`), whose section 9 sets the gate and whose As built (section 11) records the misses this note closes. The relief code lives in `client/canvas/relief/`. Client only: no server, protocol or stored data change.
+Status: built, after four design review rounds and the build review, in lane HXPERF-2 (section 11, As built). Code references are to main at `2d73a8a5` (no cited file differs at `677cf341`). This follows the hex relief design (`docs/design/design-v1-iso-hex-relief.md`), whose section 9 sets the gate and whose As built (section 11) records the misses this note closes. The relief code lives in `client/canvas/relief/`. Client only: no server, protocol or stored data change.
 
 ## 1. Why
 
@@ -208,7 +208,7 @@ HXPERF-2 owns the whole change, in this order, tests beside each step.
 | Live camera | New `client/state/liveCamera.ts`, `client/canvas/Stage.tsx` (every camera path, `camRef`, the bar component), `features/dm/CameraLayer.tsx`, the hosts' files: `builder/LabelPaneHost.tsx`, `lights/LightPaneHost.tsx`, `pins/PinPaneHost.tsx`, `traps/TrapPaneHost.tsx`, `doors/DoorPill.tsx`, `builder/heights/ReadoutHost.tsx`, `movement/StopNote.tsx` |
 | Area frames | `IsoBoard.tsx` (the area build as a scheduler job), `client/canvas/relief/volumes.ts` (`groundChanges`), `client/lib/view.ts` (`DrawnHeights` source) |
 | Acceptance | Unit files beside each, `e2e/iso.e2e.ts` with the HXPERF2 step prefix, `scripts/bench-iso.ts` and its test |
-| Docs commit | This note's As built, `docs/design-v1-iso-hex-relief.md` section 11 (the misses closed or reported), `docs/design-v1-isometric-view.md` 5.1 (the scheduler's rules) |
+| Docs commit | This note's As built, `docs/design/design-v1-iso-hex-relief.md` section 11 (the misses closed or reported), `docs/design/design-v1-isometric-view.md` 5.1 (the scheduler's rules) |
 
 No visible change is intended, so FEATURES.md and the DM guide need no edit. If the build changes anything a person can see, FEATURES.md takes it in the docs commit.
 

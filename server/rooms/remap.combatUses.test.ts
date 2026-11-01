@@ -11,7 +11,7 @@ import { parseRoomState } from "./stateSchema.ts";
 
 /**
  * Combat uses through an export and an import
- * (docs/design-v1-combat-controls.md 3.6): marks, class resources and the
+ * (docs/design/design-v1-combat-controls.md 3.6): marks, class resources and the
  * saved turns' marks and pips come through, each holder under its new id.
  * Turn records, and the damage types only a record's start reads, are named
  * by seqs of the old room, so they go, as does the record each saved turn
@@ -57,7 +57,7 @@ const inline = (state: RoomState, id: string): Actor => {
   return t.actor.inline;
 };
 
-describe("combat uses through an import (docs/design-v1-combat-controls.md 3.6)", () => {
+describe("combat uses through an import (docs/design/design-v1-combat-controls.md 3.6)", () => {
   test("the stored-state schema takes every new field, and the import drops records and damage types and keeps marks, resources and saved turns", () => {
     const before = played();
     assert.ok(Object.values(before.tokens).some((t) => "inline" in t.actor && t.actor.inline.turnRecord), "the fight has records");
@@ -335,7 +335,7 @@ describe("a saved step through an import keeps the turns that left the fight (de
   });
 });
 
-describe("marks through an import that changes a link (docs/design-v1-combat-controls.md 2.4 and 3.6)", () => {
+describe("marks through an import that changes a link (docs/design/design-v1-combat-controls.md 2.4 and 3.6)", () => {
   /** The fight with the lurker's own turn begun, Lunge saved by its start, and Acid Spit spent since. */
   function file(): RoomState {
     let state = played();

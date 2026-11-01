@@ -8,7 +8,7 @@ import { chromium, type Browser, type BrowserContext, type Locator, type Page } 
 import { barControl, ConsoleWatch, OpSocket, openSideTab, reopenRoom, Shots, sideTabName, sleep, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
 
 /**
- * The Dice panel's folds (docs/design-v1-dice-pass.md 6), on the real
+ * The Dice panel's folds (docs/design/design-v1-dice-pass.md 6), on the real
  * server serving the production build: how the groups start for the DM
  * at 1440 x 900 and 1024 x 768 and for a player at 390 x 844 and 440 x
  * 956, a fold this device keeps after a reload and keeps apart by kind of
@@ -214,7 +214,7 @@ async function toFoot(inside: Locator): Promise<void> {
  * Where a token's Roll landed the Dice panel in `within`, once any smooth
  * scroll and restored place have settled (the same box twice running):
  * the roll modes whole under the sticky line, and the card after them
- * inside the scroller (docs/design-v1-dice-pass.md 8).
+ * inside the scroller (docs/design/design-v1-dice-pass.md 8).
  */
 async function landed(page: Page, within: Locator) {
   const measure = () =>
@@ -247,7 +247,7 @@ async function landed(page: Page, within: Locator) {
 /**
  * Brings `button` to its scroller's middle, waits for the scroll to settle,
  * focuses it and opens its one-roll menu with the ContextMenu key, focus in
- * the menu (docs/design-v1-roll-mode-menu.md 3.3). A scroll that takes
+ * the menu (docs/design/design-v1-roll-mode-menu.md 3.3). A scroll that takes
  * the source out of view closes the menu, so none may still be running.
  */
 async function keyMenu(page: Page, button: Locator, name: RegExp): Promise<Locator> {
@@ -579,7 +579,7 @@ describe("raccoon-vtt dice folds", { timeout: 300_000 }, () => {
       const bounds = dmSocket.state!.scenes[run.sceneId]!.bounds;
       // Thorn, then the goblin he targets.
       await tapCell(page, bounds, run.thorn);
-      // An upright phone's resting strip keeps Multi-select behind Expand (docs/design-v1-bar-compact.md 3.3).
+      // An upright phone's resting strip keeps Multi-select behind Expand (docs/design/design-v1-bar-compact.md 3.3).
       await (await barControl(page.getByRole("dialog", { name: "Thorn actions" }), "Multi-select")).tap();
       await tapCell(page, bounds, run.goblin);
       await page.getByRole("dialog", { name: "2 selected tokens" }).waitFor();

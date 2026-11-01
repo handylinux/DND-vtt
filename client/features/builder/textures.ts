@@ -38,7 +38,7 @@ export const TERRAIN_COLORS: Record<TexturedTerrain, string> = {
 
 /**
  * A terrain's swatch in the builder's terrain chip and tiles
- * (docs/design-v1-tool-options.md 9.9): the texture's plain color, and for
+ * (docs/design/design-v1-tool-options.md 9.9): the texture's plain color, and for
  * the marks drawn over a floor the mark's own: a pit's dark, a pillar's
  * stone, a stair's slab.
  */

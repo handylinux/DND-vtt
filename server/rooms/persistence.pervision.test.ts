@@ -12,7 +12,7 @@ import { DM, env, member, room, scene } from "#shared/testutil.ts";
 import { loadRoom, type Pool } from "./persistence.ts";
 
 /**
- * A lower cap of players who see for themselves (docs/design-v1-per-player-vision.md
+ * A lower cap of players who see for themselves (docs/design/design-v1-per-player-vision.md
  * 6.1 and 8.1, review PV1-ASTRA-4): the server box may run at 5 where a
  * room was played at 6. Every stored op still replays through `loadRoom`,
  * and only a live op meets the cap in force, by the actor's limits check.

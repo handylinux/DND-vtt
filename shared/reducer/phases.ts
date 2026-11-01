@@ -5,7 +5,7 @@ import { HEX_ORIGIN, hexOriginBefore } from "../rules/grid.ts";
 import { gone, invalid, type Tx } from "./tx.ts";
 
 /**
- * Map phases (docs/design-v1-maps-vision.md section 3.4): one scene, several
+ * Map phases (docs/design/design-v1-maps-vision.md section 3.4): one scene, several
  * images, the same grid. `Scene.map` is always the active phase's image, so
  * nothing that draws, projects or exports the map knows phases exist.
  *
@@ -70,14 +70,14 @@ function activePhase(scene: Scene): MapPhase | undefined {
 /**
  * The scene showing a phase it switched to: a phase with a light level
  * gives it to the scene's vision, so Night can make the scene dark
- * (docs/design-v1-maps-vision.md 4.3.8), and one without leaves the level
+ * (docs/design/design-v1-maps-vision.md 4.3.8), and one without leaves the level
  * as it was. Every way the showing phase changes applies it the same way: a
  * switch, the list losing the showing phase, and an import whose showing
  * phase's image did not come through.
  */
 export function withPhaseLight(scene: Scene, phase: Pick<MapPhase, "light">): Scene {
   if (phase.light === undefined) return scene;
-  // A per-player scene stays one, whatever the phase does to its light (docs/design-v1-per-player-vision.md 6.7).
+  // A per-player scene stays one, whatever the phase does to its light (docs/design/design-v1-per-player-vision.md 6.7).
   return { ...scene, vision: { on: scene.vision?.on ?? false, light: phase.light, ...(scene.vision?.perPlayer === true ? { perPlayer: true as const } : {}) } };
 }
 

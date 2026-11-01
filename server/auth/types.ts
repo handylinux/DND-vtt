@@ -21,7 +21,7 @@ export type GrantContext = {
 };
 
 /**
- * A table display's grant (docs/design-v1-dm-tools.md 3.1). It comes only
+ * A table display's grant (docs/design/design-v1-dm-tools.md 3.1). It comes only
  * from a display session in the display cookie, and its member id is
  * `display:<12 random characters>`, which no member has. Its socket keeps
  * the role `'player'`, so it receives what a player who owns nothing does.

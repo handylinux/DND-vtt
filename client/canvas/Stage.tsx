@@ -113,7 +113,7 @@ const UNDER_DECOR_LAYERS = layersOf("underDecor");
 
 /**
  * Holds a drawing tree still while it is hidden, so a camera move renders
- * only the tree on screen (docs/design-v1-isometric-view.md ISO-D15). Its
+ * only the tree on screen (docs/design/design-v1-isometric-view.md ISO-D15). Its
  * last render, the one that hid it, sized its stage 0x0.
  */
 const Frozen = memo(
@@ -123,7 +123,7 @@ const Frozen = memo(
   (prev, next) => prev.frozen && next.frozen,
 );
 
-/** What a drag that starts on a token moves (docs/design-v1-attach.md 4.2). */
+/** What a drag that starts on a token moves (docs/design/design-v1-attach.md 4.2). */
 type DragParts = {
   /** The token whose move goes out and whose walk is searched: the pressed one, or the mount a rider's press moves. */
   lead: ViewToken;
@@ -168,7 +168,7 @@ function fitKey(size: Size, scene: Scene): string {
 /**
  * `lift` gives the highest drawn ground inside a rectangle at a zoom, in
  * cells (boardPick.ts liftIn), which raises the top of the box a fit
- * frames in Isometric (docs/design-v1-isometric-view.md 4.2). Heights
+ * frames in Isometric (docs/design/design-v1-isometric-view.md 4.2). Heights
  * stand only from a zoom on (ISO-D12), so the box is fitted flat first,
  * then again with the lift at the zoom that fit gives.
  */
@@ -295,7 +295,7 @@ export function MapStage(props: {
   const [size, setSize] = useState<Size | null>(null);
   /*
    * The camera lives in the room's live camera slot (state/liveCamera.ts,
-   * docs/design-v1-relief-pan.md 6.2): every path writes it, and `camRef`
+   * docs/design/design-v1-relief-pan.md 6.2): every path writes it, and `camRef`
    * reads it, so a render mid-pan never hands a press, keepInView or a
    * second finger an older camera. `cam`, the state, is what the board and
    * the controllers render with: in Isometric a pan inside the board's cull
@@ -432,7 +432,7 @@ export function MapStage(props: {
 
   /*
    * A turn or a view switch, a tool's Top-down among them (6.4), keeps one
-   * world point still on screen, and the zoom (docs/design-v1-isometric-view.md
+   * world point still on screen, and the zoom (docs/design/design-v1-isometric-view.md
    * 4.2), on this device only: the selected token's ring while it shows in
    * the clear part of the canvas, else the ground a press at that part's
    * middle meets. Each stands at its drawn height in each view.
@@ -462,7 +462,7 @@ export function MapStage(props: {
    * (canvas/barDock.ts barCover), for Fit, Find and the pans that bring a
    * token into view. A bar counts by the box it published: an upright
    * phone's strip, or its expanded bar, covers the map's foot from its top
-   * (docs/design-v1-bar-compact.md 4). `opening` also counts a bar the change that asked for the move
+   * (docs/design/design-v1-bar-compact.md 4). `opening` also counts a bar the change that asked for the move
    * is about to show, as a tracker row's tap does: its box does not exist
    * yet, so it rests at its spot with the height it last had. `fresh`
    * places it anew for the canvas as it is now, as a refit after a
@@ -621,7 +621,7 @@ export function MapStage(props: {
    * through the camera's bounds with the bar's cover, as a pan from the
    * camera as it stands (lib/camera.ts barShift, review BAR-ASTRA-07). A
    * pan whose frame is still pending is the viewer's, and the move gives
-   * way to it (docs/design-v1-bar-compact.md 3.6).
+   * way to it (docs/design/design-v1-bar-compact.md 3.6).
    */
   const shiftForBar = useCallback((dy: number) => {
     const s = sizeRef.current;
@@ -666,7 +666,7 @@ export function MapStage(props: {
     const list = Object.values(allTokens).filter((t): t is ViewToken => !!t && t.sceneId === scene.id);
     // Objects (doors, chests, markers) under creatures. Creation order otherwise.
     list.sort((a, b) => (a.layer === b.layer ? (a.id < b.id ? -1 : 1) : a.layer === "object" ? -1 : 1));
-    // A carried token draws right after its holder, whatever its layer, so a torch shows on the hand holding it (docs/design-v1-attach.md 4.4).
+    // A carried token draws right after its holder, whatever its layer, so a torch shows on the hand holding it (docs/design/design-v1-attach.md 4.4).
     return drawOrder(list, allTokens);
   }, [allTokens, scene.id]);
   const tokensById = useMemo(() => new Map(tokens.map((t) => [t.id, t])), [tokens]);
@@ -693,7 +693,7 @@ export function MapStage(props: {
    * An opening's intent (state/types.ts LocalUi `opening`) is judged once,
    * at the commit after it, so the calls of one handler count together:
    * where the bar now shows a new token (barDock.ts keepsOpening), the
-   * strip clears it once (docs/design-v1-bar-compact.md 3.6, review
+   * strip clears it once (docs/design/design-v1-bar-compact.md 3.6, review
    * BAR-ASTRA-09). Any other is dropped, never to replay. One found as
    * Stage mounts, as after a blackout, counts as judged.
    */
@@ -746,7 +746,7 @@ export function MapStage(props: {
 
   // Every token's marks and label for the zoom, laid out together (useBoardText.ts).
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  // The selected token's plate shows its whole name on the map, since the action bar's header keeps two lines of it (docs/design-v1-bar-dock.md section 6).
+  // The selected token's plate shows its whole name on the map, since the action bar's header keeps two lines of it (docs/design/design-v1-bar-dock.md section 6).
   const plateIds = useMemo(() => new Set([hoveredId, selectedId].filter((id): id is string => id !== null)), [hoveredId, selectedId]);
   const pills = useBoardPills();
   // The DM's labels on the map, as this viewer's projection holds them: token labels keep off them, measured as the builder draws them.
@@ -767,7 +767,7 @@ export function MapStage(props: {
   const isoTextInput = useMemo(() => ({ characters, role, ownsToken, activeTokenId, selectedId, plateIds, pills, lockShown, fontEpoch }), [characters, role, ownsToken, activeTokenId, selectedId, plateIds, pills, lockShown, fontEpoch]);
   const [isoText, setIsoText] = useState<ReadonlyMap<string, TokenText>>(NO_TEXT);
   /*
-   * The attach rules' parts of a drag (docs/design-v1-attach.md 4.2 and 6),
+   * The attach rules' parts of a drag (docs/design/design-v1-attach.md 4.2 and 6),
    * from this copy: a press on a rider of a controlled mount, or on one
    * that covers its holder, moves the mount, and starts whenever the viewer
    * could move either, so a rider's player hears why the mount stays. A
@@ -847,7 +847,7 @@ export function MapStage(props: {
   dragStopsRef.current = dragStops;
   /**
    * What a drag or an arrow key that starts on `pressed` moves
-   * (docs/design-v1-attach.md 4.2): the mount a rider's press moves, or a
+   * (docs/design/design-v1-attach.md 4.2): the mount a rider's press moves, or a
    * selected holder above it, or why it moves nothing, then the rest of the
    * selection, less what rides on another of them, and whether a player may
    * only give it a new seat.
@@ -946,7 +946,7 @@ export function MapStage(props: {
    * A box being dragged over the map to select the tokens under it, in
    * screen pixels. With Multi-select on and no key that adds (`add`), a
    * box that never moves past the tap slop is a tap off instead
-   * (docs/design-v1-bar-dock.md section 3).
+   * (docs/design/design-v1-bar-dock.md section 3).
    */
   const boxRef = useRef<{ pointerId: number; start: Point; add: boolean; moved: boolean } | null>(null);
   const boxElRef = useRef<HTMLDivElement>(null);
@@ -996,7 +996,7 @@ export function MapStage(props: {
   const refusedPressRef = useRef<{ pointerId: number; start: Point; text: string } | null>(null);
 
   const scheduleCam = useCallback((wanted: Camera) => {
-    // A pan or a zoom never leaves the screen without some of the map on it, nor puts the map's edge under an upright phone's strip, unless it already stood there (docs/design-v1-bar-compact.md 4).
+    // A pan or a zoom never leaves the screen without some of the map on it, nor puts the map's edge under an upright phone's strip, unless it already stood there (docs/design/design-v1-bar-compact.md 4).
     const s = sizeRef.current;
     const strip = s && scope.get(barDockSlot).getState().bar?.mode === "span" ? barCoverRef.current(s, "drawn") : NO_INSETS;
     const from = pendingCamRef.current ?? camRef.current ?? undefined;
@@ -1059,7 +1059,7 @@ export function MapStage(props: {
       const node = { x: () => to.x, y: () => to.y, position: () => {} };
       dragStopsRef.current.press(node, moved, parts.named);
     };
-    // A tool's key moves nothing of the tool's while it follows a pointer (docs/design-v1-tool-cycle.md 2.7).
+    // A tool's key moves nothing of the tool's while it follows a pointer (docs/design/design-v1-tool-cycle.md 2.7).
     const busy = () => toolPointerRef.current !== null;
     slot.zoom = zoomBy;
     slot.nudge = nudge;
@@ -1145,7 +1145,7 @@ export function MapStage(props: {
 
     /*
      * A press on the map while a popover or menu is open does nothing but
-     * close it (docs/design-v1-tool-options.md 7.1 and 7.4): from its first
+     * close it (docs/design/design-v1-tool-options.md 7.1 and 7.4): from its first
      * event to its last finger's lift, the tool does nothing with it, no
      * stroke, ping, ruler point, fog edit, area, selection, one-finger pan
      * or hold to ping. The room's popover rule follows the press
@@ -1337,7 +1337,7 @@ export function MapStage(props: {
     const pointersDown = () => {
       viewGestureRef.current.pointers = gesture.pointers.size > 0;
       syncGesture();
-      // The gesture's end sets state to its last camera once, for the controllers and the saved and followed views (docs/design-v1-relief-pan.md 6.3). A frame still waiting does it itself.
+      // The gesture's end sets state to its last camera once, for the controllers and the saved and followed views (docs/design/design-v1-relief-pan.md 6.3). A frame still waiting does it itself.
       const c = liveCam.camera;
       if (gesture.pointers.size === 0 && frameRef.current === 0 && c && renderedCamRef.current !== c) setCamState(c);
     };
@@ -1480,7 +1480,7 @@ export function MapStage(props: {
       const group = parts.named;
       const moves = plan.moves;
       const landed = new Map(moves.map((m) => [m.tokenId, m]));
-      // A player who may move a carried token only to a new seat keeps it with its holder (docs/design-v1-attach.md 6).
+      // A player who may move a carried token only to a new seat keeps it with its holder (docs/design/design-v1-attach.md 6).
       const links = linksRef.current;
       const reseat = parts.reseatOnly ? linkedHolder(links.allTokens, parts.lead) : undefined;
       const lands = landed.get(parts.lead.id);
@@ -1519,7 +1519,7 @@ export function MapStage(props: {
       const watch = watchDrop({ role: facts.role, store: facts.store, moves: dropped, notify: (text) => uiRef.current.notify(text) });
       // The moves land in the view before the spots go, so an aura on a token never jumps back.
       const sent = dragStopsRef.current.send(plan, watch?.answer);
-      // The bar comes back after a drop and clears its token once, as it does when it opens (docs/design-v1-bar-compact.md 3.6).
+      // The bar comes back after a drop and clears its token once, as it does when it opens (docs/design/design-v1-bar-compact.md 3.6).
       const after = facts.store.getState().local;
       if (after.actionBar && after.selectedId !== null && group.some((t) => t.id === after.selectedId || after.selectedIds.includes(t.id))) scope.get(barDockSlot).setState({ clearRequest: { tokenId: after.selectedId } });
       watch?.sent(sent.length);
@@ -1586,7 +1586,7 @@ export function MapStage(props: {
         // A lone lead's preview stays at a wall or a ledge that stops its walk, or the walk of a creature it drags, so its frames do too.
         const leadNode = drag.lead.id === token.id ? node : offsetNode(node, token, drag.lead);
         if (lone) dragStopsRef.current.frame(leadNode, drag.lead);
-        // A lone lead's frames carry its route's corners and its cost (docs/design-v1-movement.md 6.5), and a group's named tokens
+        // A lone lead's frames carry its route's corners and its cost (docs/design/design-v1-movement.md 6.5), and a group's named tokens
         // their own leg's cost, as the group's label reads it (review AT-ASTRA-15).
         const leadFields = lone ? dragStopsRef.current.frameFields(drag.lead.id) : {};
         const named = lone ? null : new Set(drag.named.map((t) => t.id));
@@ -1621,7 +1621,7 @@ export function MapStage(props: {
           return;
         }
         const leadNode = drag.lead.id === token.id ? node : offsetNode(node, token, drag.lead);
-        // A drop made while its route is searched waits at the ghost and lands once it is found (docs/design-v1-movement.md 3.1).
+        // A drop made while its route is searched waits at the ghost and lands once it is found (docs/design/design-v1-movement.md 3.1).
         dragStopsRef.current.drop(leadNode, drag.lead, drag.named, (plan) => landDrop(node, token, followers, drag, plan));
       },
     };
@@ -1630,7 +1630,7 @@ export function MapStage(props: {
   const memberMap = members ?? {};
   const below: ViewToken[] = [];
   const above: ViewToken[] = [];
-  // The party stays above the sight overlay as it does above the fog, fog or no fog (docs/design-v1-maps-vision.md 4.3.7).
+  // The party stays above the sight overlay as it does above the fog, fog or no fog (docs/design/design-v1-maps-vision.md 4.3.7).
   for (const t of tokens) ((fog || sightMode !== null) && drawsAboveFog(t, role, memberMap, characters) ? above : below).push(t);
 
   const renderToken = (t: ViewToken, iso: IsoToken | null = null, text?: TokenText) => (

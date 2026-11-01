@@ -5,7 +5,7 @@ import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 /**
- * The camera scan (docs/design-v1-isometric-view.md 4.1). Camera math
+ * The camera scan (docs/design/design-v1-isometric-view.md 4.1). Camera math
  * written by hand reads the world as the view, which holds only in
  * Top-down, so every conversion between the screen and the map goes through
  * lib/camera.ts and lib/view.ts, where the view is a parameter. This fails

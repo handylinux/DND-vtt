@@ -5,7 +5,7 @@ import type { Point } from "./camera.ts";
 
 /**
  * The cells drawn ground stands on, on either grid
- * (docs/design-v1-iso-hex-relief.md 5.1): pure geometry over the shared
+ * (docs/design/design-v1-iso-hex-relief.md 5.1): pure geometry over the shared
  * square and hex helpers, read by every renderer and pointer reader that
  * meets drawn heights. A cell is named by its key, `col` along x and `row`
  * along y, which on hexes is the hex's offset key and never a world point.

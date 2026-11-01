@@ -13,7 +13,7 @@ import { sameImage as sameImageRef } from "#shared/imageRef.ts";
  *
  * An SRD monster's image lives in the room's `srdImages`, keyed by its SRD
  * id. Until the DM sets one it is the monster's shipped icon
- * (shared/srd/tokenIcons.ts, docs/design-v1-starter-art.md section 6),
+ * (shared/srd/tokenIcons.ts, docs/design/design-v1-starter-art.md section 6),
  * read here and never stored: the DM's choice always wins, and a room made
  * before the defaults gets them with no migration. A room's own monster
  * carries its image in its stat block record and has no default.
@@ -84,7 +84,7 @@ function isShippedIcon(image: ImageRef, shipped: ImageRef | undefined): boolean 
  * - An SRD monster's tokens carry its SRD id in their actor, so a goblin the
  *   DM renamed "Snik" is still a Goblin Warrior.
  * - A room monster's tokens placed since wave 5 carry its id
- *   (`Actor.monsterId`, docs/design-v1-dm-tools.md 3.6), which decides.
+ *   (`Actor.monsterId`, docs/design/design-v1-dm-tools.md 3.6), which decides.
  * - Older ones, and tokens the DM detached, are found by name, the way the
  *   initiative tracker groups them (groupKeyFor in
  *   shared/rules/initiative.ts): a monster or NPC token with exactly that

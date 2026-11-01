@@ -13,7 +13,7 @@ import { VolumeStand, type LiveSub } from "./stand.ts";
 
 /**
  * The areas the isometric board stands as their real shapes
- * (docs/design-v1-iso-area-shapes.md 4.4 and 6). Each is built lazily, in
+ * (docs/design/design-v1-iso-area-shapes.md 4.4 and 6). Each is built lazily, in
  * slices of a frame, nearest the middle of the view first: its mesh, the
  * stand rule's test on its footprint, then each of its buckets in view cut
  * and drawn at the turn. Until all of that is done an area lies flat, as
@@ -111,7 +111,7 @@ const NUDGES = [0, 0, 1e-6, 0, -1e-6, 0, 0, 1e-6, 0, -1e-6, 1e-6, 1e-6, 1e-6, -1
  * region with its openings at 0, world polygons, which clip the parts that
  * lie over that region and no others (drawRelief.ts drawVolume). So a part
  * below 0 shows through a neighbor's opening in its region as well as its
- * own (docs/design-v1-iso-hex-relief.md 5.2), and never through another
+ * own (docs/design/design-v1-iso-hex-relief.md 5.2), and never through another
  * region's, whose opening swept up would show it over the flat ground
  * between. A region with no part over it, such as a pit in a sphere's box
  * corner past its round plan, clips nothing (reviews HXR1-ASTRA-1,
@@ -227,7 +227,7 @@ export function groundChanges(was: DrawnHeights, now: DrawnHeights): VBox[] | nu
  * come from one scene's chunks, grid, bounds, feet and stand rule, only
  * their fog can part them, and only under the tiles whose bits differ or
  * that one side lacks, each grown by a cell, since a hex's sub-cells reach
- * into the next tile (docs/design-v1-relief-pan.md 8). Otherwise the whole
+ * into the next tile (docs/design/design-v1-relief-pan.md 8). Otherwise the whole
  * scene: on a player's board every fog change makes new heights, and a
  * pass over a 200 by 200 scene costs a phone's frames.
  */

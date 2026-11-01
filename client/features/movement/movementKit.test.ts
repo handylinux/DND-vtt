@@ -23,7 +23,7 @@ function flatChrome(camera: { x: number; y: number; scale: number }) {
 }
 
 /*
- * The movement feature's notes and marks on the kit (docs/design-v1-look-pass-2.md
+ * The movement feature's notes and marks on the kit (docs/design/design-v1-look-pass-2.md
  * D30 and D31): the hold mark scales as every other outline does, the
  * stopped walk's note takes the kit's sizes and says what Teleport here
  * does in words on the page, and the inside-the-ground line is a Note.

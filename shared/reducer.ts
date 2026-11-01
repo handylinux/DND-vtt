@@ -120,7 +120,7 @@ export type Applied = {
   /** The absolute restore that undoes the op, or null when nothing undoable changed. */
   inverse: RestoreEntry[] | null;
   /**
-   * The trap step changed what the op's player sees (docs/design-v1-traps.md
+   * The trap step changed what the op's player sees (docs/design/design-v1-traps.md
    * 6.5), so that player's undo of the step is refused.
    */
   trapped?: true;
@@ -146,7 +146,7 @@ export function applyOp(state: RoomState, op: Op, actor: Viewer, env: Env): Appl
   let trapWrote: Set<EntityKey> | undefined;
   let plain: ApplyResult | undefined;
   try {
-    // The trap step plans from the room before the op (docs/design-v1-traps.md 13.2). Ops stored before traps met none.
+    // The trap step plans from the room before the op (docs/design/design-v1-traps.md 13.2). Ops stored before traps met none.
     const plan = trapsGoOff(env.opVersion) && env.withoutTraps !== true ? planBefore(op, state, actor, env) : null;
     if (plan && plan.op !== op) {
       // A stop rewrote the landing. The op still passes or fails exactly as it would without its trap step (6.7).
@@ -157,12 +157,12 @@ export function applyOp(state: RoomState, op: Op, actor: Viewer, env: Env): Appl
     // Areas that hit a creature again remind the table around the op itself (reducer/areaTriggers.ts).
     if (op.t === "encounter.next" && !pressChangesNothing(state, actor, op, env)) remindTurnEnd(tx);
     dispatch(tx, moved);
-    // A scene that stopped being per player pools its holders' maps (docs/design-v1-per-player-vision.md 6.3).
+    // A scene that stopped being per player pools its holders' maps (docs/design/design-v1-per-player-vision.md 6.3).
     foldSight(tx, state);
-    // What players remember follows the scene's settings, and a scene the players move to is marked played (docs/design-v1-map-discovery.md 5.4, 5.5).
+    // What players remember follows the scene's settings, and a scene the players move to is marked played (docs/design/design-v1-map-discovery.md 5.4, 5.5).
     keepMemory(tx, state);
     markPlayed(tx, state);
-    // Every op's dispatch ends with the links that no longer hold coming loose (docs/design-v1-attach.md 5.2).
+    // Every op's dispatch ends with the links that no longer hold coming loose (docs/design/design-v1-attach.md 5.2).
     if (attaches(env.opVersion)) {
       linkPass(tx);
       settleMounts(tx);
@@ -170,7 +170,7 @@ export function applyOp(state: RoomState, op: Op, actor: Viewer, env: Env): Appl
     endSaves(tx);
     const dispatched = plan ? new Set(tx.touched()) : null;
     if (plan) traps = trapStep(tx, op, state, plan);
-    // A pit that opened moved what stood on its lid, so the links it left out of reach come loose (docs/design-v1-traps.md 13.2).
+    // A pit that opened moved what stood on its lid, so the links it left out of reach come loose (docs/design/design-v1-traps.md 13.2).
     if (traps?.pit && attaches(env.opVersion)) {
       linkPass(tx);
       settleMounts(tx);
@@ -212,7 +212,7 @@ export function applyOp(state: RoomState, op: Op, actor: Viewer, env: Env): Appl
 }
 
 /**
- * Whether the trap step changed what the op's player sees (docs/design-v1-traps.md
+ * Whether the trap step changed what the op's player sees (docs/design/design-v1-traps.md
  * 6.5): their whole projection of the room after the op against the op without
  * its trap step, as the server would send each, sight, lights and pits
  * included. A trap action that changed nothing, or changed only what fog,
@@ -465,7 +465,7 @@ function dispatch(tx: Tx, op: Op): void {
       return actorPrompt(tx, op);
     case "undo":
     case "redo":
-    // The server rolls (docs/design-v1-dice.md 4.2): the actor stores the `sys.dice` it resolves in place of each.
+    // The server rolls (docs/design/design-v1-dice.md 4.2): the actor stores the `sys.dice` it resolves in place of each.
     case "dice.roll":
     case "roll.dice":
     case "actor.deathRoll":

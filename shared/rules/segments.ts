@@ -2,7 +2,7 @@ import { orient2d } from "robust-predicates";
 import type { Bounds } from "./geom.ts";
 
 /**
- * The exact half of the wall geometry (docs/design-v1-maps-vision.md
+ * The exact half of the wall geometry (docs/design/design-v1-maps-vision.md
  * sections 2.1 and 4.3.4): the orientation predicate, the split of a wall
  * set at every crossing with its counting pass, clipping to a sweep's box,
  * the step that moves an eye off a wall, and the polygon scanline helpers.
@@ -33,7 +33,7 @@ export const SIGHT = 4;
 export const SIGHT_POTENTIAL = 8;
 
 /**
- * A free wall of a player's held build (docs/design-v1-map-discovery.md
+ * A free wall of a player's held build (docs/design/design-v1-map-discovery.md
  * 5.2): a piece the server cut, whose cut ends lie on a 1/10000 grid, off
  * the lattice this file's exact arithmetic assumes. Pieces skip the
  * counting pass and the exact split, and a plain pass splits them against
@@ -930,7 +930,7 @@ export class SegmentIndex {
   /**
    * `free`, as Candidates has it, files a held build's pieces (PIECE) in
    * every cell within PIECE_REACH of them too, so a query of a cell beside
-   * a rounded end still finds the piece (docs/design-v1-map-discovery.md
+   * a rounded end still finds the piece (docs/design/design-v1-map-discovery.md
    * 5.2). Without it every segment is filed by its own box.
    */
   constructor(xy: Float64Array, tags: Uint8Array, free?: Uint8Array) {

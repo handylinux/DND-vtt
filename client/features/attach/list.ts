@@ -11,7 +11,7 @@ import { attachAllowed, grappledSeen, type AttachViewer } from "./rights.ts";
 import { walkersFor } from "./walk.ts";
 
 /**
- * The Attach list (docs/design-v1-attach.md 4.1), as plain functions for
+ * The Attach list (docs/design/design-v1-attach.md 4.1), as plain functions for
  * node --test: every token this viewer sees within reach of the selected
  * one, nearest first, each with the sentence its choice makes, and for the
  * DM the tokens up to 30 ft away under "Farther away", since the DM also
@@ -71,7 +71,7 @@ function sentence(choice: AttachChoice, name: string): string {
  * Grappled, as the rules carry a grappled foe, and a friend is dragged.
  * Beyond reach nothing is dragged. A token already carried offers only
  * what it would hold, Carry and Drag: it changes mounts through Get off,
- * which charges the dismount (docs/design-v1-attach.md 4.3).
+ * which charges the dismount (docs/design/design-v1-attach.md 4.3).
  */
 function choicesFor(view: RoomState, selected: Token, other: Token, farther: boolean): AttachChoice[] {
   const out: AttachChoice[] = [];
@@ -136,7 +136,7 @@ function checkedRow(view: RoomState, viewer: AttachViewer, choice: AttachChoice,
  * Whether a wall stops the step onto a seat, on a scene whose walls stop a
  * player's moves (shared/permissions.ts legCheck and draggedWalls): every
  * attach but a drag steps onto its seat, a grappled creature carried by a
- * creature included (docs/design-v1-attach.md 4.1), and what the stepping
+ * creature included (docs/design/design-v1-attach.md 4.1), and what the stepping
  * token drags follows the step as on any walk (4.2). A token rising where it
  * stands crosses no edge.
  */

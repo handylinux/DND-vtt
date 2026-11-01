@@ -8,7 +8,7 @@ import { chromium, type Browser, type BrowserContext, type CDPSession, type Loca
 import { ConsoleWatch, openSideTab, OpSocket, pagePoint, reopenRoom, Shots, sideTabName, SocketWatch, startServer, tapCell, touchSwipe, waitFor, type Server } from "./harness.ts";
 
 /**
- * Two panels in the side panel (docs/design-v1-split-panel.md 12.2), on
+ * Two panels in the side panel (docs/design/design-v1-split-panel.md 12.2), on
  * the real server serving the production build: "Two panels" on and off,
  * the tabs picking the top panel, the bar's name picking the bottom one,
  * links landing in the other pane, the bar's drag and keys, a side panel
@@ -335,7 +335,7 @@ describe("raccoon-vtt: two panels in the side panel", { timeout: 1_200_000 }, ()
     await openSideTab(dm, "Initiative");
     await toggleSplit(dm);
     await bottomPane(dm, "Token").waitFor();
-    // The room depends on the party bar's height, so the expected panes are worked out from it by the rule of 3.2: even, with Initiative given 193 own px as far as the other keeps 133 (docs/design-v1-side-headers.md 10).
+    // The room depends on the party bar's height, so the expected panes are worked out from it by the rule of 3.2: even, with Initiative given 193 own px as far as the other keeps 133 (docs/design/design-v1-side-headers.md 10).
     const at130 = await roomOf(dm);
     const space = at130.room / 1.3 - 45;
     const expected = Math.max(Math.floor(space / 2), Math.min(193, space - 133));
@@ -426,7 +426,7 @@ describe("raccoon-vtt: two panels in the side panel", { timeout: 1_200_000 }, ()
 
     const oneRow = await Promise.all([...(await tablist(dm).getByRole("tab").all()), hidePanels(dm)].map((t) => t.boundingBox()));
     await toggleSplit(dm);
-    // Dice is the row's third tab since it took the Log's place (docs/design-v1-dice.md 8.1), so the row's own presses use it.
+    // Dice is the row's third tab since it took the Log's place (docs/design/design-v1-dice.md 8.1), so the row's own presses use it.
     await tab(dm, "Dice").click();
     await topPane(dm, "Dice").waitFor();
     await bottomPane(dm, "Token").waitFor();
@@ -612,7 +612,7 @@ describe("raccoon-vtt: two panels in the side panel", { timeout: 1_200_000 }, ()
     await belowName(dm, "Log").click();
     const list = belowMenu(dm);
     await list.waitFor();
-    // Each item's title, after its panel's icon, which a screen reader does not hear (docs/design-v1-icons-2.md 3.1).
+    // Each item's title, after its panel's icon, which a screen reader does not hear (docs/design/design-v1-icons-2.md 3.1).
     const items = await list.getByRole("menuitemradio").evaluateAll((els) => els.map((el) => ((el as unknown as { querySelector(s: string): DomEl | null }).querySelector(":scope > :not([aria-hidden])")?.textContent ?? "").trim()));
     assert.deepEqual(items, ["Token", "Initiative", "Dice", "Log", "Journal", "Areas", "DM", "Scenes", "Monsters", "Encounters", "Characters", "Outliner", "Library", "Menu"]);
     assert.equal(await list.getByRole("menuitemradio", { name: sideTabName("Log") }).getAttribute("aria-checked"), "true");
@@ -831,7 +831,7 @@ describe("raccoon-vtt: two panels in the side panel", { timeout: 1_200_000 }, ()
   });
 
   test("6. a side panel too short for two: disabled where it never fits, the bottom pane hidden and kept, and a link placed once the room is known", async () => {
-    // A large phone held sideways holds two for the DM since the side panel's headers are one 45 px row each (docs/design-v1-side-headers.md): 319 own px of room, over 311.
+    // A large phone held sideways holds two for the DM since the side panel's headers are one 45 px row each (docs/design/design-v1-side-headers.md): 319 own px of room, over 311.
     await view(dm, dmCdp, { width: 932, height: 430 }, { side: 59, bottom: 21 });
     await reloadAt(dm, 1);
     await oneOnly(dm);
@@ -1241,7 +1241,7 @@ describe("raccoon-vtt: two panels in the side panel", { timeout: 1_200_000 }, ()
     await oneOnly(dm);
   });
 
-  test("ic2-split. on a touch tablet the top pane's icon tab is named above it, and the pane below, which the bar names, never is (docs/design-v1-icons-2.md 3.1)", async () => {
+  test("ic2-split. on a touch tablet the top pane's icon tab is named above it, and the pane below, which the bar names, never is (docs/design/design-v1-icons-2.md 3.1)", async () => {
     const context = await browser.newContext({ viewport: { width: 1180, height: 820 }, hasTouch: true, isMobile: true, storageState: await dmContext.storageState() });
     try {
       const page = await context.newPage();

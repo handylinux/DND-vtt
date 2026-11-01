@@ -8,7 +8,7 @@ import { drawAccess, type DrawAccess } from "./gate.ts";
 /**
  * The Draw tool's choices, its draft and its gesture, apart from the tool's
  * .tsx so the row and the tool's key share one list and one pick, and the
- * unit tests can load them (docs/design-v1-tool-cycle.md 2.13).
+ * unit tests can load them (docs/design/design-v1-tool-cycle.md 2.13).
  */
 
 /** A kept ruler is a drawing too, but the ruler tool makes and removes it (features/measure). */

@@ -8,7 +8,7 @@ import { pickShape, type HexDetection, type HexFound, type MapShape } from "./de
 import { canonicalToWorld, calibrationFromFind, calibrationFromHexFind, FOUND_SNAP, FOUND_SNAP_PX, worldToCanonical, type Calibration, type KeptGrid, type Point } from "./calibrate.ts";
 
 /**
- * Finding a map's drawn grid from the page (docs/design-v1-grid-detect.md
+ * Finding a map's drawn grid from the page (docs/design/design-v1-grid-detect.md
  * section 6): what to do with a detection, and the Worker that makes one,
  * with its cancel and its deadline.
  */
@@ -24,7 +24,7 @@ export const IMPORT_WAIT_MS = 2000;
  * A grid found on a map: applied when `tier` is high, else only offered.
  * `shape` is the shape its lines make, as a scene stores it, absent for
  * squares. `contested` names the other shape found on the same map, which
- * makes even a sure find only an offer (docs/design-v1-grid-detect.md 10.6).
+ * makes even a sure find only an offer (docs/design/design-v1-grid-detect.md 10.6).
  */
 export type FoundGrid = {
   tier: "high" | "medium";

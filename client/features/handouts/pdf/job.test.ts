@@ -283,7 +283,7 @@ function world(opts: { pages?: number; title?: string | null; failDraw?: number[
 const answer = (s: Sent, ...args: Parameters<OnAnswer>) => s.onAnswer(...args);
 const refusal = (code: OpRefusal["code"], text: string): OpRefusal => ({ code, message: text, text });
 
-describe("opening a PDF (docs/design-v1-pdf-handouts.md 4.1.3)", () => {
+describe("opening a PDF (docs/design/design-v1-pdf-handouts.md 4.1.3)", () => {
   test("a PDF by its type, or by its name when it has no type or a generic one; an image by its type whatever its name", () => {
     assert.equal(isPdfFile({ type: "application/pdf", name: "x" }), true);
     assert.equal(isPdfFile({ type: "", name: "Letter.PDF" }), true);
@@ -355,7 +355,7 @@ describe("opening a PDF (docs/design-v1-pdf-handouts.md 4.1.3)", () => {
   });
 });
 
-describe("drawing and uploading (docs/design-v1-pdf-handouts.md 4.1.4)", () => {
+describe("drawing and uploading (docs/design/design-v1-pdf-handouts.md 4.1.4)", () => {
   test("every page of the range, in order, background uploads, each owned page in the ledger before the next upload, then the create under the id chosen first", async () => {
     const w = world({ pages: 3 });
     await w.open();
@@ -515,7 +515,7 @@ describe("drawing and uploading (docs/design-v1-pdf-handouts.md 4.1.4)", () => {
   });
 });
 
-describe("pausing and stopping (docs/design-v1-pdf-handouts.md 4.1.6)", () => {
+describe("pausing and stopping (docs/design/design-v1-pdf-handouts.md 4.1.6)", () => {
   test("each upload failure pauses or stops in its own words, and Try again goes on from that page", async () => {
     const cases: [unknown, string][] = [
       [new ApiError(0, "x", "network", null), "The upload stopped at page 2. Check your connection."],
@@ -817,7 +817,7 @@ describe("pausing and stopping (docs/design-v1-pdf-handouts.md 4.1.6)", () => {
   });
 });
 
-describe("saving under a stable id (docs/design-v1-pdf-handouts.md 4.1.5)", () => {
+describe("saving under a stable id (docs/design/design-v1-pdf-handouts.md 4.1.5)", () => {
   test("an invalid title pauses the save until it is fixed", async () => {
     const w = world({ pages: 1 });
     await w.open();
@@ -907,7 +907,7 @@ describe("saving under a stable id (docs/design-v1-pdf-handouts.md 4.1.5)", () =
   });
 });
 
-describe("what the server holds decides a save (docs/design-v1-pdf-handouts.md 4.1.5)", () => {
+describe("what the server holds decides a save (docs/design/design-v1-pdf-handouts.md 4.1.5)", () => {
   test("an unknown create that committed is saved even while a Library delete of it is pending, read from the room's real store", async () => {
     const withDoc = { ...testRoom(), handoutDocs: { "doc-1": { id: "doc-1", rev: 1, title: "Strange letter", pages: [{ assetId: "img-1", width: 1583, height: 2048 }], createdAt: "2026-10-16T00:00:00.000Z" } } } as RoomState;
     const server = new LocalServer(structuredClone(withDoc), DM_VIEWER, "s1");
@@ -929,7 +929,7 @@ describe("what the server holds decides a save (docs/design-v1-pdf-handouts.md 4
   });
 });
 
-describe("Cancel upload (docs/design-v1-pdf-handouts.md 4.1.6)", () => {
+describe("Cancel upload (docs/design/design-v1-pdf-handouts.md 4.1.6)", () => {
   test("before the create: Cancelling… until the summary, its own pages deleted and a reused one never, the ledger cleared", async () => {
     const w = world({ pages: 3, autoUpload: false });
     await w.open();
@@ -1160,7 +1160,7 @@ describe("Cancel upload with nothing to undo", () => {
   });
 });
 
-describe("the ledger and its recovery (docs/design-v1-pdf-handouts.md 4.1.2)", () => {
+describe("the ledger and its recovery (docs/design/design-v1-pdf-handouts.md 4.1.2)", () => {
   test("found with its document saved, it is cleared quietly; otherwise offered", () => {
     const ledger = { docId: "doc-1", title: "Strange letter", ids: ["a", "b"], uncertain: null };
     assert.equal(recoveryOf(null, {}), "none");
@@ -1236,7 +1236,7 @@ describe("the ledger and its recovery (docs/design-v1-pdf-handouts.md 4.1.2)", (
   });
 });
 
-describe("the job's pages and its holds (docs/design-v1-pdf-handouts.md 4.1.2)", () => {
+describe("the job's pages and its holds (docs/design/design-v1-pdf-handouts.md 4.1.2)", () => {
   test("a running job's pages, owned and reused alike, are not loose; a finished one's are", async () => {
     const w = world({ pages: 2, autoUpload: false });
     await w.open();

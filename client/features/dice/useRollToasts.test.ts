@@ -4,7 +4,7 @@ import type { DiceRoll, LogEntry, LogEvent } from "#shared/model.ts";
 import { parseRollToasts } from "../device/settings.ts";
 import { BATCH_REMEMBERED_MS, othersRolls, ownResultText, toastDie, unseenGroups } from "./useRollToasts.ts";
 
-/** Rolls as toasts (docs/design-v1-dice.md 8.5 and 8.7). */
+/** Rolls as toasts (docs/design/design-v1-dice.md 8.5 and 8.7). */
 let seq = 0;
 const ROLL: DiceRoll = { formula: "1d20+5", faces: [14], total: 19, label: "Stealth" };
 function line(data: Partial<Extract<LogEvent, { type: "dice" }>>): LogEntry {
@@ -61,7 +61,7 @@ describe("others' rolls as toasts", () => {
   });
 });
 
-/** Others' D20 Tests lead their toast with the die (docs/design-v1-roll-animation.md 4). */
+/** Others' D20 Tests lead their toast with the die (docs/design/design-v1-roll-animation.md 4). */
 describe("the toast's d20", () => {
   type Dice = Extract<LogEvent, { type: "dice" }>;
   const dice = (rolls: DiceRoll[], extra: Partial<Dice> = {}): Dice => ({ type: "dice", by: "p2", to: "all", rolls, ...extra });

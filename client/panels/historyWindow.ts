@@ -4,7 +4,7 @@ import type { LogEntry } from "#shared/model.ts";
 import { ApiError } from "../lib/api.ts";
 
 /**
- * The Log panel's window on the room's archive (docs/design-v1-log-history.md
+ * The Log panel's window on the room's archive (docs/design/design-v1-log-history.md
  * 5.3): which older or newer lines it holds besides the live log, and the
  * page it is waiting for.
  *

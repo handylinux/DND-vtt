@@ -1,6 +1,6 @@
 import { WorkBudget } from "#shared/rules/walk.ts";
 
-/** The most route work a frame does (docs/design-v1-movement.md 5.2), in milliseconds. */
+/** The most route work a frame does (docs/design/design-v1-movement.md 5.2), in milliseconds. */
 export const SLICE_MS = 4;
 
 /**
@@ -15,7 +15,7 @@ export type RouteJob = { run(budget: WorkBudget): boolean; readonly first?: bool
 export type Frames = { now(): number; request(run: () => void): number; cancel(handle: number): void };
 
 /**
- * The one owner of route work on the board (docs/design-v1-movement.md
+ * The one owner of route work on the board (docs/design/design-v1-movement.md
  * 5.2, review ASTRA-14). Every drag's aim, ruler leg, open-ground check
  * and arrow key's press runs through it, on one budget a frame that all of
  * them share: once it is spent nothing else runs until the next frame, and

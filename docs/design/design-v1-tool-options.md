@@ -1,10 +1,10 @@
 # raccoon-vtt v1: tool options in one row
 
-Status: draft 1, for design review, with the project owner's answers of 2026-10-16 (section 17). Code is cited from public main at `e4ec8696`. This design builds on docs/design-v1-layout-hierarchy.md and docs/design-v1-bar-dock.md, and replaces the first one's section 3 (the rail). Their other rules stay, and section 10 says exactly what each rule that read the options' box does after.
+Status: draft 1, for design review, with the project owner's answers of 2026-10-16 (section 17). Code is cited from public main at `e4ec8696`. This design builds on docs/design/design-v1-layout-hierarchy.md and docs/design/design-v1-bar-dock.md, and replaces the first one's section 3 (the rail). Their other rules stay, and section 10 says exactly what each rule that read the options' box does after.
 
 The project owner's feedback after the first real session (2026-10-15): the tools' options took too much height, worst on a phone held sideways, and Draw and Area were the worst of them. Players on phones come first. The DM plays on a computer. The project owner then chose a direction from a visual design handoff: its Turn 2, frames 2a to 2d, "one row of options, everything else one tap away". This document keeps that direction's structure and behavior and makes it buildable here: every control the code has today gets a home, the fit and the popovers get exact rules, and every part of the page that reads the options' box is told what it reads now.
 
-Two notes on names. The project owner renamed "Select several" to "Multi-select" on 2026-10-16, so this document calls the mode and its bar Multi-select. The rename itself (the token bar's button, the bar's words, the tests that find them) is its own change. A parallel design, docs/design-v1-token-window.md, changes the docked token bar: it removes Move bar and Reset bar position, adds a reset icon to the bar's header and lets the docked bar be resized on a computer. Nothing here depends on the bar's size or on those buttons. The bar reads the free area, and this design only changes how tall the options are.
+Two notes on names. The project owner renamed "Select several" to "Multi-select" on 2026-10-16, so this document calls the mode and its bar Multi-select. The rename itself (the token bar's button, the bar's words, the tests that find them) is its own change. A parallel design, docs/design/design-v1-token-window.md, changes the docked token bar: it removes Move bar and Reset bar position, adds a reset icon to the bar's header and lets the docked bar be resized on a computer. Nothing here depends on the bar's size or on those buttons. The bar reads the free area, and this design only changes how tall the options are.
 
 Every size is in layout px, the chrome's own (`features/device/layout.ts`): the window divided by the interface size. A safe area counts at its full size, as in the two designs above. "Sideways" means wider than tall. "Short" means under 500 px tall (`SHORT_LANDSCAPE_MAX`, `features/encounter/band.ts:18`). "Wide" means 900 px or wider (`theme.layout.wideMinWidth`). "The phone layout" means under 900 px. "Room" means the width a row may use for its controls. Widths quoted from today's controls were measured on the dev fixture room at 100% (section 3.4). They illustrate the rules, and no rule depends on them: the build measures the real controls.
 
@@ -65,7 +65,7 @@ Room measures the bar and publishes it (`Room.tsx:125-177,243-246,516-534`):
 
 Section 9 maps every control, so here only the shape of each bar. Ruler: a line, Shared (DM), Keep, Clear, then one danger button per kept ruler and Remove all. Area: three states (idle, placing, a placed area picked), the placing and picked bars with a More toggle that opens a second row of up to thirteen controls, and a spell search whose results take their own row. Draw: a long row of a drawing tool select, Undo, Redo, ten color swatches, Width, Opacity, Fill, DM only, Clear mine and Clear all, plus a text row or a polygon row above it while one is in progress, and an eraser-only form for a player not allowed to draw. Ping: Look here (DM) and Ping sound. Fog: a fog-off state, then Clear or add fog, Shape, the polygon's Close shape and Undo corner, the brush's width, Draft or Live, the draft's publish button, Undo and Discard, and More with Fog all and Reveal all. Add token: a kind select and Monster… and Character…, or Cancel once something is chosen. Pin: three states. Map builder: a mode select, Undo, Redo, each mode's controls and Clear build, with a compact form for a selected stamp on a phone that opens modal Tint and More sheets (`stamps/StampOptions.tsx:139-178`, `StampSheet.tsx:13-19`). Line up grid: Apply, the scale, Nudge and More, each opening a row. Multi-select: "3 selected.", Actions and Done.
 
-The measured cost of the bars on a sideways phone is in docs/design-v1-layout-hierarchy.md 2.1: before the rail they left the map as little as 16 layout px at 844 x 390 at 130%.
+The measured cost of the bars on a sideways phone is in docs/design/design-v1-layout-hierarchy.md 2.1: before the rail they left the map as little as 16 layout px at 844 x 390 at 130%.
 
 ### 3.4 Widths today
 
@@ -160,7 +160,7 @@ Every button in the toolbar's row, Panels included, is `B` wide: 56 px with its 
 
 ### 5.5 Keys
 
-Amended by docs/design-v1-tool-cycle.md: a second press of the active tool's key also moves to the next option of its main choice.
+Amended by docs/design/design-v1-tool-cycle.md: a second press of the active tool's key also moves to the next option of its main choice.
 
 Unchanged: every key picks its tool directly, a setup tool behind Setup and any tool hidden by the pair included, because `useShortcuts` keeps reading `toolsFor` (`Room.tsx:293-298`), never the buttons the toolbar draws. One addition: the key of the active tool brings back its tucked options. It never tucks, so a held or repeated key never hides them. A key that picks another tool closes any open popover, as any tool change does.
 
@@ -242,7 +242,7 @@ The row draws its inline slots in display order with 4 px between them, then ⋯
 
 ### 7.1 The shared popover base
 
-One base for every non-modal popover in the room: this design's tool popovers, Setup and Tools (5.1, 5.2), and the side panel's More menu (docs/design-v1-panel-tabs.md cites this section). Whichever of the two builds lands first writes it, and the other adopts it. A consumer adds its own role, look, keys and contents. It never changes the rules below.
+One base for every non-modal popover in the room: this design's tool popovers, Setup and Tools (5.1, 5.2), and the side panel's More menu (docs/design/design-v1-panel-tabs.md cites this section). Whichever of the two builds lands first writes it, and the other adopts it. A consumer adds its own role, look, keys and contents. It never changes the rules below.
 
 - **Modules.** `client/components/Popover.tsx`, the component, and `client/components/popoverPlace.ts`, the placement, a pure function. One test file, `client/components/popover.test.ts`, holds the base's tests (14).
 - **In the page.** The popover renders right after its anchor in the page, so it is next in Tab order, and positions itself from measured rectangles in the chrome's own px (a rectangle divided by the interface size, as Room's measures are), so the interface size never enters the rule.
@@ -266,7 +266,7 @@ One base for every non-modal popover in the room: this design's tool popovers, S
 - **Closes with its anchor or its surface**: when the anchor leaves the page or its surface hides (the options under a sheet, the side panel hidden), when a scroll takes the anchor out of what scrolled or out of the window (FL-17), and when a modal dialog opens.
 - **Stacking.** While open, the popover's box stands in the browser's top layer (FL-17), over everything in the page but a modal dialog opened after it. In a browser with no popovers, its stacking context (its consumer's element) takes `theme.z.popover` (21, 7.6) instead.
 
-The menu kind (More, Setup, Tools) uses `components/Menu.tsx` and its pure keys, `components/menuKeys.ts`, from docs/design-v1-panel-tabs.md 4.4 and 5.2: `role="menu"`, its items `menuitemradio`, arrows, Home and End, typeahead, Enter or Space to pick, Escape to close with focus on the anchor, Tab and Shift+Tab by the rule above, every handled key marked used. The focus and Tab rules above are the base's, not the menu's own, so More, Setup and Tools behave alike. Setup and Tools draw it as tiles (5.1).
+The menu kind (More, Setup, Tools) uses `components/Menu.tsx` and its pure keys, `components/menuKeys.ts`, from docs/design/design-v1-panel-tabs.md 4.4 and 5.2: `role="menu"`, its items `menuitemradio`, arrows, Home and End, typeahead, Enter or Space to pick, Escape to close with focus on the anchor, Tab and Shift+Tab by the rule above, every handled key marked used. The focus and Tab rules above are the base's, not the menu's own, so More, Setup and Tools behave alike. Setup and Tools draw it as tiles (5.1).
 
 ### 7.2 Kinds and look
 
@@ -309,7 +309,7 @@ The base's rules (7.1), and for the tool popovers, Setup and Tools:
 
 ### 7.6 Stacking
 
-Since FL-17 an open popover's box is a manual popover in the browser's top layer, so it stands over notices, toasts, the alerts opened over the screen (22) and a player's roll card (25), and only a modal dialog opened after it stands above it. The rest of this section holds for a browser with no popovers. There, while a popover is open, its options element or toolbar takes `theme.z.popover`, a new token of 21 (today's "options over notices", `Room.tsx:1461`), so the popover stands over notices and toasts and under the alerts opened over the screen (22), a player's roll card (25) and modal dialogs. A roll card at a narrow screen's foot stands on the options row, where the options' popovers rise, so it folds into "Roll asked" while one of them is open, as under a sheet (docs/design-v1-visual.md 3.3.1), and comes back when it closes. The rest of the time the options keep `theme.z.options` (14) and the toolbar `theme.z.bars` (15). The compact token bar (16) covers the toolbar and the merged row together, as it covers the toolbar today.
+Since FL-17 an open popover's box is a manual popover in the browser's top layer, so it stands over notices, toasts, the alerts opened over the screen (22) and a player's roll card (25), and only a modal dialog opened after it stands above it. The rest of this section holds for a browser with no popovers. There, while a popover is open, its options element or toolbar takes `theme.z.popover`, a new token of 21 (today's "options over notices", `Room.tsx:1461`), so the popover stands over notices and toasts and under the alerts opened over the screen (22), a player's roll card (25) and modal dialogs. A roll card at a narrow screen's foot stands on the options row, where the options' popovers rise, so it folds into "Roll asked" while one of them is open, as under a sheet (docs/design/design-v1-visual.md 3.3.1), and comes back when it closes. The rest of the time the options keep `theme.z.options` (14) and the toolbar `theme.z.bars` (15). The compact token bar (16) covers the toolbar and the merged row together, as it covers the toolbar today.
 
 ### 7.7 Code it reuses
 
@@ -350,7 +350,7 @@ Line: today's hint, then the reading "35 ft (15 ft + 20 ft)" with the diagonal r
 | Slot | Kind | Priority | Compact |
 |---|---|---|---|
 | Shared (DM) | Pressed toggle | 1 | |
-| Measure, Straight or Walking (docs/design-v1-movement.md) | Segmented | 4 | A chip with "Line" or "Walk" |
+| Measure, Straight or Walking (docs/design/design-v1-movement.md) | Segmented | 4 | A chip with "Line" or "Walk" |
 | Keep ("Keep this ruler on the map") | Button | 2 | |
 | Clear | Danger | 2 | |
 | "Kept rulers (2)" (while this person has kept rulers to remove) | Chip, opens the "Kept rulers" setting popover | 3 | "Kept (2)" |
@@ -359,7 +359,7 @@ The popover holds today's row: one danger row per kept ruler, named "Remove the 
 
 ### 9.3 Area (`areas/AreaOptions.tsx`)
 
-Amended by docs/design-v1-area-from-character.md section 4.
+Amended by docs/design/design-v1-area-from-character.md section 4.
 
 The More toggle and its store flag (`areas/store.ts:34`) go: its row is the tool's content always in ⋯. The spell results row goes too: results show in the shape popover under the spell field, or, while the field is in the row, in a "Spells" choice popover anchored to it that shows while the field has focus and text. Enter still applies the first match. The shape chip is named "Shape: Sphere" and its popover titled "Shape".
 
@@ -543,9 +543,9 @@ Nudge and More were pressed toggles opening rows. Nudge becomes a popover anchor
 
 - The options element: one element, `role="toolbar"` named "<tool> options", before the toolbar in the page's order, never remounted by a rotation or a change of arrangement, so a draft, a half-typed field and focus survive turning the phone.
 - `optionsShown` and the rule that a phone sheet or the list of panels hides the options (`Room.tsx:464`).
-- Every tool's state, its reset rules on a tool, scene or role change (docs/design-v1-layout-hierarchy.md 3.5's list), and every key.
+- Every tool's state, its reset rules on a tool, scene or role change (docs/design/design-v1-layout-hierarchy.md 3.5's list), and every key.
 - The options over a lasting notice where they would meet it (8).
-- The side panel's hiding, the sideways sheet's Hide, the very short sheet, the handout viewer and the ten moves of docs/design-v1-layout-hierarchy.md, unchanged.
+- The side panel's hiding, the sideways sheet's Hide, the very short sheet, the handout viewer and the ten moves of docs/design/design-v1-layout-hierarchy.md, unchanged.
 
 **New:** the arrangement (4), the toolbar's grouping, pair and tuck (5), the strip and its fit (6), popovers (7), the line (8). `data-rvtt-arrangement` on the options element ("stacked", "floating", "merged", "pair"), `data-rvtt-slot` on each slot where it is drawn (never in the measuring layer), for the tests. On the phone layout the toolbar's fill and top edge move to an `aria-hidden` backdrop under the options (`theme.z.options − 1`), which takes the toolbar's taps between its buttons, so the merged row is never painted under the toolbar's fill. The `nav` keeps its buttons at `theme.z.bars`.
 
@@ -580,7 +580,7 @@ This keeps the rule today's design set (a tool's options report their drawn box 
 | The summary row's tap (`askedAlerts`) | Cards over the options down to the toolbar | Unchanged |
 | The very short mode and its modal sheet | Decided from the top bars and the 60 px toolbar | Unchanged: it never read the options. It hides the options, so it closes any popover (7.4) |
 | Notices, beside the lane or spanning | Spanning right of the rail | Beside the lane where 320 px are left there, else across the map, as before the rail. The row and the line stand over a lasting notice they meet (8) |
-| "Viewing as Pat" | Room reports the free area's box while a rail shows | Room reports a box only beside the lane, as docs/design-v1-bar-dock.md 1.3 set it |
+| "Viewing as Pat" | Room reports the free area's box while a rail shows | Room reports a box only beside the lane, as docs/design/design-v1-bar-dock.md 1.3 set it |
 | A player's roll card at a narrow screen's foot | Stands on `Chrome.bottom` or the toolbar, right of the rail | Stands on `Chrome.bottom` (above the row and the line) or on the toolbar, from the left edge |
 | Fit, Find, pans to a token, `keepInView` | Clear of `insets` with the rail at the left | Clear of the bars, the row and the line. Picking a tool refits a camera that is still a fit, as a bar appearing at the foot does today. Merged, a tool adds only its line |
 | Panes on map points (label, light, pin, door, stop note, heights readout) | Clamp to `insets` | The same, so a pane never sits under the row or the line |
@@ -602,7 +602,7 @@ This keeps the rule today's design set (a tool's options report their drawn box 
 
 ### 11.1 Keys for the shortcut sheet
 
-Amended by docs/design-v1-tool-cycle.md 4.4: the `toolKeyShow` row's words.
+Amended by docs/design/design-v1-tool-cycle.md 4.4: the `toolKeyShow` row's words.
 
 The project owner's standing rule (2026-10-16): the shortcut sheet (`?`, and Menu, This device: `client/features/device/ShortcutSheet.tsx`) lists the room's keys and its key-plus-pointer combinations (Shift or Ctrl+click, a key with a drag, Space+drag, a right or middle drag, Ctrl+wheel), from the registry in `client/state/shortcuts.ts`, `SHORTCUTS` and `BEHAVIORS` beside it, and FEATURES.md's shortcut tables mirror them (`shortcuts.test.ts` fails when they disagree). Plain taps, clicks, drags and touch gestures are not listed there, by the project owner's word: "just the key + click and key + drag behaviors". So the tap that tucks, Setup's and the pair's taps, a press on the map closing a popover, two fingers keeping it open, and the taps on the line and the "options hidden" pill stay rules of this design (5.1, 5.2, 5.4, 7.1, 7.4, 8) and get no sheet row. This design adds no key-plus-pointer combination.
 
@@ -856,13 +856,13 @@ Unit tests, `node:test`:
     - The same output for the same input.
   - The tool popovers' inputs to `popoverPlace` (7.3): the bound under the top bars and a lasting notice, the rise region to the top safe area, toolbar popovers over a stacked row.
   - The last tool: Ruler at the start, never Select, updated by every way a tool becomes active, back to the Ruler when its tool leaves the list. Tuck: a second tap on a tool's own button, a pick of the active tool's tile in Setup or Tools, a tool change, the active tool's key, and a change of arrangement, which keeps it.
-- `client/canvas/barDock.test.ts`: the rail describe goes, except "the right safe area is off while the side panel shows" (`:540`), which moves to the free area's describe. The `phone()` fixture drops `rail`, and its `options` models a stacked row (53 px) or a merged one (0) with an optional line. The worked numbers of docs/design-v1-bar-dock.md 1.4 at 844 x 390 at 130% are recomputed with the merged row (Multi-select's free height 151: dock). `columnCards` without a rail. `noticeSpan` and the Multi-select hint tests go.
+- `client/canvas/barDock.test.ts`: the rail describe goes, except "the right safe area is off while the side panel shows" (`:540`), which moves to the free area's describe. The `phone()` fixture drops `rail`, and its `options` models a stacked row (53 px) or a merged one (0) with an optional line. The worked numbers of docs/design/design-v1-bar-dock.md 1.4 at 844 x 390 at 130% are recomputed with the merged row (Multi-select's free height 151: dock). `columnCards` without a rail. `noticeSpan` and the Multi-select hint tests go.
 - `client/lib/escape.test.ts` is unchanged: `escapeTarget` keeps its order, since the base takes Escape before the room's handler sees it (7.1).
 - `client/state/shortcuts.test.ts`: a key picks a setup tool and a tool the pair hides. The active tool's key shows tucked options and never tucks.
 - `client/features/tools.test.ts`: the DM's phone toolbar with Setup, the wide toolbar with all ten, a player's unchanged.
 - Delete `client/pages/optionsPlace.test.ts`. Drop `rail` from the `Chrome` literals in `client/canvas/barButtons.test.ts:71` and `client/features/tokens/statBlockOpen.test.ts:45`.
 
-e2e, one file after another as docs/design-v1-visual.md 5.3 says. A new helper in `e2e/harness.ts`, `pickOption(page, tool, group, option)`, opens a group's chip, or ⋯ where the group waits there, and checks the option's radio, so tests stop reaching for native selects.
+e2e, one file after another as docs/design/design-v1-visual.md 5.3 says. A new helper in `e2e/harness.ts`, `pickOption(page, tool, group, option)`, opens a group's chip, or ⋯ where the group waits there, and checks the option's radio, so tests stop reaching for native selects.
 
 New `e2e/options.e2e.ts`, on E2E_PORT plus 15 (plus 12 to 14 went to other builds):
 
@@ -896,7 +896,7 @@ Existing files:
 
 ## 15. Build plan
 
-One part in one workspace, built after the token window build's first commit (the rename to Multi-select, docs/design-v1-token-window.md), since this design's tests, sheet rows and FEATURES text say "Multi-select". Each commit typechecks, passes the unit tests and builds. The e2e edits ride with the commit whose behavior they follow, and the new sweep comes last.
+One part in one workspace, built after the token window build's first commit (the rename to Multi-select, docs/design/design-v1-token-window.md), since this design's tests, sheet rows and FEATURES text say "Multi-select". Each commit typechecks, passes the unit tests and builds. The e2e edits ride with the commit whose behavior they follow, and the new sweep comes last.
 
 1. `feat(ui): layout rules for tool options in one row`: `client/pages/optionsLayout.ts` and its test (4, 6.3, 6.4, 5.2).
 2. `feat(ui): popovers, value chips and the options strip`: the shared popover base (7.1), `client/components/Popover.tsx`, `client/components/popoverPlace.ts` and `client/components/popover.test.ts`, and `client/components/Menu.tsx` with `menuKeys.ts` and its tile option, unless the panel tabs build has landed them first, in which case this commit adopts them and adds the tile option. Then the strip, slots, measuring layer, value chip, tiles, ⋯ and line in `client/features/measure/controls.tsx`, the new glyphs in `components/Icon.tsx` (a caret, the up chevron, a sliders glyph for Setup, and the option glyphs of 17.2), `theme.z.popover` in `client/lib/theme.ts`. Every new size is a theme token, so the style drift tests (`client/lib/styleDrift.test.ts`, `styleDriftScan.test.ts`) pass. Nothing uses them yet.
@@ -914,7 +914,7 @@ One part in one workspace, built after the token window build's first commit (th
 4. `feat(ui): one options row with a floating line replaces the rail`: `client/pages/Room.tsx` (the options element and its arrangements, the line, the measured box, `insets`, `Chrome` without `rail`, the toolbar's backdrop), `client/canvas/barDock.ts` and its test, `client/features/encounter/InitiativeStrip.tsx`, `client/features/rolls/PlayerRolls.tsx`, `client/canvas/Stage.tsx` (the map press a popover suppresses, read from the room's open-popover slot), `client/features/tools.ts` (no `optionsAt`), `client/canvas/TokenActionBar.tsx` (`ScrollForMore` without `fill`), the deletion of `client/pages/optionsPlace.ts` and its test, the fixtures in `barButtons.test.ts` and `statBlockOpen.test.ts`, the shortcut sheet's rows for Escape and the popovers' keys, with the "Tool options" surface (11.1), in `client/state/shortcuts.ts`, FEATURES.md (section 16: the options lines and the shortcut tables' rows for them).
 5. `feat(ui): the toolbar merges with the options on short sideways screens`: `Room.tsx` `Toolbar` and `ToolButton` (Setup and Tools as tile menus, the pair, fixed widths, tuck with the active tool's description and the "options hidden" pill, the carets), the last tool and tuck in the room's scope (`client/state/scope.ts` slots), `client/state/shortcuts.ts` (a key shows tucked options, the wider reach of the tool keys, and the sheet's "Toolbar" rows and intro, 11.1) and its test, `client/features/tools.test.ts`, FEATURES.md (the toolbar lines, and the shortcut section's rows for them).
 6. `test(e2e): every tool option reachable in the row or behind more at every size`: `e2e/options.e2e.ts`, `pickOption` in `e2e/harness.ts`.
-7. `docs: point the layout, bar dock and visual designs at one-row tool options`: a status line in docs/design-v1-layout-hierarchy.md section 3 ("Replaced by docs/design-v1-tool-options.md") and its FEATURES line in section 9, the "options scroll past that room" and "capped options" sentences of docs/design-v1-bar-dock.md 1.3, and docs/design-v1-visual.md 3.4's first line.
+7. `docs: point the layout, bar dock and visual designs at one-row tool options`: a status line in docs/design/design-v1-layout-hierarchy.md section 3 ("Replaced by docs/design/design-v1-tool-options.md") and its FEATURES line in section 9, the "options scroll past that room" and "capped options" sentences of docs/design/design-v1-bar-dock.md 1.3, and docs/design/design-v1-visual.md 3.4's first line.
 
 The pointer registry and the sheet's Mouse, Touch and surface sections come from the shortcut sheet's own build. Whichever of the two lands second adds this design's rows to it.
 

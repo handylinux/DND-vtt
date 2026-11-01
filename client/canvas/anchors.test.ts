@@ -7,7 +7,7 @@ import { footAnchor, groundAnchor, headAnchor } from "./anchors.ts";
 const CAM: Camera = { x: 120, y: -40, scale: 30 };
 const BOX = { x: 4, y: 6, w: 2, h: 2 };
 
-describe("the chrome's anchors (docs/design-v1-isometric-view.md 5.3)", () => {
+describe("the chrome's anchors (docs/design/design-v1-isometric-view.md 5.3)", () => {
   test("Top-down: under the box's bottom middle and at its top edge, as before, whatever the height", () => {
     const top = { view: TOP_DOWN };
     assert.deepEqual(footAnchor(CAM, top, BOX, 3), viewToScreen(CAM, toView(TOP_DOWN, { x: 5, y: 8 })));

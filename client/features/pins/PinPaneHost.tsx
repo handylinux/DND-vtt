@@ -35,7 +35,7 @@ export function PinPaneHost(props: { scene: Scene; tool: string; chrome: ChromeC
   useEffect(() => {
     if (paneId !== null && !open) store.setState({ paneId: null });
   }, [paneId, open, store]);
-  // At the camera the canvas last drew, subscribed only while it shows (docs/design-v1-relief-pan.md 6.3).
+  // At the camera the canvas last drew, subscribed only while it shows (docs/design/design-v1-relief-pan.md 6.3).
   const at = useChromeCamera(props.chrome, open);
   if (!open || !pin || !at) return null;
   const close = () => store.setState({ paneId: null });

@@ -60,12 +60,12 @@ import {
 
 /**
  * A page to show. Its size, when known ahead, lays it out before it loads:
- * a handout of pages carries every page's size (docs/design-v1-pdf-handouts.md
+ * a handout of pages carries every page's size (docs/design/design-v1-pdf-handouts.md
  * 3.1). One image does not, so its own size is read once it arrives.
  */
 export type ViewerPage = {
   src: string;
-  /** The page's small copy, shown stretched to its box while `src` is slow (docs/design-v1-pdf-handouts.md 5.4). */
+  /** The page's small copy, shown stretched to its box while `src` is slow (docs/design/design-v1-pdf-handouts.md 5.4). */
   thumb?: string;
   alt: string;
   width?: number;
@@ -80,7 +80,7 @@ const THUMB_AFTER_MS = 400;
 const PAGE_FILL = theme.color.surfaceRaised;
 
 /**
- * The one way to look at an image large (docs/design-v1-layout-hierarchy.md
+ * The one way to look at an image large (docs/design/design-v1-layout-hierarchy.md
  * section 5): a handout the DM shows (HandoutPopup.tsx), and any image in
  * the Library (images/LibraryGrid.tsx).
  *
@@ -92,7 +92,7 @@ const PAGE_FILL = theme.color.surfaceRaised;
  * that would move the pinch's baseline. Elsewhere it fills the screen from
  * the start. zoom.ts viewerStep holds every state and step.
  *
- * A handout of several pages reads like a PDF (docs/design-v1-pdf-handouts.md
+ * A handout of several pages reads like a PDF (docs/design/design-v1-pdf-handouts.md
  * section 5): one column of pages, a page row with Previous page and Next
  * page, the page keys, a fling, and pages that load near the screen. Two
  * layers draw it. The page layer, under the CSS transform, holds only the
@@ -111,7 +111,7 @@ export function HandoutViewer(props: {
   onClose(): void;
   pages: readonly ViewerPage[];
   /**
-   * Which showing this is (docs/design-v1-pdf-handouts.md 5.1): the popup's
+   * Which showing this is (docs/design/design-v1-pdf-handouts.md 5.1): the popup's
    * `showingKey`, or the Library's `doc:<id>` or `image:<id>`. A new key
    * starts at rest on its remembered page, and the same key arriving again,
    * as a reconnect's resync, keeps the page, the zoom and any gesture.
@@ -121,7 +121,7 @@ export function HandoutViewer(props: {
   headerActions?: ReactNode;
   /**
    * What is shown, in the header under the title: the Library's size,
-   * bytes, use and credit (docs/design-v1-pdf-handouts.md 8.4). Small and
+   * bytes, use and credit (docs/design/design-v1-pdf-handouts.md 8.4). Small and
    * muted, wrapping as it needs.
    */
   details?: ReactNode;

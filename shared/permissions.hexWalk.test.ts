@@ -11,7 +11,7 @@ import { COLUMNS, hexWallRoom, onHex, ROWS, sideWall, wallsRound } from "./rules
 import { character, DM, P1 } from "./testutil.ts";
 
 /**
- * A player's walk on a hex scene that stops moves (docs/design-v1-hex-grids.md
+ * A player's walk on a hex scene that stops moves (docs/design/design-v1-hex-grids.md
  * phase H2): routes and squeezes go where the hex rules let them, each stop
  * of a route on an anchor, and the walls stop what crosses them.
  */

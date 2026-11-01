@@ -53,7 +53,7 @@ export const FULL_NOTE_ROOM = Math.ceil(
 export const COMPACT_NOTE_ROOM = Math.ceil(2 * theme.touch + GAP + PAD_TOP + PAD_FOOT + 2 * theme.line.border);
 
 /**
- * The note after a stopped drop (docs/design-v1-maps-vision.md 4.1), beside
+ * The note after a stopped drop (docs/design/design-v1-maps-vision.md 4.1), beside
  * the ghost that marks where the player dropped the token: what stopped the
  * walk, and "Teleport here" for Misty Step and anything else that passes
  * walls or ledges. It goes when the player closes it, the teleport is done,
@@ -92,13 +92,13 @@ export function StopNoteHost(props: { scene: Scene; chrome: ChromeCamera; viewpo
     observer.observe(el);
     return () => observer.disconnect();
   }, [shown]);
-  // At the camera the canvas last drew, subscribed only while the note shows (docs/design-v1-relief-pan.md 6.3).
+  // At the camera the canvas last drew, subscribed only while the note shows (docs/design/design-v1-relief-pan.md 6.3).
   const at = useChromeCamera(props.chrome, shown);
 
   if (!shown || !note || !token || !at) return null;
 
   const fp = footprint(token);
-  // Under the ghost where the walk stopped: in Isometric under its ring, on the ground drawn there (docs/design-v1-isometric-view.md 5.3).
+  // Under the ghost where the walk stopped: in Isometric under its ring, on the ground drawn there (docs/design/design-v1-isometric-view.md 5.3).
   const pick = at.pick;
   const anchor = footAnchor(at.camera, pick, { x: note.ghost.x, y: note.ghost.y, w: fp.w, h: fp.h }, groundUnder(pick, { ...token, x: note.ghost.x, y: note.ghost.y, squeeze: undefined }));
   // A card over the map as wide as a map pane, inside the canvas's 8 px margins.
@@ -141,7 +141,7 @@ export function StopNoteHost(props: { scene: Scene; chrome: ChromeCamera; viewpo
       {stopText({ blocker: note.blocker, door: noteDoor(chunks, note.sceneId, note.door, fog, sceneGrid(props.scene)), searched: note.searched, capped: note.capped, follower: note.follower })}
     </span>
   );
-  // The note's one action, so the primary (docs/design-v1-visual.md 2.3). The help is its description, read with it.
+  // The note's one action, so the primary (docs/design/design-v1-visual.md 2.3). The help is its description, read with it.
   const action = (
     <Button variant="primary" size="sm" busy={busy} onClick={teleport} aria-describedby={helpId} style={oneRow ? { flex: 1, minWidth: 0 } : undefined}>
       {busy ? "Teleporting…" : "Teleport here"}

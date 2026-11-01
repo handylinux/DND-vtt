@@ -72,7 +72,7 @@ export const KINDS: Record<AssetKind, KindSpec> = {
   },
   /**
    * A scene's picture for the DM's Scenes panel, which a DM device renders
-   * (docs/design-v1-maps-vision.md 3.3). One small variant. Players never
+   * (docs/design/design-v1-maps-vision.md 3.3). One small variant. Players never
    * read one: no scene projection or other entity gives them its id, so it
    * is never in their visible set.
    */
@@ -103,9 +103,9 @@ export type AssetView = {
   width: number;
   height: number;
   variants: Variant[];
-  /** An Openverse image's or a starter pick's credit (docs/design-v1-dm-tools.md 3.13). */
+  /** An Openverse image's or a starter pick's credit (docs/design/design-v1-dm-tools.md 3.13). */
   credit?: AssetCredit;
-  /** A starter pick's work key, `<pack>/<work>` (docs/design-v1-starter-art.md 5). Absent for the room's own uploads. */
+  /** A starter pick's work key, `<pack>/<work>` (docs/design/design-v1-starter-art.md 5). Absent for the room's own uploads. */
   starter?: string;
   /**
    * A starter pick's SHA-256 in hex, sent with `starter` only: the work a
@@ -122,7 +122,7 @@ export type AssetView = {
 /**
  * `created`, on a handout's answer only: whether this upload made the row,
  * rather than reusing the room's row of the same bytes
- * (docs/design-v1-pdf-handouts.md 3.9).
+ * (docs/design/design-v1-pdf-handouts.md 3.9).
  */
 export type UploadResult = AssetView & { cellPx?: number; created?: boolean };
 

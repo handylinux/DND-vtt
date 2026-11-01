@@ -4,7 +4,7 @@ import { RoomScope } from "./scope.ts";
 import type { RoomUi } from "./store.ts";
 import type { RoomView } from "./types.ts";
 
-/* I, Q and E (docs/design-v1-isometric-view.md 6.5), on every page now that Isometric is offered. */
+/* I, Q and E (docs/design/design-v1-isometric-view.md 6.5), on every page now that Isometric is offered. */
 const { BEHAVIORS, DEFAULT_KEYS, NO_KEY, sheetSections, SHORTCUTS, shortcutFor, shortcutKeys, VIEW_BEHAVIORS, VIEW_SHORTCUTS } = await import("./shortcuts.ts");
 const { isoOffered, viewVoiceSlot } = await import("../features/view/choice.ts");
 const { pickView, readView, viewKey, withPick } = await import("../features/view/store.ts");
@@ -50,7 +50,7 @@ function page(input: { role?: "dm" | "player"; tool?: string; suggested?: "isome
   };
 }
 
-describe("I, Q and E (docs/design-v1-isometric-view.md 6.5)", () => {
+describe("I, Q and E (docs/design/design-v1-isometric-view.md 6.5)", () => {
   test("the table and the sheet hold them for everyone, with the standee's tap, on keys no other row has", () => {
     assert.equal(isoOffered, true);
     for (const row of VIEW_SHORTCUTS) assert.ok(SHORTCUTS.includes(row), row.id);

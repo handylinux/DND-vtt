@@ -132,7 +132,7 @@ export function announceTurn(): void {
 }
 
 /**
- * A trap's sound (docs/design-v1-traps.md 2 and 4.3): white noise through
+ * A trap's sound (docs/design/design-v1-traps.md 2 and 4.3): white noise through
  * a filter that sweeps, shaped to each, synthesized as the chime is so no
  * file needs a license. It plays where this device has sound on, or with
  * `always` for the trap pane's play button, a tap that asks for it.

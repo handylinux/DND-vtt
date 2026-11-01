@@ -9,7 +9,7 @@ import sharp from "sharp";
 import { ConsoleWatch, openSideTab, OpSocket, Shots, SocketWatch, startServer, waitFor, type Server } from "./harness.ts";
 
 /**
- * The table display (docs/design-v1-dm-tools.md 3.1) where the live play
+ * The table display (docs/design/design-v1-dm-tools.md 3.1) where the live play
  * review after wave 5 found it broken (LP5-DISPLAY): a DM on a desktop, a
  * TV at 1920 x 1080 paired with a code, and a player on a phone for the
  * X-card and for saving a handout with its Download button.
@@ -428,7 +428,7 @@ describe("raccoon-vtt table display run", { timeout: 180_000 }, () => {
     dmConsole.expectSocketFailures = false;
   });
 
-  test("7. a handout of pages steps a page at a time on the TV, its bar over the page (docs/design-v1-pdf-handouts.md 7)", async () => {
+  test("7. a handout of pages steps a page at a time on the TV, its bar over the page (docs/design/design-v1-pdf-handouts.md 7)", async () => {
     // The last test stopped the server, which closed the op socket with it.
     const cookie = (await dmContext.cookies(server.origin)).map((c) => `${c.name}=${c.value}`).join("; ");
     ops = await OpSocket.open({ origin: server.origin, roomId: run.roomId, cookie });
@@ -450,7 +450,7 @@ describe("raccoon-vtt table display run", { timeout: 180_000 }, () => {
     const dialog = tv.getByRole("dialog", { name: "Ship's log" });
     const bar = dialog.getByRole("toolbar", { name: "Handout pages" });
     const button = (name: string) => bar.getByRole("button", { name, exact: true });
-    // The bar's buttons are icons named by aria-label (docs/design-v1-icons.md 4), so the name is read as a screen reader reads it.
+    // The bar's buttons are icons named by aria-label (docs/design/design-v1-icons.md 4), so the name is read as a screen reader reads it.
     const focused = () =>
       tv.evaluate(() => {
         const el = (globalThis as unknown as { document: { activeElement: { textContent: string | null; getAttribute(name: string): string | null } | null } }).document.activeElement;
@@ -564,7 +564,7 @@ describe("raccoon-vtt table display run", { timeout: 180_000 }, () => {
     await bar.waitFor({ state: "detached" });
 
     // The bar keeps one row over the page on a phone used as a display, now that its buttons are icons
-    // (docs/design-v1-icons.md 4), turned sideways, and on a TV at 130% as Chrome lays a 1920 x 1080 screen
+    // (docs/design/design-v1-icons.md 4), turned sideways, and on a TV at 130% as Chrome lays a 1920 x 1080 screen
     // out at that zoom. Nothing overlaps.
     try {
       for (const [size, rows] of [

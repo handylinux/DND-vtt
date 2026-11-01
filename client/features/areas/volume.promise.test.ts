@@ -16,7 +16,7 @@ import { buildVolume, everySubcell, type Volume } from "./volume.ts";
 import { chordTolerance, ctxOf, faceIndex, flatGround, inClip, meshIntervals, mulberry32, randomGround, randomTemplate, randomWalls, rect, tok, type Ground } from "./volumeTesting.ts";
 
 /**
- * What the solid promises (docs/design-v1-iso-area-shapes.md 4.1, 4.4 and
+ * What the solid promises (docs/design/design-v1-iso-area-shapes.md 4.1, 4.4 and
  * the case table): a creature the area may catch whose cells lie inside
  * the DM's solid through its height is caught under every coverage and
  * inclusion rule, and one whose cells miss it is caught under none, for

@@ -10,7 +10,7 @@ import { K, turnAxes, type Turn } from "../../lib/view.ts";
 
 /**
  * An area's solid as a mesh, for Isometric to stand it at its real shape
- * (docs/design-v1-iso-area-shapes.md 4.2). The solid is the rules' own
+ * (docs/design/design-v1-iso-area-shapes.md 4.2). The solid is the rules' own
  * (`ResolvedArea.solid`), cut by the area's wall polygons, the scene's
  * edges and the drawn ground, so what stands is what catches. It is built
  * in slices a frame can take, each stopping at a deadline and carrying on
@@ -39,7 +39,7 @@ import { K, turnAxes, type Turn } from "../../lib/view.ts";
  * at the same vertices whenever their buckets are cut.
  *
  * On a hex scene the ground cut follows the hexes instead
- * (docs/design-v1-iso-hex-relief.md 8): each face is cut by the six
+ * (docs/design/design-v1-iso-hex-relief.md 8): each face is cut by the six
  * canonical sides of each hex it meets, one plane per lattice side shared
  * by both hexes beside it, then by that hex's level, its part at or below
  * the ground dropped. A face lying along a side belongs to the one hex its

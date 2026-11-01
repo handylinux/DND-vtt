@@ -17,11 +17,11 @@ import { memberRow } from "./memberRow.ts";
 
 /**
  * The roster with who is online (features section 1), your own color
- * (docs/design-v1-visual.md section 4), and for the DM the access tools:
+ * (docs/design/design-v1-visual.md section 4), and for the DM the access tools:
  * kick, remove and remove DM behind each row's Manage, the player
  * password, DM devices, the DM link and deleting the room (design 10.2).
  * The roster is for seeing who is here, so the actions that cannot be
- * undone wait one tap away (docs/design-v1-layout-hierarchy.md M7).
+ * undone wait one tap away (docs/design/design-v1-layout-hierarchy.md M7).
  */
 export default function MembersPanel(_props: PanelProps) {
   const members = useRoomView((s) => s.view?.members);
@@ -136,7 +136,7 @@ export default function MembersPanel(_props: PanelProps) {
 }
 
 /**
- * Your own color, under your row (docs/design-v1-visual.md 4.2 and 4.3). A
+ * Your own color, under your row (docs/design/design-v1-visual.md 4.2 and 4.3). A
  * tap applies at once, like a switch: the store predicts it, so the swatch,
  * the dot and the whole interface's accent change before the server
  * answers, and a refusal puts the old color back with the usual message.

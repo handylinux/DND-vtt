@@ -8,7 +8,7 @@ import { member, room, scene } from "#shared/testutil.ts";
 
 /*
  * The per-player parts of What players see as the DM's panel draws them
- * (docs/design-v1-per-player-vision.md 7.1 and 11): the Sight row under
+ * (docs/design/design-v1-per-player-vision.md 7.1 and 11): the Sight row under
  * the switch, named and described, who sees for themselves, and both busy
  * while their change is on its way.
  */
@@ -62,7 +62,7 @@ describe("What players see on a per-player scene (7.1, 11)", () => {
     assert.match(html, /Gus sees only what creatures that share sight see here\./);
     assert.doesNotMatch(html, /Ana sees only/, "Ana's entry is on");
     assert.match(html, /<input type="radio"[^>]*checked=""[^>]*value="player"/);
-    assert.ok(html.indexOf("data-vision-sight") > html.indexOf("Light level"), "after the light (docs/design-v1-map-discovery.md 8.4)");
+    assert.ok(html.indexOf("data-vision-sight") > html.indexOf("Light level"), "after the light (docs/design/design-v1-map-discovery.md 8.4)");
     assert.ok(html.indexOf("data-vision-sight") < html.indexOf("Fog and party vision"), "before the fold");
     assert.doesNotMatch(html, /aria-busy/);
     // Each row's question speaks through a status mounted before it has words (PV4-OP-5), so a screen reader hears them come.
@@ -85,7 +85,7 @@ describe("What players see on a per-player scene (7.1, 11)", () => {
   });
 });
 
-describe("What players see (docs/design-v1-map-discovery.md 8.1 and 8.4)", () => {
+describe("What players see (docs/design/design-v1-map-discovery.md 8.1 and 8.4)", () => {
   const MAP = { assetId: "a", widthPx: 700, heightPx: 700, cellPx: 70, originPx: { x: 0, y: 0 } };
   const group = /<div role="radiogroup" aria-labelledby="[^"]+" aria-describedby="[^"]+"[^>]*>/;
 
@@ -114,7 +114,7 @@ describe("What players see (docs/design-v1-map-discovery.md 8.1 and 8.4)", () =>
     assert.ok(html.indexOf(">Fog<") > html.indexOf("Fog and party vision"), "the Fog switch sits in the fold, moved from This scene");
   });
 
-  test("Fog and party vision folds as a Section: its label in a heading, chevron first, and folded, both switches' state beside it (docs/design-v1-design-pass.md 4.1)", () => {
+  test("Fog and party vision folds as a Section: its label in a heading, chevron first, and folded, both switches' state beside it (docs/design/design-v1-design-pass.md 4.1)", () => {
     const html = render(table({ on: true, light: "dark" }));
     assert.match(html, /<h[34][^>]*><button type="button" aria-expanded="false"[^>]*><svg[^>]*>[\s\S]*?<\/svg>Fog and party vision<\/button><\/h[34]>/, "the chevron, then the label");
     assert.match(html, /Fog and party vision<\/button><\/h[34]><span[^>]*>Fog on · Party vision on<\/span>/, "the summary after the heading, outside its button");
@@ -144,7 +144,7 @@ describe("What players see (docs/design-v1-map-discovery.md 8.1 and 8.4)", () =>
   });
 });
 
-describe("Sight's working line (docs/design-v1-design-pass.md 4.4)", () => {
+describe("Sight's working line (docs/design/design-v1-design-pass.md 4.4)", () => {
   function sight(working: string | null): string {
     return renderToStaticMarkup(
       createElement(Segmented, { label: "Sight", value: "party", options: SIGHT_CHOICES, onChange: () => {}, description: createElement(SightStatus, { help: "The party shares one map.", working }) }),

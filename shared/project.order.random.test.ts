@@ -7,7 +7,7 @@ import { applyOp } from "./reducer.ts";
 import { DM, P1, P2, chance, character, env, int, pick, rng, room, token } from "./testutil.ts";
 
 /**
- * Many random fights under the order setting (docs/design-v1-combat-flow.md
+ * Many random fights under the order setting (docs/design/design-v1-combat-flow.md
  * 11): Next, Previous, drags, new values, adds, removes, hides, ring and
  * setting changes, the DM's initiative rolls, open and secret, and fights
  * ended and started again. The test keeps its
@@ -177,7 +177,7 @@ function check(state: RoomState, record: Record_, label: string): void {
   }
 }
 
-describe("the order setting over random fights (docs/design-v1-combat-flow.md 11)", () => {
+describe("the order setting over random fights (docs/design/design-v1-combat-flow.md 11)", () => {
   test("no player ever receives a row the setting hides, and every row it shows is there", () => {
     for (let s = 1; s <= 100; s++) {
       const r = rng(s);

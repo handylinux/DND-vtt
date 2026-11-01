@@ -6,7 +6,7 @@ import type { ImageRef } from "#shared/model.ts";
 import { preloadInBackground } from "../../lib/retryableLazy.ts";
 
 /**
- * Shipped game-icons.net tokens (docs/design-v1-dm-tools.md 3.12). An icon
+ * Shipped game-icons.net tokens (docs/design/design-v1-dm-tools.md 3.12). An icon
  * is a key, `<author>/<name>`, and a disk color. Its art is a file of one
  * path under public/game-icons, fetched only when something shows it and
  * then kept by the browser for good, since the folder is named by the

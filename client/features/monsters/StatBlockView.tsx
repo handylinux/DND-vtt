@@ -14,9 +14,9 @@ export const SRD_CREDIT = "Stat blocks from the System Reference Document 5.2.1 
 /**
  * A full 2024 stat block, read only: what the Monsters panel shows for a
  * monster it lists, and what the token panel shows for a token linked to
- * one (docs/design-v1-dm-tools.md 3.6). Only its six ability boxes roll, and
+ * one (docs/design/design-v1-dm-tools.md 3.6). Only its six ability boxes roll, and
  * only with `roll`, where the viewer may roll for its creature
- * (docs/design-v1-stat-block-rolls.md). Everything else in it is text.
+ * (docs/design/design-v1-stat-block-rolls.md). Everything else in it is text.
  */
 export function StatBlockView(props: { view: StatBlockMonster; source: "srd" | "room"; credit?: boolean; roll?: BlockRoller | null | undefined }) {
   const split = useMemo(() => splitAbilityTable(props.view.statBlock), [props.view.statBlock]);

@@ -24,7 +24,7 @@ import { keyBytes, MEMORY_CAP, wallLargestBytes } from "./memorySize.ts";
  * snapshots, while a room near them is measured exactly before every op that
  * could cross.
  *
- * Wave 4 adds two reserves (docs/design-v1-maps-vision.md 2.4), both for
+ * Wave 4 adds two reserves (docs/design/design-v1-maps-vision.md 2.4), both for
  * what can grow without an op that could be refused. The party's explored
  * layer grows by `sys.explore`, which is never refused, so the room check
  * and the exploring scene's projected check add what that layer may still
@@ -32,14 +32,14 @@ import { keyBytes, MEMORY_CAP, wallLargestBytes } from "./memorySize.ts";
  * and never stored, so every projected check of a vision scene adds the
  * most its sight tiles can take instead of measuring them.
  *
- * Per-player vision (docs/design-v1-per-player-vision.md 6.8) adds what a
+ * Per-player vision (docs/design/design-v1-per-player-vision.md 6.8) adds what a
  * player's own sight decides: on a per-player scene the party's layer and
  * each holder's, and on any scene the lists of who saw a creature's stop
  * or turn start. No measure reads them. Each counts at its widest instead,
  * from the scenes and the roster alone, so the answer an op gets never
  * depends on what another player's creatures saw (security rule 11).
  *
- * Wave 5 (docs/design-v1-dm-tools.md 2.4) splits a DM's projected scene into
+ * Wave 5 (docs/design/design-v1-dm-tools.md 2.4) splits a DM's projected scene into
  * the room-level part every DM projection shares (the monsters, the journal,
  * the roll requests, the characters, the log) and each scene's own part.
  * Journal pages and roll requests are room level, so an op on them touches
@@ -62,7 +62,7 @@ import { keyBytes, MEMORY_CAP, wallLargestBytes } from "./memorySize.ts";
  * and the log's lines and derived undo metadata outside the measure, so
  * the measure is the projection's size less those.
  *
- * Traps (docs/design-v1-traps.md 6.7) are counted so that a springing
+ * Traps (docs/design/design-v1-traps.md 6.7) are counted so that a springing
  * never moves a measure: a trap's own fields exactly and, in place of what
  * the reducer writes on it and around it, fixed reserves from the complete
  * serialized writes (trapReserve, Appendix B), and the room's occurrences
@@ -72,7 +72,7 @@ import { keyBytes, MEMORY_CAP, wallLargestBytes } from "./memorySize.ts";
  * reserves already hold (server/rooms/actor.ts).
  *
  * Companion stat blocks ride in every DM projection too, but outside this
- * measure (docs/design-v1-companion-stat-blocks.md 3.4): the measure counts
+ * measure (docs/design/design-v1-companion-stat-blocks.md 3.4): the measure counts
  * their field as empty, and the room's caps hold them to 3 MiB on their own
  * (shared/limits.ts). So a map, a monster or a journal page never grows
  * into the blocks' room, and a DM's snapshot is at most 3 MiB plus theirs.
@@ -115,7 +115,7 @@ export class SizeGuard {
   /** Each scene's own part (sceneOwnBytes), measured at the first check. */
   #scenes: Map<string, Measure> | null = null;
   /**
-   * The room-wide share of players' memory (docs/design-v1-map-discovery.md
+   * The room-wide share of players' memory (docs/design/design-v1-map-discovery.md
    * 5.5), worked out at the last exact measure and never on the growth
    * bound, so it is a function of the stored state and that measure alone.
    */
@@ -180,10 +180,10 @@ export class SizeGuard {
    * elsewhere. Without `before`, any op on the scene counts as growing it.
    *
    * An op that makes a scene per player, whose refusal comes of the room
-   * per-player sight needs there (docs/design-v1-per-player-vision.md 6.8),
+   * per-player sight needs there (docs/design/design-v1-per-player-vision.md 6.8),
    * says so in the DM's words (PER_PLAYER_FULL). One that reserves players'
    * memory where it does not fit says that (MEMORY_FULL,
-   * docs/design-v1-map-discovery.md 5.5).
+   * docs/design/design-v1-map-discovery.md 5.5).
    *
    * `role` is the sender's. Every op counts what players' copies may hold
    * beyond the DM's (discoveryReserve), but a player's op on a scene that
@@ -354,7 +354,7 @@ function neededBefore(before: RoomState, sceneId: string, share: number, role: V
  * A scene's whole measure (design 10.5): a DM's projection of it as the
  * checks count it, with every reserve, the room-level part included, and
  * for a DM's op what players' copies may hold beyond it
- * (docs/design-v1-map-discovery.md 5.5).
+ * (docs/design/design-v1-map-discovery.md 5.5).
  */
 export function projectedSceneBytes(state: RoomState, sceneId: string, share: number = MEMORY_CAP, role: Viewer["role"] = "dm"): number {
   const scene = state.scenes[sceneId]!;
@@ -475,7 +475,7 @@ export function roomLevelBytes(state: RoomState): number {
   for (const name of ROOM_LEVEL) {
     if ((name === "trapLog" || name === "trapSeen") && trapped) bytes += fieldBytes(name) + (name === "trapLog" ? TRAP_LOG_RESERVE : TRAP_SEEN_RESERVE + DUE_RESERVE);
     else if (name === "log") bytes += fieldBytes(name) + collectionBytes(measuredLog(state.log));
-    // Each list of who saw at its widest, whoever it names (docs/design-v1-per-player-vision.md 6.8).
+    // Each list of who saw at its widest, whoever it names (docs/design/design-v1-per-player-vision.md 6.8).
     else if (name === "encounter") bytes += fieldBytes(name) + valueBytes(state.encounter) - encounterLists(state.encounter).extra + encounterLists(state.encounter).count * widestListExtra(state.members);
     else if (name === "encounterHistory") bytes += fieldBytes(name) + collectionBytes(state.encounterHistory) - historyLists(state.encounterHistory).extra + historyLists(state.encounterHistory).count * widestListExtra(state.members);
     else bytes += fieldBytes(name) + (name === "meta" ? valueBytes(state[name]) : collectionBytes(state[name] ?? (name === "trapLog" || name === "trapSeen" ? [] : {})));
@@ -501,11 +501,11 @@ export function measuredLog(log: readonly LogEntry[]): readonly LogEntry[] {
 }
 
 // ---------------------------------------------------------------------------
-// Per-player vision's reserves (docs/design-v1-per-player-vision.md 6.8)
+// Per-player vision's reserves (docs/design/design-v1-per-player-vision.md 6.8)
 
 /**
  * The refusal of a switch to Per player that the room cannot hold
- * (docs/design-v1-per-player-vision.md 6.8): each holder's map and the
+ * (docs/design/design-v1-per-player-vision.md 6.8): each holder's map and the
  * party's count at their widest from the switch on.
  */
 export const PER_PLAYER_FULL = "The room is too full for per-player sight on this scene: each player's map and the paths this fight recorded need room. Delete unused scenes to free space.";
@@ -698,7 +698,7 @@ function privateStateBytes(state: RoomState): number {
 
 /**
  * What a per-player scene adds to its DM projection at its widest, beyond
- * its own part (docs/design-v1-per-player-vision.md 6.8): the shared sight
+ * its own part (docs/design/design-v1-per-player-vision.md 6.8): the shared sight
  * beside the union, the shared fog and every holder's layer joined, every
  * tile present, and its holder list as it is, with their fields. On every
  * scene, each list of who saw that its creatures' paths hold, as wide as
@@ -745,7 +745,7 @@ function fogPastBounds(fogTiles: RoomState["fogTiles"], scene: Scene): number {
 }
 
 // ---------------------------------------------------------------------------
-// Map discovery's reserves (docs/design-v1-map-discovery.md 5.5)
+// Map discovery's reserves (docs/design/design-v1-map-discovery.md 5.5)
 
 /**
  * The refusal of an op that would reserve players' memory where the room
@@ -935,7 +935,7 @@ function memoryStoredBytes(state: RoomState): number {
 }
 
 // ---------------------------------------------------------------------------
-// The traps' reserves (docs/design-v1-traps.md 6.7, Appendix B)
+// The traps' reserves (docs/design/design-v1-traps.md 6.7, Appendix B)
 
 /** Per trap, the small fields the reducer writes and `noticedBy` (160), and its actions' and stop's slack (100). */
 export const TRAP_RESERVE = 160 + 100;
@@ -1016,7 +1016,7 @@ function trapsMeasure(state: RoomState): number {
  * or none read and the record of a turn's reminders (RoomState.reminded)
  * ride outside, under bounds of their own, so no player's op ever passes
  * or fails by what they cannot read. So does players' memory, which the
- * guard reserves at its caps and its share (docs/design-v1-map-discovery.md
+ * guard reserves at its caps and its share (docs/design/design-v1-map-discovery.md
  * 5.5), whatever it holds.
  */
 export function measuredStateBytes(state: RoomState): number {
@@ -1055,7 +1055,7 @@ function sceneOfEntry(name: SceneLevel, key: string, value: unknown): string | u
  * One scene's own part of a DM's projection: its scene-level collections,
  * filtered to it, with their field names, and its pit reserve. On a
  * per-player scene the party's layer counts at its widest whatever it
- * holds (docs/design-v1-per-player-vision.md 6.8).
+ * holds (docs/design/design-v1-per-player-vision.md 6.8).
  */
 export function sceneOwnBytes(state: RoomState, sceneId: string): number {
   let bytes = pitReserve(state, sceneId);
@@ -1129,7 +1129,7 @@ function allScenesOwnBytes(state: RoomState): Map<string, number> {
 /**
  * Every scene of a room that arrives whole, as a room import stores it, by
  * the projected-scene check every op runs (design 10.5,
- * docs/design-v1-maps-vision.md 2.4): the room-level part, the scene's own
+ * docs/design/design-v1-maps-vision.md 2.4): the room-level part, the scene's own
  * part, the most its sight tiles can take and, on the player scene, all its
  * explored layer may still take. A room the import accepts then takes the
  * moves and edits its own checks would refuse at once otherwise. The import
@@ -1164,10 +1164,10 @@ export function checkWholeScenes(state: RoomState, sceneLimit: number = LIMITS.p
  */
 export function growthBound(before: RoomState, after: RoomState, touched: readonly EntityKey[]): number {
   // Per-player vision's reserves move with the roster, the scenes and how many lists there are, none of them an entity
-  // whose own size says so (docs/design-v1-per-player-vision.md 6.8).
+  // whose own size says so (docs/design/design-v1-per-player-vision.md 6.8).
   let growth = Math.max(0, perPlayerStoredReserve(after) - perPlayerStoredReserve(before));
   const trapped = hasTraps(after);
-  // A room's first trap brings the room's reserves for occurrences and both trap logs (docs/design-v1-traps.md 6.7).
+  // A room's first trap brings the room's reserves for occurrences and both trap logs (docs/design/design-v1-traps.md 6.7).
   if (trapped && !hasTraps(before)) growth += DUE_RESERVE + TRAP_LOG_RESERVE + TRAP_SEEN_RESERVE;
   for (const key of touched) {
     const next = readEntity(after, key);
@@ -1179,7 +1179,7 @@ export function growthBound(before: RoomState, after: RoomState, touched: readon
     if ((parsed?.kind === "trapLog" || parsed?.kind === "trapSeen") && trapped) continue;
     // The log's lines only some viewers or none read ride outside the measures.
     if (parsed?.kind === "log" && lineAudience(next as LogEntry) !== "shared") continue;
-    // Players' memory counts at its caps and its share, which the reserves hold whatever it writes (docs/design-v1-map-discovery.md 5.5).
+    // Players' memory counts at its caps and its share, which the reserves hold whatever it writes (docs/design/design-v1-map-discovery.md 5.5).
     if (parsed?.kind === "memory" || parsed?.kind === "memoryBy") continue;
     const prev = readEntity(before, key);
     const added = prev === null || prev === undefined || sceneOf(prev) !== sceneOf(next);

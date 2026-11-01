@@ -108,7 +108,7 @@ export function RowDamageField(props: { name: string; value: number | string | u
 }
 
 /**
- * The group save (docs/design-v1-roll-options.md 5): rows rolled by the
+ * The group save (docs/design/design-v1-roll-options.md 5): rows rolled by the
  * server, asked, typed or failing outright, pass or fail against the DC,
  * then the outcome, each row overridable, and one Apply the server applies
  * as one op and one undo. A page of the Dice panel or of the Areas panel,
@@ -282,7 +282,7 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
     if (next !== pageRef.current) update(next);
   }, [confirmedView?.rolls, confirmedView?.tokens, viewing, page.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // A player's ask the page holds, as the view holds it (docs/design-v1-player-save-spell.md 3.3): its end, read from its closing line, frees or stops Apply.
+  // A player's ask the page holds, as the view holds it (docs/design/design-v1-player-save-spell.md 3.3): its end, read from its closing line, frees or stops Apply.
   useEffect(() => {
     const cast = pageRef.current.cast;
     if (!confirmedView || !cast) return;
@@ -620,7 +620,7 @@ function GroupSavePage(props: { page: Page; parent: "Dice" | "Areas"; onBack(): 
       {/*
        * The count takes the line's spare room, so All fail and All pass keep
        * their own width beside it. Where the two do not fit beside it they
-       * wrap as a pair and grow to share their line (docs/design-v1-polish.md
+       * wrap as a pair and grow to share their line (docs/design/design-v1-polish.md
        * R6), so neither stands alone under the other.
        */}
       <div style={{ display: "flex", alignItems: "center", gap: theme.space(2), flexWrap: "wrap" }}>
@@ -1217,7 +1217,7 @@ export { DAMAGE_TYPES, type DamageType };
  * The Dice panel's notice of the open group save (5.1): "Fireball's save: 2
  * waiting." with Open. An info notice between the roll modes and the
  * creature card, so the DM reads an unfinished group save as a status
- * rather than one more line of the panel (docs/design-v1-dice-pass.md 7.8).
+ * rather than one more line of the panel (docs/design/design-v1-dice-pass.md 7.8).
  */
 export function OpenGroupSave(props: { page: Page; onOpen(): void }) {
   const { page } = props;

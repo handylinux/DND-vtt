@@ -48,7 +48,7 @@ function searched(i: WalkInput, to: { x: number; y: number }): { search: WalkSea
   return { search, cost: search.costTo(to)! };
 }
 
-describe("walking around walls (docs/design-v1-movement.md 4.4, 5)", () => {
+describe("walking around walls (docs/design/design-v1-movement.md 4.4, 5)", () => {
   test("open ground needs no search", () => {
     const w = world({});
     assert.equal(findRoute(input(w, tok(w, { x: 2, y: 2 })), { x: 9, y: 5 }), null);

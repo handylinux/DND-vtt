@@ -31,7 +31,7 @@ const PDFJS = new URL("./node_modules/pdfjs-dist/", import.meta.url);
 /**
  * pdf.js's two plain JavaScript image decoders, which a PDF handout's
  * scanned pages need, and the licenses that cover them and pdf.js
- * (docs/design-v1-pdf-handouts.md 4.2.4). The job's worker loads the
+ * (docs/design/design-v1-pdf-handouts.md 4.2.4). The job's worker loads the
  * decoders from the app's own origin, from a folder named by the installed
  * version, so a new pin is a new URL and a file under one name never
  * changes. The build writes them there, and the dev server serves the same

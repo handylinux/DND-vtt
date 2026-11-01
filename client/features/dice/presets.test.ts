@@ -9,7 +9,7 @@ import { creatureRolls, srdNeeds, type DiceView } from "./creature.ts";
 import { presetFor } from "./presets.ts";
 
 /**
- * Every d20 path in the app and the test it rolls (docs/design-v1-roll-options.md
+ * Every d20 path in the app and the test it rolls (docs/design/design-v1-roll-options.md
  * 3.2), each through presetFor. The paths are built by later steps of the
  * build plan, and each adds its own check here that it calls presetFor with
  * the test this table gives it.

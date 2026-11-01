@@ -1,6 +1,6 @@
 /**
  * Builds the map builder's stamps in public/stamps/ and their catalog in
- * shared/stamps.ts (docs/design-v1-maps-vision.md section 3.5). Run by hand
+ * shared/stamps.ts (docs/design/design-v1-maps-vision.md section 3.5). Run by hand
  * when the set changes:
  *
  *   node scripts/stamps.ts [--cache <dir>]
@@ -790,7 +790,7 @@ function catalogSource(stamps: Built[]): string {
   );
   return `/**
  * The stamp art RaccoonVTT ships, drawn from \`/stamps/<key>.webp\`
- * (docs/design-v1-maps-vision.md section 3.5). Written by
+ * (docs/design/design-v1-maps-vision.md section 3.5). Written by
  * \`node scripts/stamps.ts\`, so change the script, not this file.
  *
  * \`w\` and \`h\` are the footprint in cells, the size a new stamp takes. Each

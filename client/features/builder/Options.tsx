@@ -71,7 +71,7 @@ const EDGE_HINTS: Record<EdgeKind, string> = {
   clear: "Tap or drag to remove walls, doors, windows and No wall marks. Walls around floor come back.",
 };
 
-/** What painting a terrain does to a walk (docs/design-v1-movement.md 3.4), for the hint of a mode that paints it. */
+/** What painting a terrain does to a walk (docs/design/design-v1-movement.md 3.4), for the hint of a mode that paints it. */
 const TERRAIN_COST = "Difficult and Rubble cost double to walk through. Water costs double without a swim speed.";
 
 /**
@@ -119,7 +119,7 @@ function TerrainSwatch(props: { terrain: TerrainId }) {
 }
 
 /**
- * The builder's options (docs/design-v1-tool-options.md 9.9): what a
+ * The builder's options (docs/design/design-v1-tool-options.md 9.9): what a
  * gesture does on the line, then the mode, Undo and Redo, and each mode's
  * own controls, with Clear build always in ⋯. A room with corners or a
  * selected stamp is a task: its controls lead, and the builder's own drop
@@ -215,7 +215,7 @@ export default function BuilderOptions() {
     {
       id: "mode",
       priority: 1 + drop,
-      // The mode's icon, as on its tile (D-261026-3), by the chips' glyph rule (docs/design-v1-tool-options.md 6.2):
+      // The mode's icon, as on its tile (D-261026-3), by the chips' glyph rule (docs/design/design-v1-tool-options.md 6.2):
       // beside the words where the row has room, and alone where the row's priority-1 controls need the room.
       compact: true,
       glyph: true,

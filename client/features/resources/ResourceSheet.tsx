@@ -60,7 +60,7 @@ function modifierOf(text: string | undefined): number | null {
 
 /**
  * The sheet that adds, updates and edits a character's class resources
- * (docs/design-v1-combat-controls.md 7.1). Add picks one of the twelve
+ * (docs/design/design-v1-combat-controls.md 7.1). Add picks one of the twelve
  * SRD classes and its level, and ticks that class's resources there, their
  * counts from Appendix A, or makes one of the player's own. Update reads a
  * class's resources again at a new class level. Edit changes one, or

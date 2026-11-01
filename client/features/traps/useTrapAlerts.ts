@@ -13,7 +13,7 @@ import { trapStart } from "./TrapSaveStart.tsx";
 const NO_LINES: readonly LogEntry[] = [];
 
 /**
- * What a trap going off tells this device (docs/design-v1-traps.md 4.3).
+ * What a trap going off tells this device (docs/design/design-v1-traps.md 4.3).
  * The DM gets a toast and the trap's sound for each new line in the DM's
  * trap log, with Save and damage while its springing waits with a save,
  * damage or conditions, and the Passive Perception hint with Mark found. A
@@ -120,7 +120,7 @@ export function useTrapAlerts(): void {
 /**
  * The alerts as one of the board's controllers (features/layers.ts
  * CONTROLLERS): mounted once outside both drawing trees, so a springing
- * toasts and sounds once whichever view shows (docs/design-v1-isometric-view.md 5.1).
+ * toasts and sounds once whichever view shows (docs/design/design-v1-isometric-view.md 5.1).
  */
 export function TrapAlerts(): null {
   useTrapAlerts();

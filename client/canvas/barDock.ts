@@ -5,7 +5,7 @@ import { TAP_SLOP_PX } from "../lib/gestures.ts";
 import { scopeSlot, type RoomScope } from "../state/scope.ts";
 
 /*
- * Where the token action bar sits (docs/design-v1-bar-dock.md), as plain
+ * Where the token action bar sits (docs/design/design-v1-bar-dock.md), as plain
  * functions over boxes in the chrome's own pixels (features/device/layout.ts),
  * so every rule runs under node --test.
  *
@@ -30,7 +30,7 @@ const ROW_GAP = 4;
 
 /**
  * The default width of a window that does not span
- * (docs/design-v1-token-window.md 3.3): the narrowest that holds
+ * (docs/design/design-v1-token-window.md 3.3): the narrowest that holds
  * Conditions, Hidden and Multi-select on one line as this page draws them,
  * and never under 304. `buttons` are the widths of three hidden small
  * buttons with those labels, in layout px, so the device's font and the
@@ -52,7 +52,7 @@ export const EDGE = 8;
  * header is 52 px now (components/SheetHeader.tsx), so a bar given just
  * this much shows its second row up to 4 px under the "Scroll for more"
  * fade. It stays 148 so 844 x 390 at 130% with a phone's insets, which
- * leaves 151, still docks (docs/design-v1-bar-dock.md 1.4).
+ * leaves 151, still docks (docs/design/design-v1-bar-dock.md 1.4).
  */
 export const MIN_BAR_HEIGHT = 148;
 /** Below this layout width, a layout no wider than tall spans the bar as a phone does. */
@@ -90,7 +90,7 @@ export type Chrome = {
   /**
    * The toolbar with the bottom safe area, the tool's options row while it
    * stands at the foot, and its line's reserve: everything that stands over
-   * the map's foot (docs/design-v1-tool-options.md 10.2).
+   * the map's foot (docs/design/design-v1-tool-options.md 10.2).
    */
   bottom: number;
   /** As `bottom`, but only up to the row's highest control, or the line's top where it holds a reading, a warning or a status: a hint may be covered. */
@@ -116,7 +116,7 @@ export const NO_SIDES: Sides = { top: 0, right: 0, bottom: 0, left: 0 };
  * the page already ends at the keyboard. Placement reads it
  * (placedChrome). A size decision reads the chrome alone, so typing never
  * turns the bar compact, folds a roll card or hides what holds the field
- * (docs/design.md 14.4).
+ * (docs/design/design.md 14.4).
  */
 export type Typing = { top: number; bottom: number; lift: number; page: number };
 
@@ -304,7 +304,7 @@ export function releaseSpot(box: Box, free: Box): Spot {
 }
 
 /**
- * The spot a step of the grip's arrow keys stores (docs/design-v1-token-window.md
+ * The spot a step of the grip's arrow keys stores (docs/design/design-v1-token-window.md
  * 4.3): the nearest corner as a drop picks it, with no snapping, since a
  * 24 px snap would never let an 8 px step leave an edge.
  */
@@ -333,7 +333,7 @@ export function arrowStep(key: string, shift: boolean): { dx: number; dy: number
 
 /**
  * What the window's status says of where it stands, read from its stored
- * spot (docs/design-v1-token-window.md 4.3): its corner when flush with
+ * spot (docs/design/design-v1-token-window.md 4.3): its corner when flush with
  * both edges, the edge and the gap along it when flush with one, and both
  * gaps otherwise.
  */
@@ -361,7 +361,7 @@ export const RESET_WORDS = "Window back at bottom right";
 /*
  * A docked window narrower than the default width happens only beside a
  * phone's open sideways sheet, and its header follows the width it gets
- * (docs/design-v1-token-window.md 7.1). A header in two rows there left a
+ * (docs/design/design-v1-token-window.md 7.1). A header in two rows there left a
  * short window little more than its header, with Apply out of view (the
  * build review's W5B-P-3), so the header keeps one row at every width the
  * window shows at. What gives way first is what the window keeps elsewhere:
@@ -398,7 +398,7 @@ export function headerLayout(width: number, finePointer: boolean): { grip: "butt
 
 /**
  * The size this device gave the token window on a computer, as
- * `rvtt.tokenBarSize` stores it (docs/design-v1-token-window.md 6): a
+ * `rvtt.tokenBarSize` stores it (docs/design/design-v1-token-window.md 6): a
  * width, which the window takes exactly within its limits, and a height,
  * which caps it. Either may be missing, which is the default: the default
  * width, and as tall as the content up to the room.
@@ -725,7 +725,7 @@ export type PaneLaneBox = { left: number; top: number };
 /**
  * Where a map pane drawn as a card (a label's, pin's, light's or trap's,
  * features/builder/labelEdit.ts panePlacement) goes while the column shows
- * a card (docs/design-v1-look-pass-2.md 2.8). The lane's rule for the
+ * a card (docs/design/design-v1-look-pass-2.md 2.8). The lane's rule for the
  * token window (shareLane) without its stacked step, since a pane stands
  * by its thing rather than in a corner:
  *
@@ -777,14 +777,14 @@ export function columnRoom(input: { lane: Lane; columnTop: number; bar: Box }): 
  * the right side from its own left edge or the lane's, whichever is
  * further left, whatever its height, so a token never lands under a bar
  * that later grows, nor under a window wider than the lane
- * (docs/design-v1-token-window.md 9.1). A bar elsewhere covers the side
+ * (docs/design/design-v1-token-window.md 9.1). A bar elsewhere covers the side
  * that leaves the largest clear rectangle. Measured from the viewport's
  * edges, like `bars`, in the same pixels as everything passed in.
  */
 export function barCover(viewport: Size, bars: Sides, bar: { box: Box; laneLeft: number; freeRight: number; mode?: BarMode } | null): Sides {
   if (!bar) return NO_SIDES;
   const { box } = bar;
-  // An upright phone's strip, or its expanded bar, crosses the free area at its foot, so it covers the bottom from its top whatever its height (docs/design-v1-bar-compact.md 4).
+  // An upright phone's strip, or its expanded bar, crosses the free area at its foot, so it covers the bottom from its top whatever its height (docs/design/design-v1-bar-compact.md 4).
   if (bar.mode === "span") return { ...NO_SIDES, bottom: Math.max(0, viewport.height - box.top) };
   const inLane = box.left >= bar.laneLeft - 0.5;
   const againstRight = box.left + box.width >= bar.freeRight - 0.5;
@@ -837,7 +837,7 @@ export const OFFSET_Y = 34;
 /**
  * The room an upright phone's bar gets on this screen whichever token is
  * tapped: the expanded bar's reach with no content
- * (docs/design-v1-bar-compact.md 9.1), which never reads a token. Given no
+ * (docs/design/design-v1-bar-compact.md 9.1), which never reads a token. Given no
  * layout, the reach the free area alone leaves, which only a layout over
  * about 770 px tall caps lower.
  */
@@ -848,7 +848,7 @@ export function spanRoomAtWorst(free: Box, layout?: Size): number {
 /**
  * Where the bar hangs, before a drag: at the free area's foot as the strip
  * or its expanded bar on an upright phone, whatever its token does
- * (docs/design-v1-bar-compact.md 3), at its spot when it docks, and the
+ * (docs/design/design-v1-bar-compact.md 3), at its spot when it docks, and the
  * overlay's place when compact, then shared with the column when they
  * meet across. The one rule for the bar drawn (TokenActionBar.tsx) and for
  * where a pan expects it (restingBar).
@@ -939,7 +939,7 @@ export function placeBar(input: {
  * compact bar at its spot with the height it last had, shared with the
  * column as the drawn bar will be (placeBar), and an upright phone's
  * strip, or its expanded bar while the bar stays expanded, at the free
- * area's foot (docs/design-v1-bar-compact.md 4). `mode` tells barCover
+ * area's foot (docs/design/design-v1-bar-compact.md 4). `mode` tells barCover
  * which side it covers.
  */
 export function restingBar(input: {
@@ -977,7 +977,7 @@ export function restingBar(input: {
 /*
  * On a phone held upright the bar rests as a strip at the foot of the
  * map's free area, across its width, and never follows its token
- * (docs/design-v1-bar-compact.md 3). Expand grows it up from the same
+ * (docs/design/design-v1-bar-compact.md 3). Expand grows it up from the same
  * foot. The strip is held from the moment it shows, so a free area that
  * shrinks after the opening never turns it into the compact overlay.
  */
@@ -1222,7 +1222,7 @@ export function restFloor(stripTop: number): number {
 /*
  * An upright phone's bar was once Smaller or Larger, and this device
  * remembered Larger under this key. Expanded now lasts only while the bar
- * is open (docs/design-v1-bar-compact.md 5.3, R1), so the dock store
+ * is open (docs/design/design-v1-bar-compact.md 5.3, R1), so the dock store
  * removes the key once as it starts and never writes it.
  */
 export const LARGER_KEY = "rvtt.tokenBarLarger";
@@ -1363,7 +1363,7 @@ export const CARD_MAX = 300;
 
 /**
  * The alerts column's card width and the shadow room at its left
- * (docs/design-v1-layout-hierarchy.md 3.5), in the column's own pixels.
+ * (docs/design/design-v1-layout-hierarchy.md 3.5), in the column's own pixels.
  * The column hangs from the top bar and sizes its cards from the map's
  * width, so a sheet and the safe areas each take their share: a sheet in
  * place of the right safe area.
@@ -1392,7 +1392,7 @@ export function columnEdges(input: ColumnWidth): ToastEdges {
 export const TOAST_MIN = 44;
 
 /**
- * Where a toast that shows now starts on a phone (docs/design-v1-bar-dock.md
+ * Where a toast that shows now starts on a phone (docs/design/design-v1-bar-dock.md
  * 1.3): 8 px under the alerts column's drawn cards, a turn card included
  * (`cover`), its top plus their height, while the notices span the map over
  * the column and it shows a card (`cards`), so the toast never covers that
@@ -1414,7 +1414,7 @@ export function toastTop(input: { spanning: boolean; column: ColumnFacts | null;
 
 /**
  * Where a toast that shows now starts while a map pane stands as a bottom
- * sheet (docs/design-v1-bar-dock.md 1.3): 8 px under the pane's header,
+ * sheet (docs/design/design-v1-bar-dock.md 1.3): 8 px under the pane's header,
  * `head` being its foot, so the toast lies over the pane's body and never
  * over its header and Close. Null keeps it at the top of the notices: no
  * header measured yet, or under 44 px left above the tool's options
@@ -1433,7 +1433,7 @@ export type Band = { top: number; bottom: number };
 
 /**
  * Where a toast that showed over an upright phone's spanning token bar's
- * header moves (docs/design-v1-bar-dock.md 1.3, review LP19-BS-2): 8 px
+ * header moves (docs/design/design-v1-bar-dock.md 1.3, review LP19-BS-2): 8 px
  * under the header, `head` being its box, so the toast never covers the
  * bar's Close or Collapse. Null where no bar spans, or where
  * under 44 px would be left above the tool's options (`optionsTop`), and
@@ -1557,7 +1557,7 @@ export function inToastLayer(place: ToastPlace | undefined): boolean {
 }
 
 /**
- * The toasts' places on this render (docs/design-v1-bar-dock.md 1.3),
+ * The toasts' places on this render (docs/design/design-v1-bar-dock.md 1.3),
  * from the last render's (`was`) and what stands now: the toasts showing
  * (`ids`, oldest first), toastTop's place (`low`), paneToastTop's
  * (`pane`), whether a map pane stands as a bottom sheet (`paneStands`),
@@ -1623,7 +1623,7 @@ export function inToastLayer(place: ToastPlace | undefined): boolean {
  * screen turns, a toast under the bar's header takes its place anew.
  *
  * An upright phone's resting strip keeps the toasts above the band over
- * it (docs/design-v1-bar-compact.md 3.5). As resting begins, and each time
+ * it (docs/design/design-v1-bar-compact.md 3.5). As resting begins, and each time
  * the strip's top rises, the layer's stack whose drawn foot is lower than
  * the strip's top less 60 takes its place anew, as if it came then, a
  * stack a pane left included (`anew`, which Room.tsx reads from the stack
@@ -1652,7 +1652,7 @@ export function nextToastPlaces(
     cardMeasured?: boolean;
     /** The toasts to place under a spanning bar's header (toastsUnderHead), barToastTop's place under it, and the bar's opening, which then owns the stack (reviews LP19-BS-2, LP19-Q1, LP19-OPUS-3 and FU24-OPUS-1). */
     overBar?: { ids: ReadonlySet<number>; at: number | null; opening: number | null };
-    /** The toasts that take their place anew for a resting strip, as toasts that came now would (docs/design-v1-bar-compact.md 3.5). */
+    /** The toasts that take their place anew for a resting strip, as toasts that came now would (docs/design/design-v1-bar-compact.md 3.5). */
     anew?: ReadonlySet<number>;
     /** A creature's turn started moments ago (Room.tsx), so a card that comes to a column with none is its turn's (review LP20-CC-2). */
     turnStarted?: boolean;
@@ -1746,7 +1746,7 @@ export function toastLayerPlace(state: ToastPlaces, ids: readonly number[], colu
 
 /**
  * What a stack of toasts does when it runs past its room
- * (docs/design-v1-bar-dock.md 1.3, decided for review LP16-PT-2), the room
+ * (docs/design/design-v1-bar-dock.md 1.3, decided for review LP16-PT-2), the room
  * running from the stack's top down to the tool's highest control, which
  * stands over the screen's foot. First the oldest toasts whose words the
  * log keeps (`logged`, as a whisper's) and that have no button go, never
@@ -1780,7 +1780,7 @@ export function columnTop(laneTop: number, lastingBottom: number | null, toastBo
  * What an upright phone's token bar and the toasts read of each other: the
  * box of the expanded bar's header (`head`), which a toast that shows over
  * it moves under (barToastTop, review LP19-BS-2), the resting strip
- * publishing none (docs/design-v1-bar-compact.md 3.5), when that header
+ * publishing none (docs/design/design-v1-bar-compact.md 3.5), when that header
  * last showed (`shownAt`, for barOpening) and which of the bar's openings
  * it is (`opening`, from a count, `openings`, that goes up each time a
  * header shows), the foot of the toasts over the map (`foot`), which the
@@ -1807,7 +1807,7 @@ export const spanToastSlot = scopeSlot(() => ({
 /**
  * The alerts' summary row while it stands in an upright phone's strip
  * header, where no spot is left for it over the band
- * (docs/design-v1-bar-compact.md 3.5): how many alerts wait, its words as
+ * (docs/design/design-v1-bar-compact.md 3.5): how many alerts wait, its words as
  * the button's name, and its own tap.
  */
 export type HeaderSummary = { count: number; name: string; press(): void };
@@ -1816,7 +1816,7 @@ export type HeaderSummary = { count: number; name: string; press(): void };
  * The bar as it shows, for the column, the notices and the camera.
  * `freeRight` is the free area's right edge (barCover). `rests` marks an
  * upright phone's resting strip, whose band the toasts keep out of
- * (docs/design-v1-bar-compact.md 3.5).
+ * (docs/design/design-v1-bar-compact.md 3.5).
  */
 export type BarFacts = { box: Box; mode: BarMode; lane: Lane; laneLeft: number; freeRight: number; rests?: boolean };
 
@@ -1845,14 +1845,14 @@ type BarDockState = {
   defaultWidth: number;
   /** This Room's stored window size, read with the spot, and kept to itself by a preview as the spot is. */
   size: BarSize;
-  /** The device's main pointer is fine, read once with the page: the window resizes only here (docs/design-v1-token-window.md 5.1). */
+  /** The device's main pointer is fine, read once with the page: the window resizes only here (docs/design/design-v1-token-window.md 5.1). */
   finePointer: boolean;
   /** The content height the bar last had, for where it will rest before it opens. */
   lastHeight: number;
   /** Set by Actions: the next bar to show takes focus on its frame. */
   focusFrame: boolean;
   /**
-   * An upright phone's bar is expanded (docs/design-v1-bar-compact.md 5.3).
+   * An upright phone's bar is expanded (docs/design/design-v1-bar-compact.md 5.3).
    * It lasts while the bar stays open, through another token tapped, a
    * drag, a fold and a turn of the screen, and is never stored.
    */
@@ -1863,7 +1863,7 @@ type BarDockState = {
    * The token and the map's frame `expandedHeight` was worked out for, so
    * the bar a drag hid comes back at that height for the same token in the
    * same frame, the content a drop adds, such as Undo move, scrolling
-   * (docs/design-v1-bar-compact.md 3.6, 5.1).
+   * (docs/design/design-v1-bar-compact.md 3.6, 5.1).
    */
   expandedFor: string | null;
   /**
@@ -1897,7 +1897,7 @@ type BarDockState = {
    * "span" once an upright phone's strip shows, kept through a drag, a
    * tap on another token and a fold until the selection is let go, the
    * screen turns or the interface size changes, so the strip never turns
-   * compact by itself (docs/design-v1-bar-compact.md 2).
+   * compact by itself (docs/design/design-v1-bar-compact.md 2).
    */
   heldMode: HeldMode;
   /** Where a player's roll card stands on a narrow screen (CardAt), for the opening rule (openMode). */

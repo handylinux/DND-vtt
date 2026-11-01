@@ -3,7 +3,7 @@ import { theme } from "../lib/theme.ts";
 
 /**
  * The colors of a control in each state, shared by Button, IconButton,
- * Chip, Segmented and the tabs (docs/design-v1-visual.md 2.2 and 2.3), so
+ * Chip, Segmented and the tabs (docs/design/design-v1-visual.md 2.2 and 2.3), so
  * "chosen" and "cannot act yet" look the same wherever they appear.
  *
  * Disabled swaps colors and keeps the shape. It never fades by opacity:

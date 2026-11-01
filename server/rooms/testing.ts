@@ -157,7 +157,7 @@ type Body = Record<string, unknown>;
 export class TestClient {
   readonly ip: string;
   token: string | undefined;
-  /** A table display's session, in its own cookie (docs/design-v1-dm-tools.md 3.1). */
+  /** A table display's session, in its own cookie (docs/design/design-v1-dm-tools.md 3.1). */
   displayToken: string | undefined;
   #app: () => FastifyInstance;
   #userAgent: string;

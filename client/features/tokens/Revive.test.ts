@@ -4,7 +4,7 @@ import { describe, test } from "node:test";
 
 const { offersRevive } = await import("./Revive.tsx");
 
-describe("where Revive shows (docs/design-v1-combat-flow.md 3.5)", () => {
+describe("where Revive shows (docs/design/design-v1-combat-flow.md 3.5)", () => {
   test("only on the dead, never dying or stable, and never on an object", () => {
     assert.equal(offersRevive("dead", "monster"), true);
     assert.equal(offersRevive("dead", "pc"), true);

@@ -2,7 +2,7 @@ import { describeEvent, memberName, whisperHeading, type LogNames } from "#share
 import type { LogEntry } from "#shared/model.ts";
 
 /**
- * The session log export (docs/design-v1-dm-tools.md 3.10): sessions found
+ * The session log export (docs/design/design-v1-dm-tools.md 3.10): sessions found
  * among the lines a viewer may read, and the Markdown file of one session
  * or of everything. The log keeps no sessions, and the group plays one
  * evening at a time, so a session is a run of lines, in id order, with no

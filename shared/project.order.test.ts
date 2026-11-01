@@ -7,12 +7,12 @@ import { DM, P1, P2, apply, character, room, token } from "./testutil.ts";
 
 /**
  * Which rows of the initiative order players see before each row's first
- * turn (docs/design-v1-combat-flow.md 11): the room's setting, applied by
+ * turn (docs/design/design-v1-combat-flow.md 11): the room's setting, applied by
  * the projection the server sends from, so no player receives a row, total,
  * place or count it hides.
  */
 
-/** A table display's viewer: a player who owns nothing (docs/design-v1-dm-tools.md 3.1). */
+/** A table display's viewer: a player who owns nothing (docs/design/design-v1-dm-tools.md 3.1). */
 const DISPLAY: Viewer = { memberId: "display:abcdefghijkl", role: "player" };
 
 const ROWS = [
@@ -59,7 +59,7 @@ function holdsOnly(state: RoomState, viewer: Viewer, shown: string[]): void {
   for (const row of ROWS) if (!shown.includes(row.id)) assert.ok(!text.includes(`"${row.id}"`), `${row.id} reaches ${viewer.memberId}`);
 }
 
-describe("the initiative order players see (docs/design-v1-combat-flow.md 11)", () => {
+describe("the initiative order players see (docs/design/design-v1-combat-flow.md 11)", () => {
   test("before any turn, each choice shows players only its rows, and the DM every row", () => {
     const party = fight("party");
     for (const viewer of [P1, DISPLAY]) holdsOnly(party, viewer, ["r-pc", "r-comp"]);

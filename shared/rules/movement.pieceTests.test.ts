@@ -8,7 +8,7 @@ import { coreBlocked, isPreview, landing, legStop, lineClear, ownWalk, previewCh
 
 /*
  * The movement rule's two tests of a held build's pieces
- * (docs/design-v1-map-discovery.md 5.2): a build read as it comes is the
+ * (docs/design/design-v1-map-discovery.md 5.2): a build read as it comes is the
  * gate's, `pieceBlocks`, and one read through `previewChunks` the
  * preview's, `pieceTouches`. Every entry point a device asks takes the
  * build's test. Astra's wall passes about 0.00004 cell north of (5.5, 5.5),

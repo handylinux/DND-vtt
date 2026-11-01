@@ -12,7 +12,7 @@ import { cutLong, WallGraph, type LatticeSegment, type SegKind } from "./snap.ts
 
 /**
  * A checked Universal VTT map turned into what the scene will store
- * (docs/design-v1-maps-vision.md section 3.1 steps 3 to 7): the scene's
+ * (docs/design/design-v1-maps-vision.md section 3.1 steps 3 to 7): the scene's
  * size and where the image sits in it, edge walls, free walls and lights,
  * and the counts the summary shows. Pure, so the worker runs it and the
  * tests run it on synthetic files.

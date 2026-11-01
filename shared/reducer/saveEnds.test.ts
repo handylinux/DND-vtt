@@ -11,7 +11,7 @@ import { DM, P1, actor, character, effect, entry, env, room, token } from "../te
 import { SAVE_ASKED, SAVE_SETTLED } from "./rolls.ts";
 
 /**
- * A save at the end of each turn ends an effect (docs/design-v1-roll-options.md
+ * A save at the end of each turn ends an effect (docs/design/design-v1-roll-options.md
  * 6.1): the turn end's line and occurrence, the DM's settling op, who may
  * set a save, and what players read.
  */

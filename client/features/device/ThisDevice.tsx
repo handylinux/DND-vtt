@@ -57,7 +57,7 @@ export function shortcutsHelp(keys: KeyMap): string {
 }
 
 /**
- * Menu, This device (docs/design-v1-dm-tools.md 2.7): what belongs to this
+ * Menu, This device (docs/design/design-v1-dm-tools.md 2.7): what belongs to this
  * device alone and is kept on it, never in the room. Each setting takes
  * effect at once, here and on the map behind the menu.
  */
@@ -103,7 +103,7 @@ export default function ThisDevice() {
         />
       </Section>
       <Section label="Map detail">
-        {/* In a settings row's padding, as Room settings stands the same cards, so its label stands where Battery's and Sounds' do (docs/design-v1-spacing-pass.md S3). */}
+        {/* In a settings row's padding, as Room settings stands the same cards, so its label stands where Battery's and Sounds' do (docs/design/design-v1-spacing-pass.md S3). */}
         <div style={{ padding: `${theme.space(2)}px 0` }}>
           <RadioCards
             legend="Map images"
@@ -173,7 +173,7 @@ const PREVIEW_SHEET_TOP = theme.space(2);
 
 /**
  * The chosen handle at its real size, so the choice shows without opening
- * a sheet (docs/design-v1-sheet-swipe.md 4.8): drawn as a sheet's top edge
+ * a sheet (docs/design/design-v1-sheet-swipe.md 4.8): drawn as a sheet's top edge
  * rising over the map's ground, with the handle where a sheet puts it, 5 px
  * under that edge inside its border, in its color at rest. One picture to
  * a screen reader, which already hears the choice from the select.

@@ -5,7 +5,7 @@ import { theme } from "../lib/theme.ts";
 
 /*
  * Where a tool's options stand and what their one row shows
- * (docs/design-v1-tool-options.md 4, 5.2, 5.4, 6.3, 6.4 and 7.3), as plain
+ * (docs/design/design-v1-tool-options.md 4, 5.2, 5.4, 6.3, 6.4 and 7.3), as plain
  * functions of the layout and of measured widths, so every rule runs under
  * node --test. Every size is in layout px, the chrome's own
  * (features/device/layout.ts).

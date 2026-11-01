@@ -2,7 +2,7 @@ import { BoxGeometry, BufferAttribute, BufferGeometry, CylinderGeometry, Dodecah
 import type { DieKind } from "./layout.ts";
 
 /**
- * The dice as solids (docs/design-v1-roll-animation.md 3.2): each kind's
+ * The dice as solids (docs/design/design-v1-roll-animation.md 3.2): each kind's
  * triangles grouped into faces by their normals, each face numbered, with
  * its center, its normal and the way its number reads upward, and the
  * orientation that lands a given number facing the viewer, upright. Only

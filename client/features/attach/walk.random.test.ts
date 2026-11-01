@@ -376,7 +376,7 @@ type RulerCounts = { rulers: number; legs: number; offHolder: number; fogged: nu
 function rulerSeed(seed: number, opts: { lamps: boolean | "towed"; drags: boolean; carts: boolean; party?: boolean | "always"; fog?: boolean; lifted?: boolean }, n: RulerCounts): void {
   const r = rng(seed);
   const drawn = randomCase(r, opts.carts ? "cart" : undefined);
-  // A ruler has no turn (docs/design-v1-movement.md 3.3): it leaves out other creatures' spaces and a dismount's half Speed.
+  // A ruler has no turn (docs/design/design-v1-movement.md 3.3): it leaves out other creatures' spaces and a dismount's half Speed.
   // So here every creature is an ally, whose space costs a drag nothing, and every rider is carried, so no drag reads what a
   // ruler leaves out. A creature a holder drags stays, and so does its extra foot.
   const tokens: Record<string, Token> = Object.fromEntries(
@@ -446,7 +446,7 @@ function rulerSeed(seed: number, opts: { lamps: boolean | "towed"; drags: boolea
   // more than the DM's drag, and not for a lamp the mover carries, whose area goes where the mover goes however hidden
   // (review AT-O-37).
   const ruler = measureWalk({ view: startCopy, sceneId: "s1", stops, viewer: { role: c.who.role }, everything: dm });
-  // A player's copy holds the build only where their fog is lifted (docs/design-v1-map-discovery.md 5.2): past it a drag
+  // A player's copy holds the build only where their fog is lifted (docs/design/design-v1-map-discovery.md 5.2): past it a drag
   // lands at the real ground's height, which the copy the ruler started on cannot know. So a player's ruler is held to its
   // drags where every cell about its walk is held.
   // Every cell about the walk, three cells past its stops, held on a copy.
@@ -476,7 +476,7 @@ function rulerSeed(seed: number, opts: { lamps: boolean | "towed"; drags: boolea
   if (Object.values(c.state.tokens).some((t) => t?.attached?.kind === "drag" && t.attached.to === c.mover)) n.towed++;
   // Shared, the DM's ruler reads on the DM's room what it reads on a player's copy that shows the creature where it starts
   // (review AT-SOL-5). Under the fog a ruler reads its own device's build, which on a player's copy is only the ground they
-  // hold (docs/design-v1-map-discovery.md 6, Rulers), so there the two are compared where the copy holds every cell about
+  // hold (docs/design/design-v1-map-discovery.md 6, Rulers), so there the two are compared where the copy holds every cell about
   // the walk (MD2-O-11).
   const copy = copyFor(c.state, P1);
   if (!dm || !copy.tokens[c.mover] || !holdsWalk(copy)) return;
@@ -515,7 +515,7 @@ describe("a walking ruler reads each leg as the drag it stands for (reviews AT-A
     // shared ruler sees it, on either device. Seed 1162: the horse's first leg drags its goblin into the fog, so neither
     // device's next leg is cut where the goblin would be stopped.
     // Both walk under the fog, where since map discovery a shared ruler reads each device's own build, the ground a player
-    // holds on theirs (docs/design-v1-map-discovery.md 6, Rulers), so the two are no longer held to one answer.
+    // holds on theirs (docs/design/design-v1-map-discovery.md 6, Rulers), so the two are no longer held to one answer.
     const n = noRulers();
     for (const seed of [138, 1162]) rulerSeed(seed, { lamps: seed % 3 !== 0, drags: seed % 5 !== 0, carts: seed % 8 > 4 }, n);
     assert.deepEqual([n.fogged, n.shared], [2, 0], JSON.stringify(n));

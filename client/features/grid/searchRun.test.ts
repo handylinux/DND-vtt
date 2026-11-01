@@ -52,7 +52,7 @@ describe("a search of a map already uploaded", () => {
   });
 });
 
-describe("one search, three looks (docs/design-v1-grid-detect.md 10.7)", () => {
+describe("one search, three looks (docs/design/design-v1-grid-detect.md 10.7)", () => {
   test("the answer carries squares, hex rows and hex columns, read from the same pixels", async () => {
     const hexMap = drawMap({ width: 900, height: 700, seed: 3, art: [{ kind: "noise", scale: 40, amp: 20 }], noise: 3, hexGrid: { orient: "rows", cellPx: 60, center: { x: 40, y: 50 } } });
     const answer = await runSearch({ file: new Blob(["hexes"]) }, { fetch: async () => ({ ok: false, blob: async () => new Blob() }), pixels: async () => hexMap });

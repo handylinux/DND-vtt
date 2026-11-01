@@ -4,7 +4,7 @@ import { formatFeet } from "../measure/ruler.ts";
 import type { TurnTrail } from "../measure/movement.ts";
 
 /**
- * Whose movement a turn's pill and a drag's band read (docs/design-v1-attach.md
+ * Whose movement a turn's pill and a drag's band read (docs/design/design-v1-attach.md
  * 7.2), as plain functions for node --test.
  */
 

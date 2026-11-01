@@ -5,7 +5,7 @@ import { theme } from "../client/lib/theme.ts";
 
 /**
  * How far the client's styles drift from the tokens in client/lib/theme.ts
- * (docs/design-v1-visual.md, "Drift in numbers" and section 5.5).
+ * (docs/design/design-v1-visual.md, "Drift in numbers" and section 5.5).
  *
  * `node scripts/style-drift.ts` prints the measures the design's audit
  * quotes: font sizes, radii and spacing from tokens against raw numbers,

@@ -28,7 +28,7 @@ import type { SaveOutcomeIdentity } from "#shared/saveOutcomeContract.ts";
  */
 export const UNDO_DEPTH = 50;
 
-/** The fields a move sets: a squeeze too, which stops a token in a narrow opening (docs/design-v1-maps-vision.md 4.1). */
+/** The fields a move sets: a squeeze too, which stops a token in a narrow opening (docs/design/design-v1-maps-vision.md 4.1). */
 type Place = Pick<Token, "x" | "y" | "elevation" | "rotation" | "squeeze">;
 
 /**
@@ -39,7 +39,7 @@ type Place = Pick<Token, "x" | "y" | "elevation" | "rotation" | "squeeze">;
  * because a token moved away and back stands where it stood, with legs on
  * its path that a move's undo, which puts back the path it had, would
  * erase. The size counts because a resize can leave the place as it was
- * (docs/design-v1-token-window.md 8.7), and an undo of a move or a resize
+ * (docs/design/design-v1-token-window.md 8.7), and an undo of a move or a resize
  * would put back a footprint someone changed since.
  */
 export type Pose = Place &
@@ -48,7 +48,7 @@ export type Pose = Place &
     attached: string;
     /**
      * The token rode along when the step was made by a chain not every
-     * player sees (docs/design-v1-attach.md 8.3): a silent passenger, which
+     * player sees (docs/design/design-v1-attach.md 8.3): a silent passenger, which
      * its undo and redo take back quietly or leave as it is, and which never
      * answers. Fixed when the step is made, so no hidden change since can
      * turn it into a token the answer reads. Not part of the comparison.
@@ -62,7 +62,7 @@ export type Pose = Place &
     root?: true;
   };
 
-/** Which tokens the step's player sees now: a pose holds a link only as their copy shows it (docs/design-v1-attach.md 8.3). */
+/** Which tokens the step's player sees now: a pose holds a link only as their copy shows it (docs/design/design-v1-attach.md 8.3). */
 export type Shows = (tokenId: string) => boolean;
 
 /**
@@ -96,14 +96,14 @@ export type UndoEntry = {
   /** The first op's own phrase, kept while `label` names the step by its tally, for when a later op of the group ends the tally. */
   opLabel?: string;
   /**
-   * The step is a teleport's move (docs/design-v1-maps-vision.md 4.1), so
+   * The step is a teleport's move (docs/design/design-v1-maps-vision.md 4.1), so
    * its redo is built with `teleport` and skips the wall and ledge test, as
    * the teleport did. Undone and redone it stays one.
    */
   teleport?: true;
   /**
    * The routes of the step's walks, by token, in the order the moves were
-   * made (docs/design-v1-movement.md 7.4), a plain move kept as one piece.
+   * made (docs/design/design-v1-movement.md 7.4), a plain move kept as one piece.
    * A redo built from the step carries them, so a player's redo meets the
    * walls along each piece. Kept only while every move the step merged left
    * one, and `routed` once one of them walked a real route: a step of plain
@@ -113,13 +113,13 @@ export type UndoEntry = {
   routed?: true;
   /**
    * A trap's public springing stopped one of the step's tokens or told its
-   * players (docs/design-v1-traps.md 6.5): a player's undo of it is refused
+   * players (docs/design/design-v1-traps.md 6.5): a player's undo of it is refused
    * and the step dropped. One trapped op marks a whole merged gesture.
    */
   trapped?: true;
   /**
    * The controlled rides a player's step ended or made, each with its
-   * turn's seq (docs/design-v1-attach.md 8.3). Its undo and its redo carry
+   * turn's seq (docs/design/design-v1-attach.md 8.3). Its undo and its redo carry
    * them, so a ride put back on the same turn shares the turn again.
    */
   rides?: Ride[];
@@ -147,9 +147,9 @@ export class UndoStacks {
   /**
    * Whether an applied op by this role goes on the stack at all. A scene's
    * new thumbnail alone does not: a DM device uploads it in the background
-   * (docs/design-v1-maps-vision.md 3.3), and Ctrl+Z must take back what the
+   * (docs/design/design-v1-maps-vision.md 3.3), and Ctrl+Z must take back what the
    * DM did, not a picture nobody asked for. Nor does an ask to change a
-   * roll or its end (docs/design-v1-roll-request.md 7.5): the ask is the
+   * roll or its end (docs/design/design-v1-roll-request.md 7.5): the ask is the
    * player's, so a DM's undo of Keep would bring back an ask the player was
    * told was settled. Keep stands, as the Allow's roll does. Nor does a
    * close of an ask for saves, for the same reason.
@@ -159,7 +159,7 @@ export class UndoStacks {
     if (op.t.startsWith("sys.")) return false;
     if (op.t === "roll.change") return false;
     if ((op.t === "roll.ask" || op.t === "roll.close") && op.reason === "savePage") return false;
-    // A dismissal answers the player, as Keep does, and a withdrawal is the player's own (docs/design-v1-player-save-spell.md 5.6).
+    // A dismissal answers the player, as Keep does, and a withdrawal is the player's own (docs/design/design-v1-player-save-spell.md 5.6).
     if (op.t === "cast.close") return false;
     if (op.t === "scene.update" && Object.keys(op.patch).every((field) => field === "thumb")) return false;
     if (role === "dm") return true;
@@ -274,7 +274,7 @@ export class UndoStacks {
   /**
    * The step an undo or a redo would take now, left on its stack. The actor
    * reads the images it names before the undo joins the queue
-   * (docs/design-v1-dm-tools.md 2.6).
+   * (docs/design/design-v1-dm-tools.md 2.6).
    */
   peek(memberId: string, which: HistoryDirection, scope: HistoryScope = "play"): UndoEntry | null {
     return this.#members.get(memberId)?.[scope][which].at(-1) ?? null;
@@ -449,7 +449,7 @@ function withRides(entry: UndoEntry, rides: readonly Ride[] | undefined): void {
 
 /**
  * The controlled rides an op ended or made on the turn under way, from the
- * turn's list of mounts before and after it (docs/design-v1-attach.md 8.3).
+ * turn's list of mounts before and after it (docs/design/design-v1-attach.md 8.3).
  */
 export function ridesChanged(before: RoomState, after: RoomState): Ride[] {
   const was = before.encounter?.turnStart;
@@ -504,7 +504,7 @@ function samePose(a: Pose, b: Pose, path = true): boolean {
   );
 }
 
-/** The tokens an op names, the roots of its groups (docs/design-v1-attach.md 8.2): every other token it moves rides on one of them. */
+/** The tokens an op names, the roots of its groups (docs/design/design-v1-attach.md 8.2): every other token it moves rides on one of them. */
 export function namedTokens(op: Op): string[] {
   if (op.t === "token.moveMany") return op.moves.map((m) => m.tokenId);
   return "tokenId" in op && typeof op.tokenId === "string" ? [op.tokenId] : [];
@@ -536,7 +536,7 @@ export function plannedOn(before: RoomState, op: Op): Passengers {
  * token the step never held, which a link made since brought into the
  * restore, by how it rode in `before`, the state the restore found: a
  * torch handed to a hidden imp after the step is as silent there as one
- * the imp held all along (docs/design-v1-attach.md 8.3).
+ * the imp held all along (docs/design/design-v1-attach.md 8.3).
  */
 export function keptFrom(poses: Record<string, Pose>, before: RoomState): Passengers {
   return { roots: rootsOf(poses), kept: poses, planned: before };
@@ -574,7 +574,7 @@ export function posesAfter(state: RoomState, inverse: RestoreEntry[], shows: Sho
 
 /**
  * Whether a token is carried in `state` under a root of the step by a chain not
- * every player sees (docs/design-v1-attach.md 8.3): a hidden passenger,
+ * every player sees (docs/design/design-v1-attach.md 8.3): a hidden passenger,
  * one only some players see, or a visible one with a hidden token or link
  * anywhere between it and its root, however deep, so a visible light on a
  * visible torch on a hidden imp is as silent as the torch. Such a
@@ -634,7 +634,7 @@ function stillUnder(state: RoomState, tokenId: string, restoring: ReadonlySet<st
  * hidden from them has moved. Its path is looked at only while their copy
  * shows one (`pathShown`): a path of a row they cannot see, or of a turn
  * gone by, never reaches them, so a refusal never tells a player that the
- * DM marked a leg there (docs/design-v1-attach.md 8.3). The restore is
+ * DM marked a leg there (docs/design/design-v1-attach.md 8.3). The restore is
  * guarded by the token's value now, like every other (design 7.7), and
  * replays the same way.
  */
@@ -650,13 +650,13 @@ export function poseRestore(state: RoomState, step: UndoEntry & { poses: Record<
   const silent = new Set([...restoring].filter((id) => step.poses[id]?.silent === true));
   for (const entry of step.entries) {
     const parsed = parseKey(entry.key);
-    // An attach's rows and the turn's list stay as they are: the undo takes back the link and the seat only (docs/design-v1-attach.md 8.3).
+    // An attach's rows and the turn's list stay as they are: the undo takes back the link and the seat only (docs/design/design-v1-attach.md 8.3).
     if (parsed?.kind === "encounter") continue;
     if (parsed?.kind !== "token") return { ok: false, code: "invalid", message: "only token moves and resizes undo this way" };
     const current = state.tokens[parsed.id];
     const before = entry.value as Token | null | undefined;
     // A silent passenger of the step rides back quietly while it is still under the group, and is left as it is otherwise,
-    // gone or not. Either way it never answers (docs/design-v1-attach.md 8.3).
+    // gone or not. Either way it never answers (docs/design/design-v1-attach.md 8.3).
     if (silent.has(parsed.id)) {
       const back = current && stillUnder(state, parsed.id, restoring, silent) ? quietlyBack(current, before, step.poses[parsed.id], visible) : null;
       if (back && current) {
@@ -681,7 +681,7 @@ export function poseRestore(state: RoomState, step: UndoEntry & { poses: Record<
 }
 
 /**
- * A silent passenger's way back (docs/design-v1-attach.md 8.3): by the
+ * A silent passenger's way back (docs/design/design-v1-attach.md 8.3): by the
  * displacement the step gave it, its own holder's actual move, from
  * wherever it sits now, so a visible torch on an invisible holder floats
  * back as it floated out. Its path goes back with it only where it still
@@ -713,7 +713,7 @@ function putBack(current: Token, before: Token, exists: (tokenId: string) => boo
   const { path: _path, squeeze: _squeeze, w: _w, h: _h, attached: _attached, ...rest } = current;
   const out: Token = { ...rest, ...placeOf(before), ...sizeOf(before) };
   if (before.path) out.path = before.path;
-  // The link goes back with the seat (docs/design-v1-attach.md 8.3). One to a holder the player cannot see now comes back
+  // The link goes back with the seat (docs/design/design-v1-attach.md 8.3). One to a holder the player cannot see now comes back
   // too, and the link pass keeps it only where it holds, so the player's answer is the one with no hidden holder at all.
   // One to a holder deleted since stays off, since a player's restore never refuses on a link.
   if (before.attached && exists(before.attached.to)) out.attached = before.attached;
@@ -722,7 +722,7 @@ function putBack(current: Token, before: Token, exists: (tokenId: string) => boo
 
 /** The refusal of a move's or a resize's undo. Like CHANGED_SINCE, it does not say who. */
 export const MOVED_SINCE = "it was moved or resized since";
-/** Why a player's undo of a step a trap stopped or told them about is refused (docs/design-v1-traps.md 6.5). */
+/** Why a player's undo of a step a trap stopped or told them about is refused (docs/design/design-v1-traps.md 6.5). */
 export const TRAPPED_ON_THE_WAY = "something happened on the way. Ask the DM";
 
 /** The refusal of an undo meant for a step that is no longer the newest, undone or covered by another device's change. */

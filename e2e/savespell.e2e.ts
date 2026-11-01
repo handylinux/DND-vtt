@@ -11,7 +11,7 @@ import { ConsoleWatch, diceFoldsOpen, dragCells, LoadWatch, multiSelect, OpSocke
 import { toastOverlapLines } from "./helpers/alignment.ts";
 
 /**
- * A player's save spell end to end (docs/design-v1-player-save-spell.md 8),
+ * A player's save spell end to end (docs/design/design-v1-player-save-spell.md 8),
  * on the real server serving the production build, with the DM and Pat
  * each on a phone at 390 x 844. Pat plays Thorn, whose block holds
  * Fireball and Hold Person, and Bree. Two goblins stand near, Goblin 2
@@ -314,7 +314,7 @@ describe("raccoon-vtt a player's save spell", { timeout: 600_000 }, () => {
     await shots.take(pat, "savespell-block");
   });
 
-  test("dpf1-s1. the block's Roll 8d6 Fire and ask offers Secret only, for the damage alone, and opening and closing it by ContextMenu sends nothing (docs/design-v1-roll-mode-menu.md 1)", async () => {
+  test("dpf1-s1. the block's Roll 8d6 Fire and ask offers Secret only, for the damage alone, and opening and closing it by ContextMenu sends nothing (docs/design/design-v1-roll-mode-menu.md 1)", async () => {
     const dice = sheet(pat, "Dice");
     const block = dice.getByRole("group", { name: "Ask for saves: Fireball" });
     const send = block.getByRole("button", { name: "Roll 8d6 Fire and ask" });

@@ -73,7 +73,7 @@ export function actorRest(tx: Tx, op: OpOf<"actor.rest">): void {
   const r = applyRest(resolved.actor, op.kind, op.heal ?? 0);
   if ("refused" in r) throw invalid(r.refused);
   tx.putActor(resolved, r.actor);
-  // A character's class resources come back with it (docs/design-v1-combat-controls.md 2.4), on the character beside its actor.
+  // A character's class resources come back with it (docs/design/design-v1-combat-controls.md 2.4), on the character beside its actor.
   if (resolved.character) {
     const character = tx.character(resolved.character.id);
     const resources = restedResources(character.resources, op.kind);

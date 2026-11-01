@@ -37,7 +37,7 @@ import {
 } from "./optionsRoom.ts";
 
 /**
- * Tool options in one row (docs/design-v1-tool-options.md section 14): the
+ * Tool options in one row (docs/design/design-v1-tool-options.md section 14): the
  * rules that keep things still under the finger, the popovers, the
  * toolbar's Setup, pair and tuck, the measured box and the names. Case 2,
  * the reach sweep over every tool state at every size, runs in the files
@@ -48,7 +48,7 @@ import {
  * another as the others.
  *
  * Not always here, and why:
- * - The side panel's More comes with docs/design-v1-panel-tabs.md. Case 4
+ * - The side panel's More comes with docs/design/design-v1-panel-tabs.md. Case 4
  *   presses it only where that build has made it. Until then the base's
  *   one-open-popover rule across consumers is tested in
  *   client/components/popover.test.ts.
@@ -601,7 +601,7 @@ describe("raccoon-vtt tool options in one row", { timeout: 3_600_000 }, () => {
     await dragCellsTouch(dm, { x: 18, y: 6 }, { x: 22, y: 8 });
     await waitFor("a stroke drawn while tucked", () => (drawings() > drawn ? true : null));
     assert.equal(await options(dm).getAttribute("data-rvtt-tucked"), "", "still tucked after drawing");
-    // D brings them back and moves to the next drawing tool (docs/design-v1-tool-cycle.md), Shift+D goes back to Pen, and picking Ruler shows the Ruler's options.
+    // D brings them back and moves to the next drawing tool (docs/design/design-v1-tool-cycle.md), Shift+D goes back to Pen, and picking Ruler shows the Ruler's options.
     await key(dm, "d");
     assert.equal(await options(dm).getAttribute("data-rvtt-tucked"), null);
     await options(dm).getByRole("button", { name: "Drawing tool: Line" }).waitFor();

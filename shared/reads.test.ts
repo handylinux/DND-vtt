@@ -30,7 +30,7 @@ describe("reads", () => {
     }
   });
 
-  test("a companion block's save is predicted by the DM on any scene and the character's owners, and by no other player (docs/design-v1-companion-stat-blocks.md 4.4)", () => {
+  test("a companion block's save is predicted by the DM on any scene and the character's owners, and by no other player (docs/design/design-v1-companion-stat-blocks.md 4.4)", () => {
     const state = setup();
     state.companionBlocks.b1 = companionBlock("b1", "c1");
     const { rev: _rev, ...block } = companionBlock("b2", "c1");
@@ -96,7 +96,7 @@ describe("reads", () => {
     assert.ok(!satisfies(reads(edit, state), p.projected, P1, p.opts));
   });
 
-  test("a DM on any scene replays saving and deleting a document, which reads nothing and its own key, and a player never holds one (docs/design-v1-pdf-handouts.md 3.3)", () => {
+  test("a DM on any scene replays saving and deleting a document, which reads nothing and its own key, and a player never holds one (docs/design/design-v1-pdf-handouts.md 3.3)", () => {
     const state = setup();
     const pages = [{ assetId: "a", width: 1584, height: 2048 }];
     state.handoutDocs.d1 = { id: "d1", rev: 0, title: "Strange letter", pages, createdAt: "" };
@@ -214,7 +214,7 @@ describe("wave 3 map ops", () => {
   });
 });
 
-describe("wave 5 ops (docs/design-v1-dm-tools.md)", () => {
+describe("wave 5 ops (docs/design/design-v1-dm-tools.md)", () => {
   test("a DM's group edit on tokens in view replays at once, a player's waits when a target is withheld", () => {
     const state = setup();
     state.tokens.mine = token("mine", { ownerIds: ["p1"], x: 1, y: 2 });
@@ -283,7 +283,7 @@ describe("wave 5 ops (docs/design-v1-dm-tools.md)", () => {
   });
 });
 
-describe("companion ops (docs/design-v1-combat-flow.md 4.6)", () => {
+describe("companion ops (docs/design/design-v1-combat-flow.md 4.6)", () => {
   function party() {
     const state = setup();
     state.tokens.ws = token("ws", { kind: "npc", x: 2, y: 3, ownerIds: ["p1"], companion: { of: "c1", turn: "shared", reactionUsed: true } });

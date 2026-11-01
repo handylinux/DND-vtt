@@ -48,7 +48,7 @@ export function useDetach(token: Token, shows: boolean): DetachState | null {
  * focus and its place in the keys' order (`aria-disabled`), described by
  * the note under the play row (DetachNote), which stands on a row of its
  * own so no button in the row stretches to the note's width
- * (docs/design-v1-look-pass-2.md 2.7).
+ * (docs/design/design-v1-look-pass-2.md 2.7).
  */
 export function DetachButton(props: { token: Token; detach: DetachState | null; noteId: string; focusTo?: AttachFocus }) {
   const actions = useRoomActions();
@@ -98,7 +98,7 @@ const BAR_FRAME = '[role="dialog"][data-bar-mode]';
  * Where focus goes once a press here took its button away: the first of
  * `to` inside the closest `scope` to the button, as Revive's hand-off reads
  * it. The bar's frame by default. The Token panel's Position, which holds
- * the same controls, names its own (docs/design-v1-token-sections.md 3.3).
+ * the same controls, names its own (docs/design/design-v1-token-sections.md 3.3).
  */
 export type AttachFocus = { scope: string; to: readonly string[] };
 
@@ -114,7 +114,7 @@ const IN_BAR: AttachFocus = { scope: "body", to: [BAR_FRAME] };
  * may undo the link. The name beside it already says which token, so they
  * show the short words, named in full for a reader ("Put down Torch").
  *
- * Each kind of link is a row of its own (docs/design-v1-polish.md R5): its
+ * Each kind of link is a row of its own (docs/design/design-v1-polish.md R5): its
  * word in a first column as wide as the longer word, its names and actions
  * wrapping beside it. One wrapping row for both kinds ended a line on
  * "Dragging" with its names on the next, under the carried ones. With the

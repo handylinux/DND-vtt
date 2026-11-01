@@ -6,7 +6,7 @@ import { theme } from "../../lib/theme.ts";
 import { displayPath, rememberedDisplayRoom } from "./remember.ts";
 
 /**
- * Home's way to a table display (docs/design-v1-dm-tools.md 3.1): a TV's
+ * Home's way to a table display (docs/design/design-v1-dm-tools.md 3.1): a TV's
  * browser opens `/display` here and types the DM's code. A device already
  * paired goes back to its room, and Leave there brings it back here.
  *

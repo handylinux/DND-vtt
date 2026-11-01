@@ -21,7 +21,7 @@ import {
 import { footprintHexes, hexAt, hexDistance, hexKey, hexNeighbors, hexSubcells, referenceHex, sameHex, snapAnchor, type Hex, type HexGrid } from "./hex.ts";
 
 /**
- * Footprints on hexes (docs/design-v1-hex-grids.md 4.2 and section 10): a
+ * Footprints on hexes (docs/design/design-v1-hex-grids.md 4.2 and section 10): a
  * creature takes its size's 1, 3, 7 or 12 connected hexes around the anchor
  * nearest the middle of its stored box, and fog and sight read the
  * sub-cells inside those hexes.

@@ -9,7 +9,7 @@ export type SettingIds = {
 };
 
 /**
- * One setting in a panel (docs/design-v1-visual.md 2.3): its name at 16 px
+ * One setting in a panel (docs/design/design-v1-visual.md 2.3): its name at 16 px
  * weight 600, the help under it, and its control at the right, or under
  * both when `wide` (a Segmented with several options, a long field). The
  * DM tab, Room settings, This device, Scenes and Initiative lay their

@@ -16,7 +16,7 @@ import { builderSlot, labelPaneSlot } from "./store.ts";
 const LABEL_SLOP_PX = 6;
 
 /**
- * How the board on screen shows a label (docs/design-v1-isometric-view.md
+ * How the board on screen shows a label (docs/design/design-v1-isometric-view.md
  * 6.2): in Isometric standing on the drawn ground under its anchor where
  * the stand rule lets it, as IsoBoard.tsx draws it, else lying flat.
  */

@@ -5,7 +5,7 @@ import { int, rng } from "#shared/testutil.ts";
 
 /*
  * Random sequences of presses on an ability box and its list
- * (docs/design-v1-stat-block-rolls.md 11): box and row taps and holds,
+ * (docs/design/design-v1-stat-block-rolls.md 11): box and row taps and holds,
  * moves, scrolls, cancels, keys, reader clicks, picks, Escape, Back, a
  * held roll's change, the window's blur and an unmount, on a fake clock,
  * through the real control and press registry (abilityMenu.testing.ts).

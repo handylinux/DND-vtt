@@ -231,7 +231,7 @@ function addText(ctx: ToolContext): void {
   if (textAt && words) create(ctx, "text", [textAt.x, textAt.y], words.slice(0, 1000));
 }
 
-/** The tiles' glyphs where a plain one shows the thing itself (docs/design-v1-tool-options.md 17.2). Pen, Text and Eraser have none, so the chip keeps its words. */
+/** The tiles' glyphs where a plain one shows the thing itself (docs/design/design-v1-tool-options.md 17.2). Pen, Text and Eraser have none, so the chip keeps its words. */
 const MODE_GLYPHS: Partial<Record<DrawMode, IconName>> = { line: "shapeLine", arrow: "shapeArrow", rect: "shapeBox", ellipse: "shapeCircle", polygon: "shapePolygon" };
 
 const WIDTHS = [
@@ -272,7 +272,7 @@ function StrokeBar(props: { width: number; color: string; opacity: number }) {
 }
 
 /**
- * Draw's options (docs/design-v1-tool-options.md 9.4): the drawing tool,
+ * Draw's options (docs/design/design-v1-tool-options.md 9.4): the drawing tool,
  * the color and the stroke as chips, then Fill, Undo, Redo, DM only and
  * Clear mine by priority, with Clear all always in ⋯. Text being typed or
  * a shape with corners comes first, as its own task, and the settings
@@ -286,7 +286,7 @@ function DrawOptions(props: { role: "dm" | "player" }) {
   const ui = useRoomUi();
   const access = useRoomView(accessOf);
 
-  // The DM may change who can draw at any moment (docs/design-v1-dm-tools.md 3.9).
+  // The DM may change who can draw at any moment (docs/design/design-v1-dm-tools.md 3.9).
   useEffect(() => {
     if (access === "draw") {
       tool.openedAs = "draw";
@@ -384,7 +384,7 @@ function DrawOptions(props: { role: "dm" | "player" }) {
           {
             id: "undoCorner",
             priority: 1,
-            // Its words stay beside the arrow: Undo's arrow alone stands in the same row (docs/design-v1-icons.md 4).
+            // Its words stay beside the arrow: Undo's arrow alone stands in the same row (docs/design/design-v1-icons.md 4).
             control: (
               <OptButton icon="undo" onClick={() => drawStore.setState({ draft: { kind: "polygon", points: st.draft!.points.slice(0, -2) } })}>
                 Undo corner

@@ -34,7 +34,7 @@ describe("foldsUnderSheet", () => {
     assert.equal(foldsUnderSheet({ width: 900, height: 1200, sheetOpen: true }), false);
   });
 
-  test("a docked window beside a sideways sheet folds under 182 px of room, one header row with the grip's dots, and not at 182 (docs/design-v1-token-window.md 7.1)", () => {
+  test("a docked window beside a sideways sheet folds under 182 px of room, one header row with the grip's dots, and not at 182 (docs/design/design-v1-token-window.md 7.1)", () => {
     assert.equal(foldsUnderSheet({ width: 480, height: 320, sheetOpen: true, sideRoom: 129 }), true);
     assert.equal(foldsUnderSheet({ width: 480, height: 320, sheetOpen: true, sideRoom: 181 }), true);
     assert.equal(foldsUnderSheet({ width: 480, height: 320, sheetOpen: true, sideRoom: 182 }), false);
@@ -57,7 +57,7 @@ const timeUp: ColumnAlert = { id: "t", kind: "timeUp", says: "Time is up for you
 const notice = (id: string, text: string): ColumnAlert => ({ id, kind: "notice", text, says: text });
 
 describe("alertsSummary", () => {
-  test("a death save comes after concentration, and the turn card last, after the notices (docs/design-v1-combat-controls.md 4.6)", () => {
+  test("a death save comes after concentration, and the turn card last, after the notices (docs/design/design-v1-combat-controls.md 4.6)", () => {
     const s = alertsSummary(null, [
       { id: "turn", kind: "turn", who: "Adult Red Dragon", says: "Adult Red Dragon's turn." },
       notice("n1", "Fire Breath can recharge (5–6)."),
@@ -213,7 +213,7 @@ describe("paneDockFits", () => {
   });
 });
 
-describe("summaryFor (docs/design-v1-look-pass-2.md 2.8)", () => {
+describe("summaryFor (docs/design/design-v1-look-pass-2.md 2.8)", () => {
   test("no row with nothing that wants it", () => {
     assert.equal(summaryFor({ paneLane: null, barLane: null }), null);
     assert.equal(summaryFor({ paneLane: "beside", barLane: "stacked" }), null);
@@ -265,7 +265,7 @@ describe("a rolls' line whose words name only its lead (LP16-PT-3)", () => {
   });
 });
 
-describe("drawsPaneRow, the flag Room reads (docs/design-v1-look-pass-2.md 2.8)", () => {
+describe("drawsPaneRow, the flag Room reads (docs/design/design-v1-look-pass-2.md 2.8)", () => {
   const base = { paneLane: "summary" as const, barLane: null, folded: false, asked: false, waiting: true };
 
   test("the pane's row while a pane card has no room beside the lane and something waits", () => {

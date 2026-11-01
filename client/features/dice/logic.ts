@@ -7,7 +7,7 @@ import type { DiceResult, DiceRoll, LogEntry, LogEvent } from "#shared/model.ts"
 import type { DiceRollInput } from "#shared/protocol.ts";
 
 /**
- * What the Dice panel reads from the log (docs/design-v1-dice.md 8.3 and
+ * What the Dice panel reads from the log (docs/design/design-v1-dice.md 8.3 and
  * 8.6), kept free of React so it is tested under plain Node: the rows of
  * Recent rolls, a tag's lines, the field's reading and this device's
  * history of formulas.
@@ -48,7 +48,7 @@ function diceOf(entry: LogEntry): DiceLine | null {
  *
  * `held` names the tag whose dice are in the air: its lines stay out until
  * they land, so the new row never shows before the dice do
- * (docs/design-v1-roll-animation.md 3.4).
+ * (docs/design/design-v1-roll-animation.md 3.4).
  */
 export function recentRolls(log: readonly LogEntry[], held: string | null = null): RecentRow[] {
   const rows: RecentRow[] = [];
@@ -122,7 +122,7 @@ export function rollsOf(lines: readonly LogEntry[]): DiceRoll[] {
 export type HeaderRoll = { total: number; label: string | undefined; sums: string | null; dice: DiceRoll[]; more: number };
 
 /**
- * What the header line leads with (docs/design-v1-dice-ui.md 4.1). One
+ * What the header line leads with (docs/design/design-v1-dice-ui.md 4.1). One
  * damage tap of several types reads as its sum under their shared label,
  * with every part's dice and crit sums, as its toast and the HP entry's
  * chip read it: the line is the panel's one result, so one type's total
@@ -197,7 +197,7 @@ export function askedFormula(result: Pick<DiceResult, "formula" | "mode">): stri
 /**
  * A roll as Again asks for it: its formula as asked, and a critical hit's
  * damage marked critical again, so the server rolls it by the room's rule
- * then (the critical hit rules addendum of docs/design-v1-dice.md).
+ * then (the critical hit rules addendum of docs/design/design-v1-dice.md).
  */
 export function askedRoll(result: Pick<DiceResult, "formula" | "mode" | "crit">): { formula: string; critical?: true } | null {
   const critical = askedCritical(result);
@@ -212,7 +212,7 @@ export function askedRoll(result: Pick<DiceResult, "formula" | "mode" | "crit">)
  * marked critical again, so it rolls by the room's rule then. A creature's
  * initiative goes marked as initiative again, so the server keeps it from
  * players while the order setting keeps the creature's place from them then
- * (docs/design-v1-combat-flow.md 11.3). A line from before the mark was kept
+ * (docs/design/design-v1-combat-flow.md 11.3). A line from before the mark was kept
  * says so by its `hidden`, which only an initiative roll carries. A
  * creature's save goes as that save again, so the server records the
  * condition that fails it then, as the first roll did.

@@ -37,7 +37,7 @@ export function seenChunks(src: GroundSource): Chunks {
 
 function masked(chunks: Chunks, tiles: Readonly<Record<string, FogTile | undefined>>, sceneId: string, bounds: { w: number; h: number }): Chunks {
   const fog = new FogView(tiles, sceneId, bounds);
-  // On hexes a key is a hex, seen where any sub-cell inside it is (docs/design-v1-hex-grids.md HX-D10).
+  // On hexes a key is a hex, seen where any sub-cell inside it is (docs/design/design-v1-hex-grids.md HX-D10).
   const g = heightsGrid(chunks, sceneId);
   const seen = (x: number, y: number) => (isHex(g) ? hexInScene(g, bounds, { col: x, row: y }) && hexSubcells(g, { col: x, row: y }).some(([sx, sy]) => fog.revealed(sx, sy)) : fog.cellSeen(x, y));
   const out: Record<string, BuildChunk> = {};
@@ -66,7 +66,7 @@ function masked(chunks: Chunks, tiles: Readonly<Record<string, FogTile | undefin
  * or another member's: the drop's landing (movement/drop.ts dropLanding),
  * a kept seat at its holder's height, read on the ground this viewer has
  * seen (`seen`, from seenChunks), so a fogged platform never lifts it
- * (docs/design-v1-isometric-view.md 4.3). A shadow and a standing ghost
+ * (docs/design/design-v1-isometric-view.md 4.3). A shadow and a standing ghost
  * both read this one landing.
  */
 export function previewLanding(view: RoomState, role: Role, seen: Chunks, token: DropToken, at: Point): number {

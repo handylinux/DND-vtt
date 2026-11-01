@@ -269,7 +269,7 @@ export function hpView(actor: ProjectedActor | undefined): HpView {
 }
 
 /**
- * The AC a row shows in its shield (docs/design-v1-combat-flow.md 3.3):
+ * The AC a row shows in its shield (docs/design/design-v1-combat-flow.md 3.3):
  * whatever AC this viewer's copy holds, which is every creature's for the
  * DM and a player's own creatures' for them, since the projection sends no
  * other. None for an AC of 0, a dead creature (a corpse's AC answers
@@ -286,7 +286,7 @@ export function rowAc(actor: ProjectedActor | undefined, token?: Pick<Token, "ki
 /**
  * Whether the DM's row says players do not see it yet: the room's order
  * setting keeps its place from them until its first turn
- * (docs/design-v1-combat-flow.md 11). The DM's view holds only the scene the
+ * (docs/design/design-v1-combat-flow.md 11). The DM's view holds only the scene the
  * DM looks at, so a row whose token stands elsewhere cannot be told and
  * says nothing.
  */
@@ -333,7 +333,7 @@ export function whoseTurn(input: { dm: boolean; started: boolean; activeName: st
   return { name: "Another creature", line: "Another creature's turn" };
 }
 
-/** How the tracker's round header shows (docs/design-v1-combat-flow.md 3.1): full and sticky, one compact sticky row, or full and scrolling with the list. */
+/** How the tracker's round header shows (docs/design/design-v1-combat-flow.md 3.1): full and sticky, one compact sticky row, or full and scrolling with the list. */
 export type RoundHeaderForm = "full" | "compact" | "static";
 
 /** The compact header's one row: the buttons' touch height. */
@@ -359,7 +359,7 @@ export type RoundHeaderRoom = {
 export const ROWS_UNDER_HEADER = 2;
 
 /**
- * The header's form (docs/design-v1-combat-flow.md 3.1): full and sticky
+ * The header's form (docs/design/design-v1-combat-flow.md 3.1): full and sticky
  * while the scroller holds the full header and two standard rows, one
  * compact sticky row while it holds the compact header and two rows, and
  * otherwise full and scrolling with the list, so a short panel still
@@ -512,7 +512,7 @@ function tokenOrder(a: Token, b: Token): number {
  * holds both layers and the sight tiles of the scene on screen, so a fog
  * check alone would leave out every monster the party sees in explored
  * ground. On a per-player scene it is what any player sees, the union
- * (docs/design-v1-per-player-vision.md decision 14, vision/union.ts).
+ * (docs/design/design-v1-per-player-vision.md decision 14, vision/union.ts).
  */
 export function addCandidates(view: RoomState, sceneId: string | null, mode: AddMode, selectedId: string | null): Token[] {
   if (sceneId === null) return [];
@@ -520,7 +520,7 @@ export function addCandidates(view: RoomState, sceneId: string | null, mode: Add
   const out: Token[] = [];
   for (const token of Object.values(view.tokens)) {
     if (!token || token.sceneId !== sceneId || taken.has(token.id)) continue;
-    // A companion that acts on its character's turn takes no row of its own, which the server refuses anyway (docs/design-v1-combat-flow.md 3.6.7).
+    // A companion that acts on its character's turn takes no row of its own, which the server refuses anyway (docs/design/design-v1-combat-flow.md 3.6.7).
     if (actsOnCharacterTurn(token)) continue;
     if (mode === "selected") {
       if (token.id === selectedId) out.push(token);
@@ -543,7 +543,7 @@ export function ownCandidates(view: Pick<RoomState, "tokens" | "characters" | "e
 }
 
 /**
- * The companions listed under a row (docs/design-v1-combat-flow.md 3.6.7):
+ * The companions listed under a row (docs/design/design-v1-combat-flow.md 3.6.7):
  * those in this viewer's copy that act on the row's character's turn,
  * listed under it, by name. The row's character is `rowCharacter`'s, the
  * one the server's Reaction reset reads, so a row naming one player's

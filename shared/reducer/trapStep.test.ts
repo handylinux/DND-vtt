@@ -8,7 +8,7 @@ import { DM, P1, actor, env, reveal, room, token } from "../testutil.ts";
 import { DONE_MEANWHILE, SETTLED_MEANWHILE } from "./traps.ts";
 
 /**
- * The trap step in the reducer (docs/design-v1-traps.md 5, 6.3 and 13.2):
+ * The trap step in the reducer (docs/design/design-v1-traps.md 5, 6.3 and 13.2):
  * what goes off on walks, landings, turns and doors, what it writes, and
  * what it leaves for the DM. P1 plays Thorn. The DM runs everything else.
  */

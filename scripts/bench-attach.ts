@@ -1,5 +1,5 @@
 /**
- * Attached tokens on a phone (docs/design-v1-attach.md section 11): the
+ * Attached tokens on a phone (docs/design/design-v1-attach.md section 11): the
  * group rules and the link pass at the room's cap of 500 tokens, with one
  * holder carrying a full group of 20 at the deepest chain the limits allow.
  * Each row runs on a fresh copy of the tokens, so the children index is

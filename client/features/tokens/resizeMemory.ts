@@ -3,7 +3,7 @@ import type { CreatureSize, Token } from "#shared/model.ts";
 import { scopeSlot } from "../../state/scope.ts";
 
 /*
- * Where a creature grew from, on this page (docs/design-v1-token-window.md
+ * Where a creature grew from, on this page (docs/design/design-v1-token-window.md
  * 8.2): the base rule alone can leave a creature a square from where it
  * started, since a growth away from a wall spreads right and down and its
  * shrink takes the grown footprint's top-left square. So the page that

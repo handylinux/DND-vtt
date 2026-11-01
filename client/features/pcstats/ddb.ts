@@ -3,7 +3,7 @@ import { checkedFill } from "#shared/rules/pcFill.ts";
 import { ApiError, api } from "../../lib/api.ts";
 
 /**
- * The D&D Beyond step's requests and words (docs/design-v1-pc-stats.md 6.3
+ * The D&D Beyond step's requests and words (docs/design/design-v1-pc-stats.md 6.3
  * and Appendix D): a share link fetched by the server, or the character's
  * JSON pasted and read on this device by the same reader, in a chunk of its
  * own that loads only then. Each refusal ends with the way out.

@@ -1,6 +1,6 @@
 /**
  * The DM guide's picture of raised hexes in the isometric view
- * (docs/dm-guide.md, "Hex scenes", docs/design-v1-iso-hex-relief.md),
+ * (docs/dm-guide.md, "Hex scenes", docs/design/design-v1-iso-hex-relief.md),
  * taken from the real server on the production build, as guide-iso.ts
  * takes the isometric view's, in a "Guide examples" room.
  *

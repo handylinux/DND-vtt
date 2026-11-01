@@ -12,7 +12,7 @@ import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
 import { ConsoleWatch, dragCells, OpSocket, pagePoint, pickOption, pickTool, reopenRoom, Shots, SocketWatch, startServer, tapCell, touchSwipe, waitFor, wholeInReach, type Server } from "./harness.ts";
 
 /**
- * Traps end to end (docs/design-v1-traps.md 11), on the real server
+ * Traps end to end (docs/design/design-v1-traps.md 11), on the real server
  * serving the production build: the DM on a desktop, Pat on a phone at
  * 390 x 844. The DM builds a Hidden Pit from its preset with the Trap
  * tool, gives it a Dexterity save and leaves it unfound when it goes off.
@@ -187,7 +187,7 @@ function patHeardOfTrap(): boolean {
 }
 
 /**
- * The pane's rows, read in the page (docs/design-v1-polish.md R1 to R3):
+ * The pane's rows, read in the page (docs/design/design-v1-polish.md R1 to R3):
  * each remove's middle against the first line of the fields it removes,
  * each FieldRow's control against its label, each unit against its field,
  * each tick with help against its label's first line, and the foot's Set
@@ -721,7 +721,7 @@ describe("raccoon-vtt traps", { timeout: 600_000 }, () => {
     for (const due of state(dmSocket)?.traps?.[pitId]?.rig?.due ?? []) await ops.send({ t: "trap.settle", trapId: pitId, due: due.id });
   });
 
-  test("lp2-1a. a trap goes off while its pane is open as a card: at 1280 x 800, 844 x 390 and 820 x 1180, at 85% and 130%, the pane's header, Close and folds stay in reach and no card covers it, beside the lane or under the column's summary row, whose tap closes the pane and puts focus on the card (docs/design-v1-look-pass-2.md 2.8)", async () => {
+  test("lp2-1a. a trap goes off while its pane is open as a card: at 1280 x 800, 844 x 390 and 820 x 1180, at 85% and 130%, the pane's header, Close and folds stay in reach and no card covers it, beside the lane or under the column's summary row, whose tap closes the pane and puts focus on the card (docs/design/design-v1-look-pass-2.md 2.8)", async () => {
     // In the board's top right corner, where the alerts column hangs, so its pane would meet the cards.
     const cornerId = randomUUID().replace(/-/g, "").slice(0, 16);
     run.cornerId = cornerId;
@@ -870,7 +870,7 @@ describe("raccoon-vtt traps", { timeout: 600_000 }, () => {
     await reopenRoom(dm);
   });
 
-  test("lp2-1b. the pane's choices fit its card: Afterwards and Hits unfold with no sideways scroll at 1280 x 800 and 844 x 390, Afterwards is one switch, Who's three words share a row, and arrow keys through Hits change what it hits and start no pick, while Add squares and Place the area still start theirs (docs/design-v1-look-pass-2.md 2.7)", async () => {
+  test("lp2-1b. the pane's choices fit its card: Afterwards and Hits unfold with no sideways scroll at 1280 x 800 and 844 x 390, Afterwards is one switch, Who's three words share a row, and arrow keys through Hits change what it hits and start no pick, while Add squares and Place the area still start theirs (docs/design/design-v1-look-pass-2.md 2.7)", async () => {
     // A 320 px phone at 130%, where the pane is a sheet about 214 px inside: each of Hits' names, chosen and so with its check, fits without a sideways scroll (LP2L1-ASTRA-01).
     await dm.setViewportSize({ width: 320, height: 568 });
     await dm.evaluate(() => localStorage.setItem("rvtt.uiScale", "1.3"));
@@ -978,7 +978,7 @@ describe("raccoon-vtt traps", { timeout: 600_000 }, () => {
     await ops.send({ t: "trap.update", trapId: run.trapId, patch: { rig: { hits: "trigger" } } });
   });
 
-  test("lp2-1b-2. the last way a trap goes off keeps its tick and focus on a click, Space and Enter, says why, and lets go once another is ticked, and a cleared name goes back to the saved one and says why (docs/design-v1-look-pass-2.md 2.7, D13)", async () => {
+  test("lp2-1b-2. the last way a trap goes off keeps its tick and focus on a click, Space and Enter, says why, and lets go once another is ticked, and a cleared name goes back to the saved one and says why (docs/design/design-v1-look-pass-2.md 2.7, D13)", async () => {
     await pickTool(dm, "Trap");
     await tapCell(dm, BOUNDS, { x: 6, y: 4 });
     await pane(dm).getByText("Hidden Pit", { exact: true }).first().waitFor();
@@ -1049,7 +1049,7 @@ describe("raccoon-vtt traps", { timeout: 600_000 }, () => {
     await pickTool(dm, "Select");
   });
 
-  test("lp2-1b-3. Save and damage reads as the group save it fills: a DC row, On a pass with Half and None, and dice that do not read say why under their row (docs/design-v1-look-pass-2.md D12)", async () => {
+  test("lp2-1b-3. Save and damage reads as the group save it fills: a DC row, On a pass with Half and None, and dice that do not read say why under their row (docs/design/design-v1-look-pass-2.md D12)", async () => {
     await pickTool(dm, "Trap");
     await tapCell(dm, BOUNDS, { x: 6, y: 4 });
     await pane(dm).getByText("Hidden Pit", { exact: true }).first().waitFor();
@@ -1146,7 +1146,7 @@ describe("raccoon-vtt traps", { timeout: 600_000 }, () => {
     await pickTool(dm, "Select");
   });
 
-  test("pl1-a. a trap with every part filled lays out its rows level, as a card at 1440 x 900 and as a sheet at 320 x 568 at 130%: each remove beside its fields' first line, DC, On a pass and Uses left beside their labels, rounds beside its field, Set it off filling its line with every button's words on one line, and the last tick on its label's first line (docs/design-v1-polish.md R1 to R3)", async () => {
+  test("pl1-a. a trap with every part filled lays out its rows level, as a card at 1440 x 900 and as a sheet at 320 x 568 at 130%: each remove beside its fields' first line, DC, On a pass and Uses left beside their labels, rounds beside its field, Set it off filling its line with every button's words on one line, and the last tick on its label's first line (docs/design/design-v1-polish.md R1 to R3)", async () => {
     // A door for the trap to lock, as an effect with a choice.
     await ops.send({ t: "build.edge", sceneId: run.sceneId, edges: [{ key: "12,9,w", feature: { kind: "door", state: "closed", secret: false, discovered: false } }] });
     const needleId = randomUUID().replace(/-/g, "").slice(0, 16);
@@ -1231,7 +1231,7 @@ describe("raccoon-vtt traps", { timeout: 600_000 }, () => {
     await reopenRoom(dm);
   });
 
-  test("dpfix-1. a new trap's pane on a 320 x 568 phone at 130%, every group folded: each header within 1 px, and a summary that fits beside its name keeps the name's line (HX7-4 on squares, docs/design-v1-design-pass.md 4.1)", async () => {
+  test("dpfix-1. a new trap's pane on a 320 x 568 phone at 130%, every group folded: each header within 1 px, and a summary that fits beside its name keeps the name's line (HX7-4 on squares, docs/design/design-v1-design-pass.md 4.1)", async () => {
     const bareId = randomUUID().replace(/-/g, "").slice(0, 16);
     const rig = { on: ["enter" as const], who: "party" as const, floor: true, resets: "never" as const, stops: false, foundOnSpring: true, hits: "zone" as const, actions: [], find: [], notice: false };
     await ops.send({ t: "trap.create", trap: { id: bareId, sceneId: run.sceneId, name: "Bare Trap", zone: { cells: [{ x: 10, y: 8, w: 1, h: 1 }] }, rig } });
@@ -1288,7 +1288,7 @@ describe("raccoon-vtt traps", { timeout: 600_000 }, () => {
     assert.deepEqual(off, [], "out of line by more than 1 px, or wrapped where it fits");
   });
 
-  test("pl1-b. at 1440 x 900, at 100% and 130%, a docked token window's Close stands as far under its frame's top as a trap pane's, and the Trap tool's hint sits in the middle of its line (docs/design-v1-polish.md R7, R8)", async () => {
+  test("pl1-b. at 1440 x 900, at 100% and 130%, a docked token window's Close stands as far under its frame's top as a trap pane's, and the Trap tool's hint sits in the middle of its line (docs/design/design-v1-polish.md R7, R8)", async () => {
     await ops.send({ t: "token.update", tokenId: run.thorn, patch: { x: 2, y: 9, elevation: 0 } });
     for (const scale of [1, 1.3]) {
       const label = `1440 x 900 at ${Math.round(scale * 100)}%`;

@@ -21,7 +21,7 @@ import {
 } from "./types.ts";
 
 /*
- * Two panels in the room's state (docs/design-v1-split-panel.md 5): one
+ * Two panels in the room's state (docs/design/design-v1-split-panel.md 5): one
  * rule for which pane a panel opens in, the split's start pair, rule 0 for
  * a phone-only panel, a request that waits for the room's measure, and
  * the preview taking the same results.

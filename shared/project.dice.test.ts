@@ -7,7 +7,7 @@ import type { Op, OpOf } from "./protocol.ts";
 import { DM, P1, P2, apply, character, member, reveal, room, scene, token } from "./testutil.ts";
 
 /**
- * Who receives a dice line (docs/design-v1-dice.md 5.2), as a matrix of
+ * Who receives a dice line (docs/design/design-v1-dice.md 5.2), as a matrix of
  * line shapes and viewers: the DM, a co-DM, the roller, another player, a
  * table display, and a player behind a blackout.
  */
@@ -50,7 +50,7 @@ function table(): RoomState {
 
 const FREE: Roll = { formula: "2d6+3", label: "Longsword" };
 
-describe("who receives a dice line (docs/design-v1-dice.md 5.2)", () => {
+describe("who receives a dice line (docs/design/design-v1-dice.md 5.2)", () => {
   test("an open free roll reaches every member in full, the tag only its roller, and no table display", () => {
     const { state, entry } = roll(P1, table(), "all", [FREE], { dc: 15 });
     for (const v of [DM, DM2]) assert.equal(seen(state, entry, v)?.tag, TAG, `${v.memberId} gets the DM's whole line`);

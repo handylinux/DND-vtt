@@ -21,7 +21,7 @@ import { ABILITY_NAMES } from "#shared/rules/skills.ts";
 
 /**
  * The words and the drafts of a character's class resources
- * (docs/design-v1-combat-controls.md 7): what each row reads, what a rest
+ * (docs/design/design-v1-combat-controls.md 7): what each row reads, what a rest
  * restores, and the Add, Update and Edit sheets' checks, as plain
  * functions for node --test. Every sheet sends one character.update with
  * the whole list, each item without `used`, which the reducer keeps by id.

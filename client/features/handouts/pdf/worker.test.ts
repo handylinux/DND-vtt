@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { imageFailure } from "./options.ts";
 
-describe("the worker's warning filter (docs/design-v1-pdf-handouts.md 4.2.1)", () => {
+describe("the worker's warning filter (docs/design/design-v1-pdf-handouts.md 4.2.1)", () => {
   test("only image failures, and only while a page draws", () => {
     const line = 'Warning: Unable to decode image "img_p0_1": "JpxError: OpenJPEG failed to initialize".';
     assert.equal(imageFailure([line], true), line);

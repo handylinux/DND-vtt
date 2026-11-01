@@ -49,7 +49,7 @@ export async function diskHasRoom(config: Pick<Config, "ASSET_DIR">): Promise<bo
 
 /**
  * A room's deletion, the one path both a DM's delete and the admin page's
- * take (docs/design-v1-dm-tools.md 3.18): the gateway unloads the room and
+ * take (docs/design/design-v1-dm-tools.md 3.18): the gateway unloads the room and
  * closes its sockets with 4009, the row's cascade removes its data, and its
  * files go to the trash when no other room names them. Image files are
  * shared between rooms that uploaded the same bytes, so the room's file
@@ -74,7 +74,7 @@ export function registerRoomRoutes(app: FastifyInstance, kit: AuthKit): Promise<
     r.get("/api/config", async () => ({
       turnstileSiteKey: turnstileEnabled(kit.config) ? (kit.config.TURNSTILE_SITE_KEY ?? null) : null,
       // Openverse needs no key, so image search is always there
-      // (docs/design-v1-dm-tools.md 3.13). Kept for the picker, which reads it.
+      // (docs/design/design-v1-dm-tools.md 3.13). Kept for the picker, which reads it.
       searchEnabled: true,
     }));
 

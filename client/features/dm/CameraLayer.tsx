@@ -16,13 +16,13 @@ const FOLLOW_MS = 120;
  * and view it shows (`live`), and it hears each camera move from the room's
  * live camera (state/liveCamera.ts) without rendering, since in Isometric a
  * pan inside the board's cull step renders nothing
- * (docs/design-v1-relief-pan.md 6.3). On a DM's device it publishes the
+ * (docs/design/design-v1-relief-pan.md 6.3). On a DM's device it publishes the
  * camera for "Bring everyone here", and while "Follow me" is on it sends
  * the camera to the players, throttled, plus once more whenever someone
  * comes online, so a player who joins mid-scene catches up.
  *
  * With "Show my view on the table display" on, it also sends the area it
- * shows to table displays (docs/design-v1-dm-tools.md 3.1), as often as
+ * shows to table displays (docs/design/design-v1-dm-tools.md 3.1), as often as
  * Follow me does, once more when another display connects, and never at
  * rest. Only while this device views the players' scene, so a TV never
  * moves to a scene they cannot see.

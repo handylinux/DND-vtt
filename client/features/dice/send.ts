@@ -5,7 +5,7 @@ import { useRoomActions, useRoomStore } from "../../state/view.ts";
 import { useReceipts, type ReceiptTracker } from "./useReceipt.ts";
 
 /**
- * Sending an op that rolls or applies (docs/design-v1-dice.md 4.5 and 8.7):
+ * Sending an op that rolls or applies (docs/design/design-v1-dice.md 4.5 and 8.7):
  * only while the socket is open, since a roll needs the server, and with
  * its tag tracked from the tap, so the surface that sent it shows its
  * answer in place. The store shows no toast for it: the surface does, and

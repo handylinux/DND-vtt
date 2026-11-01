@@ -10,7 +10,7 @@ import { DM, P1, apply, env, member, refused, room, scene } from "../testutil.ts
 import { derivedId } from "./duplicate.ts";
 
 /**
- * Players' memory in the reducer (docs/design-v1-map-discovery.md 5.3 to
+ * Players' memory in the reducer (docs/design/design-v1-map-discovery.md 5.3 to
  * 5.5, lane MD1): the map step's `sys.remember` as stored, and everything
  * else that changes a layer's memory as bookkeeping: hides, Fog all,
  * forgetting tiles, vision or fog off, the shape switch, a scene's

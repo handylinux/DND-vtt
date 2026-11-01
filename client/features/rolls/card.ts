@@ -12,7 +12,7 @@ import { CONDITIONS } from "#shared/srd/conditions.ts";
 
 /**
  * The player's card rolls a request's answer on the server
- * (docs/design-v1-roll-request.md 5.2 to 5.4), as plain functions for node
+ * (docs/design/design-v1-roll-request.md 5.2 to 5.4), as plain functions for node
  * --test: Roll's words and why it waits, the reading under the roll row,
  * the op's roll fields, and the words of a rolled result. The DM's live
  * card reads the same reading for its Roll (6).
@@ -120,7 +120,7 @@ export type CardRoll = {
  * Roll on the card (5.2, 5.3) for one creature and one choice: `bonus` is
  * the creature's as this device knows it, `preset` doc 3's for the test, read
  * at the tap, and `inputs` the player's own. The preset's sources and the
- * pressed chip resolve once by the cancel rule (docs/design-v1-dice.md 3.3),
+ * pressed chip resolve once by the cancel rule (docs/design/design-v1-dice.md 3.3),
  * and the preset's extra comes before the player's. `text` is the Total
  * field's draft, which holds Roll back only while the room lets players type
  * totals (`typeTotals`, absent reads as on): off, the field is hidden with

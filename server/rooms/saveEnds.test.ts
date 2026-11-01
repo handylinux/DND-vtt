@@ -6,7 +6,7 @@ import { remapState } from "./remap.ts";
 import { parseRoomState } from "./stateSchema.ts";
 import { describeOp } from "./undoLabels.ts";
 
-/** A save that ends an effect in a room's export and its undo words (docs/design-v1-roll-options.md 6.1). */
+/** A save that ends an effect in a room's export and its undo words (docs/design/design-v1-roll-options.md 6.1). */
 function withSave(): RoomState {
   const fx: Effect = effect("fx", { key: "frightened", save: { ability: "wis", dc: 15, spell: true }, due: { id: "3:0", state: "pending" } });
   const line: LogEvent = { type: "saveEnds", tokenId: "gob", effectId: "fx", key: "frightened", ability: "wis", dc: 15 };

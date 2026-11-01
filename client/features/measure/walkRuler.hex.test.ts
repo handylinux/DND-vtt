@@ -7,7 +7,7 @@ import { COLUMNS, hexWallRoom, onHex, ROWS, wallsRound } from "#shared/rules/hex
 import { measureWalk } from "./walkRuler.ts";
 
 /**
- * The walking ruler on hexes (docs/design-v1-hex-grids.md phase H2): it
+ * The walking ruler on hexes (docs/design/design-v1-hex-grids.md phase H2): it
  * walks the six-neighbor lattice round walls, as a drag's route does, and
  * reads every hex as one step.
  */

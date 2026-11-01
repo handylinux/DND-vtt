@@ -2,7 +2,7 @@ import type Konva from "konva";
 
 /**
  * A local drag in the isometric view moves its nodes into the drag layer
- * (docs/design-v1-isometric-view.md 5.1 and 6.3), so each frame redraws
+ * (docs/design/design-v1-isometric-view.md 5.1 and 6.3), so each frame redraws
  * that layer alone and never the relief with its walls and columns. The
  * drag layer's ground group has the relief's transform, so a node keeps its
  * place on screen and its world x and y. react-konva never moves a node to

@@ -11,7 +11,7 @@ import { indexBuild, isPiece, LEDGE, pieceBlocks, pieceTouches, PIECE_BAND, scen
 import { token } from "../testutil.ts";
 
 /*
- * A player's device reading its held chunks (docs/design-v1-map-discovery.md
+ * A player's device reading its held chunks (docs/design/design-v1-map-discovery.md
  * 5.2): `known`, `auto` and `upDir` in place of what it would derive from
  * cells it may not hold, the piece path for the server's cut walls, and the
  * device's two tests of a piece, with section 10's walls rows.

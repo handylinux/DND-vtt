@@ -8,7 +8,7 @@ import { facingsOf, type Facing } from "../rules/heights.ts";
 import { invalid, type Tx } from "./tx.ts";
 
 /**
- * Raised areas and stairs (docs/design-v1-maps-vision.md 4.2): heights and
+ * Raised areas and stairs (docs/design/design-v1-maps-vision.md 4.2): heights and
  * stair marks painted on cells, kept in their chunks in the stored form of
  * shared/heightCodec.ts. Both change movement and sight, so both move the
  * walls version, and the limits step runs the split's counting pass on
@@ -74,7 +74,7 @@ const paintHeight =
 /**
  * The build chunks as a `build.height` would leave them, written nowhere,
  * so a pit can check its opened ground against the caps before it opens
- * (docs/design-v1-traps.md 5.7). Throws as the op would on a cell outside
+ * (docs/design/design-v1-traps.md 5.7). Throws as the op would on a cell outside
  * the scene.
  */
 export function heightsPainted(chunks: Readonly<Record<string, BuildChunk>>, scene: Scene, op: OpOf<"build.height">): Record<string, BuildChunk> {
@@ -87,7 +87,7 @@ export function heightsPainted(chunks: Readonly<Record<string, BuildChunk>>, sce
 export function buildStairs(tx: Tx, op: OpOf<"build.stairs">): void {
   const scene = tx.scene(op.sceneId);
   const mark: StairMark = op.up ?? ".";
-  // Each grid keeps its own facings (docs/design-v1-hex-grids.md H3), so a chunk never holds a mark its scene cannot read.
+  // Each grid keeps its own facings (docs/design/design-v1-hex-grids.md H3), so a chunk never holds a mark its scene cannot read.
   const g = sceneGrid(scene);
   if (mark !== "." && mark !== "a" && !facingsOf(g).includes(mark as Facing)) {
     throw invalid(isHex(g) ? "a stair on hexes faces a side from 0 to 5" : "a stair on squares faces north, east, south or west");
@@ -101,7 +101,7 @@ export function buildStairs(tx: Tx, op: OpOf<"build.stairs">): void {
 }
 
 /**
- * Marks cells as difficult ground, or clears the marks (docs/design-v1-movement.md
+ * Marks cells as difficult ground, or clears the marks (docs/design/design-v1-movement.md
  * 6.3). The mark paints over the floor or the map without changing the
  * cell's terrain, and stops nothing, so no walls version moves.
  */

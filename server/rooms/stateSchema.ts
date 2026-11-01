@@ -66,7 +66,7 @@ const iso = z.string().max(40);
 const memberIds = z.array(id).max(MAX_OWNERS);
 /** What a log line counts, such as the tokens a deleted character took with it. */
 const count = z.number().int().min(0).max(1_000_000);
-/** An upload or, from wave 5, a shipped icon (docs/design-v1-dm-tools.md 3.12). */
+/** An upload or, from wave 5, a shipped icon (docs/design/design-v1-dm-tools.md 3.12). */
 const imageRef = dmToolSchemas.imageRef;
 const sizeSchema = z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan", "custom"]);
 const visibility = z.enum(["all", "dm"]);
@@ -92,17 +92,17 @@ const settings = z.strictObject({
   revealHiddenOnTurn: z.boolean(),
   // Older rooms and backups have no turn timer: it reads as off.
   turnTimerSec: z.number().int().min(0).max(MAX_TURN_TIMER_SEC).default(0),
-  // Backups from before wave 5 have none, which reads as every player (docs/design-v1-dm-tools.md 3.9).
+  // Backups from before wave 5 have none, which reads as every player (docs/design/design-v1-dm-tools.md 3.9).
   playersDraw: dmToolSchemas.whichPlayers.optional(),
-  // Backups from before it have none, which reads as on (docs/design-v1-combat-flow.md 3.4).
+  // Backups from before it have none, which reads as on (docs/design/design-v1-combat-flow.md 3.4).
   healRevives: z.boolean().optional(),
   // Backups from before it rolled every crit by the 2024 rule, which is what they keep.
   critRule: z.enum(CRIT_RULES).default("rollTwice"),
-  // Backups from before it showed players the whole order, which is what they keep (docs/design-v1-combat-flow.md 11.1).
+  // Backups from before it showed players the whole order, which is what they keep (docs/design/design-v1-combat-flow.md 11.1).
   playersSeeOrder: z.enum(ORDER_REVEALS).default("all"),
-  // Backups from before hex grids have none, which reads as squares (docs/design-v1-hex-grids.md HX-D19).
+  // Backups from before hex grids have none, which reads as squares (docs/design/design-v1-hex-grids.md HX-D19).
   newScenes: mapSchemas.gridShape.optional(),
-  // Backups from before map discovery have none, which reads as each kind's old default (docs/design-v1-map-discovery.md 8.2).
+  // Backups from before map discovery have none, which reads as each kind's old default (docs/design/design-v1-map-discovery.md 8.2).
   newScenePlayers: memorySchemas.scenePreset.optional(),
 });
 
@@ -148,21 +148,21 @@ const scene = z
     fogEnabled: z.boolean(),
     wallsVersion: z.number().int().min(0),
     defaultView: z.strictObject({ x: coord, y: coord, zoom: z.number().min(0.01).max(100) }).optional(),
-    // Backups from before wave 3 have none of these, which reads as before (docs/design-v1-maps-vision.md 2.3).
+    // Backups from before wave 3 have none of these, which reads as before (docs/design/design-v1-maps-vision.md 2.3).
     autoWalls: mapSchemas.autoWalls.optional(),
     folder: mapSchemas.folderName.optional(),
     thumb: id.optional(),
     phases: mapSchemas.mapPhases.optional(),
     phaseId: id.optional(),
     phaseGrid: mapSchemas.phaseGrid.optional(),
-    // Backups from before wave 4 have neither, which reads as off (docs/design-v1-maps-vision.md 2.3).
+    // Backups from before wave 4 have neither, which reads as off (docs/design/design-v1-maps-vision.md 2.3).
     blockMovement: z.boolean().optional(),
     vision: mapSchemas.sceneVision.optional(),
     // Backups from before schema version 13 have none, and their imports keep the older sign (Scene.gridFromFile).
     gridFromFile: z.literal(true).optional(),
-    // Backups from before hex grids have none, which reads as squares (docs/design-v1-hex-grids.md section 7).
+    // Backups from before hex grids have none, which reads as squares (docs/design/design-v1-hex-grids.md section 7).
     gridShape: mapSchemas.gridShape.optional(),
-    // Backups from before the isometric view have none, which reads as Top-down (docs/design-v1-isometric-view.md 7).
+    // Backups from before the isometric view have none, which reads as Top-down (docs/design/design-v1-isometric-view.md 7).
     suggestedView: z.literal("isometric").optional(),
   })
   .refine(
@@ -202,7 +202,7 @@ const edgeFeature = z.discriminatedUnion("kind", [
 const cellKey = z.string().regex(/^-?\d{1,4},-?\d{1,4}$/);
 const edgeKey = z.string().regex(/^-?\d{1,4},-?\d{1,4},[nw]$/);
 
-/** A chunk's stair marks by its stamp (docs/design-v1-hex-grids.md HX-D14): compass letters on squares, six facings on hexes. */
+/** A chunk's stair marks by its stamp (docs/design/design-v1-hex-grids.md HX-D14): compass letters on squares, six facings on hexes. */
 const SQUARE_MARKS = /^[.aensw]*$/;
 const HEX_MARKS = /^[.a0-5]*$/;
 /** A remembered stair's way up by its scene's shape: memory carries no stamp, so its scene's shape is the one it was seen on. */
@@ -223,9 +223,9 @@ const chunk = z.strictObject({
   heights: z.string().regex(new RegExp(`^[A-Za-z0-9+/]{${HEIGHTS_CHARS - 1}}=$`)).optional(),
   // Either shape's facings here: the refinement below keeps each to its own stamp.
   up: z.string().regex(new RegExp(`^[.aensw0-5]{${STAIRS_CHARS}}$`)).optional(),
-  // Difficult ground marks (docs/design-v1-movement.md 6.3), absent when there are none.
+  // Difficult ground marks (docs/design/design-v1-movement.md 6.3), absent when there are none.
   rough: z.string().regex(new RegExp(`^[.d]{${ROUGH_CHARS}}$`)).optional(),
-  // The hex shape its cell data was written under, absent for squares (docs/design-v1-hex-grids.md HX-D14).
+  // The hex shape its cell data was written under, absent for squares (docs/design/design-v1-hex-grids.md HX-D14).
   grid: mapSchemas.gridShape.optional(),
 }).refine((c) => c.up === undefined || (c.grid === undefined ? SQUARE_MARKS : HEX_MARKS).test(c.up), {
   message: STAIR_FACINGS,
@@ -245,7 +245,7 @@ const fogTile = z.strictObject({
 const fogDraft = z.strictObject({ sceneId: id, rev, ops: z.array(fogOpSchema).max(500), grid: mapSchemas.gridShape.optional() });
 
 /**
- * Per-player vision (docs/design-v1-per-player-vision.md 6.7): who saw a
+ * Per-player vision (docs/design/design-v1-per-player-vision.md 6.7): who saw a
  * stop or a turn's start, at most the design's most holders, each sorted
  * with no repeat. A stored log line holds no list: the DM's keeps none once
  * its readers are fixed, and a reader's copy names only them (Tx.settleLog,
@@ -269,7 +269,7 @@ const sightHolders = z.strictObject({
 const exploredTile = fogTile.extend({ memberId: id });
 
 /**
- * A chunk of one layer's memory (docs/design-v1-map-discovery.md 5.3), by
+ * A chunk of one layer's memory (docs/design/design-v1-map-discovery.md 5.3), by
  * the bounds the map step's `sys.remember` is held to. A stored chunk is
  * never a player's, so the build chunk above, strict, refuses a player
  * chunk's `known`, `auto` and `upDir`.
@@ -327,13 +327,13 @@ const pathStop = z.strictObject({
   seenBy: stopSeenBy.optional(),
   joinedUnseen: z.literal(true).optional(),
   footprint: z.strictObject({ w: z.number().min(0.5).max(20), h: z.number().min(0.5).max(20), squeeze: z.literal(true).optional() }).optional(),
-  // Walking routes (docs/design-v1-movement.md 6.2): the leg's corners, at most the path's 100 once legs join, and what it took.
+  // Walking routes (docs/design/design-v1-movement.md 6.2): the leg's corners, at most the path's 100 once legs join, and what it took.
   via: z.array(coord).max(2 * MAX_PATH_CORNERS).optional(),
   moved: z.number().min(0).max(1_000_000).optional(),
   cost: z.number().min(0).max(1_000_000).optional(),
   diag: z.tuple([z.number().min(0).max(1_000_000), z.number().min(0).max(1_000_000)]).optional(),
   routeSeen: z.literal(true).optional(),
-  // Attached tokens (docs/design-v1-attach.md 7.2): a leg the holder's move took the creature along.
+  // Attached tokens (docs/design/design-v1-attach.md 7.2): a leg the holder's move took the creature along.
   carried: z.literal(true).optional(),
 });
 
@@ -373,9 +373,9 @@ const token = z.strictObject({
   squeeze: z.literal(true).optional(),
   light: mapSchemas.tokenLight.optional(),
   partyVision: z.boolean().optional(),
-  // Backups from before companions have none (docs/design-v1-combat-flow.md 4.7). A spent Reaction comes with its token.
+  // Backups from before companions have none (docs/design/design-v1-combat-flow.md 4.7). A spent Reaction comes with its token.
   companion: z.strictObject({ of: id, turn: z.enum(["own", "shared", "none"]), reactionUsed: z.literal(true).optional() }).optional(),
-  // Backups from before attached tokens have none (docs/design-v1-attach.md 8.1).
+  // Backups from before attached tokens have none (docs/design/design-v1-attach.md 8.1).
   attached: z.strictObject({ to: id, kind: z.enum(ATTACH_KINDS), steer: z.literal(true).optional() }).optional(),
 });
 
@@ -389,13 +389,13 @@ const character = z.strictObject({
   actor: actorStored,
   // Backups from before character levels have none.
   level: z.number().int().min(1).max(20).optional(),
-  // Backups from before stat blocks for player characters have none (docs/design-v1-pc-stats.md 3.5).
+  // Backups from before stat blocks for player characters have none (docs/design/design-v1-pc-stats.md 3.5).
   stats: pcStatsForImport.optional(),
-  // Backups from before known forms have none. A hand-made empty list passes here, and the remap stores it as none (docs/design-v1-known-forms.md 3.1).
+  // Backups from before known forms have none. A hand-made empty list passes here, and the remap stores it as none (docs/design/design-v1-known-forms.md 3.1).
   knownForms: knownFormsSchema.optional(),
-  // Backups from before re-sync have no record (docs/design-v1-resync.md 4).
+  // Backups from before re-sync have no record (docs/design/design-v1-resync.md 4).
   ddbSync: ddbSyncForImport.optional(),
-  // Backups from before combat uses have no class resources (docs/design-v1-combat-controls.md 3.6).
+  // Backups from before combat uses have no class resources (docs/design/design-v1-combat-controls.md 3.6).
   resources: z
     .array(combatUseSchemas.resourceStored)
     .max(LIMITS.resourcesPerCharacter)
@@ -424,7 +424,7 @@ const template = z.strictObject({
       h: z.number().min(0.5).max(20),
       elevation: z.number().int().min(-100_000).max(100_000),
       height: z.number().min(0).max(10_000),
-      // The size a stationary emanation was cast from (docs/design-v1-hex-grids.md HX-D11), never custom.
+      // The size a stationary emanation was cast from (docs/design/design-v1-hex-grids.md HX-D11), never custom.
       size: sizeSchema.exclude(["custom"]).optional(),
     })
     .optional(),
@@ -474,7 +474,7 @@ const entry = z.strictObject({
   inLair: z.boolean(),
   advantage: z.enum(["adv", "dis"]).optional(),
   hadTurn: z.literal(true).optional(),
-  // Attached tokens (docs/design-v1-attach.md 7.1): the round a controlled mount's row is passed over or marks time in.
+  // Attached tokens (docs/design/design-v1-attach.md 7.1): the round a controlled mount's row is passed over or marks time in.
   skipRound: z.number().int().min(0).max(100_000).optional(),
   markRound: z.number().int().min(0).max(100_000).optional(),
 });
@@ -510,7 +510,7 @@ const encounterSnapshot = z.strictObject({
   revealed: z.array(z.strictObject({ tokenId: id, visibility, fogExemptAuto: z.boolean() })).max(LIMITS.encounterRows),
   legendary: z.strictObject({ holderId: id, actionsUsed: z.number().int().min(0).max(10) }).optional(),
   companionReactions: z.array(id).max(LIMITS.encounterRows).optional(),
-  // What a turn start replaced for each of its creatures (docs/design-v1-combat-controls.md 3.3), none in backups from before it.
+  // What a turn start replaced for each of its creatures (docs/design/design-v1-combat-controls.md 3.3), none in backups from before it.
   turnUses: z
     .array(
       z.strictObject({
@@ -548,7 +548,7 @@ const encounterSnapshot = z.strictObject({
   at: iso,
 });
 
-// Wave 5 (docs/design-v1-dm-tools.md). Counts and byte sizes are checkLimits's.
+// Wave 5 (docs/design/design-v1-dm-tools.md). Counts and byte sizes are checkLimits's.
 
 /** A stored block keeps whether a secret is revealed, which only `journal.reveal` changes. */
 const journalBlock = z.strictObject({
@@ -575,7 +575,7 @@ const rollAnswerFields = {
   total: dmToolSchemas.rollTotal.optional(),
   result: dmToolSchemas.rollResult.optional(),
   noRoll: z.literal(true).optional(),
-  // Wave 7: a rolled answer's dice and provenance (docs/design-v1-dice.md 5.1, docs/design-v1-roll-request.md 1.1).
+  // Wave 7: a rolled answer's dice and provenance (docs/design/design-v1-dice.md 5.1, docs/design/design-v1-roll-request.md 1.1).
   tag: id.optional(),
   dice: diceSchemas.diceResult.optional(),
   typedBonus: z.literal(true).optional(),
@@ -609,7 +609,7 @@ const rollRequest = z.strictObject({
   targets: z.array(rollTarget).min(1).max(LIMITS.rollTargets),
 });
 
-/** A player's ask for saves (docs/design-v1-player-save-spell.md 5.2), as its op carries it with what the server wrote. */
+/** A player's ask for saves (docs/design/design-v1-player-save-spell.md 5.2), as its op carries it with what the server wrote. */
 const castAsk = z
   .strictObject({
     ...castSchemas.castInput.shape,
@@ -620,7 +620,7 @@ const castAsk = z
   })
   .refine((c) => (c.area === undefined) !== (c.targets === undefined), { message: "an ask names an area or its targets, one of the two" });
 
-/** A handout of pages has them in order (docs/design-v1-pdf-handouts.md 3.3). One image has none. */
+/** A handout of pages has them in order (docs/design/design-v1-pdf-handouts.md 3.3). One image has none. */
 const handout = z.strictObject({
   id,
   rev,
@@ -631,7 +631,7 @@ const handout = z.strictObject({
   shownAt: iso,
 });
 
-/** A document of handout pages, with its create op's bounds (docs/design-v1-pdf-handouts.md 3.2). The room's page count is `checkLimits`'s. */
+/** A document of handout pages, with its create op's bounds (docs/design/design-v1-pdf-handouts.md 3.2). The room's page count is `checkLimits`'s. */
 const handoutDoc = z.strictObject({ id, rev, title: name, pages: handoutSchemas.handoutPages, createdAt: iso });
 
 /** The create op's bounds. The byte limits for one monster and for all of them are `checkLimits`'s. */
@@ -682,7 +682,7 @@ const logEvent = z.discriminatedUnion("type", [
     of: z.string().regex(/^\d{1,18}:\d{1,6}$/).optional(),
   }),
   z.strictObject({ type: z.literal("life"), ...holder, life: lifeState }),
-  // A creature's use of a limited ability (docs/design-v1-combat-controls.md 8).
+  // A creature's use of a limited ability (docs/design/design-v1-combat-controls.md 8).
   z.strictObject({
     type: z.literal("use"),
     ...holder,
@@ -749,7 +749,7 @@ const logEvent = z.discriminatedUnion("type", [
     changed: rollAnswerSchemas.rollChange.optional(),
     mark: z.literal(true).optional(),
   }),
-  // A player's ask for saves and its end (docs/design-v1-player-save-spell.md 5.2).
+  // A player's ask for saves and its end (docs/design/design-v1-player-save-spell.md 5.2).
   z.strictObject({
     type: z.literal("cast"),
     castId: id,
@@ -758,7 +758,7 @@ const logEvent = z.discriminatedUnion("type", [
     slot: castSchemas.castInput.shape.slot,
     end: castSchemas.castEnd.optional(),
   }),
-  // A free roll's line with what was drawn (docs/design-v1-dice.md 5.3).
+  // A free roll's line with what was drawn (docs/design/design-v1-dice.md 5.3).
   z.strictObject({
     type: z.literal("dice"),
     tag: id.optional(),
@@ -791,7 +791,7 @@ const logEvent = z.discriminatedUnion("type", [
 const trapHow = z.enum(["enter", "leave", "turnStart", "turnEnd", "cross", "open", "hand"]);
 const lineId = z.string().regex(/^\d{1,18}:\d{1,6}$/);
 
-/** A trap's waiting occurrence (docs/design-v1-traps.md 6.1), as the reducer stores it. */
+/** A trap's waiting occurrence (docs/design/design-v1-traps.md 6.1), as the reducer stores it. */
 const trapDue = z.strictObject({
   id: lineId,
   at: iso,
@@ -821,11 +821,11 @@ const trap = z.strictObject({
       due: z.array(trapDue).max(LIMITS.trapDuePerTrap).optional(),
     })
     .optional(),
-  // The hex shape its zone was written under, absent for squares (docs/design-v1-hex-grids.md HX-D14).
+  // The hex shape its zone was written under, absent for squares (docs/design/design-v1-hex-grids.md HX-D14).
   grid: mapSchemas.gridShape.optional(),
 });
 
-/** The lines of the two trap logs (docs/design-v1-traps.md 6.3). */
+/** The lines of the two trap logs (docs/design/design-v1-traps.md 6.3). */
 const trapLine = z.discriminatedUnion("type", [
   z.strictObject({
     type: z.literal("trap"),
@@ -908,9 +908,9 @@ export const roomStateSchema = z.strictObject({
   savedEncounters: record(savedEncounter),
   stamps: record(stamp),
   lights: record(light),
-  // The party's explored layer, in the fog tiles' shape (docs/design-v1-maps-vision.md 4.3.3).
+  // The party's explored layer, in the fog tiles' shape (docs/design/design-v1-maps-vision.md 4.3.3).
   exploredTiles: record(fogTile),
-  // Per-player vision (docs/design-v1-per-player-vision.md 6.7). A backup from before it reaches this schema through the
+  // Per-player vision (docs/design/design-v1-per-player-vision.md 6.7). A backup from before it reaches this schema through the
   // snapshot migration, which adds them empty. A holder's tile key names its scene, member and place, longer than an id.
   holders: record(sightHolders),
   exploredBy: z.record(z.string().min(1).max(140), exploredTile),
@@ -930,7 +930,7 @@ export const roomStateSchema = z.strictObject({
   trapSeen: z.array(trapLogEntry).max(LIMITS.trapSeenLines),
   // The record of the running turn's reminders, which an export may carry and the import leaves behind (remap.ts).
   reminded: reminded.optional(),
-  // Map discovery (docs/design-v1-map-discovery.md 5.3, 5.5). A backup from before it reaches this schema through the
+  // Map discovery (docs/design/design-v1-map-discovery.md 5.3, 5.5). A backup from before it reaches this schema through the
   // snapshot migration, which adds them empty, and an import that carries none starts with none. A holder's chunk key
   // names its scene, member and place, longer than an id.
   memory: memoryChunks("party").default({}),
@@ -942,7 +942,7 @@ export const roomStateSchema = z.strictObject({
 /**
  * The stored state an import's room.json holds, checked whole. A sync
  * record whose `at` is more than a day past the import's time takes the
- * import's time instead (docs/design-v1-resync.md 4). The record and its
+ * import's time instead (docs/design/design-v1-resync.md 4). The record and its
  * base stay, so the next re-sync still compares three ways, and no record
  * from the future reaches a stored room, where the next stamp would follow it.
  */
@@ -961,7 +961,7 @@ export function parseRoomState(value: unknown, now = Date.now()): { ok: true; st
     state.buildChunks[key] = rest;
   }
   // Cell data stands only on the shape it was written for, and a hex scene holds only what its phase supports
-  // (docs/design-v1-hex-grids.md HX-D14), as every op leaves a room. A backup made by hand can break that, and the
+  // (docs/design/design-v1-hex-grids.md HX-D14), as every op leaves a room. A backup made by hand can break that, and the
   // rules would read its square keys as hexes.
   for (const scene of Object.values(state.scenes).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
     // A hex scene never reads as a file's own square grid (D-261026-8), as `scene.create` and the map ops refuse it.

@@ -94,7 +94,7 @@ describe("drag previews", () => {
     assert.deepEqual(t.p2.got.at(-1), { k: "dragCancel", tokenId: "gob" });
   });
 
-  test("a drag's route cost reaches the DM and the token's owners, never other players (docs/design-v1-movement.md 6.5)", () => {
+  test("a drag's route cost reaches the DM and the token's owners, never other players (docs/design/design-v1-movement.md 6.5)", () => {
     const state = room();
     state.tokens.mine = token("mine", { ownerIds: ["p1"] });
     const t = table(state);
@@ -179,7 +179,7 @@ function ground(raised: readonly (readonly [number, number, number, number, numb
   return chunks;
 }
 
-describe("drag previews on vision scenes (docs/design-v1-maps-vision.md 4.3.5)", () => {
+describe("drag previews on vision scenes (docs/design/design-v1-maps-vision.md 4.3.5)", () => {
   /*
    * A dark scene with a corridor one cell wide from x = 5 to 15 between
    * walls at y = 10 and y = 11, and a player's character with darkvision
@@ -577,7 +577,7 @@ describe("two sockets of one member on one preview", () => {
   });
 });
 
-describe("a drag preview on hexes beside a wall (docs/design-v1-hex-grids.md HX-D10)", () => {
+describe("a drag preview on hexes beside a wall (docs/design/design-v1-hex-grids.md HX-D10)", () => {
   test("a Medium dragged to (5.49, 0.2), a wall at x = 5.4375 through its hex, stays unseen while only its sub-cells beyond the wall are revealed", () => {
     const g = gridOfShape("hexRows") as HexGrid;
     const state = room({ scenes: { s1: scene("s1", { gridShape: "hexRows", fogEnabled: true }), s2: scene("s2", { order: 1 }) } });

@@ -18,18 +18,18 @@ import { TERRAIN_COLORS, TEXTURE_CELLS } from "./textures.ts";
  * arrives as the wall players see there (shared/project.ts), so it draws as
  * one.
  *
- * Free walls (docs/design-v1-maps-vision.md section 2.2) draw with the edge
+ * Free walls (docs/design/design-v1-maps-vision.md section 2.2) draw with the edge
  * walls, in the same colors and the same pass, and their doors and windows
  * draw the edge symbols turned to the segment. They are drawn from the
  * stored walls in the chunks, not from the derived set split at crossings:
  * a split changes nothing that shows.
  *
- * Raised areas and stairs (docs/design-v1-maps-vision.md section 4.2) draw
+ * Raised areas and stairs (docs/design/design-v1-maps-vision.md section 4.2) draw
  * over the floor and the map image alike, under the stamps and walls: the
  * shading of heights/relief.ts, then stairs pointing their way up. Stairs
  * over floor sit on the Stairs terrain's pale slab. Stairs over the map
  * image draw only their treads, translucent, so the art shows through.
- * Difficult ground (docs/design-v1-movement.md 3.4) draws its hatch over all
+ * Difficult ground (docs/design/design-v1-movement.md 3.4) draws its hatch over all
  * of that and under the stamps, so the map under it still shows.
  */
 
@@ -63,7 +63,7 @@ export type BoardPaths<P = Path2D> = {
   stairs: P;
   /** Stairs over floor: treads toward their direction, or five lines when they have none. */
   floorStairs: StairPaths<P>;
-  /** Squares marked difficult ground (docs/design-v1-movement.md 3.4), and the box around them for the hatch, or null when none is. */
+  /** Squares marked difficult ground (docs/design/design-v1-movement.md 3.4), and the box around them for the hatch, or null when none is. */
   rough: P;
   roughBox: { x0: number; y0: number; x1: number; y1: number } | null;
   /** Stair marks over the map image, where no floor is painted: the same shapes, drawn translucent. */
@@ -210,7 +210,7 @@ export function pillarPaths<P extends PathSink>(cells: Iterable<{ x: number; y: 
  * What the paths read of the scene: its automatic walls rule (absent for
  * "all"), its size, which stairs and raised edges stop at, and its grid
  * shape, absent for squares, by which difficult ground marks read their
- * keys as hexes (docs/design-v1-hex-grids.md 4.3).
+ * keys as hexes (docs/design/design-v1-hex-grids.md 4.3).
  */
 export type BuildPathScene = { autoWalls?: AutoWalls; bounds?: { w: number; h: number }; gridShape?: GridShape };
 
@@ -486,7 +486,7 @@ function drawStairs(g: CanvasRenderingContext2D, stairs: StairPaths<Path2D>, sty
   g.lineJoin = "miter";
 }
 
-/** Difficult ground's hatch: a muted ochre at 45% opacity, over the floor or the map and under the stamps (docs/design-v1-movement.md 3.4). */
+/** Difficult ground's hatch: a muted ochre at 45% opacity, over the floor or the map and under the stamps (docs/design/design-v1-movement.md 3.4). */
 const ROUGH_HATCH = "rgba(186, 142, 64, 0.45)";
 /** Cells between the hatch's lines. */
 const ROUGH_PITCH = 0.25;
@@ -521,7 +521,7 @@ export type DrawBuildOptions = {
   underWalls?: (g: CanvasRenderingContext2D) => void;
   /**
    * The isometric view's ground stage while heights stand
-   * (docs/design-v1-isometric-view.md 5.3 and 5.5): walls, closed doors,
+   * (docs/design/design-v1-isometric-view.md 5.3 and 5.5): walls, closed doors,
    * windows and the standing pillars stand in the relief, so the ground
    * leaves them out, and the relief's tints and shadows give way to the
    * columns. Open doors, the DM's locks and secret marks, and the pillars
@@ -653,7 +653,7 @@ const REACH_FILL = "rgba(255, 211, 77, 0.08)";
 const REACH_LINE = "rgba(255, 211, 77, 0.6)";
 
 /**
- * A scene's lights as the DM sees them in wave 3 (docs/design-v1-maps-vision.md
+ * A scene's lights as the DM sees them in wave 3 (docs/design/design-v1-maps-vision.md
  * section 3.6): a small sun at each, the same size on screen at any zoom,
  * grey while the light is off. Never part of the map export: lights are
  * the DM's, and the export draws the map.

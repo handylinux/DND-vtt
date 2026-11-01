@@ -23,11 +23,11 @@ import { useRollBlocked } from "./useRollOption.ts";
 import { useProficiency } from "./useProficiency.ts";
 
 /**
- * Recent rolls (docs/design-v1-dice.md 8.3): every roll in the viewer's
+ * Recent rolls (docs/design/design-v1-dice.md 8.3): every roll in the viewer's
  * log, newest first, one row per roller and batch, with what each drew.
  * Its foot opens the Log, which holds the older ones. It folds as the
  * panel's other groups do, one fold for the device whoever the panel
- * rolls for (docs/design-v1-dice-pass.md 6.3).
+ * rolls for (docs/design/design-v1-dice-pass.md 6.3).
  */
 
 const EMPTY_LOG: LogEntry[] = [];
@@ -38,7 +38,7 @@ const FOLDED = 5;
 const LINE_PX = 24;
 /**
  * Again's middle, where a row's first line of words stands, so a row of one
- * line is one touch target tall (docs/design-v1-dice-pass.md 7.6).
+ * line is one touch target tall (docs/design/design-v1-dice-pass.md 7.6).
  */
 const FIRST_LINE_TOP = (theme.touch - LINE_PX) / 2;
 
@@ -168,7 +168,7 @@ function RollLine(props: { roll: DiceRoll; row: { dc?: number; ac?: number }; na
   const again = props.end !== undefined && props.end !== null;
   const split = !again && props.floor === true;
   return (
-    // Again holds the line's top right corner, so the words wrap beside it and it never takes a line of its own (docs/design-v1-dice-ui.md 4.5).
+    // Again holds the line's top right corner, so the words wrap beside it and it never takes a line of its own (docs/design/design-v1-dice-ui.md 4.5).
     // Beside Again the first line of words stands at its middle. A row of one roll with no Again splits that space above and below its words, so rows of the same lines share a height and keep their words in their middle.
     <div style={{ display: "flex", alignItems: "flex-start", gap: theme.space(2) }}>
       <div
@@ -209,7 +209,7 @@ function RollLine(props: { roll: DiceRoll; row: { dc?: number; ac?: number }; na
             {/* Cancellation stays readable without widening the dice line. */}
             {roll.cancelled ? <span style={visuallyHidden}>{effectiveRollMode(roll)}</span> : null}
           </span>
-          {/* Only the DM's copy keeps the mark of an initiative roll kept from players (docs/design-v1-combat-flow.md 11.3). */}
+          {/* Only the DM's copy keeps the mark of an initiative roll kept from players (docs/design/design-v1-combat-flow.md 11.3). */}
           {roll.hidden ? (
             <span style={{ fontSize: theme.font.small, fontWeight: theme.weight.strong, color: theme.color.textMuted }}>
               Hidden from {keptFrom(roll, props.names)}
@@ -231,7 +231,7 @@ function RollLine(props: { roll: DiceRoll; row: { dc?: number; ac?: number }; na
  * A row's parts, the last of them in a box that grows to the end of its
  * line, so a part that wraps onto a line alone, such as "Natural 20" or the
  * dice, fills that line rather than standing alone under the others, as the
- * polish pass's wrap rule asks (docs/design-v1-polish.md 4). Its words stay
+ * polish pass's wrap rule asks (docs/design/design-v1-polish.md 4). Its words stay
  * at the line's start.
  */
 function LastGrows(props: { children: ReactNode[] }) {

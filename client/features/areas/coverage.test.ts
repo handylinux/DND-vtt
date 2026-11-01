@@ -38,7 +38,7 @@ describe("area coverage follows the scene's walls", () => {
   });
 });
 
-describe("areas on a hex scene draw what the rules return (docs/design-v1-hex-grids.md HX-D11)", () => {
+describe("areas on a hex scene draw what the rules return (docs/design/design-v1-hex-grids.md HX-D11)", () => {
   for (const orient of ["rows", "columns"] as const) {
     test(`${orient}: the client's context reads the scene's grid, so its shading and who it catches are the rules' own hexes`, async () => {
       const g: HexGrid = { shape: "hex", orient };

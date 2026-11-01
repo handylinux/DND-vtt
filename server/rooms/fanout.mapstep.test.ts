@@ -15,7 +15,7 @@ import { MEMORY_CAP } from "./memorySize.ts";
 import { mapStepOps } from "./remember.ts";
 
 /**
- * Players' maps through the fan-out (docs/design-v1-map-discovery.md 5.6):
+ * Players' maps through the fan-out (docs/design/design-v1-map-discovery.md 5.6):
  * chunks go by fog class, each sight holder alone and every other player
  * with the displays, so a holder's memory reaches no one else, memory itself
  * reaches no one, and each socket's events applied to its snapshot give its

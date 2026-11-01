@@ -10,7 +10,7 @@ import { decodeTile, encodeTile, getBit, TILE_BYTES } from "./rules/fog.ts";
 import { DM, P1, P2, character, env, reveal, room, scene, token } from "./testutil.ts";
 
 /**
- * Projection on wave 4 scenes (docs/design-v1-maps-vision.md 4.3): the
+ * Projection on wave 4 scenes (docs/design/design-v1-maps-vision.md 4.3): the
  * token rule on vision scenes, party members, the merged fog, sight tiles,
  * the explored layer and the DM-only teleport line. Sight itself is part
  * 4C's, so these run on a stand-in party that sees every creature west of
@@ -205,7 +205,7 @@ describe("wave 4 fields", () => {
     const heights = encodeTile(new Uint8Array(TILE_BYTES).fill(10));
     const up = ".".repeat(255) + "n";
     state.buildChunks[chunkKey("s1", 1, 1)] = { sceneId: "s1", cx: 1, cy: 1, rev: 3, cells: {}, edges: {}, heights, up };
-    // Players hold the build only where their fog is lifted (docs/design-v1-map-discovery.md 5.2).
+    // Players hold the build only where their fog is lifted (docs/design/design-v1-map-discovery.md 5.2).
     state.scenes.s1!.bounds = { w: 40, h: 40 };
     reveal(state, "s1", { x: 16, y: 16, w: 16, h: 16 });
     const p = projectState(state, P1, { sceneId: "s1" });

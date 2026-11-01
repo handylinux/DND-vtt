@@ -9,7 +9,7 @@ import type { RoomManager } from "../rooms/manager.ts";
 import type { ReceiptRow } from "../rooms/persistence.ts";
 
 /**
- * The receipt lookup (docs/design-v1-dice.md 1.2): what became of the
+ * The receipt lookup (docs/design/design-v1-dice.md 1.2): what became of the
  * caller's own ops of one tag, for a device that lost an answer. Each part
  * the server holds a receipt for is committed, with the lines the op wrote
  * projected for the caller as the live log is, or refused, with the words.

@@ -36,7 +36,7 @@ import { DESTROY_GRACE_MS, DrawCancelled, ReaderRefusal, type PdfDocument } from
 import { pdfTitle, titleProblem } from "./title.ts";
 
 /**
- * Drives a PDF upload (docs/design-v1-pdf-handouts.md 4.1): opening the
+ * Drives a PDF upload (docs/design/design-v1-pdf-handouts.md 4.1): opening the
  * file, drawing and uploading each page of the range, saving the document
  * under the id chosen first, and every way to pause, stop, cancel and go
  * on. It writes the job's state into the room's job store, which the block

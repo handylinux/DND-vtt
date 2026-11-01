@@ -10,13 +10,13 @@ export function heightHint(s: Pick<HeightState, "paint" | "shape" | "stairs" | "
     return `${how} to paint the height. Tokens standing there rise or sink with it.`;
   }
   if (s.stairs === "remove") return `${how} to remove stair marks. Stairs terrain stays a stair.`;
-  // A hex scene has no walls on grid lines, automatic ones included (docs/design-v1-hex-grids.md HX-D7).
+  // A hex scene has no walls on grid lines, automatic ones included (docs/design/design-v1-hex-grids.md HX-D7).
   const walls = isHex(grid) ? "" : (autoWalls ?? "all") === "all" ? " Here they get walls toward unpainted squares." : autoWalls === "floor" ? " Over the map image they get no walls." : "";
   const point = s.stairs === "a" || (isHex(grid) && !/^[0-5]$/.test(s.stairs)) ? " Auto points them uphill. Use an arrow where a ? shows." : "";
   return `${how} to mark stairs.${point}${walls}`;
 }
 
-/** What a gesture does in Difficult ground mode (docs/design-v1-movement.md 3.4). */
+/** What a gesture does in Difficult ground mode (docs/design/design-v1-movement.md 3.4). */
 export function roughHint(s: Pick<HeightState, "shape" | "rough">): string {
   const how = s.shape === "area" ? "Drag from corner to corner" : "Drag";
   if (s.rough === "clear") return `${how} to clear difficult ground.`;

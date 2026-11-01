@@ -5,7 +5,7 @@ import { theme } from "../lib/theme.ts";
 
 /*
  * The one wait line (design section 14.1), and its small form for a wait
- * inside help or an options line (docs/design-v1-design-pass.md 4.4). Static
+ * inside help or an options line (docs/design/design-v1-design-pass.md 4.4). Static
  * markup runs no effects, so these render with `delay={0}`, which a caller
  * that has already waited passes and which shows from the first render.
  */

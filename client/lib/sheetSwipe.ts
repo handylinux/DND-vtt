@@ -7,7 +7,7 @@ import { theme } from "./theme.ts";
 
 /*
  * Swipe a phone's bottom sheet down to close it, and the panel sheet up to
- * fill the screen (docs/design-v1-sheet-swipe.md). Three layers, each one
+ * fill the screen (docs/design/design-v1-sheet-swipe.md). Three layers, each one
  * tested on its own:
  *
  * - SheetSwipe: one touch as a state machine with no DOM, as CameraGesture

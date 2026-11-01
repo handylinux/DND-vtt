@@ -10,7 +10,7 @@ import { panelLinkTags, STEER_OPTIONS, steerChoice, steerOp, steerWords } from "
 
 type Steer = "controlled" | "independent";
 
-/** The token panel's link tags (docs/design-v1-attach.md 4.5): "Riding Warhorse", "Carries Bree and Torch". */
+/** The token panel's link tags (docs/design/design-v1-attach.md 4.5): "Riding Warhorse", "Carries Bree and Torch". */
 export function usePanelLinkTags(token: Token): string[] {
   const tokens = useRoomView((s) => s.view?.tokens);
   return useMemo(() => (tokens ? panelLinkTags(tokens, token) : []), [tokens, token]);
@@ -20,7 +20,7 @@ export function usePanelLinkTags(token: Token): string[] {
  * A rider's Controlled or Independent under the name block's tags (4.5),
  * the Attach list's own choice, for whoever may attach the pair: two words
  * side by side, and under them a line that says what the chosen one does
- * (docs/design-v1-look-pass-2.md 2.7). Most
+ * (docs/design/design-v1-look-pass-2.md 2.7). Most
  * changes show at once, as the room predicts them. One a fight makes the
  * server's to answer (a player's controlled ride, 8.4, list.ts
  * waitsForServer) shows the new choice held still while it waits, with

@@ -3,7 +3,7 @@ import { critBound } from "./crit.ts";
 import { applyMode, diceCount, doubleDice, FORMULA_ERRORS, parseFormula, type AdvantageMode, type FormulaError } from "./formula.ts";
 
 /**
- * The splitter (docs/design-v1-dice.md 8.4): a group of rolls into
+ * The splitter (docs/design/design-v1-dice.md 8.4): a group of rolls into
  * `dice.roll` ops that each keep within the three op bounds, 20 rolls, 3 KiB
  * serialized and 100 dice counted after each mode (advantage's d20 counts
  * two) and each critical's rule (its dice count twice, as `critBound` has

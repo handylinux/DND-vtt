@@ -1,5 +1,5 @@
 /**
- * Part 8's timing for the height pills (docs/design-v1-visual.md 3.4). The
+ * Part 8's timing for the height pills (docs/design/design-v1-visual.md 3.4). The
  * pills follow the map and keep off the token names, so their spots are
  * placed again on every zoom step of a pinch, each checked against the
  * placed names and plates. The budget: the height layer, that check

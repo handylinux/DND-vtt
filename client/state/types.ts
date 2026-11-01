@@ -31,7 +31,7 @@ export type DragPreview = {
   /** The latest frame's top-left corner, in cells. */
   x: number;
   y: number;
-  /** The live route's corners, top-left, flattened (docs/design-v1-movement.md 6.5). */
+  /** The live route's corners, top-left, flattened (docs/design/design-v1-movement.md 6.5). */
   path?: number[];
   /** The leg's cost, which only the DM and the token's owners receive. */
   ft?: number;
@@ -54,7 +54,7 @@ export type LaserTrail = { from: MemberId; on: boolean; points: { x: number; y: 
 export type FocusRequest = { id: number; from: MemberId; x: number; y: number; zoom: number; at: number };
 
 /**
- * A DM device's camera for table displays (docs/design-v1-dm-tools.md 3.1):
+ * A DM device's camera for table displays (docs/design/design-v1-dm-tools.md 3.1):
  * the center and size of its visible map area, in cells. Only a display's
  * store records one, since the server sends `view` to displays alone. `id`
  * changes for every event, so a display's camera can follow each once.
@@ -91,7 +91,7 @@ export const EMPTY_EPHEMERAL: Ephemeral = Object.freeze({
  * rather than by whatever draws it, so a blackout that takes the toasts
  * off screen and back never restarts its time (review LP16-R1-1). A toast
  * not drawn yet, as one waiting behind the one row over a short band, has
- * none, and its time has not started (docs/design-v1-bar-compact.md 3.5,
+ * none, and its time has not started (docs/design/design-v1-bar-compact.md 3.5,
  * review BC-OPUS-35). `pausedAt` is when its time stopped while it shows
  * whole.
  * `logged` marks one whose words the log keeps, as a whisper's or a roll's,
@@ -102,7 +102,7 @@ export type Toast = { id: number; text: string; rolls?: readonly DiceRoll[]; ton
 
 /**
  * A toast's one button, beside its words, such as the falling off
- * reminder's "Ask for the save" (docs/design-v1-attach.md 4.5). Pressing it
+ * reminder's "Ask for the save" (docs/design/design-v1-attach.md 4.5). Pressing it
  * runs `run` and dismisses the toast. A toast with one stays a while longer,
  * so there is time to reach it.
  */
@@ -111,14 +111,14 @@ export type ToastAction = { label: string; run(): void; ready?(): boolean };
 
 /**
  * The flat d20 that leads a toast of someone else's D20 Test
- * (docs/design-v1-roll-animation.md 4): its kept face, a ring for a natural
+ * (docs/design/design-v1-roll-animation.md 4): its kept face, a ring for a natural
  * 20 or a critical hit against an AC, an outline for a natural 1, and the
  * verdict's words for a screen reader.
  */
 export type ToastDie = { face: number; ring: boolean; fumble: boolean; verdict: string | null };
 
 /**
- * Someone tapped the X-card (docs/design-v1-dm-tools.md 3.11). `id` grows by
+ * Someone tapped the X-card (docs/design/design-v1-dm-tools.md 3.11). `id` grows by
  * one for every card the server sends, so a device shows each card once
  * and can tell a new one from the one it dismissed. It names no one.
  */
@@ -134,7 +134,7 @@ export type XCardSignal = { id: number; at: string };
 export type OpAnswer = "taken" | "refused" | "unknown";
 
 /**
- * How an `unknown` answer came about (docs/design-v1-pdf-handouts.md 4.1.5).
+ * How an `unknown` answer came about (docs/design/design-v1-pdf-handouts.md 4.1.5).
  * `snapshot`: a reconnect's snapshot settled the op, and the view already
  * holds that snapshot, so what the op did, if anything, is in it now.
  * `expired`: the op was too old to send and was dropped while the store
@@ -146,9 +146,9 @@ export type UnknownCause = "snapshot" | "expired";
 /**
  * Told once what became of an op: its answer, the reason when refused, how
  * an `unknown` came about, when taken with a sync record that had no `at`,
- * the `at` the server wrote on it (docs/design-v1-resync.md 3.4), and when
+ * the `at` the server wrote on it (docs/design/design-v1-resync.md 3.4), and when
  * taken as a walk the real build stopped short, `blocked`
- * (docs/design-v1-map-discovery.md 6): it landed at its last clear spot.
+ * (docs/design/design-v1-map-discovery.md 6): it landed at its last clear spot.
  */
 export type OnAnswer = (answer: OpAnswer, refusal?: OpRefusal, unknown?: UnknownCause, stamped?: string, blocked?: true) => void;
 
@@ -200,7 +200,7 @@ export type LocalUi = {
    * the token it opened for. `gather` marks a tap that gathers or takes
    * out a token in Multi-select. An upright phone's strip may move the map
    * once for it to clear the token (state/selection.ts,
-   * docs/design-v1-bar-compact.md 3.6). Null once the bar is off.
+   * docs/design/design-v1-bar-compact.md 3.6). Null once the bar is off.
    */
   opening: Opening | null;
   /** The panel open as a sheet on phones, or null. */
@@ -210,7 +210,7 @@ export type LocalUi = {
   /** The side panel's tab from 900 px up. */
   tab: string;
   /**
-   * The side panel is hidden, from 900 px up (docs/design-v1-layout-hierarchy.md
+   * The side panel is hidden, from 900 px up (docs/design/design-v1-layout-hierarchy.md
    * 4.1). Its first value on a page comes from this device's choice or the
    * short screen's default (pages/sidePanel.ts).
    */
@@ -222,7 +222,7 @@ export type LocalUi = {
    */
   sheetHidden: boolean;
   /**
-   * The panel below `tab` in the side panel (docs/design-v1-split-panel.md),
+   * The panel below `tab` in the side panel (docs/design/design-v1-split-panel.md),
    * or null with one panel: the split. Kept on a phone and in a side panel
    * too short for two, so the pair shows again once there is room, and
    * never `tab` itself or a phone-only panel.
@@ -237,7 +237,7 @@ export type LocalUi = {
   /** A request to open a panel that waits for the room to be measured before it is placed (5.1, `withSplitFits`). */
   pendingOpen: PendingOpen | null;
   /**
-   * A phone's upright sheet fills the screen (docs/design-v1-sheet-swipe.md
+   * A phone's upright sheet fills the screen (docs/design/design-v1-sheet-swipe.md
    * 4.7), by a swipe up or its Expand sheet button. Every open starts at the
    * normal height, and only the sheet's closing or its replacement ends it:
    * a subpage, Hide, a rotation and the crossing of 900 px keep it latent,
@@ -247,7 +247,7 @@ export type LocalUi = {
 };
 
 /**
- * How a panel was asked for (docs/design-v1-split-panel.md 5.1): in a pane
+ * How a panel was asked for (docs/design/design-v1-split-panel.md 5.1): in a pane
  * by name, the top by a tab, More or a phone's list and the bottom by the
  * bar's name, or by a link inside a panel, `from` naming that panel. Left
  * out for every path outside the panels.
@@ -289,7 +289,7 @@ export function sheetOpen(local: Pick<LocalUi, "panel" | "panelList" | "sheetHid
 }
 
 /**
- * What the panels show (docs/design-v1-layout-hierarchy.md 4.2): the panel
+ * What the panels show (docs/design/design-v1-layout-hierarchy.md 4.2): the panel
  * that is mounted, in a phone's sheet or as the side panel's tab, whether it
  * is on screen, whether a phone's list of panels shows, and whether the
  * Token panel is the one on screen. A hidden sheet or side panel keeps its
@@ -322,7 +322,7 @@ export function twoShow(local: Pick<LocalUi, "below" | "splitFits">): boolean {
   return local.below !== null && local.splitFits === true;
 }
 
-/** Which panel goes on top and which below, by the rules of docs/design-v1-split-panel.md 5.1. Pure and total. */
+/** Which panel goes on top and which below, by the rules of docs/design/design-v1-split-panel.md 5.1. Pure and total. */
 function placed(local: LocalUi, id: string, how: PanelHow | undefined): Pick<LocalUi, "tab" | "below"> {
   const { tab, below } = local;
   const same = { tab, below };
@@ -341,7 +341,7 @@ function placed(local: LocalUi, id: string, how: PanelHow | undefined): Pick<Loc
 }
 
 /**
- * Opens a panel (docs/design-v1-split-panel.md 5.1): as a sheet below
+ * Opens a panel (docs/design/design-v1-split-panel.md 5.1): as a sheet below
  * 900 px, and from there up on top or below by how it was asked. A hidden
  * side panel or sheet never swallows a request to see a panel. `panel`,
  * the phone's sheet, becomes it, so a rotation shows the panel opened last.
@@ -354,7 +354,7 @@ function placed(local: LocalUi, id: string, how: PanelHow | undefined): Pick<Loc
  */
 export function withPanel(local: LocalUi, id: string, how?: PanelHow, phoneOnly = false): LocalUi {
   const shown = { panelList: false, sidePanelHidden: false, sheetHidden: false } as const;
-  // Another panel opens at its normal height (docs/design-v1-sheet-swipe.md 4.7).
+  // Another panel opens at its normal height (docs/design/design-v1-sheet-swipe.md 4.7).
   const sheetExpanded = local.panel === id && local.sheetExpanded;
   if (phoneOnly) return patched(local, { ...shown, panel: id, pendingOpen: null, sheetExpanded });
   if (local.below !== null && local.splitFits === null) return patched(local, { ...shown, pendingOpen: how ? { id, how } : { id } });
@@ -491,7 +491,7 @@ export type RoomView = {
    * What the server is known to hold: the projected state before this
    * device's pending ops. A player preview leaves it out. Read it only to
    * learn what happened on the server, as a PDF upload's save does
-   * (docs/design-v1-pdf-handouts.md 4.1.5). Everything shown reads `view`.
+   * (docs/design/design-v1-pdf-handouts.md 4.1.5). Everything shown reads `view`.
    */
   confirmed?: ProjectedState | null;
   /** Sequence of confirmed, before this device's pending operations. A player preview leaves it out. */
@@ -514,7 +514,7 @@ export type RoomView = {
    * when it is in. A player preview, which applies none, leaves it out.
    */
   snapshots?: number;
-  /** DM views only: how many table displays have a socket open (docs/design-v1-dm-tools.md 3.1). Absent reads as none. */
+  /** DM views only: how many table displays have a socket open (docs/design/design-v1-dm-tools.md 3.1). Absent reads as none. */
   displays?: number;
   /**
    * Counts the server's `access` signals, sent to DM sockets when the
@@ -560,13 +560,13 @@ export type RoomView = {
   /**
    * The `n`s of this page's latest ops whose trap step refuses their Undo
    * move, oldest first, at most MAX_REFUSED, as the server's ack marks them
-   * (docs/design-v1-traps.md 6.5). The token bar reads it to stop offering
+   * (docs/design/design-v1-traps.md 6.5). The token bar reads it to stop offering
    * Undo move.
    */
   trapped?: readonly number[];
   /**
    * The DM's builder ops the server asked about before they push players'
-   * remembered map past its cap (docs/design-v1-map-discovery.md 5.3,
+   * remembered map past its cap (docs/design/design-v1-map-discovery.md 5.3,
    * FORGET_ASK), for the builder's forget question to answer once per
    * gesture: each refused op with its undo group, and once the DM said
    * yes, the `n`s it sent again with `forget`, until all are answered.

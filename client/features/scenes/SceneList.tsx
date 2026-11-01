@@ -303,7 +303,7 @@ function FolderHeader(props: {
   const { folder, collapsed, count, arrange } = props;
   const [draft, setDraft] = useState<string | null>(null);
   const [invalid, setInvalid] = useState(false);
-  // A rename only Save sends keeps the sheet from a swipe's close (docs/design-v1-sheet-swipe.md 4.5).
+  // A rename only Save sends keeps the sheet from a swipe's close (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(draft !== null && draft !== folder);
 
   if (draft !== null) {

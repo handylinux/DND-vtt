@@ -4,7 +4,7 @@ import { diceCount, doubleDice, FORMULA_ERRORS, formatFormula, parseFormula, typ
 import { rolledTerms, totalOf, type Draw, type Rolled } from "./roll.ts";
 
 /**
- * A critical hit's damage under the room's rule (docs/design-v1-dice.md,
+ * A critical hit's damage under the room's rule (docs/design/design-v1-dice.md,
  * the critical hit rules addendum). The server applies the rule when it
  * rolls, from the `critical` flag on a roll, so no client computes a
  * crit's formula or total. Each rule takes every damage die of the hit,

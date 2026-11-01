@@ -21,7 +21,7 @@ import { promptId, regenerationIn, turnId, useCreaturesUses, useDismissed } from
 
 /*
  * The cards a turn start brings to this device's alerts column
- * (docs/design-v1-combat-controls.md 4), from state alone, so a reload, a
+ * (docs/design/design-v1-combat-controls.md 4), from state alone, so a reload, a
  * second DM device and a late join show the same cards with the same
  * results: each creature of the turn this viewer answers for, its
  * Regeneration, death save and recharge prompts, and the turn card with

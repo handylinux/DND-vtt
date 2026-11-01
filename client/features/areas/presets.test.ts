@@ -7,7 +7,7 @@ import { placedAtPoint, placementHint, presetDraft } from "./presets.ts";
 const spell = (name: string) => AREA_SPELLS.find((s) => s.name === name)!;
 const draft = (patch: Partial<AreaDraft> = {}): AreaDraft => ({ ...newDraft("d", "cone", "#fff"), ...patch });
 
-describe("a spell keeps who the area is cast from (docs/design-v1-area-from-character.md 3.4)", () => {
+describe("a spell keeps who the area is cast from (docs/design/design-v1-area-from-character.md 3.4)", () => {
   test("off, a spell, then on comes back from the same creature", () => {
     const off = draft({ point: { x: 4, y: 4, z: 0 }, lastCaster: "thorn" });
     const hands = presetDraft(spell("Burning Hands"), off, undefined);

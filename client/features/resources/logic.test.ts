@@ -37,7 +37,7 @@ import {
 
 /*
  * A character's class resources as the section, the rows and the sheets
- * read and change them (docs/design-v1-combat-controls.md 7): every list a
+ * read and change them (docs/design/design-v1-combat-controls.md 7): every list a
  * sheet sends goes through character.update's own schema here, so a
  * change the server's schema would refuse fails a test first.
  */

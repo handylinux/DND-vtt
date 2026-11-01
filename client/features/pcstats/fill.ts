@@ -5,7 +5,7 @@ import { hpForMax, sensesWords } from "#shared/rules/pcSync.ts";
 import { speedText } from "../tokens/companionBlocks.ts";
 
 /**
- * The review of a fill (docs/design-v1-pc-stats.md 6.1), as plain
+ * The review of a fill (docs/design/design-v1-pc-stats.md 6.1), as plain
  * functions for node --test: what it read, and one line for each other
  * field of the character it would change, new value then current, each
  * with a tick the player may take off. The name starts off. The size is
@@ -89,7 +89,7 @@ export function alsoPatch(also: AlsoSet, character: Pick<Character, "actor">): P
  * The character as Save would leave it: the fields earlier fills set beside
  * the block, and the record a D&D Beyond "Use it" made, else the saved one.
  * A later fill before Save is reviewed against it, so it compares with what
- * the earlier fill took, not with what was saved (docs/design-v1-resync.md 1.1).
+ * the earlier fill took, not with what was saved (docs/design/design-v1-resync.md 1.1).
  */
 export function pendingCharacter(
   character: Pick<Character, "name" | "actor" | "ddbSync">,

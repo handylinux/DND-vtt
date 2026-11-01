@@ -10,7 +10,7 @@ import { ActorClosedError } from "./actor.ts";
 import { failCommits, startEngine, type Engine, type Socket } from "./testing.ts";
 
 /**
- * The deletion barrier (docs/design-v1-dm-tools.md 3.19), the restore check
+ * The deletion barrier (docs/design/design-v1-dm-tools.md 3.19), the restore check
  * for deleted images (section 2.6), and the room manager's lock and pin,
  * against the real server and Postgres. The deletion here is the shape
  * cleanup's step takes: rows the committed state does not name, in one

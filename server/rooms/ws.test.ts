@@ -6,7 +6,7 @@ import { DEFAULT_BUFFERED_LIMIT, MAX_FRAME_BYTES } from "./ws.ts";
 
 /*
  * The largest op a client can send must fit one frame with room to spare
- * (docs/design-v1-pdf-handouts.md 3.7). A show of a whole document is the
+ * (docs/design/design-v1-pdf-handouts.md 3.7). A show of a whole document is the
  * largest handout op: every page with its size, 64-character ids, an
  * 80-character title and every recipient.
  */
@@ -37,7 +37,7 @@ describe("a frame holds the largest handout op", () => {
 });
 
 describe("the send buffer a slow socket may hold", () => {
-  test("is 1 MiB over the largest DM snapshot, its 3 MiB and the companion blocks' 3 MiB (docs/design-v1-companion-stat-blocks.md 3.4)", () => {
+  test("is 1 MiB over the largest DM snapshot, its 3 MiB and the companion blocks' 3 MiB (docs/design/design-v1-companion-stat-blocks.md 3.4)", () => {
     const largest = LIMITS.projectedSceneBytes + LIMITS.companionBlocksBytes;
     assert.equal(largest, 6 * 1024 * 1024);
     assert.equal(DEFAULT_BUFFERED_LIMIT, largest + 1024 * 1024);

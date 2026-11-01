@@ -11,7 +11,7 @@ import { verifyTurnstile } from "../auth/turnstile.ts";
 import { deleteRoomAndFiles } from "./rooms.ts";
 
 /**
- * The admin page's routes (docs/design-v1-dm-tools.md 3.18), which exist
+ * The admin page's routes (docs/design/design-v1-dm-tools.md 3.18), which exist
  * only when the server has ADMIN_PASSWORD_HASH. Without it none is
  * registered, so every /api/admin route answers 404 like any unknown path.
  *

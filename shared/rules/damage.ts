@@ -1,7 +1,7 @@
 /**
  * The SRD 5.2.1 damage types, one list for every reader: the monster
  * filters, the stat block readers and the dice's damage parts
- * (docs/design-v1-dice.md 6.2), so a part's type and a defense's words
+ * (docs/design/design-v1-dice.md 6.2), so a part's type and a defense's words
  * always name the same thing.
  */
 export const DAMAGE_TYPES = [

@@ -9,7 +9,7 @@ import { followedHeight, legSteps, routeFeet, routeLattice, seatedOn, seatShift,
 import { SQUARES } from "./grid.ts";
 
 /**
- * Finding the way a creature walks (docs/design-v1-movement.md section 5):
+ * Finding the way a creature walks (docs/design/design-v1-movement.md section 5):
  * the cheapest route to where a drag is, around walls, closed doors and
  * ledges, counting difficult terrain, water, other creatures' spaces and
  * squeezing. Pure and shared, run by the client alone: the server never
@@ -44,7 +44,7 @@ export type WalkCreature = {
    * end but never goes on from.
    */
   way: "free" | "difficult" | "blocked";
-  /** On a hex scene, the hexes it stands on, as `"col,row"` keys (docs/design-v1-hex-grids.md 4.2). */
+  /** On a hex scene, the hexes it stands on, as `"col,row"` keys (docs/design/design-v1-hex-grids.md 4.2). */
   hexes?: readonly string[];
 };
 
@@ -72,7 +72,7 @@ export type WalkInput = {
    * The creatures the mover drags beside it that every player sees, each as
    * it stands (route.ts followerTrace). Each takes every step with it, offset
    * by its place, so a route is one the whole group fits through
-   * (docs/design-v1-attach.md 4.2, review LP12-AT-2).
+   * (docs/design/design-v1-attach.md 4.2, review LP12-AT-2).
    */
   towed?: readonly (Walker & { id: string })[];
   /**
@@ -105,7 +105,7 @@ export const MAX_SETTLED = 200_000;
 export const MAX_TRACED = 10_000;
 
 /**
- * What route work may still do (docs/design-v1-movement.md 5.2), one object
+ * What route work may still do (docs/design/design-v1-movement.md 5.2), one object
  * shared by every search, check and build that runs in a frame, so they
  * stop together when it is spent. Work charges it in units: a state settled
  * or traced, a lattice step checked, or a few hundred nodes of a world

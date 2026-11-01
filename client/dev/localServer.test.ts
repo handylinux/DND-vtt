@@ -31,7 +31,7 @@ function previewOfP1(server: LocalServer): ProjectedState {
   return { ...viewed, log: viewed.log.filter((line) => !previewOmits(line, DM.memberId)) };
 }
 
-describe("the dev room's View as a player (D-261026-10, docs/design-v1-per-player-vision.md 7.4)", () => {
+describe("the dev room's View as a player (D-261026-10, docs/design/design-v1-per-player-vision.md 7.4)", () => {
   test("opens only for a DM and a player of the roster, as the server's `as` does", () => {
     const out = { send() {}, close() {} };
     assert.equal(new LocalServer(room(), P1, "s1").openPreview("p2", out), null, "a player's grant");

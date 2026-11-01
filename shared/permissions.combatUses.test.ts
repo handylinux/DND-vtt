@@ -6,7 +6,7 @@ import type { Op } from "./protocol.ts";
 import { DM, P1, P2, actor, character, room, scene, token } from "./testutil.ts";
 
 /**
- * Who may spend a creature's uses (docs/design-v1-combat-controls.md 3.1):
+ * Who may spend a creature's uses (docs/design/design-v1-combat-controls.md 3.1):
  * the DM, and the creature's owners, as `actor.deathSave` is permitted. A
  * creature a player cannot see is `gone`, as a missing one is, so no player
  * can probe a monster's uses.
@@ -29,7 +29,7 @@ function setup(): RoomState {
 
 const spend = (target: { tokenId: string } | { characterId: string }, use: Extract<Op, { t: "actor.use" }>["use"] = { kind: "resist" }): Op => ({ t: "actor.use", target, use });
 
-describe("actor.use permissions (docs/design-v1-combat-controls.md 3.1)", () => {
+describe("actor.use permissions (docs/design/design-v1-combat-controls.md 3.1)", () => {
   test("the DM spends any creature's uses, and even the DM's Regeneration waits for its creature's turn", () => {
     for (const id of ["dragon", "lent", "hidden"]) assert.deepEqual(canApply(spend({ tokenId: id }), DM, setup(), deps), { ok: true });
     assert.deepEqual(canApply(spend({ characterId: "thorn" }, { kind: "resource", id: "rage" }), DM, setup(), deps), { ok: true }, "the DM may spend a resource for a player who is away");

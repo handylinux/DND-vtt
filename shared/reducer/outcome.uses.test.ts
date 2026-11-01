@@ -7,7 +7,7 @@ import { DM, actor, env, room, token } from "../testutil.ts";
 
 /**
  * A group save's Legendary Resistance writes its use line from op version
- * 20 (docs/design-v1-combat-controls.md 3.3 and 8), a secret save's hidden
+ * 20 (docs/design/design-v1-combat-controls.md 3.3 and 8), a secret save's hidden
  * from players, and an op stored before it writes none, so its later line
  * ids stay where they were.
  */

@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { handoutPages, roomHandoutPages } from "./handouts.ts";
 import type { Handout } from "./model.ts";
 
-describe("handoutPages (docs/design-v1-pdf-handouts.md 3.1)", () => {
+describe("handoutPages (docs/design/design-v1-pdf-handouts.md 3.1)", () => {
   const base: Handout = { id: "h", rev: 0, assetId: "a", title: "Strange letter", to: "all", shownAt: "" };
 
   test("a handout without pages is its one image, with no size", () => {
@@ -25,7 +25,7 @@ describe("handoutPages (docs/design-v1-pdf-handouts.md 3.1)", () => {
   });
 });
 
-describe("roomHandoutPages (docs/design-v1-pdf-handouts.md 3.7)", () => {
+describe("roomHandoutPages (docs/design/design-v1-pdf-handouts.md 3.7)", () => {
   test("counts each document's pages and each showing's, one image as one page, a shared page in each", () => {
     const page = (assetId: string) => ({ assetId, width: 1584, height: 2048 });
     const doc = (id: string, ...ids: string[]) => ({ id, rev: 0, title: "Strange letter", pages: ids.map(page), createdAt: "" });

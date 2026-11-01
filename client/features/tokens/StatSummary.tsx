@@ -20,7 +20,7 @@ import { SrdLoadFailed } from "../monsters/SrdLoadFailed.tsx";
 import { useSrdBlocks } from "../monsters/srdBlocks.ts";
 
 /*
- * The stat summary (docs/design-v1-token-panel.md 3.2): the vitals line,
+ * The stat summary (docs/design/design-v1-token-panel.md 3.2): the vitals line,
  * the saves and the defense lines, and on a short bar the "More stats"
  * disclosure that holds what leaves the line. The token bar places each
  * part in its own order, and the token panel shows the vitals in its stat
@@ -51,7 +51,7 @@ export function useLinkedBlock(
   const shown = statBlockShown({ dm: access.dm, owner: access.owner, kind: token.kind, actor, companion: token.companion !== undefined, character: character !== undefined });
   const pc = shown && character ? pcSummary(character) : null;
   const srd = useSrdList(shown && pc === null && tokenStatBlock(actor, monsters, blocks).kind === "srd");
-  // Wild Shape with a stat block rolls with the druid's and the beast's numbers mixed, as the server works them out (docs/design-v1-pc-stats.md 3.6).
+  // Wild Shape with a stat block rolls with the druid's and the beast's numbers mixed, as the server works them out (docs/design/design-v1-pc-stats.md 3.6).
   const wild = shown && character?.stats !== undefined && character.actor.wildShape === true;
   const shaped = useCharacterRollNumbers(wild && character ? character.id : null);
   if (pc) return pc;
@@ -70,7 +70,7 @@ function savesOf(numbers: RollNumbers): Record<AbilityKey, number> {
   return saves;
 }
 
-/** A player character's saves and defense lines from its own stat block, or null without one (docs/design-v1-pc-stats.md 7.4). */
+/** A player character's saves and defense lines from its own stat block, or null without one (docs/design/design-v1-pc-stats.md 7.4). */
 function pcSummary(character: Character): LinkedBlock | null {
   const numbers = pcRollNumbers(character);
   if (!numbers || !character.stats || character.actor.srdId !== undefined) return null;
@@ -281,7 +281,7 @@ export function DefenseLines(props: { block: LinkedBlock; clamp?: boolean }) {
  */
 export function MoreStats(props: { more: readonly VitalItem[]; block: LinkedBlock }) {
   const [open, setOpen] = useState(false);
-  // Opened in a window that scrolls, what it shows scrolls itself into view (docs/design-v1-token-window.md 5.7).
+  // Opened in a window that scrolls, what it shows scrolls itself into view (docs/design/design-v1-token-window.md 5.7).
   const ref = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (open) ref.current?.scrollIntoView({ block: "nearest" });

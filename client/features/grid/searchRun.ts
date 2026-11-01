@@ -10,7 +10,7 @@ import type { SearchAnswer, SearchRequest } from "./findGrid.ts";
  * page goes on as if no grid were drawn.
  *
  * Every search looks for squares, hex rows and hex columns on the same
- * pixels, whatever the scene's shape (docs/design-v1-grid-detect.md
+ * pixels, whatever the scene's shape (docs/design/design-v1-grid-detect.md
  * 10.7), so the DM never has to say which the map is. The page picks the
  * shape from the three (outcome.ts).
  */

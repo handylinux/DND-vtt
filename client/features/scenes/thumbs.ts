@@ -6,7 +6,7 @@ import type { AssetSource, RoomViewStore } from "../../state/view.ts";
 import { thumbSceneOf } from "./thumbnail.ts";
 
 /**
- * When a DM device makes a scene's thumbnail (docs/design-v1-maps-vision.md
+ * When a DM device makes a scene's thumbnail (docs/design/design-v1-maps-vision.md
  * section 3.3). The DM's projection holds only the scene in view, so a
  * thumbnail can only be drawn from the scene on screen, and the moment to
  * draw it is when the DM leaves a scene this device changed: the view held

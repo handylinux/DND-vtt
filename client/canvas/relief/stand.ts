@@ -9,7 +9,7 @@ import { dragTagPill } from "../dragTag.ts";
 import type { CellBox, FogView } from "./fogView.ts";
 
 /**
- * The stand rule (docs/design-v1-isometric-view.md 5.2, D-261026-5), the
+ * The stand rule (docs/design/design-v1-isometric-view.md 5.2, D-261026-5), the
  * security rule of the isometric view: for a player on a scene with fog,
  * a thing that stands up stands only when every fog sub-cell under its
  * Top-down footprint is revealed to that viewer. Anything else lies flat
@@ -21,7 +21,7 @@ import type { CellBox, FogView } from "./fogView.ts";
  * whatever is refused to the ground stage (`splitTokens`), so no upright
  * path can skip the test.
  *
- * On a hex scene a creature's footprint is its hexes (docs/design-v1-hex-grids.md
+ * On a hex scene a creature's footprint is its hexes (docs/design/design-v1-hex-grids.md
  * 4.2), which reach past its drawn box at their points, so the rule reads
  * the fog sub-cells inside those hexes, the very ones the server's
  * footprint test reads (footprint.ts footprintSubcells), beside the box
@@ -279,7 +279,7 @@ const STAND_CHECK = 4096;
 
 /**
  * Whether an area stands as its real shape for this viewer
- * (docs/design-v1-iso-area-shapes.md 4.4 and 9, D-261027-06): on a
+ * (docs/design/design-v1-iso-area-shapes.md 4.4 and 9, D-261027-06): on a
  * player's device on a scene with fog, only when every fog sub-cell of its
  * footprint, the wall-clipped plan before the ground cut (volume.ts), is
  * revealed and on that player's live ground, in sight or revealed by the
@@ -336,7 +336,7 @@ export function volumeStands(fog: FogView, live: LiveSub | null, fp: Footprint):
 
 /**
  * Which caught creatures' rings draw at their standee's base
- * (docs/design-v1-iso-area-shapes.md 4.4, D-261026-31): each creature an
+ * (docs/design/design-v1-iso-area-shapes.md 4.4, D-261026-31): each creature an
  * area whose volume stands catches, when that creature stands by the
  * stand rule itself, never by `drawsAboveFog` alone. Every other ring
  * stays on the ground with its area or its flat creature, under the fog,

@@ -10,7 +10,7 @@ import { scopeSlot } from "../../state/scope.ts";
  * a player's own uploads and what their view shows, the DM every one), kept
  * once per room for the page. The Library tab and panel refresh it when they
  * open. A credit line in a panel reads the same list, so showing an image's
- * credit (docs/design-v1-dm-tools.md 3.13) costs no request of its own.
+ * credit (docs/design/design-v1-dm-tools.md 3.13) costs no request of its own.
  */
 
 type Entry = { rows: ReadonlyMap<string, AssetRow> | null; failed: boolean; loading: Promise<void> | null; loadedAt: number };
@@ -136,14 +136,14 @@ export function resetLibraryForTest(): void {
   emit();
 }
 
-// ---------------------------------------------------------------- the DM's cleanup (docs/design-v1-dm-tools.md 3.19)
+// ---------------------------------------------------------------- the DM's cleanup (docs/design/design-v1-dm-tools.md 3.19)
 
 /**
  * The library images the DM can delete: those the room's state does not use.
  * Scene thumbnails are cleaned up on their own. `held` names images this
  * device knows are taken though the listing may not say so yet: a
  * document's pages, which a listing fetched before the document was saved
- * still calls unused, and a running upload's (docs/design-v1-pdf-handouts.md
+ * still calls unused, and a running upload's (docs/design/design-v1-pdf-handouts.md
  * 4.1.2 and 8.1).
  */
 export function notInUse(rows: readonly AssetRow[], held: ReadonlySet<string> = new Set()): AssetRow[] {
@@ -151,7 +151,7 @@ export function notInUse(rows: readonly AssetRow[], held: ReadonlySet<string> = 
 }
 
 /**
- * The library's images as it lists them (docs/design-v1-starter-art.md 5):
+ * The library's images as it lists them (docs/design/design-v1-starter-art.md 5):
  * the room's own first, then apart the starter picks, those whose row
  * carries a starter mark, so a DM managing their own maps never wades
  * through starter art. `rowOf` finds an item's row. An item the listing
@@ -231,11 +231,11 @@ export async function deleteImages(roomId: string, ids: readonly string[]): Prom
   return { deleted, inUse, error, remaining };
 }
 
-// ---------------------------------------------------------------- handout documents (docs/design-v1-pdf-handouts.md 8.1)
+// ---------------------------------------------------------------- handout documents (docs/design/design-v1-pdf-handouts.md 8.1)
 
 /**
  * The images a running PDF upload on this device holds, the pages it made
- * and those it reused alike (docs/design-v1-pdf-handouts.md 4.1.2). The
+ * and those it reused alike (docs/design/design-v1-pdf-handouts.md 4.1.2). The
  * upload job (features/handouts/pdf) writes it: it adds each page's id once
  * the page's upload answers, and empties it when the job ends, saved,
  * cancelled or dismissed. The Library reads it. Until the job ends its

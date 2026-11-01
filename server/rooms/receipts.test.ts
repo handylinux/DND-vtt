@@ -16,7 +16,7 @@ import type { Pool } from "./persistence.ts";
 import { DAY_MS, ReceiptBook, admissionCost, tagOf, type Receipt } from "./receipts.ts";
 
 /**
- * Receipts and admission (docs/design-v1-dice.md 1.2 and 4.4): the book's
+ * Receipts and admission (docs/design/design-v1-dice.md 1.2 and 4.4): the book's
  * rules on their own, then the actor's pipeline driven by many random
  * sequences of new tags, the same tags sent again from other devices,
  * resends, floods past the budget and the caps, refusals after admission,
@@ -208,7 +208,7 @@ type Device = {
 
 const quiet = { info: () => undefined, warn: () => undefined, error: () => undefined, debug: () => undefined };
 
-describe("receipts and admission in the actor, randomized (docs/design-v1-dice.md 1.2)", () => {
+describe("receipts and admission in the actor, randomized (docs/design/design-v1-dice.md 1.2)", () => {
   test("every tag applies once, admission refusals leave no receipt, the caps hold, and a settled tag answers as it settled", async () => {
     const CAPS = { perDay: 40, perPlayer: 12, dmFloor: 10 };
     /** What the runs did, so the test fails if the sequences stop reaching a path it claims to cover. */

@@ -13,9 +13,9 @@ export type Route =
   | { name: "room"; roomId: string | null }
   | { name: "devRoom" }
   | { name: "devKit" }
-  /** A table display (docs/design-v1-dm-tools.md 3.1): `/display` enters a code, `/display/:roomId` shows the room. */
+  /** A table display (docs/design/design-v1-dm-tools.md 3.1): `/display` enters a code, `/display/:roomId` shows the room. */
   | { name: "display"; roomId: string | null; badId?: true }
-  /** The server admin page (docs/design-v1-dm-tools.md 3.18), the not-found page when the server has no admin password. */
+  /** The server admin page (docs/design/design-v1-dm-tools.md 3.18), the not-found page when the server has no admin password. */
   | { name: "admin" }
   | { name: "guide" }
   /** The list of every written doc (features/guide/docs.ts). */

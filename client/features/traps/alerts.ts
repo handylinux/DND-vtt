@@ -5,7 +5,7 @@ import { isPoseOp, type ClientOp } from "#shared/protocol.ts";
 import { ownsToken } from "../tokens/access.ts";
 
 /*
- * What a trap going off tells each device (docs/design-v1-traps.md 4.3),
+ * What a trap going off tells each device (docs/design/design-v1-traps.md 4.3),
  * as plain functions for node --test: the DM's toast and sound for each new
  * line in the DM's trap log, a player's for each new players' line naming
  * a creature they play, and whether a player's move met a trap, which ends

@@ -5,7 +5,7 @@ import { OUTCOME_TOO_BIG } from "#shared/protocol.ts";
 import { DAMAGE_TYPES } from "#shared/rules/damage.ts";
 import { attackResults, conditionSkip, damageWords, dealtTypes, parseParts, partAmounts, planTargets, rowDamage, worstCase, type PartAmount } from "./outcome.ts";
 
-/** A group save's outcome (docs/design-v1-roll-options.md 5.4 and 5.5). */
+/** A group save's outcome (docs/design/design-v1-roll-options.md 5.4 and 5.5). */
 
 const stat = (kind: Defense["kind"], of: Defense["of"], qualifier?: string): Defense => (qualifier ? { kind, of, qualifier, source: "Stat block" } : { kind, of, source: "Stat block" });
 const row = (defenses: Defense[] = [], extra: { evasion?: boolean; effects?: { key: never }[]; on?: string[] } = {}) => ({ defenses, qualifiedOn: new Set(extra.on ?? []), evasion: extra.evasion ?? false, effects: extra.effects ?? [] });
@@ -97,7 +97,7 @@ describe("conditions and the plan", () => {
   });
 });
 
-/** The types each row takes, for the Regeneration note (docs/design-v1-combat-controls.md 3.4). */
+/** The types each row takes, for the Regeneration note (docs/design/design-v1-combat-controls.md 3.4). */
 describe("the damage types a row takes", () => {
   const dealt = (parts: PartAmount[], result: "pass" | "fail", defenses: Defense[] = []) => dealtTypes(parts, rowDamage(parts, result, { onPass: "half", dexSave: false, row: row(defenses) }).byPart);
 

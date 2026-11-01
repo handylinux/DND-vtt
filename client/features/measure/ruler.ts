@@ -15,11 +15,11 @@ import { HEX_R, hexAt, hexCenter, type Hex, type HexGrid } from "#shared/rules/h
  * same distance as `distanceFt`. A free stop sits on the center of the cell
  * it was dropped in, so the line drawn is exactly the cells measured, and it
  * stands on the ground there as the measurer sees it (`z`, in feet,
- * docs/design-v1-heights-readout.md section 3). The stop carries that
+ * docs/design/design-v1-heights-readout.md section 3). The stop carries that
  * height in the ruler's ephemeral frame and in a kept ruler, so every
  * receiver reads the measurer's distance, whatever its own fog hides.
  *
- * On a hex scene (docs/design-v1-hex-grids.md 4.3) a free stop sits on the
+ * On a hex scene (docs/design/design-v1-hex-grids.md 4.3) a free stop sits on the
  * center of the hex it was dropped in, every hex is one step, and a line
  * from a token starts where it leaves the outline of the token's hexes.
  * The scene's grid goes with every reading, so the typecheck lists them.
@@ -348,7 +348,7 @@ export function keptDrawing(input: { id: string; sceneId: string; stops: readonl
   if (stops.some((s) => s.tokenId !== undefined)) drawing.anchors = stops.map((s) => s.tokenId ?? null);
   const z = stops.map((s) => (s.tokenId === undefined ? (s.z ?? 0) : 0));
   if (z.some((feet) => feet !== 0)) drawing.z = z;
-  // A walking ruler stays one when kept (docs/design-v1-movement.md 3.3).
+  // A walking ruler stays one when kept (docs/design/design-v1-movement.md 3.3).
   if (input.walk) drawing.walk = true;
   return drawing;
 }

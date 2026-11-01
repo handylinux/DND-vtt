@@ -1,6 +1,6 @@
 # raccoon-vtt v1: the DM guide looks like a printed guide
 
-Status: decided and built, in review. The project owner approved the look as shown on 2026-10-18, with headings in the app's font (section 10). Section 12 lists the tests. This design builds on the DM guide's page (`client/pages/DmGuide.tsx`), the Docs page (`client/pages/Docs.tsx`) and the shared Markdown renderer (`client/components/markdown.ts`, `Markdown.tsx`), and keeps the visual design's tokens (docs/design-v1-visual.md).
+Status: decided and built, in review. The project owner approved the look as shown on 2026-10-18, with headings in the app's font (section 10). Section 12 lists the tests. This design builds on the DM guide's page (`client/pages/DmGuide.tsx`), the Docs page (`client/pages/Docs.tsx`) and the shared Markdown renderer (`client/components/markdown.ts`, `Markdown.tsx`), and keeps the visual design's tokens (docs/design/design-v1-visual.md).
 
 The project owner asked on 2026-10-18: "could the formatting of the dm guide be "spruced" up a little bit? I feel text hierarchies could be made a bit more clear and the TOC could be a bit more "official" looking/be a bit more bespoke instead of just being a basic list. open to ideas here i just want the guide to look more "professional"".
 

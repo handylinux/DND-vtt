@@ -2,7 +2,7 @@ import type { Locator, Page } from "playwright-core";
 import sharp from "sharp";
 
 /**
- * The alignment check (docs/design-v1-polish.md 4): what the polish pass
+ * The alignment check (docs/design/design-v1-polish.md 4): what the polish pass
  * measured by hand, kept as a test, so a screen that drifts off its
  * middle fails a run rather than waiting for someone to notice.
  *
@@ -79,7 +79,7 @@ import sharp from "sharp";
  *   itself when both do not fit, components/Panel.tsx).
  * - A name above controls that leave its words no room beside them is a
  *   heading over them, as a FieldRow stacks its label over a field that
- *   does not fit beside it (docs/design-v1-polish.md R2). A name is alone
+ *   does not fit beside it (docs/design/design-v1-polish.md R2). A name is alone
  *   above its controls only where its words fit in the room they leave.
  * - A pane's header band and a pane's frame are placed by
  *   the header check instead, since the band's room above its row is
@@ -579,7 +579,7 @@ const OUTLINE_PIXEL_BOXES = 2;
 /**
  * FL-15's outlined ability boxes (D-261030-588) in `root`'s six-ability
  * grids (client/features/monsters/AbilityGrid.tsx), in either form
- * (docs/design-v1-stat-block-rolls.md 3.1): a text grid's `dt` and `dd`
+ * (docs/design/design-v1-stat-block-rolls.md 3.1): a text grid's `dt` and `dd`
  * parts, or a rolling grid's buttons, whose three lines carry
  * `data-ability-abbr`, `data-ability-score` and `data-ability-save`. A box
  * is outlined exactly when a screen reader hears its save as proficient,
@@ -1424,7 +1424,7 @@ function measureInPage(roots: DomElement[], opts: PageOptions): Finding[] {
           // A part that grows to fill its line is a line of its own, as a window's buttons share each line they wrap onto.
           const content = { l: b.inner.l + b.pad.l, r: b.inner.r - b.pad.r };
           const fills = (it: Item) => it.box.l <= content.l + LIMIT && it.box.r >= content.r - LIMIT;
-          // A name stacked above controls that leave its words no room beside them is a heading over them, as a FieldRow stacks its label over a field that does not fit (docs/design-v1-polish.md R2). It is alone only where its words would fit in the room the controls leave on their line.
+          // A name stacked above controls that leave its words no room beside them is a heading over them, as a FieldRow stacks its label over a field that does not fit (docs/design/design-v1-polish.md R2). It is alone only where its words would fit in the room the controls leave on their line.
           const gap = num(cs, "column-gap") * zoomOf(el);
           const roomBeside = (named: Item[], controls: Item[]) => {
             const need = named.reduce((n, it) => n + (it.v.r - it.v.l), 0) + gap * named.length;
@@ -1898,7 +1898,7 @@ export async function leadLines(group: Locator, words: readonly string[], screen
 }
 
 
-/** Lane B's marker for the corner mark inside a rolling box (docs/design-v1-stat-block-rolls.md 3.1): its `data-ability-mark`. */
+/** Lane B's marker for the corner mark inside a rolling box (docs/design/design-v1-stat-block-rolls.md 3.1): its `data-ability-mark`. */
 export const ABILITY_MARK = '[data-ability-mark]';
 
 /** The shape of a node the rolling grid's checks read in the page, as the page's DOM has it. */
@@ -1928,7 +1928,7 @@ type RollEl = {
 };
 
 /**
- * A rolling six-ability grid at rest (docs/design-v1-stat-block-rolls.md 3 and 9).
+ * A rolling six-ability grid at rest (docs/design/design-v1-stat-block-rolls.md 3 and 9).
  *
  * - It is a `role="group"` of six buttons, each named by its own label, and
  *   no button holds a hidden ", proficient" span.
@@ -2005,7 +2005,7 @@ export async function rollingGridLines(grid: Locator, screen: string): Promise<s
 }
 
 /**
- * The open list's and options' rows (docs/design-v1-stat-block-rolls.md 9):
+ * The open list's and options' rows (docs/design/design-v1-stat-block-rolls.md 9):
  * none runs wider than its box, which would cut a name or a bonus, and a
  * bonus stands at the row's end. A row whose words and tag do not fit wraps
  * the tag under the name, never the bonus.

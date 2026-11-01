@@ -6,7 +6,7 @@ import { textCells } from "./geometry.ts";
  * lines from its anchor at the top left, `textCells` tall each, the widest
  * line wide, grown on every side by the halo and by how far the letters'
  * ink reaches past the lines' boxes, so the stand rule tests every
- * sub-cell a letter can touch (docs/design-v1-isometric-view.md 5.2).
+ * sub-cell a letter can touch (docs/design/design-v1-isometric-view.md 5.2).
  * `measure` gives a line's width in ems of the bold board font.
  */
 export type MeasureEm = (line: string) => number;

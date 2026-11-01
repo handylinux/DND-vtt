@@ -11,7 +11,7 @@ import { DM, P1, P2, env, randomOp, randomState, rng } from "./testutil.ts";
 
 /**
  * Whole-party scenes are byte for byte as before per-player vision
- * (docs/design-v1-per-player-vision.md section 9, rule 12): random rooms,
+ * (docs/design/design-v1-per-player-vision.md section 9, rule 12): random rooms,
  * none of whose scenes is per player, go through random ops, and every
  * state the reducer leaves, every answer it gives and every viewer's
  * projection hash as they did on the build before per-player vision. The
@@ -39,7 +39,7 @@ const VIEWS: readonly [Viewer, string][] = [
  * The collections per-player vision and map discovery add hold nothing on
  * these rooms, and so say nothing the build before held. The played marks
  * a move of the players writes are bookkeeping no build before wrote, so
- * they are left out with their keys (docs/design-v1-map-discovery.md 5.5).
+ * they are left out with their keys (docs/design/design-v1-map-discovery.md 5.5).
  */
 function stored(state: RoomState): string {
   const room = { ...state } as Record<string, unknown>;
@@ -56,7 +56,7 @@ function stored(state: RoomState): string {
 /*
  * What map discovery changed in a player's copy of a scene with fog on, by
  * design, left out of its hash: the chunks they hold and the scene copy's
- * automatic walls rule (docs/design-v1-map-discovery.md 5.2), the route
+ * automatic walls rule (docs/design/design-v1-map-discovery.md 5.2), the route
  * corners of a private leg on a scene with vision (decision 12), and which
  * area reminders there they read (onFoggedArea). Legs seen whole keep their
  * corners. Scenes with fog off stay byte for byte, and so does everything
@@ -93,7 +93,7 @@ function seenBy(state: RoomState, viewer: Viewer, view: ProjectedState): string 
 /*
  * An area's reminder about a creature on a scene with fog on, or one no
  * longer in the room: map discovery reads its rays against each player's
- * live ground (docs/design-v1-map-discovery.md decision 13), so whom it is
+ * live ground (docs/design/design-v1-map-discovery.md decision 13), so whom it is
  * for may change by design, and with that how many copies are written (one
  * for those who saw it, one for the DM alone) and the numbers they take.
  * Such lines are kept as the reminders they give, each once, without ids

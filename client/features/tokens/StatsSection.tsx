@@ -23,7 +23,7 @@ const OTHER_SPEEDS: readonly OtherSpeed[] = ["fly", "swim", "climb", "burrow"];
 const SPEED_LABELS: Record<SpeedKey, string> = { walk: "Walk", fly: "Fly", swim: "Swim", climb: "Climb", burrow: "Burrow" };
 
 /**
- * Which speeds stand in "Other speeds" (docs/design-v1-look-pass.md 3.1):
+ * Which speeds stand in "Other speeds" (docs/design/design-v1-look-pass.md 3.1):
  * every one not set, so a walker's Stats shows Walk alone rather than four
  * rows of "none". `held` is what the fold held as it opened, kept while it
  * stays open, so a speed typed there stays under the field's own label
@@ -60,11 +60,11 @@ export function StatsFields(props: {
   canEdit(field: keyof ActorPatch): boolean;
   onPatch(patch: ActorPatch): void;
   dm: boolean;
-  /** No AC to show while `hpLess` holds, an effect's stored AC included (docs/design-v1-combat-flow.md 3.6.6). */
+  /** No AC to show while `hpLess` holds, an effect's stored AC included (docs/design/design-v1-combat-flow.md 3.6.6). */
   noAc?: boolean;
   /**
    * The character's stat block gives its initiative and Passive Perception
-   * (docs/design-v1-pc-stats.md 7.1), so they show as text that says so,
+   * (docs/design/design-v1-pc-stats.md 7.1), so they show as text that says so,
    * for the DM too, and are changed in the block.
    */
   fromBlock?: boolean;
@@ -217,7 +217,7 @@ function Stat(props: { label: string; value: string | number | undefined; editab
 /**
  * How many legendary actions a round and Legendary Resistances a day the
  * creature has. How many are used is play, set by Use and Restore in its
- * Uses, whose pips show what is left (docs/design-v1-monster-uses.md). A
+ * Uses, whose pips show what is left (docs/design/design-v1-monster-uses.md). A
  * lower maximum lowers a count used past it.
  */
 function LegendaryFields(props: { actor: Partial<Actor>; onPatch(patch: ActorPatch): void }) {

@@ -1,6 +1,6 @@
 /**
  * The DM guide's pictures of the isometric view (docs/dm-guide.md, "The
- * isometric view", docs/design-v1-isometric-view.md): the DM's board in
+ * isometric view", docs/design/design-v1-isometric-view.md): the DM's board in
  * Isometric, turned once, and the View menu open over it, taken from the
  * real server on the production build so they always show the app as it is.
  *

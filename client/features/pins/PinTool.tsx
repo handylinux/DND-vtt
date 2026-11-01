@@ -15,7 +15,7 @@ import { pinSlot } from "./store.ts";
 import { TOOL_ORDER } from "../toolbarOrder.ts";
 
 /**
- * The Pin tool (docs/design-v1-dm-tools.md 3.8), the DM's: a tap places a
+ * The Pin tool (docs/design/design-v1-dm-tools.md 3.8), the DM's: a tap places a
  * pin and opens its pane, a tap on a pin opens its pane, and a drag moves
  * one. A journal page's "Pin to the map" picks this tool with the page
  * waiting, and the next tap places a pin linked to it.
@@ -117,7 +117,7 @@ function withoutRev(pin: Pin) {
 }
 
 /**
- * The pin tool's options (docs/design-v1-tool-options.md 9.8): a new pin's
+ * The pin tool's options (docs/design/design-v1-tool-options.md 9.8): a new pin's
  * color and DM only, nothing while a pin's pane is open, or Cancel while a
  * journal page waits for its spot.
  */

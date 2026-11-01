@@ -13,7 +13,7 @@ import { savePageAskFieldsSchema } from "../saveOutcomeContract.ts";
 import { tracksSaveOutcomes } from "../saveOutcomes.ts";
 
 /**
- * Roll requests (docs/design-v1-dm-tools.md 3.3 and docs/design-v1-roll-request.md).
+ * Roll requests (docs/design/design-v1-dm-tools.md 3.3 and docs/design/design-v1-roll-request.md).
  * The DM asks for a saving throw or an ability check, each target's player
  * rolls it on the server (`roll.dice`, whose answer reducer/dice.ts writes
  * with the helpers here) or types the total they rolled, and the reducer
@@ -25,7 +25,7 @@ import { tracksSaveOutcomes } from "../saveOutcomes.ts";
 export const NOT_PLAYED = "only creatures a player plays can be asked to roll";
 /** The refusal of a player's change to an answer that is final (`isFinal`). */
 export const FINAL = "Ask the DM to change it.";
-/** The refusal of a "save ends" request that is not one save of one creature with its effect (docs/design-v1-roll-request.md 7.5). */
+/** The refusal of a "save ends" request that is not one save of one creature with its effect (docs/design/design-v1-roll-request.md 7.5). */
 export const ENDS_NEEDS_ONE = "Ends needs one creature with that effect.";
 /** The refusal of a second open request for one save occurrence, as from a second DM device. */
 export const ALREADY_ASKED = "That save was already asked.";
@@ -37,7 +37,7 @@ export const DIE_NEEDED = "Bardic Inspiration names its die.";
 export const TYPED_ONLY = "Only a typed answer can be fixed this way.";
 /** The refusal of "Fix my total" on an answer the player may still change: they send the new total themselves. */
 export const SEND_INSTEAD = "Send the corrected total.";
-/** The refusal of a request for a save occurrence that is no longer pending: settled, or replaced by a newer turn end (docs/design-v1-roll-options.md 6.1). */
+/** The refusal of a request for a save occurrence that is no longer pending: settled, or replaced by a newer turn end (docs/design/design-v1-roll-options.md 6.1). */
 export const SAVE_SETTLED = "That save is no longer waiting.";
 
 export function rollAsk(tx: Tx, op: OpOf<"roll.ask">): void {
@@ -99,7 +99,7 @@ export function rollAsk(tx: Tx, op: OpOf<"roll.ask">): void {
  * to find, and with pass or fail hidden there is nothing to read, so they
  * may change freely. Only the DM changes a final answer, or reopens it.
  *
- * A rolled answer is final whatever the switches (docs/design-v1-dice.md
+ * A rolled answer is final whatever the switches (docs/design/design-v1-dice.md
  * 5.4): the server rolled it, so a typed total or a fail without rolling
  * after it would be a second answer. The DM allows a change in one tap.
  */
@@ -173,7 +173,7 @@ export function rollAnswer(tx: Tx, op: OpOf<"roll.answer">): void {
 }
 
 /**
- * An answer with its provenance (docs/design-v1-roll-request.md 7.5): it
+ * An answer with its provenance (docs/design/design-v1-roll-request.md 7.5): it
  * keeps the op's tag, and the DM's own mark is kept apart from what the DC
  * gives, so `resultOf` decides the result for every reader alike. A DM's
  * bare mark on an answer keeps the answer, its total and dice, and only
@@ -226,7 +226,7 @@ function taggedAnswer(tx: Tx, request: RollRequest, index: number, current: Roll
  * Clears a target's answer, kept as `previous`, so its player may answer
  * once more, and with it any ask and `retype`. A target with no answer is
  * left as it is. With `change`, the DM's Allow of a "Fix my total" ask
- * (docs/design-v1-roll-request.md 5.5), the ask must still be pending on
+ * (docs/design/design-v1-roll-request.md 5.5), the ask must still be pending on
  * this answer, and the target then waits with `retype`, for a total typed
  * again and never a roll. While the room has typed totals off, a player
  * types no total, so the Allow reopens it plainly, for a roll. No line: the
@@ -249,7 +249,7 @@ export function rollReopen(tx: Tx, op: OpOf<"roll.reopen">): void {
 
 /**
  * A player's ask to change their answer, or its end
- * (docs/design-v1-roll-request.md 5.5 and 7.5). An ask names the answer it
+ * (docs/design/design-v1-roll-request.md 5.5 and 7.5). An ask names the answer it
  * would change by its tag, so one made on an answer since replaced, marked
  * or reopened is over before it lands. It replaces any pending ask. `clear`,
  * the player's Withdraw or the DM's Keep, ends only the pending ask it
@@ -313,7 +313,7 @@ export function changeRefusal(request: Pick<RollRequest, "dc" | "dcShown" | "res
 /**
  * Closes requests, "Close all answered" several at once. One already
  * closed, by another DM device, is passed over. Each close settles its
- * request in the same op (docs/design-v1-roll-request.md 1.1), so no
+ * request in the same op (docs/design/design-v1-roll-request.md 1.1), so no
  * gesture is left half done. A pending ask goes with the request, kept as
  * it stands, since nothing acts on it again. A "save ends" request settles
  * its own occurrence (`settleOccurrence`).
@@ -335,7 +335,7 @@ export function rollClose(tx: Tx, op: OpOf<"roll.close">): void {
 }
 
 /**
- * A closing "save ends" request's occurrence (docs/design-v1-roll-options.md
+ * A closing "save ends" request's occurrence (docs/design/design-v1-roll-options.md
  * 6.1), settled as the op names, doc 3's Accept failure or Dismiss, else
  * resolved when its creature answered and dismissed when it did not. Only
  * its own occurrence and only while pending: a newer occurrence, one
@@ -361,7 +361,7 @@ export const SAVE_ASKED = "That save was asked. Close its request instead.";
 
 /**
  * The DM's Accept failure or Dismiss on a save-ends card with no request
- * (docs/design-v1-roll-options.md 6.1). Only the effect's pending
+ * (docs/design/design-v1-roll-options.md 6.1). Only the effect's pending
  * occurrence that the card named, so a tap on a card a newer turn end
  * replaced, or one another DM device settled first, changes nothing. A
  * linked request's occurrence is settled only by closing that request.
@@ -379,7 +379,7 @@ export function actorSaveDue(tx: Tx, op: OpOf<"actor.saveDue">): void {
 }
 
 /**
- * The life of a "save ends" request (docs/design-v1-roll-request.md 7.5,
+ * The life of a "save ends" request (docs/design/design-v1-roll-request.md 7.5,
  * "When an ends request closes"), as one rule after every op rather than a
  * call in every path that answers a target or removes an effect: an answer
  * typed, rolled, marked or allowed after an ask, a removal by

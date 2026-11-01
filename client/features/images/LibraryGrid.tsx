@@ -58,15 +58,15 @@ export const tileImage = { width: "100%", height: "100%", objectFit: "cover", di
  * The image picker's Library tab passes `onPick`, and each image is a
  * button that picks it. The Library panel shows the same grid without it,
  * and a tap opens the image in the handout viewer, its size, credit and
- * status in the viewer's header (docs/design-v1-pdf-handouts.md 8.4). The
+ * status in the viewer's header (docs/design/design-v1-pdf-handouts.md 8.4). The
  * DM and players see the same tiles and the same viewer. For the DM the
  * panel lists handouts and maps too, each tile with its status, and
  * deletes an image nothing uses from the viewer's header, or every one at
- * once under Clean up (docs/design-v1-dm-tools.md 3.19), since only the
+ * once under Clean up (docs/design/design-v1-dm-tools.md 3.19), since only the
  * DM can tell a handout kept for later from one nobody needs.
  *
  * Starter picks list after the room's own images, in a fold of their own,
- * closed at first (docs/design-v1-starter-art.md 5), and work there as
+ * closed at first (docs/design/design-v1-starter-art.md 5), and work there as
  * anywhere else in the library.
  */
 export function LibraryGrid(props: {
@@ -176,7 +176,7 @@ function LibraryStatus(props: { library: LibraryState; failed?: string }) {
   );
 }
 
-/** After Handouts, which come first: the DM comes to the Library for one a few times a session, and for the rest rarely (docs/design-v1-layout-hierarchy.md M6). */
+/** After Handouts, which come first: the DM comes to the Library for one a few times a session, and for the rest rarely (docs/design/design-v1-layout-hierarchy.md M6). */
 const SECTIONS: { kind: AssetKind; heading: string }[] = [
   { kind: "map", heading: "Maps" },
   { kind: "token", heading: "Token images" },
@@ -188,7 +188,7 @@ const SECTIONS: { kind: AssetKind; heading: string }[] = [
  * up", with what a delete did, out of the way of the images the DM came
  * for. A rare action that cannot be undone led the panel before.
  *
- * Handouts start with the DM's documents (docs/design-v1-pdf-handouts.md
+ * Handouts start with the DM's documents (docs/design/design-v1-pdf-handouts.md
  * 8.1), which come from the room's state rather than the listing, so they
  * show while the listing loads or after it fails. Until it arrives the
  * other sections are the images already on the map, as a player's are.
@@ -365,7 +365,7 @@ function useDocDeletes(roomId: string): DocDeletesApi {
   return { flows, start: (doc) => startDocDelete(slot, deps, doc), retry: (docId) => retryDocDelete(slot, deps, docId) };
 }
 
-// ---------------------------------------------------------------- tiles that open the viewer (docs/design-v1-pdf-handouts.md 8.4)
+// ---------------------------------------------------------------- tiles that open the viewer (docs/design/design-v1-pdf-handouts.md 8.4)
 
 /** What the viewer shows for a tile. `actions` sit in its header, left of Expand and Close. */
 type TileView = { title: string; pages: ViewerPage[]; details?: ReactNode; actions?: ReactNode };
@@ -378,7 +378,7 @@ type TileView = { title: string; pages: ViewerPage[]; details?: ReactNode; actio
  */
 type Tile = { key: string; thumbId: string; label: string; tag: string | null; status: string | null; view(close: () => void): TileView };
 
-/** `starter` puts a section in the starter picks' fold, after the room's own (docs/design-v1-starter-art.md 5). */
+/** `starter` puts a section in the starter picks' fold, after the room's own (docs/design/design-v1-starter-art.md 5). */
 type LibrarySection = { id: string; heading?: string; label: string; tiles: readonly Tile[]; after?: ReactNode; keep?: boolean; starter?: boolean };
 
 /** A section's tiles by key, in order, as the focus rule after a delete reads them. */
@@ -506,7 +506,7 @@ function TileLibrary(props: { sections: readonly LibrarySection[]; before?: Reac
 }
 
 /**
- * The starter picks' fold (docs/design-v1-starter-art.md 5), closed until
+ * The starter picks' fold (docs/design/design-v1-starter-art.md 5), closed until
  * the DM opens it, so the room's own images stay what the library shows.
  * The panels' own fold, the section label as a disclosure (Panel.tsx).
  */
@@ -532,7 +532,7 @@ function focusHeading(section: HTMLElement | null): void {
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** The panel's first control: in its pane of the desktop side panel (either of two, docs/design-v1-split-panel.md 9.1), or the phone sheet's region, which holds its header too. */
+/** The panel's first control: in its pane of the desktop side panel (either of two, docs/design/design-v1-split-panel.md 9.1), or the phone sheet's region, which holds its header too. */
 function panelControl(root: HTMLElement | null): HTMLElement | undefined {
   const panel = root?.closest<HTMLElement>("[data-pane]") ?? root?.closest<HTMLElement>('[role="tabpanel"], section[aria-label]') ?? root?.parentElement ?? null;
   return panel ? [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].find((el) => el.getClientRects().length > 0) : undefined;
@@ -670,7 +670,7 @@ type ShownHandout = Parameters<typeof handoutPages>[0] & { title: string; shownA
  * The viewer's title: a handout's that shows this image, the one shown
  * last, else what the image is. A handout of pages names the page, "Strange
  * letter, page 3", its first when the image fills several
- * (docs/design-v1-pdf-handouts.md 8.1).
+ * (docs/design/design-v1-pdf-handouts.md 8.1).
  */
 export function viewTitle(id: string, row: AssetRow | undefined, handouts: readonly ShownHandout[]): string {
   let shown: { title: string; shownAt: string; page: number; pages: number } | null = null;

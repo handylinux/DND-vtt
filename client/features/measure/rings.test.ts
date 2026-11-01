@@ -68,7 +68,7 @@ describe("range rings", () => {
   });
 });
 
-describe("range rings on a hex scene (docs/design-v1-hex-grids.md 4.3)", () => {
+describe("range rings on a hex scene (docs/design/design-v1-hex-grids.md 4.3)", () => {
   for (const orient of ["rows", "columns"] as const) {
     const g: HexGrid = { shape: "hex", orient };
     const bounds = { w: 30, h: 30 };

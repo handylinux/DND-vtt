@@ -6,13 +6,13 @@ import { reminderPreset, type RollPreset } from "#shared/rules/rollReminders.ts"
 import { creatureRolls, type CreatureRolls, type DiceView } from "./creature.ts";
 
 /**
- * The preset every d20 roll in the app takes (docs/design-v1-roll-options.md
+ * The preset every d20 roll in the app takes (docs/design/design-v1-roll-options.md
  * 3.2): the option buttons, doc 4's card and live card, the group save's
  * rows, the save-ends and concentration cards, death saves, and initiative,
  * single, from the tracker and auto. Each reads it here, at the tap, from
  * the creature's effects in the viewer's view and its Magic Resistance then,
  * and combines its sources with its own once, as it builds the op
- * (docs/design-v1-dice.md 3.3).
+ * (docs/design/design-v1-dice.md 3.3).
  */
 
 function actorOf(dice: DiceView, creature: ActorTarget): Actor | undefined {

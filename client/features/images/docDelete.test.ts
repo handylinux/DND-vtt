@@ -24,7 +24,7 @@ import {
 import type { DeleteResult } from "./library.ts";
 
 /*
- * Deleting a document from the DM's Library (docs/design-v1-pdf-handouts.md
+ * Deleting a document from the DM's Library (docs/design/design-v1-pdf-handouts.md
  * 3.5, 4.1.5's checking rule, 8.1, and the rows of 10.5 and 10.6): the op's
  * every answer, the image delete after it, and an `unknown` answer decided
  * only from a snapshot of the current connection.

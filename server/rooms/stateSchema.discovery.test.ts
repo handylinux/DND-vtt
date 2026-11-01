@@ -10,7 +10,7 @@ import { DM, env, member, room, scene } from "#shared/testutil.ts";
 import { parseRoomState } from "./stateSchema.ts";
 
 /**
- * Map discovery's stored fields (docs/design-v1-map-discovery.md 5.3 and
+ * Map discovery's stored fields (docs/design/design-v1-map-discovery.md 5.3 and
  * 5.5, lane MD1): each layer's memory, by the bounds the map step's ops
  * are held to, the scenes' marks, the room's default for new scenes and
  * the teleport line past what a player could not see. A stored chunk is

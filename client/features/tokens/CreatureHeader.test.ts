@@ -7,7 +7,7 @@ const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { CreatureHeader } = await import("./CreatureHeader.tsx");
 
-/** A creature header's markup, drawn from props alone (docs/design-v1-design-pass.md 4.3). */
+/** A creature header's markup, drawn from props alone (docs/design/design-v1-design-pass.md 4.3). */
 function header(actions?: readonly string[]): string {
   return renderToStaticMarkup(
     createElement(CreatureHeader, {

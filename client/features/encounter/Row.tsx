@@ -98,12 +98,12 @@ export function EntryRow(props: {
     { tokens: token ? { [token.id]: token } : {}, characters: character ? { [character.id]: character } : {} },
     entry.tokenId !== undefined ? { tokenId: entry.tokenId } : entry.characterId !== undefined ? { characterId: entry.characterId } : {},
   );
-  // A creature with no HP to show has no readout (docs/design-v1-combat-flow.md 3.6.6).
+  // A creature with no HP to show has no readout (docs/design/design-v1-combat-flow.md 3.6.6).
   const hp = hpLess(actor, token) ? NO_HP : hpView(actor);
-  // The AC shield, first on the second line, which is the row button's description (docs/design-v1-combat-flow.md 3.3).
+  // The AC shield, first on the second line, which is the row button's description (docs/design/design-v1-combat-flow.md 3.3).
   const ac = rowAc(actor, token);
   const lineId = useId();
-  // The companions listed under the row, and whose they are (docs/design-v1-combat-flow.md 3.6.7).
+  // The companions listed under the row, and whose they are (docs/design/design-v1-combat-flow.md 3.6.7).
   const tokens = useRoomView((s) => s.view?.tokens);
   const companions = useMemo(() => (tokens ? nestedCompanions({ tokens }, entry) : NO_COMPANIONS), [tokens, entry]);
   const rowOwner = useRoomView((s) => {
@@ -112,7 +112,7 @@ export function EntryRow(props: {
   });
   // An own-turn companion's row names whose it is, in the words of the token panel's name block, for every viewer whose copy says so.
   const companionOf = useRoomView((s) => (token?.companion ? s.view?.characters[token.companion.of]?.name : undefined));
-  // A rider's mount and a controlled mount's rider, from the links in this copy (docs/design-v1-attach.md 4.5 and 7.1).
+  // A rider's mount and a controlled mount's rider, from the links in this copy (docs/design/design-v1-attach.md 4.5 and 7.1).
   const link = useMemo(() => rowLink(tokens ?? {}, token), [tokens, token]);
   // A controlled mount's row whose turn was its rider's this round only lets time pass for it, and reads muted.
   const muted = useRoomView((s) => marksTime(s.view?.encounter, entry));
@@ -130,16 +130,16 @@ export function EntryRow(props: {
     if (token && "inline" in token.actor) return playerPlays(s.view, { token });
     return character ? playerPlays(s.view, { character }) : false;
   });
-  // An HP-less creature is never drawn dead, whatever it stores (docs/design-v1-combat-flow.md 3.6.6).
+  // An HP-less creature is never drawn dead, whatever it stores (docs/design/design-v1-combat-flow.md 3.6.6).
   const life = shownLife(actor, token);
   const dead = life === "dead";
-  // A companion's players open its block from its row where its bar would (docs/design-v1-companion-stat-blocks.md 6.7).
+  // A companion's players open its block from its row where its bar would (docs/design/design-v1-companion-stat-blocks.md 6.7).
   const playerBlock = useCompanionBlockOpens(!dm && mine ? token : undefined);
-  // A player character's own stat block, or the shape it takes, opens from its row for the DM and its players, on its token (docs/design-v1-pc-stats.md 7.4).
+  // A player character's own stat block, or the shape it takes, opens from its row for the DM and its players, on its token (docs/design/design-v1-pc-stats.md 7.4).
   const pcBlock = (dm || mine) && token !== undefined && "ref" in token.actor && (character?.stats !== undefined || character?.actor.srdId !== undefined);
   const drag = props.drag;
   const slotted = handleSlot(dm, drag);
-  // Whoever rolls this creature's initiative rolls it from the row: a player their own, the DM a creature no player plays (docs/design-v1-roll-options.md 4.5).
+  // Whoever rolls this creature's initiative rolls it from the row: a player their own, the DM a creature no player plays (docs/design/design-v1-roll-options.md 4.5).
   const creature = useMemo(() => rowCreature(entry.tokenId, entry.characterId), [entry.tokenId, entry.characterId]);
   const rolls = creature !== null && (mine || (dm && !playerOwned));
   const [rollAt, setRollAt] = useState<RollAt | null>(null);
@@ -341,7 +341,7 @@ const NO_HP: HpView = { kind: "none" };
 
 /**
  * A companion that acts on its character's turn, listed under the
- * character's row (docs/design-v1-combat-flow.md 3.6.7): its picture, name,
+ * character's row (docs/design/design-v1-combat-flow.md 3.6.7): its picture, name,
  * AC, HP, conditions and its own Reaction and Ready, struck through when
  * dead. A tap does what a row tap does. It has no value box and no drag
  * handle, since it takes its character's place in the order. For the DM
@@ -478,7 +478,7 @@ function CompanionMenu(props: { token: Token; entryId: string; name: string; dm:
           </span>
         </div>
       ) : null}
-      {/* Its things in its Combat section's order, as its character's row lists theirs (docs/design-v1-token-sections.md 4). */}
+      {/* Its things in its Combat section's order, as its character's row lists theirs (docs/design/design-v1-token-sections.md 4). */}
       <UsesGroup target={target} name={props.name} />
       {/* Its own patch, which a device that holds the token predicts at once (shared/reads.ts). */}
       <ReactionSwitch answer={{ kind: "companion", tokenId: token.id, entryId: props.entryId }} dm={dm} />
@@ -694,7 +694,7 @@ function useWidth(ref: RefObject<HTMLElement | null>, on: boolean): number {
  * in for the words while it rolls never moves the value box.
  */
 const ROLL_PX = 72;
-/** The least a name keeps beside Roll, as the group save's rows keep for theirs (docs/design-v1-roll-options.md Appendix D). */
+/** The least a name keeps beside Roll, as the group save's rows keep for theirs (docs/design/design-v1-roll-options.md Appendix D). */
 const NAME_MIN_PX = 80;
 
 /**
@@ -717,7 +717,7 @@ function rollFitsBeside(linePx: number, slotted: boolean): boolean {
 }
 
 /**
- * The row's "Roll +2" (docs/design-v1-roll-options.md 4.5): initiative
+ * The row's "Roll +2" (docs/design/design-v1-roll-options.md 4.5): initiative
  * rolled on the server with the creature's bonus, its preset and the Dice
  * panel's choices, as the panel's own Initiative option rolls it. Busy
  * until its line lands, and disabled with the reason while a roll cannot
@@ -809,7 +809,7 @@ function InitiativeRoll(props: { entry: InitEntry; creature: ActorTarget; name: 
 }
 
 /**
- * What a row's Roll left once its line landed (docs/design-v1-roll-options.md
+ * What a row's Roll left once its line landed (docs/design/design-v1-roll-options.md
  * 4.3): the value written once, as a typed value goes, while the row still
  * holds the value it had at the tap. The box shows a value that went in, so
  * a line shows only when it did not: the row changed meanwhile, the server
@@ -844,15 +844,15 @@ function RowMenu(props: {
   playerOwned: boolean;
   /**
    * A token whose full stat block the row opens: a monster's or NPC's for
-   * the DM (docs/design-v1-dm-tools.md 3.6), and a companion's with a block
-   * for its players (docs/design-v1-companion-stat-blocks.md 6.7).
+   * the DM (docs/design/design-v1-dm-tools.md 3.6), and a companion's with a block
+   * for its players (docs/design/design-v1-companion-stat-blocks.md 6.7).
    */
   statBlockTokenId: string | null;
-  /** The row's creature is dead: the DM's Revive comes first, for a row whose token has no bar in this view (docs/design-v1-combat-flow.md 3.5). */
+  /** The row's creature is dead: the DM's Revive comes first, for a row whose token has no bar in this view (docs/design/design-v1-combat-flow.md 3.5). */
   revive: boolean;
   /** The row's Roll, here when its line has no room for it beside the value box, or the row has a value it would replace. */
   roll?: ReactNode;
-  /** The DM's "Move after Bree" on a controlled mount's acting row (docs/design-v1-attach.md 7.1, attach/tags.ts). */
+  /** The DM's "Move after Bree" on a controlled mount's acting row (docs/design/design-v1-attach.md 7.1, attach/tags.ts). */
   moveAfter?: ReturnType<typeof moveAfterRider>;
 }) {
   const { entry, role, drag } = props;
@@ -866,7 +866,7 @@ function RowMenu(props: {
   const dm = role === "dm";
   const update = (patch: { hidden?: boolean; advantage?: "adv" | "dis" | null }) =>
     actions.dispatch({ t: "encounter.update", entryId: entry.id, patch });
-  // In lair applies the block's lair or base counts with the switch (docs/design-v1-combat-controls.md 3.1), so it waits for the block.
+  // In lair applies the block's lair or base counts with the switch (docs/design/design-v1-combat-controls.md 3.1), so it waits for the block.
   const lair = useLairCounts(dm ? props.target : null);
   const lairSend = useSend();
   const setLair = (inLair: boolean) => {
@@ -885,7 +885,7 @@ function RowMenu(props: {
         gap: theme.space(1),
       }}
     >
-      {/* The creature's things first, in its Combat section's order, then the row's own setup, then Remove (docs/design-v1-token-sections.md 4). */}
+      {/* The creature's things first, in its Combat section's order, then the row's own setup, then Remove (docs/design/design-v1-token-sections.md 4). */}
       {dm && props.revive && props.target ? (
         <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: theme.space(2) }}>
           <ReviveButton target={props.target} describedBy={reviveNoteId} focusTo={REVIVE_FOCUS_IN_ROW} />
@@ -975,7 +975,7 @@ function RowMenu(props: {
 const GROW: CSSProperties = { flex: "1 1 auto" };
 
 /**
- * The row's Uses group (docs/design-v1-combat-controls.md 5): the
+ * The row's Uses group (docs/design/design-v1-combat-controls.md 5): the
  * creature's combat uses in their off-turn form, the same list as its
  * token bar's Uses drawer. Nothing for a creature with no use.
  */

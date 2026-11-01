@@ -23,7 +23,7 @@ import { movementRules, type MovementRules } from "./ruleHooks.ts";
 import { DM, P1, P2, room, token } from "./testutil.ts";
 
 /**
- * Wave 4's permissions (docs/design-v1-maps-vision.md 4.1): walls and ledges
+ * Wave 4's permissions (docs/design/design-v1-maps-vision.md 4.1): walls and ledges
  * stopping players' moves, teleports, squeezes, doors within reach, and the
  * redo of a move. The movement test is part 4B's, so these run on a stand-in
  * that the permissions only call: a wall along x = 10 and a ledge along
@@ -162,7 +162,7 @@ describe("doors", () => {
     // Another player's token opens nothing for them, and reaches nothing.
     assert.equal(decide({ t: "door.set", sceneId: "s1", door: { edge: "5,5,n" }, state: "open", by: "own" }, P2, state), `invalid: ${CHOOSE_OPENER}`);
     assert.equal(decide({ t: "door.set", sceneId: "s1", door: { edge: "5,5,n" }, state: "closed" }, P2, state), `forbidden: ${DOOR_TOO_FAR}`);
-    // An open names who opens it (docs/design-v1-traps.md 5.3).
+    // An open names who opens it (docs/design/design-v1-traps.md 5.3).
     assert.equal(decide({ t: "door.set", sceneId: "s1", door: { edge: "5,5,n" }, state: "open" }, P1, state), `invalid: ${CHOOSE_OPENER}`);
   });
 

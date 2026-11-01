@@ -176,7 +176,7 @@ async function continuable(kit: AuthKit, roomId: string): Promise<RosterEntry[]>
 
 /**
  * The colors the room's DMs use now, one per DM in join order, so the join
- * page can mark them as taken (docs/design-v1-visual.md 4.4). A DM can
+ * page can mark them as taken (docs/design/design-v1-visual.md 4.4). A DM can
  * change color, so the page cannot assume the yellow they start with.
  * Colors only: who the DMs are stays out of a step a player reaches with
  * the password alone.

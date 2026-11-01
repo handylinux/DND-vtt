@@ -8,7 +8,7 @@ import { CHANGED_SINCE } from "./misc.ts";
 import { WILD_SHAPE_ALONE, withShapeRules } from "../rules/pcStats.ts";
 import { DM, actor, apply, character, env, refused, room, token } from "../testutil.ts";
 
-/** A shape on a character's own actor (docs/design-v1-pc-stats.md 3.6). */
+/** A shape on a character's own actor (docs/design/design-v1-pc-stats.md 3.6). */
 
 function setup() {
   return room({

@@ -73,7 +73,7 @@ export function stepSceneLoad(load: SceneLoad, e: SceneLoadEvent): { load: Scene
  * The last map image the canvas finished with, by asset id. `loading` while
  * it fetches and decodes one. `swap` says the scene's previous image stays
  * on screen meanwhile: a map phase switch, or a new image for the scene on
- * screen (docs/design-v1-maps-vision.md section 3.4).
+ * screen (docs/design/design-v1-maps-vision.md section 3.4).
  */
 export type MapProgress = { assetId: string; state: "loading" | "drawn" | "failed"; swap?: boolean } | null;
 

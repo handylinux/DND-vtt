@@ -80,7 +80,7 @@ describe("version 5 size and place updates on the acting creature", () => {
 /** The second rule: a patch that set `srdId` alone kept an actor's `monsterId`, and ops stored at version 5 still do. */
 const at = (seq: number, opVersion?: number): Env => ({ ...env(seq), ...(opVersion === undefined ? {} : { opVersion }) });
 
-describe("version 5 ops on an actor's stat block links (docs/design-v1-companion-stat-blocks.md 3.2, rule 1)", () => {
+describe("version 5 ops on an actor's stat block links (docs/design/design-v1-companion-stat-blocks.md 3.2, rule 1)", () => {
   /** A companion the DM linked to a room monster through "Make a companion". */
   function moonHound(): RoomState {
     return room({

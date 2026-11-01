@@ -1,7 +1,7 @@
 import { ApiError, toApiError } from "../../lib/api.ts";
 
 /**
- * The admin page's routes (server/http/admin.ts, docs/design-v1-dm-tools.md
+ * The admin page's routes (server/http/admin.ts, docs/design/design-v1-dm-tools.md
  * 3.18). They answer 404 when the server has no ADMIN_PASSWORD_HASH, and
  * 401 without a live admin session. The shapes mirror the server's types,
  * which the client cannot import.

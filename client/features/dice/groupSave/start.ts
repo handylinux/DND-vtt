@@ -19,7 +19,7 @@ import { useGroupSaveStore } from "./store.ts";
  * Reads the tab's draft back once after a reload (5.10). The DM's alerts
  * column does it as the room opens, not only the Dice panel, so the ask a
  * kept page holds shows no card to open a second page from
- * (docs/design-v1-player-save-spell.md 3.3), and a start reads it first, so
+ * (docs/design/design-v1-player-save-spell.md 3.3), and a start reads it first, so
  * a kept page with rolls is never replaced unasked.
  */
 function restoreDraft(store: ReturnType<typeof useGroupSaveStore>, roomId: string): void {
@@ -49,7 +49,7 @@ export function useRestoreGroupSave(): void {
  * Whether the page sent anything: rolls, requests or its damage line. The
  * caster's roll an ask brought is not the page's own until the DM rolls or
  * the page sends anything, so opening an ask never asks to discard nothing
- * (docs/design-v1-player-save-spell.md 3.3).
+ * (docs/design/design-v1-player-save-spell.md 3.3).
  */
 export function sentAny(page: Pick<Page, "rolls" | "requests" | "damage">): boolean {
   return page.rolls.length > 0 || page.requests.length > 0 || (page.damage !== null && !page.damage.imported);

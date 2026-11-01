@@ -34,12 +34,12 @@ import { drawMap, drawPortrait } from "./placeholders.ts";
  * - `color=8e4ec6` gives the viewer that member color, to watch the accent follow it (lib/accent.ts).
  * - `text=1` puts board text at its worst: long names, packed crowds, long area and map labels.
  * - `melee=1` casts Spirit Guardians around Thorn with goblins in melee above and below him.
- * - `pcstats=1` gives Thorn a level and a stat block (docs/design-v1-pc-stats.md).
- * - `ask=save|check|two` opens a roll request for Thorn and Vex, Thorn Restrained and Blessed for a save, and `ask=saveends` a save-ends request of Thorn's with a rolled fail and a pending ask (docs/design-v1-roll-request.md 5, 1.1).
- * - `rolls=1` links the goblins to the SRD's Goblin Warrior, for the Dice panel's roll options (docs/design-v1-roll-options.md).
- * - `party=1` adds six players' characters with long names to the party, two of them off the scene (docs/design-v1-side-headers.md).
- * - `diceui=1` adds to `rolls=1` and `pcstats=1` save spells, riders, a long weapon name, the SRD's Owlbear and an Adult Red Dragon, and rolls in the log (docs/design-v1-dice-ui.md).
- * - `attach=1` puts a warhorse, a torch, a Grappled kobold and a cart beside Thorn, and a lantern and a dragged prisoner on Goblin 1 (docs/design-v1-attach.md). `attach=riding` also sits Thorn on the warhorse, controlled, with a saddlebag on it and a pack mule it drags, and gives the warhorse a row that shares his turn.
+ * - `pcstats=1` gives Thorn a level and a stat block (docs/design/design-v1-pc-stats.md).
+ * - `ask=save|check|two` opens a roll request for Thorn and Vex, Thorn Restrained and Blessed for a save, and `ask=saveends` a save-ends request of Thorn's with a rolled fail and a pending ask (docs/design/design-v1-roll-request.md 5, 1.1).
+ * - `rolls=1` links the goblins to the SRD's Goblin Warrior, for the Dice panel's roll options (docs/design/design-v1-roll-options.md).
+ * - `party=1` adds six players' characters with long names to the party, two of them off the scene (docs/design/design-v1-side-headers.md).
+ * - `diceui=1` adds to `rolls=1` and `pcstats=1` save spells, riders, a long weapon name, the SRD's Owlbear and an Adult Red Dragon, and rolls in the log (docs/design/design-v1-dice-ui.md).
+ * - `attach=1` puts a warhorse, a torch, a Grappled kobold and a cart beside Thorn, and a lantern and a dragged prisoner on Goblin 1 (docs/design/design-v1-attach.md). `attach=riding` also sits Thorn on the warhorse, controlled, with a saddlebag on it and a pack mule it drags, and gives the warhorse a row that shares his turn.
  */
 function readOptions() {
   const q = new URLSearchParams(location.search);

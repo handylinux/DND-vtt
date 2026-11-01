@@ -65,7 +65,7 @@ const NO_TRAPS = {};
 
 /**
  * How many of the desk's waiting things its summary words leave out
- * (docs/design-v1-visual.md 3.2.1): the words name the traps that went
+ * (docs/design/design-v1-visual.md 3.2.1): the words name the traps that went
  * off, else the asks for saves, else the roll requests, so the rest count
  * in the summary's "+N". "Dart plate went off +2" with two asks for saves
  * waiting, where the row once read "Dart plate went off" alone
@@ -78,26 +78,26 @@ export function deskUnnamed(counts: { traps: number; asks: number; cards: number
 }
 
 /**
- * The DM's side of request a roll (docs/design-v1-dm-tools.md 3.3): the
+ * The DM's side of request a roll (docs/design/design-v1-dm-tools.md 3.3): the
  * sheet, opened from the party bar or a token's action bar, and a live card
  * per open request in the fight alerts column, newest on top. Each card
  * lists every creature asked, "waiting" or its answer, with Pass and Fail
  * to mark a roll with no DC or to overrule, Reopen on an answer, and Close.
  * Loaded only for a DM.
  *
- * On a phone the cards follow the player's chips (docs/design-v1-visual.md
+ * On a phone the cards follow the player's chips (docs/design/design-v1-visual.md
  * 3.3.1): the newest two show, then one "Rolls d/a" disclosure for the
  * rest, since six folded cards covered most of the map. Under a sheet in
  * portrait the whole stack folds into one summary, which the dock on the
  * sheet's edge stands for.
  *
  * A player's ask for saves is a card above the live cards
- * (docs/design-v1-player-save-spell.md 3.3), counted with them in the
+ * (docs/design/design-v1-player-save-spell.md 3.3), counted with them in the
  * newest two and the summary, and it leads the dock's summary, since it
  * waits for the DM. The ask the open group save holds has no card until
  * that page is discarded.
  *
- * A trap that went off with something left for the DM (docs/design-v1-traps.md
+ * A trap that went off with something left for the DM (docs/design/design-v1-traps.md
  * 4.3) is a card above both, newest first, while its springing waits: it
  * waits for the DM too, so it leads the summary.
  */
@@ -172,7 +172,7 @@ export function DmDesk() {
     const settled = () => {
       if (afterClose.current === ask) afterClose.current = null;
     };
-    // "Close all answered" lets the server skip a request an ask or a reopen reached after the tap (docs/design-v1-roll-request.md 1.1).
+    // "Close all answered" lets the server skip a request an ask or a reopen reached after the tap (docs/design/design-v1-roll-request.md 1.1).
     const op = { t: "roll.close" as const, rollIds: [...ids], ...(by === "all" ? { ifSettled: true as const } : {}) };
     if (actions.dispatch(op, { onAnswer: settled }) === null) settled();
   };
@@ -186,7 +186,7 @@ export function DmDesk() {
     if (focusAlert(scope.get(dockSlot).getState().column, null)) return;
     focusMap(scope.get(mapFocusSlot));
   }, [cards, scope]);
-  // A player's ask to change a roll waits for the DM, so then the rolls lead the dock's summary (docs/design-v1-roll-request.md 6).
+  // A player's ask to change a roll waits for the DM, so then the rolls lead the dock's summary (docs/design/design-v1-roll-request.md 6).
   const asks = cards.reduce((n, c) => n + c.targets.filter((t) => t.change !== undefined).length, 0);
   const counted = answeredCount(cards);
   // An ask for saves waits for the DM too, so it leads: "Thorn asks for saves".
@@ -401,7 +401,7 @@ function TargetRow(props: { request: RollRequest; target: RollTarget; levelOf: L
           <MarkedText text={answerText} marks={answerMarks} />
         </RollResultLine>
         {answered(target) ? (
-          // It acts in place, so it reads as a quiet button rather than a link's accent (docs/design-v1-visual.md F24).
+          // It acts in place, so it reads as a quiet button rather than a link's accent (docs/design/design-v1-visual.md F24).
           <Button
             variant="quiet"
             size="sm"
@@ -426,7 +426,7 @@ function TargetRow(props: { request: RollRequest; target: RollTarget; levelOf: L
 }
 
 /**
- * Roll for a creature still waiting (docs/design-v1-roll-request.md 6),
+ * Roll for a creature still waiting (docs/design/design-v1-roll-request.md 6),
  * where Reopen stands on an answered row: shown only while the creature is
  * in the DM's view, so a token on a scene the DM is not viewing has none.
  * One with no stat block rolls with a bonus the DM types beside it, never

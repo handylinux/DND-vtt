@@ -3,7 +3,7 @@ import { theme } from "../lib/theme.ts";
 
 /**
  * A native checkbox at 22 px in a full-width row, so the whole line is the
- * 44 px target (docs/design-v1-visual.md 2.3 and 3.7). For picking several
+ * 44 px target (docs/design/design-v1-visual.md 2.3 and 3.7). For picking several
  * items in a list, a filter, and options of a form that a button then
  * submits: placing monsters, a journal page's secret block, a pin's DM
  * only, a roll request's "Players see" options. A setting that takes
@@ -15,7 +15,7 @@ import { theme } from "../lib/theme.ts";
  * differs across the selected tokens.
  *
  * `aria-disabled` keeps a tick that cannot be taken away now, such as the
- * last of a pick that cannot be left empty (docs/design-v1-look-pass-2.md
+ * last of a pick that cannot be left empty (docs/design/design-v1-look-pass-2.md
  * 2.7): the disabled look, and a click, Space or a tap that changes
  * nothing and leaves focus where it is. Native `disabled` would drop it
  * from the focus order, so a keyboard could neither reach it nor read the

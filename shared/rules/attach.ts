@@ -11,7 +11,7 @@ import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
 import { hexInScene, hexKey, hexNeighbors, type Hex, type HexGrid } from "./hex.ts";
 
 /**
- * Attached tokens (docs/design-v1-attach.md): a rider on a mount, a
+ * Attached tokens (docs/design/design-v1-attach.md): a rider on a mount, a
  * familiar on a shoulder, a torch in a hand, a grappled creature dragged
  * beside. The link lives on the carried token (`Token.attached`), and the
  * rules here are shared by the reducer, permissions and the client: which
@@ -24,7 +24,7 @@ import { hexInScene, hexKey, hexNeighbors, type Hex, type HexGrid } from "./hex.
  * once, and every group is bounded by its scene's tokens.
  *
  * Every rule that reads where tokens stand takes the scene's grid. On hexes
- * (docs/design-v1-hex-grids.md phase H2) a seat is a hex set inside the
+ * (docs/design/design-v1-hex-grids.md phase H2) a seat is a hex set inside the
  * holder's, two tokens overlap when they share a hex, reach counts hex
  * steps, and a place to get off is searched ring by ring of hexes.
  */
@@ -337,7 +337,7 @@ function at(token: PlacedToken, spot: Point): PlacedToken {
 export function getOffFits(g: Grid, settings: DistanceSettings, bounds: { w: number; h: number }, carried: FootprintToken, holder: FootprintToken, spot: Point & { elevation?: number }): boolean {
   const placed: FootprintToken = { ...at(carried, spot), elevation: spot.elevation ?? carried.elevation, ...(carried.height !== undefined ? { height: carried.height } : {}) };
   if (isHex(g)) {
-    // Inside the scene is every hex of it the scene's (docs/design-v1-hex-grids.md 4.2).
+    // Inside the scene is every hex of it the scene's (docs/design/design-v1-hex-grids.md 4.2).
     if (!fullHexes(g, placed).every((h) => hexInScene(g, bounds, h))) return false;
   } else {
     const r = fullRect(g, placed);
@@ -621,7 +621,7 @@ export function publicMembers(tokens: Tokens, tokenId: string, seen: SeenByAll, 
  * names, with the links between them. Refusals, limits, loops, the seat
  * and get-off checks and the walls test read only these, since every
  * viewer misses an op that is refused. Traps' limits and refusals take it
- * as this list (docs/design-v1-traps.md). Attach's own checks take the
+ * as this list (docs/design/design-v1-traps.md). Attach's own checks take the
  * same set as a test over the link graph: the reducer's and the Attach
  * list's `inGraph`, the named tokens and every token all players see.
  */

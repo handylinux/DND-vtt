@@ -8,7 +8,7 @@ import { chromium, type Browser, type BrowserContext, type CDPSession, type Loca
 import { ConsoleWatch, openSideTab, OpSocket, reopenRoom, Shots, SocketWatch, startServer, touchSwipe, waitFor, type Server } from "./harness.ts";
 
 /**
- * The side panel's compact headers (docs/design-v1-side-headers.md 11.2),
+ * The side panel's compact headers (docs/design/design-v1-side-headers.md 11.2),
  * on the real server serving the production build: every header row one
  * 45 px line of 44 px targets, the tab row and the bar between two panes
  * in one look, the folded party bar's one line whose chips scroll sideways
@@ -519,7 +519,7 @@ describe("raccoon-vtt: the side panel's compact headers", { timeout: 900_000 }, 
     await phone.close();
   });
 
-  test("ic2-sheet. a phone's sheet names its panel in its own header, and nothing draws a second name over it (docs/design-v1-icons-2.md 3.1)", async () => {
+  test("ic2-sheet. a phone's sheet names its panel in its own header, and nothing draws a second name over it (docs/design/design-v1-icons-2.md 3.1)", async () => {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, storageState: await dmContext.storageState() });
     try {
       const page = await context.newPage();

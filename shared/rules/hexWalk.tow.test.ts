@@ -12,8 +12,8 @@ import type { WalkRoute } from "./walk.ts";
 import { groupWalkWorld } from "./walkWorld.ts";
 
 /**
- * A creature dragged on a hex scene (docs/design-v1-attach.md 4.2 on
- * docs/design-v1-hex-grids.md phase H2): where walls stop moves, the way
+ * A creature dragged on a hex scene (docs/design/design-v1-attach.md 4.2 on
+ * docs/design/design-v1-hex-grids.md phase H2): where walls stop moves, the way
  * a drag finds for its holder is one the creature it drags beside it fits
  * through too, and the server's test of the dragged creature's legs
  * (permissions.ts draggedWalls) takes every route found.

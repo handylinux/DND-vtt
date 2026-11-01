@@ -8,7 +8,7 @@ import { footprint } from "../../lib/scene.ts";
 import type { Ended } from "../../state/types.ts";
 
 /**
- * A table display's rules (docs/design-v1-dm-tools.md 3.1), as pure
+ * A table display's rules (docs/design/design-v1-dm-tools.md 3.1), as pure
  * functions: the pairing code as people type it, the two camera modes, what
  * a tap does, and how a handout's pages step. The display's pages draw from
  * these.
@@ -55,7 +55,7 @@ export type DisplayMode = "follow" | "fit";
 /**
  * A DM device's visible map area: its center and size, in cells (the `view`
  * event). An Isometric DM's adds its turn and its canvas's size in view
- * units (docs/design-v1-isometric-view.md ISO-D17).
+ * units (docs/design/design-v1-isometric-view.md ISO-D17).
  */
 export type ViewRect = { x: number; y: number; w: number; h: number; iso?: { turn: number; vw: number; vh: number } };
 
@@ -193,7 +193,7 @@ export function refitAt(input: { target: Rect; applied: Rect | null; appliedAt: 
 export type Overlay = "handout" | "xcard" | null;
 
 /**
- * A handout of two or more pages on the display (docs/design-v1-pdf-handouts.md
+ * A handout of two or more pages on the display (docs/design/design-v1-pdf-handouts.md
  * 7): how many pages it has, the one showing, counted from 0, and whether its
  * bar of Previous page, Next page and Close shows.
  */

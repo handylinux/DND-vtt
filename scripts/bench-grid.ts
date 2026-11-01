@@ -1,6 +1,6 @@
 /**
- * Hex grids' rules rows of the performance gate (docs/design-v1-hex-grids.md
- * section 10, against docs/design.md 9.3's budget): the coverage of a
+ * Hex grids' rules rows of the performance gate (docs/design/design-v1-hex-grids.md
+ * section 10, against docs/design/design.md 9.3's budget): the coverage of a
  * 1,000 ft line at an angle, the worst bounded area, on a 200 by 200 scene,
  * graded per hex on hex rows and hex columns, beside the same line on
  * squares, open and walled (9.3's own worst case, bench-vision.ts

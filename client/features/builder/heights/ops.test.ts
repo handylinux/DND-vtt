@@ -67,7 +67,7 @@ describe("reading the view", () => {
     assert.deepEqual(paintCells(view(), "s1", ["0,0", "1,0"], { paint: "stairs", height: 10, stairs: "n" }), [{ t: "build.stairs", sceneId: "s1", cells: ["1,0"], up: "n" }]);
   });
 
-  test("difficult ground compares against the stored marks, marking or clearing (docs/design-v1-movement.md 3.4)", () => {
+  test("difficult ground compares against the stored marks, marking or clearing (docs/design/design-v1-movement.md 3.4)", () => {
     const marked = view();
     marked.buildChunks["s1:0,0"] = { ...marked.buildChunks["s1:0,0"]!, rough: "d" + ".".repeat(255) };
     assert.deepEqual(paintCells(marked, "s1", ["0,0", "1,0"], { paint: "rough", height: 10, stairs: "a", rough: "mark" }), [{ t: "build.rough", sceneId: "s1", cells: ["1,0"], on: true }]);

@@ -16,7 +16,7 @@ const EMPTY: Record<string, Token> = {};
 const NO_SPOTS: Readonly<Record<string, { x: number; y: number }>> = {};
 
 /**
- * Who holds whom at the table (docs/design-v1-attach.md 4.4): a thin
+ * Who holds whom at the table (docs/design/design-v1-attach.md 4.4): a thin
  * dashed line from each dragged creature's center to its holder's, in the
  * holder's ring color at half opacity, on the board layer under the
  * tokens. It is drawn again only when the tokens change or a drag on this
@@ -26,11 +26,11 @@ const NO_SPOTS: Readonly<Record<string, { x: number; y: number }>> = {};
  * In Isometric the tethers lie on the ground stage under the fog, and one
  * with an end on a token being dragged leaves it for the drag's moving
  * marks until the drop (canvas/DragMarks.tsx), so a drag never redraws the
- * ground (docs/design-v1-isometric-view.md 5.1).
+ * ground (docs/design/design-v1-isometric-view.md 5.1).
  *
  * The DM's falling off reminder (4.5) runs in the board's tether controller
  * (TetherController.ts), mounted once outside both drawing trees
- * (docs/design-v1-isometric-view.md 5.1).
+ * (docs/design/design-v1-isometric-view.md 5.1).
  */
 export const TetherLayer = memo(function TetherLayer(props: LayerProps) {
   const iso = useIsoGround();

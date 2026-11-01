@@ -164,7 +164,7 @@ test("fl15: every SRD stat block draws its own Markdown and outlines the saves t
 });
 
 /*
- * The grid while its boxes roll (docs/design-v1-stat-block-rolls.md 3): a
+ * The grid while its boxes roll (docs/design/design-v1-stat-block-rolls.md 3): a
  * group of six buttons that look as the text boxes do. A grid with no
  * creature to roll for stays the `<dl>` FL-15 drew.
  */

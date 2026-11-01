@@ -11,7 +11,7 @@ import type { LocalUi, Opening } from "./types.ts";
  * hover, so "Multi-select" is a mode: while it is on, a tap adds a token
  * or takes it out again, and a tap on empty map hides the group's bar and
  * keeps the group, so the tokens under the bar can be tapped
- * (docs/design-v1-bar-dock.md section 3). On a desktop, Shift or Ctrl (Cmd
+ * (docs/design/design-v1-bar-dock.md section 3). On a desktop, Shift or Ctrl (Cmd
  * on a Mac) with a click does the same without the mode (addsToSelection).
  * `selectedId` is always the last token of `selectedIds`: the one the
  * single-token views (its panel, the area tool's caster) show.
@@ -41,7 +41,7 @@ export function tapToken(local: LocalUi, tokenId: string | null, add = false): L
 }
 
 /**
- * A tap again in the isometric view (docs/design-v1-isometric-view.md
+ * A tap again in the isometric view (docs/design/design-v1-isometric-view.md
  * 6.2): `stack` is every standee under the press, front to back. A tap
  * that lands on the selected one, where others lie under the press too,
  * selects the next one behind it, round to the front again, so a creature
@@ -120,7 +120,7 @@ export function doneSelecting(local: LocalUi): LocalUi {
  * as after Details or with the side panel on its Token tab: there Escape
  * leaves the panel and the group alone, and Done is the way out.
  *
- * "token" is Escape's alone (docs/design-v1-token-panel.md 3.3): with no
+ * "token" is Escape's alone (docs/design/design-v1-token-panel.md 3.3): with no
  * bar showing, a token selected and Multi-select off, Escape lets go of
  * it, so the keyboard always has a way to deselect before H, L, Delete or
  * the arrow keys act on a token no longer in view. Not while a map pane
@@ -138,7 +138,7 @@ export function dismissal(local: LocalUi, tokenPanelShown: boolean, mapPaneOpen 
 
 /**
  * What the single token's bar does on its Close (the dock's too), Escape
- * and Back (docs/design-v1-token-panel.md 3.3): while the token's panel
+ * and Back (docs/design/design-v1-token-panel.md 3.3): while the token's panel
  * shows that token, it hides and keeps the selection, so the panel the DM
  * is reading stays filled. Elsewhere it lets go, as it always has. A
  * group's bar is unchanged: it lets go of all of them.

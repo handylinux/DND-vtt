@@ -60,7 +60,7 @@ export function seenOnLoad(handouts: Record<string, Handout | undefined>, open: 
 
 /**
  * Whether the handout popup shows now. The X-card is never covered
- * (docs/design-v1-dm-tools.md 3.11): both are modal dialogs, and the one
+ * (docs/design/design-v1-dm-tools.md 3.11): both are modal dialogs, and the one
  * opened last draws on top, so a handout that would open or reopen while a
  * card shows (the DM shows one, or a pause ends) waits until the card is
  * dismissed. A popup already open stays open, under the card that opened
@@ -103,14 +103,14 @@ export function audienceText(to: Handout["to"], members: Record<string, Member |
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
-/** One image by its id, as every handout from before PDFs, or a document's pages in order (docs/design-v1-pdf-handouts.md 8.2). */
+/** One image by its id, as every handout from before PDFs, or a document's pages in order (docs/design/design-v1-pdf-handouts.md 8.2). */
 export type ShowInput = { id: string; title: string; audience: "all" | string[] } & ({ assetId: string } | { pages: readonly HandoutPage[] });
 
 /**
  * Why a handout's title cannot be used yet, in words for beside its field,
  * or null when it can. The protocol's own `name` rule decides, so a title
  * counts code points as the server does: 80 dragons pass wherever a title
- * is typed, saved or shown (docs/design-v1-pdf-handouts.md 3.3).
+ * is typed, saved or shown (docs/design/design-v1-pdf-handouts.md 3.3).
  */
 export function titleProblem(title: string): string | null {
   if (title.trim() === "") return "Give the handout a title.";
@@ -142,7 +142,7 @@ export function showHandoutOp(input: ShowInput): { ok: true; op: Extract<ClientO
 /**
  * A page's one name, wherever it is read: its image's `alt`, or its
  * placeholder's label before it loads, "Strange letter, page 2 of 5"
- * (docs/design-v1-pdf-handouts.md 5.7). One image is named by the title alone.
+ * (docs/design/design-v1-pdf-handouts.md 5.7). One image is named by the title alone.
  */
 export function pageName(title: string, index: number, count: number): string {
   return count > 1 ? `${title}, page ${index + 1} of ${count}` : title;
@@ -152,7 +152,7 @@ export function pageName(title: string, index: number, count: number): string {
  * Every page of a handout or a document, as the viewer takes them: each
  * named once ("Strange letter, page 2 of 5"), laid out at its size before
  * it loads, and with its thumb, which stands in while a slow link brings
- * the full image (docs/design-v1-pdf-handouts.md 5.4). The DM panel, the
+ * the full image (docs/design/design-v1-pdf-handouts.md 5.4). The DM panel, the
  * Library and the players' popup all give the viewer the same pages.
  */
 export function viewerPagesOf(title: string, pages: readonly { assetId: string; width?: number; height?: number }[], url: (assetId: string, variant: "full" | "thumb") => string): ViewerPage[] {

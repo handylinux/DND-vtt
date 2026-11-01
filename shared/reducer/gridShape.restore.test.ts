@@ -7,7 +7,7 @@ import { applyOp, type ApplyResult } from "../reducer.ts";
 import { env, member, room, token, trap } from "../testutil.ts";
 
 /*
- * A restore keeps the grid shape's invariant (docs/design-v1-hex-grids.md
+ * A restore keeps the grid shape's invariant (docs/design/design-v1-hex-grids.md
  * HX-D14), by its stamp check, its phase check and the check of a scene it
  * changes the shape of, and a switch, its undo and its redo reproject (HX-D21).
  */

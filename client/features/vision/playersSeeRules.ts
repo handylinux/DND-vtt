@@ -5,7 +5,7 @@ import { LIGHT_LEVELS, lightOf, SIGHT_CHOICES, sightOf, visionPatch } from "./se
 
 /**
  * "Players see", one choice of what players get of a scene
- * (docs/design-v1-map-discovery.md 8.1), as plain functions for node
+ * (docs/design/design-v1-map-discovery.md 8.1), as plain functions for node
  * --test. Which choice a scene is on, and the choices' names, live in
  * shared/playersSee.ts, which the server's undo names read too.
  */

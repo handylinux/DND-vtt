@@ -59,7 +59,7 @@ import { sceneGrid } from "#shared/rules/grid.ts";
  * it, even inside a placed area (caster.ts), a tap on the map places it
  * there, and a tap on a placed area's open ground picks it for editing. A
  * player's new area starts from their saved choice, the From control's
- * (docs/design-v1-area-from-character.md). While a draft is out:
+ * (docs/design/design-v1-area-from-character.md). While a draft is out:
  *
  * - A token tapped becomes what a cone, line, cube or emanation starts from
  *   (for Ice Knife, its target). A sphere or cylinder goes on the token.
@@ -408,7 +408,7 @@ export function pickTemplate(scope: RoomScope, id: string, actions: RoomActions)
 }
 
 /**
- * For a trap's pane (docs/design-v1-traps.md 4.1): aim the area a trap hits
+ * For a trap's pane (docs/design/design-v1-traps.md 4.1): aim the area a trap hits
  * with the area tool's shapes and handles. The draft starts as the trap's
  * own area, and the tool's Save puts it back into the trap.
  */

@@ -6,7 +6,7 @@ import type { RoomState, Scene } from "#shared/model.ts";
 import { room, scene } from "#shared/testutil.ts";
 
 /*
- * Players see where a scene is made (docs/design-v1-map-discovery.md 8.1
+ * Players see where a scene is made (docs/design/design-v1-map-discovery.md 8.1
  * and 8.2): the new scene form's and the Universal VTT dialog's group, and
  * the copy's button at the end of a scene's group.
  */

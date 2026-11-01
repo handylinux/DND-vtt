@@ -23,7 +23,7 @@ import { parseParts } from "../groupSave/outcome.ts";
 import type { CastBlock, OptionState } from "../optionState.ts";
 
 /**
- * A player's ask for saves (docs/design-v1-player-save-spell.md 3.1 and
+ * A player's ask for saves (docs/design/design-v1-player-save-spell.md 3.1 and
  * 3.2): what the block reads from the player's own view, the op it sends,
  * and the sends it keeps until each settles. The block rolls the damage
  * first, on the same socket, so the server copies that roll into the ask.
@@ -81,7 +81,7 @@ export function areaAskSpec(input: {
  *
  * Each opening takes the next stamp from the option store's count, so the
  * Dice panel's folds tell a reopened block of the same spell from the one
- * before it and open its group again (docs/design-v1-dice-pass.md 6.4).
+ * before it and open its group again (docs/design/design-v1-dice-pass.md 6.4).
  * The count comes from the caller's state, which is why every opener
  * passes it.
  */
@@ -137,7 +137,7 @@ export function areaPresetOf(spell: string): AreaSpell | undefined {
 export function fillRolls(spell: string, damage: string, creature: ActorTarget): PanelRoll[] {
   const parsed = parseParts(damage);
   if (!parsed.ok) return [];
-  // Each roll names its type, as a row's Damage does, for the HP entry's types (docs/design-v1-combat-controls.md 3.4).
+  // Each roll names its type, as a row's Damage does, for the HP entry's types (docs/design/design-v1-combat-controls.md 3.4).
   return parsed.parts.flatMap((p) => ("formula" in p ? [{ formula: p.formula, label: cutLabel(`${spell} damage${p.type ? `, ${damageTypeName(p.type)}` : ""}`), creature, ...(p.type ? { type: p.type } : {}) }] : []));
 }
 

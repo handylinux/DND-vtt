@@ -5,7 +5,7 @@ import { boxStands } from "../../canvas/relief/stand.ts";
 import type { FogView } from "../../canvas/relief/fogView.ts";
 
 /**
- * A map label's displayed bounds (docs/design-v1-isometric-view.md 6.2),
+ * A map label's displayed bounds (docs/design/design-v1-isometric-view.md 6.2),
  * the one shape that drawing, the stand rule, a tap and the label pane all
  * read. In Top-down it is the flat box the text draws in (shared/rules
  * labels.ts labelBox, measured on a canvas). In Isometric a label stands

@@ -10,7 +10,7 @@ import { readResources, resourceHash } from "./resourceSync.ts";
 import { actor } from "../testutil.ts";
 
 /**
- * The class resources' merge (docs/design-v1-ddb-resources.md 4): one row
+ * The class resources' merge (docs/design/design-v1-ddb-resources.md 4): one row
  * per case of 4.2, the counts spent of 4.3, the levels of 4.4, and the
  * findings the note names one by one. The randomized invariants are in
  * pcSync.random.test.ts.

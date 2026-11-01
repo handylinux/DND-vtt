@@ -140,7 +140,7 @@ describe("the pages", () => {
 });
 
 /*
- * The viewer's states (docs/design-v1-layout-hierarchy.md 5.1), on a
+ * The viewer's states (docs/design/design-v1-layout-hierarchy.md 5.1), on a
  * computer at 1280 x 800 with a wide picture, 2000 x 1000. The card's
  * stage is 720 x 600, which fits the picture at 0.36. The window's stage
  * is 1280 x 740, which fits it at 0.64.
@@ -419,7 +419,7 @@ describe("keys", () => {
 });
 
 /*
- * Several pages (docs/design-v1-pdf-handouts.md section 5): a phone's
+ * Several pages (docs/design/design-v1-pdf-handouts.md section 5): a phone's
  * whole-screen stage of 390 x 700, and round 2's mixed heights, pages
  * about 390, 301, 390 and 390 px tall at the width fit.
  */

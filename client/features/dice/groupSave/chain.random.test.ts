@@ -56,7 +56,7 @@ const NOW = parseInt("0192f0a86c1e", 16) + 60 * 60 * 1000;
 
 /**
  * The group save's page over many random orders of events
- * (docs/design-v1-roll-options.md 11, "Randomized"): batches landing,
+ * (docs/design/design-v1-roll-options.md 11, "Randomized"): batches landing,
  * refused or unknown, answers, reopens, live-card marks, the DM's waiting
  * Roll landing or refused, requests closed elsewhere, creatures deleted,
  * the DC changed, marks and amounts, Apply, its answer taken, refused or
@@ -564,7 +564,7 @@ test("the server rolls carry the DC in the open only while players see it, and a
 });
 
 /**
- * A player's ask for saves through the DM's page (docs/design-v1-player-save-spell.md
+ * A player's ask for saves through the DM's page (docs/design/design-v1-player-save-spell.md
  * 3.3 and 8), over random orders: Open from the card (replacing a page that
  * holds rolls, or not), the roll and its requests, marks, Apply and its
  * answer taken, refused or lost, Apply again, Close the ask and its answer,

@@ -2,7 +2,7 @@ import { CHUNK_CELLS, type AutoWalls, type BuildChunk, type Scene, type SceneId,
 import { markIn } from "./heights.ts";
 
 /**
- * Automatic walls (docs/design-v1-maps-vision.md section 2.1): the one
+ * Automatic walls (docs/design/design-v1-maps-vision.md section 2.1): the one
  * predicate that decides whether an edge between two cells gets a wall
  * nobody drew. Wall derivation (rules/walls.ts) and the secret door
  * projection (project.ts) both ask it, so a hidden door never shows players

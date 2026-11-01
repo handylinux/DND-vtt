@@ -11,7 +11,7 @@ import { ConsoleWatch, dragCells, openSideTab, OpSocket, Shots, SocketWatch, sta
  * Older features on a wave 4 build that the live play review after wave 4
  * found broken (LP4-REGRESS): a DM on a desktop and a player on a phone.
  * The same two also carry the member color picker's round trip
- * (docs/design-v1-visual.md 5.3), and where focus starts on the join's
+ * (docs/design/design-v1-visual.md 5.3), and where focus starts on the join's
  * second step (LPD-DESK-9).
  *
  * It runs with `pnpm test:e2e` on its own port: E2E_PORT plus three. The
@@ -214,7 +214,7 @@ describe("raccoon-vtt older features on a wave 4 build", { timeout: 180_000 }, (
   });
 
   test("3. the phone's Panels button keeps its name while it counts unread messages (LP4-REGRESS-4)", async () => {
-    // The Dice tab took the Log's place in the row, so the Log may stand behind More (docs/design-v1-dice.md 8.1).
+    // The Dice tab took the Log's place in the row, so the Log may stand behind More (docs/design/design-v1-dice.md 8.1).
     await openSideTab(dm, "Log");
     await dm.getByLabel("Message").fill("Roll initiative");
     await dm.getByRole("button", { name: "Send" }).click();

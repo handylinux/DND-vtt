@@ -213,7 +213,7 @@ describe("preview to template", () => {
     assert.equal(draftTemplate(SQUARES, draft({ shape: "emanation", size: 10, fromId: "thorn", attached: true }), tokens, 5)!.footprint, undefined);
   });
 
-  test("how a spell slows movement goes from its preset to the template and back to a copy (docs/design-v1-movement.md 3.5)", () => {
+  test("how a spell slows movement goes from its preset to the template and back to a copy (docs/design/design-v1-movement.md 3.5)", () => {
     const guardians = presetDraft(spell("Spirit Guardians"), draft(), "thorn");
     assert.deepEqual(guardians.slows, { kind: "halfSpeed", foes: true });
     const t = draftTemplate(SQUARES, guardians, tokens, 5)!;
@@ -374,7 +374,7 @@ describe("preview to template", () => {
     assert.equal(d.includeOrigin, false);
   });
 
-  test("off, a shape change, then on comes back from the same creature (docs/design-v1-area-from-character.md 3.4)", () => {
+  test("off, a shape change, then on comes back from the same creature (docs/design/design-v1-area-from-character.md 3.4)", () => {
     // From off: no caster, but the creature to turn on again.
     const off = draft({ shape: "cone", point: { x: 4, y: 4, z: 0 }, lastCaster: "thorn" });
     const line = withShape(off, "line");
@@ -563,7 +563,7 @@ describe("the grips on an area", () => {
   });
 });
 
-describe("placing areas on a hex scene (docs/design-v1-hex-grids.md HX-D11)", () => {
+describe("placing areas on a hex scene (docs/design/design-v1-hex-grids.md HX-D11)", () => {
   for (const orient of ["rows", "columns"] as const) {
     const g: HexGrid = { shape: "hex", orient };
     const on = (id: string, size: AreaToken["size"], hex: { col: number; row: number }) => tok(id, { size, ...placedOnHex(g, { size, x: 0, y: 0 }, hex) });

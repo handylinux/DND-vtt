@@ -2,7 +2,7 @@
 
 Status: decided by the project owner on 2026-10-18 (section 12): 3D dice, with a choice of dice sets. Revised after design review round 1, and built: `client/features/dice/throw/` holds the code. The prototypes it cites ran against the dev room from outside the repository.
 
-The project owner asked on 2026-10-17, in the dice UI request: "A roll animation would also be cool but can be done after these changes." And on 2026-10-18: "Also did we ever get around to dice animations?" The dice UI pass shipped and kept a place for it (docs/design-v1-dice-ui.md 4.7), which this design read as a starting sketch, not a decision.
+The project owner asked on 2026-10-17, in the dice UI request: "A roll animation would also be cool but can be done after these changes." And on 2026-10-18: "Also did we ever get around to dice animations?" The dice UI pass shipped and kept a place for it (docs/design/design-v1-dice-ui.md 4.7), which this design read as a starting sketch, not a decision.
 
 ## 1. Summary
 
@@ -33,7 +33,7 @@ C keeps from the B work the tray under the header line (on the map the dice land
 
 - **A roll tapped in the Dice panel.** Every way a panel control rolls carries its origin, `{ surface: "dice", element, tapAt }`: `useDicePanel().roll` (the formula field and Roll, the roll options), `again` (the header line's Again, Recent rolls' Again) and `noted` (a request's answer or a death save sent from the panel). All three register the tag with the store through one helper, `registerThrow(tag, origin)`. `useRollOption(…, surface)` takes the surface as an argument: RollOptions passes `"dice"`, and the tracker's `Row.tsx` passes nothing, so the tracker's Roll never throws, even with Dice open beside it.
 - **One tap, one creature.** A tap's rolls for one creature throw together, up to the cap: a damage of two types, a damage with a rider, an attack's d20. A tap for several creatures (the DM's several-token options) shows at once.
-- **Only a commit this panel saw coming.** The throw starts when that tag's receipt turns `committed` (`useReceipt`, docs/design-v1-dice.md 8.7), with the panel mounted at the tap and still mounted. A commit seen before the panel mounted, a refusal, `unknown`, `checking`, an offline tap, a formula that no longer parses, and a preview (View as a player, `usePreview()`) never throw.
+- **Only a commit this panel saw coming.** The throw starts when that tag's receipt turns `committed` (`useReceipt`, docs/design/design-v1-dice.md 8.7), with the panel mounted at the tap and still mounted. A commit seen before the panel mounted, a refusal, `unknown`, `checking`, an offline tap, a formula that no longer parses, and a preview (View as a player, `usePreview()`) never throw.
 - **The dice are the result's faces**: `throwDice(result)`, in `throw/layout.ts` with no three, pairs each face in `faces` with its die by `rolledTerms`, and marks the kept ones by `keptFaces`, as `faceChips` does. The store and the tray take the dice count and "+N" from it.
 
 ### 3.2 Landing on the face
@@ -92,7 +92,7 @@ The prototype ran the rule at 320 x 568 at 100% and 130%, and at 390 x 844 at 13
 
 ### 3.5 Interruptions
 
-The throw ends, and the result shows, at once on: a tap or key down anywhere in the panel, a newer panel roll, the panel closing or switching away, the group save page opening, the pane resizing (a rotation, a split moved, a sheet dragged, the keyboard), the page going hidden, reduced motion or Low power turning on, or a lost WebGL context. The dice go without fading. A result still held back as the panel or its header line goes was never seen, so it goes to the own roll's toast (docs/design-v1-dice.md 8.7 rule 3), as a roll whose panel closed before its answer does.
+The throw ends, and the result shows, at once on: a tap or key down anywhere in the panel, a newer panel roll, the panel closing or switching away, the group save page opening, the pane resizing (a rotation, a split moved, a sheet dragged, the keyboard), the page going hidden, reduced motion or Low power turning on, or a lost WebGL context. The dice go without fading. A result still held back as the panel or its header line goes was never seen, so it goes to the own roll's toast (docs/design/design-v1-dice.md 8.7 rule 3), as a roll whose panel closed before its answer does.
 
 - **The tap or key still does its job.** The panel's root listens in the capture phase and never calls `preventDefault` or stops the event.
 - **Nothing moves under a finger.** Showing the result adds Recent rolls' new row at the top and moves every row under it, and iOS Safari hit-tests the click after such a move. So for a pointer, `pointerdown` only removes the dice, and the held header result and Recent rolls row show on the panel's capture-phase `click`, which comes after the browser has chosen its target. A `pointercancel`, or a `pointerup` with no `click` within 300 ms (a scroll, a drag), shows them then. A key shows them on `keydown`.
@@ -106,8 +106,8 @@ The throw ends, and the result shows, at once on: a tap or key down anywhere in 
 | A roll tapped in the Dice panel, one creature or none (3.1) | The throw, then the header line |
 | A tap for several creatures, the tracker's Roll, a group save, auto initiative | No throw. Results at once in their places |
 | Your secret roll (Secret pressed, or a DM's roll for a monster) | The throw on your device only, which already shows its numbers |
-| Someone's secret roll, as another player sees it | The bare line's words only, "Mara rolled in secret". No die, not even a shape: the projection sends no rolls (`rolls: []`, docs/design-v1-dice.md 5.2), and only this device's own tags throw |
-| A hidden creature's roll, or an initiative players did not know | Nothing for other players: the roll never reaches them (docs/design-v1-combat-flow.md 11.3) |
+| Someone's secret roll, as another player sees it | The bare line's words only, "Mara rolled in secret". No die, not even a shape: the projection sends no rolls (`rolls: []`, docs/design/design-v1-dice.md 5.2), and only this device's own tags throw |
+| A hidden creature's roll, or an initiative players did not know | Nothing for other players: the roll never reaches them (docs/design/design-v1-combat-flow.md 11.3) |
 | Others' rolls | No flying dice. Their toast, or their Recent rolls row, lands at once as today. A toast of one d20 test (attack, save, check, initiative) leads with a flat d20 icon showing the kept face. A natural 20, or a critical hit against an AC, rings once in the accent. The toast carries `rollVerdict`'s words as hidden text for a screen reader (`logic.ts`, where it moved from `RecentRolls.tsx` so the toasts need none of that panel's code): against an AC "Critical Hit" (on 20, or on 18 or 19 in a wider range, by `hitOf`), "Hit" or "Miss", and otherwise "Natural 20" or "Natural 1" with any "Pass" or "Fail". A natural 1's icon is outlined in `danger` |
 | A card's Roll: the request card, concentration, save ends, recharge | No throw. The result at once, as today. A player who wants dice can answer from the Dice panel, whose "Asked" cells send the answer |
 | Advantage or Disadvantage | Both d20s fly. The dropped one dims to 42% after landing, as its chip is struck |
@@ -251,7 +251,7 @@ One build, one review, seven commits:
 4. `feat(device): the roll animation switch and the dice set picker`: `features/device/settings.ts` (`rvtt.rollAnimation` and `rvtt.diceSet`), `throw/sets.ts` (9.1, plain data), `features/device/DiceSetPicker.tsx` and `ThisDevice.tsx` (at the end of Rolls), with Low power's help.
 5. `feat(dice): others' d20 rolls show their die in the toast`: `useRollToasts.ts`, `Toast` in `client/state/types.ts` and `notify` in `store.ts` take an optional die, and `ToastNote` in `pages/Room.tsx` draws the icon, `aria-hidden`, with `rollVerdict`'s words as hidden text.
 6. `test(e2e): the roll animation`: the `ra-` steps and dice.e2e's launch flags.
-7. `docs: the roll animation in FEATURES.md, the shortcuts and the guides`: FEATURES.md's Dice section, This device's switch and picker, and Low power. `state/shortcuts.ts` gains the Dice entry "Any tap or key during a throw: show the result at once, then do its own job", with FEATURES.md's shortcut list in the same commit. design.md's quote of Low power's help, the DM guide's Dice section, and a one-line pointer to this note in docs/design-v1-dice-ui.md 4.7.
+7. `docs: the roll animation in FEATURES.md, the shortcuts and the guides`: FEATURES.md's Dice section, This device's switch and picker, and Low power. `state/shortcuts.ts` gains the Dice entry "Any tap or key during a throw: show the result at once, then do its own job", with FEATURES.md's shortcut list in the same commit. design.md's quote of Low power's help, the DM guide's Dice section, and a one-line pointer to this note in docs/design/design-v1-dice-ui.md 4.7.
 
 Untouched: the ops, the server, the receipt flow, every card, the group save page, the tracker's look, the map and the CSP.
 

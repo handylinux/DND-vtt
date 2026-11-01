@@ -8,7 +8,7 @@ import { addDue, dmLine, orderedBy, PIT_ACTION, pitOpens, plainList, playersLine
 import { gone, Refuse, type Env, type Tx } from "./tx.ts";
 
 /*
- * The trap step (docs/design-v1-traps.md 5 and 13.2): what sets traps off
+ * The trap step (docs/design/design-v1-traps.md 5 and 13.2): what sets traps off
  * in an op, planned from the room before it and the op alone, and what
  * they write once dispatch has moved everything. The plan reads only the
  * op and stored state, so replay and every server plan the same.

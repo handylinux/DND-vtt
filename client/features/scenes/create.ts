@@ -39,7 +39,7 @@ export function nameFromFile(fileName: string): string {
 
 /**
  * Every scene made from wave 4 on stops players' moves at its walls and
- * ledges (`blockMovement`, docs/design-v1-maps-vision.md 4.1). Scenes from
+ * ledges (`blockMovement`, docs/design/design-v1-maps-vision.md 4.1). Scenes from
  * before keep moving freely until the DM turns it on, so nothing changes
  * mid-campaign without the DM choosing it.
  */
@@ -51,7 +51,7 @@ function shaped(gridShape: GridShape | undefined): { gridShape?: GridShape } {
 }
 
 /**
- * The grid a new scene of a kind starts on (docs/design-v1-hex-grids.md
+ * The grid a new scene of a kind starts on (docs/design/design-v1-hex-grids.md
  * HX-D19): a Battle mat or a Map image on the room's New scenes setting,
  * a Builder scene, a starter map and a Universal VTT import on squares,
  * since the builder's core tools, the starter art and the file's walls are
@@ -120,7 +120,7 @@ export function initialMap(asset: MapAsset, hex = false): { map: SceneMap; hinte
  *
  * Automatic walls go around floor only: on a map image the art is the
  * floor, so water, stairs or difficult ground painted over it are notes on
- * the art and must not wall themselves in (docs/design-v1-maps-vision.md
+ * the art and must not wall themselves in (docs/design/design-v1-maps-vision.md
  * section 2.1). The reducer never infers the rule, so this op says it. A
  * blank mat or a builder scene says nothing and keeps the older rule.
  */
@@ -147,7 +147,7 @@ export type NewSceneKind = "mat" | "map" | "builder" | "uvtt";
 
 /**
  * What players see on a new scene until the DM picks otherwise
- * (docs/design-v1-map-discovery.md 8.2): the room's default, except that a
+ * (docs/design/design-v1-map-discovery.md 8.2): the room's default, except that a
  * map image or starter map steps down from Explore to Reveal by hand, since
  * sight with no walls reaches all its art. A room that never set one keeps
  * each kind's older start: maps and the builder under fog, mats without.

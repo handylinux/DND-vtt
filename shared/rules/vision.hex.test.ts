@@ -13,7 +13,7 @@ import { sceneWalls } from "./walls.ts";
 
 /**
  * Sight on hexes reads the sub-cells inside a creature's hexes
- * (docs/design-v1-hex-grids.md HX-D10), never its rectangle: the raster,
+ * (docs/design/design-v1-hex-grids.md HX-D10), never its rectangle: the raster,
  * the tiles a device holds and the point query a sweep's moment asks all
  * answer alike.
  */

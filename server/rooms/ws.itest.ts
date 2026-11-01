@@ -503,7 +503,7 @@ describe("websocket: rates", () => {
   });
 });
 
-describe("websocket: the largest DM snapshot on a slow device (docs/design-v1-companion-stat-blocks.md 3.4)", () => {
+describe("websocket: the largest DM snapshot on a slow device (docs/design/design-v1-companion-stat-blocks.md 3.4)", () => {
   let t: Engine;
   before(async () => {
     // A short hold, so a socket over its send-buffer limit would be closed well within the test.

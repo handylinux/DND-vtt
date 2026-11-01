@@ -1,6 +1,6 @@
 /**
  * Which of the side panel's tabs stand in its one row
- * (docs/design-v1-panel-tabs.md 3.2). The row holds a prefix of the
+ * (docs/design/design-v1-panel-tabs.md 3.2). The row holds a prefix of the
  * registry's order, as many as fit, and More at its end holds the rest.
  * Nothing counts use and nothing moves a tab: the result depends only on
  * the widths measured on this device and the room the row has.
@@ -26,7 +26,7 @@ export const MORE_CAP = 92;
 /** The gap between two tabs, and before More. */
 export const TAB_GAP = 2;
 
-/** The gap before a group's first tab, between tabs in the row (docs/design-v1-layout-hierarchy.md M3). */
+/** The gap before a group's first tab, between tabs in the row (docs/design/design-v1-layout-hierarchy.md M3). */
 export const GROUP_GAP = 8;
 
 export type TabWidths = {
@@ -90,7 +90,7 @@ export function nameCut(fit: TabFit, w: TabWidths, index: number): boolean {
   return tab !== undefined && index >= fit.count && tab.more > fit.moreRoom;
 }
 
-/** How the row draws its tabs (docs/design-v1-icons-2.md 3.1): each panel's icon before its name, or its icon alone. */
+/** How the row draws its tabs (docs/design/design-v1-icons-2.md 3.1): each panel's icon before its name, or its icon alone. */
 export type TabLook = "named" | "icon";
 
 /** A tab that draws its icon alone: the 44 px touch target, at least as narrow as any named tab. */
@@ -124,7 +124,7 @@ export function rowNamesOpen(look: TabLook, held: boolean, moreCut: boolean): bo
 
 /**
  * Whether the side panel names the open panel above it
- * (docs/design-v1-panel-tabs.md 3.8, as docs/design-v1-icons-2.md 3.1
+ * (docs/design/design-v1-panel-tabs.md 3.8, as docs/design/design-v1-icons-2.md 3.1
  * amends it): where the row does not, on a touch pointer only, so a tap
  * never needs a long press to learn which panel is open. A computer shows
  * the name on hover and focus (first pass 3.2) and keeps the panel's height.

@@ -8,7 +8,7 @@ import { DM, actor, env, room, token } from "../testutil.ts";
 import { hpUndoRestore } from "./hpUndo.ts";
 
 /**
- * The two sets of damage types (docs/design-v1-combat-controls.md 3.4):
+ * The two sets of damage types (docs/design/design-v1-combat-controls.md 3.4):
  * `hurt`, what a creature took since its record's start, and the record's
  * `took`, what the window that start closed held. The note they feed is
  * advisory, so the sets only add types, Previous unions them back, and
@@ -52,7 +52,7 @@ function fight(state?: RoomState) {
   return f;
 }
 
-describe("damage types taken (docs/design-v1-combat-controls.md 3.4)", () => {
+describe("damage types taken (docs/design/design-v1-combat-controls.md 3.4)", () => {
   test("a hit of at least 1 adds its types once each, in the rules' order, and the next start closes them into its record", () => {
     const f = fight().start().run({ t: "encounter.next" }).run({ t: "encounter.next" });
     f.hit("troll", 7, ["slashing", "fire"]).hit("troll", 3, ["fire", "acid"]);

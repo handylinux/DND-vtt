@@ -8,7 +8,7 @@ import { EMPTY_PC_STATS } from "#shared/rules/pcStats.ts";
 import { actor, character } from "#shared/testutil.ts";
 
 /**
- * The review's markup (docs/design-v1-resync.md 3.3 and 3.6): its sections
+ * The review's markup (docs/design/design-v1-resync.md 3.3 and 3.6): its sections
  * are the only headings, each one able to take focus, a kept row is a group
  * named by its first line, a long list folds into its groups, and a bulk
  * toggle is named by its group.
@@ -93,7 +93,7 @@ describe("the review's markup", () => {
   });
 });
 
-describe("the review's spacing and chevrons (docs/design-v1-look-pass-2.md 2.5 and 3, lane 3)", () => {
+describe("the review's spacing and chevrons (docs/design/design-v1-look-pass-2.md 2.5 and 3, lane 3)", () => {
   const typed = () => bree({ ...empty(), spellAbility: "cha", abilities: { ...empty().abilities, wis: 12 } });
   const fill = () => fillOf({ spellAbility: "wis", abilities: { ...empty().abilities, wis: 16 } });
   const rowStyles = (html: string) => [...html.matchAll(/data-sync-row="[^"]+" style="([^"]+)"/g)].map((m) => m[1]);
@@ -119,7 +119,7 @@ describe("the review's spacing and chevrons (docs/design-v1-look-pass-2.md 2.5 a
   });
 });
 
-describe("the review's class resources (docs/design-v1-ddb-resources.md 6.1 and 6.3)", () => {
+describe("the review's class resources (docs/design/design-v1-ddb-resources.md 6.1 and 6.3)", () => {
   const rage = { name: "Rage", max: 3, reset: "shortOne" as const, preset: "barbarian-rage", level: 3, classId: "barbarian" as const, used: 0 };
   const withResources = (fill: PcFill, resources: NonNullable<PcFill["resources"]>): PcFill => ({ ...fill, read: { weapon: true, spell: true, other: true, resource: true }, resources });
   function synced(): Character {

@@ -1,7 +1,7 @@
 import { LIMITS } from "../limits.ts";
 
 /**
- * The dice grammar (docs/design-v1-dice.md 3), one module for the client and
+ * The dice grammar (docs/design/design-v1-dice.md 3), one module for the client and
  * the server, so a formula the Dice field reads as valid is one the server
  * rolls, and every refusal reads the same on both sides (FORMULA_ERRORS).
  *

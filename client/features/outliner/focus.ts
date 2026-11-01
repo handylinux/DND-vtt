@@ -16,7 +16,7 @@ import { flash } from "./flash.ts";
 import { frameRect, type OutlineRow } from "./rows.ts";
 
 /**
- * A tap on an outliner row (docs/design-v1-dm-tools.md 3.2): the map frames
+ * A tap on an outliner row (docs/design/design-v1-dm-tools.md 3.2): the map frames
  * the item with the Find my token framing, and the item is picked where it
  * can be. A token opens its action bar, a label, a pin or a trap its pane, an area
  * becomes the area tool's pick, and a stamp or a light opens the builder in

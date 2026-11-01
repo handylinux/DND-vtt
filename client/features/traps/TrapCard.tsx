@@ -14,7 +14,7 @@ import { TrapSaveStart } from "./TrapSaveStart.tsx";
 const NO_LOG: LogEntry[] = [];
 
 /**
- * A springing waiting for the DM, on the DM desk (docs/design-v1-traps.md
+ * A springing waiting for the DM, on the DM desk (docs/design/design-v1-traps.md
  * 4.3) in and out of fights: who set it off and who it hits, frozen when it
  * went off, what it did and could not do, and the DM note. One that went
  * off out of the players' sight in a player's op says so, and offers Do its

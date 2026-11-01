@@ -1,6 +1,6 @@
 # PDF fixtures
 
-Files for `e2e/pdf.e2e.ts` (docs/design-v1-pdf-handouts.md 11.3) that `e2e/pdfFixture.ts` cannot write. Each is one page. Every file here was made for these tests and is under the project's license, the GNU AGPL v3.0, apart from the font noted below.
+Files for `e2e/pdf.e2e.ts` (docs/design/design-v1-pdf-handouts.md 11.3) that `e2e/pdfFixture.ts` cannot write. Each is one page. Every file here was made for these tests and is under the project's license, the GNU AGPL v3.0, apart from the font noted below.
 
 ## password.pdf
 

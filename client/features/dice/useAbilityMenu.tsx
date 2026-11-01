@@ -19,7 +19,7 @@ import { IN_PREVIEW, useRollOption, useWatchInitiative } from "./useRollOption.t
 import { markRollModeSource, raiseRollModeHosts, RollPressRegistry, useRollPressBinding, type RollPressControl } from "./useRollModeMenu.tsx";
 
 /**
- * A roll the block sent (docs/design-v1-stat-block-rolls.md 8): its tag,
+ * A roll the block sent (docs/design/design-v1-stat-block-rolls.md 8): its tag,
  * the choice picked from its options, undefined for a tap, which the
  * result line reads only to decide whether mode words qualify, and the
  * row's label. An answer's roll comes back with no label of its own, so the

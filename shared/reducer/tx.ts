@@ -35,7 +35,7 @@ export type Env = {
   at: string;
   opVersion?: number;
   /**
-   * The op as it would apply with no trap step (docs/design-v1-traps.md
+   * The op as it would apply with no trap step (docs/design/design-v1-traps.md
    * 6.7): what the server's limits measure, so a trap going off never
    * changes whether an op passes. Never stored and never replayed.
    */
@@ -168,7 +168,7 @@ export class Tx {
    * Writes something the op changes only as bookkeeping, which its inverse
    * leaves out unless the op also wrote the key for real: the walls
    * version, and the party's explored layer, which has no undo at all
-   * (docs/design-v1-maps-vision.md 4.3.3).
+   * (docs/design/design-v1-maps-vision.md 4.3.3).
    */
   writeBookkeeping(key: EntityKey, value: unknown): void {
     if (!this.before.has(key)) this.bookkeeping.add(key);
@@ -334,7 +334,7 @@ export class Tx {
           reminded?.book.record(reminded.reminder, "shared");
           return;
         }
-        // The copies name who read it, so the DM's line keeps no list of who saw it (docs/design-v1-per-player-vision.md 6.5).
+        // The copies name who read it, so the DM's line keeps no list of who saw it (docs/design/design-v1-per-player-vision.md 6.5).
         const dmLine = write(entry.data ? { ...entry, data: listsStripped(entry.data) } : entry, u.dmIndex, cutLine);
         const lines = [dmLine];
         const readers: string[] = [];
@@ -479,7 +479,7 @@ export class Tx {
   }
 
   /**
-   * Appends a line to one of the trap logs (docs/design-v1-traps.md 6.3),
+   * Appends a line to one of the trap logs (docs/design/design-v1-traps.md 6.3),
    * numbered from the envelope, so lines of every log sort together and a
    * replay never writes one twice. The players' lines share the shared
    * log's count, since every player gets both. The DM's lines count on
@@ -624,7 +624,7 @@ export class Tx {
  * a scene's walls version moves on every build op anywhere on the scene.
  * Neither means someone changed what the undo would put back. Nor does a
  * scene's thumbnail, which a DM device uploads in the background whenever
- * it likes (docs/design-v1-maps-vision.md 3.3), so a thumbnail that lands
+ * it likes (docs/design/design-v1-maps-vision.md 3.3), so a thumbnail that lands
  * between a rename and its undo never makes the undo refuse.
  *
  * The meta and the encounter history have none of these fields, so their
@@ -739,19 +739,19 @@ function sameIds(a: string[] | undefined, b: string[] | undefined): boolean {
  * only the touched keys. So does a blackout turned on or off: it takes the
  * whole table out of players' projections and puts it back (design 13.3).
  *
- * Wave 4 (docs/design-v1-maps-vision.md 4.3.3 and 4.3.5): turning vision on
+ * Wave 4 (docs/design/design-v1-maps-vision.md 4.3.3 and 4.3.5): turning vision on
  * or off, or changing its light, changes the rule for every creature on the
  * scene, so it is global like `fogEnabled`. Exploring only adds to the
  * explored layer and is not: the actor finds what it reveals. Clearing
  * explored bits, by a hide or a reset, can withhold anything there again,
  * so it is.
  *
- * Per-player vision (docs/design-v1-per-player-vision.md 6.7): a scene
+ * Per-player vision (docs/design/design-v1-per-player-vision.md 6.7): a scene
  * switching between whole party and per player, and any change of a holder
  * list, change whose sight and fog every player has, so they are global
  * too. A holder's layer is as the party's: only clearing it is.
  *
- * Hex grids (docs/design-v1-hex-grids.md HX-D21): a scene's grid shape
+ * Hex grids (docs/design/design-v1-hex-grids.md HX-D21): a scene's grid shape
  * decides which sub-cells every token stands on, so a switch can put a
  * token under fog or out of sight without it moving. It is global too, and
  * so is its undo or redo, which writes the scene the same way.

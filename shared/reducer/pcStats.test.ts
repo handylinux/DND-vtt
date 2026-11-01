@@ -7,7 +7,7 @@ import { applyOp } from "../reducer.ts";
 import { EMPTY_PC_STATS, pcNumbersFromBlock, pcStatsTooBig } from "../rules/pcStats.ts";
 import { actor, apply, AT, character, DM, env, refused, room, token } from "../testutil.ts";
 
-/** The reducer's rules for a character's stat block (docs/design-v1-pc-stats.md 3.5). */
+/** The reducer's rules for a character's stat block (docs/design/design-v1-pc-stats.md 3.5). */
 
 const BLOCK: PcStats = {
   ...structuredClone(EMPTY_PC_STATS as PcStats),
@@ -115,7 +115,7 @@ describe("a character's stat block in the reducer", () => {
   });
 });
 
-/** A sync's record as its patch sends it, with no `at` (docs/design-v1-resync.md 2.1). */
+/** A sync's record as its patch sends it, with no `at` (docs/design/design-v1-resync.md 2.1). */
 const RECORD: DdbSyncPatch = {
   from: "123456789",
   base: { abilities: BLOCK.abilities, spellAbility: "cha", level: 5, ac: 15, hpMax: 38 },
@@ -131,7 +131,7 @@ function applyAt(state: ReturnType<typeof withBree>, op: Op, at: string, opVersi
   return r;
 }
 
-describe("a character's D&D Beyond sync record in the reducer (docs/design-v1-resync.md 4)", () => {
+describe("a character's D&D Beyond sync record in the reducer (docs/design/design-v1-resync.md 4)", () => {
   test("a record is stored as sent, with the op's time as its at", () => {
     const { state } = applyAt(withBree({ stats: BLOCK }), update({ stats: { saves: ["wis"] }, level: 5, ddbSync: RECORD }), LATER);
     assert.deepEqual(state.characters.bree!.ddbSync, { ...RECORD, at: LATER } satisfies DdbSync);

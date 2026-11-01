@@ -13,7 +13,7 @@ import { useInitiativeChanged } from "./useRollOption.ts";
 
 /**
  * What a stat block's ability grid last did: a roll it sent, or a tap whose
- * roll did not go, with why (docs/design-v1-stat-block-rolls.md 8).
+ * roll did not go, with why (docs/design/design-v1-stat-block-rolls.md 8).
  */
 export type BlockOutcome = { kind: "sent"; sent: BlockSent } | { kind: "unsent"; words: string };
 

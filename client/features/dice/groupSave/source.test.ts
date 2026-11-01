@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { followSelection, newPage, sourceIds } from "./chain.ts";
 
-/** Where a group save's rows come from until the roll (docs/design-v1-roll-options.md 5.1). */
+/** Where a group save's rows come from until the roll (docs/design/design-v1-roll-options.md 5.1). */
 
 describe("a group save's source", () => {
   test("a save action's group save follows the selection less the acting creature, so selecting the targets after it opens fills it", () => {

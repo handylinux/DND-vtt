@@ -1,6 +1,6 @@
 # raccoon-vtt v1: what each token section holds
 
-Status: S1 built (the list and the tracker). S2 built (the groups). Revised for design review rounds 1 and 2 (findings SEC-1 to SEC-15 and SEC-ASTRA-01 to 07, decided as D-261024-39 and D-261024-40). Code is cited from main at `1ca246d2`, the token bar from its stack (docs/design-v1-bar-compact.md, built and landing), the group icons from the second icon pass (docs/design-v1-icons-2.md, reviewed and not yet built) and the D&D Beyond class resources stack (docs/design-v1-ddb-resources.md, built and landing). Measured in the browser against short local prototypes that were not kept (section 5).
+Status: S1 built (the list and the tracker). S2 built (the groups). Revised for design review rounds 1 and 2 (findings SEC-1 to SEC-15 and SEC-ASTRA-01 to 07, decided as D-261024-39 and D-261024-40). Code is cited from main at `1ca246d2`, the token bar from its stack (docs/design/design-v1-bar-compact.md, built and landing), the group icons from the second icon pass (docs/design/design-v1-icons-2.md, reviewed and not yet built) and the D&D Beyond class resources stack (docs/design/design-v1-ddb-resources.md, built and landing). Measured in the browser against short local prototypes that were not kept (section 5).
 
 The project owner, 2026-10-24: "It feels a little weird that the token pop up has uses but the combat section doesn't. Up to ideas of what all should be included in the various sections"
 
@@ -18,7 +18,7 @@ Decided under guess mode as D-261024-38: the Token panel and a character's page 
 
 ## 2. The audit
 
-Every control and section on each surface, for the DM and a player, on a monster (the adult red dragon, a goblin), a character (Thorn, three class resources) and a companion (Skitter, a giant spider sharing Thorn's turn). "Strip" and "expanded" are the bar's states (docs/design-v1-bar-compact.md 3.3 and 5). Each row was checked against the code.
+Every control and section on each surface, for the DM and a player, on a monster (the adult red dragon, a goblin), a character (Thorn, three class resources) and a companion (Skitter, a giant spider sharing Thorn's turn). "Strip" and "expanded" are the bar's states (docs/design/design-v1-bar-compact.md 3.3 and 5). Each row was checked against the code.
 
 | Thing | Bar: strip / expanded | Tracker row options | Turn card | Token panel today | Character page today | Finding |
 |---|---|---|---|---|---|---|
@@ -57,7 +57,7 @@ What each viewer and kind changes:
 
 ## 3. The proposal
 
-The panel's order stays header, stat block, groups by use, setup (docs/design-v1-token-panel-groups.md 2). Group icons are the second icon pass's (its section 5). Section labels inside a group stay words (its 3.2).
+The panel's order stays header, stat block, groups by use, setup (docs/design/design-v1-token-panel-groups.md 2). Group icons are the second icon pass's (its section 5). Section labels inside a group stay words (its 3.2).
 
 | Part | Holds, in order | Who | Folded summary | Starts |
 |---|---|---|---|---|
@@ -74,7 +74,7 @@ The panel's order stays header, stat block, groups by use, setup (docs/design-v1
 
 ### 3.1 Uses
 
-Since rebuilt by docs/design-v1-monster-uses.md: each count shows as display-only pips on its own row's title line, the DM's pips under the list are gone, and Restore, always there on a count and off while full, is the hand correction.
+Since rebuilt by docs/design/design-v1-monster-uses.md: each count shows as display-only pips on its own row's title line, the DM's pips under the list are gone, and Restore, always there on a count and off while full, is the hand correction.
 
 - **The list**: `CombatUses` in its `list` form, the drawer's and the row group's. Legendary Resistance with Use, and Restore once one is spent. Legendary actions by name with their off reasons. Recharge and X/Day abilities, Other used, Regeneration's line, a character's class resources, and the turn's skipped prompts with Reopen (below). Its status line, busy buttons and loading line (`Loading the uses…`, or the inline reload) as built.
 - **Who**: the DM and the creature's owners, where `useUsesPresence` is `yes` or `loading`, as the bar's button. For a character, the DM and its players always, so Add is reached with no resource yet. A player lent only a character's token gets no class resources, as today (`holdsClassResources`).
@@ -306,7 +306,7 @@ S2 placed the list and the switch in the panel and the page, and settled the oth
   - The panel's pips wrap 4 a row at 320 x 568 at 130% and 6 a row at 390 x 844 at 130%, as section 5's table has them. A block is 86, 143 and 200 px for one, two and three rows, 24 px more where its words take two lines, as S1 measured in the row.
   - Folded, Combat's row is 48 px at 1280 and 62 px at 130%. The dragon's "HP 256/256" is whole at all three. The goblin's "HP 10/10 · Reaction used" is whole in 210 px at 1280, and cut at 130%: 149 of the 152 layout px it needs at 390 and 95 at 320, as section 5 expected. The summary never goes under its 4em floor of 52 px.
   - Nothing is out of line by more than 1 px on the panel's Combat, Uses with pips at maxima 3 and 10, Reaction, the attach controls, Token settings and a lent player's Stats, or on the page's Combat, at the three sizes.
-- **Not fixed here**: at 390 x 844 at 130% Position's Elevation and Facing labels wrap by `FieldRow`'s own basis (docs/design-v1-polish.md R2), from before S2. The check measures the attach controls alone.
+- **Not fixed here**: at 390 x 844 at 130% Position's Elevation and Facing labels wrap by `FieldRow`'s own basis (docs/design/design-v1-polish.md R2), from before S2. The check measures the attach controls alone.
 - **Tests**: the order, presence and summary rules are in panelOrder.test.ts. The e2e steps are prefixed `s2-` in tokenpanel, combatuses, classresources, characters, companions, attach and barrest, each with its alignment check inside it. The alignment sweep's class resources root now reads the Uses section. Stats' maxima are checked in StatsSection.test.ts and tokenpanel. combatuses' `setUp` waits up to 75 s for Connected, since the desk and the op socket share one session and its many reloads meet the server's snapshot budget, which delays rather than refuses (server/rooms/budgets.ts).
 
 ### Live play 22

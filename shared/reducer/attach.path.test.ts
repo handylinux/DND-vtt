@@ -8,7 +8,7 @@ import { pathThisTurn, withStop } from "../rules/path.ts";
 import { DM, P1, P2, actor, env, room, token } from "../testutil.ts";
 
 /**
- * Paths and costs of attached tokens (docs/design-v1-attach.md 7.2 and
+ * Paths and costs of attached tokens (docs/design/design-v1-attach.md 7.2 and
  * 7.3): a carried leg on the rider's path, joins and "Doesn't count" on
  * one, the cost of getting on and off a mount, and a controlled mount's
  * moves on its rider's turn recorded on its own path.

@@ -21,7 +21,7 @@ const LightPane = retryableLazy(() => import("./LightPane.tsx"), { roles: ["dm"]
 
 /**
  * Where the canvas mounts the pane of the light tapped in the builder's
- * Light mode (docs/design-v1-maps-vision.md section 4.3.1), for the DM.
+ * Light mode (docs/design/design-v1-maps-vision.md section 4.3.1), for the DM.
  * Its code loads only for a DM. It closes on its own when it no longer
  * applies: the light is gone or on another scene, or the tool or the
  * builder's mode moved on.
@@ -40,7 +40,7 @@ export function LightPaneHost(props: { scene: Scene; chrome: ChromeCamera; viewp
   useEffect(() => {
     if (paneOpen && !open) modeStore.setState({ paneOpen: false });
   }, [paneOpen, open, modeStore]);
-  // At the camera the canvas last drew, subscribed only while it shows (docs/design-v1-relief-pan.md 6.3).
+  // At the camera the canvas last drew, subscribed only while it shows (docs/design/design-v1-relief-pan.md 6.3).
   const at = useChromeCamera(props.chrome, open);
   if (!open || !light || !at) return null;
   const close = () => modeStore.setState({ paneOpen: false });

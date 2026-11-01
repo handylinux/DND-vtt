@@ -26,7 +26,7 @@ export function IconButton(
   },
 ) {
   const { tooltipHold, icon, label, title, pressed, disabled, style, children, onPointerEnter, onPointerLeave, onPointerDown, onPointerUp, onPointerCancel, onClickCapture, onFocus, onBlur, ...rest } = props;
-  // The name on hover, keyboard focus and a long press, never covering the button (docs/design-v1-icons.md 3). Said by a reader only when it adds to the name.
+  // The name on hover, keyboard focus and a long press, never covering the button (docs/design/design-v1-icons.md 3). Said by a reader only when it adds to the name.
   const tooltip = useTooltip(title ?? label, { describes: addsWords(title, label) });
   const look: CSSProperties = disabled
     ? { background: "transparent", border: `${theme.line.border}px solid transparent`, color: theme.color.textDisabled }

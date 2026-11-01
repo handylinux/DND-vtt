@@ -8,7 +8,7 @@ import { barControl, expandBar, multiSelect, pickTool, readCamera, sleep, Touche
 
 /**
  * The token action bar at rest on a phone held upright
- * (docs/design-v1-bar-compact.md): a strip at the foot of the map that
+ * (docs/design/design-v1-bar-compact.md): a strip at the foot of the map that
  * stays put as the map pans and keeps every token in reach, and Expand,
  * which shows the whole bar.
  *
@@ -236,7 +236,7 @@ restFile(null, () => {
       assert.ok(cams.length <= 2, `Expand moved the map more than once: ${JSON.stringify(cams)}`);
       assert.equal(big.bottom, strip.bottom, "the expanded bar left the strip's foot");
       const h = big.bottom - big.top;
-      // Two thirds of 843, the layout's height, caps it: 562 (docs/design-v1-bar-compact.md 5.1).
+      // Two thirds of 843, the layout's height, caps it: 562 (docs/design/design-v1-bar-compact.md 5.1).
       assert.ok(h > 114 && h <= 563, `expanded ${h} px`);
       const t = await tokenRect(dm, run.thorn);
       assert.ok(t.bottom <= big.top, `the expanded bar covers Thorn: ${JSON.stringify({ t, big })}`);
@@ -534,7 +534,7 @@ restFile(null, () => {
     test("br-f-10. a compact bar turns into the strip as F reaches 148 and never back, the strip 96 px with its header and quick row whole over a 44 px band, and edge tokens with the summary row showing are panned into the band and tapped", async () => {
       await homeTokens();
       const z = 1.3;
-      // 349 px at 130% opens compact, F about 140, and F reaches 148 just past 360 (docs/design-v1-bar-compact.md 3.1, a 320 x 360 window).
+      // 349 px at 130% opens compact, F about 140, and F reaches 148 just past 360 (docs/design/design-v1-bar-compact.md 3.1, a 320 x 360 window).
       await setUp(pat, { width: 320, height: 349, scale: z });
       await openOn(pat, run.thorn);
       const thorn = bar(pat, "Thorn");
@@ -644,7 +644,7 @@ restFile(null, () => {
         const second = rowOf("Second whisper.");
         assert.equal(await pat.locator("[data-toast]").filter({ hasText: "Second whisper." }).count(), 0, "the whisper that came meanwhile was drawn");
         await shots.take(pat, "br-f-11-whole");
-        // Escape shrinks it, and the one that waited takes the row, its time starting as it draws (docs/design-v1-bar-compact.md 3.5).
+        // Escape shrinks it, and the one that waited takes the row, its time starting as it draws (docs/design/design-v1-bar-compact.md 3.5).
         await pat.keyboard.press("Escape");
         await second.waitFor({ timeout: 2_000 });
         await sleep(3_500);
@@ -2041,7 +2041,7 @@ restFile(null, () => {
     /** Whether focus stands on the strip's Expand. */
     const focusOnExpand = (bar: Locator) => expandButton(bar).evaluate((el) => el.ownerDocument.activeElement === el);
 
-    test("ic2-bar-1. Expand and Collapse show their words beside the chevron where the strip has room, at 390 x 844 at 85%, its name whole, its status line keeping AC and HP and focus kept on Expand, and the chevron alone at 390 x 844 at 130% to 100% and 320 x 568, their words their name (docs/design-v1-icons-2.md 8)", async () => {
+    test("ic2-bar-1. Expand and Collapse show their words beside the chevron where the strip has room, at 390 x 844 at 85%, its name whole, its status line keeping AC and HP and focus kept on Expand, and the chevron alone at 390 x 844 at 130% to 100% and 320 x 568, their words their name (docs/design/design-v1-icons-2.md 8)", async () => {
       // The words need a strip of 431 px, which keeps the title as wide as at 390 x 844 with the chevron alone: 443 at 390 x 844 at 85%, and 374 at 100%.
       const views = [
         { view: { width: 320, height: 568, scale: 1.3 }, words: false },

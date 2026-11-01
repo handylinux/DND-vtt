@@ -35,7 +35,7 @@ export async function setupAuth(
 
   await app.register(fastifyCookie);
   const sessions = new SessionStore(pool, cookie);
-  // Table displays (docs/design-v1-dm-tools.md 3.1): a second store on a
+  // Table displays (docs/design/design-v1-dm-tools.md 3.1): a second store on a
   // second cookie, which only the display routes and the `as=display`
   // socket read.
   const displaySessions = new SessionStore(pool, displayCookie, Date.now, "display");

@@ -6,7 +6,7 @@ import { sceneWalls } from "#shared/rules/walls.ts";
 
 /**
  * Who lends the party sight on a scene, as the DM's What players see settings and
- * token panel list it (docs/design-v1-maps-vision.md section 4.3.2), read
+ * token panel list it (docs/design/design-v1-maps-vision.md section 4.3.2), read
  * from the DM's view, which holds every creature, light and build chunk on
  * the scene the DM looks at.
  *

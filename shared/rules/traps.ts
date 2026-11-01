@@ -17,7 +17,7 @@ import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
 import { cornerAt, hexAt, hexCorners, hexKey, hexNeighbors, hexSubcells, sceneHexSpan, type Hex, type HexGrid } from "./hex.ts";
 
 /**
- * Triggers and traps (docs/design-v1-traps.md section 5): which creatures
+ * Triggers and traps (docs/design/design-v1-traps.md section 5): which creatures
  * set a trap off, where along a move, in what order, where a stopped group
  * lands, and who a springing hits. Pure, so the reducer runs the same rule
  * on replay and the DM's device runs it to predict its own ops. Players'
@@ -129,7 +129,7 @@ export function wireCells(wire: { a: readonly [number, number]; b: readonly [num
 const WIRE_LATTICE = 64;
 
 // ---------------------------------------------------------------------------
-// Zones on hexes (docs/design-v1-hex-grids.md phase H2)
+// Zones on hexes (docs/design/design-v1-hex-grids.md phase H2)
 
 /**
  * A zone's hexes on a hex scene: the hexes its rectangles of keys name (`x`
@@ -236,7 +236,7 @@ function subcellCells(subs: readonly (readonly [number, number])[]): CellRange {
  * Whether a zone lies wholly under the fog (6.4), the rule a player's copy
  * of a found trap reads (project.ts projectTrapCtx). On squares every range
  * of zoneRanges is fogged. On hexes every fog sub-cell inside each of its
- * hexes is (docs/design-v1-hex-grids.md H2), so ground revealed beside a
+ * hexes is (docs/design/design-v1-hex-grids.md H2), so ground revealed beside a
  * hex, even in a cell the hex shares, never shows the trap. A zone with no
  * hexes, a door that is gone, counts as fogged, as on squares.
  */
@@ -398,7 +398,7 @@ export function trapIndex(state: Pick<TrapRoom, "traps" | "scenes">, sceneId: st
 /**
  * The keys a scene's squares run over: its cells, or on hexes the columns
  * and rows its hex keys take (hex.ts sceneHexSpan), so the index reads a
- * hex by its key as it reads a square (docs/design-v1-hex-grids.md H2).
+ * hex by its key as it reads a square (docs/design/design-v1-hex-grids.md H2).
  * A scene's grid cannot change while it holds a trap (grid.ts switchHolds),
  * so the index kept for its traps keeps its grid too.
  */
@@ -705,7 +705,7 @@ function walksOf(op: Op, before: RoomState, entries: readonly MovedToken[], seen
 }
 
 /**
- * Each spot's elevation by attach's rule (docs/design-v1-attach.md 5.1):
+ * Each spot's elevation by attach's rule (docs/design/design-v1-attach.md 5.1):
  * the group's own walk for the named token, the holder's change for what
  * rides, and for a dragged creature its own ground behind a holder on the
  * ground, else the holder's change but never below the ground. The holder
@@ -1058,7 +1058,7 @@ function walkEvents(walk: Walk, index: TrapIndex, before: RoomState, seen: (id: 
   let lx1 = -1;
   let ly1 = -1;
   let lastMix: Mix | null = null;
-  /** On hexes a footprint reads each of its hexes by its key, at most 12 (docs/design-v1-hex-grids.md H2). */
+  /** On hexes a footprint reads each of its hexes by its key, at most 12 (docs/design/design-v1-hex-grids.md H2). */
   const onHexes = (j: number): readonly number[] => {
     const sq = squares!;
     const light = lightAt(walk, j);
@@ -1594,7 +1594,7 @@ function hitsIn(trap: Trap, m: Moment, by: readonly string[], opVersion?: number
   return out.sort(cmp);
 }
 
-/** Whether any hex a footprint stands on is a key of the rectangles (docs/design-v1-hex-grids.md H2). */
+/** Whether any hex a footprint stands on is a key of the rectangles (docs/design/design-v1-hex-grids.md H2). */
 function hexesOnRects(g: HexGrid, at: PlacedToken, rects: readonly CellRect[]): boolean {
   return occupiedHexes(g, at).some((h) => inRects(rects, h.col, h.row));
 }

@@ -1,5 +1,5 @@
 /**
- * How pdf.js runs for a PDF handout (docs/design-v1-pdf-handouts.md 4.2), in
+ * How pdf.js runs for a PDF handout (docs/design/design-v1-pdf-handouts.md 4.2), in
  * one place, so a test pins every value. Nothing here loads pdf.js: the
  * job's worker imports this file too, and the reader itself loads only when
  * a DM picks a PDF (render.ts).

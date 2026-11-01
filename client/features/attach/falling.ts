@@ -4,7 +4,7 @@ import { displayName } from "../../lib/scene.ts";
 import { askTarget, type AskFrom } from "../rolls/logic.ts";
 
 /**
- * The falling off reminder (docs/design-v1-attach.md 4.5), as plain
+ * The falling off reminder (docs/design/design-v1-attach.md 4.5), as plain
  * functions for node --test: "While mounted, you must make the same save
  * if you're knocked Prone or the mount is." Unconscious brings Prone with
  * it, so it counts too. The app decides nothing: it reminds the DM and

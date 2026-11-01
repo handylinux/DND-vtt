@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { makeProbe, stageLoader, type ProbeCanvas } from "./probe.ts";
 
-/** The WebGL probe and the dice chunk's background load (docs/design-v1-roll-animation.md 6 and 7). */
+/** The WebGL probe and the dice chunk's background load (docs/design/design-v1-roll-animation.md 6 and 7). */
 
 function fakeCanvas(has: boolean, log: string[]): () => ProbeCanvas {
   return () => ({

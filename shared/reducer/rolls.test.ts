@@ -14,7 +14,7 @@ import { DM, P1, P2, actor, character, effect, env, room, token } from "../testu
 import { ALREADY_ASKED, DIE_NEEDED, ENDS_NEEDS_ONE, FINAL, ROLLED_ONLY, SAVE_SETTLED, SEND_INSTEAD, TYPED_ONLY } from "./rolls.ts";
 
 /**
- * Roll requests with wave 7's additions (docs/design-v1-roll-request.md 1.1
+ * Roll requests with wave 7's additions (docs/design/design-v1-roll-request.md 1.1
  * and 7.5): answers that keep their tag and the DM's mark, `resultOf`
  * through the reducer, the "save ends" request's fields and refusals, the
  * close rule on every close path, and the rule that closes a save-ends
@@ -234,7 +234,7 @@ describe("the request's additions (1.1, 7.5)", () => {
     assert.ok(send(table(), endsAsk("r1", { targets: [PIP], ends: { effect: "pfx", occurrence: "pocc1" } })).ok, "a token's own effect");
   });
 
-  test("a second open request for one occurrence is refused, and so is one for an occurrence the close settled (docs/design-v1-roll-options.md 6.1)", () => {
+  test("a second open request for one occurrence is refused, and so is one for an occurrence the close settled (docs/design/design-v1-roll-options.md 6.1)", () => {
     let state = ok(send(table(), endsAsk("r1"))).state;
     assert.deepEqual(send(state, endsAsk("r2")), { ok: false, code: "invalid", message: ALREADY_ASKED });
     assert.ok(send(withThornEffects(state, [frightened("fx", "occ2")]), endsAsk("r2", { ends: { effect: "fx", occurrence: "occ2" } })).ok, "another occurrence is another save");

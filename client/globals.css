@@ -366,7 +366,7 @@ summary::-webkit-details-marker {
 }
 
 /* The tracker's round header sticks over the rows (panels/TrackerPanel.tsx,
-   docs/design-v1-combat-flow.md 3.1), so a control reached by Tab or
+   docs/design/design-v1-combat-flow.md 3.1), so a control reached by Tab or
    Shift+Tab scrolls into view below it, never under it (WCAG 2.2 SC
    2.4.11). The section sets the header's height while it sticks, else 0.
    Inline styles cannot reach the rows' controls, hence this rule. The
@@ -398,7 +398,7 @@ summary::-webkit-details-marker {
 }
 
 /* Six even options, such as the six abilities of Request a roll
-   (docs/design-v1-roll-request.md 4.2), need 6 x 44 + 5 x 4 = 284 px.
+   (docs/design/design-v1-roll-request.md 4.2), need 6 x 44 + 5 x 4 = 284 px.
    Narrower, they go three by three, never two by two, so two even rows
    keep the abilities in their usual order. */
 @container (width < 284px) {
@@ -411,7 +411,7 @@ summary::-webkit-details-marker {
 }
 
 /* Three even options whose words wrap (components/Segmented.tsx `wrap`),
-   such as Grid shape and Kind of scene (docs/design-v1-design-pass.md
+   such as Grid shape and Kind of scene (docs/design/design-v1-design-pass.md
    4.2), share one row while a third of it holds their longest word whole:
    "columns" is 58 px at 14 px weight 600, plus an option's 10 px of
    padding and border, three times, plus two 4 px gaps, is 212, and 8 px

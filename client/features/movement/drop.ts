@@ -18,7 +18,7 @@ import { displayName, snapPosition } from "../../lib/scene.ts";
 
 /**
  * Where a dropped token lands when walls, doors and ledges stop players'
- * moves (docs/design-v1-maps-vision.md sections 4.1 and 4.2), as plain
+ * moves (docs/design/design-v1-maps-vision.md sections 4.1 and 4.2), as plain
  * functions for node --test. The rule itself is part 4B's
  * (shared/rules/movement.ts), the very test the server runs in
  * `canApply`, so a drop the map sends is one the server takes, and a drag
@@ -35,7 +35,7 @@ export type Point = { x: number; y: number };
 
 /**
  * The grid of the scene a token stands on, squares where this copy does
- * not hold the scene. On a hex scene (docs/design-v1-hex-grids.md 4.2 and
+ * not hold the scene. On a hex scene (docs/design/design-v1-hex-grids.md 4.2 and
  * phase H2) a drop snaps to its size's nearest anchor, and the movement
  * rule's landing (movement.ts landing) holds a walk at the wall and lines
  * a creature up with a narrow space by squeezing onto the anchors of the
@@ -103,7 +103,7 @@ const previewViews = new WeakMap<DropView, DropView>();
 
 /**
  * The room as a drag's picture and a walking ruler read it
- * (docs/design-v1-map-discovery.md 5.2): what nothing checks after, so the
+ * (docs/design/design-v1-map-discovery.md 5.2): what nothing checks after, so the
  * pieces of a player's held build stop anything within their band
  * (movement.ts previewChunks), where a drop, a press and every other
  * action this device sends read them by the gate test and let the
@@ -118,7 +118,7 @@ export function previewView(view: DropView): DropView {
 
 /**
  * The elevation a drop lands a token at. One that sits on a holder
- * (docs/design-v1-attach.md 4.1 and 4.3) lands by the holder, not by the
+ * (docs/design/design-v1-attach.md 4.1 and 4.3) lands by the holder, not by the
  * ground under its seat, which differs where the holder straddles two
  * heights: at the holder's elevation where the link still holds there, the
  * height the server takes for a new seat, else as a Get off lands
@@ -184,7 +184,7 @@ export type Landed = { tokenId: string; x: number; y: number; elevation?: number
 /**
  * What stopped a walk as a player hears of it: a wall or a ledge, or
  * `unknown` where the stop is on ground they do not see live, which names
- * no kind (docs/design-v1-map-discovery.md 6, the words): a remembered
+ * no kind (docs/design/design-v1-map-discovery.md 6, the words): a remembered
  * wall may be gone, and the real build may stop them where they hold
  * nothing. "Teleport here" past it sends `teleport: "unknown"`.
  */
@@ -203,11 +203,11 @@ export type Stop = {
   aim: Point;
   /** Where the walk stopped, the start when it stopped at its first step. */
   at: Point;
-  /** A route was looked for and none reaches the spot on ground the party has seen (docs/design-v1-movement.md 3.1). */
+  /** A route was looked for and none reaches the spot on ground the party has seen (docs/design/design-v1-movement.md 3.1). */
   searched?: true;
   /** The search gave up past its cap (5.2). */
   capped?: true;
-  /** The creature the walker drags beside it that cannot follow where the walker alone would go, by the name players see (docs/design-v1-attach.md 4.2). */
+  /** The creature the walker drags beside it that cannot follow where the walker alone would go, by the name players see (docs/design/design-v1-attach.md 4.2). */
   follower?: string;
 };
 
@@ -217,7 +217,7 @@ export type DropPlan = {
   stop: Stop | null;
   /** Tokens of a group drag left where they were, since a wall or a ledge stood in their way (section 4.1). */
   held: { token: DropToken; blocker: StopBlocker }[];
-  /** The lone walk turned too often for one move, so it landed partway (docs/design-v1-movement.md 5.2). */
+  /** The lone walk turned too often for one move, so it landed partway (docs/design/design-v1-movement.md 5.2). */
   cut?: true;
 };
 
@@ -269,7 +269,7 @@ export type Aim = Point & { seat?: Point };
  * The aim of a drag of `lead`, its box dropped at `at`, that was pressed on
  * `pressed`: with the pressed token's dropped middle where that token sits
  * on the lead, up a chain of tokens each sitting on the next, as a press on
- * a rider of a controlled mount moves the mount (docs/design-v1-attach.md
+ * a rider of a controlled mount moves the mount (docs/design/design-v1-attach.md
  * 4.2). Its middle is where its own box would be dropped, by the lead's
  * box at the pointer's offset.
  */
@@ -373,7 +373,7 @@ export function planOne(state: DropView, token: DropToken, raw: Aim, mode: Exclu
 
 /**
  * What a player's device says stopped its own walk to `to`
- * (docs/design-v1-map-discovery.md 6, the words), by the rule the server
+ * (docs/design/design-v1-map-discovery.md 6, the words), by the rule the server
  * words a stop by (permissions.ts stopWords) on the device's own held
  * build and live ground (rules/held.ts deviceGround): the kind, and the
  * door, only where the part of the blocker the walk met is live to it
@@ -395,7 +395,7 @@ export function heardStop(state: DropView, walker: Walker, to: LegEnd, stopped: 
 export type Found = { kind: "open" } | { kind: "route"; route: Pick<WalkRoute, "pieces"> } | { kind: "none"; capped: boolean; follower?: string };
 
 /**
- * The spot a lone drop's route aims at (docs/design-v1-movement.md 3.1):
+ * The spot a lone drop's route aims at (docs/design/design-v1-movement.md 3.1):
  * where the drop would be placed, by the drop's own rule and squeezed where
  * the creature squeezes, with no leg test, since the route is the leg. A
  * mount a rider's drag leads aims at the stand that keeps the rider's
@@ -592,7 +592,7 @@ export function planPress(state: DropView, world: RouteWorld | null, token: Drop
 export const CUT_TEXT = "Stopped partway: the way there turns too often for one move. Drag again to go on.";
 
 /**
- * A lone drop with what its route search found (docs/design-v1-movement.md
+ * A lone drop with what its route search found (docs/design/design-v1-movement.md
  * 3.1 and 5.6). The straight leg is today's drop. A route lands at its
  * spot and goes with the move, cut after 64 pieces, and goes without a
  * route past 300 squares of reach, which the server refuses. No route, a
@@ -635,7 +635,7 @@ export function planWalk(state: DropView, token: DropToken, raw: Aim, mode: Excl
  * so a creature that would have to squeeze to land stays put on a walk.
  *
  * `walkersOf` names the creatures a token drags beside it
- * (docs/design-v1-attach.md 4.2), each tested on the token's leg offset by
+ * (docs/design/design-v1-attach.md 4.2), each tested on the token's leg offset by
  * its place: a token one of them could not follow stays where it was.
  */
 export function planGroup(state: DropView, tokens: readonly DropToken[], dx: number, dy: number, mode: Exclude<DropMode, "teleport">, walkersOf: (token: DropToken) => readonly DropToken[] = () => []): DropPlan {
@@ -664,7 +664,7 @@ type WalkersState = BuildState & { tokens?: Readonly<Record<string, Token | unde
 
 /**
  * The walks of the creatures a holder drags beside it along the holder's
- * walk `points` (docs/design-v1-attach.md 5.1), as the reducer moves them
+ * walk `points` (docs/design/design-v1-attach.md 5.1), as the reducer moves them
  * (shared/rules/moveLeg.ts): each from where it stands, offset by its
  * place, on its own ground behind a holder whose walk is on the ground,
  * else by the holder's change of height, never below the ground, and
@@ -745,7 +745,7 @@ export function cutPieces(points: readonly RoutePoint[], pieces: readonly RouteP
 /**
  * Where a holder's walk along `points` (its start, then each piece's end)
  * stops so that every creature it drags beside it can walk too
- * (docs/design-v1-attach.md 4.2): the first piece some walker's leg is
+ * (docs/design/design-v1-attach.md 4.2): the first piece some walker's leg is
  * stopped on is walked back, a lattice step at a time from its end and on
  * back through the pieces before it, to the last spot the holder and
  * every walker reach clear, its start when none. Each spot is snapped to
@@ -822,7 +822,7 @@ export function walkersStop(
 
 /**
  * A holder's drop cut short where a creature it drags cannot follow
- * (docs/design-v1-attach.md 4.2), only for a player's walk where walls
+ * (docs/design/design-v1-attach.md 4.2), only for a player's walk where walls
  * stop moves: the plan's lone move ends at walkersStop's spot, its route
  * kept up to there, and the walk is stopped there as a lone walk is at a
  * wall, with the note that says so: a search that found no way says so
@@ -863,7 +863,7 @@ export function moveOpsOf(moves: readonly Landed[]): ClientOp[] {
  * A walk's stop once its search found no way because a creature the
  * walker drags beside it cannot follow (Found `follower`): held where the
  * straight walk is, at the walker's own wall or where that creature meets
- * one, and naming it (docs/design-v1-attach.md 4.2, review LP12-AT-2).
+ * one, and naming it (docs/design/design-v1-attach.md 4.2, review LP12-AT-2).
  */
 export function namedFollower(state: DropView, plan: DropPlan, found: Found): DropPlan {
   if (found.kind !== "none" || found.follower === undefined || !plan.stop) return plan;
@@ -879,10 +879,10 @@ export function holdLabel(blocker: StopBlocker, noWay = false): string {
 
 /**
  * The note after a stopped drop: what stopped it, and how to go on. A walk
- * whose search found no way says so (docs/design-v1-movement.md 3.1),
+ * whose search found no way says so (docs/design/design-v1-movement.md 3.1),
  * after "Too far to work out a way around" when the search gave up, and
  * names the creature it drags that cannot follow when that is why
- * (docs/design-v1-attach.md 4.2).
+ * (docs/design/design-v1-attach.md 4.2).
  */
 export function stopText(stop: Pick<Stop, "blocker" | "door" | "searched" | "capped" | "follower">): string {
   if (stop.follower !== undefined) return `${stop.follower} can't follow through there.`;
@@ -907,7 +907,7 @@ export function heldText(held: readonly { name: string; blocker: StopBlocker }[]
 
 /**
  * The note after a group drag some of whose moves the real build stopped
- * short (`blocked`, docs/design-v1-map-discovery.md 6): which ones, and by
+ * short (`blocked`, docs/design/design-v1-map-discovery.md 6): which ones, and by
  * what, the server does not say.
  */
 export const GROUP_BLOCKED_TEXT = "Some of them stopped short: something blocks the way.";

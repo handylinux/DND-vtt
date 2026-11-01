@@ -3,7 +3,7 @@ import { theme } from "../lib/theme.ts";
 import { Icon } from "./Icon.tsx";
 
 /**
- * One line of a list (docs/design-v1-visual.md 2.3): members, scenes,
+ * One line of a list (docs/design/design-v1-visual.md 2.3): members, scenes,
  * rooms, characters, the outliner. At least 44 px, or 56 px with a detail
  * line. A leading slot (a 32 px disk or a 20 px dot), the title at 16 px
  * weight 600 cut with an ellipsis, a detail line at 13 px muted, and a
@@ -16,12 +16,12 @@ import { Icon } from "./Icon.tsx";
  * you are on) takes the accent tint and outline. `turn` marks the
  * creature whose turn it is, in the fixed cream highlight, never the
  * accent. `pressed` makes the row a toggle button, such as a known form
- * chosen (docs/design-v1-known-forms.md 5.2): `chosen`'s look without its
+ * chosen (docs/design/design-v1-known-forms.md 5.2): `chosen`'s look without its
  * `aria-current`, and a check in the leading slot, which an unpressed one
  * keeps empty so the titles line up.
  *
  * A row that unfolds a short body under itself keeps its own look, never
- * the chosen tint, and ends in `RowChevron` (docs/design-v1-look-pass-2.md
+ * the chosen tint, and ends in `RowChevron` (docs/design/design-v1-look-pass-2.md
  * 2.5).
  */
 export function Row(props: {
@@ -46,7 +46,7 @@ export function Row(props: {
    * A detail that wraps onto as many lines as it needs, never cut, and that
    * describes the button rather than naming it, so a disclosure is named by
    * its title alone, as a re-sync's group of changes is with its summary
-   * (docs/design-v1-resync.md 3.3).
+   * (docs/design/design-v1-resync.md 3.3).
    */
   fullDetail?: boolean;
   /**
@@ -191,7 +191,7 @@ export function RowList(props: { label?: string; children: ReactNode }) {
 /**
  * The end of a row that unfolds what is under it: one chevron, muted, at
  * `md`, pointing down while open and right while folded, so every such row
- * draws the same one (docs/design-v1-look-pass-2.md 2.5). Decoration only:
+ * draws the same one (docs/design/design-v1-look-pass-2.md 2.5). Decoration only:
  * the row's `aria-expanded` says the state.
  */
 export function RowChevron(props: { open: boolean }) {

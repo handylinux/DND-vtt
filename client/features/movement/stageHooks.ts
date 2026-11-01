@@ -32,7 +32,7 @@ type DragNode = { x(): number; y(): number; position(p: Point): void };
 /**
  * What the map canvas (client/canvas/Stage.tsx) asks of walls, ledges and
  * routes while a token is dragged and dropped
- * (docs/design-v1-maps-vision.md 4.1, docs/design-v1-movement.md 3.1).
+ * (docs/design/design-v1-maps-vision.md 4.1, docs/design/design-v1-movement.md 3.1).
  * Kept here so the canvas needs a line for each step of a drag.
  */
 export type DragStops = {
@@ -48,7 +48,7 @@ export type DragStops = {
    * stop moves, the preview stays on the last clear spot before the wall
    * or the ledge, so a drop never bounces back, and so it does where a
    * creature the token drags beside it would meet one
-   * (docs/design-v1-attach.md 4.2).
+   * (docs/design/design-v1-attach.md 4.2).
    */
   frame(node: DragNode, token: DropToken): void;
   /** What a frame sends others besides where the token is: the route's corners and the leg's cost (6.5), and where a cut walk lands. */
@@ -176,7 +176,7 @@ export function dragStops(deps: DragDeps): DragStops {
   let memo: { view: DropView; token: DropToken; qx: number; qy: number; mode: string; stop: Stop | null; lands: Pose } | null = null;
   /**
    * The same for the creatures a holder drags beside it
-   * (docs/design-v1-attach.md 4.2): where along the holder's walk to
+   * (docs/design/design-v1-attach.md 4.2): where along the holder's walk to
    * `target`, its route or else the straight leg, the first of them would
    * meet a wall. Asked again only for a new spot, a new route or a
    * changed room.

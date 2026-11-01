@@ -5,7 +5,7 @@ import { handFocusOn } from "../../lib/handFocus.ts";
 import { useRoomActions } from "../../state/view.ts";
 
 /**
- * The DM's Revive where a tap lands (docs/design-v1-combat-flow.md 3.5): in
+ * The DM's Revive where a tap lands (docs/design/design-v1-combat-flow.md 3.5): in
  * a dead creature's action bar beside its Dead tag, and first in its
  * tracker row's options. The token panel keeps its own beside Stabilize and
  * Mark dead.

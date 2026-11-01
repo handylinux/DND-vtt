@@ -11,7 +11,7 @@ import { hexAt, hexDistance, type Hex, type HexGrid } from "./hex.ts";
  * representation, a box of whole cells, so "the same function between points"
  * holds by construction: a point is a box one cell on each side.
  *
- * On hexes (docs/design-v1-hex-grids.md 4.3) a box also holds the hexes it
+ * On hexes (docs/design/design-v1-hex-grids.md 4.3) a box also holds the hexes it
  * stands on, and the steps between two boxes are the fewest hex steps
  * between any hex of one and any hex of the other, with no second axis:
  * a hex has no diagonal, so the room's rule only combines those steps with

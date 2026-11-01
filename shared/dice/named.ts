@@ -5,7 +5,7 @@ import type { DamagePart, NamedRoll } from "./bonus.ts";
 import { formatFormula, parseFormula } from "./formula.ts";
 
 /**
- * The rolls a stat block names (docs/design-v1-roll-options.md 3.1): its
+ * The rolls a stat block names (docs/design/design-v1-roll-options.md 3.1): its
  * attacks, save actions, damage, healing and recharge, read from the
  * block's Markdown as doc 1's NamedRoll. Every SRD block, every room
  * monster and every companion block has that Markdown (shared/srd/monsters.ts,
@@ -220,7 +220,7 @@ const REST_RECHARGE = /^recharges? after a short or long rest$/i;
 const COST = /^costs\s+([1-3])\s+actions?$/i;
 
 /**
- * A printed name's parts (docs/design-v1-combat-controls.md 2.1): the name
+ * A printed name's parts (docs/design/design-v1-combat-controls.md 2.1): the name
  * without its recharge, uses, rest recharge or cost bracket, which the
  * options and the combat uses show on their own. `shown` keeps the rest
  * recharge and the cost, as the Dice panel's rows have always named them.
@@ -303,7 +303,7 @@ function keySlug(name: string): string {
 const keysRead = new WeakMap<StatBlockMonster, readonly string[]>();
 
 /**
- * Every entry's key, in blockEntries' order (docs/design-v1-combat-controls.md
+ * Every entry's key, in blockEntries' order (docs/design/design-v1-combat-controls.md
  * 2.1): its section, a colon and a slug of its name without its brackets,
  * then `-2` and up for a name repeated in its section. Each entry has one
  * before any is read into rolls, so a roll's key (its entry's, with `:hit`

@@ -8,7 +8,7 @@ const NONE: readonly never[] = [];
  * The numbers a character rolls with as the server works them out (doc 1's
  * creatureNumbers over doc 3's SRD table), so a shape's saves on the bar
  * and in its section are the bonuses its rolls get
- * (docs/design-v1-pc-stats.md 3.6 and 7.4). The table loads only for a
+ * (docs/design/design-v1-pc-stats.md 3.6 and 7.4). The table loads only for a
  * character in a shape. `loading` while it does, `failed` when it did not.
  */
 export function useCharacterRollNumbers(characterId: string | null): { numbers: RollNumbers | null; loading: boolean; failed: boolean } {

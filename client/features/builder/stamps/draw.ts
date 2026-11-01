@@ -3,7 +3,7 @@ import type { AssetSource } from "../../../state/view.ts";
 import { shippedStamp, sizeBucket } from "./rules.ts";
 
 /**
- * Draws a scene's stamps onto the board (docs/design-v1-maps-vision.md
+ * Draws a scene's stamps onto the board (docs/design/design-v1-maps-vision.md
  * section 3.5), for the DM and players alike, below walls, doors, labels
  * and tokens: the build calls `drawStamps` between its floor and its walls.
  *

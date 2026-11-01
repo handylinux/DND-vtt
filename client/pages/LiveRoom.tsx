@@ -53,7 +53,7 @@ export default function LiveRoom(props: { roomId: string; me: Me }) {
       room,
       env: browserEnv(),
       recheck: () => recheck(roomId),
-      // Low power sends fewer drag and ruler frames (docs/design-v1-dm-tools.md 3.15).
+      // Low power sends fewer drag and ruler frames (docs/design/design-v1-dm-tools.md 3.15).
       ephPerSecond: () => ephRate(lowPower()),
     });
     socket.start();

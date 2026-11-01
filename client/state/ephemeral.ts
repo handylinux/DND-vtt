@@ -98,10 +98,10 @@ export function applyEph(
       if (local || opts.role !== "player") return eph;
       return { ...eph, focus: { id: ++focusSeq, from, x: e.x, y: e.y, zoom: e.zoom, at: now } };
     case "view": {
-      // A DM's camera for table displays (docs/design-v1-dm-tools.md 3.1), which the display's own room follows.
+      // A DM's camera for table displays (docs/design/design-v1-dm-tools.md 3.1), which the display's own room follows.
       // The server sends it to displays only, whose stores hold the player role.
       if (local || opts.role !== "player") return eph;
-      // An Isometric DM's turn and size in view units come along (docs/design-v1-isometric-view.md ISO-D17).
+      // An Isometric DM's turn and size in view units come along (docs/design/design-v1-isometric-view.md ISO-D17).
       const view: ViewRequest = { id: ++viewSeq, from, x: e.x, y: e.y, w: e.w, h: e.h, at: now, ...(e.iso ? { iso: { turn: e.iso.turn, vw: e.iso.vw, vh: e.iso.vh } } : {}) };
       return { ...eph, view };
     }

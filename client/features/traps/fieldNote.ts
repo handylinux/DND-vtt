@@ -3,7 +3,7 @@ import { LIMITS } from "#shared/limits.ts";
 import { cleanLine } from "./rules.ts";
 
 /*
- * When a trap pane field's note under it comes and goes (docs/design-v1-look-pass-2.md
+ * When a trap pane field's note under it comes and goes (docs/design/design-v1-look-pass-2.md
  * 2.9, D13). A field is left by a press somewhere else in the pane, and the blur comes
  * while that press is still down. A note that comes or goes on that blur moves
  * everything under it before the press lifts, so the press clicks nothing: a Done, a

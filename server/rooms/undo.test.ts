@@ -384,7 +384,7 @@ describe("a player's move undo and the path of the turn", () => {
     assert.ok(poseRestore(fresh, { ...step, poses: step.poses! }, visible).ok);
   });
 
-  test("reads no path the player's copy does not show: the DM's mark on a leg of a row hidden from them refuses nothing (docs/design-v1-attach.md 8.0)", () => {
+  test("reads no path the player's copy does not show: the DM's mark on a leg of a row hidden from them refuses nothing (docs/design/design-v1-attach.md 8.0)", () => {
     // P1 moves a creature they do not own, as the room lets every player move any token, so a row hidden from them hides its path.
     // Its owners get the path of its own turn on a hidden row too (review AT-HIDDENPATH), so for them a mark refuses as on a shown one.
     for (const [owners, hidden] of [[[], false], [[], true], [["p1"], true]] as const) {
@@ -405,7 +405,7 @@ describe("a player's move undo and the path of the turn", () => {
   });
 });
 
-describe("squeezes and teleports on a player's move undo (docs/design-v1-maps-vision.md 4.1)", () => {
+describe("squeezes and teleports on a player's move undo (docs/design/design-v1-maps-vision.md 4.1)", () => {
   const visible = () => true;
   const deps = { canUseAsset: () => true };
   const DM_VIEWER: Viewer = { memberId: "dm1", role: "dm" };
@@ -499,7 +499,7 @@ describe("squeezes and teleports on a player's move undo (docs/design-v1-maps-vi
   });
 });
 
-describe("a player's resize undo (docs/design-v1-token-window.md 8.7)", () => {
+describe("a player's resize undo (docs/design/design-v1-token-window.md 8.7)", () => {
   const visible = () => true;
   const deps = { canUseAsset: () => true };
   const DM_VIEWER: Viewer = { memberId: "dm1", role: "dm" };
@@ -604,7 +604,7 @@ describe("a player's resize undo (docs/design-v1-token-window.md 8.7)", () => {
   });
 });
 
-describe("asks for saves and undo (docs/design-v1-player-save-spell.md 5.6)", () => {
+describe("asks for saves and undo (docs/design/design-v1-player-save-spell.md 5.6)", () => {
   test("no close of an ask goes on a stack, the DM's Dismiss and Close the ask included, nor a player's ask", () => {
     for (const end of ["done", "dismissed", "withdrawn"] as const) {
       assert.equal(UndoStacks.records("dm", { t: "cast.close", castId: "k1", end }), false, end);
@@ -630,7 +630,7 @@ describe("asks for saves and undo (docs/design-v1-player-save-spell.md 5.6)", ()
   });
 });
 
-describe("a player's walks around walls on undo and redo (docs/design-v1-movement.md 7.4)", () => {
+describe("a player's walks around walls on undo and redo (docs/design/design-v1-movement.md 7.4)", () => {
   const visible = () => true;
   const deps = { canUseAsset: () => true };
   const route: [number, number, number, 0 | 1][] = [

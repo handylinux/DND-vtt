@@ -3,7 +3,7 @@ import { footprintGround } from "#shared/rules/heights.ts";
 
 /**
  * How far below the ground under it a token stands, in feet, or null when
- * it is on the ground or above it (docs/design-v1-maps-vision.md 4.2). A
+ * it is on the ground or above it (docs/design/design-v1-maps-vision.md 4.2). A
  * token is inside the ground after an undo or a restore put it back below
  * ground painted since, or when it burrows, which features 8 allows, so
  * nothing raises it on its own: its owners and the DM are told, and may

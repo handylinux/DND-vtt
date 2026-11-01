@@ -43,13 +43,13 @@ import { IMPORT_CHOICE_NAME, UvttLightChoice } from "../vision/UvttLightChoice.t
 import { lightsLead, startingLight, type LightProposal, whyShown } from "../vision/uvttLight.ts";
 
 /**
- * The Universal VTT import's dialog (docs/design-v1-maps-vision.md section
+ * The Universal VTT import's dialog (docs/design/design-v1-maps-vision.md section
  * 3.1, "DM behavior"): reading the file in the worker, a summary sheet to
  * check it against the map, then the image upload and the ops, each step
  * saying what it is doing, and every path ending in the new scene or a
  * plain sentence. Opened from a scene's phases, it adds only the image.
  * A new scene starts on what players see by the room's default, or Like
- * the scene on the DM's screen (docs/design-v1-map-discovery.md 8.1). A
+ * the scene on the DM's screen (docs/design/design-v1-map-discovery.md 8.1). A
  * map that brings its own lights starts dark under party vision instead,
  * and the summary leads by saying so (D-261028-08).
  *

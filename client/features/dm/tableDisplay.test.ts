@@ -24,7 +24,7 @@ describe("the DM's side", () => {
   });
 });
 
-describe("an Isometric DM's view event (docs/design-v1-isometric-view.md ISO-D17)", () => {
+describe("an Isometric DM's view event (docs/design/design-v1-isometric-view.md ISO-D17)", () => {
   test("x and y are its middle at 0, w and h the box of its canvas's corners at 0, with its turn and size in view units", () => {
     for (const turn of [0, 1, 2, 3] as Turn[]) {
       const camera = { x: 100, y: -300, scale: 40 };

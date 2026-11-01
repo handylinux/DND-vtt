@@ -29,7 +29,7 @@ const KINDS: { value: Kind; label: string }[] = [
  * chosen.
  *
  * A character's class resources come back with the rest, so a chosen rest
- * names those it restores (docs/design-v1-combat-controls.md 7.2).
+ * names those it restores (docs/design/design-v1-combat-controls.md 7.2).
  */
 export function RestSection(props: { actor: Pick<Actor, "hp" | "life"> | undefined; target: ActorTarget; resources?: readonly ClassResource[] }) {
   const actions = useRoomActions();
@@ -37,7 +37,7 @@ export function RestSection(props: { actor: Pick<Actor, "hp" | "life"> | undefin
   const [heal, setHeal] = useState<number | null>(null);
   const hp = props.actor?.hp;
   const canRest = !!hp && hp.cur >= 1 && props.actor?.life === "alive";
-  // A rest chosen and not yet finished keeps the sheet from a swipe's close: only its button sends it (docs/design-v1-sheet-swipe.md 4.5).
+  // A rest chosen and not yet finished keeps the sheet from a swipe's close: only its button sends it (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(canRest && kind !== null);
   const fighting = useRoomView((s) => !!s.view?.encounter);
   const back = kind ? restBackText(props.resources, kind) : null;
@@ -55,7 +55,7 @@ export function RestSection(props: { actor: Pick<Actor, "hp" | "life"> | undefin
       {!canRest ? <Note>A rest needs at least 1 Hit Point.</Note> : null}
       {/* A tap on the chosen rest keeps it, as with any radio. Cancel below puts the choice away. */}
       <Segmented<Kind> label="Rest" value={kind} options={KINDS} disabled={!canRest} onChange={setKind} grow />
-      {/* Only once a rest is chosen, so it adds nothing to every creature's panel during a fight (docs/design-v1-token-panel.md 3.8). */}
+      {/* Only once a rest is chosen, so it adds nothing to every creature's panel during a fight (docs/design/design-v1-token-panel.md 3.8). */}
       {canRest && fighting && kind ? <Note>A fight is running, and rolling Initiative stops a rest. End the fight first, or rest anyway.</Note> : null}
       {canRest && kind === "short" ? (
         <>

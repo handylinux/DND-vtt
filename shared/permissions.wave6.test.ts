@@ -9,7 +9,7 @@ import { applyOp } from "./reducer.ts";
 import { DM, P1, P2, actor, character, env, room, token } from "./testutil.ts";
 
 /**
- * The combat flow's permissions (docs/design-v1-combat-flow.md 4.4): a
+ * The combat flow's permissions (docs/design/design-v1-combat-flow.md 4.4): a
  * player's companion beside their character, with no setting needed, and
  * what its owners may change on it and delete. The DM may do all of it.
  */

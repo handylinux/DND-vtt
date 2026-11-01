@@ -7,7 +7,7 @@ import { cornerAt, hexCorners, hexNeighbors, sceneHexes, type Hex, type HexGrid 
 
 /**
  * Hex scenes with free walls along hex sides, for the movement tests on
- * hexes (docs/design-v1-hex-grids.md HX-D8): a wall on the side a hex
+ * hexes (docs/design/design-v1-hex-grids.md HX-D8): a wall on the side a hex
  * shares with its neighbor in direction `d`, and walls round a set of
  * solid hexes, so a test lays out rooms and corridors by hexes.
  */

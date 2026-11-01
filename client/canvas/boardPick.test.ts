@@ -37,7 +37,7 @@ function pickFor(state: RoomState, role: "dm" | "player", camera: Camera, turn: 
 
 const CAM: Camera = { x: 400, y: 120, scale: 40 };
 
-describe("the board's pick (docs/design-v1-isometric-view.md 6.1)", () => {
+describe("the board's pick (docs/design/design-v1-isometric-view.md 6.1)", () => {
   test("Top-down: a press means the point under it, and a gap is the world distance times the scale, as before", () => {
     const cam: Camera = { x: 13, y: -7, scale: 37 };
     const pick = flatPick(cam, { w: 20, h: 20 });
@@ -136,7 +136,7 @@ describe("the board's pick (docs/design-v1-isometric-view.md 6.1)", () => {
   });
 });
 
-describe("the board's pick on a hex scene (docs/design-v1-hex-grids.md HX-D11, ISOREB-OPUS-01)", () => {
+describe("the board's pick on a hex scene (docs/design/design-v1-hex-grids.md HX-D11, ISOREB-OPUS-01)", () => {
   test("both views read the scene's grid, so a standee's footprint and stand rule read its hexes as Top-down does", () => {
     for (const shape of ["hexRows", "hexColumns"] as const) {
       const state = room();
@@ -150,7 +150,7 @@ describe("the board's pick on a hex scene (docs/design-v1-hex-grids.md HX-D11, I
   });
 });
 
-describe("arrow keys move by the screen (docs/design-v1-isometric-view.md 6.5)", () => {
+describe("arrow keys move by the screen (docs/design/design-v1-isometric-view.md 6.5)", () => {
   test("Up is north at turn 0, west at 1, south at 2 and east at 3, and every arrow turns with it", () => {
     const compass = { north: [0, -1], east: [1, 0], south: [0, 1], west: [-1, 0] } as const;
     const up = [0, -1] as const;
@@ -233,7 +233,7 @@ describe("a token's ring as the board draws it (ISO34-ASTRA-3, ASTRA-9)", () => 
   });
 });
 
-describe("a turn or a switch keeps one point still (docs/design-v1-isometric-view.md 4.2, 6.4)", () => {
+describe("a turn or a switch keeps one point still (docs/design/design-v1-isometric-view.md 4.2, 6.4)", () => {
   const viewport = { width: 800, height: 600 };
   const state = heightsRoom({ "6,6": 10, "7,6": 10, "6,7": 10, "7,7": 10 });
   const pickAt = (camera: Camera, view = isometric(0) as ReturnType<typeof isometric>) => boardPickFor({ room: state, scene: state.scenes.s1!, role: "dm", fog: true, view, camera, lowPower: false }, new DrawnHeightsMemo());

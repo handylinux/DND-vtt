@@ -41,7 +41,7 @@ const Env = z.object({
   ROOM_QUOTA_MB: z.coerce.number().int().positive().default(1024),
   ROOM_SECRET_KEY: z.string().optional(),
   /**
-   * The admin page's password as an argon2id hash (docs/design-v1-dm-tools.md
+   * The admin page's password as an argon2id hash (docs/design/design-v1-dm-tools.md
    * 3.18), made by `node scripts/admin.ts hash-password`. Unset or empty,
    * there is no admin page: /admin is not found and every /api/admin route
    * answers 404.

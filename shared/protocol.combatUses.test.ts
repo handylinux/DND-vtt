@@ -10,7 +10,7 @@ const bad = (schema: Schema, value: unknown, why?: string) => assert.ok(!schema.
 const use = (u: Record<string, unknown>, more: Record<string, unknown> = {}) => ({ t: "actor.use", target: { tokenId: "dragon" }, use: u, ...more });
 const breath = { kind: "ability", key: "actions:fire-breath", name: "Fire Breath", limit: "recharge", max: 1, min: 5 };
 
-describe("combat uses: ops (docs/design-v1-combat-controls.md 3.1)", () => {
+describe("combat uses: ops (docs/design/design-v1-combat-controls.md 3.1)", () => {
   test("every kind of use, spent and given back", () => {
     ok(clientOpSchema, use({ kind: "legendary", cost: 1 }));
     ok(clientOpSchema, use({ kind: "legendary", cost: 2, key: "legendaryActions:wing-attack", name: "Wing Attack" }));
@@ -109,7 +109,7 @@ describe("combat uses: ops (docs/design-v1-combat-controls.md 3.1)", () => {
     bad(clientOpSchema, { t: "dice.roll", tag: "t1", to: "all", rolls: [{ formula: "2d6", type: "healing" }] });
   });
 
-  test("class resources go whole, each id once, a count used only within the count (docs/design-v1-ddb-resources.md 5)", () => {
+  test("class resources go whole, each id once, a count used only within the count (docs/design/design-v1-ddb-resources.md 5)", () => {
     const rage = { id: "rage", name: "Rage", max: 3, reset: "shortOne", preset: "rage", level: 3, atLevel: 3 };
     const update = (resources: unknown) => ({ t: "character.update", characterId: "thorn", patch: { resources } });
     ok(clientOpSchema, update([rage, { id: "loh", name: "Lay on Hands", max: 200, reset: "long", pool: true }]));

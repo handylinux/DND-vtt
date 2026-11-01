@@ -61,7 +61,7 @@ export function seenRoom(state: RoomState, role: Role = "player"): DropView {
   };
 }
 
-/** `view` with `tokenId`'s turn under way, so a move records what its leg took (docs/design-v1-movement.md 6.2). */
+/** `view` with `tokenId`'s turn under way, so a move records what its leg took (docs/design/design-v1-movement.md 6.2). */
 export function onTurn(view: RoomState, tokenId: string): RoomState {
   let state = view;
   const ops: Op[] = [{ t: "encounter.start", entries: [{ id: "n1", tokenId, value: 20 }] }, { t: "encounter.next" }];

@@ -14,7 +14,7 @@ import type { LoadState } from "./probe.ts";
 import { DISPOSE_MS, GONE_MS, LAND_MS, LATE_MS, PAINT_MS, ThrowStore, type PanelHost, type Stage, type StagedThrow, type StageEvents, type StageModule, type ThrowOrigin, type TrayHost } from "./store.ts";
 
 /**
- * The throw's store (docs/design-v1-roll-animation.md 3 to 7), with a fake
+ * The throw's store (docs/design/design-v1-roll-animation.md 3 to 7), with a fake
  * tracker, loader, stage, clock and idle queue, so every rule runs under
  * plain Node: which commits throw, the 1 s timer, the interruptions, the
  * warm-up, a lost context and the renderer's disposal.

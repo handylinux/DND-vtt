@@ -16,7 +16,7 @@ import { findRolls } from "./logic.ts";
 import { ReceiptTracker } from "./useReceipt.ts";
 
 /**
- * The Dice panel's flow, randomized (docs/design-v1-dice.md 8.4, 8.7 and
+ * The Dice panel's flow, randomized (docs/design/design-v1-dice.md 8.4, 8.7 and
  * 1.2): many sequences of panel rolls, rolls with their own visibility,
  * take() at a tap, choice taps, batches, refusals, acks, dropped sockets,
  * resends, a log that trims old lines, lookups and snapshots, against a
@@ -100,7 +100,7 @@ class FakeServer {
   }
 }
 
-describe("the Dice panel's flow, randomized (docs/design-v1-dice.md 8.4 and 8.7)", () => {
+describe("the Dice panel's flow, randomized (docs/design/design-v1-dice.md 8.4 and 8.7)", () => {
   test("a tag rolls once, unknown never sends again, a taken choice goes with one roll, late answers leave newer choices, and every roll settles", async () => {
     /** What the runs reached, so the test fails if the sequences stop covering a path it names. */
     const seen = new Map<string, number>();
@@ -267,12 +267,12 @@ describe("the Dice panel's flow, randomized (docs/design-v1-dice.md 8.4 and 8.7)
   });
 });
 
-describe("a roll that cannot go (docs/design-v1-dice.md 4.5 and 11)", () => {
+describe("a roll that cannot go (docs/design/design-v1-dice.md 4.5 and 11)", () => {
   function panelWith(sender: Partial<RollSender>) {
     const tracker = new ReceiptTracker();
     const choices = createStore<DiceState>(() => ({ adv: true, dis: false, secret: null, version: 3, last: null }));
     const full: RollSender = { dispatch: () => 1, connected: () => true, receipts: tracker, ...sender };
-    // A DM's panel: a roll for a creature, here a monster, starts secret, and a free formula in the open (docs/design-v1-dice.md 17).
+    // A DM's panel: a roll for a creature, here a monster, starts secret, and a free formula in the open (docs/design/design-v1-dice.md 17).
     return { choices, panel: createDicePanel({ store: choices, sender: full, secretStart: (creatures) => creatures.length > 0 }) };
   }
 
@@ -320,7 +320,7 @@ describe("a roll that cannot go (docs/design-v1-dice.md 4.5 and 11)", () => {
   });
 });
 
-describe("an answer or a death save in the header line (LP7-DICE-10, docs/design-v1-dice-ui.md 4.1)", () => {
+describe("an answer or a death save in the header line (LP7-DICE-10, docs/design/design-v1-dice-ui.md 4.1)", () => {
   function panel() {
     const choices = createStore<DiceState>(() => ({ adv: false, dis: false, secret: null, version: 0, last: null }));
     const sender: RollSender = { dispatch: () => 1, connected: () => true, receipts: new ReceiptTracker() };

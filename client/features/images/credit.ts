@@ -3,7 +3,7 @@ import { cropSourceRect } from "../../lib/tokenView.ts";
 
 /**
  * An openly licensed image's credit, as the library and the token panel show
- * it (docs/design-v1-dm-tools.md 3.13): the work and who made it, linked to
+ * it (docs/design/design-v1-dm-tools.md 3.13): the work and who made it, linked to
  * its page, its license, linked to the license, and what the app changed,
  * since Creative Commons licenses ask an adaptation to say so:
  *
@@ -15,7 +15,7 @@ import { cropSourceRect } from "../../lib/tokenView.ts";
  * size. "Cropped." is added only where a token's crop shows less than the
  * whole image, so the credit names only changes actually made.
  *
- * A starter pick (docs/design-v1-starter-art.md 9) says what its build
+ * A starter pick (docs/design/design-v1-starter-art.md 9) says what its build
  * changed in its own words, which replace the guess. When the room's copy
  * differs in size from the shipped file, as a token's 512 px copy of a
  * 1024 px portrait does, the new size follows ("Resized to 512 x 512 for

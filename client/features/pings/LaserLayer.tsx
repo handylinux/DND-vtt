@@ -18,13 +18,13 @@ import { markOwner } from "./who.ts";
  * someone else's. Nothing is saved. The store drops faded points, and
  * this layer animates by the board's one frame clock (frameClock.ts),
  * which runs in the ping controller only while some trail still has
- * points. In low power (docs/design-v1-dm-tools.md 3.15) the trail does
+ * points. In low power (docs/design/design-v1-dm-tools.md 3.15) the trail does
  * not fade: it draws whole with no loop, and each point goes when the
  * store drops it.
  *
  * In Isometric the trail draws in the drag layer, standing in view space,
  * each point at the drawn height of the ground under it
- * (docs/design-v1-isometric-view.md 5.3).
+ * (docs/design/design-v1-isometric-view.md 5.3).
  */
 
 const CORE_PX = 3;

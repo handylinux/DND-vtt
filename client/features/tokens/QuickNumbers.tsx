@@ -9,7 +9,7 @@ import { quickUnit, type QuickUnit, type VitalItem } from "./statSummary.ts";
 
 /**
  * The numbers a table asks for most, under a token's name at the top of its
- * panel (docs/design-v1-dice-ui.md 5.1): AC on its shield, speed after the
+ * panel (docs/design/design-v1-dice-ui.md 5.1): AC on its shield, speed after the
  * footprints, Passive Perception, initiative, the elevation off the
  * ground, and the sheet link where the viewer's copy holds one. Each
  * number is one unbreakable unit, speed breaking only between its modes,

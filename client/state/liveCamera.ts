@@ -5,7 +5,7 @@ import type { Camera } from "../lib/camera.ts";
 import { scopeSlot, useScoped } from "./scope.ts";
 
 /**
- * The camera on screen, outside React (docs/design-v1-relief-pan.md 6.2).
+ * The camera on screen, outside React (docs/design/design-v1-relief-pan.md 6.2).
  * In Isometric a pan inside the board's cull step moves the stages without
  * a React render, so the camera's one source of truth lives here: every
  * camera path writes it, `camRef` reads it, and the board's applier
@@ -90,7 +90,7 @@ export type CameraFit = "inside" | "step" | "out";
  * applier, which moves both stages: inside the rendered cull step nothing
  * renders, past it the board renders to lay out again, and a view that left
  * the layout renders at once, before the scheduler draws, so no strip lies
- * past what is laid out (docs/design-v1-relief-pan.md 5.6). A zoom, every
+ * past what is laid out (docs/design/design-v1-relief-pan.md 5.6). A zoom, every
  * Top-down move, and the move a gesture ends on set state as before.
  * Says how MapStage's state follows: not at all, in its own time, or inside flushSync.
  */
@@ -122,7 +122,7 @@ export type LastApplied = { camera: Camera | null; stage: unknown; ratio: number
  * Whether a board render must put `want` on the stages: only when it, the
  * stage or the pixel ratio is new since the last apply, as react-konva sets
  * a prop only when it changes. A render that changes nothing then moves
- * nothing, and none writes an older camera back (docs/design-v1-relief-pan.md 11).
+ * nothing, and none writes an older camera back (docs/design/design-v1-relief-pan.md 11).
  */
 export function needsApply(last: LastApplied, want: Camera, stage: unknown, ratio: number): boolean {
   return last.camera !== want || last.stage !== stage || last.ratio !== ratio;

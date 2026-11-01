@@ -42,7 +42,7 @@ import { NumberField } from "./ui.tsx";
  * alone, a few at most) and puts their tokens on the players' scene. A
  * player deletes a character they play alone, whoever made it.
  *
- * A character's row opens its page (docs/design-v1-look-pass.md 3.1), the
+ * A character's row opens its page (docs/design/design-v1-look-pass.md 3.1), the
  * panel's subpage, named by the character with "Back to Characters" in the
  * sheet's or side panel's header (usePanelHeader). Which page is open lives
  * in the Room's scope (characterPage.ts), so a companion's link in the
@@ -59,7 +59,7 @@ export default function CharactersPanel(props: PanelProps) {
    * The form in the panel's place lives in the slot beside the page, so the
    * remount a crossing of 900 px makes keeps it: New character, the
    * character whose "Add a companion" form shows, or the character whose
-   * stat blocks page shows (docs/design-v1-companion-stat-blocks.md 6.4).
+   * stat blocks page shows (docs/design/design-v1-companion-stat-blocks.md 6.4).
    */
   const shownForm = useStore(pageStore, useShallow(formFields));
   const formId = shownForm?.id ?? "";
@@ -94,7 +94,7 @@ export default function CharactersPanel(props: PanelProps) {
 
   /*
    * New character, Add a companion and a character's stat blocks are
-   * subpages too, each naming itself in the header (docs/design-v1-look-pass.md
+   * subpages too, each naming itself in the header (docs/design/design-v1-look-pass.md
    * 3.1). They name the control that opened them in their `backTo`, so
    * leaving one hands focus back to it on the page it returns to.
    */
@@ -174,7 +174,7 @@ export default function CharactersPanel(props: PanelProps) {
       {mine.map((c) => (
         <CharacterRow key={c.id} character={c} onOpen={() => openPage(c.id)} />
       ))}
-      {/* A long rest comes once a day and the list is read every time, so the rest waits below it (docs/design-v1-layout-hierarchy.md M8). */}
+      {/* A long rest comes once a day and the list is read every time, so the rest waits below it (docs/design/design-v1-layout-hierarchy.md M8). */}
       {dm && list.length > 0 ? <PartyLongRest characters={list} /> : null}
       {others.length > 0 ? (
         <Section label="The party">
@@ -387,7 +387,7 @@ function NewCharacter(props: { formId: string; since: number; onDone(id: string 
   const [error, setError] = useState<string | null>(null);
   const draft: NewCharacterDraft = { name, owners, size, hpMax, ac, walk, initBonus, pp, image };
   const { typed, pending } = usePendingNumbers(draft);
-  // Only Create sends the form, so a sheet's swipe springs back once anything in it changed (docs/design-v1-sheet-swipe.md 4.5), a number still being typed too.
+  // Only Create sends the form, so a sheet's swipe springs back once anything in it changed (docs/design/design-v1-sheet-swipe.md 4.5), a number still being typed too.
   useUnsavedSince(typed);
   useKeepDraft(props.formId, typed, start);
   const leave = useLeaveForm(props.formId, typed, JSON.stringify(typed) !== start, (to) => props.onDone(null, to), props.opened, props.since);

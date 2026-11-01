@@ -190,7 +190,7 @@ describe("a holder's route search walks the creature it drags beside it with it 
   });
 });
 
-describe("a new seat on a holder over uneven ground (docs/design-v1-attach.md 4.1)", () => {
+describe("a new seat on a holder over uneven ground (docs/design/design-v1-attach.md 4.1)", () => {
   test("is planned at the holder's elevation, which the server takes from a player who may only re-seat the token", () => {
     // P1's warhorse straddles a 10 ft step, standing at 10 ft, and carries the DM's grappled kobold on its high half.
     const horse = token("horse", { name: "Warhorse", kind: "npc", size: "large", x: 4, y: 4, elevation: 10, ownerIds: ["p1"] });
@@ -849,7 +849,7 @@ describe("a walking ruler sees a party member its legs move where every player s
       });
       state.scenes.s1 = { ...state.scenes.s1!, fogEnabled: true };
       reveal(state, "s1", { x: 0, y: 0, w: 8, h: 12 });
-      // Players hold a wall only where they hold a cell beside it (docs/design-v1-map-discovery.md 5.2): the patch of ground about it is lifted too.
+      // Players hold a wall only where they hold a cell beside it (docs/design/design-v1-map-discovery.md 5.2): the patch of ground about it is lifted too.
       reveal(state, "s1", { x: 9, y: 2, w: 1, h: 2 });
       const spots = [{ x: 10, y: 5 }, { x: 10, y: 1 }];
       let room = state;

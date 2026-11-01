@@ -13,7 +13,7 @@ export const FORGET_YES = "Go ahead";
 export const FORGET_BUSY = "Saving…";
 
 /**
- * The builder's forget question (docs/design-v1-map-discovery.md 5.3): a
+ * The builder's forget question (docs/design/design-v1-map-discovery.md 5.3): a
  * DM's builder op, a paste or a Clear the build that would push players'
  * remembered map past its cap is refused with FORGET_ASK, and this asks
  * once per gesture before it is sent again with `forget`

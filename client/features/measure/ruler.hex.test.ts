@@ -11,7 +11,7 @@ import { freeStop, type GroundReader } from "./ruler.ts";
 /**
  * A straight ruler's free stop on a hex scene stands on the ground of the
  * hex it sits on, read by its key, and a player's fog is read on that hex
- * (docs/design-v1-hex-grids.md H3), never on the hex whose key the stop's
+ * (docs/design/design-v1-hex-grids.md H3), never on the hex whose key the stop's
  * floored world point happens to spell.
  */
 

@@ -3,7 +3,7 @@ import type { AbilityKey, ClassResource } from "../model.ts";
 
 /**
  * The SRD 5.2.1 class resources a player can add as presets
- * (docs/design-v1-combat-controls.md 7.1 and Appendix A): each class
+ * (docs/design/design-v1-combat-controls.md 7.1 and Appendix A): each class
  * feature with a count of uses that a rest brings back, the class level it
  * starts at, its count by class level, and the rest that brings it back.
  * The app does not know a character's classes, so the player picks the
@@ -143,7 +143,7 @@ export function presetReset(preset: ClassPreset, classLevel: number): ClassResou
 /** A class resource as the resource sheets send it in character.update: no `used`, which the reducer keeps by id. */
 export type ResourceInput = Omit<ClassResource, "used">;
 
-/** As a sync, its Undo or the editor's Save sends one: `used` only where it sets the count spent (docs/design-v1-ddb-resources.md 5). */
+/** As a sync, its Undo or the editor's Save sends one: `used` only where it sets the count spent (docs/design/design-v1-ddb-resources.md 5). */
 export type ResourceSent = ResourceInput & { used?: number };
 
 /**

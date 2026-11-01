@@ -14,7 +14,7 @@ import type { AbilityBox } from "./abilityTable.ts";
 
 /**
  * The six abilities three across, as the 2024 block prints them: about a
- * third of the height of a seven-row table (docs/design-v1-dice-ui.md 6.1
+ * third of the height of a seven-row table (docs/design/design-v1-dice-ui.md 6.1
  * and 6.3). A PC's block and a monster's draw the same grid, so the two
  * read alike in the token panel.
  *
@@ -25,13 +25,13 @@ import type { AbilityBox } from "./abilityTable.ts";
  * so no box, row or grid changes size for it.
  *
  * With `roll`, where the viewer may roll for the block's creature, the six
- * boxes open that ability's rolls (docs/design-v1-stat-block-rolls.md): a
+ * boxes open that ability's rolls (docs/design/design-v1-stat-block-rolls.md): a
  * group of six buttons that look as the text boxes do, with the newest
  * result under them. Without it the grid is the read only list it always was.
  */
 /**
  * Whom a block's boxes roll for, as the viewer reads the room (section 2 of
- * docs/design-v1-stat-block-rolls.md), or null where they stay text. The
+ * docs/design/design-v1-stat-block-rolls.md), or null where they stay text. The
  * same creature keeps the same object across the room's changes, so a list
  * that is open is not handed a new roller at every op.
  */

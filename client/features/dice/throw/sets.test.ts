@@ -5,7 +5,7 @@ import { theme } from "../../../lib/theme.ts";
 import { DEFAULT_DICE_SET, DICE_SETS, diceSet, parseDiceSet } from "./sets.ts";
 
 /**
- * The dice sets (docs/design-v1-roll-animation.md 9.1), read unlit: lit and
+ * The dice sets (docs/design/design-v1-roll-animation.md 9.1), read unlit: lit and
  * shaded they were measured from rendered pixels, and the unlit colors are
  * what a new set is checked against before it is drawn.
  */

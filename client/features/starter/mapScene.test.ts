@@ -122,7 +122,7 @@ describe("the grid a starter map's scene starts on", () => {
     assert.equal(retainedGrid({ width: 4096, sha256: SHA }, { ...inked, grid: undefined }), null);
   });
 
-  test("made on hexes, takes no measured square grid and opens Line up grid (docs/design-v1-hex-grids.md HX-D19)", () => {
+  test("made on hexes, takes no measured square grid and opens Line up grid (docs/design/design-v1-hex-grids.md HX-D19)", () => {
     const made = starterMapScene({ id: "s1", name: "", asset: ROW, work: inked, grid: measured, gridShape: "hexRows" });
     assert.equal(made.aligned, false);
     assert.equal(made.scene.gridShape, "hexRows");

@@ -45,8 +45,8 @@ import type { PanelClose } from "../panels.ts";
 
 /**
  * Settings of the scene the DM is looking at, grouped by what each is for
- * (docs/design-v1-map-discovery.md 8.4): the scene's name under "This
- * scene", apart from New scene above it (docs/design-v1-design-pass.md
+ * (docs/design/design-v1-map-discovery.md 8.4): the scene's name under "This
+ * scene", apart from New scene above it (docs/design/design-v1-design-pass.md
  * 4.1), then What players see, everything that decides what reaches players
  * (features/vision/VisionSettings.tsx), then Map image and grid, Walls and
  * movement, and Size and view: the scene's size, background and views, then export
@@ -55,7 +55,7 @@ import type { PanelClose } from "../panels.ts";
  * folded on a phone (settingsFolds.ts), and stays mounted while folded, so
  * an upload in it is never cut short. Every change is one op, so it shows at once
  * and undo covers it, and a setting that is on or off is a Switch row
- * named by the setting (docs/design-v1-visual.md 3.7), never a button
+ * named by the setting (docs/design/design-v1-visual.md 3.7), never a button
  * named by its state.
  */
 export function SceneSettings(props: { scene: Scene; others: Scene[]; close: PanelClose }) {
@@ -65,7 +65,7 @@ export function SceneSettings(props: { scene: Scene; others: Scene[]; close: Pan
   const scope = useRoomScope();
   const startFraming = useStartFraming();
   const fold = useSceneFolds();
-  // As the token panel's and the character page's groups (docs/design-v1-design-pass.md 4.1), kept mounted while folded so an upload in one is never cut short.
+  // As the token panel's and the character page's groups (docs/design/design-v1-design-pass.md 4.1), kept mounted while folded so an upload in one is never cut short.
   const group = (key: SceneGroup) => ({ label: SCENE_GROUP_LABELS[key], icon: SCENE_GROUP_ICONS[key], ...fold(key), keep: true, summary: sceneGroupSummary(scene, key) });
   const update = (patch: OpOf<"scene.update">["patch"]) => actions.dispatch({ t: "scene.update", sceneId: scene.id, patch });
   const playerSceneId = useRoomView((s) => s.view?.meta.playerSceneId ?? null);
@@ -178,7 +178,7 @@ const VIEWS: readonly { value: ViewKind; label: string }[] = [
 
 /**
  * The view devices that follow the scene show on it
- * (docs/design-v1-isometric-view.md 7): Top-down, which stores nothing, or
+ * (docs/design/design-v1-isometric-view.md 7): Top-down, which stores nothing, or
  * Isometric. Each device may pick its own view instead, from the View
  * button, and a pick holds until it follows the scene again.
  */
@@ -192,7 +192,7 @@ function SuggestedView(props: { scene: Scene; onChange(view: ViewKind): void }) 
 
 /**
  * The walls the builder adds where painted ground meets unpainted ground
- * (docs/design-v1-maps-vision.md section 2.1). Each note names the edges its
+ * (docs/design/design-v1-maps-vision.md section 2.1). Each note names the edges its
  * rule walls, so switching says which edges open or close.
  */
 const AUTO_WALLS: readonly { value: AutoWalls; label: string }[] = [
@@ -270,7 +270,7 @@ function GridStyle(props: { scene: Scene; onChange(grid: Scene["grid"]): void; c
 }
 
 /**
- * The scene's grid shape (docs/design-v1-hex-grids.md section 8), beside
+ * The scene's grid shape (docs/design/design-v1-hex-grids.md section 8), beside
  * Line up the grid. A shape the scene's content cannot stand on is off,
  * with the reducer's own words for why (shared/rules/grid.ts
  * `switchRefusal`), and so is every hex shape for a scene that came with
@@ -328,7 +328,7 @@ function MapGrid(props: { scene: Scene; map: NonNullable<Scene["map"]>; close: P
     setDown(squares.down);
     setCountsEdited(false);
   }, [scene.id, squares.across, squares.down]);
-  // Only Apply sends counts typed over the grid's own, so a sheet's swipe springs back until then (docs/design-v1-sheet-swipe.md 4.5).
+  // Only Apply sends counts typed over the grid's own, so a sheet's swipe springs back until then (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(countsEdited && (across !== squares.across || down !== squares.down));
   const counts = calibrationFromCounts(map, across, down);
 
@@ -442,7 +442,7 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
   /** On the players' scene: the DM has read the warning, and the picker is out. */
   const [armed, setArmed] = useState(false);
   const [fogIt, setFogIt] = useState(true);
-  // The picked image reads the fog choice, so a sheet's swipe springs back while the picker is out with it changed (docs/design-v1-sheet-swipe.md 4.5).
+  // The picked image reads the fog choice, so a sheet's swipe springs back while the picker is out with it changed (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(armed && !fogIt);
   useEffect(() => setArmed(false), [scene.id]);
   /*
@@ -465,7 +465,7 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
   const phaseCount = scene.phases?.length ?? 0;
   /*
    * A key paste lands here only with focus in the row, and on the players'
-   * scene only once the DM has confirmed (docs/design-v1-paste.md 1.2):
+   * scene only once the DM has confirmed (docs/design/design-v1-paste.md 1.2):
    * the row is on screen whenever the Scenes panel is, and a paste uploads
    * at once, so a Ctrl+V meant for the room must never replace the map.
    * Confirming moves focus into the row, so the rule costs nothing.
@@ -596,7 +596,7 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
     </>
   );
 
-  /* Removing the image removes every map phase with it (docs/design-v1-maps-vision.md section 3.4), so the second tap says so. */
+  /* Removing the image removes every map phase with it (docs/design/design-v1-maps-vision.md section 3.4), so the second tap says so. */
   const removeButton = (
     <ConfirmButton
       label="Remove map image"

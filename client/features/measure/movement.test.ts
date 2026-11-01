@@ -63,7 +63,7 @@ describe("movement since the turn began", () => {
     assert.equal(shoved.movedFt, 15, "a shove's diagonal is not the creature's");
   });
 
-  test("the DM's trail draws no leg a holder carried the creature, which its holder's own trail shows (docs/design-v1-attach.md 7.2)", () => {
+  test("the DM's trail draws no leg a holder carried the creature, which its holder's own trail shows (docs/design/design-v1-attach.md 7.2)", () => {
     const stops: PathStop[] = [stop(2, 2), stop(4, 2), { ...stop(8, 2), uncounted: true, carried: true }, stop(8, 4)];
     const trail = turnTrail({ grid: SQUARES, encounter: fight, sceneId: "s1", token: tok({ x: 8, y: 4, path: { turn: 7, stops } }), rules: five, role: "dm" })!;
     assert.deepEqual(trail.legs.map((l) => [l.counted, l.carried]), [[true, false], [false, true], [true, false]]);
@@ -182,7 +182,7 @@ describe("movement since the turn began", () => {
   });
 });
 
-describe("a resize on the turn (docs/design-v1-token-window.md 8.7)", () => {
+describe("a resize on the turn (docs/design/design-v1-token-window.md 8.7)", () => {
   const MEDIUM = { w: 1, h: 1 };
   const TINY = { w: 0.5, h: 0.5 };
 
@@ -434,7 +434,7 @@ describe("a resize on the turn (docs/design-v1-token-window.md 8.7)", () => {
   });
 });
 
-describe("a drag along a route (docs/design-v1-movement.md 3.1, 3.2 and 4.2)", () => {
+describe("a drag along a route (docs/design/design-v1-movement.md 3.1, 3.2 and 4.2)", () => {
   const walker = tok({ x: 0, y: 0 });
   const calm = { encounter: null, activeTokenId: null, speeds: { walk: 30 }, rules: five, role: "dm" as const };
   const flat = (pts: [number, number][]) => pts.map(([x, y]) => ({ x, y, elevation: 0 }));

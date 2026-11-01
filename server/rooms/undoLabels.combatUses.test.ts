@@ -14,7 +14,7 @@ function state() {
   });
 }
 
-describe("combat uses' undo step labels (docs/design-v1-combat-controls.md 3.5)", () => {
+describe("combat uses' undo step labels (docs/design/design-v1-combat-controls.md 3.5)", () => {
   test("a use names what it spent or gave back, and for whom", () => {
     const s = state();
     assert.equal(describeOp({ t: "actor.use", target: { tokenId: "dragon" }, use: { kind: "legendary", cost: 1, key: "legendaryActions:fiery-rays", name: "Fiery Rays", once: true } }, s), "using Fiery Rays for Adult Red Dragon");

@@ -11,7 +11,7 @@ import { hpRevertOf } from "./hpUndo.ts";
 import { invalid, type ResolvedActor, type Tx } from "./tx.ts";
 
 /**
- * A creature's limited uses (docs/design-v1-combat-controls.md 2 and 3):
+ * A creature's limited uses (docs/design/design-v1-combat-controls.md 2 and 3):
  * what `actor.use` spends and gives back. The reducer never reads a stat
  * block (3.2), so the op carries what the sending device read there, and
  * the marks keep the ability's name, so they read and give back without it.
@@ -353,7 +353,7 @@ function needsRecord(resolved: ResolvedActor, due: readonly string[]): boolean {
 }
 
 /**
- * A turn starts (docs/design-v1-combat-controls.md 2.3, 2.4 and 3.3): each
+ * A turn starts (docs/design/design-v1-combat-controls.md 2.3, 2.4 and 3.3): each
  * creature of it gets its turn record where 2.3 says, stamped with the seq
  * of the op, the turn's row and round, its HP and life, the damage types of
  * the window it closes (`took`, which empties `hurt`) and the recharges due

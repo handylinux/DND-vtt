@@ -1,6 +1,6 @@
 /**
  * The DM guide's pictures of sight per player (docs/dm-guide.md, "Sight
- * for each player", docs/design-v1-per-player-vision.md): the Vision
+ * for each player", docs/design/design-v1-per-player-vision.md): the Vision
  * settings of a per-player scene, and View as a player for each of the
  * two players on it, taken from the real server on the production build
  * so they always show the app as it is.

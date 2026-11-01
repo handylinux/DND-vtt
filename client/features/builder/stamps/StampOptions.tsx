@@ -23,7 +23,7 @@ const CHOOSER_NAME_MAX = 160;
 
 /**
  * Stamp mode's slots in the builder's row (design 3.5,
- * docs/design-v1-tool-options.md 9.9): the stamp the next tap places and
+ * docs/design/design-v1-tool-options.md 9.9): the stamp the next tap places and
  * Snap, and for the selected stamp its tint, Flip, Bring to front,
  * Duplicate, who sees it, Delete and Done, a task of their own that comes
  * after a 1 px line. Each button sends one op, so the row's Undo takes back

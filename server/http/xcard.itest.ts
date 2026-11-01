@@ -14,7 +14,7 @@ import { registerSecurity } from "./security.ts";
 import { registerXCardRoutes } from "./xcard.ts";
 
 /**
- * The X-card (docs/design-v1-dm-tools.md 3.11): the route, its broadcast to
+ * The X-card (docs/design/design-v1-dm-tools.md 3.11): the route, its broadcast to
  * every socket of the room, and that nothing about a tap is written or sent
  * back that could name who tapped it.
  */

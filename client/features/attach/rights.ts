@@ -5,7 +5,7 @@ import { ownsToken } from "../tokens/access.ts";
 import { movesOthers } from "../../canvas/dragRights.ts";
 
 /**
- * Who may attach, detach, drag and direct what (docs/design-v1-attach.md
+ * Who may attach, detach, drag and direct what (docs/design/design-v1-attach.md
  * 6), read from this member's own copy of the room, so the bar and the map
  * offer only what the server takes. The server's rule is in
  * shared/permissions.ts, and rights.test.ts compares the two, as

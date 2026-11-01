@@ -14,7 +14,7 @@ import { rowResult, type Mark, type RowBase } from "./rows.ts";
 import { parseDamageOverride } from "./damageInput.ts";
 
 /**
- * What the outcome does to each row (docs/design-v1-roll-options.md 5.4)
+ * What the outcome does to each row (docs/design/design-v1-roll-options.md 5.4)
  * and the plan Apply freezes from them (5.5), read from the page and the
  * DM's view at the moment of reading.
  */
@@ -43,7 +43,7 @@ export type RowOutcome = {
   evasion: boolean;
   /**
    * The damage types its amount carries (outcome.ts dealtTypes), for the
-   * Regeneration note (docs/design-v1-combat-controls.md 3.4): none when it
+   * Regeneration note (docs/design/design-v1-combat-controls.md 3.4): none when it
    * takes nothing. A plain override keeps the worked-out parts' types,
    * and a typed override supplies its own.
    */
@@ -281,7 +281,7 @@ export const SETTLE_WORDS = "Settle: it changes no one";
  * skipped row, with its amount, its conditions with ids from `newId`, and
  * each Legendary Resistance used. Null when nothing would change, but for
  * a trap's springing, which still has to be settled: its plan names no
- * creature (docs/design-v1-traps.md 4.4).
+ * creature (docs/design/design-v1-traps.md 4.4).
  */
 export function buildPlan(page: Page, dice: DiceView, amounts: PartAmount[] | null, ids: { plan: string; newId: () => string }): OpOf<"actor.outcome"> | null {
   if (amounts && (amounts.length > MAX_DAMAGE_PARTS || amounts.reduce((sum, part) => sum + Math.max(0, part.amount), 0) > 100_000)) return null;
@@ -304,11 +304,11 @@ export function buildPlan(page: Page, dice: DiceView, amounts: PartAmount[] | nu
     rows.push({ target: row.target, amount: outcome.amount, conditions: outcome.conditions, resist: outcome.resisted, types: outcome.types, ...(outcome.damage ? { damage: outcome.damage } : {}) });
   }
   const targets = planTargets(rows, ids.newId);
-  // The outcome closes the player's ask it answers in the same op (docs/design-v1-player-save-spell.md 3.3).
-  // A trap's springing is settled by the outcome that applies it, in the same op (docs/design-v1-traps.md 4.4).
+  // The outcome closes the player's ask it answers in the same op (docs/design/design-v1-player-save-spell.md 3.3).
+  // A trap's springing is settled by the outcome that applies it, in the same op (docs/design/design-v1-traps.md 4.4).
   const closing = closingOf(page);
   if (targets.length === 0 && closing.trap === undefined) return null;
-  // Saves rolled in secret keep a Legendary Resistance's use line from players (docs/design-v1-combat-controls.md 8).
+  // Saves rolled in secret keep a Legendary Resistance's use line from players (docs/design/design-v1-combat-controls.md 8).
   return { t: "actor.outcome", plan: ids.plan, ...(page.fill ? { label: page.fill.name } : {}), ...closing, targets, ...(page.secret ? { quiet: true as const } : {}) };
 }
 

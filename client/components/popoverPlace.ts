@@ -1,5 +1,5 @@
 /**
- * Where a popover stands (docs/design-v1-tool-options.md 7.1, "Placement").
+ * Where a popover stands (docs/design/design-v1-tool-options.md 7.1, "Placement").
  * A pure function of measured rectangles, all in the chrome's own px: a
  * client rectangle divided by the interface size, as Room's measures are,
  * so the interface size never enters the rule.

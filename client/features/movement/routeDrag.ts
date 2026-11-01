@@ -4,7 +4,7 @@ import { routeLegCheck, routeSearch, routeWorld, routeWorldUnits, type RouteLegC
 import type { RouteJob, RouteWork } from "./routeWork.ts";
 
 /**
- * A lone token drag's route search (docs/design-v1-movement.md 5.2), as a
+ * A lone token drag's route search (docs/design/design-v1-movement.md 5.2), as a
  * small state machine kept free of React and Konva so it is tested under
  * plain Node: the finger aims at spots, and the drag's work, its world's
  * build, the open-ground check and then the search, runs through the
@@ -22,7 +22,7 @@ import type { RouteJob, RouteWork } from "./routeWork.ts";
  * What the search says of the spot aimed at: the straight leg is the route,
  * a route, no route, or still searching since a time. With no route, a
  * creature the walker drags beside it that cannot follow where the walker
- * alone would go is `follower` (docs/design-v1-attach.md 4.2).
+ * alone would go is `follower` (docs/design/design-v1-attach.md 4.2).
  */
 export type RouteAnswer = { kind: "open" } | { kind: "route"; route: WalkRoute } | { kind: "none"; capped: boolean; follower?: string } | { kind: "searching"; since: number };
 

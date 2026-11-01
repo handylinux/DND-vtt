@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 /*
  * The ping sound is one setting shown in two places, the ping tool's
- * "Ping sound" and This device's switch (docs/design-v1-visual.md 3.7).
+ * "Ping sound" and This device's switch (docs/design/design-v1-visual.md 3.7).
  * Each case loads the module afresh, as a new page does, since it reads
  * storage once as the page starts.
  */

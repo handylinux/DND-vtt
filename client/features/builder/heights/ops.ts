@@ -9,7 +9,7 @@ import { cellKey, chunk, clipRect, parseCellKey, rectBetween, type Bounds, type 
 import type { HeightState, StairChoice } from "./store.ts";
 
 /**
- * Turning Height mode's gestures into ops (docs/design-v1-maps-vision.md
+ * Turning Height mode's gestures into ops (docs/design/design-v1-maps-vision.md
  * section 4.2): `build.height` and `build.stairs`, at most 2,000 cells each.
  * Cells that already look the way the gesture leaves them are left out, so
  * a stroke back over painted ground sends nothing and adds no undo step.
@@ -35,7 +35,7 @@ export function stairOps(sceneId: string, cells: readonly string[], choice: Stai
   return chunk(changed, LIMITS.heightCellsPerOp).map((part) => ({ t: "build.stairs", sceneId, cells: part, up }));
 }
 
-/** Marks cells as difficult ground or clears their marks (docs/design-v1-movement.md 6.3), leaving out cells already so. */
+/** Marks cells as difficult ground or clears their marks (docs/design/design-v1-movement.md 6.3), leaving out cells already so. */
 export function roughOps(sceneId: string, cells: readonly string[], on: boolean, marked: (x: number, y: number) => boolean): ClientOp[] {
   const changed = cells.filter((key) => {
     const c = parseCellKey(key);

@@ -15,7 +15,7 @@ import { SERVER_ACTOR } from "./actor.ts";
 import { exploreOp } from "./explore.ts";
 
 /**
- * The explore step on a per-player scene (docs/design-v1-per-player-vision.md
+ * The explore step on a per-player scene (docs/design/design-v1-per-player-vision.md
  * 6.1 and 6.3, lane PV3), on real sight: the shared sight into the party's
  * layer, each holder's own sight into theirs, and the joins the holder list
  * gains, ticked by the cap in force.
@@ -313,7 +313,7 @@ describe("the explore step's joins", () => {
 // Random sequences
 
 /**
- * The step after many random events (docs/design-v1-per-player-vision.md
+ * The step after many random events (docs/design/design-v1-per-player-vision.md
  * 6.1 and 6.3), each event an op as the DM or the server applies it, then
  * the step and its op applied as the actor applies it. After each step:
  *

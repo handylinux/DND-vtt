@@ -7,7 +7,7 @@ import type { PopoverHandle } from "./Popover.tsx";
 
 /*
  * Menu items with their own content, look, marks, names and presses
- * (docs/design-v1-stat-block-rolls.md 4.7 and 10), as an ability's list
+ * (docs/design/design-v1-stat-block-rolls.md 4.7 and 10), as an ability's list
  * draws its rows. An item without them draws as before.
  */
 

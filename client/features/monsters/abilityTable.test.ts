@@ -13,7 +13,7 @@ const { StatBlockView } = await import("./StatBlockView.tsx");
 
 const TABLE = ["| | Score | Mod | Save |", "| --- | --- | --- | --- |", "| Str | 21 | +5 | +5 |", "| Dex | 9 | −1 | +3 |", "| Con | 15 | +2 | +6 |", "| Int | 18 | +4 | +8 |", "| Wis | 15 | +2 | +6 |", "| Cha | 18 | +4 | +4 |"];
 
-describe("a monster block's ability table, three across (docs/design-v1-dice-ui.md 6.3)", () => {
+describe("a monster block's ability table, three across (docs/design/design-v1-dice-ui.md 6.3)", () => {
   test("the table is read out of the text, which is otherwise left as written", () => {
     const text = ["## Aboleth", "", "**Speed** 10 ft.", "", ...TABLE, "", "**Skills** History +12"].join("\n");
     const split = splitAbilityTable(text);

@@ -56,7 +56,7 @@ function ground(cells: Record<string, number>): Record<string, BuildChunk> {
 
 const valid = (trap: unknown) => clientOpSchema.safeParse({ t: "trap.create", trap });
 
-describe("drawing a trap's zone (docs/design-v1-traps.md 4.1)", () => {
+describe("drawing a trap's zone (docs/design/design-v1-traps.md 4.1)", () => {
   test("squares snap to whole cells, stay on the scene and stop at 20 a side from where the drag began", () => {
     assert.deepEqual(rectBetween(SQUARES, { x: 2.4, y: 3.9 }, { x: 4.1, y: 3.2 }, BOUNDS), { x: 2, y: 3, w: 3, h: 1 });
     assert.deepEqual(rectBetween(SQUARES, { x: 5.5, y: 5.5 }, { x: 1.2, y: 0.4 }, BOUNDS), { x: 1, y: 0, w: 5, h: 6 }, "dragged up and left");
@@ -274,7 +274,7 @@ describe("the pane's lines and its asks for rolls", () => {
     assert.equal(openedLine({ floor: 5 }), "Opened: its floor is at 5 ft.");
   });
 
-  test("one wording per idea: the switch's words, uses, and None for every empty summary (docs/design-v1-look-pass-2.md D22)", () => {
+  test("one wording per idea: the switch's words, uses, and None for every empty summary (docs/design/design-v1-look-pass-2.md D22)", () => {
     assert.equal(afterSummary(rig({ resets: "nextTurn", stops: false, usesLeft: 3 }), null), "Arms again at the start of the next turn, 3 uses left");
     assert.equal(afterSummary(rig({ stops: false, usesLeft: 0 }), null), "Goes off once, no uses left");
     assert.equal(findSummary(rig({})), "None");

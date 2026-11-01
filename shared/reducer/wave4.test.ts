@@ -12,7 +12,7 @@ import { DM, P1, actor, apply, entry, env, refused, reveal, room, scene, token }
 import { guardMatches } from "./misc.ts";
 
 /**
- * The wave 4 reducer (docs/design-v1-maps-vision.md section 4): doors,
+ * The wave 4 reducer (docs/design/design-v1-maps-vision.md section 4): doors,
  * heights and stairs with the tokens standing on them, squeezes and
  * teleports, carried lights and party members, vision settings and phase
  * light, and the party's explored layer beside the DM's fog.

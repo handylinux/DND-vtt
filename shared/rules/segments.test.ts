@@ -566,7 +566,7 @@ describe("SegmentIndex", () => {
 describe("determinism", () => {
   /*
    * Sight's "seen" marks are stored facts, so the code behind them may use
-   * only arithmetic that every engine rounds alike (docs/design-v1-maps-vision.md
+   * only arithmetic that every engine rounds alike (docs/design/design-v1-maps-vision.md
    * 4.3.4). This file and vision.ts, and everything they import other than
    * types, must not call these. heights.test.ts checks heights.ts the same way.
    */

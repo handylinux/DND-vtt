@@ -121,7 +121,7 @@ The owner's seventh line (D-261026-2's fifth and sixth amendments). A class reso
 
 **Tests**: `client/features/combat/logic.test.ts`, `UsesSection.test.ts`, `usesSurfaces.test.ts`, `client/features/resources/ResourceRows.test.ts`, and the e2e files `combatuses`, `combat` (its pips loop), `tokenpanel` (its pips groups) and `classresources` (its counts in words), plus `reach`. The alignment sweep already covers the Uses section, the row group and the drawer through `combatuses`.
 
-**Docs** (the lane's last commit): `FEATURES.md` (Uses, and its pips sentence), `docs/dm-guide.md` (Uses and legendary actions, with a new `uses.webp`, and the two lines that place the legendary pips: the Combat group's Uses and the tracker row's options), `docs/design-v1-token-sections.md` 3.1 (points here), `docs/design-v1-combat-controls.md` (its pips mentions).
+**Docs** (the lane's last commit): `FEATURES.md` (Uses, and its pips sentence), `docs/dm-guide.md` (Uses and legendary actions, with a new `uses.webp`, and the two lines that place the legendary pips: the Combat group's Uses and the tracker row's options), `docs/design/design-v1-token-sections.md` 3.1 (points here), `docs/design/design-v1-combat-controls.md` (its pips mentions).
 
 ## 8. Screenshots
 

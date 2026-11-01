@@ -5,7 +5,7 @@ import { lightCells, senseCells } from "#shared/rules/vision.ts";
 
 /**
  * How far a sense or a light really reaches on the room's grid
- * (docs/design-v1-maps-vision.md section 2.4). Sight stops a sense at
+ * (docs/design/design-v1-maps-vision.md section 2.4). Sight stops a sense at
  * LIMITS.senseMaxCells and each light radius at LIMITS.lightRadiusMaxCells
  * as well as at their feet, so a grid finer than 5 ft per cell costs what
  * 5 ft does. There a 60 ft darkvision reaches 30 cells, which is 30 ft at

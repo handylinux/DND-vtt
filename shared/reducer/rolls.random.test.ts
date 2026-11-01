@@ -11,7 +11,7 @@ import { DM, P1, P2, actor, chance, character, companionBlock, env, int, pick, r
 import { ALREADY_ASKED, DIE_NEEDED, FINAL, ROLLED_ONLY, SEND_INSTEAD, TYPED_ONLY, isFinal } from "./rolls.ts";
 
 /**
- * Randomized: a request's answers on the reducer (docs/design-v1-roll-request.md
+ * Randomized: a request's answers on the reducer (docs/design/design-v1-roll-request.md
  * 11.1, the reducer's bullet). A turn end's new occurrence is written into
  * the state directly, since doc 3's turn end comes later. Each sequence
  * mixes typed totals, fails without rolling, the DM's totals and marks,
@@ -208,7 +208,7 @@ function nextStep(r: () => number, state: RoomState, n: number): Step {
     case "next":
       return { op: { t: "encounter.next" }, who: DM };
     case "occurrence": {
-      // The creature's turn end asks the save again (docs/design-v1-roll-options.md 6.1): a new occurrence, pending.
+      // The creature's turn end asks the save again (docs/design/design-v1-roll-options.md 6.1): a new occurrence, pending.
       const fx = fxOf(state, creature);
       if (!fx) return { op: chat, who: DM };
       const pre = (s: RoomState) => withEffects(s, creature, actorOf(s, creature).effects.map((e) => (e.id === fx.id ? { ...e, due: { id: `occ-${nameOf(creature)}-${n}`, state: "pending" as const } } : e)));

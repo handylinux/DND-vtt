@@ -8,7 +8,7 @@ import { readDdbCharacter } from "./read.ts";
 
 /**
  * The D&D Beyond reader over hand-made JSON in the shape of a character's
- * (docs/design-v1-pc-stats.md 6.3 and Appendix B): an invented character
+ * (docs/design/design-v1-pc-stats.md 6.3 and Appendix B): an invented character
  * and only the fields the reader reads, so no D&D Beyond text is in the
  * repository. One fixture part per row of Appendix B.
  */
@@ -201,7 +201,7 @@ describe("readDdbCharacter: the character", () => {
 
   test("AC from the armor worn and its bonus, HP, speeds and darkvision, and the sheet link", () => {
     assert.equal(fill.actor.ac, 12 + 4 + 1);
-    // The review's AC line says to check it, so it is not a warning as well (docs/design-v1-resync.md 2.5).
+    // The review's AC line says to check it, so it is not a warning as well (docs/design/design-v1-resync.md 2.5).
     assert.ok(!fill.warnings.some((w) => /worked out from the armor/.test(w)));
     assert.equal(fill.actor.hpMax, 60 + 2 * 10);
     assert.equal(readDdbCharacter(wren({ overrideHitPoints: 99 }), ids)!.actor.hpMax, 99);
@@ -385,7 +385,7 @@ describe("readDdbCharacter: what does not read", () => {
   });
 });
 
-describe("readDdbCharacter: a source D&D Beyond did not send (docs/design-v1-resync.md 2.5)", () => {
+describe("readDdbCharacter: a source D&D Beyond did not send (docs/design/design-v1-resync.md 2.5)", () => {
   const WARN = {
     classes: "D&D Beyond did not send the character's classes, so the level, spellcasting, class features, max HP, weapons and spells were not read. They stay as they are.",
     modifiers: "D&D Beyond did not send the character's bonuses and proficiencies, so the scores, proficiencies, bonuses, defenses, senses, AC, max HP and weapons were not read. They stay as they are.",

@@ -7,7 +7,7 @@ import { imageErrorMessage } from "./errors.ts";
 import type { DeleteResult } from "./library.ts";
 
 /**
- * Deleting a document from the DM's Library (docs/design-v1-pdf-handouts.md
+ * Deleting a document from the DM's Library (docs/design/design-v1-pdf-handouts.md
  * 3.5 and 8.1): `handoutDoc.delete`, then the document's images through the
  * delete route, which keeps any image another handout or document names.
  *

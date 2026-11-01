@@ -6,7 +6,7 @@ import type { RoomState, Token } from "#shared/model.ts";
 import { DM, room, token } from "#shared/testutil.ts";
 
 /*
- * The bar's attach parts (docs/design-v1-look-pass-2.md 2.7, 2.10 and 3.1).
+ * The bar's attach parts (docs/design/design-v1-look-pass-2.md 2.7, 2.10 and 3.1).
  * A holder's line names each token once, under what the holder does with
  * it, and its actions show the short words, named in full for a reader.
  * Get off with no spot to go to is unavailable but focusable, and its note
@@ -53,7 +53,7 @@ describe("the bar's group line", () => {
     assert.equal(named("Carrying Goblin 2"), undefined, "a dragged creature is not carried");
   });
 
-  test("gives each kind of link a row of its own: its word in the first column, its names and actions beside it (docs/design-v1-polish.md R5)", () => {
+  test("gives each kind of link a row of its own: its word in the first column, its names and actions beside it (docs/design/design-v1-polish.md R5)", () => {
     const view = stable();
     const markup = render(view, createElement(GroupLine, { token: view.tokens.horse! }));
     assert.match(markup, /^<div role="group" aria-label="Attached tokens" style="display:grid;grid-template-columns:max-content minmax\(0, 1fr\)/);

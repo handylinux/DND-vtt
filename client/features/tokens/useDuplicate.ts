@@ -10,10 +10,10 @@ import { duplicateToken, occupiedBoxes, spreadPositions } from "./factory.ts";
 export type DuplicateFocus = { scope: string; to: readonly string[] };
 
 /**
- * Duplicate, the token bar's and the DM's Token settings' (docs/design-v1-token-sections.md
+ * Duplicate, the token bar's and the DM's Token settings' (docs/design/design-v1-token-sections.md
  * 3.4): a copy of the token on the nearest free spot beside it, selected
  * for this viewer with `opens`, so an upright phone's strip clears it once
- * (docs/design-v1-bar-compact.md 3.6). The selection replaces the bar's
+ * (docs/design/design-v1-bar-compact.md 3.6). The selection replaces the bar's
  * frame with the copy's, and remounts the Token panel for it, so the
  * button pressed leaves the page either way. Focus then moves on to
  * `focus` (D-261024-42), the one rule for both.

@@ -22,7 +22,7 @@ describe("fl5: a menu's row width", () => {
 });
 
 /*
- * The rows of Setup's and Tools' tiles (docs/design-v1-tool-options.md
+ * The rows of Setup's and Tools' tiles (docs/design/design-v1-tool-options.md
  * 5.1 and 5.2), from the widths Chrome draws them at in Inter: the setup
  * tools, then a DM's play tools, each at least the 60 px tile.
  */

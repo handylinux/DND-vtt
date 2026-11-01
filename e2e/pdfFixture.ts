@@ -1,7 +1,7 @@
 import sharp, { type Sharp } from "sharp";
 
 /**
- * Small PDFs for the PDF handout tests (docs/design-v1-pdf-handouts.md
+ * Small PDFs for the PDF handout tests (docs/design/design-v1-pdf-handouts.md
  * 11.3), and the checks on the pages a PDF became. Each page is white paper
  * with a band of its own color in its top-left corner and "Page N" in
  * Helvetica, all vector, so the file is a few hundred bytes a page however

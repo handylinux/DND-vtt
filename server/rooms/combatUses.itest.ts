@@ -8,7 +8,7 @@ import { startEngine, type Engine, type Socket } from "./testing.ts";
 
 /**
  * Combat uses on the real server and Postgres
- * (docs/design-v1-combat-controls.md 2.3 and 3.1): a turn's prompt is
+ * (docs/design/design-v1-combat-controls.md 2.3 and 3.1): a turn's prompt is
  * refused before any die is drawn once it is settled or no longer due, its
  * roll is drawn once, and the stored roll replays after a restart to the
  * same room.

@@ -35,7 +35,7 @@ import { useKeyHints, withKey } from "../../state/shortcuts.ts";
 import { uiScale } from "../device/settings.ts";
 
 /**
- * The map tools' options (docs/design-v1-tool-options.md 6 to 8): one row
+ * The map tools' options (docs/design/design-v1-tool-options.md 6 to 8): one row
  * of 44 px controls that never wraps and never scrolls, a line above it
  * for the tool's hint or reading, and ⋯ for what the row has no room for.
  * Each tool lists its controls as slots (OptionsStrip), and the strip
@@ -204,7 +204,7 @@ export type Slot = {
 };
 
 /**
- * The line's tone (8, docs/design-v1-design-pass.md 2.4 rule 5): a hint
+ * The line's tone (8, docs/design/design-v1-design-pass.md 2.4 rule 5): a hint
  * for an instruction, a reading for a measure, a warning for a refusal or
  * a failure, and a status, in the success green, only for a result that
  * worked ("Grid saved"). A wait is a hint that is `finding`, its words a
@@ -223,7 +223,7 @@ export type StripLine = { tone: LineTone; content: ReactNode; finding?: boolean 
 
 /**
  * A wait's words in the options line: the small loading line, muted,
- * after a delay its caller has already waited (docs/design-v1-design-pass.md
+ * after a delay its caller has already waited (docs/design/design-v1-design-pass.md
  * 2.4 rules 5 and 6). It is no live region of its own, since the line is
  * the one polite live region. It stands as a block inside the line's
  * words, so its spinner sets no baseline that would grow the line past a
@@ -1421,7 +1421,7 @@ export function OptionsDivider() {
  * (4)"), whose name is then those words, with the full words as the
  * tooltip. `compactIcon` makes its compact form its icon alone, named by
  * its words with their tooltip, for a row that cannot hold the words
- * (docs/design-v1-look-pass.md 3.4). In a popover it is a row as wide as
+ * (docs/design/design-v1-look-pass.md 3.4). In a popover it is a row as wide as
  * the popover, a pressed toggle with a check mark, and `ends` closes the
  * popover after it acts, for a button that ends the tool's task.
  */
@@ -1448,7 +1448,7 @@ export function OptButton(props: {
   rowWords?: string;
   /**
    * Its icon alone in the row, its words its name and tooltip (Button's
-   * `iconOnly`, docs/design-v1-icons.md 3.1). In ⋯ it is a row with its
+   * `iconOnly`, docs/design/design-v1-icons.md 3.1). In ⋯ it is a row with its
    * words, as every row there is.
    */
   iconOnly?: "always" | "fine";
@@ -1653,7 +1653,7 @@ function LiveConfirm(props: { label: string; confirm: string; title?: string; on
       variant="danger"
       armed={armed}
       icon={props.icon}
-      // The icon alone until armed, then its words (docs/design-v1-icons.md 3.1 rule 6). A slot keeps its words: it holds its widest anyway, so a row never moves.
+      // The icon alone until armed, then its words (docs/design/design-v1-icons.md 3.1 rule 6). A slot keeps its words: it holds its widest anyway, so a row never moves.
       iconOnly={props.iconOnly && !armed && !slotted && !row ? "always" : undefined}
       disabled={props.disabled}
       aria-label={accessibleName(words, props.title)}

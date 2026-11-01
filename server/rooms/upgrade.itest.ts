@@ -10,7 +10,7 @@ import { startEngine, type Engine } from "./testing.ts";
 
 /**
  * The map discovery upgrade over a room Postgres stored before it
- * (docs/design-v1-map-discovery.md 5.5, ASTRA-31, section 10's S3 row): a
+ * (docs/design/design-v1-map-discovery.md 5.5, ASTRA-31, section 10's S3 row): a
  * version 26 snapshot and version 25 ops that make scene S3, move the
  * players there, explore it and move them away. Then the same with newer
  * ops after, made through a socket. Then a reload after the snapshot the

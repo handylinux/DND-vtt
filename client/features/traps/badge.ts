@@ -4,7 +4,7 @@ export const BADGE_PX = 20;
 /**
  * The box a trap's badge covers in Top-down, in cells (TrapLayer.tsx Badge):
  * its disc with its outline, and the eye beside it where it shows, for the
- * stand rule (docs/design-v1-isometric-view.md 5.2).
+ * stand rule (docs/design/design-v1-isometric-view.md 5.2).
  */
 export function trapBadgeBox(at: { x: number; y: number }, scale: number, found: boolean): { x0: number; y0: number; x1: number; y1: number } {
   const s = 1 / scale;

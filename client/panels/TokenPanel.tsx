@@ -85,7 +85,7 @@ const HP_VISIBILITY_OPTIONS: { value: HpVisibility; label: string }[] = [
 
 /**
  * The selected token's panel (features sections 5, 7, 8 and 15), grouped
- * by use (docs/design-v1-token-panel-groups.md, panelOrder.ts): the name
+ * by use (docs/design/design-v1-token-panel-groups.md, panelOrder.ts): the name
  * with its picture and quick numbers, the stat block, then the Combat,
  * Notes, Position and Image groups, and the setup groups folded at the
  * foot, each as this device last left it (panelFolds.ts). The DM and the token's owners, directly or through its
@@ -119,7 +119,7 @@ const ATTACH_FOCUS: AttachFocus = { scope: PANEL_BOX, to: [`${ATTACH_CONTROLS} b
 /**
  * A press that selects another token remounts the panel for it, so focus
  * goes to that creature's name, read first: Duplicate's copy, and a name in
- * Position's group line (docs/design-v1-token-sections.md 7, D-261024-47).
+ * Position's group line (docs/design/design-v1-token-sections.md 7, D-261024-47).
  */
 const TO_NAME: AttachFocus & DuplicateFocus = { scope: PANEL_BOX, to: [CREATURE_HEADING] };
 
@@ -184,9 +184,9 @@ function TokenDetails(props: PanelProps) {
   // A viewer's tap is what this device remembers. "View as a player" reads what is stored and never writes it.
   const groupFold = (key: FoldKey) => ({ open: folds[key], onToggle: () => slot.tap(key, !folds[key], !preview) });
   const companion = isCompanion(token);
-  // The quick numbers stand under the name (docs/design-v1-dice-ui.md 5.1).
+  // The quick numbers stand under the name (docs/design/design-v1-dice-ui.md 5.1).
   const quickNumbers = vitals({ actor, token, fullAccess: access.full, place: "panel" });
-  // A player lent only a token of a character holds none of its card (docs/design-v1-pc-stats.md 4.2), so it has no stat card to show or edit there.
+  // A player lent only a token of a character holds none of its card (docs/design/design-v1-pc-stats.md 4.2), so it has no stat card to show or edit there.
   const playsCharacter = character !== undefined && ownsCharacter(you?.memberId, character);
   const cardNotes =
     access.full && actor && (access.canEditActor("notes") || actor.notes !== undefined) ? (
@@ -255,7 +255,7 @@ function TokenDetails(props: PanelProps) {
       case "sight":
         return <TokenSight key={id} token={token} actor={actor} access={access} update={update} />;
       case "stats":
-        // A player lent only a character's token holds no card, so its Stats is the bar's Size alone (docs/design-v1-token-sections.md 3).
+        // A player lent only a character's token holds no card, so its Stats is the bar's Size alone (docs/design/design-v1-token-sections.md 3).
         return statCard && actor ? (
           <Group key={id} label="Stats" icon="stats" {...groupFold("stats")}>
             <SizeField token={token} actor={actor} access={access} feetPerCell={feetPerCell} />
@@ -277,7 +277,7 @@ function TokenDetails(props: PanelProps) {
             {access.dm ? <DmSettings token={token} feetPerCell={feetPerCell} update={update} /> : <OwnerNames token={token} access={access} update={update} />}
           </Group>
         );
-      // docs/design-v1-combat-flow.md 3.6.9's section, a group folded through this panel's folds with its character beside its name.
+      // docs/design/design-v1-combat-flow.md 3.6.9's section, a group folded through this panel's folds with its character beside its name.
       case "companion":
         return <CompanionSection key={id} token={token} access={access} group={groupFold("companion")} />;
       case "owners":
@@ -321,7 +321,7 @@ function TokenDetails(props: PanelProps) {
 /**
  * The token's header (CreatureHeader.tsx): its picture as the image field
  * previews it, the name, the kind line and the tags. A companion names its
- * character in the tracker's words (docs/design-v1-combat-flow.md 3.6.7),
+ * character in the tracker's words (docs/design/design-v1-combat-flow.md 3.6.7),
  * and wears its portrait, for whoever's copy holds the link. The DM's View
  * as takes the header's actions row, one tap from the header, folded
  * groups or not (D-261027-09).
@@ -335,7 +335,7 @@ function NameBlock(props: { token: Token; name: string; actor: Partial<Actor> | 
   const ui = useRoomUi();
   const scope = useRoomScope();
   const here = usePanelHere();
-  // "Companion of Thorn" opens Thorn's page where the viewer has one to open: the DM, and Thorn's players (docs/design-v1-look-pass.md 2.11).
+  // "Companion of Thorn" opens Thorn's page where the viewer has one to open: the DM, and Thorn's players (docs/design/design-v1-look-pass.md 2.11).
   const openKeeper =
     keeper && (you?.role === "dm" || ownsCharacter(you?.memberId, keeper))
       ? () => {
@@ -344,13 +344,13 @@ function NameBlock(props: { token: Token; name: string; actor: Partial<Actor> | 
         }
       : null;
   const fp = footprint(token);
-  // What carries it and what it carries, from the links in this copy (docs/design-v1-attach.md 4.5).
+  // What carries it and what it carries, from the links in this copy (docs/design/design-v1-attach.md 4.5).
   const linkTags = usePanelLinkTags(token);
-  // The tracker's words and icons for the same states (docs/design-v1-icons-2.md 5): "Hidden" with the eye struck through fits a 320 px phone at 130% where "Hidden from players" with it would cut.
+  // The tracker's words and icons for the same states (docs/design/design-v1-icons-2.md 5): "Hidden" with the eye struck through fits a 320 px phone at 130% where "Hidden from players" with it would cut.
   const tags: (string | HeaderTag)[] = [];
   if (token.visibility === "dm") tags.push({ text: "Hidden", icon: "hidden", title: "Hidden from players", spoken: "from players" });
   if (token.locked) tags.push({ text: "Locked", icon: "locked" });
-  // Words alone: the Hidden tag beside it already draws the struck-out eye (docs/design-v1-icons-2.md 3.2).
+  // Words alone: the Hidden tag beside it already draws the struck-out eye (docs/design/design-v1-icons-2.md 3.2).
   if (token.nameHidden) tags.push("Name hidden");
   tags.push(...linkTags);
   const kind = tokenKind({ token, companionOf: keeper?.name, character: props.character, cr: props.actor?.cr });
@@ -373,7 +373,7 @@ function NameBlock(props: { token: Token; name: string; actor: Partial<Actor> | 
   );
 }
 
-/** The image's buttons and the other images, in the Image group (docs/design-v1-dice-ui.md 5.2): the picture itself stands beside the name. */
+/** The image's buttons and the other images, in the Image group (docs/design/design-v1-dice-ui.md 5.2): the picture itself stands beside the name. */
 function ImageRow(props: { token: Token; name: string; access: TokenAccess; update(patch: TokenPatch): void }) {
   const { token, access, update } = props;
   const fp = footprint(token);
@@ -430,7 +430,7 @@ function PositionSection(props: { token: Token; access: TokenAccess; update(patc
 }
 
 /**
- * Position's attach controls (docs/design-v1-token-sections.md 3.3), each
+ * Position's attach controls (docs/design/design-v1-token-sections.md 3.3), each
  * as the token's bar offers it: the group line whole, its names with Let
  * go or Put down beside each token it holds, then Get off, Put down or Let
  * go on a carried token and Attach, with Get off's note when there is no
@@ -486,7 +486,7 @@ function useHandOffToNext(): (from: HTMLElement) => void {
   );
 }
 
-/** A companion's player dismisses it in Delete's place, with the bar's own button (docs/design-v1-combat-flow.md 3.6.9). */
+/** A companion's player dismisses it in Delete's place, with the bar's own button (docs/design/design-v1-combat-flow.md 3.6.9). */
 function DismissSection(props: { tokenId: string; name: string }) {
   const handOff = useHandOffToNext();
   return (
@@ -498,7 +498,7 @@ function DismissSection(props: { tokenId: string; name: string }) {
   );
 }
 
-/** An owner's Name and, on a PC, "Name others see", for a token they may rename: a PC's or a companion's (docs/design-v1-combat-flow.md 3.6.4). */
+/** An owner's Name and, on a PC, "Name others see", for a token they may rename: a PC's or a companion's (docs/design/design-v1-combat-flow.md 3.6.4). */
 function OwnerNames(props: { token: Token; access: TokenAccess; update(patch: TokenPatch): void }) {
   const { token, update } = props;
   return (
@@ -520,7 +520,7 @@ function DmSettings(props: { token: Token; feetPerCell: number; update(patch: To
   const { token, update } = props;
   const fp = footprint(token);
   const autoHeight = Math.max(fp.w, fp.h) * props.feetPerCell;
-  // A creature companion a player plays is the party's, so its HP follows the party's setting (docs/design-v1-combat-flow.md 3.6.5).
+  // A creature companion a player plays is the party's, so its HP follows the party's setting (docs/design/design-v1-combat-flow.md 3.6.5).
   const followsParty = useRoomView((s) => followsPartyHp(s.view, token));
   const actions = useRoomActions();
   const encounter = useRoomView((s) => s.view?.encounter);
@@ -599,7 +599,7 @@ function DmSettings(props: { token: Token; feetPerCell: number; update(patch: To
   );
 }
 
-/** The bar's Duplicate, worded, last in the DM's Token settings (docs/design-v1-token-sections.md 3.4). */
+/** The bar's Duplicate, worded, last in the DM's Token settings (docs/design/design-v1-token-sections.md 3.4). */
 function DuplicateButton(props: { token: Token }) {
   const duplicate = useDuplicate(props.token, TO_NAME);
   return (
@@ -612,7 +612,7 @@ function DuplicateButton(props: { token: Token }) {
 }
 
 /**
- * The creature's size on the map, first in Stats (docs/design-v1-token-window.md
+ * The creature's size on the map, first in Stats (docs/design/design-v1-token-window.md
  * 8.10), the one place that edits it: for the DM the six sizes and Custom
  * with its width by height, for an owner who may resize the six, and
  * read-only for an owner of a locked or a Custom token. "Back to Medium"
@@ -713,7 +713,7 @@ function Owners(props: { token: Token; update(patch: TokenPatch): void; group: {
   const through = (character?.ownerIds ?? []).map((id) => members?.[id]?.name).filter(Boolean);
   const names = owners.map((id) => members?.[id]?.name).filter((n): n is string => !!n);
   if (token.companion) {
-    // A companion's owners are its character's, kept in step by the server (docs/design-v1-combat-flow.md 3.6.4).
+    // A companion's owners are its character's, kept in step by the server (docs/design/design-v1-combat-flow.md 3.6.4).
     return (
       <Group label="Owners" icon="group" {...props.group} summary={names.length > 0 ? names.join(", ") : "None"}>
         <CompanionOwners token={token} />

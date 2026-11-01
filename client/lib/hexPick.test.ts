@@ -12,7 +12,7 @@ import { cellAtPoint, cellPolygon, groundSurface, HIT_RECONCILE, neighborOf, pol
 import { isometric, pickWalk, TOP_DOWN, toView, toWorld, type DrawnHeights, type Turn, type ViewPoint } from "./view.ts";
 
 /*
- * Hex ground for the pointer (docs/design-v1-iso-hex-relief.md 5.1 and 7):
+ * Hex ground for the pointer (docs/design/design-v1-iso-hex-relief.md 5.1 and 7):
  * canonical polygons, the walk against a direct ray and prism oracle, and
  * the handoff from a hit on a rounded edge to the rules' hexAt.
  */

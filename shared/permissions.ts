@@ -65,7 +65,7 @@ export type PermissionDeps = {
   canUseAsset: (memberId: string, assetId: string, kind: AssetKind) => boolean;
   /**
    * Whether a restore may put back a reference to this asset: it is still
-   * a row of this room, of the kind its place takes (docs/design-v1-dm-tools.md
+   * a row of this room, of the kind its place takes (docs/design/design-v1-dm-tools.md
    * 2.6). Cleanup and the library delete can remove a row an undo step still
    * names, and putting it back would draw a broken picture for everyone. The
    * server loads the facts for the ids a restore adds (restoreAddedAssets in
@@ -84,20 +84,20 @@ function refuse(code: RefusalCode, message: string): Decision {
 }
 
 const FORBIDDEN = refuse("forbidden", "only the DM can do that");
-/** The refusal of a drawing, or of an undo or redo that puts one back, by a player the DM has not let draw (docs/design-v1-dm-tools.md 3.9). */
+/** The refusal of a drawing, or of an undo or redo that puts one back, by a player the DM has not let draw (docs/design/design-v1-dm-tools.md 3.9). */
 export const NO_DRAWING = "The DM has not let you draw.";
 /** The same, as an undo or redo refusal words it after "could not undo drawing: ", like every restore's reason. */
 export const NO_DRAWING_BACK = "the DM has not let you draw";
 const NOT_YOURS = refuse("forbidden", "that is not yours");
 const GONE = refuse("gone", "that is not here");
 
-/** A token's light is its owners' to set (docs/design-v1-maps-vision.md 4.3.9). `partyVision` stays the DM's. */
+/** A token's light is its owners' to set (docs/design/design-v1-maps-vision.md 4.3.9). `partyVision` stays the DM's. */
 const OWNER_TOKEN_FIELDS = new Set(["image", "altImages", "rotation", "elevation", "name", "publicName", "notes", "rangeRings", "light"]);
-/** A character's stat block and known forms are its players', as its light card is (docs/design-v1-pc-stats.md 4.1, docs/design-v1-known-forms.md 3.2). */
+/** A character's stat block and known forms are its players', as its light card is (docs/design/design-v1-pc-stats.md 4.1, docs/design/design-v1-known-forms.md 3.2). */
 const OWNER_CHARACTER_FIELDS = new Set(["name", "defaultImage", "actor", "level", "stats", "knownForms", "ddbSync", "resources"]);
 const OWNER_ACTOR_FIELDS = new Set(["hp", "speeds", "ac", "initBonus", "passivePerception", "senses", "notes", "sheetUrl"]);
 /**
- * A character's players take a shape on its own actor (docs/design-v1-pc-stats.md
+ * A character's players take a shape on its own actor (docs/design/design-v1-pc-stats.md
  * 4.1): an SRD creature and whether it is Wild Shape. A room monster's link
  * stays the DM's.
  */
@@ -129,7 +129,7 @@ class Check {
 
   /**
    * The actor's live ground on a scene, where the touch rule speaks
-   * (docs/design-v1-map-discovery.md 6, decision 11): a player's, on a
+   * (docs/design/design-v1-map-discovery.md 6, decision 11): a player's, on a
    * scene with fog on, squares and hexes alike (MD2-LK-3), each tested by
    * its own cells. Null where today's words stand: for the DM, and with
    * fog off, where nothing is withheld.
@@ -246,7 +246,7 @@ export function canApply(op: Op, actor: Viewer, state: RoomState, deps: Permissi
 }
 
 /**
- * The refusals on a hex scene of what hexes do not have yet (docs/design-v1-hex-grids.md
+ * The refusals on a hex scene of what hexes do not have yet (docs/design/design-v1-hex-grids.md
  * section 6, phase H1), in the words its limit lines show.
  */
 export const ON_HEXES = {
@@ -263,7 +263,7 @@ export const ON_HEXES = {
  * squeezes, whose stops on hexes are anchors (`onHexStop`), attaching and a
  * token sent onto a hex scene with its links, and traps, and from H3
  * Reveal room's fog shapes of hex keys, heights, stairs and pits
- * (docs/design-v1-hex-grids.md section 6). A
+ * (docs/design/design-v1-hex-grids.md section 6). A
  * restore keeps the same line in the reducer (shared/reducer/misc.ts),
  * since two DMs can race a switch.
  */
@@ -299,7 +299,7 @@ function hexPhaseFits(op: Op, c: Check): Decision {
   }
 }
 
-/** The refusal of a prompt whose turn record is not the creature's current one, or whose row and round no longer act (docs/design-v1-combat-controls.md 2.3). */
+/** The refusal of a prompt whose turn record is not the creature's current one, or whose row and round no longer act (docs/design/design-v1-combat-controls.md 2.3). */
 export const TURN_OVER = "That turn is over.";
 /** The refusal of a prompt its record never held: a death save not dying at the start, or a recharge not due then. */
 export const NOT_DUE = "That is not due this turn.";
@@ -309,7 +309,7 @@ export function noLongerDying(name: string): string {
 }
 
 /**
- * Why a turn's prompt (docs/design-v1-combat-controls.md 2.3) cannot be
+ * Why a turn's prompt (docs/design/design-v1-combat-controls.md 2.3) cannot be
  * settled now, or null: by its roll, its Apply or its Skip, or with
  * `reopen` a skipped one opened again. It is the occurrence `(record, what)`
  * on the creature's current record, while that record's row acts in its
@@ -381,7 +381,7 @@ export type ExpectSubject = Pick<Character, "stats" | "level" | "name" | "ddbSyn
 
 /**
  * The value of a character's part as `expect` hashes it
- * (docs/design-v1-resync.md 4), absent as null: HP is the current and
+ * (docs/design/design-v1-resync.md 4), absent as null: HP is the current and
  * maximum alone, and the shape its SRD id and whether it is Wild Shape.
  *
  * A part of the block, and the record that describes the block, is null
@@ -414,7 +414,7 @@ function expectValue(character: ExpectSubject, part: ExpectPart): unknown {
     case "actor.shape":
       return { srdId: actor.srdId, wildShape: actor.wildShape };
     case "resources":
-      // The list whole, each count spent included, so a use spent since the review refuses the write (docs/design-v1-ddb-resources.md 5).
+      // The list whole, each count spent included, so a use spent since the review refuses the write (docs/design/design-v1-ddb-resources.md 5).
       return character.resources ?? null;
   }
 }
@@ -432,7 +432,7 @@ export function expectOf(character: ExpectSubject, parts: Iterable<ExpectPart>):
 }
 
 /**
- * A `character.update`'s `expect`, for every role (docs/design-v1-resync.md
+ * A `character.update`'s `expect`, for every role (docs/design/design-v1-resync.md
  * 4): each part it names still hashes as the sender saw it, on the staged
  * state. Here, where ops arrive, after the role's checks, so a player who
  * does not play the character hears that first, and never in the reducer,
@@ -454,7 +454,7 @@ function expectFits(op: Op, c: Check): Decision {
 export const SYNC_STAMP_FULL = "this character's sync record cannot take a later time";
 
 /**
- * A sync write the reducer would stamp (docs/design-v1-resync.md 4), for
+ * A sync write the reducer would stamp (docs/design/design-v1-resync.md 4), for
  * every role: refused when the stamp past the record it replaces would not
  * parse, so no stored state ever fails the schema. Only a record at the
  * schema's last millisecond, which no clock makes, gets here.
@@ -465,10 +465,10 @@ function stampFits(op: Op, c: Check): Decision {
   return syncStampFits(before) ? OK : refuse("invalid", SYNC_STAMP_FULL);
 }
 
-/** The refusals of a route whose shape no walk has (docs/design-v1-movement.md 7.1), whoever sends it. */
+/** The refusals of a route whose shape no walk has (docs/design/design-v1-movement.md 7.1), whoever sends it. */
 export const ROUTE_OFF_LATTICE = "a route steps by half squares from where the token stands, inside the scene";
 export const ROUTE_TOO_LONG = `a route reaches at most ${MAX_ROUTE_REACH} squares`;
-/** On a hex scene a route's stops are anchors (docs/design-v1-hex-grids.md 4.2, HX-D17). */
+/** On a hex scene a route's stops are anchors (docs/design/design-v1-hex-grids.md 4.2, HX-D17). */
 export const ROUTE_OFF_HEXES = "a route steps from hex to hex, each stop on its own hexes or a squeeze's, inside the scene";
 
 /**
@@ -515,7 +515,7 @@ function onHexStop(g: HexGrid, scene: Scene, token: Token, at: Point): boolean {
   return Math.abs(placed.x - at.x) < 1e-6 && Math.abs(placed.y - at.y) < 1e-6 && hexStandHexes(g, stand).every((h) => hexInScene(g, scene.bounds, h));
 }
 
-/** The refusal of a player's op that names an effect's save or its occurrence (docs/design-v1-roll-options.md 6.1). */
+/** The refusal of a player's op that names an effect's save or its occurrence (docs/design/design-v1-roll-options.md 6.1). */
 export const SAVE_IS_DMS = "only the DM sets a save that ends an effect";
 
 /**
@@ -552,7 +552,7 @@ function setsSave(op: Op): boolean {
   }
 }
 
-/** The refusal of a squeeze flag on a move that is not into a narrow opening (docs/design-v1-maps-vision.md 4.1). */
+/** The refusal of a squeeze flag on a move that is not into a narrow opening (docs/design/design-v1-maps-vision.md 4.1). */
 export const NOT_A_SQUEEZE = "it only squeezes where an opening is too narrow for it";
 
 /**
@@ -573,7 +573,7 @@ function squeezeFits(op: Op, c: Check): Decision {
   const walker = walkerFor(c.state, token, seenAllIn(c), { to: op });
   const points = op.route ? routePoints(c.state.buildChunks, walker, op.route, op.elevation ?? token.elevation) : [];
   if (movementRules.squeezeFits(c.state, walkEnd(c.state, walker, { x: op.x, y: op.y }, points.slice(1, -1)))) return OK;
-  // The full footprint is the squeeze's stopping step (docs/design-v1-map-discovery.md 6).
+  // The full footprint is the squeeze's stopping step (docs/design/design-v1-map-discovery.md 6).
   const ground = c.liveGround(token.sceneId);
   const { squeeze: _squeeze, ...full } = token;
   return refuse("invalid", ground && !footprintLive(ground, { ...full, x: op.x, y: op.y }) ? SOMETHING_BLOCKS : NOT_A_SQUEEZE);
@@ -618,10 +618,10 @@ function forDm(op: Op, c: Check): Decision {
       // Roster changes come from HTTP flows the server runs itself, never from a socket.
       return refuse("forbidden", "the server makes roster changes");
     case "sys.explore":
-      // The actor writes what the party explored after each batch (docs/design-v1-maps-vision.md 4.3.3).
+      // The actor writes what the party explored after each batch (docs/design/design-v1-maps-vision.md 4.3.3).
       return refuse("forbidden", "the server records what the party explored");
     case "sys.remember":
-      // So it writes what players remember (docs/design-v1-map-discovery.md 5.3).
+      // So it writes what players remember (docs/design/design-v1-map-discovery.md 5.3).
       return refuse("forbidden", "the server records what players remember");
     case "member.update":
       return op.memberId === c.actor.memberId ? OK : refuse("forbidden", "members edit only themselves");
@@ -655,7 +655,7 @@ function forDm(op: Op, c: Check): Decision {
     case "scene.setMap":
       return op.map && !c.asset(op.map.assetId, "map") ? GONE : OK;
     case "scene.update": {
-      // A thumbnail is a `thumb` asset and every phase a `map` asset, each of this room (docs/design-v1-maps-vision.md 3.3, 3.4).
+      // A thumbnail is a `thumb` asset and every phase a `map` asset, each of this room (docs/design/design-v1-maps-vision.md 3.3, 3.4).
       if (op.patch.thumb && !c.asset(op.patch.thumb, "thumb")) return GONE;
       return (op.patch.phases ?? []).every((phase) => c.asset(phase.assetId, "map")) ? OK : GONE;
     }
@@ -677,17 +677,17 @@ function forDm(op: Op, c: Check): Decision {
       return rollDiceCheck(c, op);
     case "roll.reopen":
       return op.change === undefined ? OK : allowFixCheck(c, op);
-    // The DM keeps or allows a player's ask and never makes one (docs/design-v1-roll-request.md 7.5).
+    // The DM keeps or allows a player's ask and never makes one (docs/design/design-v1-roll-request.md 7.5).
     case "roll.change":
       return op.ask === undefined ? OK : refuse("forbidden", ONLY_PLAYERS_ASK);
     // The DM's death roll and recharge roll need a creature that exists, checked before anything is drawn.
     case "actor.deathRoll":
     case "actor.rechargeRoll":
       return ("tokenId" in op.target ? c.state.tokens[op.target.tokenId] : c.state.characters[op.target.characterId]) ? OK : GONE;
-    // The rule of the op it carries (docs/design-v1-dice.md 4.2).
+    // The rule of the op it carries (docs/design/design-v1-dice.md 4.2).
     case "sys.dice":
       return forDm(op.asked, c);
-    // A player asks for saves, and the DM resolves or sets the ask aside (docs/design-v1-player-save-spell.md 5.4).
+    // A player asks for saves, and the DM resolves or sets the ask aside (docs/design/design-v1-player-save-spell.md 5.4).
     case "cast.ask":
       return refuse("forbidden", DM_RUNS_GROUP_SAVE);
     case "cast.close":
@@ -701,7 +701,7 @@ function forDm(op: Op, c: Check): Decision {
   }
 }
 
-/** The refusal of a page private to a DM, who reads every page anyway (docs/design-v1-dm-tools.md 3.7). */
+/** The refusal of a page private to a DM, who reads every page anyway (docs/design/design-v1-dm-tools.md 3.7). */
 export const PAGE_FOR_A_PLAYER = "a page is private to one player, never to a DM";
 
 /**
@@ -785,10 +785,10 @@ function forPlayer(op: Op, c: Check): Decision {
     case "roll.ask":
     case "roll.reopen":
     case "roll.close":
-    // A save-ends occurrence is the DM's to settle, and a group save's outcome the DM's to apply (docs/design-v1-roll-options.md 6.1, 5.5).
+    // A save-ends occurrence is the DM's to settle, and a group save's outcome the DM's to apply (docs/design/design-v1-roll-options.md 6.1, 5.5).
     case "actor.saveDue":
     case "actor.outcome":
-    // Traps are the DM's alone: players search and disarm through the DM's requests (docs/design-v1-traps.md 6.2).
+    // Traps are the DM's alone: players search and disarm through the DM's requests (docs/design/design-v1-traps.md 6.2).
     case "trap.create":
     case "trap.update":
     case "trap.delete":
@@ -799,7 +799,7 @@ function forPlayer(op: Op, c: Check): Decision {
 
     case "token.updateMany": {
       // Owners may set the owner fields among a group edit's (OWNER_TOKEN_FIELDS), on tokens they own, each as a
-      // `token.update` would be checked (docs/design-v1-dm-tools.md 3.5).
+      // `token.update` would be checked (docs/design/design-v1-dm-tools.md 3.5).
       for (const id of op.tokenIds) {
         const token = c.visibleToken(id);
         if (!token) return GONE;
@@ -854,7 +854,7 @@ function forPlayer(op: Op, c: Check): Decision {
     case "token.create":
       return op.token.companion ? companionCheck(c, op.token, op.token.companion) : placeTokenCheck(c, op.token);
     case "token.delete": {
-      // Dismiss: a companion's owners delete it, as its character's player (docs/design-v1-combat-flow.md 3.6.4). Every
+      // Dismiss: a companion's owners delete it, as its character's player (docs/design/design-v1-combat-flow.md 3.6.4). Every
       // other token is the DM's.
       const token = c.visibleToken(op.tokenId);
       if (!token) return GONE;
@@ -922,7 +922,7 @@ function forPlayer(op: Op, c: Check): Decision {
     }
 
     case "actor.deathSave":
-    // A death save rolled on the server, as its counts are set (docs/design-v1-dice.md 4.1).
+    // A death save rolled on the server, as its counts are set (docs/design/design-v1-dice.md 4.1).
     case "actor.deathRoll":
     case "actor.rechargeRoll":
     case "actor.prompt":
@@ -936,7 +936,7 @@ function forPlayer(op: Op, c: Check): Decision {
       const t = c.target(op.target);
       if (!t.visible) return GONE;
       if (!t.owned) return NOT_YOURS;
-      // Class resources are the character's players' alone (docs/design-v1-combat-controls.md 7.2), so a player lent
+      // Class resources are the character's players' alone (docs/design/design-v1-combat-controls.md 7.2), so a player lent
       // only the token spends none, as they read and edit none.
       if (op.use.kind !== "resource" || !("tokenId" in op.target)) return OK;
       const token = c.state.tokens[op.target.tokenId];
@@ -1120,9 +1120,9 @@ function forPlayer(op: Op, c: Check): Decision {
       for (const entry of op.entries) {
         if (entry.key.startsWith("token:")) {
           // An undo retraces a move that was allowed when made. A redo makes it again, so walls stop it as they would a new
-          // move, except a teleport's, which passed them the first time too (docs/design-v1-maps-vision.md 4.1).
+          // move, except a teleport's, which passed them the first time too (docs/design/design-v1-maps-vision.md 4.1).
           const tokenId = entry.key.slice("token:".length);
-          // A silent passenger of the step answers nothing, whatever the DM changed about it unseen since (docs/design-v1-attach.md 8.3).
+          // A silent passenger of the step answers nothing, whatever the DM changed about it unseen since (docs/design/design-v1-attach.md 8.3).
           if (quiet.has(tokenId)) {
             const current = c.state.tokens[tokenId];
             const restored = entry.value && typeof entry.value === "object" ? (entry.value as Token) : null;
@@ -1143,7 +1143,7 @@ function forPlayer(op: Op, c: Check): Decision {
         if ((before && before.sceneId !== playerScene) || (current && current.sceneId !== playerScene)) return GONE;
         if (before && (before.ownerId !== c.actor.memberId || before.visibility !== "all")) return FORBIDDEN;
         if (current && (current.ownerId !== c.actor.memberId || current.visibility !== "all")) return FORBIDDEN;
-        // Putting a drawing back draws it again, so it needs the permission a new one does (docs/design-v1-dm-tools.md 2.6).
+        // Putting a drawing back draws it again, so it needs the permission a new one does (docs/design/design-v1-dm-tools.md 2.6).
         // Taking one away stays allowed.
         if (before && before.kind !== "ruler" && !drawsAllowed(c.state.meta.settings, c.actor.memberId)) return refuse("forbidden", NO_DRAWING_BACK);
       }
@@ -1155,7 +1155,7 @@ function forPlayer(op: Op, c: Check): Decision {
 /**
  * Whether the actor may wear an image: an upload must be one they may use,
  * of kind `token`. A shipped icon names no asset, so its key's shape, which
- * the protocol checked, is all it needs (docs/design-v1-dm-tools.md 3.12).
+ * the protocol checked, is all it needs (docs/design/design-v1-dm-tools.md 3.12).
  */
 function imageUsable(c: Check, image: ImageRef | null | undefined): boolean {
   const assetId = imageAssetId(image);
@@ -1170,7 +1170,7 @@ function tokenImagesUsable(c: Check, input: { image?: ImageRef | null; altImages
 /**
  * Whether a member may move a token at all, by rights alone: the question
  * the ephemeral channel asks of a drag preview. Walls stay out of it
- * (docs/design-v1-maps-vision.md 4.1): the dragging client stops its own
+ * (docs/design/design-v1-maps-vision.md 4.1): the dragging client stops its own
  * preview at a wall, and the move it drops is tested when it arrives.
  */
 export function mayMoveToken(state: RoomState, viewer: Viewer, tokenId: string): Decision {
@@ -1178,7 +1178,7 @@ export function mayMoveToken(state: RoomState, viewer: Viewer, tokenId: string):
   const c = new Check(state, viewer, { canUseAsset: () => false });
   const d = namedMoveCheck(c, tokenId);
   if (d.ok || d.code === "gone") return d;
-  // A token a holder the player moves carries goes with it, however the player stands with it (docs/design-v1-attach.md 6),
+  // A token a holder the player moves carries goes with it, however the player stands with it (docs/design/design-v1-attach.md 6),
   // up links the player sees alone, so a hidden holder lends no drag a right (8.0).
   const seen = new Set<string>([tokenId]);
   let at = state.tokens[tokenId];
@@ -1191,7 +1191,7 @@ export function mayMoveToken(state: RoomState, viewer: Viewer, tokenId: string):
 }
 
 /**
- * Whether the room lets this player draw (docs/design-v1-dm-tools.md 3.9):
+ * Whether the room lets this player draw (docs/design/design-v1-dm-tools.md 3.9):
  * every player, the default and the rule for rooms from before the setting,
  * or this one among those the DM picked. The Draw tool asks the same, so it
  * shows exactly when the server would take a drawing.
@@ -1202,7 +1202,7 @@ export function drawsAllowed(settings: Partial<Pick<RoomSettings, "playersDraw">
 }
 
 /**
- * A player's answer to a roll request (docs/design-v1-dm-tools.md 3.3): a
+ * A player's answer to a roll request (docs/design/design-v1-dm-tools.md 3.3): a
  * request that exists and names a creature they own now, else `gone`, the
  * same answer a missing request gives, so a refusal never says whom else
  * the DM asked. They send a total, while the room lets players type them
@@ -1281,7 +1281,7 @@ function rolledInitiative(state: RoomState, memberId: string, row: InitEntry, va
 
 /**
  * The refusal of a live answer without its tag, the DM's or a player's
- * (docs/design-v1-roll-request.md 7.5). The tag is the answer's receipt key
+ * (docs/design/design-v1-roll-request.md 7.5). The tag is the answer's receipt key
  * and its provenance, and the reducer judges an untagged answer by the rule
  * from before them. So the rule lives here, where live ops arrive, and stored
  * answers from before it replay as they were. Only a page loaded before the
@@ -1289,13 +1289,13 @@ function rolledInitiative(state: RoomState, memberId: string, row: InitEntry, va
  */
 export const ANSWER_NEEDS_TAG = "An answer needs its tag. Reload the page.";
 
-/** The refusal of a roll for a creature that has an answer by now (docs/design-v1-dice.md 4.3), a player's or one with `unanswered`. */
+/** The refusal of a roll for a creature that has an answer by now (docs/design/design-v1-dice.md 4.3), a player's or one with `unanswered`. */
 export const ANSWERED_MEANWHILE = "It was answered meanwhile.";
-/** The refusal of the DM's Allow of an ask that is no longer the pending one (docs/design-v1-dice.md 4.3). */
+/** The refusal of the DM's Allow of an ask that is no longer the pending one (docs/design/design-v1-dice.md 4.3). */
 export const SETTLED_MEANWHILE = "It was settled meanwhile.";
 
 /**
- * A request's answer rolled on the server (docs/design-v1-dice.md 4.3), as
+ * A request's answer rolled on the server (docs/design/design-v1-dice.md 4.3), as
  * `roll.answer` is checked: a player for a target they own now, else
  * `gone`, and the DM for any target. A player rolls only a creature still
  * waiting, as does any roll with `unanswered`, so a DM's Roll that crosses a
@@ -1323,14 +1323,14 @@ function rollDiceCheck(c: Check, op: OpOf<"roll.dice">): Decision {
   return ask && ask.id === op.change && ask.on === target.tag && target.dice ? OK : refuse("invalid", SETTLED_MEANWHILE);
 }
 
-/** The refusal of a player's roll where the DM allowed "Fix my total", which reopens the answer for typing alone (docs/design-v1-roll-request.md 5.5). */
+/** The refusal of a player's roll where the DM allowed "Fix my total", which reopens the answer for typing alone (docs/design/design-v1-roll-request.md 5.5). */
 export const TYPE_THE_TOTAL = "Type the corrected total.";
 /** The refusal of a DM's ask: an ask is the player's, and the DM changes an answer directly. */
 export const ONLY_PLAYERS_ASK = "Only a player asks to change a roll.";
 
 /**
  * A player's ask to change their answer, or its Withdraw
- * (docs/design-v1-roll-request.md 7.5), as `roll.answer` is checked: a
+ * (docs/design/design-v1-roll-request.md 7.5), as `roll.answer` is checked: a
  * request they can see that names a creature they own now, else `gone`.
  * Whether the ask fits the answer it names is the reducer's, since it reads
  * the request's DC, which a player's view may lack. "Fix my total" goes only
@@ -1366,11 +1366,11 @@ export function fixPending(target: Pick<RollTarget, "change" | "tag">, id: strin
   return ask !== undefined && ask.id === id && ask.reason === "fix-total" && ask.on === target.tag;
 }
 
-/** The refusal of a player's roll for a creature they see and do not own (docs/design-v1-dice.md 4.3). */
+/** The refusal of a player's roll for a creature they see and do not own (docs/design/design-v1-dice.md 4.3). */
 export const NOT_YOUR_ROLL = "You roll only for your own creatures.";
 
 /**
- * A free roll (docs/design-v1-dice.md 4.3), by anyone, for no creature or
+ * A free roll (docs/design/design-v1-dice.md 4.3), by anyone, for no creature or
  * for creatures of their own, checked before anything is drawn. The DM may
  * name any creature that exists, on any scene. A player names only one they
  * own now, as for a roll answer: one they cannot see is `gone`, as a missing
@@ -1395,7 +1395,7 @@ function diceRollCheck(c: Check, op: OpOf<"dice.roll">): Decision {
 
 /**
  * A DM's undo or redo never puts back a reference to an image that was
- * deleted since (docs/design-v1-dm-tools.md 2.6). Only references the
+ * deleted since (docs/design/design-v1-dm-tools.md 2.6). Only references the
  * restore adds are checked: one the entity holds now is in use, so it was
  * not deleted. A player's restores touch only drawings and token poses,
  * which add no image.
@@ -1409,7 +1409,7 @@ function restoredAssetsUsable(op: OpOf<"sys.restore">, c: Check): Decision {
   return OK;
 }
 
-/** The refusal of a DM's ask for saves: the DM starts the group save itself (docs/design-v1-player-save-spell.md 5.4). */
+/** The refusal of a DM's ask for saves: the DM starts the group save itself (docs/design/design-v1-player-save-spell.md 5.4). */
 export const DM_RUNS_GROUP_SAVE = "The DM runs a group save directly.";
 /** The refusal of a DM's withdrawal: an ask is withdrawn by a player of its caster, and the DM dismisses it instead. */
 export const ONLY_ITS_PLAYER_WITHDRAWS = "Only its player withdraws an ask. Dismiss it instead.";
@@ -1436,7 +1436,7 @@ function askedAreaRefusal(c: Check, templateId: string): Decision | null {
   return refuse("forbidden", asks.some((ask) => c.ownsTokenId(ask.caster)) ? AREA_ASKED : AREA_ASKED_DM);
 }
 
-/** Whether an open ask for saves names this area, which locks it for its player (docs/design-v1-player-save-spell.md 5.4). */
+/** Whether an open ask for saves names this area, which locks it for its player (docs/design/design-v1-player-save-spell.md 5.4). */
 export function askedArea(state: Pick<RoomState, "casts">, templateId: string): boolean {
   return Object.values(state.casts).some((ask) => ask.area === templateId);
 }
@@ -1455,7 +1455,7 @@ export function waitingAsks(state: Pick<RoomState, "casts" | "tokens" | "charact
 }
 
 /**
- * A player's ask for saves (docs/design-v1-player-save-spell.md 5.4): for
+ * A player's ask for saves (docs/design/design-v1-player-save-spell.md 5.4): for
  * a creature they see and own on the players' scene, which the ask names,
  * so nothing goes behind a pause. An area is one of theirs that they see
  * there, and each target a token they see there, named once. A hidden
@@ -1503,7 +1503,7 @@ function moveCheck(c: Check, tokenId: string): Decision {
   return movesAnyToken(c.state.meta.settings, c.actor.memberId) ? OK : NOT_YOURS;
 }
 
-/** Whether every player sees a token where it stands, as the reducer's seen marks judge (docs/design-v1-attach.md 8.0). */
+/** Whether every player sees a token where it stands, as the reducer's seen marks judge (docs/design/design-v1-attach.md 8.0). */
 function seenByAll(c: Check, token: Token): boolean {
   return inSightOfNonOwners(c.state, token, {});
 }
@@ -1517,7 +1517,7 @@ function seenAllIn(c: Check): (t: { id: string }) => boolean {
 }
 
 /**
- * Whether the player directs this mount (docs/design-v1-attach.md 6): it
+ * Whether the player directs this mount (docs/design/design-v1-attach.md 6): it
  * carries a creature of theirs by a controlled ride, "it moves on your turn
  * as you direct it", and the DM chose that by marking the ride controlled.
  * A refusal must not read what some player cannot see, so only a rider and
@@ -1535,7 +1535,7 @@ function directsMount(c: Check, mount: Token): boolean {
 
 /**
  * Whether the player may move a token an op names (design 8.1 and
- * docs/design-v1-attach.md 6): by the movement rule, or a controlled mount
+ * docs/design/design-v1-attach.md 6): by the movement rule, or a controlled mount
  * one of their creatures rides, or, with `to`, a token carried by one they
  * may move whose move keeps its link there, a new seat or a dragged
  * creature still within reach. Its whole group rides along whoever owns the
@@ -1558,7 +1558,7 @@ function namedMoveCheck(c: Check, tokenId: string, to?: Pick<Token, "x" | "y"> &
 }
 
 /**
- * The walls test of a player's group move (docs/design-v1-attach.md 4.2):
+ * The walls test of a player's group move (docs/design/design-v1-attach.md 4.2):
  * besides each named token's own legs, each dragged creature among the
  * public members walks the holder's route offset by its place, piece by
  * piece, on its own ground. A step onto a seat and a get-off leg are walks
@@ -1586,7 +1586,7 @@ function draggedWalls(c: Check, op: Op): Decision {
   return OK;
 }
 
-/** A player's refusals of attaching (docs/design-v1-attach.md 6). */
+/** A player's refusals of attaching (docs/design/design-v1-attach.md 6). */
 export const RIDE_ON_YOUR_TURN = "You can get on a mount on your own turn.";
 
 /** The player's name for a token, as their copy shows it. */
@@ -1622,7 +1622,7 @@ function ownTurnOr(c: Check, tokenId: string): Decision {
 }
 
 /**
- * A player's attach (docs/design-v1-attach.md 6), on two tokens their copy
+ * A player's attach (docs/design/design-v1-attach.md 6), on two tokens their copy
  * holds. A ride, a perch or a carry onto a holder needs the right to move
  * both and the two within reach as they stand. A drag needs the right to
  * move the holder, the two within reach, and the right to move the
@@ -1680,7 +1680,7 @@ function comesOffFirst(carried: Token, holder: Token): string {
 }
 
 /**
- * A player's detach (docs/design-v1-attach.md 6): of a link their copy
+ * A player's detach (docs/design/design-v1-attach.md 6): of a link their copy
  * holds, by the right to move the carried token or its holder, and a
  * creature's player can always get off. A link to a holder they cannot see
  * is not in their copy, so it answers as a token attached to nothing does.
@@ -1713,7 +1713,7 @@ export function movesAnyToken(settings: Partial<Pick<RoomSettings, "playersMoveA
 /**
  * The fields a move sets, which a player's undo of a move may put back: its
  * turn's path goes back with the position, and a squeeze with the place it
- * was squeezed in (docs/design-v1-maps-vision.md 4.1).
+ * was squeezed in (docs/design/design-v1-maps-vision.md 4.1).
  */
 const POSE_FIELDS = ["x", "y", "elevation", "rotation", "path", "squeeze", "attached", "rev"] as const;
 
@@ -1742,7 +1742,7 @@ function restoreMoveCheck(c: Check, tokenId: string, value: unknown): Decision {
   if (!token) return GONE;
   const restored = value && typeof value === "object" ? (value as Token) : null;
   const inPlace = restored !== null && restored.sceneId === current.sceneId && restored.x === current.x && restored.y === current.y;
-  // An undo or a redo takes the right its op took (docs/design-v1-attach.md 6 and 8.3): a move's, a controlled mount's
+  // An undo or a redo takes the right its op took (docs/design/design-v1-attach.md 6 and 8.3): a move's, a controlled mount's
   // and a new seat's (namedMoveCheck), and a link's own, which its owner may always undo, locked or not, as detachCheck lets them.
   // Only a link the player sees counts, so a hidden steed never changes the answer (8.0).
   const shownTo = (t: Token) => (t.attached && c.visibleToken(t.attached.to) ? t.attached.to : undefined);
@@ -1763,7 +1763,7 @@ function restoredTokens(op: OpOf<"sys.restore">): Map<string, unknown> {
 
 /**
  * The token of the restore a token rides under, before and after it
- * (docs/design-v1-attach.md 8.3): walking up its links now, and up the
+ * (docs/design/design-v1-attach.md 8.3): walking up its links now, and up the
  * links the restore puts back, each reaches a token of the same restore
  * the player may move. Its top one names the group, or undefined when the
  * token is not carried so throughout. Such a token rides back as it rode
@@ -1792,7 +1792,7 @@ function carriedThroughout(c: Check, tokenId: string, value: unknown, restoring:
 
 /**
  * A passenger's part of a player's undo or redo of a group move
- * (docs/design-v1-attach.md 8.3). One outside the public members (hidden,
+ * (docs/design/design-v1-attach.md 8.3). One outside the public members (hidden,
  * seen by only some players, or riding a holder players cannot see) takes
  * no check at all, so no refusal ever reads it. A public one must be in the
  * player's copy and change only its pose, and on a redo a dragged one
@@ -1828,7 +1828,7 @@ function restoreCarriedCheck(c: Check, tokenId: string, value: unknown, redo: bo
 }
 
 /**
- * Whether a player takes back a link by its holder's right (docs/design-v1-attach.md
+ * Whether a player takes back a link by its holder's right (docs/design/design-v1-attach.md
  * 6 and 8.3): the token is attached, now or in what the restore puts back,
  * to a holder in their copy that they may move, as a detach of it needs. So
  * undoing a Drag of a goblin the DM marked Grappled is theirs, as the drag was.
@@ -1844,7 +1844,7 @@ function viaHolder(c: Check, current: Token, restored: Token | null): boolean {
 const SIZE_FIELDS = ["size", "w", "h"] as const;
 
 /**
- * A player's undo or redo of a move or a resize (docs/design-v1-token-window.md
+ * A player's undo or redo of a move or a resize (docs/design/design-v1-token-window.md
  * 8.7), judged two ways by whether it changes the token's size. One that
  * keeps the size is a move's, judged by restoreMoveCheck as before, and its
  * redo meets the walls as a new move would (`redo`, false for a teleport's).
@@ -1875,7 +1875,7 @@ function restorePoseCheck(c: Check, tokenId: string, value: unknown, redo: boole
 }
 
 /**
- * A player's resize (docs/design-v1-token-window.md 8.6): a `token.update`
+ * A player's resize (docs/design/design-v1-token-window.md 8.6): a `token.update`
  * whose patch holds `size`, from the owner branch and from
  * companionUpdateCheck, so a companion and any other owned token are judged
  * by one rule. The player owns the token and it is unlocked, as for a move,
@@ -1914,7 +1914,7 @@ function restoreWords(d: Decision): Decision {
   return d;
 }
 // ---------------------------------------------------------------------------
-// The touch rule (docs/design-v1-map-discovery.md 6, decision 11)
+// The touch rule (docs/design/design-v1-map-discovery.md 6, decision 11)
 
 /**
  * What a player hears when what stopped them may lie on ground they do not
@@ -2111,7 +2111,7 @@ const TOUCH_REFUSALS: ReadonlySet<string> = new Set([WALL_IN_THE_WAY, LEDGE_IN_T
 export type TouchLanding = { op: Op; words: string };
 
 /**
- * The touch rule's landing (docs/design-v1-map-discovery.md 6, decision 11,
+ * The touch rule's landing (docs/design/design-v1-map-discovery.md 6, decision 11,
  * MD-R9-1): a player's op on a scene with fog on, squares or hexes, that
  * the real build stops, landed instead of refused, so no spot can be probed
  * for free by a refusal in place. The server asks it of every player op before the
@@ -2357,7 +2357,7 @@ export const TELEPORT_OFF_MAP = "a teleport lands inside the map";
 
 /**
  * Walls, doors and ledges stop a player's move on a scene that blocks
- * movement (docs/design-v1-maps-vision.md 4.1). A permission rule, never a
+ * movement (docs/design/design-v1-maps-vision.md 4.1). A permission rule, never a
  * reducer one, so stored moves replay as they were made. A teleport skips
  * the test and nothing else: the player still needs the right to move the
  * token, and it lands inside the scene.
@@ -2385,7 +2385,7 @@ function legCheck(c: Check, tokenId: string, to: StoredEnd, teleport: boolean): 
 
 /**
  * A player's walk along routes on a scene that blocks movement
- * (docs/design-v1-movement.md 7.1, 7.4): today's leg test, shifts and all,
+ * (docs/design/design-v1-movement.md 7.1, 7.4): today's leg test, shifts and all,
  * on each piece, from the token where the piece starts with the walk's own
  * elevation there. The first piece stopped refuses the move in today's
  * words. A redo's routes run one after another from where the token stands
@@ -2466,7 +2466,7 @@ function hexStopAgrees(c: Check, op: OpOf<"token.move">): Decision {
   return Math.abs(placed.x - op.x) < 1e-6 && Math.abs(placed.y - op.y) < 1e-6 ? OK : refuse("invalid", HEX_STOP_OFF);
 }
 
-/** Whether a footprint at `at` lies inside the scene: its box on squares, and on hexes every hex it stands on (docs/design-v1-hex-grids.md 4.2). */
+/** Whether a footprint at `at` lies inside the scene: its box on squares, and on hexes every hex it stands on (docs/design/design-v1-hex-grids.md 4.2). */
 function insideScene(scene: Scene, token: Pick<Token, "size" | "w" | "h">, at: Point): boolean {
   const grid = sceneGrid(scene);
   if (isHex(grid)) return occupiedHexes(grid, { ...token, x: at.x, y: at.y }).every((h) => hexInScene(grid, scene.bounds, h));
@@ -2474,11 +2474,11 @@ function insideScene(scene: Scene, token: Pick<Token, "size" | "w" | "h">, at: P
   return at.x >= 0 && at.y >= 0 && at.x + fp.w <= scene.bounds.w && at.y + fp.h <= scene.bounds.h;
 }
 
-/** A player's refusals at a door (docs/design-v1-maps-vision.md 4.1), the way players learn about locks. */
+/** A player's refusals at a door (docs/design/design-v1-maps-vision.md 4.1), the way players learn about locks. */
 export const DOOR_LOCKED = "It's locked.";
 export const DOOR_TOO_FAR = "Too far from the door.";
 export const DOOR_DM_ONLY = "only the DM locks doors and marks secret doors";
-/** A player's open names who opens the door, so its door traps know whom they catch (docs/design-v1-traps.md 5.3). */
+/** A player's open names who opens the door, so its door traps know whom they catch (docs/design/design-v1-traps.md 5.3). */
 export const CHOOSE_OPENER = "Choose who opens the door.";
 /**
  * How far a token reaches a door, by the room's own distance rule: 5 ft, or
@@ -2496,7 +2496,7 @@ export function doorReachFt(feetPerCell: number): number {
  * door must be within reach of a token of their own on the scene.
  *
  * On a scene with fog on the door is judged first as the player's copy
- * shows it, memory's where they remember one (docs/design-v1-map-discovery.md
+ * shows it, memory's where they remember one (docs/design/design-v1-map-discovery.md
  * 6), and reach from there, so while reach fails the answer is the one a
  * real door there would give. Once reach passes, a door gone from the build
  * or moved since they saw it is gone, without reading a stored wall that is
@@ -2509,7 +2509,7 @@ function doorCheck(c: Check, op: OpOf<"door.set">): Decision {
   if (!shown) return GONE;
   // Reach comes before the lock: a player learns a door is locked by trying it, so a door out of reach answers the same
   // whether it is locked or not, and no request can list the locks across the scene. An open names its opener, a token
-  // of theirs that reaches the door (docs/design-v1-traps.md 5.3), and a close any token of theirs that does.
+  // of theirs that reaches the door (docs/design/design-v1-traps.md 5.3), and a close any token of theirs that does.
   if (op.state === "open") {
     const by = op.by !== undefined ? c.visibleToken(op.by) : null;
     if (!by || by.sceneId !== op.sceneId || !ownsToken(c.state, c.actor, by)) return refuse("invalid", CHOOSE_OPENER);
@@ -2537,7 +2537,7 @@ function shownDoorChunk(c: Check, op: OpOf<"door.set">): BuildChunk | null {
 
 /**
  * Whether a player's `door.set` reached the door their copy shows
- * (docs/design-v1-map-discovery.md 5.3, doors touched): the server drops
+ * (docs/design/design-v1-map-discovery.md 5.3, doors touched): the server drops
  * that door's memory in every layer the sender reads when the op is taken,
  * or refused as gone once reach passed, so they then see it as it is.
  */
@@ -2586,7 +2586,7 @@ function reachWords(c: Check, tokens: readonly Token[], ref: DoorRef, chunk: Bui
 }
 
 /**
- * Whether a token reaches a door (docs/design-v1-maps-vision.md 4.1): a cell
+ * Whether a token reaches a door (docs/design/design-v1-maps-vision.md 4.1): a cell
  * beside it within 5 ft or one cell by the room's distance rule, and a clear
  * line from the token to the door's middle. `chunk` holds the door, stored
  * or as a player's projection holds it, which keep the same geometry. The
@@ -2620,7 +2620,7 @@ function doorIn(chunk: BuildChunk, ref: DoorRef): Extract<BuildChunk["edges"][st
  * multiple of 1/128, so the step crosses a grid line only when the
  * midpoint lies on one, and then each side is its own cell. On a hex
  * scene the points themselves come back, each standing for the hex that
- * holds it (docs/design-v1-hex-grids.md section 6, H2): a hex's side is
+ * holds it (docs/design/design-v1-hex-grids.md section 6, H2): a hex's side is
  * no grid line, so the step finds the hexes on each side of a door drawn
  * along one, and a door through a hex reads that hex from both sides.
  */
@@ -2711,7 +2711,7 @@ function createCharacterCheck(c: Check, input: Extract<Op, { t: "character.creat
 
 /**
  * A player's edit of a character's companion stat blocks
- * (docs/design-v1-companion-stat-blocks.md 4.1), with no room setting, as
+ * (docs/design/design-v1-companion-stat-blocks.md 4.1), with no room setting, as
  * adding a companion needs none: a create names a character that exists and
  * that they own, and an edit or a delete names a block of a character they
  * own. Any other block answers `gone`, the answer for anything outside
@@ -2736,11 +2736,11 @@ function ownsBlock(c: Check, blockId: string): boolean {
   return block !== undefined && c.ownsCharacterId(block.characterId);
 }
 
-/** What an owner may change on a companion beyond any token's owner fields (docs/design-v1-combat-flow.md 3.6.4). */
+/** What an owner may change on a companion beyond any token's owner fields (docs/design/design-v1-combat-flow.md 3.6.4). */
 const COMPANION_OWNER_FIELDS = new Set(["name", "actor", "kind", "companion", "companionReaction"]);
 /**
  * The stat block links a companion's owners set beside the stats an owner
- * edits (docs/design-v1-companion-stat-blocks.md 4.1): an SRD block, or one
+ * edits (docs/design/design-v1-companion-stat-blocks.md 4.1): an SRD block, or one
  * of the character's own. A room monster's link stays the DM's.
  */
 const COMPANION_OWNER_ACTOR_FIELDS = new Set([...OWNER_ACTOR_FIELDS, "srdId", "blockId"]);
@@ -2748,7 +2748,7 @@ const COMPANION_OWNER_ACTOR_FIELDS = new Set([...OWNER_ACTOR_FIELDS, "srdId", "b
 /**
  * A `blockId` a player names must be a block of a character they own, else
  * `gone`, before the reducer's own rules run, so no answer tells them that
- * a block outside their view exists (docs/design-v1-companion-stat-blocks.md 4.1).
+ * a block outside their view exists (docs/design/design-v1-companion-stat-blocks.md 4.1).
  */
 function blockLinkVisible(c: Check, blockId: string | null | undefined): boolean {
   return blockId === undefined || blockId === null || ownsBlock(c, blockId);
@@ -2764,7 +2764,7 @@ function blockLinkVisible(c: Check, blockId: string | null | undefined): boolean
  * as for the DM.
  */
 function companionUpdateCheck(c: Check, token: Token, link: NonNullable<Token["companion"]>, patch: TokenPatch): Decision {
-  // A companion's size is its owners' through the one rule every owned token's resize takes (docs/design-v1-token-window.md 8.6).
+  // A companion's size is its owners' through the one rule every owned token's resize takes (docs/design/design-v1-token-window.md 8.6).
   if (patch.size !== undefined) return resizeCheck(c, token, patch);
   for (const field of Object.keys(patch)) {
     if (field === "publicName") return refuse("forbidden", "only a PC's owner renames it");
@@ -2788,7 +2788,7 @@ export function companionReachFt(feetPerCell: number): number {
  * Whether a footprint is within a companion's reach of its character's
  * token, by the room's own distance rule on the scene's grid: on hexes the
  * fewest hex steps between the two footprints, with the room's rule only
- * for height (rules/distance.ts, docs/design-v1-hex-grids.md 4.3).
+ * for height (rules/distance.ts, docs/design/design-v1-hex-grids.md 4.3).
  */
 export function withinCompanionReach(settings: RoomSettings, grid: Grid, spot: FootprintToken, character: FootprintToken): boolean {
   return boxDistanceFt(tokenCellBox(grid, spot, settings.feetPerCell), tokenCellBox(grid, character, settings.feetPerCell), settings) <= companionReachFt(settings.feetPerCell);
@@ -2843,7 +2843,7 @@ export const companionWords = {
 };
 
 /**
- * A player's companion for a character they own (docs/design-v1-combat-flow.md
+ * A player's companion for a character they own (docs/design/design-v1-combat-flow.md
  * 3.6.3 and 4.4), with no setting needed: summons arrive mid-turn. It lands
  * on the scene the player holds, inside the map, within 5 ft of a token of
  * the character, and on a scene where walls stop moves, where that token's
@@ -2901,7 +2901,7 @@ function companionCheck(c: Check, input: TokenInput, link: NonNullable<TokenInpu
     a.legendary === undefined &&
     a.monsterId === undefined;
   if (!bare) return refuse("forbidden", "a new companion starts unhurt, with no conditions or DM notes");
-  // Only what its player could change afterwards (docs/design-v1-companion-stat-blocks.md 4.1): a link, never the DM's fields.
+  // Only what its player could change afterwards (docs/design/design-v1-companion-stat-blocks.md 4.1): a link, never the DM's fields.
   if (a.initScore !== undefined || a.creatureType !== undefined || a.cr !== undefined || a.xp !== undefined) {
     return refuse("forbidden", "a new companion leaves its initiative score, creature type, CR and XP to the DM");
   }
@@ -2943,7 +2943,7 @@ function placeTokenCheck(c: Check, input: Extract<Op, { t: "token.create" }>["to
     // A character token's HP follows the character's rules, so "exact" is the only setting it carries.
     (input.hpVisibility ?? "exact") !== "exact" ||
     (input.layer ?? "token") !== "token" ||
-    // Party membership is the DM's mark (docs/design-v1-maps-vision.md 4.3.5), false included, since it is no plain token's.
+    // Party membership is the DM's mark (docs/design/design-v1-maps-vision.md 4.3.5), false included, since it is no plain token's.
     input.partyVision !== undefined;
   if (special) return refuse("forbidden", "players place only a plain token of their own character");
   if (input.size !== character.size || input.w !== undefined || input.h !== undefined) return refuse("forbidden", "the token takes its character's size");

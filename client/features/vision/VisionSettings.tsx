@@ -49,7 +49,7 @@ type Patch = OpOf<"scene.update">["patch"];
 
 /**
  * What players see of a scene, the first group of its settings
- * (docs/design-v1-map-discovery.md 8.1 and 8.4, docs/design-v1-maps-vision.md
+ * (docs/design/design-v1-map-discovery.md 8.1 and 8.4, docs/design/design-v1-maps-vision.md
  * 4.3.1), whose `Group` the settings page draws: Players see first,
  * then the light level, the light each map phase brings, Sight, who sees
  * for themselves, and every party creature on the scene with its senses,
@@ -67,7 +67,7 @@ type Patch = OpOf<"scene.update">["patch"];
  * says so while the op is on its way.
  *
  * The Sight row makes the scene per player and back
- * (docs/design-v1-per-player-vision.md 7.1), and on a per-player scene
+ * (docs/design/design-v1-per-player-vision.md 7.1), and on a per-player scene
  * the list of who sees for themselves follows it. Each waits only on its
  * own changes.
  */
@@ -165,7 +165,7 @@ export function VisionSettings(props: { scene: Scene }) {
       {on ? <Sources sceneId={scene.id} perPlayer={perPlayer} /> : null}
       {perPlayer ? <MountNotes sceneId={scene.id} /> : null}
 
-      {/* A part of the group that folds, so a Section's fold: chevron first, its capitals label a level under the group's (docs/design-v1-design-pass.md 4.1). */}
+      {/* A part of the group that folds, so a Section's fold: chevron first, its capitals label a level under the group's (docs/design/design-v1-design-pass.md 4.1). */}
       <Section
         label="Fog and party vision"
         fold={{
@@ -233,7 +233,7 @@ function useFold(custom: boolean): { open: boolean; toggle(): void } {
  * its help says what the server is working out, as a polite status, so
  * focus stays on the option through it all. Whole party asks first while
  * players hold maps of their own here, since they join the party's for
- * good (docs/design-v1-map-discovery.md 8.1).
+ * good (docs/design/design-v1-map-discovery.md 8.1).
  */
 function SightRow(props: { scene: Scene; working: SightChoice | null }) {
   const { scene, working } = props;
@@ -287,7 +287,7 @@ function SightRow(props: { scene: Scene; working: SightChoice | null }) {
 /**
  * Sight's help, or once a change has waited the shared delay, what the
  * server is working out, as the small loading line
- * (docs/design-v1-design-pass.md 4.4). Its status stays mounted through
+ * (docs/design/design-v1-design-pass.md 4.4). Its status stays mounted through
  * both, so a screen reader hears the change, and the line inside says
  * nothing of its own. It sits in the Segmented's description, a `p`, so
  * everything in it is a `span`.

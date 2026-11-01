@@ -1,7 +1,7 @@
 /**
  * Written by `node scripts/game-icons.ts`. Do not edit by hand.
  *
- * The token icons from game-icons.net (docs/design-v1-dm-tools.md 3.12):
+ * The token icons from game-icons.net (docs/design/design-v1-dm-tools.md 3.12):
  * where the app serves them, and each author with their license and how
  * many of their icons ship. The icons themselves and their index are files
  * under public/, fetched only when shown, so this module stays small.

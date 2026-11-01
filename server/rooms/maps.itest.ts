@@ -6,7 +6,7 @@ import { solid } from "../assets/testImages.ts";
 import { startEngine, type Engine, type TestClient } from "./testing.ts";
 
 /**
- * Wave 3's server side end to end (docs/design-v1-maps-vision.md 2.5, 3.3,
+ * Wave 3's server side end to end (docs/design/design-v1-maps-vision.md 2.5, 3.3,
  * 3.4): the `thumb` asset kind, phase sizes from the asset rows, what
  * players may read, and an export carrying stamps, lights, free walls,
  * phases and a thumbnail into a new room.

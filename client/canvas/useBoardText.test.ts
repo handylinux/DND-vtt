@@ -11,7 +11,7 @@ const { measureLabel } = await import("./measureText.ts");
 /*
  * The label pass keeps token labels off other layers' pills by zoom alone,
  * never by pan, while a pointed pill slides along the view's edge as it is
- * drawn (docs/design-v1-polish.md R4). So what it keeps off is every place
+ * drawn (docs/design/design-v1-polish.md R4). So what it keeps off is every place
  * the pill can slide to: a label never lands on a trap's name slid in from
  * the screen's edge.
  */
@@ -33,7 +33,7 @@ function token(id: string, cell: { x: number; y: number }): LabelInput {
   return { id, box, belowY: box.y1 + sizes.gapPx, aboveY: box.y0 - sizes.gapPx, name: "Goblin", hp: null, alert: false, rank: 0, sides: false, nameOnly: false, style: labelStyle(sizes, scale, scale) };
 }
 
-describe("a pointed pill in the label pass (docs/design-v1-polish.md R4)", () => {
+describe("a pointed pill in the label pass (docs/design/design-v1-polish.md R4)", () => {
   test("keeps the room of every place the view can slide it to, the drawn pill inside it at either end", () => {
     const [reach] = pillObstacles([trap], scale);
     assert.ok(reach);

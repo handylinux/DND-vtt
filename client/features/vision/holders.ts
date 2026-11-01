@@ -7,7 +7,7 @@ import { displayName } from "../../lib/scene.ts";
 
 /**
  * Who sees for themselves on a per-player scene, and what the Vision
- * settings say about it (docs/design-v1-per-player-vision.md 7.1), as
+ * settings say about it (docs/design/design-v1-per-player-vision.md 7.1), as
  * plain functions over the DM's view for node --test. The DM's view holds
  * the scene's holder list (RoomState.holders) and every owner, so these
  * answer exactly what the server's list says.

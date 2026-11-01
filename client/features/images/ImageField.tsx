@@ -28,7 +28,7 @@ const FIRST_LINE_MAX = 64;
  * choose a new one (then crop it), re-crop the current one, or remove it.
  * Shared by the token panel and the character cards. An openly licensed
  * image from Openverse shows its credit under it, with "Cropped." when the
- * crop shows less than the whole image (docs/design-v1-dm-tools.md 3.13).
+ * crop shows less than the whole image (docs/design/design-v1-dm-tools.md 3.13).
  */
 export function ImageField(props: {
   value: ImageRef | undefined;
@@ -39,7 +39,7 @@ export function ImageField(props: {
   ring?: string;
   /** Shown when there is no image. */
   initials?: string;
-  /** The preview's width. The token panel's row is compact (docs/design-v1-token-panel.md 3.6). */
+  /** The preview's width. The token panel's row is compact (docs/design/design-v1-token-panel.md 3.6). */
   previewSize?: number;
   /**
    * More in the button column: `beside` pairs with "Change image" on its
@@ -51,14 +51,14 @@ export function ImageField(props: {
   extra?: { beside?: ReactNode; below?: ReactNode };
 }) {
   const [step, setStep] = useState<{ kind: "pick" } | { kind: "crop"; assetId: string; initial: Crop } | null>(null);
-  // A shipped icon has no crop (docs/design-v1-dm-tools.md 3.12).
+  // A shipped icon has no crop (docs/design/design-v1-dm-tools.md 3.12).
   const value = props.value && isAssetImage(props.value) ? props.value : undefined;
   const set = props.value !== undefined;
   const roomId = useRoomView((s) => s.roomId);
   const row = useAssetRow(roomId, value?.assetId);
 
   const change = (
-    // Words alone, so the pair still fits beside the picture in the side panel and on a 390 px phone (docs/design-v1-icons.md 4.1).
+    // Words alone, so the pair still fits beside the picture in the side panel and on a 390 px phone (docs/design/design-v1-icons.md 4.1).
     <Button size="sm" onClick={() => setStep({ kind: "pick" })} style={props.extra ? PAIR_BUTTON : undefined}>
       {set ? "Change image" : "Add image"}
     </Button>

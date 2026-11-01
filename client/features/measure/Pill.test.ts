@@ -9,7 +9,7 @@ const { leaningTag, pillGeometry, pillPlace, pillReach, pillStackPlace } = await
 const { theme } = await import("../../lib/theme.ts");
 
 /*
- * The board's readouts (docs/design-v1-look-pass-2.md 2.11): one size at
+ * The board's readouts (docs/design/design-v1-look-pass-2.md 2.11): one size at
  * every zoom, grown with the interface size, kept inside the map the bars
  * leave clear, and a drag's label and its warnings placed as one stack.
  */
@@ -148,7 +148,7 @@ describe("a stack of readouts", () => {
   });
 });
 
-describe("a pointed pill at the screen's edge (docs/design-v1-polish.md R4)", () => {
+describe("a pointed pill at the screen's edge (docs/design/design-v1-polish.md R4)", () => {
   // A 390 x 844 phone at 40 px a cell, with its bars over the map.
   const scale = 40;
   const view = boardViewOf({ x: 0, y: 0, scale }, { width: 390, height: 844 }, { top: 52, right: 0, bottom: 113, left: 0 });

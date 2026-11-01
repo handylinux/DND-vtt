@@ -5,7 +5,7 @@ import type { VBox } from "./pieces.ts";
 import type { KeptHost, KeptLayer } from "./scheduler.ts";
 
 /**
- * The kept relief picture (docs/design-v1-relief-pan.md 5): the relief
+ * The kept relief picture (docs/design/design-v1-relief-pan.md 5): the relief
  * layer's own canvas keeps its pixels between draws. A draw whose only
  * marks came from the camera, at the same scale, turn, canvas size, pixel
  * ratio and stage key, copies the canvas onto itself by the move in whole
@@ -395,7 +395,7 @@ export type KeptBoard<T> = {
  * The board's side of the kept picture (scheduler.ts KeptHost). Every
  * camera-derived field of the draw context is set from the stage as it
  * draws, on the whole path too, so a whole repaint between renders culls by
- * the view on screen (docs/design-v1-relief-pan.md 5.2).
+ * the view on screen (docs/design/design-v1-relief-pan.md 5.2).
  */
 export function keptHost<T>(b: KeptBoard<T>): KeptHost {
   return {

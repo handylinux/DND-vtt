@@ -5,7 +5,7 @@ import type { OpAnswer } from "../../state/types.ts";
 import { dropLanding, landed, squeezedSpot, walkerOf, type DropToken, type DropView, type Landed, type Stop } from "./drop.ts";
 
 /**
- * "Teleport here" (2026-10-14, docs/design-v1-maps-vision.md section
+ * "Teleport here" (2026-10-14, docs/design/design-v1-maps-vision.md section
  * 4.1), for Misty Step and anything else that passes walls or ledges. The
  * SRD says teleportation spends no movement, so it replaces the walk to the
  * wall rather than adding to it: the walk is taken back first, with the

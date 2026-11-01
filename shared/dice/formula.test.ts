@@ -33,7 +33,7 @@ function refusal(text: string): string | undefined {
   return parsed.ok ? undefined : parsed.error;
 }
 
-describe("the dice grammar (docs/design-v1-dice.md 3.1)", () => {
+describe("the dice grammar (docs/design/design-v1-dice.md 3.1)", () => {
   test("section 11's formulas: 10d4+1d8, 4d6dl1 and d%", () => {
     const mixed = formula("10d4+1d8");
     assert.equal(diceCount(mixed), 11);

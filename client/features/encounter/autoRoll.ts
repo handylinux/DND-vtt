@@ -13,7 +13,7 @@ import { MAX_VALUE, MIN_VALUE, entryActor } from "./logic.ts";
 
 /**
  * Auto initiative: the DM rolls monster initiative in one press (features
- * section 10, design 9.4, docs/design-v1-roll-options.md 7).
+ * section 10, design 9.4, docs/design/design-v1-roll-options.md 7).
  *
  * The dice roll on the server, as one secret `dice.roll` from the DM, so
  * they land in the DM's log and Recent rolls like any other roll. Once
@@ -66,7 +66,7 @@ export type RollRow = {
   /**
    * The preset's advantage sources (presetFor): the DM's mark on the row in
    * place of the tracker's hint, and Poisoned. Unresolved, so the roll
-   * combines them once (docs/design-v1-dice.md 3.3).
+   * combines them once (docs/design/design-v1-dice.md 3.3).
    */
   sources: AdvantageSource[];
   /** The preset's extra terms, such as Exhaustion's "-2". */
@@ -323,7 +323,7 @@ export function planPress(rows: readonly RollRow[], mode: RollMode, kept: readon
  * screen, so a hidden group leaves players no trace of its creature. Each
  * is marked as initiative, so a creature whose place in the order players
  * may not know yet leaves them no bare line either
- * (docs/design-v1-combat-flow.md 11.3).
+ * (docs/design/design-v1-combat-flow.md 11.3).
  */
 export function initiativeRolls(groups: readonly RollGroup[]): PanelRoll[] {
   return groups.map((group) => {
@@ -414,7 +414,7 @@ export type RollPress = {
 /**
  * What the results card says players see of the totals. Where the room keeps
  * monsters' places secret, a total reaches them only once its row joins their
- * order (docs/design-v1-combat-flow.md 11.2), so the card must not tell the
+ * order (docs/design/design-v1-combat-flow.md 11.2), so the card must not tell the
  * DM that every visible monster's total already went out.
  */
 export function totalsHelp(reveal: OrderReveal): string {
@@ -423,7 +423,7 @@ export function totalsHelp(reveal: OrderReveal): string {
     : "Players see a monster's total once it joins their order, never the dice or modifiers.";
 }
 
-/** An answer that never came back, which the receipt could not settle. Nothing is sent again on its own (docs/design-v1-dice.md 8.7). */
+/** An answer that never came back, which the receipt could not settle. Nothing is sent again on its own (docs/design/design-v1-dice.md 8.7). */
 export const MAY_HAVE_HAPPENED = "This may have happened. Check the log.";
 /** Lines that do not answer the press's rolls one to one (valuesFrom). */
 export const NOT_READ = "The dice landed, but their lines could not be read here. Nothing was set. Check the log.";

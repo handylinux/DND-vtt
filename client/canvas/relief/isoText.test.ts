@@ -54,7 +54,7 @@ function layout(tokens: readonly ViewToken[], place?: (t: ViewToken) => { x: num
   ).out;
 }
 
-describe("token labels in Isometric lay out in view space (docs/design-v1-isometric-view.md 5.4)", () => {
+describe("token labels in Isometric lay out in view space (docs/design/design-v1-isometric-view.md 5.4)", () => {
   test("no goblin's name lands on another's standee or ring, at every turn", () => {
     const tokens = crowd();
     for (const turn of [0, 1, 2, 3] as Turn[]) {

@@ -7,7 +7,7 @@ import { withExplored } from "../../features/vision/exploredFog.ts";
 
 /**
  * Both of the board's drawing trees stay mounted once Isometric has shown
- * (docs/design-v1-isometric-view.md 5.1, ISO-D15), so anything with effects
+ * (docs/design/design-v1-isometric-view.md 5.1, ISO-D15), so anything with effects
  * must mount once, outside both, or its sound, reminder, camera stream or
  * frame clock runs twice. Node cannot load the .tsx files, so these read
  * their source: the registry's lines, each renderer's own file, and where

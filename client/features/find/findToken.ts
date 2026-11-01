@@ -59,7 +59,7 @@ export function findRect(token: Pick<Token, "x" | "y" | "size" | "w" | "h">): Re
  * canvas/barDock.ts barCover). The zoom ignores the cover, so a press with
  * the Log open shows the token as large as one without, with some of its
  * surroundings under the sheet. In the view the board shows
- * (docs/design-v1-isometric-view.md 4.2). A given `zoom` keeps that scale
+ * (docs/design/design-v1-isometric-view.md 4.2). A given `zoom` keeps that scale
  * and only centers.
  */
 export function findCamera(viewport: Size, target: Rect, bars: Insets, cover: Insets, frame: FindFrame = FLAT_FRAME, zoom?: number): Camera {
@@ -86,7 +86,7 @@ export function findCamera(viewport: Size, target: Rect, bars: Insets, cover: In
  * highest drawn ground in its box, which raises the box's top as a fit's
  * does, and the height its middle draws at (a token's ring, or the ground
  * under an outline row's box), each from this viewer's drawn heights
- * (docs/design-v1-isometric-view.md 4.2).
+ * (docs/design/design-v1-isometric-view.md 4.2).
  */
 export type FindFrame = { view: View; lift: number; z: number };
 

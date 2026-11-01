@@ -9,7 +9,7 @@ import { hexSubcells, parseHexKey } from "../rules/hex.ts";
 import { invalid, type Tx } from "./tx.ts";
 
 /*
- * Players' memory of the build (docs/design-v1-map-discovery.md 5.3 and
+ * Players' memory of the build (docs/design/design-v1-map-discovery.md 5.3 and
  * 5.4): one memory per explored layer, the party's and each sight
  * holder's, each a diff against the build now, stored by chunk. The map
  * step on the server decides what each layer remembers and writes it in

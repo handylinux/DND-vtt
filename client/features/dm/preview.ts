@@ -10,7 +10,7 @@ import { panelById } from "../panels.ts";
  * "View as a player" (features section 13): the DM sees what one player
  * can see, with fog, and nothing that player may not see.
  *
- * The server projects it (docs/design-v1-per-player-vision.md 7.4): a
+ * The server projects it (docs/design/design-v1-per-player-vision.md 7.4): a
  * preview socket asks for the room as that player (state/socket.ts
  * previewOf), on whichever scene the DM is looking at, and the room store
  * behind it holds that player's own projection, their own sight and map
@@ -28,7 +28,7 @@ export function previewNotice(name: string | undefined): string {
 /** The parts of a store the preview reads. The live store and the fixture's both fit. */
 export type PreviewSource = Pick<StoreApi<RoomView>, "getState" | "subscribe">;
 
-/** How long the preview waits for the player's snapshot before it says it could not load (docs/design-v1-per-player-vision.md 7.4). */
+/** How long the preview waits for the player's snapshot before it says it could not load (docs/design/design-v1-per-player-vision.md 7.4). */
 export const PREVIEW_LOAD_MS = 10_000;
 
 export type PreviewLoad = "loading" | "loaded" | "failed";
@@ -187,7 +187,7 @@ export function createPreview(source: PreviewSource, memberId: string, options: 
     doneSelecting: () => store.setState({ local: doneSelecting(store.getState().local) }),
     showActions: (open) => store.setState({ local: showActions(store.getState().local, open) }),
     openPanel: (id, how) => store.setState({ local: withPanel(store.getState().local, id, how, panelById(id)?.narrowOnly === true) }),
-    // The preview is a player's room, so its split starts on a player's panels and never meets the DM's (docs/design-v1-split-panel.md 8).
+    // The preview is a player's room, so its split starts on a player's panels and never meets the DM's (docs/design/design-v1-split-panel.md 8).
     splitPanels: (on, pair) => store.setState({ local: on ? withSplit(store.getState().local, "player", pair) : withoutBelow(store.getState().local) }),
     swapPanels: () => store.setState({ local: withSwap(store.getState().local) }),
     fitSplit: (fits) => store.setState({ local: withSplitFits(store.getState().local, fits) }),

@@ -12,7 +12,7 @@ import { chunk, type Bounds, type Point } from "./cells.ts";
 import type { EdgeKind } from "./store.ts";
 
 /*
- * The builder on a hex scene (docs/design-v1-hex-grids.md HX-D7, HX-D9):
+ * The builder on a hex scene (docs/design/design-v1-hex-grids.md HX-D7, HX-D9):
  * Wall lines drawn point to point as free walls, and Erase and Difficult
  * ground by hex keys. Squares keep cells.ts.
  */

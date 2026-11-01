@@ -12,7 +12,7 @@ import { diceFoldsSlot, severalKey } from "../diceFolds.ts";
 import { receiptsSlot } from "../useReceipt.ts";
 
 /*
- * Several selected creatures in the dice pass (docs/design-v1-dice-pass.md
+ * Several selected creatures in the dice pass (docs/design/design-v1-dice-pass.md
  * 5.3): the card with their pictures and names, the groups under it, the
  * cells that say once what their label says, and a shared attack's state
  * kept in a slot by the attack's name, so a fold that unmounts its row, or

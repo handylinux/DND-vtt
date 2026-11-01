@@ -17,7 +17,7 @@ import { byCategory, findShown, packLine, resultLine, searchGroups, tileSource, 
 import { loadedStarterPacks, loadStarterPacks, onStarterPacks } from "./catalog.ts";
 
 /**
- * The Starter tab (docs/design-v1-starter-art.md 4): the packs that fit
+ * The Starter tab (docs/design/design-v1-starter-art.md 4): the packs that fit
  * the place it opens in, each folded under its name, its works by
  * category inside, a search over names, categories and tags across those
  * packs, and under the tiles the chosen work's name, pack, author and

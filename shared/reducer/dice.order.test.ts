@@ -7,7 +7,7 @@ import { DM, P1, P2, apply, room, token } from "../testutil.ts";
 
 /**
  * An initiative roll for a creature whose place in the order players may not
- * know yet stays the DM's, open or secret (docs/design-v1-combat-flow.md
+ * know yet stays the DM's, open or secret (docs/design/design-v1-combat-flow.md
  * 11.3): the line marks the roll `hidden` when it is written, and a player's
  * projection drops it, so no total, bare line or toast reaches them.
  */
@@ -54,7 +54,7 @@ function diceFor(state: RoomState, viewer: typeof DM): Extract<LogEvent, { type:
   return line?.data?.type === "dice" ? line.data : null;
 }
 
-describe("initiative rolls under the order setting (docs/design-v1-combat-flow.md 11.3)", () => {
+describe("initiative rolls under the order setting (docs/design/design-v1-combat-flow.md 11.3)", () => {
   test("a monster's roll before its turn reaches no player, open or secret, and reaches the DM whole with its mark", () => {
     for (const to of ["all", "dm"] as const) {
       const state = run(fight("party"), initiative([{ tokenId: "gob" }], to));

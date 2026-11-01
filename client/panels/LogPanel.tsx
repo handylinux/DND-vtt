@@ -47,7 +47,7 @@ function scrollParent(el: HTMLElement | null): HTMLElement | null {
  * view holds the newest lines the room keeps for this viewer
  * (shared/logRings.ts). Older ones come a page at a time from the archive,
  * projected for this viewer by the server, into a window of at most 500
- * rows (historyWindow.ts, docs/design-v1-log-history.md 5.3). Past that the
+ * rows (historyWindow.ts, docs/design/design-v1-log-history.md 5.3). Past that the
  * window parts from the live log, and Show newer and Back to latest bring
  * the reader back.
  */
@@ -62,7 +62,7 @@ export default function LogPanel(_props: PanelProps) {
   // An older server supplies no archive retention, so only its live lines
   // offer Undo. A new server keeps loaded pages current without a refetch.
   const retainedIds = useMemo(() => hpUndoLogIds ?? mainLog.map((entry) => entry.id), [hpUndoLogIds, mainLog]);
-  // Trap lines keep logs of their own, so no players' line ever pushes out a DM's, and read in among the rest (docs/design-v1-traps.md 6.3).
+  // Trap lines keep logs of their own, so no players' line ever pushes out a DM's, and read in among the rest (docs/design/design-v1-traps.md 6.3).
   const trapLog = useRoomView((s) => s.view?.trapLog ?? EMPTY_LOG);
   const trapSeen = useRoomView((s) => s.view?.trapSeen ?? EMPTY_LOG);
   const log = useMemo(() => (trapLog.length + trapSeen.length === 0 ? mainLog : mergeLog(mergeLog(trapLog, trapSeen), mainLog)), [mainLog, trapLog, trapSeen]);
@@ -84,7 +84,7 @@ export default function LogPanel(_props: PanelProps) {
   // The file comes from the server by this device's own grant, which in "view as a player" is the DM's.
   const preview = usePreview();
   const dm = you?.role === "dm";
-  // In "view as a player" the pages are that player's, as the preview's socket gives the rest (docs/design-v1-per-player-vision.md 7.4).
+  // In "view as a player" the pages are that player's, as the preview's socket gives the rest (docs/design/design-v1-per-player-vision.md 7.4).
   const viewer = { sceneId: dm && !preview ? sceneId : null, previewOf: preview?.memberId ?? null };
   // Whose window it is. A page for any other room, viewer, projecting scene or preview never lands in it.
   const key = historyKey({ roomId, memberId: me, role: you?.role ?? "", sceneId, previewOf: viewer.previewOf, blackout });
@@ -211,7 +211,7 @@ export default function LogPanel(_props: PanelProps) {
         >
           Export
         </Button>
-        {/* A filter of what shows, so a checkbox rather than a switch (docs/design-v1-visual.md 3.7). */}
+        {/* A filter of what shows, so a checkbox rather than a switch (docs/design/design-v1-visual.md 3.7). */}
         <div style={{ flex: "none" }}>
           <Checkbox label="Chat only" checked={chatOnly} onChange={setChatOnly} />
         </div>
@@ -373,7 +373,7 @@ function EntryRow(props: { entry: LogEntry; names: LogNames; me: string; dm: boo
 
 function Composer(props: { names: LogNames; me: string; inputRef: Ref<HTMLInputElement>; onSend(op: NonNullable<ReturnType<typeof messageOp>>): boolean }) {
   const [text, setText] = useState("");
-  // A half-typed message keeps the sheet from a swipe's close (docs/design-v1-sheet-swipe.md 4.5).
+  // A half-typed message keeps the sheet from a swipe's close (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(text.trim() !== "");
   const [targetId, setTargetId] = useState("all");
   const [error, setError] = useState<string | null>(null);

@@ -10,7 +10,7 @@ import { rollsOf, rollVerdict, type DiceLine } from "./logic.ts";
 import { useReceipts, type ReceiptState } from "./useReceipt.ts";
 
 /**
- * Rolls as toasts (docs/design-v1-dice.md 8.5 and 8.7): someone else's
+ * Rolls as toasts (docs/design/design-v1-dice.md 8.5 and 8.7): someone else's
  * roll that arrives with its numbers after the page's first snapshot, one
  * toast per batch, while the Dice panel is not on screen and this device
  * shows others' rolls. A bare secret line shows none, nor does a request's
@@ -34,7 +34,7 @@ export function othersRolls(fresh: readonly LogEntry[], me: string): DiceLine[][
 }
 
 /**
- * The die a toast of one D20 Test leads with (docs/design-v1-roll-animation.md 4):
+ * The die a toast of one D20 Test leads with (docs/design/design-v1-roll-animation.md 4):
  * an attack, a save, a check or initiative, read by its deciding d20. It
  * rings for a natural 20, or a critical hit against an AC, and is outlined
  * for a natural 1. Null for any other toast: damage, several rolls, or a

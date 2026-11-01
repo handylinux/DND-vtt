@@ -13,7 +13,7 @@ import { seenIn, walkersFor } from "./walk.ts";
 
 /**
  * What a player's device reads on a per-player scene
- * (docs/design-v1-per-player-vision.md 6.6, decision 10): its copy holds
+ * (docs/design/design-v1-per-player-vision.md 6.6, decision 10): its copy holds
  * creatures only that player sees and ground only they remember, so every
  * public answer (who every player sees, the attach list's limits, what a
  * drag tows) reads what every viewer shares, while the player's own drag

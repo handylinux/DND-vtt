@@ -40,7 +40,7 @@ function answerOf(answer: OpAnswer, refusal?: OpRefusal): { answer: SyncAnswer; 
 }
 
 /**
- * "Re-sync from D&D Beyond" (docs/design-v1-resync.md 1.2 and 3): fetches
+ * "Re-sync from D&D Beyond" (docs/design/design-v1-resync.md 1.2 and 3): fetches
  * the character the sheet link names, else the record's, at once, reviews
  * what changed against the live character, applies it in one op that
  * expects each part as the review saw it, and offers Undo until it
@@ -424,7 +424,7 @@ export function ResyncDialog(props: { characterId: string; onClose(): void }) {
       }
     >
       <div ref={root} style={{ display: "grid", gap: theme.space(3) }}>
-        {/* A plain status line: the check mark means chosen in this app, never done (docs/design-v1-look-pass-2.md 2.3). */}
+        {/* A plain status line: the check mark means chosen in this app, never done (docs/design/design-v1-look-pass-2.md 2.3). */}
         <p ref={done} tabIndex={-1} role="status" style={{ margin: 0, fontSize: theme.font.body14, lineHeight: theme.leading.body, outline: "none" }}>
           {undone ? RESYNC_WORDS.undone(who) : doneLine(counts.current ?? { cameIn: 0, removed: 0, cameBack: 0, stayed: 0, resourcesRemoved: 0, resourcesBack: 0 })}
         </p>

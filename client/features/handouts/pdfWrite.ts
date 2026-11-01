@@ -1,6 +1,6 @@
 /**
  * A PDF of image pages, written in the browser for Download on a handout
- * of several pages (docs/design-v1-pdf-handouts.md section 6, decision 2).
+ * of several pages (docs/design/design-v1-pdf-handouts.md section 6, decision 2).
  *
  * A PDF can hold a JPEG as it is, under the DCTDecode filter, so a PDF of
  * image pages needs no library: a catalog, a page tree, and for each page

@@ -68,7 +68,7 @@ describe("credits", () => {
     assert.ok(icons.rows.every((r) => r.changes === null));
   });
 
-  test("the X-card credits John Stavropoulos with the link and the license its text asks for (docs/design-v1-dm-tools.md 3.11)", () => {
+  test("the X-card credits John Stavropoulos with the link and the license its text asks for (docs/design/design-v1-dm-tools.md 3.11)", () => {
     const safety = creditSections().find((s) => s.id === "safety");
     const xcard = safety?.rows.find((r) => r.title === "X-Card");
     assert.ok(xcard, "the About page lists the X-card");

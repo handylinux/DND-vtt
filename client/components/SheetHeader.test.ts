@@ -6,7 +6,7 @@ import { describe, test } from "node:test";
  * Hide puts a panel away and keeps it mounted, on the side panel and on a
  * sideways sheet. Drawn as a right chevron it looked like the scrolling tab
  * row's own arrow beside it, and like forward next to Back's left chevron
- * (docs/design-v1-layout-hierarchy.md 4.1, 4.2).
+ * (docs/design/design-v1-layout-hierarchy.md 4.1, 4.2).
  */
 
 const { createElement } = await import("react");
@@ -36,7 +36,7 @@ describe("Hide's icon", () => {
  * A subpage in a side panel pane sits under the tab row or the bar, which
  * name its panel, so its header takes a header row's 44 px and a pane
  * title's 16 px rather than a sheet's 56 and 18
- * (docs/design-v1-side-headers.md 3.3).
+ * (docs/design/design-v1-side-headers.md 3.3).
  */
 describe("a compact header", () => {
   const header = (compact: boolean) => renderToStaticMarkup(createElement(SheetHeader, { title: "Members", compact, back: { label: "Back to Menu", onBack() {} } }));
@@ -60,7 +60,7 @@ describe("a compact header", () => {
  * It gives that back with a 48 px row's 2 px above and below its buttons,
  * so its Close and title stand where a map pane's header puts them, 6 px
  * under the frame's top edge inside its border, not 4
- * (docs/design-v1-polish.md R7).
+ * (docs/design/design-v1-polish.md R7).
  */
 describe("a sticky pane header", () => {
   const row = (markup: string) => /^<div[^>]*style="([^"]*)"/.exec(markup)?.[1] ?? "";

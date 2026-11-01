@@ -11,7 +11,7 @@ import type { PieceSource } from "./pieces.ts";
 
 /*
  * The relief's terrain against an independent oracle
- * (docs/design-v1-iso-hex-relief.md 10.4). The oracle intersects each
+ * (docs/design/design-v1-iso-hex-relief.md 10.4). The oracle intersects each
  * screen point's ray with every cell's prism, a canonical polygon from
  * hex.ts or a unit square, up from minus infinity to its drawn height,
  * and takes the nearest hit: no key, no faces list, no walk. The board's

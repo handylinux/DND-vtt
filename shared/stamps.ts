@@ -1,6 +1,6 @@
 /**
  * The stamp art RaccoonVTT ships, drawn from `/stamps/<key>.webp`
- * (docs/design-v1-maps-vision.md section 3.5). Written by
+ * (docs/design/design-v1-maps-vision.md section 3.5). Written by
  * `node scripts/stamps.ts`, so change the script, not this file.
  *
  * `w` and `h` are the footprint in cells, the size a new stamp takes. Each

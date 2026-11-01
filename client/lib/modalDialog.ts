@@ -110,7 +110,7 @@ export type SheetDialogStep = "close" | "show" | "showModal";
 
 /**
  * What takes a sheet's `<dialog>` from how it stands to how its sheet asks
- * (docs/design-v1-layout-hierarchy.md 4.2): show() or showModal() to open,
+ * (docs/design/design-v1-layout-hierarchy.md 4.2): show() or showModal() to open,
  * close() to hide, and close() then the other open for a change of mode,
  * since a dialog cannot change between modal and not while open.
  */
@@ -138,7 +138,7 @@ export function sheetDialogSteps(now: SheetDialogState, want: { shown: boolean; 
  *   a `title` to land on: its title. The browser's own pick is the dialog's
  *   first control, which for a sheet swiped up to fill the screen was the
  *   Expand sheet button kept hidden until it has keyboard focus
- *   (docs/design-v1-sheet-swipe.md 4.7).
+ *   (docs/design/design-v1-sheet-swipe.md 4.7).
  * Null leaves focus where the browser put it, and "page" blurs it.
  */
 export function sheetFocusAfter(input: { steps: readonly SheetDialogStep[]; before: "inside" | "outside" | "page"; hiding: boolean; title?: boolean }): "before" | "page" | "hide" | "title" | null {
@@ -219,7 +219,7 @@ export function sheetStepping(): boolean {
 
 /**
  * A panel sheet as one `<dialog>` kept mounted from the moment its panel
- * opens until it closes (docs/design-v1-layout-hierarchy.md 4.2), so no
+ * opens until it closes (docs/design/design-v1-layout-hierarchy.md 4.2), so no
  * change of mode, no Hide and no rotation remounts the panel, and its
  * draft, scroll and subpage stay. `shown` false closes it with its content
  * kept. `modal` opens it with showModal() and `aria-modal="true"`, which

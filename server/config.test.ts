@@ -28,7 +28,7 @@ describe("loadConfig", () => {
     assert.doesNotThrow(() => loadConfig(base));
   });
 
-  test("the admin password is an argon2id hash or nothing, and an empty value is nothing (docs/design-v1-dm-tools.md 3.18)", () => {
+  test("the admin password is an argon2id hash or nothing, and an empty value is nothing (docs/design/design-v1-dm-tools.md 3.18)", () => {
     const hash = "$argon2id$v=19$m=19456,t=2,p=1$c2FsdHNhbHRzYWx0$aGFzaGhhc2hoYXNoaGFzaGhhc2hoYXNoaGFzaGhhc2g";
     assert.equal(loadConfig({ ...base, ADMIN_PASSWORD_HASH: hash }).ADMIN_PASSWORD_HASH, hash);
     assert.equal(loadConfig({ ...base, ADMIN_PASSWORD_HASH: "" }).ADMIN_PASSWORD_HASH, undefined);

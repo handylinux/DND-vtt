@@ -17,7 +17,7 @@ import {
 
 /**
  * Which entry takes a paste, and one entry's own paste in progress
- * (docs/design-v1-paste.md 1.2 and 1.3).
+ * (docs/design/design-v1-paste.md 1.2 and 1.3).
  *
  * Every image entry registers with its Room page's router, which holds one
  * `paste` listener on the document, so exactly one entry takes a paste even

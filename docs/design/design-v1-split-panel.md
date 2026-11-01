@@ -1,6 +1,6 @@
 # raccoon-vtt v1: two panels at once in the side panel
 
-Status: draft 2, with the project owner's answers of 2026-10-17 (section 15) and the fixes from the design review's round 1 (11.4). Code is cited from the wave 5 tip `bbaf7cec` (main with the four wave 5 builds). This design builds on docs/design-v1-panel-tabs.md ("the tabs design"), whose row, More and menu it extends (section 10 states each addition to its contract), on docs/design-v1-layout-hierarchy.md 4.1 (the side panel, hidden and shown) and 4.2 (a phone's sheet), and on the shared popover base of docs/design-v1-tool-options.md 7.1.
+Status: draft 2, with the project owner's answers of 2026-10-17 (section 15) and the fixes from the design review's round 1 (11.4). Code is cited from the wave 5 tip `bbaf7cec` (main with the four wave 5 builds). This design builds on docs/design/design-v1-panel-tabs.md ("the tabs design"), whose row, More and menu it extends (section 10 states each addition to its contract), on docs/design/design-v1-layout-hierarchy.md 4.1 (the side panel, hidden and shown) and 4.2 (a phone's sheet), and on the shared popover base of docs/design/design-v1-tool-options.md 7.1.
 
 The project owner asked on 2026-10-17: "Support for a vertical Split View in sidebar would be great. Even just support for two panels so initiative and character stats can be up at the same time would be great. I'll let you design how this is initiated but please make it intuitive."
 
@@ -28,7 +28,7 @@ Every size is in layout px, the chrome's own (`features/device/layout.ts`). Insi
 
 ### 3.1 Two panes and the bar
 
-Changed by docs/design-v1-side-headers.md: the bar is a 45 px header row in the tab row's look, its name in the chosen tab's pill, and a pane's minimum counts the 45 px subpage header, 133 px, so room for two is 311 own px.
+Changed by docs/design/design-v1-side-headers.md: the bar is a 45 px header row in the tab row's look, its name in the chosen tab's pill, and a pane's minimum counts the 45 px subpage header, 133 px, so room for two is 311 own px.
 
 ```
 +--------------------------------------------+
@@ -54,10 +54,10 @@ Changed by docs/design-v1-side-headers.md: the bar is a 45 px header row in the 
 
 ### 3.2 Sizes
 
-- **A pane's minimum** is a subpage header (the sheet header's 56 px and its 1 px border) above the very short sheet's minimum body, 88 px (docs/design-v1-layout-hierarchy.md 4.2): 145 own px, whether or not a header shows, so a subpage opening never moves the bar.
+- **A pane's minimum** is a subpage header (the sheet header's 56 px and its 1 px border) above the very short sheet's minimum body, 88 px (docs/design/design-v1-layout-hierarchy.md 4.2): 145 own px, whether or not a header shows, so a subpage opening never moves the bar.
 - **Room for two**: the room holds both minimums and the bar, 336 own px. It is measured on the room's own box, which holds both panes, so it never depends on whether two show. It is measured in a layout effect before the first paint, as the side panel shows and as its panels change, and after that by a ResizeObserver whose result commits with `flushSync`, as the tabs' fit is (`pages/SideTabs.tsx:151-162`). So no frame paints one pane and the next two.
 - **No measure while hidden.** A hidden side panel is `display: none` (`[hidden]`, `client/globals.css:39-41`), so its room cannot be measured. While it is hidden on a wide layout the room is unknown (`splitFits` is null), never a measure kept from before, and a request that would place a panel by it waits for the side panel to show (5.1).
-- **The share.** The bar's place is the top pane's share of the room less the bar, in thousandths. With no share stored, the split is even, except that a pane holding Initiative takes at least the height Initiative needs to keep its round header stuck (its full header and two standard rows, `roundHeaderForm`, `logic.ts:347-352`: 193 own px with today's header and rows, `INITIATIVE_STUCK` in `pages/splitPanes.ts`), as far as the other pane keeps its minimum. At 1280 x 800 at 130% that gives the DM 193 and 151 in place of 172 and 172. A stored share, from a drag or a key step, always wins. A share is clamped where it is drawn, so each pane keeps its minimum, and the stored share stays as it was, as the token window's stored size does (docs/design-v1-token-window.md 7).
+- **The share.** The bar's place is the top pane's share of the room less the bar, in thousandths. With no share stored, the split is even, except that a pane holding Initiative takes at least the height Initiative needs to keep its round header stuck (its full header and two standard rows, `roundHeaderForm`, `logic.ts:347-352`: 193 own px with today's header and rows, `INITIATIVE_STUCK` in `pages/splitPanes.ts`), as far as the other pane keeps its minimum. At 1280 x 800 at 130% that gives the DM 193 and 151 in place of 172 and 172. A stored share, from a drag or a key step, always wins. A share is clamped where it is drawn, so each pane keeps its minimum, and the stored share stays as it was, as the token window's stored size does (docs/design/design-v1-token-window.md 7).
 - **What changes the panes' sizes**: the room (a resize, a rotation, the interface size, the party bar folding, a font), the share, and, while no share is stored, which pane holds Initiative. Never a subpage, a header, a badge or a panel's content.
 
 ### 3.3 The bar's controls
@@ -70,7 +70,7 @@ Changed by docs/design-v1-side-headers.md: the bar is a 45 px header row in the 
 
 ### 3.4 Moving the bar
 
-- **By pointer**: a press on the grip or on the bar's blank part, with pointer capture, `touch-action: none` and the row-resize cursor, moves the bar once it passes `TAP_SLOP_PX` (8 px). A press that never passes it does nothing. The top pane follows the pointer, clamped at both minimums. On release the share is stored. Escape or `pointercancel` puts the bar back where it was. These are the token window's drag rules (docs/design-v1-token-window.md 4.2), on one axis.
+- **By pointer**: a press on the grip or on the bar's blank part, with pointer capture, `touch-action: none` and the row-resize cursor, moves the bar once it passes `TAP_SLOP_PX` (8 px). A press that never passes it does nothing. The top pane follows the pointer, clamped at both minimums. On release the share is stored. Escape or `pointercancel` puts the bar back where it was. These are the token window's drag rules (docs/design/design-v1-token-window.md 4.2), on one axis.
 - **By keys**: with the grip focused, Up and Down move the bar 8 px, or 64 px with Shift, each press stored at once and clamped. Left, Right, Home and End do nothing there. Every key it handles is marked used.
 - One pointer at a time, as for the token window. The side panel hiding mid-drag (S) ends the drag as `pointercancel` does.
 - A press on the bar closes an open popover, by the base's rule, before it drags.
@@ -262,10 +262,10 @@ No plain click, tap or drag has a row: the bar's drag, a press on Swap or Close,
 
 ## 10. What this changes in other designs
 
-- **docs/design-v1-panel-tabs.md**: section 6 of this design is the addition to its contract, in one place: 3.8's header moves into the top pane, 4.1's menu gains "Two panels", 4.4's `Menu` gains its item kinds, 5.1's roles gain the bottom panel's tab and item, 5.2 and 5.4 change `tabsSide`, `tabsEnds` and `tabsListPick`, and 6's "no caller changes" becomes this design's rule (5.1). Its fit, cap, badges, More's look and every other rule hold.
-- **docs/design-v1-layout-hierarchy.md 4.1**: "What follows its state" counts a panel shown in either pane: `tokenPanelShown`, the Log's and the Journal's "on screen" and `PanelProps.shown` hold for the top pane, and for the bottom pane while two show. 4.2's phone sheet is unchanged.
-- **docs/design-v1-tool-options.md 7.1**: the bar's "Panel below" is one more popover on the base, adding nothing to it. Its side is the consumer's input, chosen as it opens.
-- **docs/design-v1-token-window.md**: its drag rules are reused for the bar (3.4). The token window, its free area and the alerts column do not change, since the side panel's width does not.
+- **docs/design/design-v1-panel-tabs.md**: section 6 of this design is the addition to its contract, in one place: 3.8's header moves into the top pane, 4.1's menu gains "Two panels", 4.4's `Menu` gains its item kinds, 5.1's roles gain the bottom panel's tab and item, 5.2 and 5.4 change `tabsSide`, `tabsEnds` and `tabsListPick`, and 6's "no caller changes" becomes this design's rule (5.1). Its fit, cap, badges, More's look and every other rule hold.
+- **docs/design/design-v1-layout-hierarchy.md 4.1**: "What follows its state" counts a panel shown in either pane: `tokenPanelShown`, the Log's and the Journal's "on screen" and `PanelProps.shown` hold for the top pane, and for the bottom pane while two show. 4.2's phone sheet is unchanged.
+- **docs/design/design-v1-tool-options.md 7.1**: the bar's "Panel below" is one more popover on the base, adding nothing to it. Its side is the consumer's input, chosen as it opens.
+- **docs/design/design-v1-token-window.md**: its drag rules are reused for the bar (3.4). The token window, its free area and the alerts column do not change, since the side panel's width does not.
 
 ## 11. Edge cases
 
@@ -386,7 +386,7 @@ Four commits, in this order. Run `pnpm -s typecheck`, `pnpm -s test` and `pnpm -
    - `client/pages/SplitBar.tsx` (new): the grip as a separator, the name and "Panel below", Swap and Close, the drag and keys.
    - `client/pages/SideTabs.tsx`: "Two panels" and its line, the bottom panel's mark, note and description, the tab keys passing it, and the cut name handed to the top pane.
    - `client/components/Icon.tsx`: `splitPanel` and `swapPanels`. `client/state/shortcuts.ts`: O, `[role="separator"]` in `NAVIGATES`, the "Two panels" surface and rows, the changed rows. `client/features/panels.ts`: `[data-pane-bar]` in `useSubpageFocus`. `client/features/outliner/OutlinerPanel.tsx`: `/`'s search focus taken once shown (9.2). `client/features/images/LibraryGrid.tsx`: `[data-pane]` in its focus helper.
-   - `FEATURES.md` (14), and lines under docs/design-v1-panel-tabs.md 4.1 and 6 and docs/design-v1-layout-hierarchy.md 4.1 pointing here.
+   - `FEATURES.md` (14), and lines under docs/design/design-v1-panel-tabs.md 4.1 and 6 and docs/design/design-v1-layout-hierarchy.md 4.1 pointing here.
    - Commit: `feat(ui): two panels in the side panel, with a bar to resize, swap and close them`.
 4. **e2e** (12.2, 12.3).
    - `e2e/splitpanel.e2e.ts` and the `paneltabs.e2e.ts` shapes.
@@ -396,7 +396,7 @@ Files another build may also edit: `client/pages/Room.tsx` and `client/pages/Sid
 
 ## 14. FEATURES.md
 
-In "Phones, tablets and connection", a new bullet right after the bullet that begins "On a phone, panels open as sheets". docs/design-v1-sheet-swipe.md adds its own bullet after the same one, so this one comes first and the swipe's follows it:
+In "Phones, tablets and connection", a new bullet right after the bullet that begins "On a phone, panels open as sheets". docs/design/design-v1-sheet-swipe.md adds its own bullet after the same one, so this one comes first and the swipe's follows it:
 
 - New: "Two panels, at the top of More, shows two panels at once, one above the other, such as Initiative above a token's stats, or for a player their character's card. The tabs pick the top one. The bottom one starts on Token for the DM and Characters for a player. The bar between them names it: press its name to pick another, or use Swap or Close, and drag the bar, or move it with the keys, to share the room. A link that opens a panel, such as Stat block, Details or a pin's page, leaves an open panel where it is and otherwise opens in the other pane, so the panel you are reading stays. This device remembers the two panels and where the bar sits, for a DM and for a player. A side panel too short for two shows the top one until there is room, and a phone shows one panel at a time."
 

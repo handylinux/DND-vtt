@@ -34,7 +34,7 @@ function candidatesFor(before: RoomState, after: RoomState, touched: EntityKey[]
 }
 
 /*
- * The server's narrow sight diff (docs/design-v1-maps-vision.md 4.3.5,
+ * The server's narrow sight diff (docs/design/design-v1-maps-vision.md 4.3.5,
  * server/rooms/fanout.ts): on each scene a viewer holds, the sight tiles
  * that changed join the touched keys, and `dependents` adds the tokens,
  * labels and stamps on them. Nothing else may need sending.
@@ -51,7 +51,7 @@ function watched(state: RoomState, connections: readonly Connection[]): string[]
 function runSequence(seed: number, ops: number): { applied: number; refused: number } {
   const r = rng(seed);
   let state = randomState(r);
-  // A table display is one more player who owns nothing (docs/design-v1-dm-tools.md 3.1).
+  // A table display is one more player who owns nothing (docs/design/design-v1-dm-tools.md 3.1).
   const connections = [connect(state, DM, "s1"), connect(state, DM, "s2"), connect(state, P1, "s1"), connect(state, P2, "s1"), connect(state, DISPLAY, "s1")];
   let applied = 0;
   let refused = 0;
@@ -162,7 +162,7 @@ describe("fan-out invariant on vision scenes", () => {
   });
 });
 
-describe("narrow sight dependents (docs/design-v1-maps-vision.md 4.3.5)", () => {
+describe("narrow sight dependents (docs/design/design-v1-maps-vision.md 4.3.5)", () => {
   /** A player character with darkvision on a dark vision scene, a goblin it sees and one far off. */
   function dark(): RoomState {
     const state = room();

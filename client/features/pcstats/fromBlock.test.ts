@@ -8,7 +8,7 @@ import { NO_CHALLENGE_RATING, NO_SIZE_LINE, parseStatBlockText } from "../monste
 import { pdfText, text2014, webText } from "../monsters/testing.ts";
 import { pcPasteWarnings, statsFromBlock } from "./fromBlock.ts";
 
-/** Pasted text read into a character's stat block (docs/design-v1-pc-stats.md 6.2). */
+/** Pasted text read into a character's stat block (docs/design/design-v1-pc-stats.md 6.2). */
 
 function ids(): () => string {
   let n = 0;

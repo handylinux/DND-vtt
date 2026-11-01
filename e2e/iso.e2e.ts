@@ -13,7 +13,7 @@ import { placedOnHex } from "../shared/rules/footprint.ts";
 import { cornerAt, hexCenter, hexCorners, hexInScene, hexNeighbors, type Hex, type HexGrid } from "../shared/rules/hex.ts";
 
 /**
- * The isometric view's choice (docs/design-v1-isometric-view.md 7 and 8,
+ * The isometric view's choice (docs/design/design-v1-isometric-view.md 7 and 8,
  * lane ISO-5): the View button and its menu, a scene's Suggested view,
  * the keys I, Q and E, and the table display's rows. A DM on a computer,
  * Pat on a phone and a TV.
@@ -24,7 +24,7 @@ import { cornerAt, hexCenter, hexCorners, hexInScene, hexNeighbors, type Hex, ty
  * A plain browser checks that the choice is there without it.
  *
  * The ISOA steps are areas standing as their real shapes
- * (docs/design-v1-iso-area-shapes.md 8, lane ISOA-2), read through the
+ * (docs/design/design-v1-iso-area-shapes.md 8, lane ISOA-2), read through the
  * hook's layout of the board (relief/isoTest.ts): which areas stand, the
  * order their bands and the standees draw in, and the rings at bases.
  *
@@ -1343,7 +1343,7 @@ describe("raccoon-vtt isometric view: the choice", { timeout: 300_000 }, () => {
     await waitFor("Pat back on the first scene", () => (patSocket.state?.meta.playerSceneId === run.sceneId ? true : null));
   });
 
-  // ---------------------------------------------------------------- input (lane ISO-4, docs/design-v1-isometric-view.md 6)
+  // ---------------------------------------------------------------- input (lane ISO-4, docs/design/design-v1-isometric-view.md 6)
 
   test("ISO-40. Pat drags in Isometric: up a revealed platform to its top at 10 ft, and a Large across a ledge stays under the finger, each moving in the drag layer", async () => {
     const patId = patSocket.you!.memberId;

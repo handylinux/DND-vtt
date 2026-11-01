@@ -15,7 +15,7 @@ export type MarkdownImage = { url: string; width: number; height: number };
  * new tab with no opener and no referrer.
  *
  * `guide` turns on the DM guide's (markdown.ts) too, and its look, a
- * printed guide's rather than a note's (docs/design-v1-guide-look.md):
+ * printed guide's rather than a note's (docs/design/design-v1-guide-look.md):
  * body text kept to a reading measure, numbered lists drawn as steps, keys
  * as keycaps, screenshots framed as figures with their captions, alerts as
  * callouts, and a paragraph of bold alone as a label. `image` maps an
@@ -70,7 +70,7 @@ function noImage(): null {
 
 /**
  * Headings in text color, each with a 1 px rule under it
- * (docs/design-v1-visual.md F4). In the accent they changed color with
+ * (docs/design/design-v1-visual.md F4). In the accent they changed color with
  * each member, pink for a pink player, and looked like links.
  */
 function headingStyle(fontSize: number, top: number): CSSProperties {

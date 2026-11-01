@@ -11,7 +11,7 @@ import { actor, applyInView, bar, combatSections, DESK, dm, dmCdp, dmConsole, dm
 
 /**
  * The token panel, the stat summary and AC on tokens
- * (docs/design-v1-token-panel.md section 7) on the real server serving the
+ * (docs/design/design-v1-token-panel.md section 7) on the real server serving the
  * production build: the bar's summary and its two rows of buttons, "Stat
  * block" opening the block in the panel beside the bar, Escape after it,
  * the panel's order and folds and what this device remembers of them, the
@@ -27,7 +27,7 @@ import { actor, applyInView, bar, combatSections, DESK, dm, dmCdp, dmConsole, dm
  * It runs with `pnpm test:e2e` on E2E_PORT plus ten. The other environment
  * variables are the smoke run's (smoke.e2e.ts).
  *
- * The very short sideways sheet (docs/design-v1-layout-hierarchy.md 4.2)
+ * The very short sideways sheet (docs/design/design-v1-layout-hierarchy.md 4.2)
  * is checked at 480 x 320 at 130%, where it always applies (steps 5 and
  * 7c). With the turn band it applies at larger sizes only where the strip
  * cannot stay in the top bar, which that design's own e2e reaches.
@@ -58,9 +58,9 @@ panelFile(null, () => {
     assert.ok(Math.abs((await rectOf(details)).top - tops[3]!) < 2, "Details sits beside Stat block");
 
     // The two rows: play first, then setup and Delete apart, starting a line of their own.
-    // By name, since Hidden, Locked and Duplicate show their icon alone to a mouse (docs/design-v1-icons.md 4).
+    // By name, since Hidden, Locked and Duplicate show their icon alone to a mouse (docs/design/design-v1-icons.md 4).
     const names = async (row: string) => goblin.locator(`[data-bar-row="${row}"] button`).evaluateAll((els) => els.map((el) => (el.getAttribute("aria-label") ?? el.textContent ?? "").trim()));
-    // Roll opens the Dice panel's options for the goblin (docs/design-v1-roll-options.md 4.5), and Attach its list of what it can ride, carry or drag (docs/design-v1-attach.md 4.1).
+    // Roll opens the Dice panel's options for the goblin (docs/design/design-v1-roll-options.md 4.5), and Attach its list of what it can ride, carry or drag (docs/design/design-v1-attach.md 4.1).
     assert.deepEqual(await names("play"), ["Conditions", "Hidden", "Multi-select", "Roll", "Attach"]);
     assert.deepEqual(await names("less"), ["Locked", "Duplicate", "Delete"]);
     const multiSelect = await rectOf(goblin.getByRole("button", { name: "Multi-select", exact: true }));
@@ -191,7 +191,7 @@ panelFile(null, () => {
     }
   });
 
-  test("1z. at 130% on a desk, an icon's name shows beside it and inside the window: Duplicate in the action bar near the bottom, the window's resize handle, and Hide panels at the right edge (docs/design-v1-icons.md 3.2)", async () => {
+  test("1z. at 130% on a desk, an icon's name shows beside it and inside the window: Duplicate in the action bar near the bottom, the window's resize handle, and Hide panels at the right edge (docs/design/design-v1-icons.md 3.2)", async () => {
     await setUp(dm, dmCdp, { ...DESK, scale: 1.3 }, null);
     await tapToken(dm, run.goblin.at);
     const goblin = bar(dm, "Goblin 4");
@@ -262,7 +262,7 @@ panelFile(null, () => {
     assert.ok(await panel.getByRole("heading", { name: "Goblin Warrior" }).isVisible());
     await shots.take(dm, "tokenpanel-dm-stat-block-beside-bar");
 
-    // From the panel's top, the block's disclosure is within 240 px, with the quick numbers above it under the name (docs/design-v1-token-panel-groups.md 3).
+    // From the panel's top, the block's disclosure is within 240 px, with the quick numbers above it under the name (docs/design/design-v1-token-panel-groups.md 3).
     await panel.evaluate((el) => ((el as unknown as El).scrollTop = 0));
     await settle(panel);
     await dm.waitForTimeout(100);
@@ -408,7 +408,7 @@ panelFile(null, () => {
     const list = dm.getByRole("tabpanel", { name: "Characters" });
     const row = list.locator(`[data-opener="character:${run.thorn.characterId}"]`);
     await row.click();
-    // The level is setup, in the page's Stats group (docs/design-v1-look-pass.md 3.1).
+    // The level is setup, in the page's Stats group (docs/design/design-v1-look-pass.md 3.1).
     const stats = list.getByRole("button", { name: "Stats", exact: true });
     if ((await stats.getAttribute("aria-expanded")) !== "true") await stats.click();
     const level = list.getByRole("textbox", { name: "Character level", exact: true });
@@ -522,7 +522,7 @@ panelFile(null, () => {
         await tapToken(dm, t.at, span);
         const b = bar(dm, name);
         await b.waitFor();
-        // An upright phone's strip shows the speeds once expanded (docs/design-v1-bar-compact.md 5).
+        // An upright phone's strip shows the speeds once expanded (docs/design/design-v1-bar-compact.md 5).
         await expandBar(b);
         await noSideScroll(b, `${size.label}, ${name}'s bar`);
         // A short bar keeps speed in More stats.
@@ -544,7 +544,7 @@ panelFile(null, () => {
         await (await barControl(b, "Details")).click();
         const panel = tokenPanel(dm);
         await panel.getByRole("heading", { name, exact: true }).first().waitFor();
-        // At 480 x 320 at 130% the panel takes the very short mode, over the whole screen with 243 px inside (docs/design-v1-layout-hierarchy.md 4.2).
+        // At 480 x 320 at 130% the panel takes the very short mode, over the whole screen with 243 px inside (docs/design/design-v1-layout-hierarchy.md 4.2).
         if (size.width === 480) assert.equal(await dm.locator('dialog[data-rvtt-sheet][aria-modal="true"]').count(), 1, `${size.label}: the panel opens over the whole screen`);
         await noSideScroll(panel, `${size.label}, ${name}'s panel`);
         await speedUnitsWhole(panel, `${size.label}, ${name}'s panel`);
@@ -601,7 +601,7 @@ panelFile(null, () => {
     await tapToken(dm, run.goblin.at);
     const goblin = bar(dm, "Goblin 4");
     await goblin.waitFor();
-    // The bar rests as the strip at the map's foot, and Expand shows all of it (docs/design-v1-bar-compact.md 3 and 5).
+    // The bar rests as the strip at the map's foot, and Expand shows all of it (docs/design/design-v1-bar-compact.md 3 and 5).
     assert.equal(await goblin.getAttribute("data-bar-state"), "rest", "390 x 844: the bar does not rest");
     await expandBar(goblin);
     const vitals = await rectOf(goblin.locator("[data-vitals]"));
@@ -708,7 +708,7 @@ panelFile(null, () => {
     ];
     for (const size of sizes) {
       await setUp(dm, dmCdp, size, null);
-      // A short wide layout starts with its side panel hidden (docs/design-v1-layout-hierarchy.md 4.1), and Stat block shows it below.
+      // A short wide layout starts with its side panel hidden (docs/design/design-v1-layout-hierarchy.md 4.1), and Stat block shows it below.
       if (size.width >= 900) assert.equal(await dm.getByRole("tab", { name: "Token" }).count(), 0, `${size.label}: the side panel starts shown`);
       await tapToken(dm, run.goblin.at);
       const goblin = bar(dm, "Goblin 4");
@@ -749,7 +749,7 @@ panelFile(null, () => {
       assert.ok(change.top >= preview.bottom - 1, `${size.label}: the buttons sit beside the preview`);
       const holds = column >= change.width + another.width + 4 - 0.5;
       assert.equal(Math.abs(change.top - another.top) <= 2, holds, `${size.label}: the pair's lines with a ${column} px column`);
-      // Each of these panels is under 320 px wide: 259, 259 and 268 (docs/design-v1-token-panel.md, the size table).
+      // Each of these panels is under 320 px wide: 259, 259 and 268 (docs/design/design-v1-token-panel.md, the size table).
       await hpPairSideBySide(panel, size.label, "above");
       await noSideScroll(panel, `${size.label}, the panel`);
       const pageWide = await dm.evaluate(() => (globalThis as unknown as { document: { documentElement: El } }).document.documentElement.scrollWidth > (globalThis as unknown as { innerWidth: number }).innerWidth);
@@ -773,7 +773,7 @@ panelFile(null, () => {
        * layout is the screen's, wherever the token stands, from the room
        * Expand may take (barDock.ts spanRoomAtWorst, F - 128): at 390 x 844
        * at 130% that holds the full layout, Apply in view for every token
-       * (docs/design-v1-bar-compact.md 9.1). The tablet docks, full.
+       * (docs/design/design-v1-bar-compact.md 9.1). The tablet docks, full.
        */
       const phone = size.width < 600;
       await expandBar(goblin);
@@ -837,7 +837,7 @@ panelFile(null, () => {
       const f = await focused(dm);
       return f.name === "Stat block" && f.expanded === "true";
     });
-    // The bar cannot stand beside a panel that covers the screen, so Stat block puts it away (docs/design-v1-token-panel.md 3.4).
+    // The bar cannot stand beside a panel that covers the screen, so Stat block puts it away (docs/design/design-v1-token-panel.md 3.4).
     assert.equal(await goblin.isVisible(), false, "the bar still shows");
     await shots.take(dm, "tokenpanel-480x320at130-very-short-stat-block");
     await openGroup(panel, "Image");
@@ -899,7 +899,7 @@ panelFile(null, () => {
     await setUp(player, playerCdp, { width: 390, height: 844, scale: 1 }, null);
     await tapToken(player, run.thorn.at);
     const thorn = bar(player, "Thorn");
-    // The strip shows the whole bar once expanded (docs/design-v1-bar-compact.md 5).
+    // The strip shows the whole bar once expanded (docs/design/design-v1-bar-compact.md 5).
     await expandBar(thorn);
     await thorn.getByRole("img", { name: "Armor Class 16" }).waitFor();
     const text = (await thorn.innerText()).replace(/\s+/g, " ");
@@ -964,7 +964,7 @@ panelFile(null, () => {
       for (const [label, page, cdp, view, elevation] of [
         ["desktop", dm, dmCdp, DESK, 0],
         ["390 x 844", player, playerCdp, { width: 390, height: 844, scale: 1 }, 0],
-        // Beside a sideways sheet at 130% the window is too narrow for the elevation in its header's row, so it shows at the line's end, after the link (docs/design-v1-token-window.md 7.1).
+        // Beside a sideways sheet at 130% the window is too narrow for the elevation in its header's row, so it shows at the line's end, after the link (docs/design/design-v1-token-window.md 7.1).
         ["844 x 390 at 130% beside a sheet", dm, dmCdp, { width: 844, height: 390, scale: 1.3, insets: { side: 47, bottom: 21 } }, 15],
       ] as const) {
         if (elevation) await ops.send({ t: "token.update", tokenId: run.thorn.id, patch: { elevation } });
@@ -1099,7 +1099,7 @@ panelFile(null, () => {
     await shots.take(dm, "tokenpanel-dm-group-bar");
   });
 
-  test("ic2-tags. a hidden, locked token with its name hidden: Hidden and Locked wear their icons, Hidden keeps its whole words as its tooltip and for a screen reader, and Name hidden stays words (docs/design-v1-icons-2.md 5, D-261024-46)", async () => {
+  test("ic2-tags. a hidden, locked token with its name hidden: Hidden and Locked wear their icons, Hidden keeps its whole words as its tooltip and for a screen reader, and Name hidden stays words (docs/design/design-v1-icons-2.md 5, D-261024-46)", async () => {
     await setUp(dm, dmCdp, DESK, null);
     await ops.send({ t: "token.update", tokenId: run.goblin.id, patch: { visibility: "dm", locked: true, nameHidden: true } });
     try {
@@ -1130,7 +1130,7 @@ panelFile(null, () => {
     }
   });
 
-  test("pl1-e. the panel's rows that stretch their control share one left edge, whatever each control's own width: the goblin's Size and Senses in Stats and its Name, Kind, Ring, Layer and Players see HP as in Token settings, at 320 x 568, 390 x 844 and 1440 x 900, at 100% and 130% (docs/design-v1-polish.md R2)", async () => {
+  test("pl1-e. the panel's rows that stretch their control share one left edge, whatever each control's own width: the goblin's Size and Senses in Stats and its Name, Kind, Ring, Layer and Players see HP as in Token settings, at 320 x 568, 390 x 844 and 1440 x 900, at 100% and 130% (docs/design/design-v1-polish.md R2)", async () => {
     for (const width of [320, 390, 1440]) {
       for (const scale of [1, 1.3]) {
         const view: View = { width, height: width === 1440 ? 900 : width === 390 ? 844 : 568, scale };
@@ -1165,7 +1165,7 @@ panelFile(null, () => {
     await setUp(dm, dmCdp, DESK, null);
   });
 
-  test("9c. sizes on the fly (docs/design-v1-token-window.md 8): the DM's steps and Stats, Pat's growth away from walls and back, no room in a corridor, undo keeping damage, an unchecked scene, a locked and a Custom token, a turn's trail kept through a resize, and the row on phones", async () => {
+  test("9c. sizes on the fly (docs/design/design-v1-token-window.md 8): the DM's steps and Stats, Pat's growth away from walls and back, no room in a corridor, undo keeping damage, an unchecked scene, a locked and a Custom token, a turn's trail kept through a resize, and the row on phones", async () => {
     const SIZES = { w: 20, h: 14 };
     const sizes = { sceneId: randomUUID(), thorn: randomUUID(), goblin: randomUUID(), owl: randomUUID() };
     const wall = { kind: "wall" } as const;
@@ -1372,7 +1372,7 @@ panelFile(null, () => {
     await ops.send({ t: "encounter.end" });
     await ops.send({ t: "token.update", tokenId: sizes.thorn, patch: { size: "medium", x: 4, y: 4 } });
 
-    // On phones: the row's buttons take a tap with no sideways scroll, and the stepper stays on its label's line or wraps under it, right-aligned (docs/design-v1-token-window.md 8, the stepper row). Whether it wraps at 320 px and 130% depends on the font's widths, so either holds there.
+    // On phones: the row's buttons take a tap with no sideways scroll, and the stepper stays on its label's line or wraps under it, right-aligned (docs/design/design-v1-token-window.md 8, the stepper row). Whether it wraps at 320 px and 130% depends on the font's widths, so either holds there.
     for (const view of [
       { width: 844, height: 390, scale: 1, insets: { side: 47, bottom: 21 } },
       { width: 320, height: 480, scale: 1.3 },
@@ -1381,7 +1381,7 @@ panelFile(null, () => {
       await setUp(player, playerCdp, view, null);
       await tapAt(player, { x: 4, y: 4 });
       await thorn.waitFor();
-      // At 320 x 480 at 130% the strip scrolls in place of Expand, and the row is reached by its scroll (docs/design-v1-bar-compact.md 5.4).
+      // At 320 x 480 at 130% the strip scrolls in place of Expand, and the row is reached by its scroll (docs/design/design-v1-bar-compact.md 5.4).
       await expandBar(thorn);
       const row = sizeRow(thorn);
       await steadyAboveSize(thorn, label);
@@ -1499,7 +1499,7 @@ panelFile(null, () => {
     await player.keyboard.press("Escape");
   });
 
-  test("s2-tp-a. in a fight, the DM's goblin: Combat runs Hit Points, Conditions, Reaction, Range rings and Rest with no Uses; Reaction used set there shows on its row's tag, and Combat's folded summary says so to the DM and to Pat (docs/design-v1-token-sections.md 3.2)", async () => {
+  test("s2-tp-a. in a fight, the DM's goblin: Combat runs Hit Points, Conditions, Reaction, Range rings and Rest with no Uses; Reaction used set there shows on its row's tag, and Combat's folded summary says so to the DM and to Pat (docs/design/design-v1-token-sections.md 3.2)", async () => {
     await ops.send({
       t: "encounter.start",
       entries: [
@@ -1615,7 +1615,7 @@ panelFile(null, () => {
     }
   });
 
-  test("s2-tp-e. Duplicate from the DM's Token settings: a copy beside the goblin, selected, the panel showing it, focus on its name (docs/design-v1-token-sections.md 7)", async () => {
+  test("s2-tp-e. Duplicate from the DM's Token settings: a copy beside the goblin, selected, the panel showing it, focus on its name (docs/design/design-v1-token-sections.md 7)", async () => {
     const panel = await panelOf(dm, run.goblin.at, "Goblin 4");
     await openGroup(panel, "Token settings");
     const known = new Set(Object.keys(dmSocket.state?.tokens ?? {}));
@@ -1642,7 +1642,7 @@ panelFile(null, () => {
     }
   });
 
-  test("s2-tp-f. the DM's Stats on a legendary creature hold the maxima alone, and its Uses the pips that count what is left, with no pips block (docs/design-v1-monster-uses.md 3.1)", async () => {
+  test("s2-tp-f. the DM's Stats on a legendary creature hold the maxima alone, and its Uses the pips that count what is left, with no pips block (docs/design/design-v1-monster-uses.md 3.1)", async () => {
     await ops.send({ t: "token.update", tokenId: run.dragon.id, patch: { actor: { legendary: { actionsMax: 3, actionsUsed: 1, resistMax: 3, resistUsed: 0 } } } });
     try {
       const panel = await panelOf(dm, { x: run.dragon.at.x + 1, y: run.dragon.at.y + 1 }, "Adult White Dragon");

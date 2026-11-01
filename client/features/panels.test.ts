@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { headerSink, PanelScrollKeeper, panelSections, panelsFor, panelSubject, RESTORE_WAIT_MS, restoreStep, scrollOf, type PanelHeader, type PanelScroll, type PanelSection } from "./panels.ts";
 
-describe("the panels' order and groups (docs/design-v1-layout-hierarchy.md M3)", () => {
+describe("the panels' order and groups (docs/design/design-v1-layout-hierarchy.md M3)", () => {
   const titles = (role: "dm" | "player", wide: boolean) => panelsFor(role, wide).map((p) => p.title);
   const groups = (role: "dm" | "player", wide: boolean) => panelsFor(role, wide).map((p) => p.group);
 
@@ -33,7 +33,7 @@ describe("the panels' order and groups (docs/design-v1-layout-hierarchy.md M3)",
 
 /*
  * One grouping for a DM's phone list of panels and the side panel's More
- * (docs/design-v1-panel-tabs.md 4.1), over the whole list and over each
+ * (docs/design/design-v1-panel-tabs.md 4.1), over the whole list and over each
  * slice the tab row's fit can leave in More.
  */
 describe("the panels in sections", () => {
@@ -76,7 +76,7 @@ describe("the panels in sections", () => {
     assert.deepEqual(shape(panelSections(panelsFor("player", true).slice(3), false)), [["", ["Log", "Journal", "Areas", "Characters", "Library", "Menu"]]], "a player's More");
   });
 
-  // docs/design-v1-split-panel.md 3.3: the bar's "Panel below" lists every panel the role has from 900 px up, grouped as More's.
+  // docs/design/design-v1-split-panel.md 3.3: the bar's "Panel below" lists every panel the role has from 900 px up, grouped as More's.
   test("every panel from 900 px up, as the split's Panel below lists them", () => {
     assert.deepEqual(shape(panelSections(panelsFor("dm", true), true)), [
       ["In play", ["Token", "Initiative", "Dice", "Log", "Journal", "Areas", "DM", "Scenes"]],

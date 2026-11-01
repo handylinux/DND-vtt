@@ -26,7 +26,7 @@ import { ConsoleWatch, openSideTab, OpSocket, Shots, sideTabName, sleep, SocketW
  * 243 px.
  *
  * A character's row opens its page, a subpage of the panel named by the
- * character with Back to Characters (docs/design-v1-look-pass.md 3.1):
+ * character with Back to Characters (docs/design/design-v1-look-pass.md 3.1):
  * focus goes to its title and Back brings it to the row. Rue, who plays
  * one character, lands on its page, which scrolls nowhere sideways at 320
  * px or at 130%. New character, Add a companion and the stat blocks page
@@ -643,7 +643,7 @@ describe("raccoon-vtt: deleting characters", { timeout: 600_000 }, () => {
     await blocks.waitFor({ state: "detached" });
   });
 
-  test("s2-ch-a. Cyra's page in the fight: Combat runs Hit Points, Conditions, Uses with what it is for and Add, Reaction and Rest, for the DM and for Pat, whose Reaction used reaches the row and the folded summary; it lines up at 320 x 568 and 390 x 844 at 130% and 1280 x 800 (docs/design-v1-token-sections.md 3)", async () => {
+  test("s2-ch-a. Cyra's page in the fight: Combat runs Hit Points, Conditions, Uses with what it is for and Add, Reaction and Rest, for the DM and for Pat, whose Reaction used reaches the row and the folded summary; it lines up at 320 x 568 and 390 x 844 at 130% and 1280 x 800 (docs/design/design-v1-token-sections.md 3)", async () => {
     if (!dmSocket.state?.encounter?.entries.some((e) => e.tokenId === run.cyraToken)) {
       await ops.send({ t: "encounter.start", entries: [{ id: "e-cyra-s2", tokenId: run.cyraToken, value: 12 }] });
     }

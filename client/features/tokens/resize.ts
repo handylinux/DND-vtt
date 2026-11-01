@@ -6,7 +6,7 @@ import { tokenStatBlock } from "../monsters/statBlockLink.ts";
 import { afterResize, poseOf, rememberedReturn, type Growth, type Pose } from "./resizeMemory.ts";
 
 /*
- * Changing a creature's size on the fly (docs/design-v1-token-window.md 8),
+ * Changing a creature's size on the fly (docs/design/design-v1-token-window.md 8),
  * as plain functions for node --test: the patch every place that changes a
  * size sends, the creature's own size for "Back to", and who may resize.
  */
@@ -74,7 +74,7 @@ export function stepSize(size: CreatureSize, by: 1 | -1): Exclude<CreatureSize, 
 /**
  * The creature's own size where this viewer's copy knows it (8.8): a PC's
  * character's size, a linked room monster's block or a companion's own
- * stat block (docs/design-v1-companion-stat-blocks.md 3.2), both sizes of a
+ * stat block (docs/design/design-v1-companion-stat-blocks.md 3.2), both sizes of a
  * "Medium or Small" block, or an SRD monster's block once the SRD has
  * loaded (`srd`, null until then). Null where none is known: an unlinked
  * NPC, a monster without a block, a companion whose block was deleted, an

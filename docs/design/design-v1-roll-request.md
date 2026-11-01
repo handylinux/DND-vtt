@@ -1,6 +1,6 @@
 # raccoon-vtt v1: the roll request, condensed and fixed
 
-Status: draft 4, with design review rounds 1 to 3 and the decisions of 2026-10-17 (section 15). Code is cited from the wave 6 design tip, whose code is the wave 5 tip's, on top of doc 1's draft (`lwottmxo`). This is doc 4 of the four wave 7 designs. It builds on docs/design-v1-dice.md ("doc 1"), which owns the roll itself, `roll.dice`, the creature's bonus, the cancel rule and the card's Roll contract (doc 1 section 7). It owns the DM's request sheet, the player's card, the DM's live card and the request's model. Docs/design-v1-pc-stats.md ("doc 2") fills the PC bonuses the card reads. Docs/design-v1-roll-options.md ("doc 3") owns the presets, the group save and its results list, which send requests through this doc (7.3). Measurements and worked examples are in the appendices, which verify rounds need not re-read.
+Status: draft 4, with design review rounds 1 to 3 and the decisions of 2026-10-17 (section 15). Code is cited from the wave 6 design tip, whose code is the wave 5 tip's, on top of doc 1's draft (`lwottmxo`). This is doc 4 of the four wave 7 designs. It builds on docs/design/design-v1-dice.md ("doc 1"), which owns the roll itself, `roll.dice`, the creature's bonus, the cancel rule and the card's Roll contract (doc 1 section 7). It owns the DM's request sheet, the player's card, the DM's live card and the request's model. Docs/design-v1-pc-stats.md ("doc 2") fills the PC bonuses the card reads. Docs/design-v1-roll-options.md ("doc 3") owns the presets, the group save and its results list, which send requests through this doc (7.3). Measurements and worked examples are in the appendices, which verify rounds need not re-read.
 
 The project owner asked on 2026-10-17: "Also please take a look at the request a roll section and condense it. Also the first choice never goes away even when selecting ability checks. Overall just give this feature some attention and improve it". And the same day, for dice: "when a dm prompts someone for a save or other roll that player should be able to either input a manual roll or click a button to roll the save."
 
@@ -17,7 +17,7 @@ The project owner asked on 2026-10-17: "Also please take a look at the request a
 Stated first and once, since doc 1's resolve and doc 3's results list read them exactly. Rules are in 7.5.
 
 ```ts
-// shared/model.ts: the answer part of RollTarget (docs/design-v1-dm-tools.md 3.3), with what this doc adds
+// shared/model.ts: the answer part of RollTarget (docs/design/design-v1-dm-tools.md 3.3), with what this doc adds
 type RollAnswer = { choice?, total?, result?, noRoll?, by?, previous?,   // as today
   tag?: id,                  // the op that wrote this answer. Every answer op carries one (7.5)
   dice?: DiceResult,         // doc 1 5.1: present exactly when the total was rolled, `fails` on it when a condition failed it
@@ -113,7 +113,7 @@ The order: recent requests, what to roll, the DC, who rolls, what players see. S
 
 ### 4.4 DC
 
-One row: the DC field as today, then, while every pick is a check, the six typical DCs as circle chips, "5" to "30", each named "15, Medium" with the SRD name as its title. A chip is pressed when the field holds its number, and a tap on a pressed chip empties the field. A save offers the field alone, since its DC is the effect's (SRD 5.2.1 page 7, docs/design-v1-dm-tools.md 3.3). The help line and "No DC" button go: an empty field is no DC, and the status line says "no DC".
+One row: the DC field as today, then, while every pick is a check, the six typical DCs as circle chips, "5" to "30", each named "15, Medium" with the SRD name as its title. A chip is pressed when the field holds its number, and a tap on a pressed chip empties the field. A save offers the field alone, since its DC is the effect's (SRD 5.2.1 page 7, docs/design/design-v1-dm-tools.md 3.3). The help line and "No DC" button go: an empty field is no DC, and the status line says "no DC".
 
 ### 4.5 Who rolls
 
@@ -144,7 +144,7 @@ The two switches start as the newest recent request had them (4.7), else both on
 
 - The status line: "Dexterity saving throw, DC 15. 2 asked." or "Pick what to roll. 2 asked." Send builds its op with `askOp(draftInput(draft), id, open)`: `draftInput` refuses the empty choices (4.3), then `askOp` runs today's checks (`logic.ts:179-211`) on a test rather than a draft, so doc 3 calls the same function (7.3).
 - The sheet's fields are one form whose submit is Send, so Enter in the DC field or the note sends (8). The fields take `enterKeyHint="send"`.
-- The draft reports unsaved input to the sheet swipe while it differs from how it opened (docs/design-v1-sheet-swipe.md 4.6, `useUnsavedInput`), as today's draft does.
+- The draft reports unsaved input to the sheet swipe while it differs from how it opened (docs/design/design-v1-sheet-swipe.md 4.6, `useUnsavedInput`), as today's draft does.
 
 ## 5. The player's card
 
@@ -163,7 +163,7 @@ Rolls 1d20+3 with disadvantage (Restrained).   its reading
 
 - The DC joins the question's line: "…saving throw, DC 15: against the poison." or "…, DC hidden." One line less on every card.
 - With two choices, each names its bonus where the device knows it, "Dexterity +3", and the higher bonus starts picked, the first on a tie or with none known. The creature picks, and the better one is its usual pick.
-- **The roll row's fit**: Roll, Adv and Dis share its first line at every supported size (at most 224 px, Appendix A). The bonus field (5.2) and the extra field, in that order, follow on that line together while both fit whole at their widths, else start a second line together, so the extra field never stands alone under the rest. Roll and the fields grow to share the line they stand on, as a window's buttons do (docs/design-v1-polish.md R6).
+- **The roll row's fit**: Roll, Adv and Dis share its first line at every supported size (at most 224 px, Appendix A). The bonus field (5.2) and the extra field, in that order, follow on that line together while both fit whole at their widths, else start a second line together, so the extra field never stands alone under the rest. Roll and the fields grow to share the line they stand on, as a window's buttons do (docs/design/design-v1-polish.md R6).
 
 ### 5.2 Roll, and one answer path
 
@@ -215,14 +215,14 @@ Each creature's answer is a small machine, `answerFlow(state, event)` in `logic.
 ### 5.7 Drafts and the screen's foot
 
 - `AnswerDraft` (`logic.ts:399`) also keeps the player's own mode, extra and bonus, so turning the phone keeps them. `answerKey` (`:407-409`) also reads `dice` and `change`, so an answer or an ask from the player's other device forgets the draft.
-- At a phone's foot the card measured its `form` as the answer row (`PlayerRolls.tsx:404-430`). It now measures the answer block, from "Fail (Stunned)" or the roll row down to the type row (`data-answer`), so the question, Later, Roll, the total and Send show and take a tap at once where they fit. Where they do not, the existing steps take over unchanged: fold with the "Roll asked" row, rise over the toolbar, then to the screen's top, then unstick the header (docs/design-v1-bar-dock.md). The roll row adds about 56 px to the measure, or 108 when its fields wrap, and the reading about 18 more while drawn. The joined DC line takes about 20 px back on every card.
+- At a phone's foot the card measured its `form` as the answer row (`PlayerRolls.tsx:404-430`). It now measures the answer block, from "Fail (Stunned)" or the roll row down to the type row (`data-answer`), so the question, Later, Roll, the total and Send show and take a tap at once where they fit. Where they do not, the existing steps take over unchanged: fold with the "Roll asked" row, rise over the toolbar, then to the screen's top, then unstick the header (docs/design/design-v1-bar-dock.md). The roll row adds about 56 px to the measure, or 108 when its fields wrap, and the reading about 18 more while drawn. The joined DC line takes about 20 px back on every card.
 
 ## 6. The DM's live card
 
 - **The title row** gains the tally: "2 of 3 answered: 1 pass, 1 fail", and "1 asks to change a roll" while one does.
 - **An answer** tells how it came: "rolled 17 (1d20+5: 12)" or "typed 17", with "natural 20" where found, "fails (Stunned)" where the server recorded it, "marked Pass" for the DM's own `mark`, the choice first when there are two, "Dex: rolled 17 (…)". A replaced one says which it was: "typed 15, changed from rolled 12 (1d20+5: 7) (Fail)", and an allowed change names its reason: "rerolled 19 (Heroic Inspiration), was 9". This is `dmAnswerText` (`logic.ts:312-322`) reading `dice`, `mark`, `changed` and `previous`. A Pass or Fail tap sets `mark`, which keeps its meaning whatever DC later reads it (1.1).
 - **Roll for a waiting creature**: where Reopen stands on an answered row, a waiting row whose bonus the DM's view knows shows a quiet "Roll +5", named "Roll +5 for Thorn". It applies `presetFor` over the DM's view, so every effect counts and the creature's Magic Resistance meets the request's `spell`, and with two choices the higher bonus, and says so as doc 3's buttons do: "Roll Dex +5, Disadvantage (Restrained)", or "Roll Dex +5: fails (Stunned)". It sends `roll.dice` with `unanswered: true` (doc 1 4.1 and 4.3), so an answer that arrived first is never replaced. That refusal shows as a toast: "Thorn answered before your roll." A token target on a scene the DM is not viewing has no bonus in the DM's view, so it has no Roll.
-- **A player's ask**: the row reads "Asks to reroll (Heroic Inspiration)", "Asks for advantage (Lucky)" or "Asks to add a d8 (Bardic Inspiration)", with Allow and Keep, one tap each, both naming the ask's `id`. Allow sends `roll.dice { rollId, target, tag, change: id }`, or `roll.reopen { rollId, target, change: id }` for "Asks to fix the total", and Keep sends `roll.change { rollId, target, clear: id }` (7.1, 7.5). Close settles a pending ask as Keep, and "Close all answered" sends `ifSettled`, which leaves a card with an ask, or one no longer fully answered when the op runs, alone (1.1). Allow or Keep of an ask that was replaced, withdrawn or already settled, from this device or a second one, is refused before any draw: "It was settled meanwhile." The row then shows the ask that stands, if any. A card with an ask unfolds on a computer, names the ask in its folded line on a phone, and makes the DM's alerts summary lead the dock (`waiting: true`, docs/design-v1-visual.md 3.2.1), since it waits for the DM.
+- **A player's ask**: the row reads "Asks to reroll (Heroic Inspiration)", "Asks for advantage (Lucky)" or "Asks to add a d8 (Bardic Inspiration)", with Allow and Keep, one tap each, both naming the ask's `id`. Allow sends `roll.dice { rollId, target, tag, change: id }`, or `roll.reopen { rollId, target, change: id }` for "Asks to fix the total", and Keep sends `roll.change { rollId, target, clear: id }` (7.1, 7.5). Close settles a pending ask as Keep, and "Close all answered" sends `ifSettled`, which leaves a card with an ask, or one no longer fully answered when the op runs, alone (1.1). Allow or Keep of an ask that was replaced, withdrawn or already settled, from this device or a second one, is refused before any draw: "It was settled meanwhile." The row then shows the ask that stands, if any. A card with an ask unfolds on a computer, names the ask in its folded line on a phone, and makes the DM's alerts summary lead the dock (`waiting: true`, docs/design/design-v1-visual.md 3.2.1), since it waits for the DM.
 - Pass, Fail, Reopen and the phone folding (`deskLayout`, `chipStack`) are unchanged. Close and "Close all answered" follow 1.1's close rule, so a save-ends request they close settles its occurrence too.
 
 ## 7. Contracts
@@ -252,15 +252,15 @@ Each creature's answer is a small machine, `answerFlow(state, event)` in `logic.
 
 ### 7.4 With other designs
 
-- **docs/design-v1-dm-tools.md 3.3**: the sheet's controls (4), the card (5) and the live card (6) replace its "DM behavior", the card bullets and "The app rolls nothing". Its model and ops gain 7.5.
-- **docs/design-v1-visual.md 2.3** (`Segmented`): `even` with six options goes three by three where six cannot keep 44 px (4.2). **3.2.1**: the DM's rolls summary leads the dock while a change waits (6).
-- **docs/design-v1-bar-dock.md and docs/design-v1-visual.md 3.3.1**: the card's measured answer row becomes the answer block (5.7). Every fallback is unchanged.
-- **docs/design-v1-sheet-swipe.md**: unchanged. The sheet's draft still reports unsaved input, and the card's swipe is still Later.
+- **docs/design/design-v1-dm-tools.md 3.3**: the sheet's controls (4), the card (5) and the live card (6) replace its "DM behavior", the card bullets and "The app rolls nothing". Its model and ops gain 7.5.
+- **docs/design/design-v1-visual.md 2.3** (`Segmented`): `even` with six options goes three by three where six cannot keep 44 px (4.2). **3.2.1**: the DM's rolls summary leads the dock while a change waits (6).
+- **docs/design/design-v1-bar-dock.md and docs/design/design-v1-visual.md 3.3.1**: the card's measured answer row becomes the answer block (5.7). Every fallback is unchanged.
+- **docs/design/design-v1-sheet-swipe.md**: unchanged. The sheet's draft still reports unsaved input, and the card's swipe is still Later.
 - **The shortcut sheet**: a new surface, "Roll requests", after doc 1's "Dice" (8).
 
 ### 7.5 The request's additions
 
-Additions to docs/design-v1-dm-tools.md 3.3's model and ops, owned here. The fields are 1.1's. The ops:
+Additions to docs/design/design-v1-dm-tools.md 3.3's model and ops, owned here. The fields are 1.1's. The ops:
 
 ```ts
 // shared/protocol.ts
@@ -277,7 +277,7 @@ op('roll.close', { rollIds, settle?: 'resolved' | 'dismissed', ifSettled?: true 
   - **Answers in snapshots keep their decision.** An answer with no `tag` (or a `previous` with none) reads its stored `result` through `resultOf` (1.1), so a legacy Pass mark on a total of 3 against DC 13 stays Pass until a new answer or mark replaces it. No snapshot step rewrites answers.
   - **Archived lines**: a `roll` line with no `tag` is filtered for players by today's `isMarkLine`, and one with a `tag` by its `mark`.
   - **Versions**: `OP_VERSION` 6 to 7 and `SNAPSHOT_VERSION` 10 to 11 (`shared/migrate.ts:13-14`), one bump for the whole wave, made by the first wave 7 build step that lands. Every wave 7 rule gates on that same number. Both steps are the identity for this doc's fields, which are optional and read as before when absent.
-  - **Deploy and rollback**: take a database backup just before the deploy (docs/design-v1-dm-tools.md 3.17). The shutdown writes version 11 snapshots. An older build refuses a version 11 snapshot or a version 7 op ("cannot migrate from version 11 down to 10", `runMigrations`), and those rooms go read-only. So a rollback restores that backup and loses the play since. There is no step down.
+  - **Deploy and rollback**: take a database backup just before the deploy (docs/design/design-v1-dm-tools.md 3.17). The shutdown writes version 11 snapshots. An older build refuses a version 11 snapshot or a version 7 op ("cannot migrate from version 11 down to 10", `runMigrations`), and those rooms go read-only. So a rollback restores that backup and loses the play since. There is no step down.
 - **`roll.change`**: `ask` is a player's, for a target they own now, with `ask.on` equal to the current answer's `tag`, else `invalid`, "It was settled meanwhile." A reroll, Lucky or an added die needs an answer with `dice` ("Only a rolled answer can be changed this way."). Its `face` must be a face the result holds, and for Halfling Luck a d20 showing 1, as doc 1 5.4 checks ("That die cannot be rerolled this way."). Lucky on an advantage or cancelled roll is refused, "Lucky changes nothing on this roll." "Fix my total" needs a typed answer that is final for the player. It replaces any pending ask. `clear` is a player's Withdraw or the DM's Keep and clears the pending ask only when its `id` matches, else `invalid`, "It was settled meanwhile." `roll.answer`, `roll.reopen` and any new answer clear it too, and `roll.close` settles it as Keep (1.1). `roll.reopen { change: id }` is the DM's Allow of a "Fix my total" ask, refused as `clear` is when the id is stale: it reopens the answer, keeping it in `previous`, sets `retype`, and clears the ask. A player's `roll.dice` on a target with `retype` is refused, "Type the corrected total." It writes no log line, since the allowed roll writes its own.
 - **`cause` and `ends`.** `ends` is the DM's, on a save request with one choice and one target that has `ends.effect` now, with `cause: 'saveEnds'`, else `invalid`, "Ends needs one creature with that effect." A second open request with the same `ends.occurrence` is refused, "That save was already asked.", so two DM devices cannot ask twice. Doc 3 6.1 makes the occurrence id (creature, effect, the turn end) and keeps its state.
 - **When an `ends` request closes** (decision 1 of round 2), always on the server, in the op that causes it:
@@ -418,7 +418,7 @@ One builder, in this order:
 4. `feat(rolls): the dm's live card shows rolled answers and rolls for a waiting creature` (with doc 1's `unanswered`).
 5. `feat(rolls): ask the dm to reroll or add a die` (`roll.change` with ask ids, `change` and `changed`, 7.1's need 3, the menu with doc 1 5.4's faces, "Fix my total" with `retype` and `roll.reopen { change }`, Allow and Keep naming the ask, the summary leading the dock).
 6. `test(e2e): roll requests with dice`.
-7. `docs: roll requests in the feature list and the design` (FEATURES.md, docs/design-v1-dm-tools.md 3.3, the visual and bar dock notes of 7.4).
+7. `docs: roll requests in the feature list and the design` (FEATURES.md, docs/design/design-v1-dm-tools.md 3.3, the visual and bar dock notes of 7.4).
 
 ## 13. FEATURES.md
 

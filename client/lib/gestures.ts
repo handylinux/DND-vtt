@@ -94,7 +94,7 @@ export class CameraGesture {
    * (features/pings/hold.ts), so its press is a hold: on its lift the
    * canvas neither lets go of the selection, hides the token bar nor opens
    * a label, door or height readout, since a hold that pings should do
-   * nothing but ping (docs/design-v1-bar-dock.md section 3). "Held" means
+   * nothing but ping (docs/design/design-v1-bar-dock.md section 3). "Held" means
    * the ping fired, not that 500 ms passed: a busy phone can fire the
    * ping's timer late, and a press lifted before it pinged nothing and
    * stays a tap.

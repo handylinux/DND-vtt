@@ -9,7 +9,7 @@ import { ConsoleWatch, OpSocket, openSideTab, pagePoint, pickOption, pickTool, p
 import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
 
 /**
- * The shortcut sheet (docs/design-v1-dm-tools.md 3.14): the keys, then on
+ * The shortcut sheet (docs/design/design-v1-dm-tools.md 3.14): the keys, then on
  * a desktop what a key or another mouse button does with a click, a drag
  * or the wheel, on every device the drags of attached tokens, and on an
  * Android phone its Back button, each for the viewer's role. The DM opens it with `?` on a computer, and a player from
@@ -19,7 +19,7 @@ import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
  * key from the sheet, swaps it with Ruler's and resets them all
  * (state/keyBindings.ts). In a 390 px window at 130%, Change and Reset
  * keep clear of every row's words. Then a second press of a tool's key
- * moves through its main choice (docs/design-v1-tool-cycle.md 8), on the
+ * moves through its main choice (docs/design/design-v1-tool-cycle.md 8), on the
  * computer and on the phone with a keyboard.
  *
  * It runs with `pnpm test:e2e` on its own port: E2E_PORT plus fourteen.
@@ -153,7 +153,7 @@ describe("raccoon-vtt shortcut sheet on a desktop and an Android phone", { timeo
     for (const surface of ["Side panel tabs", "Handout viewer", "Token window", "Initiative", "Roll requests", "Token and character fields", "Label, pin and light panes", "Dialogs", "Adding an image"]) {
       assert.ok(titles.includes(surface), `${surface} in ${titles.join(", ")}`);
     }
-    // Request a roll's fields send it (docs/design-v1-roll-request.md 8).
+    // Request a roll's fields send it (docs/design/design-v1-roll-request.md 8).
     assert.deepEqual(await inputs(sheet, "Roll requests"), ["Enter", "ContextMenu, Shift+F10", "Up, Down, Home, End"]);
     assert.equal(await sheet.getByRole("region").count(), 0, "headings, not landmarks");
 
@@ -170,7 +170,7 @@ describe("raccoon-vtt shortcut sheet on a desktop and an Android phone", { timeo
       "Right-click a roll button",
     ]);
     assert.deepEqual(await inputs(sheet, "Initiative"), ["Enter", "Escape", "Enter", "ContextMenu, Shift+F10", "Up, Down, Home, End"], "the DM types several values");
-    // dpf1: a roll button's one-roll options by its keys, after the panel's own (docs/design-v1-roll-mode-menu.md 7).
+    // dpf1: a roll button's one-roll options by its keys, after the panel's own (docs/design/design-v1-roll-mode-menu.md 7).
     assert.deepEqual((await inputs(sheet, "Dice")).slice(-2), ["ContextMenu, Shift+F10", "Up, Down, Home, End"]);
     await shots.take(dm, "shortcuts-dm-computer");
     await sheet.getByRole("heading", { name: "Mouse with keys", exact: true }).scrollIntoViewIfNeeded();
@@ -187,11 +187,11 @@ describe("raccoon-vtt shortcut sheet on a desktop and an Android phone", { timeo
     const sheet = player.getByRole("dialog", { name: "Shortcuts" });
     await sheet.waitFor();
     const titles = await headings(sheet);
-    // A phone drags with a finger, so the drags of attached tokens show there too (docs/design-v1-attach.md 4.6).
+    // A phone drags with a finger, so the drags of attached tokens show there too (docs/design/design-v1-attach.md 4.6).
     assert.deepEqual(titles.slice(0, 3), ["Keys", "Mouse and touch", "Android"], titles.join(", "));
     assert.ok(!titles.includes("Mouse with keys"), titles.join(", "));
     assert.ok(!titles.includes("Label, pin and light panes"), "the panes are the DM's");
-    // A player's roll card: Enter sends a typed total, or rolls from the Bonus or Extra dice field (docs/design-v1-roll-request.md 8).
+    // A player's roll card: Enter sends a typed total, or rolls from the Bonus or Extra dice field (docs/design/design-v1-roll-request.md 8).
     assert.deepEqual(await inputs(sheet, "Roll requests"), ["Enter", "Enter", "ContextMenu, Shift+F10", "Up, Down, Home, End"]);
 
     const keys = await inputs(sheet, "Keys");
@@ -201,7 +201,7 @@ describe("raccoon-vtt shortcut sheet on a desktop and an Android phone", { timeo
     // dpf1: a phone's hold and a reader's double-tap and hold open a roll's one-roll options, and its keys are listed too.
     const pointer = await inputs(sheet, "Mouse and touch");
     for (const row of ["Hold a roll button", "Double-tap and hold a roll button with a screen reader"]) assert.ok(pointer.includes(row), `${row} in ${pointer.join(", ")}`);
-    // sbr: the stat block's ability boxes and their rolls (docs/design-v1-stat-block-rolls.md 13).
+    // sbr: the stat block's ability boxes and their rolls (docs/design/design-v1-stat-block-rolls.md 13).
     for (const row of ["Tap, click, hold or right-click an ability box in a stat block", "Hold or right-click a roll in an ability's rolls"]) assert.ok(pointer.includes(row), `sbr-sheet: ${row} in ${pointer.join(", ")}`);
     const fields = await inputs(sheet, "Token and character fields");
     assert.deepEqual(fields.slice(2, 7), ["Enter, Space, Down, ContextMenu, Shift+F10", "Up", "ContextMenu, Shift+F10", "Escape", "Up, Down, Home, End"], `sbr-sheet: the ability keys follow the field keys: ${fields.join(" | ")}`);
@@ -562,7 +562,7 @@ describe("raccoon-vtt shortcut sheet on a desktop and an Android phone", { timeo
     }
   });
 
-  // ------------------------------------------------ the tool cycle (docs/design-v1-tool-cycle.md 8)
+  // ------------------------------------------------ the tool cycle (docs/design/design-v1-tool-cycle.md 8)
 
   /** The tool's own options row, by its tool's name. */
   const optionsOf = (page: Page, tool: string) => page.getByRole("toolbar", { name: `${tool} options` });

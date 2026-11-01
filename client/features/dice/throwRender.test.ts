@@ -10,7 +10,7 @@ import { receiptsSlot } from "./useReceipt.ts";
 import type { Stage, StageModule } from "./throw/store.ts";
 
 /*
- * The header line during a throw (docs/design-v1-roll-animation.md 3.4 and
+ * The header line during a throw (docs/design/design-v1-roll-animation.md 3.4 and
  * 10), rendered as the server renders it: the first render after the
  * commit shows no total, the live region already says the result with its
  * verdict, Again is live, and the tray takes no tap and no screen reader.

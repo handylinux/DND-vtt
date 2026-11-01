@@ -194,7 +194,7 @@ describe("migrations", () => {
     assert.deepEqual(migrateSnapshot(v5, 5), room());
   });
 
-  test("a room from before wave 5 gets no pages, pins or rolls, and nothing else about it changes (docs/design-v1-dm-tools.md 2.3)", () => {
+  test("a room from before wave 5 gets no pages, pins or rolls, and nothing else about it changes (docs/design/design-v1-dm-tools.md 2.3)", () => {
     const { journal: _journal, pins: _pins, rolls: _rolls, ...v7 } = room();
     const migrated = migrateSnapshot(v7, 7);
     assert.deepEqual(migrated, room());
@@ -207,7 +207,7 @@ describe("migrations", () => {
     assert.deepEqual(migrateSnapshot(v5, 5), room());
   });
 
-  test("a room from before pdf handouts gets no documents, and nothing else about it changes (docs/design-v1-pdf-handouts.md 3.8)", () => {
+  test("a room from before pdf handouts gets no documents, and nothing else about it changes (docs/design/design-v1-pdf-handouts.md 3.8)", () => {
     const { handoutDocs: _docs, ...v8 } = room({ handouts: { h1: { id: "h1", rev: 0, assetId: "a", title: "Letter", to: "all", shownAt: "" } } });
     const migrated = migrateSnapshot(v8, 8);
     assert.deepEqual(migrated, { ...v8, handoutDocs: {} });
@@ -219,12 +219,12 @@ describe("migrations", () => {
     assert.deepEqual(migrateSnapshot(v7, 7), room());
   });
 
-  test("a version 9 snapshot never migrates down to 8, so going back to an older build is a restore (docs/design-v1-pdf-handouts.md 3.8)", () => {
+  test("a version 9 snapshot never migrates down to 8, so going back to an older build is a restore (docs/design/design-v1-pdf-handouts.md 3.8)", () => {
     assert.ok(SNAPSHOT_VERSION >= 9);
     assert.throws(() => runMigrations(room(), 9, 8, snapshotMigrations), /down/);
   });
 
-  test("a room from before companion stat blocks gets none, and nothing else about it changes (docs/design-v1-companion-stat-blocks.md 3.6)", () => {
+  test("a room from before companion stat blocks gets none, and nothing else about it changes (docs/design/design-v1-companion-stat-blocks.md 3.6)", () => {
     const { companionBlocks: _blocks, ...v9 } = room({ characters: { c1: character("c1") } });
     const migrated = migrateSnapshot(v9, 9);
     assert.deepEqual(migrated, { ...v9, companionBlocks: {} });
@@ -235,7 +235,7 @@ describe("migrations", () => {
     assert.deepEqual(migrateSnapshot(v7, 7), room());
   });
 
-  test("a version 10 snapshot never migrates down to 9, so going back to an older build is a restore (docs/design-v1-companion-stat-blocks.md 3.6)", () => {
+  test("a version 10 snapshot never migrates down to 9, so going back to an older build is a restore (docs/design/design-v1-companion-stat-blocks.md 3.6)", () => {
     assert.ok(SNAPSHOT_VERSION >= 10);
     assert.throws(() => runMigrations(room(), 10, 9, snapshotMigrations), /down/);
   });
@@ -418,7 +418,7 @@ describe("migrations", () => {
   });
 });
 
-describe("op version 5: healing the dead and Revive (docs/design-v1-combat-flow.md 4.7)", () => {
+describe("op version 5: healing the dead and Revive (docs/design/design-v1-combat-flow.md 4.7)", () => {
   test("the step from 4 returns every op unchanged", () => {
     assert.ok(OP_VERSION >= 5);
     const ops: unknown[] = [
@@ -449,7 +449,7 @@ describe("op version 5: healing the dead and Revive (docs/design-v1-combat-flow.
   });
 });
 
-describe("op version 6: a resize is not movement (docs/design-v1-token-window.md 8.7)", () => {
+describe("op version 6: a resize is not movement (docs/design/design-v1-token-window.md 8.7)", () => {
   test("the step from 5 returns every op unchanged", () => {
     assert.ok(OP_VERSION >= 6);
     const ops: unknown[] = [
@@ -469,7 +469,7 @@ describe("op version 6: a resize is not movement (docs/design-v1-token-window.md
   });
 });
 
-describe("op version 6: an actor links one stat block (docs/design-v1-companion-stat-blocks.md 3.2 and 3.6)", () => {
+describe("op version 6: an actor links one stat block (docs/design/design-v1-companion-stat-blocks.md 3.2 and 3.6)", () => {
   test("the step from 5 returns every op unchanged", () => {
     assert.ok(OP_VERSION >= 6);
     const ops: unknown[] = [
@@ -495,7 +495,7 @@ describe("op version 6: an actor links one stat block (docs/design-v1-companion-
   });
 });
 
-describe("wave 7's one bump: op version 7 and snapshot version 11 (docs/design-v1-roll-request.md 7.5)", () => {
+describe("wave 7's one bump: op version 7 and snapshot version 11 (docs/design/design-v1-roll-request.md 7.5)", () => {
   test("is reached, and both steps return what they are given", () => {
     assert.ok(OP_VERSION >= 7);
     assert.ok(SNAPSHOT_VERSION >= 11);
@@ -519,7 +519,7 @@ describe("wave 7's one bump: op version 7 and snapshot version 11 (docs/design-v
   });
 });
 
-describe("the order setting's bump: op version 8 and snapshot version 12 (docs/design-v1-combat-flow.md 11.4)", () => {
+describe("the order setting's bump: op version 8 and snapshot version 12 (docs/design/design-v1-combat-flow.md 11.4)", () => {
   test("is reached, and both steps return what they are given", () => {
     assert.ok(OP_VERSION >= 8);
     assert.ok(SNAPSHOT_VERSION >= 12);
@@ -547,7 +547,7 @@ describe("the order setting's bump: op version 8 and snapshot version 12 (docs/d
   });
 });
 
-describe("the Universal VTT mark's bump: op version 9 and snapshot version 13 (docs/design-v1-grid-detect.md section 6)", () => {
+describe("the Universal VTT mark's bump: op version 9 and snapshot version 13 (docs/design/design-v1-grid-detect.md section 6)", () => {
   test("is reached, and both steps return what they are given", () => {
     assert.ok(OP_VERSION >= 9);
     assert.ok(SNAPSHOT_VERSION >= 13);
@@ -769,7 +769,7 @@ describe("the dragon turtle's id: op version 10 and snapshot version 14", () => 
   });
 });
 
-describe("a Druid's known forms: op version 11 and snapshot version 15 (docs/design-v1-known-forms.md 3.4 and 3.5)", () => {
+describe("a Druid's known forms: op version 11 and snapshot version 15 (docs/design/design-v1-known-forms.md 3.4 and 3.5)", () => {
   const OLD = "dragon-tur-t-le";
   const NEW = "dragon-turtle";
   const BOTH = [OLD, NEW, "wolf"];
@@ -813,7 +813,7 @@ describe("a Druid's known forms: op version 11 and snapshot version 15 (docs/des
   });
 });
 
-describe("a player's asks for saves: op version 12 and snapshot version 16 (docs/design-v1-player-save-spell.md 5.7)", () => {
+describe("a player's asks for saves: op version 12 and snapshot version 16 (docs/design/design-v1-player-save-spell.md 5.7)", () => {
   test("came before movement's versions", () => {
     assert.ok(OP_VERSION >= 12);
     assert.ok(SNAPSHOT_VERSION >= 16);
@@ -838,7 +838,7 @@ describe("a player's asks for saves: op version 12 and snapshot version 16 (docs
   });
 });
 
-describe("walking routes: op version 13 and snapshot version 17 (docs/design-v1-movement.md 6.6)", () => {
+describe("walking routes: op version 13 and snapshot version 17 (docs/design/design-v1-movement.md 6.6)", () => {
   test("came before attached tokens' versions", () => {
     assert.ok(OP_VERSION >= 13);
     assert.ok(SNAPSHOT_VERSION >= 17);
@@ -863,7 +863,7 @@ describe("walking routes: op version 13 and snapshot version 17 (docs/design-v1-
   });
 });
 
-describe("attached tokens: op version 14 and snapshot version 18 (docs/design-v1-attach.md 8.6)", () => {
+describe("attached tokens: op version 14 and snapshot version 18 (docs/design/design-v1-attach.md 8.6)", () => {
   test("came before traps' versions", () => {
     assert.ok(OP_VERSION >= 14);
     assert.ok(SNAPSHOT_VERSION >= 18);
@@ -888,7 +888,7 @@ describe("attached tokens: op version 14 and snapshot version 18 (docs/design-v1
   });
 });
 
-describe("traps: op version 15 and snapshot version 19 (docs/design-v1-traps.md 6.6)", () => {
+describe("traps: op version 15 and snapshot version 19 (docs/design/design-v1-traps.md 6.6)", () => {
   test("came before re-sync's versions", () => {
     assert.ok(OP_VERSION >= 15);
     assert.ok(SNAPSHOT_VERSION >= 19);
@@ -922,7 +922,7 @@ describe("traps: op version 15 and snapshot version 19 (docs/design-v1-traps.md 
   });
 });
 
-describe("re-sync from D&D Beyond: op version 16 and snapshot version 20 (docs/design-v1-resync.md 4)", () => {
+describe("re-sync from D&D Beyond: op version 16 and snapshot version 20 (docs/design/design-v1-resync.md 4)", () => {
   test("came before follow-up batch 20's op version", () => {
     assert.ok(OP_VERSION >= 16);
     assert.ok(SNAPSHOT_VERSION >= 20);
@@ -953,7 +953,7 @@ describe("re-sync from D&D Beyond: op version 16 and snapshot version 20 (docs/d
   });
 });
 
-describe("follow-up batch 20: op version 17, snapshot version 20 (docs/design-v1-traps.md 6.6, docs/design-v1-attach.md 8.6)", () => {
+describe("follow-up batch 20: op version 17, snapshot version 20 (docs/design/design-v1-traps.md 6.6, docs/design/design-v1-attach.md 8.6)", () => {
   test("came before follow-up batch 21's op version", () => {
     assert.ok(OP_VERSION >= 17);
     assert.ok(SNAPSHOT_VERSION >= 20);
@@ -977,7 +977,7 @@ describe("follow-up batch 20: op version 17, snapshot version 20 (docs/design-v1
   });
 });
 
-describe("follow-up batch 21: op version 18, snapshot version 20 (docs/design-v1-attach.md 7.1 and 8.6)", () => {
+describe("follow-up batch 21: op version 18, snapshot version 20 (docs/design/design-v1-attach.md 7.1 and 8.6)", () => {
   test("came before follow-up batch 23's versions", () => {
     assert.ok(OP_VERSION >= 18);
     assert.ok(SNAPSHOT_VERSION >= 20);
@@ -1141,7 +1141,7 @@ describe("follow-up batch 23: op version 19, snapshot version 21 (design 7.3, Lo
   });
 });
 
-describe("combat uses: op version 20, snapshot version 22 (docs/design-v1-combat-controls.md 3.6)", () => {
+describe("combat uses: op version 20, snapshot version 22 (docs/design/design-v1-combat-controls.md 3.6)", () => {
   test("came before class resources from D&D Beyond", () => {
     assert.ok(SNAPSHOT_VERSION >= 22);
   });
@@ -1204,7 +1204,7 @@ describe("Previous takes back only the turn: op version 21 (design 9.4)", () => 
   });
 });
 
-describe("class resources from D&D Beyond: op version 22, snapshot version 23 (docs/design-v1-ddb-resources.md 5)", () => {
+describe("class resources from D&D Beyond: op version 22, snapshot version 23 (docs/design/design-v1-ddb-resources.md 5)", () => {
   test("brought op version 22 and snapshot version 23", () => {
     assert.ok(opMigrations.some((s) => s.from === 21 && s.to === 22));
     assert.ok(snapshotMigrations.some((s) => s.from === 22 && s.to === 23));
@@ -1232,7 +1232,7 @@ describe("class resources from D&D Beyond: op version 22, snapshot version 23 (d
   });
 });
 
-describe("per-player vision: op version 23, snapshot version 24 (docs/design-v1-per-player-vision.md 6.7)", () => {
+describe("per-player vision: op version 23, snapshot version 24 (docs/design/design-v1-per-player-vision.md 6.7)", () => {
   test("brought op version 23 and snapshot version 24", () => {
     assert.ok(OP_VERSION >= 23);
     assert.ok(SNAPSHOT_VERSION >= 24);
@@ -1270,7 +1270,7 @@ describe("per-player vision: op version 23, snapshot version 24 (docs/design-v1-
   });
 });
 
-describe("hex grids, phase H1: op version 24, snapshot version 25 (docs/design-v1-hex-grids.md section 7)", () => {
+describe("hex grids, phase H1: op version 24, snapshot version 25 (docs/design/design-v1-hex-grids.md section 7)", () => {
   test("brought op version 24 and snapshot version 25", () => {
     assert.ok(OP_VERSION >= 24);
     assert.ok(SNAPSHOT_VERSION >= 25);
@@ -1312,7 +1312,7 @@ describe("hex grids, phase H1: op version 24, snapshot version 25 (docs/design-v
   });
 });
 
-describe("the isometric view: op version 25, snapshot version 26 (docs/design-v1-isometric-view.md 7)", () => {
+describe("the isometric view: op version 25, snapshot version 26 (docs/design/design-v1-isometric-view.md 7)", () => {
   test("brought op version 25 and snapshot version 26", () => {
     assert.ok(OP_VERSION >= 25);
     assert.ok(SNAPSHOT_VERSION >= 26);
@@ -1344,7 +1344,7 @@ describe("the isometric view: op version 25, snapshot version 26 (docs/design-v1
   });
 });
 
-describe("map discovery: op version 26, snapshot version 27 (docs/design-v1-map-discovery.md 5.5)", () => {
+describe("map discovery: op version 26, snapshot version 27 (docs/design/design-v1-map-discovery.md 5.5)", () => {
   test("brought op version 26 and snapshot version 27", () => {
     assert.ok(OP_VERSION >= 26);
     assert.ok(SNAPSHOT_VERSION >= 27);
@@ -1397,7 +1397,7 @@ describe("map discovery: op version 26, snapshot version 27 (docs/design-v1-map-
   });
 });
 
-describe("hex grids, phase H2: op version 27, snapshot version 28 (docs/design-v1-hex-grids.md section 7)", () => {
+describe("hex grids, phase H2: op version 27, snapshot version 28 (docs/design/design-v1-hex-grids.md section 7)", () => {
   test("brought op version 27 and snapshot version 28", () => {
     assert.ok(OP_VERSION >= 27);
     assert.ok(SNAPSHOT_VERSION >= 28);
@@ -1435,7 +1435,7 @@ describe("hex grids, phase H2: op version 27, snapshot version 28 (docs/design-v
   });
 });
 
-describe("hex grids, phase H3: op version 28, snapshot version 29 (docs/design-v1-hex-grids.md section 7)", () => {
+describe("hex grids, phase H3: op version 28, snapshot version 29 (docs/design/design-v1-hex-grids.md section 7)", () => {
   test("brought op version 28 and snapshot version 29", () => {
     assert.ok(OP_VERSION >= 28);
     assert.ok(SNAPSHOT_VERSION >= 29);
@@ -1596,7 +1596,7 @@ describe("follow-up batch 39: op version 33", () => {
   });
 });
 
-describe("the map discovery upgrade step (docs/design-v1-map-discovery.md 5.5, ASTRA-31)", () => {
+describe("the map discovery upgrade step (docs/design/design-v1-map-discovery.md 5.5, ASTRA-31)", () => {
   const scenes = {
     s1: scene("s1", { fogEnabled: true, vision: { on: true, light: "dark" } }),
     s2: scene("s2", { order: 1, fogEnabled: true }),

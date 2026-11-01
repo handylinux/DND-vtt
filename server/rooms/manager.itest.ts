@@ -261,7 +261,7 @@ describe("idle unload, snapshots and recovery", () => {
     await again.waitClosed();
   });
 
-  test("a room stored at snapshot version 9 loads at 10 or later with no companion blocks, and a block saved then is stored and replays (docs/design-v1-companion-stat-blocks.md 3.6)", async () => {
+  test("a room stored at snapshot version 9 loads at 10 or later with no companion blocks, and a block saved then is stored and replays (docs/design/design-v1-companion-stat-blocks.md 3.6)", async () => {
     const owner = t.client();
     const { roomId } = await owner.createRoom("Snapshot 9");
     const s = await t.connect(roomId, owner);

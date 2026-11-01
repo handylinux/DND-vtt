@@ -1,6 +1,6 @@
 # raccoon-vtt v1: areas as their real shapes in Isometric
 
-Status: draft 3, revised for design review rounds 1 and 2 (section 12), D-261026-30 and D-261026-31. Code is cited from main at `fbced312`. ISOA-1, the solid, and ISOA-2, the board, are built (section 11 says where each went its own way). It builds on the isometric view (docs/design-v1-isometric-view.md, "the iso design" below) and keeps every rule of it that this note does not name.
+Status: draft 3, revised for design review rounds 1 and 2 (section 12), D-261026-30 and D-261026-31. Code is cited from main at `fbced312`. ISOA-1, the solid, and ISOA-2, the board, are built (section 11 says where each went its own way). It builds on the isometric view (docs/design/design-v1-isometric-view.md, "the iso design" below) and keeps every rule of it that this note does not name.
 
 ## 1. The owner's words
 
@@ -100,7 +100,7 @@ The prototype checks all of it. Its capped sphere cut at x = 5.31 has no open ed
 
 ### 4.6 Hex scenes
 
-True shapes stand as on squares. A hex emanation (HX-D11) stands as `hexStack`: each hex its reach covers, from the lowest to the highest layer `withinReach` passes, as one prism, sides only where a neighbor's interval does not cover. So the drawn solid is exactly the hexes and layers it catches. The client passes squares on hex scenes until HX-3 (docs/design-v1-hex-grids.md, As built), and a volume reads whatever `resolveArea` reads, so it follows HX-3 with no change. Hex walls clip by their polygons, and hex heights cut by their drawn ground (H3).
+True shapes stand as on squares. A hex emanation (HX-D11) stands as `hexStack`: each hex its reach covers, from the lowest to the highest layer `withinReach` passes, as one prism, sides only where a neighbor's interval does not cover. So the drawn solid is exactly the hexes and layers it catches. The client passes squares on hex scenes until HX-3 (docs/design/design-v1-hex-grids.md, As built), and a volume reads whatever `resolveArea` reads, so it follows HX-3 with no change. Hex walls clip by their polygons, and hex heights cut by their drawn ground (H3).
 
 ## 5. Look
 

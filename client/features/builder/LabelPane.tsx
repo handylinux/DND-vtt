@@ -92,7 +92,7 @@ export default function LabelPane(props: { label: Label; camera: Camera; look?: 
     if (anchor) requestPan(scope, { sceneId: label.sceneId, x: label.x, y: label.y, anchor });
   });
 
-  // As a bottom sheet it swipes down to close, as its close does (docs/design-v1-sheet-swipe.md section 3).
+  // As a bottom sheet it swipes down to close, as its close does (docs/design/design-v1-sheet-swipe.md section 3).
   const drafts = useDraftRegistry();
   useSheetSwipe(paneRef, { enabled: sheet, onClose: () => closeRef.current(), item: label.id, clip: "foot", riders: dock.riders, drafts });
 
@@ -119,7 +119,7 @@ function LabelEditor(props: { label: Label; onClose(): void; sheet: boolean }) {
   const { label } = props;
   const actions = useRoomActions();
   const [draft, setDraft] = useState<LabelDraft>({ text: label.text, size: label.size });
-  // Only Done sends it, so a swipe springs back once the text or the size changed (docs/design-v1-sheet-swipe.md 4.5).
+  // Only Done sends it, so a swipe springs back once the text or the size changed (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedSince(draft);
   const [armedAt, setArmedAt] = useState<number | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);

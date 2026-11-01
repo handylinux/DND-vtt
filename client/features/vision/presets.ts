@@ -2,7 +2,7 @@ import { MAX_LIGHT_FT, type TokenLight } from "#shared/model.ts";
 import { lightOnGrid, reachesOnGrid } from "./reach.ts";
 
 /**
- * The SRD's light sources (docs/design-v1-maps-vision.md sections 3.6 and
+ * The SRD's light sources (docs/design/design-v1-maps-vision.md sections 3.6 and
  * 4.3.1), in its own wording: "Bright Light in a 20-foot radius and Dim
  * Light for an additional 20 feet" is `{ bright: 20, dim: 20 }`. The
  * Bullseye Lantern lights a cone, which v1 does not model, and the SRD has

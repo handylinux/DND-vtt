@@ -8,7 +8,7 @@ import { ApiError, type ApiErrorCodeOrNetwork } from "../../lib/api.ts";
  * section 11.3).
  *
  * Image search falls back to Openverse whenever Google cannot answer
- * (docs/design-v1-dm-tools.md 3.13), so every quota a search can still run
+ * (docs/design/design-v1-dm-tools.md 3.13), so every quota a search can still run
  * out of is one of Openverse's, and each is counted per day.
  */
 

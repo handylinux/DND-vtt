@@ -1,6 +1,6 @@
 # raccoon-vtt v1: the Token panel grouped by use
 
-Status: built, with the dice UI pass the project owner took on 2026-10-17 (docs/design-v1-dice-ui.md 12). Part of the dice UI pass (docs/design-v1-dice-ui.md, which holds the shared rules this document uses: its section 3) and the icon pass (docs/design-v1-icons.md).
+Status: built, with the dice UI pass the project owner took on 2026-10-17 (docs/design/design-v1-dice-ui.md 12). Part of the dice UI pass (docs/design/design-v1-dice-ui.md, which holds the shared rules this document uses: its section 3) and the icon pass (docs/design/design-v1-icons.md).
 
 The project owner, 2026-10-17: "the token panel could also use a pass to cleanup. the ac/speed/passive perception and anything else that goes there should probably go at the top by name/size, the hp/conditions/range rings/rest should probably have their own drop down, as should notes. ill let you come up with exact intricacies but there's a lot there that could be collapsible (though the more used ones should start open)". And then: "not all of those have to be their own collapsible section, they can be grouped for stuff that is combat relevant vs notes".
 
@@ -17,7 +17,7 @@ Ranked by what it costs at the table.
 
 ## 2. The new order
 
-The panel is a header, then groups by use, then setup. The order inside a group is today's ranking (docs/design-v1-token-panel.md 3.5, `panelOrder.ts`), so nothing moves relative to its neighbors.
+The panel is a header, then groups by use, then setup. The order inside a group is today's ranking (docs/design/design-v1-token-panel.md 3.5, `panelOrder.ts`), so nothing moves relative to its neighbors.
 
 | Part | Holds | Folded summary | DM | A player, own creature | A player, another creature |
 |---|---|---|---|---|---|
@@ -30,7 +30,7 @@ The panel is a header, then groups by use, then setup. The order inside a group 
 | Stats, Token settings, Companion, Owners | as today | Owners keeps its names | folded | folded | not drawn, as today |
 | Remove | Delete this token | | shown | | |
 
-Changed by docs/design-v1-look-pass.md (3.1, 3.3): the Stat block row has a folded summary after all, naming what it holds: a companion's or a monster's linked block by its name and CR ("Wolf, CR 1/4"), and a character's block by its level and Proficiency Bonus or its shape ("Level 5, PB +3", "Wild Shape: Brown Bear"). In Stats, Walk and every speed that is set keep their rows, and for a viewer who may change them the rest fold under "Other speeds" with Hovers. A character's page in the Characters panel uses the same groups and shares the `statBlock` fold.
+Changed by docs/design/design-v1-look-pass.md (3.1, 3.3): the Stat block row has a folded summary after all, naming what it holds: a companion's or a monster's linked block by its name and CR ("Wolf, CR 1/4"), and a character's block by its level and Proficiency Bonus or its shape ("Level 5, PB +3", "Wild Shape: Brown Bear"). In Stats, Walk and every speed that is set keep their rows, and for a viewer who may change them the rest fold under "Other speeds" with Hovers. A character's page in the Characters panel uses the same groups and shares the `statBlock` fold.
 
 Why these groups:
 
@@ -51,7 +51,7 @@ Why these groups:
 - **Name**: 18 px weight 700, wrapping, as today. Size and tags under it, as today.
 - **Quick numbers** (`QuickNumbers.tsx`): one wrapping line of unbreakable units, `space(3)` apart. Each is one image to a screen reader with its full words, and the same words are its tooltip:
   - AC on its shield (`AcBadge`, "Armor Class 13").
-  - Speed after the footprints (`speed`, docs/design-v1-icons.md 2.2): "30 ft", "30 ft, fly 60 ft" ("Speed 30 ft, fly 60 ft").
+  - Speed after the footprints (`speed`, docs/design/design-v1-icons.md 2.2): "30 ft", "30 ft, fly 60 ft" ("Speed 30 ft, fly 60 ft").
   - "PP 12" ("Passive Perception 12"). The word stays: an eye alone reads as vision or "shown to players" on a phone (icons doc 3.1 rule 2).
   - "Init +2" ("Initiative +2"), new here: the tracker's roll uses it, and the DM asked for it often in play.
   - The elevation when off the ground, "↑20 ft", as the token's badge on the map (`elevationBadge`).
@@ -59,7 +59,7 @@ Why these groups:
 - **Who sees what**: exactly what `vitals()` gives each viewer today (`statSummary.ts`): AC, speed and PP only where the viewer's copy holds them, so a player looking at a monster sees its elevation and nothing it hides. Init follows the same rule (`initBonus` on the viewer's copy).
 - **Room**: on a 390 px phone the line holds all five at 100% and wraps once at 130%.
 
-Changed by docs/design-v1-look-pass.md (2.11, 3.3): the header is `CreatureHeader.tsx`, shared with a character's page. Under the name, a kind line says what the creature is, then its size ("Level 5 character · Medium (5 ft)", "Monster, CR 1/4 · Small (5 ft)", "Companion of Thorn · Medium (5 ft)"), and the tags have a row of their own under it. "Companion of Thorn" is a link to Thorn's page for the DM and Thorn's players, and a companion's picture carries its character's portrait as a 20 px disk at its lower right.
+Changed by docs/design/design-v1-look-pass.md (2.11, 3.3): the header is `CreatureHeader.tsx`, shared with a character's page. Under the name, a kind line says what the creature is, then its size ("Level 5 character · Medium (5 ft)", "Monster, CR 1/4 · Small (5 ft)", "Companion of Thorn · Medium (5 ft)"), and the tags have a row of their own under it. "Companion of Thorn" is a link to Thorn's page for the DM and Thorn's players, and a companion's picture carries its character's portrait as a 20 px disk at its lower right.
 
 ## 4. The group's look
 
@@ -77,7 +77,7 @@ Changed by docs/design-v1-look-pass.md (2.11, 3.3): the header is `CreatureHeade
 - The folds stay in `rvtt.tokenPanelFolds` (`panelFolds.ts`), one device's choice, never sent to the room. New keys: `combat`, `notes`, `position`, `image`. A key never tapped follows its default.
 - **By relation.** A player's tap on another creature's Notes must not fold their own character's. Combat, Notes and the stat block are keyed by relation (`panelRelation`, `relationKey`): `own` (the DM, or an owner) and `other`, as `notes` and `other.notes`. Another creature's Notes starts open: it shows only with the DM's note for everyone.
 - "View as a player" reads the folds and never writes them, as today.
-- A request that opens the stat block (docs/design-v1-token-panel.md 3.4) still opens it whatever the fold says.
+- A request that opens the stat block (docs/design/design-v1-token-panel.md 3.4) still opens it whatever the fold says.
 
 ## 6. What must not change
 

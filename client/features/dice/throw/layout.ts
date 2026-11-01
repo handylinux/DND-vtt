@@ -4,7 +4,7 @@ import { critical } from "../options.ts";
 
 /**
  * Which dice a throw shows and where they land in the tray
- * (docs/design-v1-roll-animation.md 3.1 to 3.3), with no three.js, so the
+ * (docs/design/design-v1-roll-animation.md 3.1 to 3.3), with no three.js, so the
  * Dice panel's own chunk can plan a throw and the lazy stage only draws it.
  * Every number here is a screen px: the tray's width is measured with
  * getBoundingClientRect, which includes the panel's zoom.

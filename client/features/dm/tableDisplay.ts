@@ -4,7 +4,7 @@ import { screenToView } from "../../lib/camera.ts";
 import { groundAtMiddle, toWorld, type Live } from "../../lib/view.ts";
 
 /**
- * The DM's side of table displays (docs/design-v1-dm-tools.md 3.1): the
+ * The DM's side of table displays (docs/design/design-v1-dm-tools.md 3.1): the
  * "Show my view on the table display" switch, which belongs to one DM
  * device in one room and is kept on it, and the camera it sends.
  */
@@ -53,7 +53,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
  * the protocol's bounds (shared/protocol.ts), so the server never drops it
  * for its schema.
  *
- * An Isometric DM's (docs/design-v1-isometric-view.md ISO-D17) keeps x, y,
+ * An Isometric DM's (docs/design/design-v1-isometric-view.md ISO-D17) keeps x, y,
  * w and h as the box of its canvas's corners on the ground at 0, and adds
  * its turn and its canvas's size in view units, centered on its middle at
  * 0. Every number is the DM's camera alone: no height is read, so hidden

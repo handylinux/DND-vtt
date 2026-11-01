@@ -54,7 +54,7 @@ function generatedPassword(): string {
   return `${chars.slice(0, 5)}-${chars.slice(5, 10)}-${chars.slice(10)}`;
 }
 
-/** The admin page's password (docs/design-v1-dm-tools.md 3.18): longer than a player password, since it guards the whole server. */
+/** The admin page's password (docs/design/design-v1-dm-tools.md 3.18): longer than a player password, since it guards the whole server. */
 const ADMIN_PASSWORD_MIN = 16;
 
 /**

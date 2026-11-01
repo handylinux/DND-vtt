@@ -12,7 +12,7 @@ export function teleportToasts(fresh: readonly LogEntry[], names: LogNames): str
 }
 
 /**
- * The DM's note about a "Teleport here" (docs/design-v1-maps-vision.md
+ * The DM's note about a "Teleport here" (docs/design/design-v1-maps-vision.md
  * 4.1): every DM device shows the DM-only log line as a short toast when
  * it arrives, so a teleport past a wall never goes unnoticed. Players never
  * receive the line. The Log keeps it either way.

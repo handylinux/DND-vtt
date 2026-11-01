@@ -10,7 +10,7 @@ import { askRowText } from "./card.ts";
 import { targetRef } from "./logic.ts";
 
 /**
- * A player's ask to change a roll (docs/design-v1-roll-request.md 6):
+ * A player's ask to change a roll (docs/design/design-v1-roll-request.md 6):
  * "Asks to reroll (Heroic Inspiration)" with Allow and Keep, one tap each,
  * both naming the ask. Allow rolls on the server (`roll.dice` with
  * `change`), or for "Fix my total" reopens the answer for typing alone

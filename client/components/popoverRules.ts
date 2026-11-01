@@ -2,7 +2,7 @@ import { mousePans } from "../lib/gestures.ts";
 import { scopeSlot } from "../state/scope.ts";
 
 /**
- * The shared popover base's rules (docs/design-v1-tool-options.md 7.1),
+ * The shared popover base's rules (docs/design/design-v1-tool-options.md 7.1),
  * as pure functions and one small store, so they are tested without a
  * page. components/Popover.tsx holds the component and the listeners that
  * feed them. Every non-modal popover and menu in the room follows them:

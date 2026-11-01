@@ -7,7 +7,7 @@ import { useIsoGround } from "./relief/context.ts";
 
 /**
  * The pieces a renderer draws its marks with so they land where the
- * isometric view puts them (docs/design-v1-isometric-view.md 5.1 and 5.3,
+ * isometric view puts them (docs/design/design-v1-isometric-view.md 5.1 and 5.3,
  * isoPlace.ts), and draw exactly as before in Top-down, where each is its
  * children or today's pill.
  */

@@ -9,7 +9,7 @@ import { loadRoom } from "./persistence.ts";
 import { Socket, startEngine, type Engine, type TestClient } from "./testing.ts";
 
 /**
- * Players' maps over real sockets and Postgres (docs/design-v1-map-discovery.md
+ * Players' maps over real sockets and Postgres (docs/design/design-v1-map-discovery.md
  * 5.3, 6 and rule 3, lane MD3): with real sight, an edit out of the party's
  * sight on ground it explored is remembered in the batch that makes it, so no
  * frame a player's socket gets holds it, a replay of the stored ops and a

@@ -2,7 +2,7 @@ import { MAX_NAME } from "#shared/protocol.ts";
 import { titleFromFileName } from "../handouts.ts";
 
 /**
- * A PDF handout's title (docs/design-v1-pdf-handouts.md 4.1.3). Every source
+ * A PDF handout's title (docs/design/design-v1-pdf-handouts.md 4.1.3). Every source
  * goes through one cleaner, so a generated title always passes the
  * protocol's `name` rules, and what the DM types is checked against those
  * rules as they type.

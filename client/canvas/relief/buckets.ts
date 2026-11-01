@@ -10,7 +10,7 @@ import { boundsOf, cellPieces, keyOf, localKeyOf, polyBox, RANK, sortKey, wallIt
 import type { WallPiece } from "./runs.ts";
 
 /**
- * The depth list (docs/design-v1-isometric-view.md 5.6 and 5.7). Pieces
+ * The depth list (docs/design/design-v1-isometric-view.md 5.6 and 5.7). Pieces
  * live in 16 by 16 buckets, one per build chunk, each sorted at a turn when
  * it first comes into view at that turn, with the union of its pieces'
  * full projected bounds for culling. A bucket is rebuilt only when what it
@@ -27,7 +27,7 @@ import type { WallPiece } from "./runs.ts";
  * A carried token draws after its holder. Ties draw columns, then pits,
  * then walls, then volumes, then standees, then by id.
  *
- * An area standing as its real shape (docs/design-v1-iso-area-shapes.md
+ * An area standing as its real shape (docs/design/design-v1-iso-area-shapes.md
  * 4.3) comes in as depth bands one cell deep, each keyed at its middle. A
  * band meets the statics by key. Against the standees it goes by their
  * natural keys, their footprints' middles, never the keys the own-cells
@@ -40,7 +40,7 @@ import type { WallPiece } from "./runs.ts";
  * column, wall or standee nearer than the band taking its tint. Bands give
  * no silhouettes, being see-through.
  *
- * On hexes a bucket is 16 by 16 hex keys (docs/design-v1-iso-hex-relief.md
+ * On hexes a bucket is 16 by 16 hex keys (docs/design/design-v1-iso-hex-relief.md
  * 9). It reads its own chunk and all eight around it, since a hex's six
  * neighbors reach diagonal chunks, and every fog tile its hexes and their
  * neighbors touch, found by world position, never by the chunk's index.

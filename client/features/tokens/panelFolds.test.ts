@@ -182,7 +182,7 @@ describe("the request's override", () => {
   });
 });
 
-describe("the folds by relation (docs/design-v1-token-panel-groups.md 5)", () => {
+describe("the folds by relation (docs/design/design-v1-token-panel-groups.md 5)", () => {
   test("a tap on another creature's Notes, Combat or block never folds the viewer's own, and the other way round", () => {
     const s = storage();
     const folds = createPanelFolds(s);
@@ -210,7 +210,7 @@ describe("the folds by relation (docs/design-v1-token-panel-groups.md 5)", () =>
   });
 });
 
-describe("a character's page's folds (docs/design-v1-look-pass.md 3.1)", () => {
+describe("a character's page's folds (docs/design/design-v1-look-pass.md 3.1)", () => {
   test("its groups have keys of their own, Combat and Companions open, the rest folded, on every layout", () => {
     for (const layout of [NARROW, WIDE]) {
       const d = foldDefaults(layout);

@@ -36,8 +36,8 @@ import { useLiveTokens } from "./useLiveTokens.ts";
  *
  * In Isometric an area being aimed draws in the drag layer on the ground,
  * lifted to the drawn height at its origin, its pills standing
- * (docs/design-v1-isometric-view.md 5.3). Its real shape stands with it
- * (docs/design-v1-iso-area-shapes.md 4.5): coarse and whole in the drag
+ * (docs/design/design-v1-isometric-view.md 5.3). Its real shape stands with it
+ * (docs/design/design-v1-iso-area-shapes.md 4.5): coarse and whole in the drag
  * layer while the finger moves, and once it rests the board stands it in
  * the depth list instead (relief/IsoBoard.tsx), with the rings of the
  * creatures it catches at their bases. Other members' previews stand

@@ -65,7 +65,7 @@ export function Spinner(props: { size?: number; label?: string }) {
  * its owner already keeps mounted.
  *
  * `small` is the same wait at a help line's size, for a wait inside help or
- * an options line (docs/design-v1-design-pass.md 4.4). It is a `span`, so it
+ * an options line (docs/design/design-v1-design-pass.md 4.4). It is a `span`, so it
  * fits inside the `p` or `span` that holds it, where a `div` would not.
  */
 export function Loading(props: { text: string; detail?: string | null; active?: boolean; delay?: number; live?: boolean; small?: boolean; style?: CSSProperties }) {

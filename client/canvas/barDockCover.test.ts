@@ -5,7 +5,7 @@ import { barCapacity } from "./barButtons.ts";
 import { COLUMN_FADE, DEFAULT_CHROME, DEFAULT_SPOT, EDGE, columnFacts, laneChoice, paneLaneBox, placeBar, restingBar, toastTop, type Chrome, type ColumnFacts } from "./barDock.ts";
 
 /*
- * A turn card in the alerts column (docs/design-v1-combat-controls.md 4.2
+ * A turn card in the alerts column (docs/design/design-v1-combat-controls.md 4.2
  * and 4.6): the bar's lane and a map pane skip it, since it lasts the
  * whole turn, while a toast keeps 8 px under it as under any first card
  * (review CCB-OPUS-2), so a toast on a phone never lies over its Show.

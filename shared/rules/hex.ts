@@ -2,7 +2,7 @@ import { FOG_SUBCELLS, type CreatureSize } from "../model.ts";
 import type { Point } from "./geom.ts";
 
 /**
- * Hex grid geometry (docs/design-v1-hex-grids.md section 4).
+ * Hex grid geometry (docs/design/design-v1-hex-grids.md section 4).
  *
  * The world stays in cells: one cell is the distance between two
  * neighboring hex centers, so a hex is one cell across its flat sides. Hex

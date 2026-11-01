@@ -24,7 +24,7 @@ const SHAPES: readonly { value: FogShapeKind; label: string; glyph: IconName }[]
   { value: "room", label: "Builder room", glyph: "fogRoom" },
 ];
 
-/** The line under the shapes, by the scene's grid: a hex scene's Builder room is the hexes its wall lines close in (docs/design-v1-hex-grids.md HX-D10). */
+/** The line under the shapes, by the scene's grid: a hex scene's Builder room is the hexes its wall lines close in (docs/design/design-v1-hex-grids.md HX-D10). */
 export function shapeHint(shape: FogShapeKind, g: Grid): string {
   return shape === "room" && isHex(g) ? "Tap a room closed in by wall lines." : HINTS[shape];
 }
@@ -35,7 +35,7 @@ export function brushTitle(w: number, g: Grid): string {
 }
 
 /**
- * The fog tool's options (docs/design-v1-tool-options.md 9.6): what a drag
+ * The fog tool's options (docs/design/design-v1-tool-options.md 9.6): what a drag
  * does now on the line, then reveal or hide, the shape, draft or live, and
  * the draft's Reveal, Undo and Discard by priority. Fog all and Reveal all
  * are always in ⋯, a second tap away, because they change what players

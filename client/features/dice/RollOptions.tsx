@@ -101,20 +101,20 @@ import { useRollModeMenu } from "./useRollModeMenu.tsx";
 import { useRollPresses } from "./useDicePanel.ts";
 import { useActOnce, useInitiativeChanged, useRollBlocked, useRollOption, useRowResult, useWatchInitiative } from "./useRollOption.ts";
 
-/** The roll mode row (Roller.tsx) and the sticky result line, which a token's Roll lands the panel by (docs/design-v1-dice-pass.md 8), found from the Dice panel's root (DicePanel.tsx). */
+/** The roll mode row (Roller.tsx) and the sticky result line, which a token's Roll lands the panel by (docs/design/design-v1-dice-pass.md 8), found from the Dice panel's root (DicePanel.tsx). */
 const DICE_PANEL = "[data-dice-panel]";
 const DICE_MODES = "[data-dice-modes]";
 const DICE_LAST = "[data-dice-last]";
 
 /**
  * A creature's roll options, between the roller and Recent rolls
- * (docs/design-v1-roll-options.md 4): the DM's selected token, or the
+ * (docs/design/design-v1-roll-options.md 4): the DM's selected token, or the
  * character or companion a player picks, in a card that says whose rolls
- * these are, then its groups, each folding (docs/design-v1-dice-pass.md 5
+ * these are, then its groups, each folding (docs/design/design-v1-dice-pass.md 5
  * and 6). Every button is 44 px and rolls on the server at once, shows busy
  * until its line lands, and its result shows in the panel's sticky line.
  * A stat block's six ability boxes roll through this panel's path too
- * (docs/design-v1-stat-block-rolls.md), and the rest of its views stay text.
+ * (docs/design/design-v1-stat-block-rolls.md), and the rest of its views stay text.
  */
 export function RollOptions(_props: PanelProps) {
   const role = useRoomView((s) => s.you?.role ?? null);
@@ -156,7 +156,7 @@ export function RollOptions(_props: PanelProps) {
 }
 
 /**
- * Lands the panel for a token's Roll (docs/design-v1-dice-pass.md 8): the
+ * Lands the panel for a token's Roll (docs/design/design-v1-dice-pass.md 8): the
  * roll mode row at the scroller's top, just under the sticky line where it
  * shows, so Adv, Dis and Secret are whole and the card follows them, as
  * Advantage is the choice most often made just before an attack. Where the
@@ -185,7 +185,7 @@ function landOnModes(options: HTMLElement, smooth: boolean): void {
  * A player's creatures (4.1, `playerCreatures`): their characters, those
  * characters' companions, and every other token they own on the scene,
  * as tabs across the card's top where there are two or more
- * (docs/design-v1-dice-pass.md 5.2). The first pick is the selected token
+ * (docs/design/design-v1-dice-pass.md 5.2). The first pick is the selected token
  * when it is theirs, so a bar's Roll lands on it, else their character, and
  * a pick lasts for the page. Other creatures are never offered, since the
  * server refuses them.
@@ -203,7 +203,7 @@ export function PlayerOptions(props: { view: RoomState; selected: readonly strin
   const loaded = useCreatureRolls(current?.creature ?? null);
   const cast = useOption((s) => s.cast);
   const { folds } = useDiceFolds();
-  // An ask stays in reach with no creature to pick, as for a lent token off the players' scene (docs/design-v1-player-save-spell.md 3.2).
+  // An ask stays in reach with no creature to pick, as for a lent token off the players' scene (docs/design/design-v1-player-save-spell.md 3.2).
   if (!current) {
     return (
       <>
@@ -241,7 +241,7 @@ function currentPick(view: RoomState, options: readonly Pickable[], picked: stri
 
 /**
  * Whether the options end on a group's fold, so Recent rolls follows them
- * with no gap, as the groups follow each other (docs/design-v1-dice-pass.md
+ * with no gap, as the groups follow each other (docs/design/design-v1-dice-pass.md
  * 6.1): several selected, or one creature whose options have loaded.
  * Ending on the creature card, with nobody selected or while the options
  * load, the panel's gap stays, as between the card and its first group.
@@ -353,7 +353,7 @@ export function OptionsList(props: { dice: DiceView; rolls: CreatureRolls; creat
 
 /**
  * The region "Rolls for Thorn": the creature's card, then its groups
- * (docs/design-v1-dice-pass.md 5). The card's frame, header and tabs draw
+ * (docs/design/design-v1-dice-pass.md 5). The card's frame, header and tabs draw
  * here, at once, while the options load. What the loaded options hold
  * draws keyed by the creature, inside the card and under it, so a pick
  * starts each afresh while the tabs keep their focus.
@@ -387,11 +387,11 @@ type Ctx = {
   played: boolean;
   ask: boolean;
   blocked: string | null;
-  /** The row a player's open ask for saves goes under, or null for the top of the options (docs/design-v1-player-save-spell.md 3.1). */
+  /** The row a player's open ask for saves goes under, or null for the top of the options (docs/design/design-v1-player-save-spell.md 3.1). */
   castRow: string | null;
   /** The actor its uses and turn record are on: a token's own, or its character's. */
   actor: Actor | undefined;
-  /** Its spent abilities, as room state (docs/design-v1-combat-controls.md 2.2). */
+  /** Its spent abilities, as room state (docs/design/design-v1-combat-controls.md 2.2). */
   marks: Marks;
   /** Its block's limited uses, null where this viewer reads no block of it. */
   uses: readonly LimitedUse[] | null;
@@ -436,7 +436,7 @@ function useCtx(props: Shown) {
 }
 
 /**
- * The card's own parts under its header (docs/design-v1-dice-pass.md 5.1),
+ * The card's own parts under its header (docs/design/design-v1-dice-pass.md 5.1),
  * none of which fold: why rolls are blocked, the Ask switch, the Death
  * Save while dying, what a creature without numbers needs, and Initiative,
  * which starts a fight.
@@ -502,7 +502,7 @@ function SummaryName(props: { level: Proficiency | null; name: string }) {
 }
 
 /**
- * The groups under the card (docs/design-v1-dice-pass.md 6.1), in the
+ * The groups under the card (docs/design/design-v1-dice-pass.md 6.1), in the
  * order players know, each folding as this device last left it for this
  * kind of creature (6.3). What newly waits in a group opens it once, on the
  * render that first sees it (6.4), and a folded group's line leads with
@@ -643,7 +643,7 @@ function OptionGroups(props: Shown) {
 
 /**
  * What a creature whose numbers this viewer lacks needs before a roll
- * (docs/design-v1-pc-stats.md 4.2): why no bonus shows, Add a stat block
+ * (docs/design/design-v1-pc-stats.md 4.2): why no bonus shows, Add a stat block
  * where the viewer may, and the one Bonus field every save, check, skill
  * and Initiative here rolls by. It stands in the card, above the groups
  * that fold, so its text lives in the option store.
@@ -707,9 +707,9 @@ const ACTION_SECTIONS: readonly (readonly [Exclude<NamedRoll["section"], "spells
 ];
 
 /**
- * A grid's label in the panel's one label look (docs/design-v1-dice-ui.md 3.2), with what bears on all of its
+ * A grid's label in the panel's one label look (docs/design/design-v1-dice-ui.md 3.2), with what bears on all of its
  * rolls after it on the same line, wrapping under it where the line is full: "SAVES  +1d4: Blessed". An h4
- * under its group's h3, as in the token panel (docs/design-v1-dice-pass.md 6.6).
+ * under its group's h3, as in the token panel (docs/design/design-v1-dice-pass.md 6.6).
  */
 function GroupLabel(props: { children: ReactNode; note?: string | undefined }) {
   return (
@@ -721,12 +721,12 @@ function GroupLabel(props: { children: ReactNode; note?: string | undefined }) {
   );
 }
 
-/** The option buttons' outline (OptionCell), which a row's other actions share (docs/design-v1-dice-pass.md 7.3). */
+/** The option buttons' outline (OptionCell), which a row's other actions share (docs/design/design-v1-dice-pass.md 7.3). */
 const OPTION_OUTLINE = `${theme.line.border}px solid ${theme.color.controlBorder}`;
 
 /**
  * One part of a named row's controls line, grown to share each line it
- * stands on at every size (docs/design-v1-dice-pass.md 7.2), so Hunter's
+ * stands on at every size (docs/design/design-v1-dice-pass.md 7.2), so Hunter's
  * Mark or a slot stepper never stands alone at the end of a wrapped line.
  * A grid, so the control inside stretches to the part's width. The row's
  * own option cells grow by themselves (OptionCell `fill`), and this holds
@@ -779,7 +779,7 @@ function OptionCell(props: { text: string; level?: Proficiency | undefined; tag?
         flexWrap: "wrap",
         alignItems: "center",
         alignContent: "center",
-        // In a row's controls line the cell grows with its line, and its words stay in its middle (docs/design-v1-dice-pass.md 7.2).
+        // In a row's controls line the cell grows with its line, and its words stay in its middle (docs/design/design-v1-dice-pass.md 7.2).
         justifyContent: props.fill ? "center" : "space-between",
         columnGap: theme.space(1),
         rowGap: 0,
@@ -900,7 +900,7 @@ const TESTS: readonly D20Test[] = [
 /**
  * Initiative (4.2, 4.3): "Initiative +2" with what its tap does to the
  * tracker as its tag ("sets row", "replaces 15 · −4"), across the card
- * (docs/design-v1-dice-pass.md 5.1), and a monster in a room that uses
+ * (docs/design/design-v1-dice-pass.md 5.1), and a monster in a room that uses
  * scores "Score 12" beside "Roll instead". The value is written only to a row that still holds what
  * it held at the tap, by the room's listener, so the cell may close first.
  */
@@ -956,7 +956,7 @@ function InitiativeCell(props: { ctx: Ctx; bonus: number; bonusText: string }) {
 /**
  * The death save, rolled by the server with the creature's own numbers. Where this viewer holds none of them its bonus goes unsaid.
  * While its turn's death save is open it settles it, as every death save Roll does, and it waits while this device shows the
- * creature's Regeneration open (docs/design-v1-combat-controls.md 2.3).
+ * creature's Regeneration open (docs/design/design-v1-combat-controls.md 2.3).
  */
 function DeathSaveCell(props: { ctx: Ctx; bonus: number | null }) {
   const { ctx } = props;
@@ -965,7 +965,7 @@ function DeathSaveCell(props: { ctx: Ctx; bonus: number | null }) {
   const test: D20Test = { kind: "deathSave" };
   const preset = presetFor(ctx.dice, ctx.creature, test, { rolls: ctx.rolls });
   const row = `deathSave:${"tokenId" in ctx.creature ? ctx.creature.tokenId : ctx.creature.characterId}`;
-  // Across the card, above Initiative (docs/design-v1-dice-pass.md 5.1).
+  // Across the card, above Initiative (docs/design/design-v1-dice-pass.md 5.1).
   return (
     <OptionCell
       creature={ctx.creature}
@@ -982,7 +982,7 @@ function DeathSaveCell(props: { ctx: Ctx; bonus: number | null }) {
 }
 
 /**
- * A row's own use ops (docs/design-v1-combat-controls.md 6): Used and an
+ * A row's own use ops (docs/design/design-v1-combat-controls.md 6): Used and an
  * X/Day ability's Use, each busy while its op is out and deaf to a second
  * tap, and a refusal said on the row, where it was tapped.
  */
@@ -1015,14 +1015,14 @@ function useRowUse() {
 }
 
 /**
- * One named roll (4.2), in two lines (docs/design-v1-dice-ui.md 4.3): its
+ * One named roll (4.2), in two lines (docs/design/design-v1-dice-ui.md 4.3): its
  * header, the name with its uses and recharge, Used, and its numbers as a
  * stat block reads them ("+6 to hit, 1d8+3 Slashing", "DC 14 DEX, 2d8
  * Radiant"), then one line of controls that wraps only where the panel is
  * too narrow: Attack, Damage, Critical, each rider, Heal, a plain roll, a
  * group save, Recharge and a spell's slot level.
  *
- * Used and an X/Day ability's count are room state (docs/design-v1-combat-controls.md
+ * Used and an X/Day ability's count are room state (docs/design/design-v1-combat-controls.md
  * 6): Used marks a recharge used or ready, Use spends one X/Day use, and a
  * roll that spends a recharge marks it only where this row shows it ready.
  * A roll never spends an X/Day use, since a reroll is not a second use.
@@ -1280,7 +1280,7 @@ function GroupSaveButton(props: { ctx: Ctx; named: NamedRoll; spend: ((quiet: bo
           onClick={() => !go(false) && setPending(true)}
           aria-label={`Group save, DC ${save.dc} ${ABILITY_SHORT[save.ability]}`}
           title={`Group save, DC ${save.dc} ${ABILITY_SHORT[save.ability]}`}
-          // It acts beside Attack and Damage, so it wears their outline, not the raised look's dim one (docs/design-v1-dice-pass.md 7.3).
+          // It acts beside Attack and Damage, so it wears their outline, not the raised look's dim one (docs/design/design-v1-dice-pass.md 7.3).
           style={{ border: OPTION_OUTLINE, minWidth: 0, maxWidth: "100%", whiteSpace: "normal", textAlign: "center" }}
         >
           Group save

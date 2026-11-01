@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { DDB_LINK_ERROR, ddbCharacterId, ddbCharacterUrl, ddbSheetUrl } from "./link.ts";
 
-/** A D&D Beyond character's number from what a player pastes (docs/design-v1-pc-stats.md 6.3). */
+/** A D&D Beyond character's number from what a player pastes (docs/design/design-v1-pc-stats.md 6.3). */
 
 describe("ddbCharacterId", () => {
   test("a number of 1 to 12 digits, or the digits after /characters/ on the named hosts", () => {

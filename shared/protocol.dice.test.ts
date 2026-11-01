@@ -10,7 +10,7 @@ import { clientOpSchema, opSchema, serverOnlyOpSchema, type OpOf } from "./proto
 import { applyOp } from "./reducer.ts";
 import { DM, actor, chance, effect, int, pick, rng, room, scene, token } from "./testutil.ts";
 
-/** The dice ops' bounds (docs/design-v1-dice.md 4.1 and 4.4) and the size of the line the largest one writes (Appendix B). */
+/** The dice ops' bounds (docs/design/design-v1-dice.md 4.1 and 4.4) and the size of the line the largest one writes (Appendix B). */
 const TAG = "0192f0a8-6c1e-7a4b-9c3d-2e1f0a9b8c7d";
 
 function op(overrides: Record<string, unknown> = {}): unknown {
@@ -46,7 +46,7 @@ describe("dice.roll's bounds", () => {
     assert.equal(firstIssue(op({ rolls: big })), FORMULA_ERRORS.tooMuch);
   });
 
-  test("a roll marks itself as initiative with true alone, and a stored one parses as replay parses it (docs/design-v1-combat-flow.md 11.4)", () => {
+  test("a roll marks itself as initiative with true alone, and a stored one parses as replay parses it (docs/design/design-v1-combat-flow.md 11.4)", () => {
     const marked = op({ rolls: [{ formula: "1d20+2", label: "Initiative", creature: { tokenId: "g1" }, initiative: true }] });
     assert.equal(firstIssue(marked), null);
     assert.notEqual(firstIssue(op({ rolls: [{ formula: "1d20+2", initiative: false }] })), null);

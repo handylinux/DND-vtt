@@ -4,7 +4,7 @@ import { scopeSlot } from "../../state/scope.ts";
 
 /**
  * Whether the map draws the party's sight, and how
- * (docs/design-v1-maps-vision.md section 4.3.1):
+ * (docs/design/design-v1-maps-vision.md section 4.3.1):
  *
  * - `party`: a player on a scene with party vision sees the levels: bright
  *   clear, dim and darkvision's grey shaded, ground explored before dimmed.

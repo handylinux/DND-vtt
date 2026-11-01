@@ -16,7 +16,7 @@ import { ownWalk } from "../rules/movement.ts";
 import { MAX_ROUTE_SWEEP, routeSweepPlan } from "./areaTriggers.ts";
 
 /**
- * Moves walking their routes (docs/design-v1-movement.md 6.2 and 7): what
+ * Moves walking their routes (docs/design/design-v1-movement.md 6.2 and 7): what
  * each leg takes on the turn's path, its corners and whether players saw it
  * whole, joins by those sums, what reaches whom, the area sweep along a
  * route, and ops from before op version 13 replaying as they ran.

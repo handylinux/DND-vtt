@@ -1,11 +1,11 @@
 /**
- * The sight rows of the wave 4 performance gate (docs/design-v1-maps-vision.md
+ * The sight rows of the wave 4 performance gate (docs/design/design-v1-maps-vision.md
  * section 4.3.6), on scenes at the caps: 6,000 potential sight pieces from a
  * 200 x 200 dungeon with crossing free walls, pillars and raised areas, 12
  * party sources with 150 ft darkvision, and 100 free lights plus 20 lit
  * token lights, each 120 ft bright and 120 ft dim beyond.
  *
- * Then the same scenes per player (docs/design-v1-per-player-vision.md
+ * Then the same scenes per player (docs/design/design-v1-per-player-vision.md
  * 8.1) at the worst ownership the cap allows: 6 sight holders, each owning
  * 11 of the 12 sources with a different one missing, so no two share a
  * raster. Each such row times the union and every holder's raster and the
@@ -551,7 +551,7 @@ export function lightReachesEveryHolder(state: RoomState, holders: readonly stri
   }
 }
 
-/** The per-player rows (docs/design-v1-per-player-vision.md 8.1), each against the whole-party row above it. */
+/** The per-player rows (docs/design/design-v1-per-player-vision.md 8.1), each against the whole-party row above it. */
 function perPlayerRows(runs: number, rows: BenchRow[]): void {
   const pcs = (s: RoomState) => Object.values(s.tokens).filter((t) => t.kind === "pc");
   const moveBy = (s: RoomState, run: number) => {

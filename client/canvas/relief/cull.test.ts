@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { CULL_STEP_PX, cullFit, cullOf } from "./cull.ts";
 
 /*
- * The isometric board's cull box (docs/design-v1-relief-pan.md 5.6), one
+ * The isometric board's cull box (docs/design/design-v1-relief-pan.md 5.6), one
  * implementation for the board (128 px steps) and the kept picture's rig
  * (24 px), so the two cannot drift (review HXPERF2B-OPUS-01).
  */

@@ -46,7 +46,7 @@ describe("a Druid's Beast Shapes limit", () => {
     assert.equal(fitsShapeLimit(shapeLimit(20), named("Wolf")), true);
   });
 
-  test("the Beast Shapes table's known forms by level (docs/design-v1-known-forms.md 2)", () => {
+  test("the Beast Shapes table's known forms by level (docs/design/design-v1-known-forms.md 2)", () => {
     assert.deepEqual([2, 3, 4, 7, 8, 20].map(knownFormCount), [4, 4, 6, 6, 8, 8]);
   });
 

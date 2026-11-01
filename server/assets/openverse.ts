@@ -12,7 +12,7 @@ import { configureSharp } from "./process.ts";
 import { MAX_QUERY_LENGTH, normalizeQuery } from "./serpapi.ts";
 
 /**
- * Openverse, the second image search (docs/design-v1-dm-tools.md 3.13): free
+ * Openverse, the second image search (docs/design/design-v1-dm-tools.md 3.13): free
  * and openly licensed, searched when SerpApi cannot answer or when a member
  * asks for it.
  *

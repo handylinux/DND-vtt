@@ -19,7 +19,7 @@ const DevRoom = import.meta.env.DEV ? retryableLazy(() => import("./dev/DevRoom.
 const Kit = import.meta.env.DEV ? retryableLazy(() => import("./dev/Kit.tsx")) : null;
 // A table display's pages load only on the device that opens them (features/display).
 const DisplayPages = retryableLazy(() => import("./features/display/DisplayPages.tsx"));
-// A chunk of its own, which no room ever loads (docs/design-v1-dm-tools.md 3.18).
+// A chunk of its own, which no room ever loads (docs/design/design-v1-dm-tools.md 3.18).
 const Admin = retryableLazy(() => import("./pages/Admin.tsx"));
 // The guide and its screenshots load only for a reader who opens it.
 const DmGuide = retryableLazy(() => import("./pages/DmGuide.tsx"));

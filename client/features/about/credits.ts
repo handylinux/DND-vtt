@@ -61,7 +61,7 @@ export type TokenIconsSection = {
 };
 
 /**
- * The About page's "Token icons" group (docs/design-v1-dm-tools.md 3.12):
+ * The About page's "Token icons" group (docs/design/design-v1-dm-tools.md 3.12):
  * one line naming the authors as the site asks, each license with how many
  * icons it covers, and every author with their count. 4,180 rows, one per
  * icon, would bury every other credit, and the picker credits each icon

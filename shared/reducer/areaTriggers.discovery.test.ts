@@ -15,7 +15,7 @@ import { clearVisionCache, visionCacheReport } from "../rules/vision.ts";
 import { DM, P1, P2, entry, env, member, room, template, token } from "../testutil.ts";
 
 /**
- * Area reminders by each receiver's live ground (docs/design-v1-map-discovery.md
+ * Area reminders by each receiver's live ground (docs/design/design-v1-map-discovery.md
  * decision 13): a player reads a reminder only when every ray its
  * inclusion test reads, from where the area starts to the creature, lies
  * on their sight or the DM's reveals, or on revealed ground with fog on and

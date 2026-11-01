@@ -1,6 +1,6 @@
 /**
  * A button that repeats while held, such as a stepper's − and +
- * (docs/design-v1-heights-readout.md section 5). The press steps at once,
+ * (docs/design/design-v1-heights-readout.md section 5). The press steps at once,
  * then once 400 ms into the hold and every 80 ms after, so a 1.68 s hold
  * takes the height stepper from 10 ft to 100 ft. Every tap still steps
  * once, so nothing needs the hold. A plain state machine over injected

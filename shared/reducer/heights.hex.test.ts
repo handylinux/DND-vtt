@@ -16,7 +16,7 @@ import { DM, env, P1, room, scene, token, trap as trapOf } from "../testutil.ts"
 
 /**
  * Heights, stairs and pits on a hex scene in the reducer
- * (docs/design-v1-hex-grids.md phase H3): each write is stamped with the
+ * (docs/design/design-v1-hex-grids.md phase H3): each write is stamped with the
  * scene's shape and drops the stamp with the last of its content
  * (HX-D14), a stair keeps to its grid's facings, a pit opens hexes and its
  * undo shuts them, the switch is refused while heights or stairs stand,

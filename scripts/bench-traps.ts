@@ -1,5 +1,5 @@
 /**
- * Traps' worst cases on the server (docs/design-v1-traps.md section 9),
+ * Traps' worst cases on the server (docs/design/design-v1-traps.md section 9),
  * each at a scene's 50 traps, alone, with every spot over armed squares,
  * and gated:
  *
@@ -13,7 +13,7 @@
  *   50 stopping nothing, one near the walks' end stopping every walker,
  *   and 48 going off before that one stops them all, each at 25 ms. A
  *   stop cuts the walks, so its whole op also applies the op again
- *   without its traps (docs/design-v1-traps.md 6.7).
+ *   without its traps (docs/design/design-v1-traps.md 6.7).
  * - The same moves on the ground, under the floor traps the fliers pass:
  *   the moveMany with one trap stopping every walker, under 49, and under
  *   48 and one stopping them all, each at 25 ms, and the group under 50,

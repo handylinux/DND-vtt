@@ -35,7 +35,7 @@ export function rowTarget(view: TrackerView, entry: Pick<InitEntry, "tokenId" | 
 
 /**
  * Whose Reaction a creature spends and which row its Ready counts
- * (docs/design-v1-combat-flow.md 3.6.8): its own row, or for a companion
+ * (docs/design/design-v1-combat-flow.md 3.6.8): its own row, or for a companion
  * listed under its character, the companion's own Reaction on its token
  * and its character's row, since it acts on that turn. Null outside the
  * fight, for a creature with no row, and for a companion that is not

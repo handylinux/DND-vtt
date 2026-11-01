@@ -17,7 +17,7 @@ export type GridDrag =
   | { kind: "new"; from: Point; start: CalBox | null; moved: boolean };
 
 /**
- * What a search for the map's drawn grid left (docs/design-v1-grid-detect.md
+ * What a search for the map's drawn grid left (docs/design/design-v1-grid-detect.md
  * section 6), said on the options line while the box is the one it left.
  * Moving the box ends it.
  */
@@ -36,7 +36,7 @@ export type FoundNote = {
   ownGrid?: true;
   /** The shape the note's box and grid are cells of, as a scene stores it: absent for squares. */
   shape?: GridShape;
-  /** The find set the scene's shape with its grid (docs/design-v1-grid-detect.md 10.7). */
+  /** The find set the scene's shape with its grid (docs/design/design-v1-grid-detect.md 10.7). */
   switched?: true;
   /** Squares and hexes were both found: the shape not offered and its size, which the line names too. */
   contested?: { shape: MapShape; cellPx: number };

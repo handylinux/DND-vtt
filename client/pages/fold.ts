@@ -14,7 +14,7 @@ import { useRoomView } from "../state/view.ts";
 
 /*
  * What floats over a phone's map folds under a sheet
- * (docs/design-v1-visual.md 3.2.1). On a phone in portrait a panel sheet
+ * (docs/design/design-v1-visual.md 3.2.1). On a phone in portrait a panel sheet
  * covers the bottom of the map, and the token action bar and the fight
  * alerts column would sit under it or over its header. So while a sheet
  * is open they fold, with their state kept, and one row docks on the
@@ -32,11 +32,11 @@ import { useRoomView } from "../state/view.ts";
  * panels open. In landscape the sheet docks on the right and leaves the
  * map beside it, so nothing folds there, unless the screen is so short
  * that the sheet opens over all of it (`full`, the very short mode of
- * docs/design-v1-layout-hierarchy.md 4.2, or an upright sheet swiped up to
- * fill the screen, docs/design-v1-sheet-swipe.md 4.7), as the upright sheet folds, or
+ * docs/design/design-v1-layout-hierarchy.md 4.2, or an upright sheet swiped up to
+ * fill the screen, docs/design/design-v1-sheet-swipe.md 4.7), as the upright sheet folds, or
  * the room the sheet leaves beside it (`sideRoom`, sideSheetRoom) is too
  * narrow for a docked window's header in its one row, as on a phone 480 px
- * wide (docs/design-v1-token-window.md 7.1).
+ * wide (docs/design/design-v1-token-window.md 7.1).
  */
 export function foldsUnderSheet(input: { width: number; height: number; sheetOpen: boolean; full?: boolean; sideRoom?: number }): boolean {
   if (!input.sheetOpen) return false;
@@ -212,11 +212,11 @@ export function dockFits(space: Omit<SheetSpace, "reserveTop">, dockHeight = DOC
  */
 export type ColumnAlert =
   | { id: string; kind: "concentration"; who: string; says: string }
-  /** A dying creature's death save at its turn start (docs/design-v1-combat-controls.md 4.4). */
+  /** A dying creature's death save at its turn start (docs/design/design-v1-combat-controls.md 4.4). */
   | { id: string; kind: "deathSave"; who: string; says: string }
   | { id: string; kind: "timeUp"; says: string }
   | { id: string; kind: "notice"; text: string; says: string }
-  /** A creature's turn card, its uses for the whole turn (docs/design-v1-combat-controls.md 4.2). */
+  /** A creature's turn card, its uses for the whole turn (docs/design/design-v1-combat-controls.md 4.2). */
   | { id: string; kind: "turn"; who: string; says: string };
 
 /** The rolls' line, as features/rolls publishes it (components/sheetFocus.ts AlertsSummaryEntry). `unnamed`: how many of its requests its words leave out. */
@@ -267,7 +267,7 @@ function phrase(text: string): string {
  * waits for this viewer ("Roll asked"), concentration checks, death saves,
  * the time-up, the other open rolls ("Rolls 1/3"), the notices, newest
  * first, then the turn cards, which last the whole turn
- * (docs/design-v1-combat-controls.md 4.6). An
+ * (docs/design/design-v1-combat-controls.md 4.6). An
  * order by urgency, since the column mixes log entries, roll requests and
  * a timer that share no clock. Its name starts with that text and lists
  * the rest, then says what a tap does: "Concentration check +2: Thorn
@@ -281,7 +281,7 @@ function phrase(text: string): string {
  *
  * `hides` is what stands over the alerts: the sheet that folded them, or
  * the docked token window that leaves the column only this summary row
- * (docs/design-v1-bar-dock.md 1.3), whose tap hides the window. Each advice
+ * (docs/design/design-v1-bar-dock.md 1.3), whose tap hides the window. Each advice
  * then says that, in the word the frame names itself by: "Hide the window
  * to answer.", "Hide the window to see them.", "Hide the window to see
  * it.". `room` is a screen whose tool's options leave

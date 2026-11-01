@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { idle, type IdleHost } from "./idle.ts";
 
-/** idle(): the warm-up's wait for a quiet moment (docs/design-v1-roll-animation.md 6). */
+/** idle(): the warm-up's wait for a quiet moment (docs/design/design-v1-roll-animation.md 6). */
 describe("idle", () => {
   test("with no requestIdleCallback, as in Safari, it still calls back within its maxMs", async () => {
     const host: IdleHost = { setTimeout: (cb, ms) => setTimeout(cb, ms), clearTimeout: (id) => clearTimeout(id as ReturnType<typeof setTimeout>) };

@@ -27,7 +27,7 @@ export function ReadyControls(props: { answer: ReactionTarget; target: ActorTarg
   const fire = useSendAll();
   const drop = useSend();
   const [trigger, setTrigger] = useState("");
-  // A trigger typed and not yet readied keeps the sheet from a swipe's close (docs/design-v1-sheet-swipe.md 4.5).
+  // A trigger typed and not yet readied keeps the sheet from a swipe's close (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(trigger.trim() !== "");
   // "Drop it" takes two taps, like ending the fight: a player cannot undo it, and the marker is gone for good.
   const [confirmDrop, setConfirmDrop] = useState(false);
@@ -52,7 +52,7 @@ export function ReadyControls(props: { answer: ReactionTarget; target: ActorTarg
           />
         ) : null}
         <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space(1) }}>
-          {/* Secondary: the tracker's one primary is Next (docs/design-v1-visual.md 3.3). */}
+          {/* Secondary: the tracker's one primary is Next (docs/design/design-v1-visual.md 3.3). */}
           <Button size="sm" busy={fire.waiting} onClick={() => fire.send(fireOps({ target, effectId: readied.id, answer }))}>
             It fired: Reaction used
           </Button>

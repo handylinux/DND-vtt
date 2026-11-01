@@ -24,7 +24,7 @@ import { NO_ROOM_TO_GROW, resizeRefusal, resizeSpot } from "./resize.ts";
 import { COLUMNS, freeWall, hexWallRoom, onHex, ROWS, sideWall, wallsRound } from "./hexWalls.testkit.ts";
 
 /**
- * Blocking and squeezing on hexes (docs/design-v1-hex-grids.md HX-D8 and
+ * Blocking and squeezing on hexes (docs/design/design-v1-hex-grids.md HX-D8 and
  * HX-D17): a step is allowed when every hex's center-to-center step meets
  * no movement wall and the footprint fits at its end, and a creature
  * squeezes onto the size one smaller only where no full footprint fits.

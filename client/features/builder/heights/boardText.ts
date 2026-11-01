@@ -6,7 +6,7 @@ import { regionText, type HeightRegion } from "./regions.ts";
 /**
  * The text Height mode writes on the board: a region's height in a pill and
  * a "?" on a stair the rule cannot point. Both follow the map like the rest
- * of the board's text (lib/boardScale.ts, docs/design.md 14.2): the pill at
+ * of the board's text (lib/boardScale.ts, docs/design/design.md 14.2): the pill at
  * the size of every other board pill, the "?" at a chip's letters. Kept in
  * this one helper so a change to how the board draws text changes one place.
  */
@@ -81,7 +81,7 @@ export type MarkCanvas = {
  *
  * The labels are only read. The pills are not obstacles of the label
  * placement, which reruns on every zoom step of a pinch, so up to 300 of
- * them would slow every frame of it (docs/design-v1-visual.md 3.4).
+ * them would slow every frame of it (docs/design/design-v1-visual.md 3.4).
  * Regions place in the order given.
  */
 export function placeHeightPills(regions: readonly HeightRegion[], labels: readonly Box[], cellPx: number, size: HeightPillSize, measure: MeasurePill): PlacedPill[] {

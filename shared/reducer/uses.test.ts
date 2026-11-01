@@ -55,7 +55,7 @@ function useLines(state: RoomState, op: Op, who = DM, seq = 1): Omit<Extract<Log
   });
 }
 
-describe("actor.use (docs/design-v1-combat-controls.md 3.1)", () => {
+describe("actor.use (docs/design/design-v1-combat-controls.md 3.1)", () => {
   test("a legendary action spends its cost in pips, and a once a turn one marks itself until its creature's next turn", () => {
     let state = apply(table(), use({ kind: "legendary", cost: 2, key: "legendaryActions:wing-attack", name: "Wing Attack" }));
     assert.equal(dragon(state).legendary!.actionsUsed, 2);
@@ -171,7 +171,7 @@ describe("actor.use (docs/design-v1-combat-controls.md 3.1)", () => {
     assert.equal(refused(table(), use({ kind: "resource", id: "ki" }, { target: { characterId: "thorn" } })).code, "invalid");
   });
 
-  test("a pool of units from a fixed cost of 2 (docs/design-v1-ddb-resources.md 1.1, ASTRA-7): Use spends 2 of 8, four spends empty it, a fifth is refused", () => {
+  test("a pool of units from a fixed cost of 2 (docs/design/design-v1-ddb-resources.md 1.1, ASTRA-7): Use spends 2 of 8, four spends empty it, a fifth is refused", () => {
     let state = table();
     state.characters = { thorn: { ...state.characters.thorn!, resources: [{ id: "grit", name: "Grit Points", max: 8, used: 0, reset: "short", pool: true }] } };
     for (let i = 1; i <= 4; i++) {

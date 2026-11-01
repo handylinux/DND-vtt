@@ -13,7 +13,7 @@ import { SQUARES } from "./grid.ts";
 
 /**
  * planMove equals describeMove on random group moves with traps on the way
- * (docs/design-v1-traps.md 11 and 13.1): riders, carried and perched tokens
+ * (docs/design/design-v1-traps.md 11 and 13.1): riders, carried and perched tokens
  * and dragged creatures, seen or hidden, walking straight legs, two-piece
  * routes, teleports, landings and Get off across squares and wires that
  * stop creatures or not. For every op the reducer applies, the plan of the

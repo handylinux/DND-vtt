@@ -45,7 +45,7 @@ export type TokenInteraction = {
 export const TokenInteractionContext = createContext<TokenInteraction | null>(null);
 
 /**
- * A token on the isometric view's relief (docs/design-v1-isometric-view.md
+ * A token on the isometric view's relief (docs/design/design-v1-isometric-view.md
  * 5.4): a standee, its art upright on its ring, or for a creature the stand
  * rule lays flat (5.2), only an invisible press area on its footprint, its
  * picture lying on the ground stage under the fog.
@@ -73,7 +73,7 @@ export type IsoToken = {
   /**
    * The colors of the rings of the areas standing as their real shapes that
    * catch it, drawn round its ring at its base rather than on the ground
-   * (docs/design-v1-iso-area-shapes.md 4.4, D-261026-31). None by default.
+   * (docs/design/design-v1-iso-area-shapes.md 4.4, D-261026-31). None by default.
    */
   rings?: readonly string[];
 };
@@ -99,7 +99,7 @@ type DecorProps = {
  *
  * A carried token that covers its holder's whole footprint draws `inset`,
  * at COVER_INSET of its size about its middle, so the mount's edge and
- * ring show around the rider (docs/design-v1-attach.md 4.4). A tap on the
+ * ring show around the rider (docs/design/design-v1-attach.md 4.4). A tap on the
  * mount's edge then reaches the mount.
  *
  * A carried token smaller than its holder leaves the holder's middle to it
@@ -416,7 +416,7 @@ function LockMark(props: { place: { x: number; y: number; size: number } }) {
 let shieldPath: Path2D | null = null;
 
 /**
- * The creature's AC on the party bar's shield (docs/design-v1-token-panel.md
+ * The creature's AC on the party bar's shield (docs/design/design-v1-token-panel.md
  * 3.9), in the token's bottom left corner as the number badge sits in the
  * bottom right, filled and outlined as that badge is. Named for the e2e.
  */
@@ -549,7 +549,7 @@ function TokenBody(props: {
   const { token, actor, w, h, scale, name } = props;
   const assets = useAssets();
   const upload = token.image && isAssetImage(token.image) ? token.image : undefined;
-  // A shipped icon is a disk of its color with the glyph on it, initials until its file arrives (docs/design-v1-dm-tools.md 3.12).
+  // A shipped icon is a disk of its color with the glyph on it, initials until its file arrives (docs/design/design-v1-dm-tools.md 3.12).
   const icon = token.image && !isAssetImage(token.image) ? token.image : undefined;
   const glyph = useIconGlyph(icon?.icon ?? null);
   const url = upload ? assets.url(upload.assetId, "full") : null;
@@ -558,7 +558,7 @@ function TokenBody(props: {
   const drawn = imageFace(token.image, image !== null, glyph) !== "initials";
   const crop = useMemo(() => (image ? cropSourceRect(image, upload?.crop, w / h) : undefined), [image, upload?.crop, w, h]);
   // No HP rule kills an object, so the map draws no dead or dying mark on one, and an HP-less creature shows no life it
-  // stores underneath (docs/design-v1-combat-flow.md 3.6.6).
+  // stores underneath (docs/design/design-v1-combat-flow.md 3.6.6).
   const life = token.kind === "object" ? undefined : shownLife(actor, token);
   const ring = DISPOSITION_RING[token.disposition] ?? theme.color.neutral;
   const ringPx = boardSizes(scale).ringPx;
@@ -670,7 +670,7 @@ function useSelectedHexes(gridShape: GridShape | undefined, token: ViewToken, se
 
 /**
  * The selection's ring: on a hex scene the outline of the creature's hexes
- * (docs/design-v1-hex-grids.md 3), drawn on the ground in both views, the
+ * (docs/design/design-v1-hex-grids.md 3), drawn on the ground in both views, the
  * same stroke and accent as the ring a square scene draws. Its own
  * component, so only a selected token reads the accent.
  */

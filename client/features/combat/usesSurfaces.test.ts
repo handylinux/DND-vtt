@@ -13,7 +13,7 @@ import type { ReceiptTracker as Tracker } from "../dice/useReceipt.ts";
 
 /*
  * The combat uses where the DM meets them off a creature's turn
- * (docs/design-v1-combat-controls.md 5 and 6): a tracker row's options,
+ * (docs/design/design-v1-combat-controls.md 5 and 6): a tracker row's options,
  * rendered as the DM opens them, and the token bar's Uses drawer, on
  * rooms the real reducer moved, so both surfaces read what lane A writes.
  */
@@ -145,7 +145,7 @@ function at(markup: string, marks: readonly (string | RegExp)[]): number[] {
   });
 }
 
-describe("the row's options lead with the creature's things in its Combat section's order, then the row's own (docs/design-v1-token-sections.md 4)", () => {
+describe("the row's options lead with the creature's things in its Combat section's order, then the row's own (docs/design/design-v1-token-sections.md 4)", () => {
   const state = room({ characters: { bree: character("bree", { name: "Bree", ownerIds: ["p1"], resources: [{ id: "rage", name: "Rage", max: 2, used: 0, reset: "long" }] }) } });
   state.tokens.dragon = token("dragon", { name: "Dragon", x: 6, y: 2, actor: { inline: actor({ legendary }) } });
   state.tokens.bt = token("bt", { kind: "pc", name: "Bree", x: 4, y: 2, actor: { ref: "bree" } });

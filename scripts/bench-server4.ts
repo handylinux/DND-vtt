@@ -1,5 +1,5 @@
 /**
- * The wave 4 server rows of the performance gate (docs/design-v1-maps-vision.md
+ * The wave 4 server rows of the performance gate (docs/design/design-v1-maps-vision.md
  * section 4.3.6), end to end through the room actor at the caps: each row is
  * one op as a socket sends it, timed from its arrival until the last socket
  * in the room has been sent the batch's frames, history after `ev` included.
@@ -30,13 +30,13 @@
  *   Add --revision <full commit id> to tie the output to the measured checkout.
  *
  * Then the bright and dark scenes again per player
- * (docs/design-v1-per-player-vision.md 8.1), with the six players as the
+ * (docs/design/design-v1-per-player-vision.md 8.1), with the six players as the
  * scene's sight holders at the worst ownership the cap allows, a player's
  * move on each with fog off, a free light every source sees on a hall it
  * alone lights, and a routed walk across areas during a turn on each kind
  * of scene.
  *
- * Then map discovery's rows (docs/design-v1-map-discovery.md 7), whole
+ * Then map discovery's rows (docs/design/design-v1-map-discovery.md 7), whole
  * party and with the six holders, the scene played and explored: a build
  * edit in sight and one on remembered ground, a stair edit whose run passes
  * its direction chunks away, a move that explores a tile, a move and a
@@ -90,7 +90,7 @@ function members(): Record<string, Member> {
 
 /*
  * Part 4C's room at the caps as a whole stored state, with walls that stop
- * players' moves, at a grid scale. Per player (docs/design-v1-per-player-vision.md
+ * players' moves, at a grid scale. Per player (docs/design/design-v1-per-player-vision.md
  * 8.1), at the worst ownership the cap allows: the scene is per player, the
  * six players are its sight holders, and player k owns every character but
  * the k-th, so no two share a raster. The fog projection then has each
@@ -571,7 +571,7 @@ async function runFogOff(level: "bright" | "dark", rows: Row[]): Promise<void> {
 }
 
 /*
- * A free light every source sees (docs/design-v1-per-player-vision.md
+ * A free light every source sees (docs/design/design-v1-per-player-vision.md
  * decision 15), on bench-vision.ts `lightScene`'s scene: the characters
  * carry no light and the hall's free lights stand outside it, so the hall's
  * light alone gives the hall its levels, and its move changes tiles of the
@@ -596,7 +596,7 @@ async function runFreeLight(feetPerCell: number, perPlayer: boolean, rows: Row[]
 
 /*
  * A routed walk across three areas that remind on entering, during the
- * walker's turn (docs/design-v1-per-player-vision.md 8.1): the reminders
+ * walker's turn (docs/design/design-v1-per-player-vision.md 8.1): the reminders
  * judge who saw each crossing at its moment along the walk, which on a
  * per-player scene asks every holder's point query and draws no raster.
  * The DM walks the last character east through the areas and back.
@@ -625,7 +625,7 @@ async function runWalk(perPlayer: boolean, rows: Row[]): Promise<void> {
 }
 
 /*
- * Map discovery (docs/design-v1-map-discovery.md 7). The bench room with its
+ * Map discovery (docs/design/design-v1-map-discovery.md 7). The bench room with its
  * scene played, every tile explored for the whole party (per player,
  * perPlayerLayers' random half of each layer), and when `full` every
  * layer's memory, the party's and each holder's, within one chunk of its
@@ -778,7 +778,7 @@ async function runFragmented(rows: Row[]): Promise<void> {
 }
 
 /*
- * The builder's ask (docs/design-v1-map-discovery.md 5.3, MD4-ASTRA-7) on an
+ * The builder's ask (docs/design/design-v1-map-discovery.md 5.3, MD4-ASTRA-7) on an
  * empty 200 x 200 Explore scene the party never saw, where no op forgets
  * anything and so every op of an ask is read: a gesture of 64 rectangles of
  * 2,000 squares, the most four asks carry, and the 20 bands of a rectangle

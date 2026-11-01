@@ -6,7 +6,7 @@ import { NOTICE_TONES, type NoticeTone } from "./tones.ts";
 export type { NoticeTone } from "./tones.ts";
 
 /**
- * One look for toasts and banners (docs/design-v1-visual.md 2.3): info on a
+ * One look for toasts and banners (docs/design/design-v1-visual.md 2.3): info on a
  * raised fill, warning ("Reconnecting…") and danger ("You are offline") on
  * their dark fills with an outline in the tone, and the highlight, cream
  * with ink text, for "You are viewing as Pat". 14 px text, an optional
@@ -22,7 +22,7 @@ export type { NoticeTone } from "./tones.ts";
  * news, "alert" for what needs attention now.
  *
  * `compact` is a notice that lasts over the map on a short screen
- * (docs/design-v1-layout-hierarchy.md, the bar dock review's follow-up):
+ * (docs/design/design-v1-layout-hierarchy.md, the bar dock review's follow-up):
  * one line, its words cut short with an ellipsis, its actions in the same
  * row, and More to read the rest. Taller, a Reconnecting or Starting view
  * notice stood over the tool's buttons and the toolbar of a 480 x 320

@@ -151,7 +151,7 @@ describe("the vitals' units", () => {
     const items = vitals({ actor: big, token: { kind: "monster", hpVisibility: "exact" }, fullAccess: true, place: "bar" });
     for (const unit of items.flatMap((i) => i.units)) {
       const w = unitWidth(unit);
-      // The compact bar at 480 x 320 at 130% gives its content 234 px (docs/design-v1-token-panel.md 3.12). Each unit is measured by its full words, wider than the bar draws them ("Passive Perception 60", about 150, draws as "PP 60"), so the bound holds for both.
+      // The compact bar at 480 x 320 at 130% gives its content 234 px (docs/design/design-v1-token-panel.md 3.12). Each unit is measured by its full words, wider than the bar draws them ("Passive Perception 60", about 150, draws as "PP 60"), so the bound holds for both.
       assert.ok(w <= 234, `"${unitText(unit)}" is ${Math.round(w)} px`);
     }
     assert.ok(unitWidth({ kind: "text", label: "HP", value: "100000/100000" }) >= 120, "the HP unit is about 130 px");
@@ -368,7 +368,7 @@ describe("the linked block's state", () => {
   const monsters = { m1: customMonster("m1") };
   const loaded = async () => ({ list: await loadMonsters(), failed: false });
 
-  test("a companion's stored block reads at once, with no chunk, and a deleted one as none (docs/design-v1-companion-stat-blocks.md 6.6)", () => {
+  test("a companion's stored block reads at once, with no chunk, and a deleted one as none (docs/design/design-v1-companion-stat-blocks.md 6.6)", () => {
     const blocks = { b1: companionBlock("b1", "bree", { resistances: "Cold" }) };
     const state = linkedBlockState({ blockId: "b1" }, monsters, { list: null, failed: false }, blocks);
     assert.equal(state.kind, "ready");

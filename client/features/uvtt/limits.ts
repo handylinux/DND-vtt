@@ -1,7 +1,7 @@
 import { isCoarsePointer } from "../../lib/device.ts";
 
 /**
- * The bounds of a Universal VTT import (docs/design-v1-maps-vision.md
+ * The bounds of a Universal VTT import (docs/design/design-v1-maps-vision.md
  * section 3.1). The file comes from the DM's own disk and is untrusted, so
  * every size is checked before the work it would cost: the file's bytes
  * before it is read, the counts before the schema walks them, and the

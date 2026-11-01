@@ -18,7 +18,7 @@ import { UvttAddPhase } from "../uvtt/UvttImport.tsx";
 import { activePhaseId, addPhase, canAddPhase, movePhase, phasesOf, removeConfirmText, removePhase, renamePhase } from "./rules.ts";
 
 /**
- * A map's phases in the scene's settings (docs/design-v1-maps-vision.md
+ * A map's phases in the scene's settings (docs/design/design-v1-maps-vision.md
  * section 3.4): the same place as another image, such as night or on fire.
  * A row of chips switches the map with one tap and no confirmation, since
  * the DM prepared it and the switch is the point. The list below adds,
@@ -28,7 +28,7 @@ import { activePhaseId, addPhase, canAddPhase, movePhase, phasesOf, removeConfir
  * others changes nothing they receive, so none of it asks first.
  *
  * It sits in the Map image and grid group under the map image's row
- * (docs/design-v1-map-discovery.md 8.4), a part of the group named as a
+ * (docs/design/design-v1-map-discovery.md 8.4), a part of the group named as a
  * setting is, with a heading a level under the group's.
  */
 export function PhasesSection(props: { scene: Scene }) {
@@ -44,7 +44,7 @@ export function PhasesSection(props: { scene: Scene }) {
     setEditing(null);
     setUpload((u) => (u.busy ? u : { busy: false, waiting: false, error: null }));
   }, [scene.id]);
-  // Only with focus in its row, since it uploads at once and the row is on screen whenever the scene's settings are (docs/design-v1-paste.md 1.2).
+  // Only with focus in its row, since it uploads at once and the row is on screen whenever the scene's settings are (docs/design/design-v1-paste.md 1.2).
   const addRef = useRef<HTMLDivElement>(null);
   const paste = usePasteTarget(addRef, { accepts: "image", takes: "focus", disabled: upload.busy, onFile: (f) => void add(f, true) });
 

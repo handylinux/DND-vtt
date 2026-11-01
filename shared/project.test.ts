@@ -37,7 +37,7 @@ import { DM, P1, P2, actor, apply, chance, character, companionBlock, customMons
 import { imageAssetId } from "./imageRef.ts";
 import { SQUARES } from "./rules/grid.ts";
 
-/** A table display's viewer: a player who owns nothing (docs/design-v1-dm-tools.md 3.1). */
+/** A table display's viewer: a player who owns nothing (docs/design/design-v1-dm-tools.md 3.1). */
 const DISPLAY: Viewer = { memberId: "display:abcdefghijkl", role: "player" };
 
 /** Every object nested anywhere in a value, for "this key never appears" checks. */
@@ -134,7 +134,7 @@ function playersAmong(state: RoomState, ids: readonly string[]): boolean {
 /**
  * The fog players get, written here independently of the projection: each
  * tile either layer holds, the DM's and the party's explored layer joined
- * (docs/design-v1-maps-vision.md 4.3.3).
+ * (docs/design/design-v1-maps-vision.md 4.3.3).
  */
 function mergedFog(state: RoomState): Record<string, FogTile> {
   const out: Record<string, FogTile> = {};
@@ -157,7 +157,7 @@ function assertNoLeaks(state: RoomState, viewer: Viewer, p: ProjectedState, labe
   if (state.meta.view.blackout) assertPaused(p, label);
   const sceneId = state.meta.view.blackout ? null : state.meta.playerSceneId!;
   assert.deepEqual(Object.keys(p.scenes), sceneId === null ? [] : [sceneId], `${label}: scenes`);
-  // The viewer's own characters' companion blocks are theirs to read (docs/design-v1-companion-stat-blocks.md 4.2), and only those.
+  // The viewer's own characters' companion blocks are theirs to read (docs/design/design-v1-companion-stat-blocks.md 4.2), and only those.
   const { companionBlocks: ownBlocks, ...rest } = p;
   for (const obj of walk(rest)) {
     assert.ok(!("dmNotes" in obj), `${label}: dmNotes leaked`);
@@ -174,7 +174,7 @@ function assertNoLeaks(state: RoomState, viewer: Viewer, p: ProjectedState, labe
     assert.equal(block.id in ownBlocks, owned, `${label}: companion block ${block.id}`);
   }
   // An ask for saves and its lines reach only its caster's players now, with the targets and area they see and the
-  // damage roll for its asker alone (docs/design-v1-player-save-spell.md 5.5).
+  // damage roll for its asker alone (docs/design/design-v1-player-save-spell.md 5.5).
   const paused = state.meta.view.blackout;
   const ownsCaster = (caster: string) => {
     const t = state.tokens[caster];
@@ -258,7 +258,7 @@ function assertNoLeaks(state: RoomState, viewer: Viewer, p: ProjectedState, labe
       for (const field of ["ownerIds", "fogExempt", "fogExemptAuto", "nameHidden", "publicName", "visibility", "hpVisibility", "altImages", "light"]) {
         assert.ok(!(field in pt), `${label}: ${field} of ${id} leaked`);
       }
-      // A companion is the table's only while a player plays it (docs/design-v1-combat-flow.md 3.6.5).
+      // A companion is the table's only while a player plays it (docs/design/design-v1-combat-flow.md 3.6.5).
       assert.equal("companion" in pt, t.companion !== undefined && playersToken(state, t), `${label}: companion of ${id}`);
       if (t.companion && t.kind === "object" && "inline" in pt.actor) assert.equal(pt.actor.inline.life, "alive", `${label}: an effect companion's life of ${id}`);
       if (t.nameHidden) {
@@ -344,7 +344,7 @@ function assertNoLeaks(state: RoomState, viewer: Viewer, p: ProjectedState, labe
         const y = Number(ys);
         const automatic = autoWallBetween(rule, painted(x, y), side === "n" ? painted(x, y - 1) : painted(x - 1, y));
         const shown: unknown = p.buildChunks[`${sceneId}:${c.cx},${c.cy}`]?.edges[key];
-        // With fog on players hold an edge only where they hold a cell beside it, and an automatic wall reaches them as one (docs/design-v1-map-discovery.md 5.2).
+        // With fog on players hold an edge only where they hold a cell beside it, and an automatic wall reaches them as one (docs/design/design-v1-map-discovery.md 5.2).
         const sc: RoomState["scenes"][string] = state.scenes[sceneId]!;
         const heldCell = (cx: number, cy: number): boolean => cx >= 0 && cy >= 0 && cx < sc.bounds.w && cy < sc.bounds.h && !isCellFullyFogged(fog, sceneId, { x: cx, y: cy });
         const edgeHeld: boolean = !sc.fogEnabled || heldCell(x, y) || (side === "n" ? heldCell(x, y - 1) : heldCell(x - 1, y));
@@ -476,7 +476,7 @@ function assertNoLeaks(state: RoomState, viewer: Viewer, p: ProjectedState, labe
     if (data.type === "handout") assert.ok(p.handouts[data.handoutId], `${label}: handout log leaked`);
     // An area's reminder reaches a player only while the area is in their sight, and never one hidden when it happened.
     if (data.type === "area") assert.ok(p.templates[data.templateId], `${label}: reminder about an unseen area leaked`);
-    // A roll line reaches the creature's players now, under the request's two switches (docs/design-v1-dm-tools.md 3.3).
+    // A roll line reaches the creature's players now, under the request's two switches (docs/design/design-v1-dm-tools.md 3.3).
     if (data.type === "roll") {
       const stored = state.log.find((x) => x.id === e.id)?.data as Extract<LogEvent, { type: "roll" }>;
       assert.ok(ownsCreature(state, viewer, data), `${label}: roll line ${e.id} about another's creature leaked`);
@@ -503,7 +503,7 @@ function ownsCreature(state: RoomState, viewer: Viewer, ref: { tokenId?: string;
 }
 
 /**
- * Wave 5's state (docs/design-v1-dm-tools.md 2.1): no DM-only page, no page
+ * Wave 5's state (docs/design/design-v1-dm-tools.md 2.1): no DM-only page, no page
  * private to another player, no unrevealed secret block or a revealed one's
  * flag, no pin on a page the player cannot read or under the fog, no other
  * player's roll target, hidden DC or hidden result, no `monsterId`, and the
@@ -572,7 +572,7 @@ describe("projection properties over random rooms", () => {
   test("no player projection leaks, and projectEntity agrees with projectState", () => {
     for (let seed = 1; seed <= 250; seed++) {
       const state = randomState(rng(seed));
-      // A table display is a player who owns nothing (docs/design-v1-dm-tools.md 3.1), whose projection no ownership widens.
+      // A table display is a player who owns nothing (docs/design/design-v1-dm-tools.md 3.1), whose projection no ownership widens.
       assert.equal(stableStringify(projectState(state, DISPLAY, { sceneId: "s2" })), stableStringify(projectState(state, { memberId: "p-nobody", role: "player" }, { sceneId: "s2" })), `seed ${seed} display`);
       for (const viewer of [P1, P2, DISPLAY]) {
         const p = projectState(state, viewer, { sceneId: "s2" });
@@ -1192,7 +1192,7 @@ describe("specific rules", () => {
     const hidden = { kind: "door", state: "closed", secret: true, discovered: false } as const;
     const locked = { kind: "door", state: "locked", secret: false, discovered: false } as const;
     let state = setup();
-    // The hall is all held, so every edge of it reaches players (docs/design-v1-map-discovery.md 5.2).
+    // The hall is all held, so every edge of it reaches players (docs/design/design-v1-map-discovery.md 5.2).
     reveal(state, "s1", { x: 0, y: 0, w: 16, h: 16 });
     // A hall 2..9 by 2..5 with a drawn wall run across it at x = 6.
     state = apply(state, { t: "build.rect", sceneId: "s1", terrain: "stone", x: 2, y: 2, w: 8, h: 4 });
@@ -1215,7 +1215,7 @@ describe("specific rules", () => {
     // Placing a hidden door on an automatic wall changes no chunk a player receives.
     const onlyAuto = apply(state, { t: "build.edge", sceneId: "s1", edges: [{ key: "4,2,n", feature: hidden }] });
     assert.equal(stableStringify(projectState(onlyAuto, P1, { sceneId: "s1" }).buildChunks), stableStringify(projectState(state, P1, { sceneId: "s1" }).buildChunks));
-    // The chunk past a room's south side carries its automatic walls (docs/design-v1-map-discovery.md decision 14), and a
+    // The chunk past a room's south side carries its automatic walls (docs/design/design-v1-map-discovery.md decision 14), and a
     // door hidden on one of them reads as that wall: the chunk is the same bytes with the door or without it.
     const held = () => {
       const s = setup();
@@ -1617,7 +1617,7 @@ describe("wave 3 projection", () => {
 
 /*
  * What the stat summary and the AC shield may show rests on these
- * (docs/design-v1-token-panel.md 3.2 and 3.9): they read only the viewer's
+ * (docs/design/design-v1-token-panel.md 3.2 and 3.9): they read only the viewer's
  * copy, so a number the projection holds back can never reach a screen.
  */
 describe("the stats a player's copy holds, for the stat summary and the AC shield", () => {
@@ -1674,7 +1674,7 @@ describe("the stats a player's copy holds, for the stat summary and the AC shiel
   });
 });
 
-describe("companions (docs/design-v1-combat-flow.md 3.6.5 and 4.5)", () => {
+describe("companions (docs/design/design-v1-combat-flow.md 3.6.5 and 4.5)", () => {
   /** Bree (Ana, p1) with a spirit (a creature) and a weapon (an effect), and Cy (p2), a player who owns neither. */
   function party(): RoomState {
     const state = room({ characters: { bree: character("bree", { name: "Bree", ownerIds: ["p1"] }) } });
@@ -1768,7 +1768,7 @@ describe("companions (docs/design-v1-combat-flow.md 3.6.5 and 4.5)", () => {
   });
 });
 
-describe("an effect companion lends no sight (docs/design-v1-combat-flow.md 3.6.5, SOL-01)", () => {
+describe("an effect companion lends no sight (docs/design/design-v1-combat-flow.md 3.6.5, SOL-01)", () => {
   /** A bright vision scene with no player character on it: Ana's companion beside a goblin is the party's only member there. */
   function weaponBeside(kind: "object" | "npc", partyVision: boolean): RoomState {
     const state = room({ characters: { bree: character("bree", { name: "Bree", ownerIds: ["p1"] }) } });
@@ -1792,7 +1792,7 @@ describe("an effect companion lends no sight (docs/design-v1-combat-flow.md 3.6.
   });
 });
 
-describe("pdf handouts (docs/design-v1-pdf-handouts.md 3.4)", () => {
+describe("pdf handouts (docs/design/design-v1-pdf-handouts.md 3.4)", () => {
   const pages = [
     { assetId: "page1", width: 1584, height: 2048 },
     { assetId: "page2", width: 2048, height: 1584 },
@@ -1856,7 +1856,7 @@ describe("pdf handouts (docs/design-v1-pdf-handouts.md 3.4)", () => {
   });
 });
 
-describe("companion stat blocks (docs/design-v1-companion-stat-blocks.md 4.2)", () => {
+describe("companion stat blocks (docs/design/design-v1-companion-stat-blocks.md 4.2)", () => {
   const ON_S1 = { sceneId: "s1" };
   /** Bree, played by p1 and a third player together, with a token p2 owns but not Bree, and a block with a picture. */
   function bree(): RoomState {
@@ -1929,7 +1929,7 @@ describe("companion stat blocks (docs/design-v1-companion-stat-blocks.md 4.2)", 
 });
 
 /**
- * Who receives a character's known forms (docs/design-v1-known-forms.md
+ * Who receives a character's known forms (docs/design/design-v1-known-forms.md
  * 3.3): exactly the viewers who receive its stat block, through the
  * character's existing projection, held here as a matrix so a later edit of
  * its fixed list cannot leak them.

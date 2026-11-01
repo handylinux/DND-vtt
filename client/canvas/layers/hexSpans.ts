@@ -4,7 +4,7 @@ import type { Point } from "../../lib/camera.ts";
 /**
  * The hexes whose shapes may meet a convex polygon on the ground, such as
  * the canvas's corners seen on the ground in the isometric view
- * (docs/design-v1-isometric-view.md 4.4, the hex design's HX-D18). Each
+ * (docs/design/design-v1-isometric-view.md 4.4, the hex design's HX-D18). Each
  * row of the hex lattice takes only the span of hexes across the polygon's
  * width over that row's band, so the work is the hexes on screen, not the
  * 6.6 times as many in the polygon's bounding box. The hex lines draw from

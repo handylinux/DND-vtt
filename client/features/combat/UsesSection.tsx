@@ -20,7 +20,7 @@ const ADD_BOX = "[data-uses-add]";
 
 /**
  * Combat's Uses section on the token panel and a character's page
- * (docs/design-v1-token-sections.md 3.1): the one list the token bar's
+ * (docs/design/design-v1-token-sections.md 3.1): the one list the token bar's
  * drawer and the tracker row's group show, for the DM and the creature's
  * owners while it has something in it. With `character`, the character whose class resources this
  * viewer edits (the DM and its players, never a player lent only its

@@ -13,7 +13,7 @@ import { setupHistory } from "./helpers/undoScope.ts";
 import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
 
 /**
- * Re-sync from D&D Beyond end to end (docs/design-v1-resync.md 5), on the
+ * Re-sync from D&D Beyond end to end (docs/design/design-v1-resync.md 5), on the
  * real server serving the production build. D&D Beyond is never asked:
  * each page routes the import request to an invented character built
  * here in the service's JSON shape and read by the app's own reader, or
@@ -26,7 +26,7 @@ import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
  * field, a sheet link to another number is a new source, the DM's
  * re-sync runs by keys alone on Bree's page with the toolbar's Undo
  * naming it, and a 46-roll character folds its rolls on a phone. The
- * ddbres steps bring in class resources (docs/design-v1-ddb-resources.md
+ * ddbres steps bring in class resources (docs/design/design-v1-ddb-resources.md
  * 9): additions with their counts spent, a spend here kept against D&D
  * Beyond's, a live spend while the review is open, an edit kept with
  * Overwrite and its Undo, and 14 limited uses cut to 12 at every size.
@@ -454,7 +454,7 @@ describe("raccoon-vtt re-sync from d&d beyond", { timeout: 600_000 }, () => {
     const review = ana.getByRole("dialog", { name: "Check what was read" });
     assert.equal(await readLine(review), "Read from D&D Beyond: Bree Tallow, level 5.");
     assert.equal(anaDdb.last(), NUMBER);
-    // Its header's Back says where it goes, as the re-sync's review does (docs/design-v1-look-pass-2.md 3, lane 3).
+    // Its header's Back says where it goes, as the re-sync's review does (docs/design/design-v1-look-pass-2.md 3, lane 3).
     await review.getByRole("button", { name: "Back to the D&D Beyond link", exact: true }).waitFor();
     // With no record the editor fills, and lists each value of the block it would replace.
     await review.getByRole("heading", { name: "Replaces your changes (1)", exact: true }).waitFor();
@@ -548,7 +548,7 @@ describe("raccoon-vtt re-sync from d&d beyond", { timeout: 600_000 }, () => {
     const done = ana.getByRole("dialog", { name: "Bree is re-synced" });
     const line = done.getByRole("status").filter({ hasText: "4 changes came in, and 5 of your changes stayed." });
     await line.waitFor();
-    // A plain status line: the check mark means chosen, never done (docs/design-v1-look-pass-2.md 2.3).
+    // A plain status line: the check mark means chosen, never done (docs/design/design-v1-look-pass-2.md 2.3).
     assert.equal(await line.locator("svg").count(), 0, "the done line wears the check");
     await shots.take(ana, "resync-done");
     const bree = await waitFor("level 6 in Ana's view", () => (breeIn(anaSocket)?.level === 6 ? breeIn(anaSocket)! : null));
@@ -666,7 +666,7 @@ describe("raccoon-vtt re-sync from d&d beyond", { timeout: 600_000 }, () => {
 
     await dialog.getByRole("button", { name: "Paste its JSON instead", exact: true }).click();
     await dialog.locator("textarea").fill(JSON.stringify(fixtureB()));
-    // With the JSON box open, the footer's Get it stays the one primary, and Read it is secondary (docs/design-v1-look-pass-2.md 2.2).
+    // With the JSON box open, the footer's Get it stays the one primary, and Read it is secondary (docs/design/design-v1-look-pass-2.md 2.2).
     const looks = await dialog.getByRole("button").evaluateAll((buttons) =>
       buttons.map((b) => {
         const el = b as unknown as { textContent: string | null };

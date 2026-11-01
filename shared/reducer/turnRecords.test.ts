@@ -8,7 +8,7 @@ import { DM, actor, character, env, room, token } from "../testutil.ts";
 import { derivedId } from "./duplicate.ts";
 
 /**
- * Turn records and their resets (docs/design-v1-combat-controls.md 2.3,
+ * Turn records and their resets (docs/design/design-v1-combat-controls.md 2.3,
  * 2.4 and 3.3): what each creature of a turn gets when the turn starts, by
  * Next or by a removal, what Previous puts back, and what a fight's end
  * clears.
@@ -82,7 +82,7 @@ function fight(setup?: (s: RoomState) => void, opVersion?: number) {
   });
 }
 
-describe("turn records (docs/design-v1-combat-controls.md 2.3)", () => {
+describe("turn records (docs/design/design-v1-combat-controls.md 2.3)", () => {
   test("a dragon's turn start stamps its record: the op's seq, the row and round, its HP and life, and its recharges due", () => {
     const f = fight((s) => {
       s.tokens.dragon = { ...s.tokens.dragon!, actor: { inline: { ...(s.tokens.dragon!.actor as { inline: Actor }).inline, uses: { "actions:fire-breath": breath, "actions:dominate-mind": dominate } } } };
@@ -281,7 +281,7 @@ describe("turn records (docs/design-v1-combat-controls.md 2.3)", () => {
   });
 });
 
-describe("a fight's end (docs/design-v1-combat-controls.md 2.4)", () => {
+describe("a fight's end (docs/design/design-v1-combat-controls.md 2.4)", () => {
   test("clears what lasts a turn from every actor, a creature removed earlier included, and keeps counted uses, recharges and pips", () => {
     const f = fight().next();
     f.run({ t: "actor.use", target: { tokenId: "dragon" }, use: { kind: "legendary", cost: 1, key: "legendaryActions:fiery-rays", name: "Fiery Rays", once: true } });
@@ -308,7 +308,7 @@ describe("a fight's end (docs/design-v1-combat-controls.md 2.4)", () => {
   });
 });
 
-describe("pips of a turn's other creatures (docs/design-v1-combat-controls.md 2.4)", () => {
+describe("pips of a turn's other creatures (docs/design/design-v1-combat-controls.md 2.4)", () => {
   test("a mount's spent pips refill at its rider's start, saved in the step, and Previous puts them back", () => {
     const f = fight((s) => {
       s.tokens.horse = { ...s.tokens.horse!, actor: { inline: { ...(s.tokens.horse!.actor as { inline: Actor }).inline, legendary: { ...legendary, actionsUsed: 2 } } } };
@@ -333,7 +333,7 @@ describe("pips of a turn's other creatures (docs/design-v1-combat-controls.md 2.
   });
 });
 
-describe("a scene's copy (docs/design-v1-combat-controls.md 2.4)", () => {
+describe("a scene's copy (docs/design/design-v1-combat-controls.md 2.4)", () => {
   test("keeps counted uses and drops the turn's record, marks and damage types, so the copy's prompt is refused while the original's row acts", () => {
     const f = fight((s) => {
       const t = s.tokens.dragon!;

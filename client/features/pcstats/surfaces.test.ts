@@ -7,7 +7,7 @@ import { statBlockShown } from "../monsters/statBlockLink.ts";
 import { saveUnitsOf } from "../tokens/statSummary.ts";
 import { defenseLinesOf, partsText, pcDefenseLines } from "./reading.ts";
 
-/** Where a player character's stat block shows (docs/design-v1-pc-stats.md 7.3 and 7.4). */
+/** Where a player character's stat block shows (docs/design/design-v1-pc-stats.md 7.3 and 7.4). */
 
 const BLOCK: PcStats = { ...structuredClone(EMPTY_PC_STATS as PcStats), defenses: { poison: "immune", fire: "resistant", cold: "resistant", radiant: "vulnerable" } };
 

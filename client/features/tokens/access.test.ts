@@ -16,9 +16,9 @@ function fixture(): RoomState {
   state.tokens.pc = token("pc", { kind: "pc", name: "Hero", actor: { ref: "hero" }, ownerIds: [] });
   state.tokens.familiar = token("familiar", { kind: "npc", name: "Owl", ownerIds: ["p1"] });
   state.tokens.goblin = token("goblin");
-  // Hero's companion, played by whoever plays Hero (docs/design-v1-combat-flow.md 3.6.4).
+  // Hero's companion, played by whoever plays Hero (docs/design/design-v1-combat-flow.md 3.6.4).
   state.tokens.spirit = token("spirit", { kind: "npc", name: "Wildfire Spirit", ownerIds: ["p1"], companion: { of: "hero", turn: "shared" } });
-  // A stat block Hero keeps, which Hero's player may link to the spirit (docs/design-v1-companion-stat-blocks.md 4.1).
+  // A stat block Hero keeps, which Hero's player may link to the spirit (docs/design/design-v1-companion-stat-blocks.md 4.1).
   state.companionBlocks.b1 = companionBlock("b1", "hero");
   return state;
 }
@@ -123,7 +123,7 @@ describe("token access mirrors the server's permissions", () => {
     });
   }
 
-  test("resize mirrors the server's resize rule: the DM, or an owner of an unlocked token of the six sizes (docs/design-v1-token-window.md 8.6)", () => {
+  test("resize mirrors the server's resize rule: the DM, or an owner of an unlocked token of the six sizes (docs/design/design-v1-token-window.md 8.6)", () => {
     for (const variant of [{}, { locked: true }, { size: "custom" as const, w: 2, h: 3 }]) {
       const state = fixture();
       for (const id of ["pc", "familiar", "goblin", "spirit"]) state.tokens[id] = { ...state.tokens[id]!, ...variant };

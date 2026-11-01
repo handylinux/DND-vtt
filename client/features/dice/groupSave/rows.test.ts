@@ -9,7 +9,7 @@ import type { DiceView } from "../creature.ts";
 import { newPage, roll, type ServerRoll } from "./chain.ts";
 import { countWords, creatureCount, groupRows, rowBonus, rowResult, type RowState } from "./rows.ts";
 
-/** A group save's rows and their results (docs/design-v1-roll-options.md 5.2 and 5.3). */
+/** A group save's rows and their results (docs/design/design-v1-roll-options.md 5.2 and 5.3). */
 
 let monsters: readonly SrdMonster[] = [];
 let rolls: SrdRolls = {};

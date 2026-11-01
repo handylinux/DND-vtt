@@ -10,7 +10,7 @@ import { belowGround, belowGroundText } from "./ground.ts";
 const EMPTY = {};
 
 /**
- * "Inside the ground (10 ft below). Stand on it" (docs/design-v1-maps-vision.md
+ * "Inside the ground (10 ft below). Stand on it" (docs/design/design-v1-maps-vision.md
  * 4.2), on a token's action bar and its panel, for its owners and the DM.
  * Stand on it sets its elevation to the ground under it, which only those
  * who may change its elevation see.

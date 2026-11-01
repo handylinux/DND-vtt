@@ -3,7 +3,7 @@ import { FIRST_LAST_TOOL, lastToolAfter, tuckAfter, type TuckEvent } from "../pa
 import { scopeSlot, type RoomScope } from "./scope.ts";
 
 /**
- * The toolbar's own state for one Room page (docs/design-v1-tool-options.md
+ * The toolbar's own state for one Room page (docs/design/design-v1-tool-options.md
  * 5.2, 5.4): the last tool other than Select that this page made active,
  * which the pair's second button shows, and the tool whose options are
  * tucked. Never stored: a reload starts at the Ruler, untucked. Per page,
@@ -30,7 +30,7 @@ export function tuckEvent(scope: RoomScope, active: string, e: TuckEvent): void 
 }
 
 /**
- * What the tool's key last said (docs/design-v1-tool-cycle.md 4.3): "Area:
+ * What the tool's key last said (docs/design/design-v1-tool-cycle.md 4.3): "Area:
  * Sphere", or why the press held. A slot of its own, so a press re-renders
  * the status alone and not the Room page, which reads `toolbarSlot`. `key`
  * is new each time, so words that repeat are said again.

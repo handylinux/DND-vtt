@@ -11,7 +11,7 @@ import { TOP_DOWN, toView } from "../lib/view.ts";
 
 /**
  * A tap on empty map with the Select tool, the one tool without pointer
- * handlers (docs/design-v1-heights-readout.md section 2). Labels, doors and
+ * handlers (docs/design/design-v1-heights-readout.md section 2). Labels, doors and
  * the ground are drawn into the map, not shapes that catch a tap, so a tap
  * on one arrives here, and the first step that takes it ends it:
  *
@@ -24,14 +24,14 @@ import { TOP_DOWN, toView } from "../lib/view.ts";
  * A press held until the hold-to-ping fired (`held`, lib/gestures.ts) does
  * nothing at all: a hold that pings should neither let go of a token, hide
  * its bar nor open anything, a door's pill included
- * (docs/design-v1-bar-dock.md section 3). A tap a label or a door takes
+ * (docs/design/design-v1-bar-dock.md section 3). A tap a label or a door takes
  * still puts a readout away, as every tap on the map does. Any tap but one
  * on a pin puts a pin's popover away too (putAway).
  *
  * In Isometric `world` is where the press's ray meets the drawn ground
  * (lib/view.ts pickGround), and `screen` the press itself, which a label
  * standing up, a door's standing piece and a pin's marker are tested
- * against (docs/design-v1-isometric-view.md 6.2). Left out, it is where
+ * against (docs/design/design-v1-isometric-view.md 6.2). Left out, it is where
  * `world` shows in Top-down.
  */
 export function emptyTap(ctx: ToolContext, tool: string, world: Point, held: boolean, deselect: () => void, screen?: Point): void {

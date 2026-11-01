@@ -12,7 +12,7 @@ import { SQUARES } from "./rules/grid.ts";
 import { DM, chance, entry, env, int, pick, rng, template, token } from "./testutil.ts";
 
 /**
- * The property test of per-player vision (docs/design-v1-per-player-vision.md
+ * The property test of per-player vision (docs/design/design-v1-per-player-vision.md
  * section 10, lane PV1): random rooms of 1 to 8 players, per-player scenes
  * and whole-party ones, under random ops and their undo, with the server's
  * explore step after each, by the stub rules of perPlayerTestutil.ts. After
@@ -267,7 +267,7 @@ function run(seed: number, steps: number): { applied: number; perPlayer: number;
   return { applied, perPlayer, lists, copies, holders };
 }
 
-describe("per-player vision over random rooms (docs/design-v1-per-player-vision.md section 10)", () => {
+describe("per-player vision over random rooms (docs/design/design-v1-per-player-vision.md section 10)", () => {
   test("events, the oracle, route corners, marks, players' data and the switch hold after every batch", () => {
     withCellVision(() => {
       let applied = 0;
@@ -299,7 +299,7 @@ describe("per-player vision over random rooms (docs/design-v1-per-player-vision.
  * oracle, over random rooms with the DM's creatures set beside holders'
  * own sources (review SEC-PV1-3).
  */
-describe("the marks by the oracle (docs/design-v1-per-player-vision.md 6.5, review SEC-PV1-3)", () => {
+describe("the marks by the oracle (docs/design/design-v1-per-player-vision.md 6.5, review SEC-PV1-3)", () => {
   test("M1 and M2: a creature's, a row's and an area's lists name exactly the players the oracle finds", () => {
     withCellVision(() => {
       const counted = { creatures: 0, named: 0, partial: 0, rows: 0, rowsNamed: 0, areas: 0, areasNamed: 0 };

@@ -86,7 +86,7 @@ export type BoardSizes = {
 };
 
 /**
- * This device's interface size (features/device, docs/design-v1-dm-tools.md
+ * This device's interface size (features/device, docs/design/design-v1-dm-tools.md
  * 3.16). The names, chips and badges drawn on tokens grow and shrink with
  * the bars and panels, while the map and the tokens themselves keep the
  * zoom's size. A module value, not an argument, because every board

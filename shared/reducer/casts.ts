@@ -9,7 +9,7 @@ import { DAMAGE_TYPES, type DamageType } from "../rules/damage.ts";
 import { Refuse, invalid, type Tx } from "./tx.ts";
 
 /**
- * A player's asks for saves (docs/design-v1-player-save-spell.md 5.2 and
+ * A player's asks for saves (docs/design/design-v1-player-save-spell.md 5.2 and
  * 5.3). The player names their creature, its spell and what it targets,
  * and the DM's page fills the group save from the DM's own view of the
  * caster's stat block. Closing an ask removes it, and the log keeps its

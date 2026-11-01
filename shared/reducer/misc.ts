@@ -29,7 +29,7 @@ export function logWhisper(tx: Tx, op: OpOf<"log.whisper">): void {
  * Showing a handout again updates it in place, so a re-show is one upsert
  * and one log line. A handout of pages names its first page as `assetId`
  * too, written here so the two never drift, and a re-show as one image
- * drops the pages it had (docs/design-v1-pdf-handouts.md 3.3).
+ * drops the pages it had (docs/design/design-v1-pdf-handouts.md 3.3).
  */
 export function handoutShow(tx: Tx, op: OpOf<"handout.show">): void {
   const input = op.handout;
@@ -56,7 +56,7 @@ export function handoutClose(tx: Tx, op: OpOf<"handout.close">): void {
 
 /**
  * Saves a PDF as a document of pages in the DM's library, under the id the
- * upload chose before it began (docs/design-v1-pdf-handouts.md 3.3). An id in
+ * upload chose before it began (docs/design/design-v1-pdf-handouts.md 3.3). An id in
  * use is refused, so a create sent again after a lost answer never makes a
  * second document. Documents log nothing, as saved encounters do.
  */
@@ -124,7 +124,7 @@ export function restore(tx: Tx, op: OpOf<"sys.restore">): void {
     }
     tx.write(entry.key, value);
   }
-  // A scene a restore takes away takes the party's explored layer with it, as bookkeeping (docs/design-v1-maps-vision.md
+  // A scene a restore takes away takes the party's explored layer with it, as bookkeeping (docs/design/design-v1-maps-vision.md
   // 4.3.3): it is no one's work, so it never counts as work that depends on the scene.
   for (const p of removed) if (p.kind === "scene" && !tx.state.scenes[p.id]) forgetExplored(tx, p.id);
   shapesHold(tx, op, before);
@@ -143,7 +143,7 @@ export function restore(tx: Tx, op: OpOf<"sys.restore">): void {
 }
 
 /**
- * The shape's invariant on a restore (docs/design-v1-hex-grids.md HX-D14),
+ * The shape's invariant on a restore (docs/design/design-v1-hex-grids.md HX-D14),
  * refused in the switch's words. Each value written onto a scene passes
  * the stamp check, which runs only when the value holds grid-keyed
  * content, and the phase check, which keeps from a hex scene what its
@@ -202,7 +202,7 @@ function placedOn(
 /**
  * A restore writes saved values, so it could bring back a row for a
  * companion that now acts on its character's turn, or owners a companion's
- * character no longer has (docs/design-v1-combat-flow.md 3.6.4 and 3.6.8).
+ * character no longer has (docs/design/design-v1-combat-flow.md 3.6.4 and 3.6.8).
  * The row is refused: the undo of the companion's own change puts its row
  * back with its turn, which passes. The owners are reconciled rather than
  * refused, so an undo is never blocked by a companion: each companion of a
@@ -236,7 +236,7 @@ function companionsAfterRestore(tx: Tx, entries: RestoreEntry[]): void {
 
 /**
  * A player's undo of a Get off, or redo of a mounting, puts the mount back
- * on the turn's list (docs/design-v1-attach.md 8.3): only for the turn the
+ * on the turn's list (docs/design/design-v1-attach.md 8.3): only for the turn the
  * step was made on, the same seq, and only while the restored ride is the
  * one it names, a mount the turn's creature rides by controlled rides that
  * hold, up the whole chain as the turn's start lists them, on an acting row
@@ -326,7 +326,7 @@ export function restoreReferenceConflicts(state: RoomState, entries: readonly Re
  *
  * A player's undo and redo of a move pass these checks too, since every
  * restore the server builds sets `deps`, and never trip them on a link
- * (docs/design-v1-attach.md 8.0 and 8.3). Such a restore writes only poses
+ * (docs/design/design-v1-attach.md 8.0 and 8.3). Such a restore writes only poses
  * and takes no token away, so the scans for work that depends on it never
  * run, and it puts a link back only to a holder that still exists
  * (server/rooms/undo.ts putBack) or keeps the one the token has now. So a
@@ -364,12 +364,12 @@ function checkReferences(tx: Tx, entries: RestoreEntry[], before: Map<EntityKey,
       throw invalid(DEPENDED_ON);
     }
   }
-  // A pin never names a page that is gone (docs/design-v1-dm-tools.md 3.8).
+  // A pin never names a page that is gone (docs/design/design-v1-dm-tools.md 3.8).
   const pages = new Set(removed.flatMap((p) => (p.kind === "journal" ? [p.id] : [])));
   if (pages.size > 0 && Object.values(s.pins).some((pin) => pin.pageId !== undefined && pages.has(pin.pageId))) throw invalid(DEPENDED_ON);
   if (characters.size > 0) {
-    // A companion uses its character as a character token does (docs/design-v1-combat-flow.md 3.6.4), and so does a stat
-    // block the character keeps (docs/design-v1-companion-stat-blocks.md 3.3).
+    // A companion uses its character as a character token does (docs/design/design-v1-combat-flow.md 3.6.4), and so does a stat
+    // block the character keeps (docs/design/design-v1-companion-stat-blocks.md 3.3).
     const tokenUses = Object.values(s.tokens).some((t) => ("ref" in t.actor && characters.has(t.actor.ref)) || (t.companion !== undefined && characters.has(t.companion.of)));
     const entryUses = s.encounter?.entries.some((e) => e.characterId !== undefined && characters.has(e.characterId)) ?? false;
     const blockUses = Object.values(s.companionBlocks).some((b) => characters.has(b.characterId));
@@ -379,7 +379,7 @@ function checkReferences(tx: Tx, entries: RestoreEntry[], before: Map<EntityKey,
     const named = (id: string | undefined) => id !== undefined && tokens.has(id);
     const entryUses = s.encounter?.entries.some((e) => named(e.tokenId)) ?? false;
     const templateUses = Object.values(s.templates).some((t) => named(t.attachedTo) || named(t.casterId));
-    // A token another one is attached to holds it (docs/design-v1-attach.md 8.3).
+    // A token another one is attached to holds it (docs/design/design-v1-attach.md 8.3).
     const tokenUses = Object.values(s.tokens).some((t) => named(t.attached?.to));
     if (entryUses || templateUses || tokenUses) throw invalid(DEPENDED_ON);
   }
@@ -466,7 +466,7 @@ export function guardMatches(entry: RestoreEntry, current: unknown): boolean {
  * rules caches are keyed on it, and a version they saw before with other
  * walls would serve those. So it keeps the higher of the restored and the
  * current version, one more when the same restore moves walls, a change of
- * the scene's automatic walls included (docs/design-v1-maps-vision.md 2.1).
+ * the scene's automatic walls included (docs/design/design-v1-maps-vision.md 2.1).
  * The scene is written once either way, so its rev moves exactly as it did
  * when stored restores were first applied.
  */

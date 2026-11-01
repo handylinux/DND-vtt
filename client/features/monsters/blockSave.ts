@@ -6,7 +6,7 @@ import { blockSaveOutcome, monsterPatch } from "./draft.ts";
 
 /**
  * The save of one open companion stat block editor
- * (docs/design-v1-companion-stat-blocks.md 6.2), kept free of React so a
+ * (docs/design/design-v1-companion-stat-blocks.md 6.2), kept free of React so a
  * test can run it through many orders of answers, lost answers, snapshots
  * and edits from elsewhere (blockSave.test.ts).
  *

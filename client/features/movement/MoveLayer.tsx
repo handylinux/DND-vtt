@@ -13,7 +13,7 @@ import { holdLabel, type Point } from "./drop.ts";
 import { holdSlot, stopNoteSlot } from "./store.ts";
 
 /**
- * Walls and ledges on the overlay layer (docs/design-v1-maps-vision.md
+ * Walls and ledges on the overlay layer (docs/design/design-v1-maps-vision.md
  * 4.1): while a drag is held at a wall or a ledge, a red outline round the
  * spot it stays on and a label naming what is in the way, and after a
  * stopped drop, a faint ghost of the token where the player dropped it.
@@ -22,7 +22,7 @@ import { holdSlot, stopNoteSlot } from "./store.ts";
  *
  * In Isometric both draw in the drag layer on the ground at the drawn
  * height under the token, the label standing over the ring
- * (docs/design-v1-isometric-view.md 5.3).
+ * (docs/design/design-v1-isometric-view.md 5.3).
  *
  * The DM's teleport toasts (toasts.ts) run as one of the board's
  * controllers, mounted once whichever view shows.

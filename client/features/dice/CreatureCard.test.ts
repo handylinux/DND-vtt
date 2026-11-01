@@ -9,7 +9,7 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const { CARD_PICTURES, CreatureCard, DICE_CARD } = await import("./CreatureCard.tsx");
 
 /*
- * The creature card's frame and header (docs/design-v1-dice-pass.md 5),
+ * The creature card's frame and header (docs/design/design-v1-dice-pass.md 5),
  * drawn from props alone, so it renders here with no Room around it.
  */
 

@@ -43,7 +43,7 @@ const spirit: CompanionDraft = { ...NEW_COMPANION, name: " Wildfire Spirit ", hp
 const weapon: CompanionDraft = { ...NEW_COMPANION, name: "Spiritual Weapon", what: "effect", turn: "none" };
 const at = { id: "ws", sceneId: "s1", x: 6, y: 5, elevation: 10 };
 
-describe("the companion form (docs/design-v1-combat-flow.md 3.6.3)", () => {
+describe("the companion form (docs/design/design-v1-combat-flow.md 3.6.3)", () => {
   test("a creature is an NPC with full HP, an effect an object with 0 of 0 HP and AC 0, both allies on the creatures layer, owned as the character, at its elevation", () => {
     const creature = companionInput(spirit, at, bree().characters.bree!);
     assert.equal(creature.kind, "npc");
@@ -164,7 +164,7 @@ describe("the links the panel sends", () => {
   });
 });
 
-describe("adding a companion from a stat block (docs/design-v1-companion-stat-blocks.md 5.6, 6.3)", () => {
+describe("adding a companion from a stat block (docs/design/design-v1-companion-stat-blocks.md 5.6, 6.3)", () => {
   const SRD = JSON.parse(readFileSync(new URL("../../../shared/srd/monsters.json", import.meta.url), "utf8")) as SrdMonster[];
   const owlView = SRD.find((m) => m.srdId === "owl")!;
   const owl: ChosenBlock = { link: { srdId: "owl" }, view: owlView, source: "srd" };
@@ -225,7 +225,7 @@ describe("adding a companion from a stat block (docs/design-v1-companion-stat-bl
   });
 });
 
-describe("an own-turn companion made mid-fight joins it (docs/design-v1-combat-flow.md 3.6.2)", () => {
+describe("an own-turn companion made mid-fight joins it (docs/design/design-v1-combat-flow.md 3.6.2)", () => {
   const owl: CompanionDraft = { ...NEW_COMPANION, name: "Hoot", hp: 1, ac: 11, turn: "own", turnPicked: true };
   const p1 = { memberId: "p1", role: "player" as const };
 
@@ -270,7 +270,7 @@ describe("an own-turn companion made mid-fight joins it (docs/design-v1-combat-f
   });
 });
 
-describe("where a player's companion goes on a hex scene (docs/design-v1-hex-grids.md 4.2)", () => {
+describe("where a player's companion goes on a hex scene (docs/design/design-v1-hex-grids.md 4.2)", () => {
   for (const orient of ["rows", "columns"] as const) {
     test(`${orient}: a hex next to the character, 5 ft away, which the server takes, and none once the six around it are taken`, () => {
       const state = bree();

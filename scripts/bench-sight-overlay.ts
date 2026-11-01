@@ -1,5 +1,5 @@
 /**
- * Part 4E's row for the wave 4 gate (docs/design-v1-maps-vision.md 4.3.6):
+ * Part 4E's row for the wave 4 gate (docs/design/design-v1-maps-vision.md 4.3.6):
  * "Applying changed sight tiles and redrawing the overlay", phone, 4 ms.
  * This times the applying half in Node: decoding the changed tiles and
  * writing their levels into the scene's pixels

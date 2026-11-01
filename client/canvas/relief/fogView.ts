@@ -34,7 +34,7 @@ function unionOf(a: FogTile, b: FogTile): Uint8Array | null {
 export type CellBox = { x0: number; y0: number; x1: number; y1: number };
 
 /**
- * What one viewer's fog reveals, sub-cell by sub-cell (docs/design-v1-isometric-view.md
+ * What one viewer's fog reveals, sub-cell by sub-cell (docs/design/design-v1-isometric-view.md
  * 5.2). `tiles` null is a viewer who sees all the ground: the DM, or anyone
  * on a scene without fog. Everything fails closed as the fog image does
  * (lib/fogTiles.ts): a sub-cell past the scene's edge, in a missing tile or

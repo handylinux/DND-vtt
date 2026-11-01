@@ -356,7 +356,7 @@ function randomEdit(r: () => number, state: RoomState, id: string): Op {
   }
 }
 
-describe("companions under undo (docs/design-v1-combat-flow.md 3.6.4 and 3.6.8)", () => {
+describe("companions under undo (docs/design/design-v1-combat-flow.md 3.6.4 and 3.6.8)", () => {
   const DM: Viewer = { memberId: "dmA", role: "dm" };
   const CY: Viewer = { memberId: "p2", role: "player" };
   function breeRoom(): RoomState {
@@ -448,7 +448,7 @@ describe("companions under undo (docs/design-v1-combat-flow.md 3.6.4 and 3.6.8)"
   });
 });
 
-describe("undoing companion stat blocks (docs/design-v1-companion-stat-blocks.md 3.3)", () => {
+describe("undoing companion stat blocks (docs/design/design-v1-companion-stat-blocks.md 3.3)", () => {
   function bree(): RoomState {
     const state = twoDms();
     state.characters.bree = character("bree", { name: "Bree", ownerIds: ["p1"] });

@@ -5,7 +5,7 @@ import { EMPTY_PC_STATS } from "../rules/pcStats.ts";
 import { actor, character, token } from "../testutil.ts";
 import { bonusFor, creatureBonus, creatureNumbers, pcRollNumbers, type RollSources } from "./bonus.ts";
 
-/** A character's numbers from its stat block through doc 1's bonus (docs/design-v1-pc-stats.md 5). */
+/** A character's numbers from its stat block through doc 1's bonus (docs/design/design-v1-pc-stats.md 5). */
 const BLOCK: PcStats = {
   ...structuredClone(EMPTY_PC_STATS as PcStats),
   abilities: { str: 8, dex: 16, con: 12, int: 10, wis: 14, cha: 10 },

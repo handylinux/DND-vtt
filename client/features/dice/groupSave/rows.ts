@@ -9,7 +9,7 @@ import { creatureRolls, type DiceView } from "../creature.ts";
 import { presetFor } from "../presets.ts";
 
 /**
- * A group save's rows (docs/design-v1-roll-options.md 5.2 and 5.3): one per
+ * A group save's rows (docs/design/design-v1-roll-options.md 5.2 and 5.3): one per
  * creature, each holder once, with its way of rolling, and its result by
  * one precedence, read from what the page holds.
  */

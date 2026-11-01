@@ -9,12 +9,12 @@ import { chromium, type Browser, type BrowserContext, type CDPSession, type Loca
 import { ConsoleWatch, openSceneGroup, openSideTab, OpSocket, pagePoint, pickTool, readCamera, sceneGroup, sceneGroupFold, Shots, sideTabName, SocketWatch, startServer, Touches, waitFor, wholeInReach, type Server } from "./harness.ts";
 
 /**
- * Layout and hierarchy (docs/design-v1-layout-hierarchy.md section 10):
+ * Layout and hierarchy (docs/design/design-v1-layout-hierarchy.md section 10):
  *
  * 1. On a short screen held sideways the tool's options stand in the
  *    toolbar's own row, beside the whole toolbar or Select and the last
  *    tool, on one line, and take none of the map's height
- *    (docs/design-v1-tool-options.md 4, which replaced the rail).
+ *    (docs/design/design-v1-tool-options.md 4, which replaced the rail).
  * 2. Everywhere else they stack on the toolbar or float above it, and a
  *    rotation keeps the same element.
  * 3. The alerts column, its summary row, "Viewing as Pat" and a player's
@@ -330,7 +330,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
 
     const cookie = (await deskContext.cookies(server.origin)).map((c) => `${c.name}=${c.value}`).join("; ");
     ops = await OpSocket.open({ origin: server.origin, roomId: run.roomId, cookie });
-    // Pat's order holds the Hag before its turn, so the very short sheet scrolls an order of three as before (docs/design-v1-combat-flow.md 11).
+    // Pat's order holds the Hag before its turn, so the very short sheet scrolls an order of three as before (docs/design/design-v1-combat-flow.md 11).
     await ops.send({ t: "room.update", settings: { playersSeeOrder: "all" } });
     await ops.send({ t: "character.create", character: { id: run.thorn.characterId, name: "Thorn", size: "medium", ownerIds: [run.patId], actor: actor(24) } });
     const token = (id: string, extra: Record<string, unknown>) => ({ t: "token.create", token: { id, sceneId: run.sceneId, size: "medium", visibility: "all", ...extra } });
@@ -379,7 +379,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
     await ops.send({ t: "journal.update", pageId: run.lore, patch: { blocks: [{ id: randomUUID().replace(/-/g, "").slice(0, 12), text }] } });
   }
 
-  // ------------------------------------------------ where the tool's options stand (cases 1, 2 and 4, docs/design-v1-tool-options.md 4)
+  // ------------------------------------------------ where the tool's options stand (cases 1, 2 and 4, docs/design/design-v1-tool-options.md 4)
 
   const TOOLS = { dm: ["Ruler", "Area", "Draw", "Ping", "Fog", "Map builder", "Line up grid", "Add token", "Pin", "Trap"], player: ["Ruler", "Area", "Draw", "Ping"] } as const;
   /**
@@ -527,7 +527,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
   /*
    * Case 3. With the Area tool the token bar never shows, so the column
    * shares the right with nothing but notices. Its cards and its summary
-   * row stop above the tool's row and its line (docs/design-v1-tool-options.md 10.3).
+   * row stop above the tool's row and its line (docs/design/design-v1-tool-options.md 10.3).
    */
   for (const size of [
     { width: 844, height: 390, insets: { side: 47, bottom: 21 } },
@@ -582,7 +582,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
       // A notice that lasts spans the map or stands beside the lane, and the tool's controls stay in reach under it.
       await pickTool(phone, "Select");
       await openPanel(phone, "Scenes");
-      // A phone starts the Size and view group folded (docs/design-v1-map-discovery.md 8.4).
+      // A phone starts the Size and view group folded (docs/design/design-v1-map-discovery.md 8.4).
       await (await openSceneGroup(sheet(phone, "Scenes"), "Size and view")).getByRole("button", { name: "Save current view" }).tap();
       const framing = phone.getByRole("group", { name: "Starting view" });
       await framing.waitFor();
@@ -607,7 +607,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
     await waitFor("the card or the row that stands for it", async () => ((await card.isVisible()) || (await row.isVisible()) ? true : null));
     const below = await foot(player, "Area");
     if (await card.isVisible()) {
-      // At the foot it stands on the row and the line (docs/design-v1-tool-options.md 10.3).
+      // At the foot it stands on the row and the line (docs/design/design-v1-tool-options.md 10.3).
       const cardBox = await box(card);
       assert.ok(cardBox.y + cardBox.height <= (below.line ?? below.row) + 0.5, `the roll card's foot at ${cardBox.y + cardBox.height} stands over the tool's line at ${below.line ?? below.row}`);
       assert.ok(Math.abs(cardBox.x) <= 0.5, "the roll card starts at the left edge");
@@ -856,7 +856,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
           inside: li.getBoundingClientRect().right <= body.getBoundingClientRect().right + 0.5,
         };
       });
-      // The body's own width inside its padding: the very short sheet's 241 px (docs/design-v1-layout-hierarchy.md 4.2) and the padding's 32.
+      // The body's own width inside its padding: the very short sheet's 241 px (docs/design/design-v1-layout-hierarchy.md 4.2) and the padding's 32.
       assert.ok(Math.abs(fit.inner - 32 - 241) <= 3, `the body is ${fit.inner - 32} px inside its padding`);
       assert.deepEqual({ lineOverflows: fit.lineOverflows, textOverflows: fit.textOverflows, bodyScrolls: fit.bodyScrolls, inside: fit.inside }, { lineOverflows: false, textOverflows: false, bodyScrolls: false, inside: true });
       await shots.take(phone, "layout-very-short-480x320-130-log-long-name");
@@ -913,7 +913,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
     const dialog = modal(phone);
     await dialog.getByRole("button", { name: "Close Initiative" }).tap();
     await dialog.waitFor({ state: "detached" });
-    // Here the compact token bar covers the toolbar (docs/design-v1-bar-dock.md 1.4): the turn strip opens Initiative and leaves the bar as it is.
+    // Here the compact token bar covers the toolbar (docs/design/design-v1-bar-dock.md 1.4): the turn strip opens Initiative and leaves the bar as it is.
     const bar = await selectToken(phone, phoneSocket, run.goblin.id, "Goblin 1");
     await ops.send({ t: "actor.hp", target: { tokenId: run.hag.id }, change: { kind: "damage", amount: 1 } });
     await phone.locator('[data-alert="concentration"]').first().waitFor({ state: "attached" });
@@ -1217,7 +1217,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
     await ac.fill("15");
     await ac.press("Enter");
     await waitFor("the Armor Class put back", async () => (acOf() === 15 ? true : null));
-    // Kept through a change of mode, a draft is saved when a fold closes over it (docs/design-v1-token-panel.md 3.5).
+    // Kept through a change of mode, a draft is saved when a fold closes over it (docs/design/design-v1-token-panel.md 3.5).
     await ac.fill("1");
     await view(phone, phoneCdp, short, insets);
     await modal("Token", true);
@@ -1350,7 +1350,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
       await region.getByRole("button", { name: "Close Panels" }).tap();
       return items;
     };
-    // Dice comes before Log among the panels (docs/design-v1-dice.md 8.1).
+    // Dice comes before Log among the panels (docs/design/design-v1-dice.md 8.1).
     assert.deepEqual(await list(phone), ["# In play", "Token", "Initiative", "Party", "Dice", "Log", "Journal", "Areas", "DM", "Scenes", "# Prepare", "Monsters", "Encounters", "Characters", "Outliner", "Library", "---", "Menu"]);
     assert.deepEqual(await list(player), ["Token", "Initiative", "Dice", "Log", "Journal", "Areas", "Characters", "Library", "Menu"]);
   });
@@ -1430,7 +1430,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
   test("5. at a computer, Hide panels and Panels hide and show the side panel, and focus follows", async () => {
     const side = sidePanel(desk);
     const map = desk.locator(".konvajs-content").first();
-    // The Dice tab took the Log's place in the row, so the Log may stand behind More (docs/design-v1-dice.md 8.1).
+    // The Dice tab took the Log's place in the row, so the Log may stand behind More (docs/design/design-v1-dice.md 8.1).
     await openSideTab(desk, "Log");
     await desk.getByLabel("Message", { exact: true }).fill("Half a thought");
     const before = (await box(map)).width;
@@ -1514,7 +1514,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
     for (const name of ["Select", "Ruler"]) assert.match((await toolbar(phone).getByRole("button", { name, exact: true }).textContent()) ?? "", new RegExp(name));
     assert.match((await toolbar(phone).getByRole("button", { name: "Panels" }).textContent()) ?? "", /Panels/);
     await pickTool(phone, "Ruler");
-    // The DM's ten tools leave the row 117 px, so the toolbar shows Select and the last tool (docs/design-v1-tool-options.md 4.3).
+    // The DM's ten tools leave the row 117 px, so the toolbar shows Select and the last tool (docs/design/design-v1-tool-options.md 4.3).
     assert.equal(await options(phone, "Ruler").getAttribute("data-rvtt-arrangement"), "pair");
     await shots.take(phone, "layout-932x430-hidden-pair");
 
@@ -1530,7 +1530,7 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
       return { header: parseFloat(w.getComputedStyle(header).paddingRight), toolbar: parseFloat(w.getComputedStyle(nav).paddingRight), left: parseFloat(w.getComputedStyle(header).paddingLeft) };
     });
     assert.deepEqual(pads, { header: 12, toolbar: 4, left: 59 + 12 });
-    // One row of tabs that does not scroll: Token, Initiative and Dice as their icons, then More (docs/design-v1-panel-tabs.md 9.1, docs/design-v1-icons-2.md 3.1).
+    // One row of tabs that does not scroll: Token, Initiative and Dice as their icons, then More (docs/design/design-v1-panel-tabs.md 9.1, docs/design/design-v1-icons-2.md 3.1).
     const tablist = phone.getByRole("tablist", { name: "Panels" });
     const row = await tablist.evaluate((el) => {
       const e = el as unknown as DomEl;
@@ -1639,14 +1639,14 @@ describe("raccoon-vtt: layout and hierarchy", { timeout: 1_200_000 }, () => {
 
 describe("raccoon-vtt: the handout viewer and the Library (case 8)", () => {
   /**
-   * The handout viewer and the DM's Library (docs/design-v1-layout-hierarchy.md
+   * The handout viewer and the DM's Library (docs/design/design-v1-layout-hierarchy.md
    * section 5, move M6, and section 10 e2e case 8). A player's popup on a
    * computer opens as a card and grows to the window on the first zoom step,
    * by the wheel, a button or a key, and Zoom out or Reset zoom takes it back.
    * Expand grows it without a zoom. A sideways phone shows it whole-screen
    * from the start. On a touch tablet a pinch keeps the card's size until the
    * fingers lift. A tap on any image the Library lists opens it in the same
-   * viewer, its details in the header (docs/design-v1-pdf-handouts.md 8.4).
+   * viewer, its details in the header (docs/design/design-v1-pdf-handouts.md 8.4).
    */
 
   let dmContext: BrowserContext;
@@ -2101,7 +2101,7 @@ describe("raccoon-vtt: the handout viewer and the Library (case 8)", () => {
       );
       await shot(dm, "library-dm-order");
 
-      // A tap on a handout's tile opens the viewer at once, under the title of the handout showing it (docs/design-v1-pdf-handouts.md 8.4).
+      // A tap on a handout's tile opens the viewer at once, under the title of the handout showing it (docs/design/design-v1-pdf-handouts.md 8.4).
       const library = dm.getByRole("tabpanel", { name: "Library" });
       const tile = handouts.getByRole("button", { name: "Handout", exact: true });
       await shot(dm, "library-dm-handout-tile");
@@ -2204,14 +2204,14 @@ describe("raccoon-vtt: the handout viewer and the Library (case 8)", () => {
 describe("raccoon-vtt: the moves in the DM panel, Scenes, Members, Characters and the party bar (case 9)", () => {
   /**
    * The hierarchy pass's moves M4, M5, M7, M8 and M9
-   * (docs/design-v1-layout-hierarchy.md 6.3, e2e case 9), for a DM at a
+   * (docs/design/design-v1-layout-hierarchy.md 6.3, e2e case 9), for a DM at a
    * computer with the side panel, then on a phone:
    *
    * - M4: the DM panel leads with Handouts, then Players' screens, Check
    *   their view, the player link and the table display. Away from the
    *   players' scene, its notice leads Players' screens.
    * - M5, regrouped by the map discovery work (ms2-1,
-   *   docs/design-v1-map-discovery.md 8.4, docs/design-v1-design-pass.md
+   *   docs/design/design-v1-map-discovery.md 8.4, docs/design/design-v1-design-pass.md
    *   4.1): the scene's name under This scene, then What players see, Map
    *   image and grid with the map image first and Map phases after it,
    *   Walls and movement and Size and view, each a fold that stays as the
@@ -2464,7 +2464,7 @@ describe("raccoon-vtt: the moves in the DM panel, Scenes, Members, Characters an
     test("4. ms2-1: the scene's settings are its name under This scene, then What players see, Map image and grid, Walls and movement and Size and view, each a fold the device remembers, then Export as image and Delete", async () => {
       let panel = await sideTab(dm, "Scenes");
       const groups = ["What players see", "Map image and grid", "Walls and movement", "Size and view"];
-      // docs/design-v1-map-discovery.md 8.4 and docs/design-v1-design-pass.md 4.1: the name first, under This scene, then the groups and the two sections after them.
+      // docs/design/design-v1-map-discovery.md 8.4 and docs/design/design-v1-design-pass.md 4.1: the name first, under This scene, then the groups and the two sections after them.
       const name = panel.getByRole("textbox", { name: "Scene name" }).last();
       await name.waitFor();
       assert.equal(await name.evaluate((el) => (el as unknown as El).closest("section")?.querySelectorAll("h2, h3, h4")[0]?.textContent), "This scene", "the name is under its own label, apart from New scene");
@@ -2645,7 +2645,7 @@ describe("raccoon-vtt: the moves in the DM panel, Scenes, Members, Characters an
       await sheet.getByRole("button", { name: "Close DM" }).click();
 
       sheet = await phoneSheet(phone, "Scenes");
-      // A phone starts every group but What players see folded (docs/design-v1-map-discovery.md 8.4).
+      // A phone starts every group but What players see folded (docs/design/design-v1-map-discovery.md 8.4).
       for (const [group, open] of [["What players see", "true"], ["Map image and grid", "false"], ["Walls and movement", "false"], ["Size and view", "false"]] as const) {
         assert.equal(await sceneGroupFold(sheet, group).getAttribute("aria-expanded"), open, `${group} on a phone`);
       }

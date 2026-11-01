@@ -18,7 +18,7 @@ import { entryName } from "./logic.ts";
 
 /**
  * The fight alerts' cards that roll a save after the fact
- * (docs/design-v1-roll-options.md 6.1, 6.2 and 6.4), free of React so
+ * (docs/design/design-v1-roll-options.md 6.1, 6.2 and 6.4), free of React so
  * node --test covers them: which cards show, the buttons each offers, what
  * each button sends and the words. The save-ends cards are the DM's, read
  * from the effects alone (shared/rules/saveEnds.ts), so a reload brings
@@ -158,7 +158,7 @@ const CHANGE_WORDS: Record<RollChange["reason"], string> = {
 /**
  * A player's pending ask to change a fail, as doc 4's live card names it:
  * "Bree asks to reroll (Heroic Inspiration).". Allow and Keep are doc 4's
- * (docs/design-v1-roll-request.md 1.1), and Accept failure settles the ask
+ * (docs/design/design-v1-roll-request.md 1.1), and Accept failure settles the ask
  * as Keep.
  */
 export function changeWords(name: string, change: RollChange): string {

@@ -8,7 +8,7 @@ import { chromium, type Browser, type BrowserContext, type CDPSession, type Loca
 import { barControl, ConsoleWatch, openSideTab, OpSocket, pickTool, Shots, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
 
 /**
- * Companion stat blocks end to end (docs/design-v1-companion-stat-blocks.md
+ * Companion stat blocks end to end (docs/design/design-v1-companion-stat-blocks.md
  * section 10): a player's companion added from the SRD's owl, a block
  * pasted from a book into the character's stat blocks, attaching with the
  * numbers step and its size through the token window's resize, Change and
@@ -217,7 +217,7 @@ async function openCard(page: Page, characterId: string): Promise<void> {
   await blocks.waitFor();
 }
 
-/** Leaves the add form, whose block or fields were changed, by its Cancel and then Discard changes? (docs/design-v1-look-pass.md 3.1). */
+/** Leaves the add form, whose block or fields were changed, by its Cancel and then Discard changes? (docs/design/design-v1-look-pass.md 3.1). */
 async function discardForm(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Cancel", exact: true }).last().click();
   // The header's Back asks the same question: the form's own button is the last.
@@ -1351,7 +1351,7 @@ describe("raccoon-vtt companion stat blocks", { timeout: 900_000 }, () => {
     for (const c of made) await ops.send({ t: "character.delete", characterId: c.id });
   });
 
-  test("s2-co-a. in a fight, the Owl sharing Bree's turn holds a Reaction of its own in its Token panel's Combat, for the DM and for Ana, who marks it used without touching Bree's; it lines up at 320 x 568 and 390 x 844 at 130% and 1280 x 800 (docs/design-v1-token-sections.md 3.2)", async () => {
+  test("s2-co-a. in a fight, the Owl sharing Bree's turn holds a Reaction of its own in its Token panel's Combat, for the DM and for Ana, who marks it used without touching Bree's; it lines up at 320 x 568 and 390 x 844 at 130% and 1280 x 800 (docs/design/design-v1-token-sections.md 3.2)", async () => {
     const owl = companionOf("Owl")!;
     assert.equal(owl.companion?.turn, "shared");
     await ops.send({ t: "encounter.start", entries: [{ id: "e-bree-s2", tokenId: run.bree.tokenId, value: 15 }] });

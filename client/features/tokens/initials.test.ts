@@ -8,7 +8,7 @@ import { initials } from "../../lib/tokenView.ts";
  * The board and the tracker draw a token's initials with lib/tokenView.ts
  * initials(): "AR" for Aria Rose, "GW" for a Goblin Warrior. The Characters
  * and Monsters panels drew the first two letters instead ("Ar", "Go"), so
- * one creature wore two labels (docs/design-v1-visual.md F12). These render
+ * one creature wore two labels (docs/design/design-v1-visual.md F12). These render
  * the panels' disks and check every panel file asks the one function.
  */
 

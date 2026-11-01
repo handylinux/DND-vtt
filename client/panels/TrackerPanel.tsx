@@ -81,7 +81,7 @@ export default function TrackerPanel(props: PanelProps) {
     );
   }
 
-  // Ranked by use (docs/design-v1-combat-flow.md 3.2): the order under its sticky header, then what sets the order up, then the rest.
+  // Ranked by use (docs/design/design-v1-combat-flow.md 3.2): the order under its sticky header, then what sets the order up, then the rest.
   return (
     <Stack>
       <RoundSection>{dm && editingValues ? <ValueEntryFromView onDone={() => setEditingValues(false)} /> : <EntryList close={props.close} />}</RoundSection>
@@ -128,7 +128,7 @@ const STANDARD_ROW_GUESS = 56 + 2 * theme.line.border;
 
 /**
  * The round section: the turn controls as its header, then the order
- * (docs/design-v1-combat-flow.md 3.1). The header sticks to the top of the
+ * (docs/design/design-v1-combat-flow.md 3.1). The header sticks to the top of the
  * pane while the order scrolls under it. A sticky box never leaves its
  * parent, so once the order's end scrolls past, the header leaves with it,
  * with no script. The section is a plain block, since a sticky grid item
@@ -674,7 +674,7 @@ function JoinFailed(props: { candidates: Record<AddMode, Token[]>; stateOf(token
  * What the DM uses to set the order up, right after it: Auto initiative
  * with the card of what it rolled under its button, where the DM just
  * pressed, then the other ways to set values, then Add to the fight
- * (docs/design-v1-combat-flow.md 3.2).
+ * (docs/design/design-v1-combat-flow.md 3.2).
  */
 function DmSetup(props: { selectedTokenId: string | null; editingValues: boolean; onEditValues(): void }) {
   const actions = useRoomActions();

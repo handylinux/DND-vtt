@@ -4,7 +4,7 @@ import { describe, test } from "node:test";
 import { clientFiles, stripComments, type SourceFile } from "../../../../scripts/style-drift.ts";
 
 /**
- * The dice chunk's lazy boundary (docs/design-v1-roll-animation.md 6),
+ * The dice chunk's lazy boundary (docs/design/design-v1-roll-animation.md 6),
  * read from the source as uiPassScan.test.ts reads it. three.js hardly
  * tree-shakes, so one stray import would put all of it in the Dice
  * panel's chunk, which every member preloads. Only the stage and the

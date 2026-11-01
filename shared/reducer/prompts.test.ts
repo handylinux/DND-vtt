@@ -10,7 +10,7 @@ import { hpUndoRestore } from "./hpUndo.ts";
 import { rechargeLabel } from "./uses.ts";
 
 /**
- * A turn's prompts (docs/design-v1-combat-controls.md 2.3 and 4): each is
+ * A turn's prompts (docs/design/design-v1-combat-controls.md 2.3 and 4): each is
  * the occurrence of its record and its name, settled once by the first
  * roll, Apply or Skip from any surface, with its result kept, and refused
  * once settled or once its turn is over, before any die is drawn.
@@ -91,7 +91,7 @@ const deathRoll = (record?: number): DiceOp => ({ t: "actor.deathRoll", tag: `d$
 const recharge = (tokenId: string, record?: number, tag = "r1"): DiceOp => ({ t: "actor.rechargeRoll", tag, target: { tokenId }, key: "actions:fire-breath", name: "Fire Breath", min: 5, ...(record !== undefined ? { record } : {}) });
 const skip = (tokenId: string, record: number, what: string, state: "skipped" | "open" = "skipped"): Op => ({ t: "actor.prompt", target: { tokenId }, record, what, state });
 
-describe("a death save prompt (docs/design-v1-combat-controls.md 4.4)", () => {
+describe("a death save prompt (docs/design/design-v1-combat-controls.md 4.4)", () => {
   test("the first roll anywhere settles it with its total and outcome, and a second is refused before its die", () => {
     const f = fight().run({ t: "encounter.next" }).run({ t: "encounter.next" });
     const record = f.record("thorn");
@@ -159,7 +159,7 @@ describe("a death save prompt (docs/design-v1-combat-controls.md 4.4)", () => {
   });
 });
 
-describe("Skip and Reopen (docs/design-v1-combat-controls.md 4.1)", () => {
+describe("Skip and Reopen (docs/design/design-v1-combat-controls.md 4.1)", () => {
   test("the DM and whoever answers for the creature skip a prompt for everyone, reopen it while its turn runs, and never reopen a done one", () => {
     const f = fight().run({ t: "encounter.next" }).run({ t: "encounter.next" });
     const record = f.record("thorn");
@@ -183,7 +183,7 @@ describe("Skip and Reopen (docs/design-v1-combat-controls.md 4.1)", () => {
   });
 });
 
-describe("a recharge prompt (docs/design-v1-combat-controls.md 4.5)", () => {
+describe("a recharge prompt (docs/design/design-v1-combat-controls.md 4.5)", () => {
   test("a roll of its range or more readies the ability, and less keeps it used, the result kept either way", () => {
     const f = fight().run({ t: "encounter.next" });
     const record = f.record("dragon");
@@ -247,7 +247,7 @@ describe("a recharge prompt (docs/design-v1-combat-controls.md 4.5)", () => {
   });
 });
 
-describe("a Regeneration prompt (docs/design-v1-combat-controls.md 4.3)", () => {
+describe("a Regeneration prompt (docs/design/design-v1-combat-controls.md 4.3)", () => {
   const regenerate = (record: number, amount = 10): Op => ({ t: "actor.use", target: { tokenId: "troll" }, use: { kind: "regenerate", key: "traits:regeneration", amount, record } });
 
   test("Apply heals by the rules and settles it with the amount, once", () => {
@@ -295,7 +295,7 @@ describe("a Regeneration prompt (docs/design-v1-combat-controls.md 4.3)", () => 
   });
 });
 
-describe("prompts that end before their roll (docs/design-v1-combat-controls.md 2.3)", () => {
+describe("prompts that end before their roll (docs/design/design-v1-combat-controls.md 2.3)", () => {
   test("a rest that readies the ability mid-turn leaves its recharge prompt settled", () => {
     const f = fight().run({ t: "encounter.next" });
     f.run({ t: "actor.rest", target: { tokenId: "dragon" }, kind: "short", heal: 0 });

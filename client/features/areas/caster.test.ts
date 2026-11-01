@@ -74,7 +74,7 @@ describe("a press on the picked placed area", () => {
   });
 });
 
-// ------------------------------------------------ the From control (docs/design-v1-area-from-character.md)
+// ------------------------------------------------ the From control (docs/design/design-v1-area-from-character.md)
 
 const FPC = 5;
 const PAT = { memberId: "p1", role: "player" as const };

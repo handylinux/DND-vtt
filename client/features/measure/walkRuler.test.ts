@@ -13,7 +13,7 @@ import { keptDrawing, keptStops, tokenStop, type RulerStop } from "./ruler.ts";
 import { WorkBudget } from "#shared/rules/walk.ts";
 import { heldKey, legReading, measureWalk, nextHeld, saveWalk, savedWalk, walkShown, walkText, type HeldWalk, type WalkMeasure } from "./walkRuler.ts";
 
-/** The ruler's walking mode (docs/design-v1-movement.md 3.3). */
+/** The ruler's walking mode (docs/design/design-v1-movement.md 3.3). */
 
 function mulberry32(seed: number): () => number {
   let a = seed;
@@ -103,7 +103,7 @@ describe("the walking ruler", () => {
     assert.deepEqual(read(fogged(10), stops, true).onDm, [55, false], "the DM's own ruler, before it is shared, reads the DM's map");
   });
 
-  test("on a per-player scene a shared ruler keeps to the ground every player shares, on every device, though a holder remembers the way round (docs/design-v1-per-player-vision.md 6.6)", () => {
+  test("on a per-player scene a shared ruler keeps to the ground every player shares, on every device, though a holder remembers the way round (docs/design/design-v1-per-player-vision.md 6.6)", () => {
     const state = room();
     state.scenes.s1 = { ...state.scenes.s1!, fogEnabled: true, vision: { on: false, light: "dark", perPlayer: true } };
     reveal(state, "s1", { x: 0, y: 0, w: 30, h: 10 });

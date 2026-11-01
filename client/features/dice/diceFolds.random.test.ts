@@ -10,7 +10,7 @@ import { groupAsks, markSendSeen, openForAsks } from "./options.ts";
 import type { CastBlock } from "./optionState.ts";
 
 /*
- * The Dice panel's folds under random play (docs/design-v1-dice-pass.md 6.4):
+ * The Dice panel's folds under random play (docs/design/design-v1-dice-pass.md 6.4):
  * asks and casts arriving and closing, the same spell's block reopened, its
  * send retried from the list above the card, taps on folds, the options
  * remounting, the panel switching creatures, a tablet turned across 900 px,

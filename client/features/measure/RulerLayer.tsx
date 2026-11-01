@@ -43,7 +43,7 @@ import { useTrapCrossing } from "../traps/Crossing.tsx";
  *
  * In Isometric rulers draw in the drag layer, standing in view space: each
  * stop and corner at the drawn height of the ground under it, the lines
- * between them, and the labels upright (docs/design-v1-isometric-view.md
+ * between them, and the labels upright (docs/design/design-v1-isometric-view.md
  * 5.3). The feet are the rules', as in Top-down.
  *
  * A dragged creature's line and label take the color of the speed band its
@@ -97,7 +97,7 @@ export const RulerLayer = memo(function RulerLayer(props: LayerProps) {
   const gridShape = props.scene.gridShape;
   const grid = useMemo(() => sceneGrid({ gridShape }), [gridShape]);
   const route = useTreeShownStore(useScoped(routeSlot), (s) => s.route);
-  // The turn's walker: the active creature, or the controlled mount sharing its turn (docs/design-v1-attach.md 7.2).
+  // The turn's walker: the active creature, or the controlled mount sharing its turn (docs/design/design-v1-attach.md 7.2).
   const activeTokenId = useTreeShownView((s) => turnMoverId(s.view) ?? null);
   const read = useMemo<ReadDrag>(() => {
     return (token, to, walk) => {
@@ -127,7 +127,7 @@ export const RulerLayer = memo(function RulerLayer(props: LayerProps) {
       ))}
       {Object.entries(rulers).map(([key, r]) =>
         r.walk && view ? (
-          // Only the DM's own ruler, before it is shared, may read what players cannot see (docs/design-v1-movement.md 3.3).
+          // Only the DM's own ruler, before it is shared, may read what players cannot see (docs/design/design-v1-movement.md 3.3).
           <WalkRuler
             key={key}
             stops={r.points}
@@ -147,7 +147,7 @@ export const RulerLayer = memo(function RulerLayer(props: LayerProps) {
           <RemoteDragMeasure key={key} drag={d} token={tokens[d.tokenId]} read={read} scale={props.scale} grid={grid} />
         ),
       )}
-      {/* The route is this drag's, set as it starts: a rider's drag walks its mount, whose route and cost these are (docs/design-v1-attach.md 4.2). */}
+      {/* The route is this drag's, set as it starts: a rider's drag walks its mount, whose route and cost these are (docs/design/design-v1-attach.md 4.2). */}
       {route && tokens[route.tokenId] && (route.waiting || localDrag !== null) ? (
         <RouteMeasure route={route} token={tokens[route.tokenId]!} scale={props.scale} />
       ) : localDrag && tokens[localDrag.tokenId] ? (
@@ -180,7 +180,7 @@ function KeptRuler(props: { drawing: Drawing; tokens: Record<string, Token>; rul
 }
 
 /**
- * A walking ruler (docs/design-v1-movement.md 3.3): each leg along the
+ * A walking ruler (docs/design/design-v1-movement.md 3.3): each leg along the
  * route the creature would walk, between its footprint's centers, with a
  * dot at each stop, each leg's cost, and "Walking 40 ft" at the end with
  * what terrain added. A leg with no route runs straight in red, "No way

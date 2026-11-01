@@ -16,7 +16,7 @@ import type { ThrowOrigin } from "./throw/store.ts";
 
 /**
  * The Dice panel's one-roll choices and its newest roll
- * (docs/design-v1-dice.md 8.2 and 8.4), in a room-scoped store, so a fight
+ * (docs/design/design-v1-dice.md 8.2 and 8.4), in a room-scoped store, so a fight
  * alert card or the tracker rolls through the panel's rules whether the
  * panel is mounted or not.
  *
@@ -39,7 +39,7 @@ export type LastRoll =
   | { tag: string; rolls: DiceRollInput[]; to: "all" | "dm"; dc?: number; ac?: number }
   /**
    * A roll the panel cannot send again as it went: a request's answer or a
-   * death save (LP7-DICE-10, docs/design-v1-dice-ui.md 4.1). The sticky
+   * death save (LP7-DICE-10, docs/design/design-v1-dice-ui.md 4.1). The sticky
    * line shows it with no Again, named by `label` where its line has none.
    */
   | { tag: string; once: true; label: string }
@@ -108,14 +108,14 @@ export type DicePanelApi = {
    * choices, goes under the taken Secret, and becomes the sticky line. With
    * `to` it goes under that visibility with only its own sources. Returns
    * its tag, or null when nothing was sent. With `origin`, a Dice panel
-   * control's tap, its dice may be thrown (docs/design-v1-roll-animation.md 3.1).
+   * control's tap, its dice may be thrown (docs/design/design-v1-roll-animation.md 3.1).
    * An override reads choices without taking them and keeps the sticky
    * result when `to` is absent. A supplied `to` keeps its fixed envelope.
    * `parts` hears how many batches the roll went in, before it returns, so
-   * an ask for saves can name the roll whole (docs/design-v1-player-save-spell.md 5.3).
+   * an ask for saves can name the roll whole (docs/design/design-v1-player-save-spell.md 5.3).
    *
    * `choices: "none"` is a roll from outside the panel, a stat block's
-   * (docs/design-v1-stat-block-rolls.md 7): it never takes, reads or gives
+   * (docs/design/design-v1-stat-block-rolls.md 7): it never takes, reads or gives
    * back Adv, Dis or Secret, goes under the roll's own start, and still
    * becomes the sticky line when it goes. Then a roll that does not go
    * leaves the sticky line as it was. `onFail` hears the words of a roll
@@ -153,7 +153,7 @@ function take(store: StoreApi<DiceState>, start: boolean, key: string): Taken {
  * or none does. `onRefused` hears once if any part is refused.
  */
 function send(sender: RollSender, rolls: DiceRollInput[], envelope: { to: "all" | "dm"; dc?: number; ac?: number }, onRefused: () => void, given?: string): { ok: true; tag: string; parts: number } | { ok: false; error: string } {
-  // A group save names its tag before it sends, so its page can keep the tag with the rows it rolls (docs/design-v1-roll-options.md 5.2).
+  // A group save names its tag before it sends, so its page can keep the tag with the rows it rolls (docs/design/design-v1-roll-options.md 5.2).
   const tag = given ?? uuidv7();
   const batched = batchRolls(rolls, { tag, ...envelope });
   if (!batched.ok) return { ok: false, error: batched.error };
@@ -263,7 +263,7 @@ export function createDicePanel(deps: {
   };
 }
 
-/** The creatures a DM's Dice panel is opened for: the selected tokens, whose options it lists (docs/design-v1-roll-options.md 4). */
+/** The creatures a DM's Dice panel is opened for: the selected tokens, whose options it lists (docs/design/design-v1-roll-options.md 4). */
 function panelCreatures(s: Pick<RoomView, "local">): ActorTarget[] {
   return s.local.selectedIds.map((tokenId) => ({ tokenId }));
 }

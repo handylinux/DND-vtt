@@ -4,7 +4,7 @@ import { theme } from "../../lib/theme.ts";
 import { creditParts } from "./credit.ts";
 
 /**
- * An openly licensed image's credit (docs/design-v1-dm-tools.md 3.13): the
+ * An openly licensed image's credit (docs/design/design-v1-dm-tools.md 3.13): the
  * work linked to its page, the license linked to its text, the credit line
  * a starter pick's author asks for, and what the app changed. Shown to
  * everyone who may see the image.

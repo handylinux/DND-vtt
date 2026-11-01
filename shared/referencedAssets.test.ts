@@ -28,7 +28,7 @@ function everyReference(): RoomState {
   state.handouts.h2 = { id: "h2", rev: 0, assetId: "page1", pages: [page("page1"), page("page2"), page("page1")], title: "Strange letter", to: "all", shownAt: "2026-10-14T00:00:00.000Z" };
   state.handoutDocs.d1 = { id: "d1", rev: 0, title: "Strange letter", pages: [page("docPage1"), page("docPage2")], createdAt: "2026-10-14T00:00:00.000Z" };
   state.companionBlocks.b1 = companionBlock("b1", "c1", { defaultImage: imageRef("blockImage") });
-  // Stamps players remember (docs/design-v1-map-discovery.md 5.4): the party's and a holder's, whatever the stamp is now.
+  // Stamps players remember (docs/design/design-v1-map-discovery.md 5.4): the party's and a holder's, whatever the stamp is now.
   const remembered = (id: string, assetId: string) => ({ ...state.stamps.st1!, id, art: { assetId } });
   state.memory = { "s1:0,0": { sceneId: "s1", cx: 0, cy: 0, rev: 0, stamps: { st1: remembered("st1", "rememberedStamp"), gone: null } } };
   state.memoryBy = { "s1:p1:0,0": { sceneId: "s1", cx: 0, cy: 0, rev: 0, memberId: "p1", stamps: { st3: remembered("st3", "holderStamp"), st4: { ...remembered("st4", "x"), art: { key: "oak-tree" } } } } };
@@ -47,7 +47,7 @@ function namedAssets(value: unknown, out = new Set<string>()): Set<string> {
   return out;
 }
 
-describe("referencedAssetIds (docs/design-v1-dm-tools.md 3.19)", () => {
+describe("referencedAssetIds (docs/design/design-v1-dm-tools.md 3.19)", () => {
   test("finds every reference the model can hold, and no shipped icon or stamp", () => {
     const state = everyReference();
     const found = referencedAssetIds(state);
@@ -71,7 +71,7 @@ describe("referencedAssetIds (docs/design-v1-dm-tools.md 3.19)", () => {
     assert.deepEqual(restoreAddedAssets([{ key: keys.handout("h2"), value: { ...state.handouts.h1, id: "h2", assetId: "other" } }], state), [{ assetId: "other", kind: "handout" }]);
   });
 
-  test("a handout's every page is a handout image, each once, and a restore adds the pages it does not hold now (docs/design-v1-pdf-handouts.md 3.5)", () => {
+  test("a handout's every page is a handout image, each once, and a restore adds the pages it does not hold now (docs/design/design-v1-pdf-handouts.md 3.5)", () => {
     const state = everyReference();
     const before = state.handouts.h2!;
     const now = { ...before, assetId: "page2", pages: [page("page2")] };
@@ -96,7 +96,7 @@ describe("referencedAssetIds (docs/design-v1-dm-tools.md 3.19)", () => {
     assert.deepEqual(restoreAddedAssets([{ key: keys.handoutDoc("d1"), value: doc }], state), []);
   });
 
-  test("a companion block's picture is a token image, which putting the deleted block back adds (docs/design-v1-companion-stat-blocks.md 4.3)", () => {
+  test("a companion block's picture is a token image, which putting the deleted block back adds (docs/design/design-v1-companion-stat-blocks.md 4.3)", () => {
     const state = everyReference();
     const block = state.companionBlocks.b1!;
     const deleted = { ...state, companionBlocks: {} };

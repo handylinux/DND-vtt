@@ -119,7 +119,7 @@ export type ToolDef = {
    * options strip (features/measure/controls.tsx OptionsStrip), which Room
    * stands on a phone's toolbar, floats above a computer's, or puts in the
    * toolbar's own row on a short sideways screen
-   * (docs/design-v1-tool-options.md 4). It renders inside RoomProvider, so
+   * (docs/design/design-v1-tool-options.md 4). It renders inside RoomProvider, so
    * it may use the room hooks.
    */
   Options?: ComponentType<{ role: "dm" | "player" }>;
@@ -136,7 +136,7 @@ export type ToolDef = {
   hidden?(state: RoomView): boolean;
   /**
    * The tool's main choice, which a second press of its key moves through
-   * (docs/design-v1-tool-cycle.md, features/toolChoices.ts). Left out, the
+   * (docs/design/design-v1-tool-cycle.md, features/toolChoices.ts). Left out, the
    * key only shows the tool's tucked options.
    */
   cycle?: ToolCycle;

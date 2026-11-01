@@ -10,7 +10,7 @@ import { ddbSheetUrl } from "./link.ts";
 import { actionsWhole, readResources } from "./resources.ts";
 
 /**
- * A D&D Beyond character's JSON read into a fill (docs/design-v1-pc-stats.md
+ * A D&D Beyond character's JSON read into a fill (docs/design/design-v1-pc-stats.md
  * 6.3 and Appendix B), on the server for a share link and in the browser
  * for pasted JSON, by the same code. It reads named paths of the JSON and
  * never walks the tree, bounds every list it loops over, and never throws.
@@ -20,7 +20,7 @@ import { actionsWhole, readResources } from "./resources.ts";
  * cannot read becomes a warning, and the editor keeps what it had.
  *
  * Each output is read only when every source it depends on came with the
- * right type (docs/design-v1-resync.md 2.5). A source the JSON lacks leaves
+ * right type (docs/design/design-v1-resync.md 2.5). A source the JSON lacks leaves
  * its outputs out of the fill, so they stay as they are. Read as empty, a
  * sheet sent without its inventory would say the character owns no
  * weapons, and a re-sync would remove them.
@@ -30,7 +30,7 @@ import { actionsWhole, readResources } from "./resources.ts";
  * read is tolerant: a missing or mistyped value is skipped, never assumed.
  *
  * The class resources, read from the limited uses of the same actions,
- * are read by ./resources.ts (docs/design-v1-ddb-resources.md).
+ * are read by ./resources.ts (docs/design/design-v1-ddb-resources.md).
  */
 
 type Obj = Record<string, unknown>;
@@ -46,7 +46,7 @@ function obj(v: unknown): Obj | null {
  * Whether a list was read to its end: null, absent, or a list within its
  * bound. A list cut at its bound, or not a list, may hold a linked roll, so
  * its kind is not read whole and a merge never removes one because of it
- * (docs/design-v1-resync.md 2.5, DDBBUILD-ASTRA-01).
+ * (docs/design/design-v1-resync.md 2.5, DDBBUILD-ASTRA-01).
  */
 function wholeList(v: unknown, max: number): boolean {
   return v === null || v === undefined || (Array.isArray(v) && v.length <= max);

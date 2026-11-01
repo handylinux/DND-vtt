@@ -18,7 +18,7 @@ import { perPlayerClasses } from "./fanout.ts";
  * showing a preview that is now withheld gets a bare cancel instead, so the
  * preview disappears rather than freezing. On a per-player scene each
  * player is judged by their own sight and fog
- * (docs/design-v1-per-player-vision.md 7.5).
+ * (docs/design/design-v1-per-player-vision.md 7.5).
  */
 
 function previewOf(e: EphEvent): { kind: PreviewKind; id: string; ends: boolean } | null {
@@ -95,12 +95,12 @@ function mayMove(state: RoomState, sender: Connection, tokenId: string): boolean
  * passed through, and on a scene with fog or vision some of those may be
  * dark or out of the party's sight (a monster dragged through darkness back
  * into view), so a player gets only the position, which the check below
- * already passed (docs/design-v1-maps-vision.md 4.3.5).
+ * already passed (docs/design/design-v1-maps-vision.md 4.3.5).
  */
 function forPlayer(state: RoomState, sceneId: string, e: EphEvent, receiver: Connection): EphEvent {
   if (e.k !== "dragMove") return e;
   let out = e;
-  // A route's cost reads private facts, such as a Swim Speed, so only the token's owners get it (docs/design-v1-movement.md 6.5).
+  // A route's cost reads private facts, such as a Swim Speed, so only the token's owners get it (docs/design/design-v1-movement.md 6.5).
   if (out.ft !== undefined) {
     const token = state.tokens[e.tokenId];
     if (!token || !ownsToken(state, receiver.viewer, token)) {
@@ -124,11 +124,11 @@ function tokenVisibleTo(state: RoomState, receiver: Connection, tokenId: string)
  * own rule for a token standing there, by that player's sight and fog
  * (section 13.4 on the merged fog, the party's sight on a vision scene,
  * party members and exempt tokens always shown, and on a per-player scene
- * the player's own, docs/design-v1-per-player-vision.md 6.2). Which
+ * the player's own, docs/design/design-v1-per-player-vision.md 6.2). Which
  * players a drag carries along a holder with it stays a public rule, read
  * from what every player sees (`inSightOfNonOwners`). The footprint is the
  * server's to judge, whatever the frame says
- * (docs/design-v1-maps-vision.md 4.1, "Drag previews"): one size smaller
+ * (docs/design/design-v1-maps-vision.md 4.1, "Drag previews"): one size smaller
  * around the preview point where a creature that can squeeze stands with
  * its core clear and a blocker through its full footprint, as along a
  * narrow corridor, and full size otherwise. So a Large creature dragged
@@ -146,7 +146,7 @@ function tokenVisibleTo(state: RoomState, receiver: Connection, tokenId: string)
  * off the ground may reach (movement.ts walkStates, review AT-ASTRA-22),
  * and withheld when any of them withholds it.
  *
- * On a hex scene the same holds by the hex rules (docs/design-v1-hex-grids.md
+ * On a hex scene the same holds by the hex rules (docs/design/design-v1-hex-grids.md
  * HX-D10 and HX-D17): the preview squeezes where the squeezed hexes
  * nearest it are a real narrow space, and is judged by the sub-cells
  * inside the hexes it stands on there, as projection judges a creature
@@ -165,7 +165,7 @@ function previewWithheld(state: RoomState, viewer: Viewer, token: Token, x: numb
 }
 
 /**
- * What a player's judgment of a drag preview reads (docs/design-v1-per-player-vision.md
+ * What a player's judgment of a drag preview reads (docs/design/design-v1-per-player-vision.md
  * 7.5), so players who read the same are judged once per event: with
  * vision on, the sight they read, which viewers with the same sources share,
  * with fog alone, their fog (each holder alone, the rest together), and
@@ -200,7 +200,7 @@ function allowed(state: RoomState, receiver: Connection, e: EphEvent, withheld: 
       return e.points.every((p) => p.tokenId === undefined || tokenVisibleTo(state, receiver, p.tokenId));
     case "focus":
       return receiver.role === "player";
-    // A DM device's camera, for table displays only (docs/design-v1-dm-tools.md 3.1). Like every event it goes only to
+    // A DM device's camera, for table displays only (docs/design/design-v1-dm-tools.md 3.1). Like every event it goes only to
     // receivers on its scene, and a display is on the player scene, so the TV never moves to a scene players cannot see.
     case "view":
       return receiver.display;
@@ -296,7 +296,7 @@ function showsAnywhere(sender: Connection, heldKey: string, receivers: readonly 
  * Whether players may not see a drag frame where it stands, worked out once
  * per event for each judgment (judgedBy), since it is a wall test besides:
  * on a per-player scene one per source set with vision on, or per fog
- * class with fog alone (docs/design-v1-per-player-vision.md 7.5).
+ * class with fog alone (docs/design/design-v1-per-player-vision.md 7.5).
  */
 function withheldFor(state: RoomState, sceneId: string, e: EphEvent): (receiver: Connection) => boolean {
   const answers = new Map<string, boolean>();
@@ -314,7 +314,7 @@ function withheldFor(state: RoomState, sceneId: string, e: EphEvent): (receiver:
 
 /**
  * Previews held on other screens, judged again after a batch that set
- * `global` (docs/design-v1-per-player-vision.md 7.2): a switch to or from
+ * `global` (docs/design/design-v1-per-player-vision.md 7.2): a switch to or from
  * Per player, a holder pick or any other change that re-projects
  * everything can leave a receiver showing a drag or a live ruler it may no
  * longer see. Each is judged by its last frame, as it would be routed now,

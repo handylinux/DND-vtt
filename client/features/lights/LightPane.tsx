@@ -27,7 +27,7 @@ import { lightScreenBox } from "./paneBox.ts";
 import { cleanLabel, patched } from "./rules.ts";
 
 /**
- * A light's pane in the builder's Light mode (docs/design-v1-maps-vision.md
+ * A light's pane in the builder's Light mode (docs/design/design-v1-maps-vision.md
  * section 4.3.1), for the DM: its radii, on or off, whether walls cast
  * shadows from it, its name, and Delete. It hangs beside the light on a
  * wide screen and is a bottom sheet on a phone, as a label's pane is
@@ -91,7 +91,7 @@ export default function LightPane(props: { light: Light; camera: Camera; viewpor
     if (anchor) requestPan(scope, { sceneId: light.sceneId, x: light.x, y: light.y, anchor });
   });
 
-  // As a bottom sheet it swipes down to close, as its close does. Each choice is sent as it is made and its name on blur, so the focus rule alone holds it (docs/design-v1-sheet-swipe.md 4.6).
+  // As a bottom sheet it swipes down to close, as its close does. Each choice is sent as it is made and its name on blur, so the focus rule alone holds it (docs/design/design-v1-sheet-swipe.md 4.6).
   useSheetSwipe(paneRef, { enabled: sheet, onClose: () => closeRef.current(), item: light.id, clip: "foot", riders: dock.riders });
 
   return (

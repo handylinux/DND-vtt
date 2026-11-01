@@ -96,7 +96,7 @@ const NAME_WORDS: CSSProperties = { minWidth: 0 };
  * them, a menu from 900 px up and a bottom sheet on a phone, as Attach's
  * list opens. Nothing for a token with no player owner. `onOpen` hears
  * whether the menu is open, so the bar can stand over the notices while it
- * is, as it does for Attach (docs/design-v1-tool-options.md 7.6).
+ * is, as it does for Attach (docs/design/design-v1-tool-options.md 7.6).
  */
 export function ViewAsButton(props: { token: Pick<Token, "ownerIds" | "actor" | "companion">; style?: CSSProperties; onOpen?(open: boolean): void }) {
   const players = useTokenPlayers(props.token);

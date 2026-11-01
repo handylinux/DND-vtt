@@ -32,7 +32,7 @@ import { titleProblem } from "./title.ts";
 
 /**
  * The PDF upload's block in the DM panel's Handouts section
- * (docs/design-v1-pdf-handouts.md 4.1.1 and 9): the file, the range or the
+ * (docs/design/design-v1-pdf-handouts.md 4.1.1 and 9): the file, the range or the
  * progress, the title and the job's buttons, apart from the Show a handout
  * form, which keeps working beside it. It is a group named by its file, so
  * its Title field is told apart from the form's. The job itself lives in

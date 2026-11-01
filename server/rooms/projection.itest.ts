@@ -391,7 +391,7 @@ describe("projection over the socket", () => {
     player.close();
   });
 
-  test("a show of 100 pages reaches the player it is shown to whole, every page with its row's size, in its event and in a reconnect's snapshot, and a document never does (docs/design-v1-pdf-handouts.md 3.4)", async () => {
+  test("a show of 100 pages reaches the player it is shown to whole, every page with its row's size, in its event and in a reconnect's snapshot, and a document never does (docs/design/design-v1-pdf-handouts.md 3.4)", async () => {
     const dmClient = t.client();
     const { roomId } = await dmClient.createRoom("Handouts");
     const playerClient = t.client();
@@ -433,7 +433,7 @@ describe("projection over the socket", () => {
     for (const s of [dm, player, again]) s.close();
   });
 
-  test("a player receives their character's companion blocks and no other's, a table display none, and an owner change moves them (docs/design-v1-companion-stat-blocks.md 4.2)", async () => {
+  test("a player receives their character's companion blocks and no other's, a table display none, and an owner change moves them (docs/design/design-v1-companion-stat-blocks.md 4.2)", async () => {
     const dmClient = t.client();
     const { roomId } = await dmClient.createRoom("Familiars");
     const anaClient = t.client();
@@ -486,7 +486,7 @@ describe("projection over the socket", () => {
     for (const s of [dm, anaSocket, anaAgain, cySocket, display]) s.close();
   });
 
-  test("a player's ask for saves reaches the DM and the asker with the roll they sent first, and not another player, and sent twice it asks once (docs/design-v1-player-save-spell.md 8)", async () => {
+  test("a player's ask for saves reaches the DM and the asker with the roll they sent first, and not another player, and sent twice it asks once (docs/design/design-v1-player-save-spell.md 8)", async () => {
     const dmClient = t.client();
     const { roomId } = await dmClient.createRoom("Save spell");
     const playerClient = t.client();

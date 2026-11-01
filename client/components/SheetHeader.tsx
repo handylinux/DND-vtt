@@ -20,7 +20,7 @@ import { SheetGrabber, useGrabberRoom } from "./SheetGrabber.tsx";
  */
 export type HeaderBack = { label: string; onBack(): void; armed?: string | null };
 
-/** Hide, for the side panel and a sideways sheet alike (docs/design-v1-layout-hierarchy.md 4.1, 4.2): one icon wherever a panel goes away and stays mounted. */
+/** Hide, for the side panel and a sideways sheet alike (docs/design/design-v1-layout-hierarchy.md 4.1, 4.2): one icon wherever a panel goes away and stays mounted. */
 export function HideButton(props: { label: string; onClick(): void; style?: CSSProperties }) {
   return <IconButton icon="collapsePanel" label={props.label} onClick={props.onClick} style={props.style} />;
 }
@@ -37,7 +37,7 @@ const TITLE_STYLE = {
 
 /**
  * The one header of sheets, dialogs and panel subpages
- * (docs/design-v1-visual.md 2.3): a 56 px row with an optional back
+ * (docs/design/design-v1-visual.md 2.3): a 56 px row with an optional back
  * button, the title at 18 px weight 700, optional trailing actions, and
  * the close button. A header without a back button indents its title to
  * the body's text, so the two line up.
@@ -77,7 +77,7 @@ export function SheetHeader(props: {
   divider?: boolean;
   /**
    * Hide, for a sheet on the right of a phone held sideways
-   * (docs/design-v1-layout-hierarchy.md 4.2): between the actions and the
+   * (docs/design/design-v1-layout-hierarchy.md 4.2): between the actions and the
    * close, named by the panel as the close is ("Hide Initiative").
    */
   onHide?(): void;
@@ -91,17 +91,17 @@ export function SheetHeader(props: {
   /**
    * Lines under the title row, inside the header: what the dialog shows,
    * such as the handout viewer's size, bytes and credit
-   * (docs/design-v1-pdf-handouts.md 8.4). In line with the title's text.
+   * (docs/design/design-v1-pdf-handouts.md 8.4). In line with the title's text.
    */
   detail?: ReactNode;
   /** The detail lines' id, for a dialog that names them as its description. */
   detailId?: string;
   /** The header is the grab area of a sheet that swipes (lib/sheetSwipe.ts): a drag on it always moves the sheet. */
   grab?: boolean;
-  /** "Expand sheet", for a sheet that fills the screen when swiped up (docs/design-v1-sheet-swipe.md 4.7): first in the header, hidden until it has focus. */
+  /** "Expand sheet", for a sheet that fills the screen when swiped up (docs/design/design-v1-sheet-swipe.md 4.7): first in the header, hidden until it has focus. */
   fullScreen?: { pressed: boolean; onPress(): void };
   /**
-   * A header row of the side panel (docs/design-v1-side-headers.md): one
+   * A header row of the side panel (docs/design/design-v1-side-headers.md): one
    * 44 px line with the title at 16 px, the size of a pane's title, in
    * place of 56 px and 18 px. A subpage there sits under its pane's tab
    * row or bar, which already name the panel, so it takes the rows' height.
@@ -299,15 +299,15 @@ export const GRIP_ATTR = "data-pane-grip";
 export const STICKY_HEADER_ATTR = "data-sticky-header";
 
 /**
- * The header of a pane over the map (docs/design-v1-visual.md 2.3): the
+ * The header of a pane over the map (docs/design/design-v1-visual.md 2.3): the
  * token action bar, the label, pin and light panes, the door card and the
  * stop note. One 48 px row, the title at 16 px weight 700 and a close
  * button, so no pane needs negative margins to tuck its close into a
  * corner. The close is named "Close" unless the pane says more ("Close
  * without saving").
  *
- * The token window asks for more (docs/design-v1-bar-dock.md,
- * docs/design-v1-token-window.md 4): `handle` makes the row the pane's
+ * The token window asks for more (docs/design/design-v1-bar-dock.md,
+ * docs/design/design-v1-token-window.md 4): `handle` makes the row the pane's
  * handle, with its grip button at the start and no scrolling or zooming
  * under a finger on it. `sticky` keeps the row at the top of the pane's
  * scrolling frame on an opaque fill that reaches across the frame's 12 px

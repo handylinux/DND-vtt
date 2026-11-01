@@ -13,7 +13,7 @@ import { displayPath, rememberDisplayRoom } from "./remember.ts";
 import { TV_BUTTON_HEIGHT, TV_CODE_FIELD_HEIGHT, TV_TEXT } from "./tvType.ts";
 
 /*
- * The table display's pages (docs/design-v1-dm-tools.md 3.1): `/display`,
+ * The table display's pages (docs/design/design-v1-dm-tools.md 3.1): `/display`,
  * where a TV takes the code the DM's screen shows, and `/display/:roomId`,
  * the room drawn for the table. They load only on a device that opens
  * them. The room's canvas, the largest download, loads after the display

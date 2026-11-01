@@ -12,7 +12,7 @@ function stats(speeds: Parameters<typeof foldedSpeeds>[0], canEdit: boolean): st
   return renderToStaticMarkup(createElement(StatsFields, { actor: actor({ speeds }), canEdit: () => canEdit, onPatch() {}, dm: canEdit }));
 }
 
-describe("other speeds fold under Walk (docs/design-v1-look-pass.md 3.1, L14)", () => {
+describe("other speeds fold under Walk (docs/design/design-v1-look-pass.md 3.1, L14)", () => {
   test("a walker's Stats: Walk, then Other speeds folded, with no row of none", () => {
     const html = stats({ walk: 30 }, true);
     assert.match(html, /aria-label="Walk Speed"/);
@@ -47,7 +47,7 @@ describe("other speeds fold under Walk (docs/design-v1-look-pass.md 3.1, L14)", 
   });
 });
 
-describe("the legendary maxima (docs/design-v1-token-sections.md 3.1)", () => {
+describe("the legendary maxima (docs/design/design-v1-token-sections.md 3.1)", () => {
   test("the DM's Stats sets how many a round and a day, and leaves how many are used to Use and Restore in Uses", () => {
     const legendary = { actionsMax: 3, actionsUsed: 1, resistMax: 3, resistUsed: 0 };
     const html = renderToStaticMarkup(createElement(StatsFields, { actor: actor({ legendary }), canEdit: () => true, onPatch() {}, dm: true }));

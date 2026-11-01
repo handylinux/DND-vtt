@@ -29,7 +29,7 @@ function roll(text: string, faces: number[], mode?: "adv" | "dis"): DiceResult {
   return rolled.result;
 }
 
-describe("rolling a formula (docs/design-v1-dice.md 4.2)", () => {
+describe("rolling a formula (docs/design/design-v1-dice.md 4.2)", () => {
   test("draws term by term, die by die, and sums the kept faces with the numbers", () => {
     const draw = scripted([4, 6, 3]);
     const rolled = rollFormula(formula("2d6+3-1d4"), draw);

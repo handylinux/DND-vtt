@@ -20,7 +20,7 @@ import {
 } from "./classResources.ts";
 
 /**
- * Appendix A of docs/design-v1-combat-controls.md, written out again by
+ * Appendix A of docs/design/design-v1-combat-controls.md, written out again by
  * hand from the SRD 5.2.1 class tables, so the data and this test are two
  * readings that must agree: each preset's class level, every level its
  * count changes at with the count from there, and its rest.
@@ -65,7 +65,7 @@ const preset = (id: string): ClassPreset => {
 
 const update = (resources: Omit<ClassResource, "used">[], characterId = "pat") => ({ t: "character.update", characterId, patch: { resources } });
 
-describe("class resources: Appendix A (docs/design-v1-combat-controls.md 7.1)", () => {
+describe("class resources: Appendix A (docs/design/design-v1-combat-controls.md 7.1)", () => {
   test("the data holds Appendix A's rows, in its order", () => {
     assert.deepEqual(
       PRESETS.map((p) => p.id),

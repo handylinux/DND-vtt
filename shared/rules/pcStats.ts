@@ -12,7 +12,7 @@ import { SAVE_SPELLS } from "../srd/save-spells.ts";
 
 /**
  * A player character's numbers from its stat block
- * (docs/design-v1-pc-stats.md 3.3 and 3.4): one pure derivation that the
+ * (docs/design/design-v1-pc-stats.md 3.3 and 3.4): one pure derivation that the
  * editor, the view, the action bar, the dice's bonus on both sides and the
  * reducer's write of initiative and Passive Perception all read, so no two
  * of them can disagree. Every number is what the rules give plus a stored
@@ -536,7 +536,7 @@ const namedCache = new WeakMap<Character, NamedRoll[]>();
 /**
  * A character's rolls as doc 1's NamedRoll (section 3.4), weapons, then
  * spells by level, then other rolls. In a shape its own rolls give way to
- * the creature's, which come from that creature's block (docs/design-v1-roll-options.md):
+ * the creature's, which come from that creature's block (docs/design/design-v1-roll-options.md):
  * Wild Shape keeps only the other rolls, and another shape none. Empty
  * without a block. Cached per character object, since an entity is
  * never changed in place.
@@ -580,7 +580,7 @@ function upcastAt(formula: string, upcast: string | undefined, extra: number): s
  * Whether a roll stays within the dice's bounds at its largest: at level 20
  * and, for a spell that scales, cast with a 9th-level slot, each part
  * reading as a formula and all of them together within one roll's dice
- * (docs/design-v1-dice.md 3.2). The editor refuses one that does not, so a
+ * (docs/design/design-v1-dice.md 3.2). The editor refuses one that does not, so a
  * roll never grows past what can be rolled as the character levels up.
  */
 export function pcRollFits(stats: PcStats, roll: PcRoll): boolean {

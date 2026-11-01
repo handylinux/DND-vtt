@@ -9,7 +9,7 @@ import { useThrows, useThrowView } from "../dice/throw/useThrows.ts";
 import { setDiceSetId, useDiceSetId, useLowPower, useRollAnimation } from "./settings.ts";
 
 /**
- * "Dice" in This device's Rolls (docs/design-v1-roll-animation.md 9.2): a
+ * "Dice" in This device's Rolls (docs/design/design-v1-roll-animation.md 9.2): a
  * radio group of tiles, each the set's d20 showing 20 above its name. The
  * choice is kept on this device, never in the room.
  *
@@ -92,7 +92,7 @@ export function DiceSetPicker() {
     <fieldset disabled={!on} style={{ margin: 0, padding: 0, border: "none", minWidth: 0 }}>
       <legend style={{ padding: 0, fontSize: theme.font.input, fontWeight: theme.weight.strong, color: on ? theme.color.text : theme.color.textDisabled }}>Dice</legend>
       {/*
-       * One column under the legend, as RadioCards stands its cards (docs/design-v1-spacing-pass.md S2): the help space(1) under it and the
+       * One column under the legend, as RadioCards stands its cards (docs/design/design-v1-spacing-pass.md S2): the help space(1) under it and the
        * tiles space(2) under whatever stands above them, further than the tiles stand from each other. Margins, since a fieldset's gap never
        * reaches its legend.
        */}

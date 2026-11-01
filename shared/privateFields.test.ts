@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { privateFieldsIn } from "./privateFields.ts";
 
-describe("privateFieldsIn (what a player's copy never holds, docs/design-v1-per-player-vision.md 9.3)", () => {
+describe("privateFieldsIn (what a player's copy never holds, docs/design/design-v1-per-player-vision.md 9.3)", () => {
   const stop = (seen: unknown) => ({ x: 1, y: 2, seen });
 
   test("finds each private field in a snapshot: the holder list, the layers and every list of who saw", () => {

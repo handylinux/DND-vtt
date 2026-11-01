@@ -59,7 +59,7 @@ import { FieldRow, NumberField, Select } from "./ui.tsx";
 import { groundAtMiddle } from "../../lib/view.ts";
 
 /**
- * Companions in the interface (docs/design-v1-combat-flow.md 3.6.3, 3.6.9
+ * Companions in the interface (docs/design/design-v1-combat-flow.md 3.6.3, 3.6.9
  * and 3.7.5): the list and "Add a companion" in a character's page, the
  * form it opens as a subpage of the Characters panel, the Companion section of a
  * companion's token panel, and the DM's "Make a companion" in Token
@@ -93,7 +93,7 @@ function CompanionPortrait(props: { token: Token; size: number }) {
 /**
  * The Companions group of a character's page, after Combat: in play a
  * player opens the page more often for companions than to edit stats
- * (docs/design-v1-combat-flow.md 3.7.5). It lists the companions on the
+ * (docs/design/design-v1-combat-flow.md 3.7.5). It lists the companions on the
  * scene this device holds, each a button that shows it on the map with
  * its bar, as a party bar tap does. Folded, it names them.
  */
@@ -106,7 +106,7 @@ export function CharacterCompanions(props: { character: Character; canAdd: boole
   const list = tokens ? companionsOf({ tokens }, props.character.id) : [];
   const kept = characterBlocks({ companionBlocks: blocks ?? {} }, props.character.id).length;
   if (list.length === 0 && !props.canAdd) return null;
-  // Each companion's block, before its turn (docs/design-v1-companion-stat-blocks.md 6.4). An effect has none to name.
+  // Each companion's block, before its turn (docs/design/design-v1-companion-stat-blocks.md 6.4). An effect has none to name.
   const blockName = (t: Token): string | null => {
     if (t.kind === "object" || !("inline" in t.actor)) return null;
     const a = t.actor.inline;
@@ -163,7 +163,7 @@ export function CharacterCompanions(props: { character: Character; canAdd: boole
  * The form a character's "Add a companion" opens, a subpage of the
  * Characters panel as New character is: "Add a companion for Bree" with
  * "Back to Bree" in the header, and Cancel at its foot beside Add and place
- * (docs/design-v1-look-pass.md 3.1). A player's companion goes only next to
+ * (docs/design/design-v1-look-pass.md 3.1). A player's companion goes only next to
  * the character's token on the players' scene, at the first free spot
  * within 5 ft with a clear line, which the server checks again. The button
  * says why when there is none. The DM's goes on the scene in view, beside
@@ -197,7 +197,7 @@ export function CompanionForm(props: {
   const { initial, start } = useKeptDraft<CompanionDraft>(formId, () => NEW_COMPANION);
   const [draft, setDraft] = useState<CompanionDraft>(initial);
   const { typed, pending } = usePendingNumbers(draft, draftWith);
-  // Only Add sends it, so a sheet's swipe springs back once anything in it changed (docs/design-v1-sheet-swipe.md 4.5), a number still being typed too.
+  // Only Add sends it, so a sheet's swipe springs back once anything in it changed (docs/design/design-v1-sheet-swipe.md 4.5), a number still being typed too.
   useUnsavedSince(typed);
   useKeepDraft(formId, typed, start);
   const [error, setError] = useState<string | null>(null);
@@ -247,7 +247,7 @@ export function CompanionForm(props: {
   /*
    * A chosen block of the character's that leaves the view, deleted by a
    * co-owner or the DM, is chosen no more, and the numbers it filled stay
-   * (docs/design-v1-companion-stat-blocks.md 6.3).
+   * (docs/design/design-v1-companion-stat-blocks.md 6.3).
    */
   const chosenBlockId = draft.block && "blockId" in draft.block.link ? draft.block.link.blockId : undefined;
   const chosenLeft = chosenBlockId !== undefined && blocks !== undefined && blocks[chosenBlockId] === undefined;
@@ -469,7 +469,7 @@ function capitalized(text: string): string {
 export function CompanionSection(props: {
   token: Token;
   access: TokenAccess;
-  /** The token panel's fold for this group, which names its character while folded (docs/design-v1-token-panel.md 3.5). */
+  /** The token panel's fold for this group, which names its character while folded (docs/design/design-v1-token-panel.md 3.5). */
   group?: { open: boolean; onToggle(): void };
 }) {
   const { token, access } = props;
@@ -490,7 +490,7 @@ export function CompanionSection(props: {
   const list = Object.values(characters ?? {})
     .filter((c): c is Character => !!c)
     .sort((a, b) => a.name.localeCompare(b.name));
-  // A stored block is its character's, so giving the companion away or letting it go leaves the block behind (docs/design-v1-companion-stat-blocks.md 5.5).
+  // A stored block is its character's, so giving the companion away or letting it go leaves the block behind (docs/design/design-v1-companion-stat-blocks.md 5.5).
   const staysLine = stored ? <Help style={{ overflowWrap: "anywhere" }}>{`Its stat block is ${name}'s and stays with ${name}.`}</Help> : null;
   return (
     // A group as Owners beside it is, which names its character while folded as Owners names its players.
@@ -551,7 +551,7 @@ const NO_CHARACTER = "";
  * The DM's "Make a companion" in Token settings, on any token that is not
  * a PC, has stats of its own and is not yet a companion (3.6.9): it opens
  * whose it is and its turn in place, with no character chosen and the turn
- * listed under its character (docs/design-v1-token-panel.md 3.8), and
+ * listed under its character (docs/design/design-v1-token-panel.md 3.8), and
  * sends nothing until its own button, which waits for a character. Cancel
  * starts the form again from there. The one update also gives a hostile
  * token the ally ring.
@@ -582,7 +582,7 @@ export function MakeCompanion(props: { token: Token }) {
   }, [open]);
   // A companion has stats of its own, so a token that reads a character's cannot be one.
   const cannot = token.kind === "pc" || token.companion || "ref" in token.actor;
-  // Only its button sends the choices, so a sheet's swipe springs back while the form shows them changed (docs/design-v1-sheet-swipe.md 4.5).
+  // Only its button sends the choices, so a sheet's swipe springs back while the form shows them changed (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(open && !cannot && list.length > 0 && !make.waiting && (of !== NO_CHARACTER || turn !== "shared"));
   if (cannot) return null;
   if (!open) {
@@ -666,7 +666,7 @@ export function CompanionOwners(props: { token: Token }) {
 
 /**
  * Whether a token's HP follows the party's rule rather than its own
- * setting: a creature companion a player plays (docs/design-v1-combat-flow.md
+ * setting: a creature companion a player plays (docs/design/design-v1-combat-flow.md
  * 3.6.5), whose "Players see HP as" reads so in place of the Select.
  */
 export function followsPartyHp(view: Parameters<typeof playersToken>[0] | null | undefined, token: Token): boolean {

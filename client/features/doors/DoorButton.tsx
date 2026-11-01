@@ -7,7 +7,7 @@ import { doorActions, doorsInReach } from "./doors.ts";
 
 /**
  * "Open door" or "Close door" on a player's token action bar
- * (docs/design-v1-maps-vision.md 4.1), while a door the player can see is
+ * (docs/design/design-v1-maps-vision.md 4.1), while a door the player can see is
  * within reach of the token by the server's own rule, so a door never has
  * to be hit exactly on a phone. It acts on the nearest such door.
  */
@@ -28,7 +28,7 @@ export function DoorButton(props: { token: Token }) {
     [mine, chunks, scene, settings, fogTiles, token],
   );
   if (!door || !view) return null;
-  // The token whose bar opened the door is the one that opens it (docs/design-v1-traps.md 5.3).
+  // The token whose bar opened the door is the one that opens it (docs/design/design-v1-traps.md 5.3).
   const [choice] = doorActions(token.sceneId, door, "player", token.id);
   if (!choice) return null;
   return (

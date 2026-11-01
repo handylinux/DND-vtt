@@ -40,7 +40,7 @@ describe("the sheet's height cap", () => {
   });
 });
 
-describe("the sheet's width cap (docs/design-v1-look-pass.md 2.8)", () => {
+describe("the sheet's width cap (docs/design/design-v1-look-pass.md 2.8)", () => {
   test("a medium dialog's width", () => {
     assert.equal(SHEET_MAX_WIDTH, 560);
   });

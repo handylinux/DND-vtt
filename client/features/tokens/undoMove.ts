@@ -63,7 +63,7 @@ export function offered(s: Offers): Offer | null {
 
 /**
  * The tokens a pose op's offer names: the tokens it moves, and for an
- * attach or a detach the holder too (docs/design-v1-attach.md 8.3), so a
+ * attach or a detach the holder too (docs/design/design-v1-attach.md 8.3), so a
  * Carry, a Drag, a Let go or a Put down sent from the holder's bar offers
  * Undo move there. `holderBefore` is the holder a token had before the op.
  */
@@ -114,7 +114,7 @@ export function afterAnswers(s: Offers, pending: readonly PendingOp[], refused: 
 }
 
 /**
- * The tokens a token's bar offers Undo move for (docs/design-v1-attach.md
+ * The tokens a token's bar offers Undo move for (docs/design/design-v1-attach.md
  * 8.3): its own, its holders up the chain, since a rider's drag moves the
  * mount it directs, and what it carries itself, since an attach from its
  * bar names the carried token.

@@ -8,7 +8,7 @@ import type { FogView } from "./fogView.ts";
 import type { SideLook } from "./pieces.ts";
 
 /**
- * What a raised side wears (docs/design-v1-isometric-view.md 5.5,
+ * What a raised side wears (docs/design/design-v1-isometric-view.md 5.5,
  * D-261026-7): its cell's builder texture, a stair's swatch, or on a map
  * image with no builder terrain a flat tone tinted to the average color of
  * its top. The tint reads only pixels wholly inside the cell, from the map
@@ -21,7 +21,7 @@ import type { SideLook } from "./pieces.ts";
  * A hex's tint reads the pixels wholly inside its canonical polygon whose
  * squares touch only its own fog sub-cells, and only for a hex whose every
  * sub-cell this viewer has revealed: a hex seen in part stays neutral
- * (docs/design-v1-iso-hex-relief.md D-261030-465). Painted ground stays
+ * (docs/design/design-v1-iso-hex-relief.md D-261030-465). Painted ground stays
  * square, so a hex wears its stair's swatch or this.
  */
 

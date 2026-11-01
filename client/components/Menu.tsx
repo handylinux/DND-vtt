@@ -11,15 +11,15 @@ import { sectionLabelLook } from "./Panel.tsx";
 import { focusInView, usePopoverContext } from "./Popover.tsx";
 
 /**
- * A pick list on the shared popover base (docs/design-v1-panel-tabs.md
+ * A pick list on the shared popover base (docs/design/design-v1-panel-tabs.md
  * 4.4, 5.1 and 5.2): the side panel's More, and Setup and Tools in the
- * toolbar, drawn as tiles (docs/design-v1-tool-options.md 5.1 and 5.2),
+ * toolbar, drawn as tiles (docs/design/design-v1-tool-options.md 5.1 and 5.2),
  * so all three take the same keys. Render it inside a "menu" Popover.
  *
  * `role="menu"` named by `label`, its items `menuitemradio`, the one in
  * use checked, since choosing among them is one choice. An item may be a
  * `menuitemcheckbox` instead, a switch of its own beside that choice, such
- * as More's "Two panels" (docs/design-v1-split-panel.md 6), or a plain
+ * as More's "Two panels" (docs/design/design-v1-split-panel.md 6), or a plain
  * `menuitem` in a menu of actions with no choice to hold, such as a roll
  * card's asks of the DM, and any item may be disabled: it takes focus, so its description is heard, and picks
  * nothing. A section's
@@ -53,7 +53,7 @@ export type MenuItem = {
   note?: string;
   /** The shortcut it does, from state/shortcuts.ts useKeyHint: `title` its hover title with the key, "Fog (F)", and `aria` its `aria-keyshortcuts`. A roll's options keys have no hover title. */
   keys?: { title?: string; aria: string };
-  /** Drawn in place of `title`, which still names it for typeahead, such as a roll's name, tags and bonus (docs/design-v1-stat-block-rolls.md 4.2). */
+  /** Drawn in place of `title`, which still names it for typeahead, such as a roll's name, tags and bonus (docs/design/design-v1-stat-block-rolls.md 4.2). */
   content?: ReactNode;
   /** Merged over the row's own look, such as a proficiency border. */
   style?: CSSProperties;
@@ -195,7 +195,7 @@ export function Menu(props: {
     const described = it.description ? `${ids}-${it.id}` : undefined;
     const look = buttonLook("quiet", { pressed: checked, disabled });
     return (
-      // A binding's handlers go first, so Menu's own click below stays the one pick (docs/design-v1-stat-block-rolls.md 4.7).
+      // A binding's handlers go first, so Menu's own click below stays the one pick (docs/design/design-v1-stat-block-rolls.md 4.7).
       <div
         key={it.id}
         {...it.data}
@@ -300,7 +300,7 @@ const ROW = {
 } as const;
 
 /**
- * A tile (docs/design-v1-tool-options.md 7.2): words with a glyph above
+ * A tile (docs/design/design-v1-tool-options.md 7.2): words with a glyph above
  * where one exists, as the toolbar's buttons have them. Its side padding
  * is 4 px, as above and below, so the DM's five setup tools stand in one
  * row from a 430 px phone up: at 8 px they needed 4 px more than a 440 px

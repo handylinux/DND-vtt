@@ -10,7 +10,7 @@ import { boxHint, boxLine } from "./paste.ts";
 import { PasteControl, pasteSlot, type PasteRegistration, type PasteSpec, type PasteView } from "./pasteRouter.ts";
 
 /**
- * Pasting into an image entry (docs/design-v1-paste.md 1.2, 2.2 and 3.3):
+ * Pasting into an image entry (docs/design/design-v1-paste.md 1.2, 2.2 and 3.3):
  * `usePasteTarget` registers the entry with its Room page's router, so a
  * key paste can land there, and gives the Paste button and the paste box
  * their state. A pasted image goes to the handler the entry's file control
@@ -97,7 +97,7 @@ const PASTING = "Pasting…";
  * "Paste an image", a secondary button beside the entry's file control
  * (2.2). Busy while the browser answers, which may include its permission
  * prompt or iOS's own Paste callout, and a second press waits. A busy
- * button names its wait (docs/design-v1-look-pass-2.md 2.2).
+ * button names its wait (docs/design/design-v1-look-pass-2.md 2.2).
  */
 export function PasteButton(props: { paste: PasteHandle; label?: string; size?: "md" | "sm" }) {
   const { paste } = props;
@@ -117,7 +117,7 @@ export function PasteStatus(props: { paste: PasteHandle; only?: "note" | "box" }
   const { paste } = props;
   return (
     <>
-      {/* An error in the one look every paste error has, and anything else as help (docs/design-v1-look-pass-2.md 2.9). */}
+      {/* An error in the one look every paste error has, and anything else as help (docs/design/design-v1-look-pass-2.md 2.9). */}
       {paste.note && props.only !== "box" ? (
         paste.note.tone === "error" ? (
           <ErrorText>{paste.note.text}</ErrorText>

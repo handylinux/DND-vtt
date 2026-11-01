@@ -5,10 +5,10 @@ import { clientFiles, stripComments, type SourceFile } from "../../scripts/style
 /**
  * Two rules of the dice UI and icon passes, read from the source as the
  * drift test reads it (styleDrift.test.ts): the Dice panel, the stat blocks
- * and the Token panel keep to the space scale (docs/design-v1-dice-ui.md
+ * and the Token panel keep to the space scale (docs/design/design-v1-dice-ui.md
  * 3.1 rule 1), and no button anywhere is labelled by a bare arrow, cross,
  * minus or plus glyph, which drew at a different size and weight in every
- * font (docs/design-v1-icons.md 8). Each rule is also tried on a small made-up
+ * font (docs/design/design-v1-icons.md 8). Each rule is also tried on a small made-up
  * file, so a scan that finds nothing is known to look.
  */
 

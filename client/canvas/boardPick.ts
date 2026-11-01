@@ -11,7 +11,7 @@ import { creatureStands } from "./relief/stand.ts";
 import { cappedBase } from "./relief/standee.ts";
 
 /**
- * What a press on the board means (docs/design-v1-isometric-view.md 6.1):
+ * What a press on the board means (docs/design/design-v1-isometric-view.md 6.1):
  * the view on screen, its camera, the scene's grid and the drawn heights
  * this viewer may see. A press becomes a world point once, through
  * `pickGround`, and every slop and grab radius compares screen distances
@@ -161,7 +161,7 @@ export function ringCenter(pick: Pick<BoardPick, "view" | "grid" | "camera" | "s
   return screenAt(pick, { x: token.x + fp.w / 2, y: token.y + fp.h / 2 }, tokenBase(pick, token, stands));
 }
 
-/** The highest drawn ground inside a world rectangle, in cells, at least 0: how far a fit raises its box's top (docs/design-v1-isometric-view.md 4.2). */
+/** The highest drawn ground inside a world rectangle, in cells, at least 0: how far a fit raises its box's top (docs/design/design-v1-isometric-view.md 4.2). */
 export function liftIn(heights: DrawnHeights, rect: { x: number; y: number; width: number; height: number }): number {
   if (heights.high <= 0) return 0;
   const { w, h } = heights.bounds;

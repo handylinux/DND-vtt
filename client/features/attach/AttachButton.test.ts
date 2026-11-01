@@ -6,7 +6,7 @@ import type { RoomState, Token } from "#shared/model.ts";
 import { DM, room, token } from "#shared/testutil.ts";
 
 /*
- * The Attach list as card rows (docs/design-v1-look-pass-2.md 2.5 and 3,
+ * The Attach list as card rows (docs/design/design-v1-look-pass-2.md 2.5 and 3,
  * lane 3). Its keys find the rows by `data-attach-row`, so every row's
  * button must carry it, the near rows and "Farther away" alike, or Down,
  * Home and End would skip a row. The keys themselves are e2e's (lp2-3c).

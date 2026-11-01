@@ -14,7 +14,7 @@ import { UndoTable } from "./undoTesting.ts";
 import { SQUARES } from "#shared/rules/grid.ts";
 
 /**
- * The randomized test of attached tokens (docs/design-v1-attach.md 13):
+ * The randomized test of attached tokens (docs/design/design-v1-attach.md 13):
  * attach, detach, holder and carried moves, resizes, deletes, teleports,
  * scene changes, Next, Previous, undos and redos, and visibility flips of
  * riders and mounts (hide, reveal, fog), by the DM and two players through
@@ -383,7 +383,7 @@ const riding = (s: RoomState) => {
   s.meta.settings = { ...s.meta.settings, revealHiddenOnTurn: false };
 };
 
-describe("attached tokens, randomized (docs/design-v1-attach.md 13)", () => {
+describe("attached tokens, randomized (docs/design/design-v1-attach.md 13)", () => {
   test("random steps keep every invariant", () => {
     const totals: Record<string, number> = {};
     for (let seed = 1; seed <= 100; seed++) {

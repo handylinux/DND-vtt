@@ -9,7 +9,7 @@ import { seenFogBits, visionReport, type VisionWorld } from "#shared/rules/visio
 import { sceneWalls } from "#shared/rules/walls.ts";
 
 /**
- * The explore step (docs/design-v1-maps-vision.md 4.3.3): after a batch,
+ * The explore step (docs/design/design-v1-maps-vision.md 4.3.3): after a batch,
  * what the party sees on the player scene that its explored layer lacks,
  * as the one `sys.explore` the actor appends to the batch. Only the player
  * scene explores, only while its vision and fog are on, and nothing is
@@ -21,7 +21,7 @@ import { sceneWalls } from "#shared/rules/walls.ts";
  * party sees there, so the stored op says what the layer became. Tiles go
  * in row order, so the same state always gives the same op.
  *
- * On a per-player scene (docs/design-v1-per-player-vision.md 6.1 and 6.3)
+ * On a per-player scene (docs/design/design-v1-per-player-vision.md 6.1 and 6.3)
  * the step also decides who joins the holder list, with vision on, and
  * with fog on as well it writes the shared sight into the party's layer
  * and each holder's own sight, less what the party's layer and their own
@@ -98,7 +98,7 @@ function perPlayerExplore(state: RoomState, scene: Scene): OpOf<"sys.explore"> |
 const WORLD: VisionWorld = { walls: sceneWalls };
 
 /**
- * The players the holder list gains (docs/design-v1-per-player-vision.md
+ * The players the holder list gains (docs/design/design-v1-per-player-vision.md
  * 6.1, decision 4): each player with no entry who owns one of the scene's
  * sources now, in the sources' order and then by member id, ticked while
  * fewer than the cap in force are. The actor runs no limit check on this

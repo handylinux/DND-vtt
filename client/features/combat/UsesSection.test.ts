@@ -16,7 +16,7 @@ const { RoomProvider } = await import("../../state/view.ts");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
 
 /*
- * Combat's Uses section as it draws (docs/design-v1-token-sections.md 3.1),
+ * Combat's Uses section as it draws (docs/design/design-v1-token-sections.md 3.1),
  * moved from the Class resources section's test: what it is for while a
  * character has nothing in it, its rows with Restore and Edit, Add after
  * them or the limit in its place, and the question a rise in level asks
@@ -106,7 +106,7 @@ describe("Combat's Uses for a creature of its own", () => {
   state.tokens.goblin = token("goblin", { name: "Goblin" });
   const of = (tokenId: string, viewer: Viewer) => render(state, viewer, createElement(UsesSection, { target: { tokenId }, name: tokenId }));
 
-  test("the DM reads its counts as pips on its rows, with no pips block under the list (docs/design-v1-monster-uses.md 3.1)", () => {
+  test("the DM reads its counts as pips on its rows, with no pips block under the list (docs/design/design-v1-monster-uses.md 3.1)", () => {
     const markup = of("dragon", DM);
     assert.match(markup, />Uses<\/h/);
     assert.match(markup, /Legendary Actions<\/span><span[^>]*>, 2 of 3 left</, "the list's row");
@@ -129,7 +129,7 @@ describe("Combat's Uses for a creature of its own", () => {
 });
 
 /*
- * A monster's rows (docs/design-v1-monster-uses.md 3): each title line with
+ * A monster's rows (docs/design/design-v1-monster-uses.md 3): each title line with
  * its count as pips at its right end, to read only, in place of "x of y",
  * Restore always there and off while full, and the turn card's Legendary
  * Actions line.
@@ -232,7 +232,7 @@ describe("a monster's rows, its counts as pips", () => {
     assert.doesNotMatch(markup, /aria-label="Restore /);
   });
 
-  test("its rows and the parts of its box stand 12 px apart (docs/design-v1-monster-uses.md 3.1)", () => {
+  test("its rows and the parts of its box stand 12 px apart (docs/design/design-v1-monster-uses.md 3.1)", () => {
     const markup = list(spent);
     assert.match(markup, /^<div data-combat-uses="list" style="[^"]*gap:12px/);
     assert.match(markup, /<ul aria-label="Aboleth&#x27;s uses" style="[^"]*gap:12px/);

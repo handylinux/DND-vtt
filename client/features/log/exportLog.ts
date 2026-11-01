@@ -2,7 +2,7 @@ import { LIMITS } from "#shared/limits.ts";
 import { FileCutShortError, type LogRange, type LogSession } from "../../lib/api.ts";
 
 /**
- * The session log export's words (docs/design-v1-dm-tools.md 3.10): each
+ * The session log export's words (docs/design/design-v1-dm-tools.md 3.10): each
  * session as the sheet lists it, and what a failed export says. Plain
  * functions with the locale and time zone passed in, so they run under
  * node --test. ExportLog.tsx draws the sheet.

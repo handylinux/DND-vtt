@@ -115,7 +115,7 @@ export class LocalServer {
         rejects.push({ n, code: decision.code, message: decision.message });
         continue;
       }
-      // The fixture rolls with the server's resolve (docs/design-v1-dice.md 4.2), with a stand-in batch id: it keeps no receipts.
+      // The fixture rolls with the server's resolve (docs/design/design-v1-dice.md 4.2), with a stand-in batch id: it keeps no receipts.
       if (isDiceOp(next)) {
         const resolved = resolveDiceOp(next, this.state, { draw: serverDraw, batch: hash128(`${this.viewer.memberId}\n${next.tag}`).slice(0, 16) });
         if (!resolved.ok) {
@@ -167,7 +167,7 @@ export class LocalServer {
   }
 
   /**
-   * A DM's view as a player (docs/design-v1-per-player-vision.md 7.4), as
+   * A DM's view as a player (docs/design/design-v1-per-player-vision.md 7.4), as
    * server/rooms/ws.ts decides `as`: only for a DM and a player of the
    * roster. Anything else is null, the 403 `no_access` a browser sees as
    * a socket that never opens.
@@ -229,7 +229,7 @@ export function previewOmits(line: Pick<LogEntry, "kind" | "from" | "to">, by: s
 
 /**
  * One DM's view as a player on a LocalServer, as the actor serves a
- * preview socket (docs/design-v1-per-player-vision.md 7.4): that player's
+ * preview socket (docs/design/design-v1-per-player-vision.md 7.4): that player's
  * projection less whispers the DM is not party to, in its snapshot and
  * every batch after, read only, never any client's own socket, so it takes
  * no acks, and closed with 4003 once its player is no player of the
@@ -320,7 +320,7 @@ export function localSocketFactory(options: LocalSocketOptions): {
     onerror: SocketLike["onerror"] = null;
     private queue: { n: number; op: unknown }[] = [];
     private batchTimer: ReturnType<typeof setTimeout> | null = null;
-    /** A DM's view as a player, for a socket that asked `as` (docs/design-v1-per-player-vision.md 7.4). */
+    /** A DM's view as a player, for a socket that asked `as` (docs/design/design-v1-per-player-vision.md 7.4). */
     private preview: LocalPreview | null = null;
 
     constructor(as: string | null) {

@@ -10,7 +10,7 @@ import { hexDistance, hexInScene, hexKey, hexLine, type Hex, type HexGrid } from
 import type { RoutePiece } from "./route.ts";
 
 /**
- * Riding, carrying and dragging on hexes (docs/design-v1-hex-grids.md phase
+ * Riding, carrying and dragging on hexes (docs/design/design-v1-hex-grids.md phase
  * H2): a seat is a set of hexes inside the holder's, two tokens overlap when
  * they share a hex, reach counts hex steps, and a place to get off is a hex
  * placed spot beside the holder.

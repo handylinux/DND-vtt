@@ -18,7 +18,7 @@ import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
 import { assertCanvasAt, ConsoleWatch, dragCells, openSideTab, OpSocket, pagePoint, pickOption, pickTool, Shots, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
 
 /**
- * Map discovery (docs/design-v1-map-discovery.md section 10, steps md-1 to
+ * Map discovery (docs/design/design-v1-map-discovery.md section 10, steps md-1 to
  * md-9): the real server serving the production build, a DM on a
  * computer, Ben on a phone and a table display, across four scenes with
  * fog on. Ben plays Bree, who carries a torch, and Mole, who carries none.
@@ -665,7 +665,7 @@ describe("raccoon-vtt map discovery run", { timeout: 900_000 }, () => {
     await waitFor("the cavern floored again", () => (floored() === whole ? true : null));
     await pickOption(dm, "Map builder", "Builder mode", "Erase area");
     // The wait is the small loading line, muted, and the line keeps its place and a reading's height through it, so the
-    // row and the line stand still before, during and after (docs/design-v1-design-pass.md 2.4 rules 5 and 6).
+    // row and the line stand still before, during and after (docs/design/design-v1-design-pass.md 2.4 rules 5 and 6).
     const builderBar = dm.getByRole("toolbar", { name: "Map builder options" });
     const line = builderBar.locator("[data-options-line]");
     const place = async () => ({ line: await line.boundingBox(), row: await builderBar.locator("[data-options-row]").boundingBox(), reading: (await line.getAttribute("data-options-reading")) !== null });

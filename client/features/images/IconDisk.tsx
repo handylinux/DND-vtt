@@ -5,7 +5,7 @@ import { CroppedImage, ringStyle } from "./CropEditor.tsx";
 import { glyphColor, glyphSide, iconUrl, useIconGlyph } from "./icons.ts";
 
 /**
- * A shipped icon in HTML (docs/design-v1-dm-tools.md 3.12): a disk of its
+ * A shipped icon in HTML (docs/design/design-v1-dm-tools.md 3.12): a disk of its
  * color with the glyph on it, white or near-black by contrast. The glyph is
  * the icon file as a CSS mask over a box of the glyph's color, as
  * EffectIcon.tsx draws condition icons, and it shows once the file has

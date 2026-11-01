@@ -5,7 +5,7 @@ import { INCAPACITATING_KEYS } from "./hp.ts";
 
 /**
  * What a creature's conditions and statuses do to a d20 roll
- * (docs/design-v1-dm-tools.md 3.3, docs/design-v1-roll-options.md 3.2 and
+ * (docs/design/design-v1-dm-tools.md 3.3, docs/design/design-v1-roll-options.md 3.2 and
  * Appendix C), from their SRD 5.2.1 text in shared/srd/rules-text.json. One
  * table for every d20 roll the app makes: saves (concentration and save-ends
  * saves among them), death saves, checks, initiative and attacks.
@@ -24,7 +24,7 @@ import { INCAPACITATING_KEYS } from "./hp.ts";
  */
 export type RollReminder = { key: ConditionKey | StatusKey; text: string };
 
-/** What a creature's effects give one roll: sources for the cancel rule (docs/design-v1-dice.md 3.3), never a resolved mode. */
+/** What a creature's effects give one roll: sources for the cancel rule (docs/design/design-v1-dice.md 3.3), never a resolved mode. */
 export type RollPreset = {
   /** `from` is the effect's key, "magic-resistance", or "tracker" for the DM's mark on an initiative row. */
   sources: AdvantageSource[];
@@ -343,8 +343,8 @@ export function rollReminders(effects: readonly Pick<Effect, "key" | "level">[],
 
 /**
  * Every source, extra and automatic fail a creature's effects give one d20
- * roll (docs/design-v1-roll-options.md 3.2), unresolved, so the roll
- * combines them with every other source once (docs/design-v1-dice.md 3.3).
+ * roll (docs/design/design-v1-roll-options.md 3.2), unresolved, so the roll
+ * combines them with every other source once (docs/design/design-v1-dice.md 3.3).
  * A save against a spell is the test's own `spell`, which a creature with
  * Magic Resistance makes with advantage. On initiative, `mark` is the DM's
  * reminder on the creature's row, which replaces the tracker's hint
@@ -372,7 +372,7 @@ export function reminderPreset(effects: readonly Pick<Effect, "key" | "level">[]
 
 /**
  * Whether a creature has the Incapacitated condition or one that includes
- * it (docs/design-v1-roll-options.md 3.2). Every rule that ends with
+ * it (docs/design/design-v1-roll-options.md 3.2). Every rule that ends with
  * Incapacitated asks this one predicate, in presets and defenses alike:
  * Rage's advantage and resistance, Evasion, and Dodging.
  */
@@ -381,7 +381,7 @@ export function incapacitated(effects: readonly Pick<Effect, "key">[]): boolean 
 }
 
 /**
- * The condition that fails a save whatever its total (docs/design-v1-dice.md
+ * The condition that fails a save whatever its total (docs/design/design-v1-dice.md
  * 4.2): Paralyzed, Petrified, Stunned or Unconscious on a Strength or
  * Dexterity save, by the table above, among the creature's effects its
  * players may see. The server stores it on a rolled save as `fails`, so a

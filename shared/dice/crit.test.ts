@@ -8,7 +8,7 @@ import type { CritRule } from "../model.ts";
 import { askedCritical, critBound, critParts, critRuleOf, rollCritical } from "./crit.ts";
 import { FORMULA_ERRORS, formatFormula, parseFormula } from "./formula.ts";
 
-describe("the room's critical hit rule (docs/design-v1-dice.md, critical hit rules)", () => {
+describe("the room's critical hit rule (docs/design/design-v1-dice.md, critical hit rules)", () => {
   test("a room or a snapshot from before the setting rolls crits by the 2024 rule", () => {
     const state = room();
     delete state.meta.settings.critRule;

@@ -39,7 +39,7 @@ const FOLD: CSSProperties = {
 };
 
 /**
- * The turn card (docs/design-v1-combat-controls.md 4.2): from a creature's
+ * The turn card (docs/design/design-v1-combat-controls.md 4.2): from a creature's
  * turn start to its end, the turn's menu of its uses, for whoever answers
  * for it, with a block under each other creature of the turn this viewer
  * answers for. On its own turn a creature takes no legendary action, so
@@ -67,7 +67,7 @@ export function TurnCard(props: { model: TurnCardModel; folded: boolean; foldabl
         data-turn-folded=""
         style={{ ...alertCard, display: "flex", alignItems: "center", gap: theme.space(2), minHeight: theme.touch, padding: `0 ${theme.space(3)}px` }}
       >
-        {/* The fold's chevron leads its words, as the trap card's and every group's does (docs/design-v1-icons-2.md 4). Its name keeps "Show", which its words do not say, and the count its label would hide is its description. */}
+        {/* The fold's chevron leads its words, as the trap card's and every group's does (docs/design/design-v1-icons-2.md 4). Its name keeps "Show", which its words do not say, and the count its label would hide is its description. */}
         <button type="button" aria-expanded={false} aria-label={`Show ${title}`} aria-describedby={usesId} onClick={() => props.onShow(true)} style={FOLD}>
           <Icon name="chevronRight" size="sm" />
           <span style={{ flex: 1, minWidth: 0, fontSize: theme.font.body14, fontWeight: theme.weight.strong, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -100,7 +100,7 @@ export function TurnCard(props: { model: TurnCardModel; folded: boolean; foldabl
         ) : (
           <span style={{ flex: "1 1 auto", minWidth: 0, fontWeight: theme.weight.bold, overflowWrap: "anywhere" }}>{title}</span>
         )}
-        {/* Dismiss is the close every card and sheet draws (docs/design-v1-icons-2.md 4). */}
+        {/* Dismiss is the close every card and sheet draws (docs/design/design-v1-icons-2.md 4). */}
         <Button size="sm" variant="quiet" icon="close" iconOnly="always" aria-label={`Dismiss ${title}`} onClick={props.onDismiss} style={{ flex: "none", marginLeft: "auto" }} />
       </div>
       {model.blocks.map(({ participant, uses }) => (

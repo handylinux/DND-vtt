@@ -10,7 +10,7 @@ import { radiusCapFt } from "./reach.ts";
 import { visionOn } from "./sightMode.ts";
 
 /**
- * Light on a token's action bar (docs/design-v1-maps-vision.md section
+ * Light on a token's action bar (docs/design/design-v1-maps-vision.md section
  * 4.3.1): None, the SRD's carried lights, or Custom radii up to 120 ft
  * each, for the DM and the token's owners. A player lights their own torch
  * here. Its light reaches other players only as what the party sees.

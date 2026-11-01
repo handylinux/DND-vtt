@@ -9,7 +9,7 @@ import { findRoute, type WalkRoute } from "./walk.ts";
 import { groupWalkWorld } from "./walkWorld.ts";
 
 /**
- * A chain of drags on squares (docs/design-v1-attach.md 4.2): each
+ * A chain of drags on squares (docs/design/design-v1-attach.md 4.2): each
  * creature follows its own holder (moveLeg.ts follow), so the way a drag
  * finds is one the server's leg test takes for every creature in the chain
  * (permissions.ts draggedWalls), however deep, flying or on the ground.

@@ -10,7 +10,7 @@ import { againInput } from "./logic.ts";
 /**
  * Again on a creature's initiative (B7B-ASTRA-01): the roll it sends is an
  * initiative roll again, so the server keeps it from players by the order
- * setting as it stands then (docs/design-v1-combat-flow.md 11.3), the way
+ * setting as it stands then (docs/design/design-v1-combat-flow.md 11.3), the way
  * Recent rolls and the sticky line send it, through the resolve, the
  * reducer and a player's projection.
  */
@@ -47,7 +47,7 @@ function fight(): RoomState {
 
 const INITIATIVE: DiceRollInput = { formula: "1d20+2", label: "Initiative", creature: { tokenId: "gob" }, initiative: true };
 
-describe("Again on an initiative roll (B7B-ASTRA-01, docs/design-v1-combat-flow.md 11.3)", () => {
+describe("Again on an initiative roll (B7B-ASTRA-01, docs/design/design-v1-combat-flow.md 11.3)", () => {
   test("the line keeps the mark, and Again sends an initiative roll again", () => {
     const state = rolled(fight(), [INITIATIVE], "all");
     const roll = lastDice(state).rolls[0]!;

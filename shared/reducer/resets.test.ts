@@ -5,7 +5,7 @@ import { canApply } from "../permissions.ts";
 import { clientOpSchema } from "../protocol.ts";
 import { DM, P1, actor, apply, character, companionBlock, room, token } from "../testutil.ts";
 
-/** In lair's counts and a stat block's link (docs/design-v1-combat-controls.md 2.4). */
+/** In lair's counts and a stat block's link (docs/design/design-v1-combat-controls.md 2.4). */
 
 const breath: UseMark = { kind: "recharge", name: "Fire Breath", used: 1, max: 1, min: 5 };
 
@@ -24,7 +24,7 @@ function table(): RoomState {
 
 const dragon = (s: RoomState): Actor => (s.tokens.dragon!.actor as { inline: Actor }).inline;
 
-describe("In lair's counts (docs/design-v1-combat-controls.md 2.4)", () => {
+describe("In lair's counts (docs/design/design-v1-combat-controls.md 2.4)", () => {
   test("the row's creature takes the counts and XP the op carries, what it spent cut to them", () => {
     const lair = apply(table(), { t: "encounter.update", entryId: "ed", patch: { inLair: true }, counts: { actionsMax: 4, resistMax: 4, xp: 20_000 } });
     assert.equal(lair.encounter!.entries[0]!.inLair, true);
@@ -45,7 +45,7 @@ describe("In lair's counts (docs/design-v1-combat-controls.md 2.4)", () => {
   });
 });
 
-describe("a stat block's link (docs/design-v1-combat-controls.md 2.4)", () => {
+describe("a stat block's link (docs/design/design-v1-combat-controls.md 2.4)", () => {
   test("a new block takes the marks, and an edit that keeps it leaves them", () => {
     const relinked = apply(table(), { t: "token.update", tokenId: "dragon", patch: { actor: { srdId: "ancient-red-dragon" } } });
     assert.equal(dragon(relinked).uses, undefined);

@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { fitTabs, headerNamesOpen, ICON_TAB, MORE_CAP, moreReserve, nameCut, rowNamesOpen, rowWidth, tabLook, widthsFor, type TabWidths } from "./tabFit.ts";
 
 /*
- * The side panel's one row of tabs (docs/design-v1-panel-tabs.md 3.2).
+ * The side panel's one row of tabs (docs/design/design-v1-panel-tabs.md 3.2).
  * The fixtures are the widths measured in Chrome, 14 px at weight 600 in
  * the tab look with 6 px side padding, and in More's look with its caret,
  * for macOS's system font, Segoe UI (through Selawik, built to its
@@ -163,7 +163,7 @@ describe("the measured fonts (3.2)", () => {
     assert.equal(fitTabs(widths(DEJAVU_8, DM, 295))!.count, 2);
   });
 
-  // docs/design-v1-split-panel.md 6: "Two panels" heads More's menu, so More must always be there. A registry that one day fits every tab in the row needs another place for it.
+  // docs/design/design-v1-split-panel.md 6: "Two panels" heads More's menu, so More must always be there. A registry that one day fits every tab in the row needs another place for it.
   test("More holds a panel for both roles at every room up to the 360 px side panel's widest row, so Two panels always has its place", () => {
     for (const [name, font] of [["Inter", INTER], ["macOS", MACOS], ["Segoe UI", SEGOE], ["DejaVu Sans", DEJAVU]] as const) {
       for (const [role, panels] of [["DM", DM], ["player", PLAYER]] as const) {
@@ -184,7 +184,7 @@ describe("the measured fonts (3.2)", () => {
   });
 });
 
-describe("each panel's icon in the row (docs/design-v1-icons-2.md 3.1)", () => {
+describe("each panel's icon in the row (docs/design/design-v1-icons-2.md 3.1)", () => {
   // Today's registry, with Dice after Initiative. Its widths in the four fonts were measured as the others were, in Chrome on 2026-10-24. The panel-tabs cases above keep the registry they were written for.
   const DM_NOW = [DM[0]!, DM[1]!, ["Dice", "play"] as const, ...DM.slice(2)];
   const PLAYER_NOW = [PLAYER[0]!, PLAYER[1]!, ["Dice", "play"] as const, ...PLAYER.slice(2)];

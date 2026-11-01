@@ -3,7 +3,7 @@ import type { Point } from "./schema.ts";
 
 /**
  * Wall polylines, made fewer and put on the lattice
- * (docs/design-v1-maps-vision.md section 3.1 step 4): points closer than
+ * (docs/design/design-v1-maps-vision.md section 3.1 step 4): points closer than
  * a tenth of a square merged, then Douglas-Peucker, then every coordinate
  * snapped to 1/64 cell, where free walls must lie. Exporters trace curved
  * walls with a point every few pixels, so a cave wall comes down from

@@ -13,7 +13,7 @@ import { unionView, withheldFromEveryPlayer } from "./union.ts";
 
 /**
  * The DM's tools read the union on a per-player scene
- * (docs/design-v1-per-player-vision.md decision 14): the Outliner and the
+ * (docs/design/design-v1-per-player-vision.md decision 14): the Outliner and the
  * tracker's "visible" add say a creature or a label reaches players when
  * any player gets it, by every source's sight and every holder's map.
  */

@@ -11,7 +11,7 @@ const ROW = /^\|\s*(Str|Dex|Con|Int|Wis|Cha)\s*\|\s*(\d+)\s*\|\s*([+\-−]\d+)\s
 
 /**
  * A monster block's ability table, read out of its Markdown so the view can
- * draw it three across as a PC's block does (docs/design-v1-dice-ui.md 6.3).
+ * draw it three across as a PC's block does (docs/design/design-v1-dice-ui.md 6.3).
  * The stored text never changes. Only the exact table every block is
  * written with (shared/statBlock.ts, the SRD's own) is read: its header,
  * its rule, and the six abilities in order. Anything else is null, and the

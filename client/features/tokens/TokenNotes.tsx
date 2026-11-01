@@ -5,7 +5,7 @@ import { Section, TextField } from "./ui.tsx";
 
 /**
  * A token's notes in one section (features section 5,
- * docs/design-v1-token-panel.md 3.8): one for everyone who can see the
+ * docs/design/design-v1-token-panel.md 3.8): one for everyone who can see the
  * token, such as "wears the stolen guard's tabard", the card's notes,
  * which the DM and the card's owners read, and one for the DM alone, such
  * as "the real duke is in the cellar". The first is the token's own

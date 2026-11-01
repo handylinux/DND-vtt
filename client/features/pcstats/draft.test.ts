@@ -7,7 +7,7 @@ import { EMPTY_PC_STATS, pcDerived } from "#shared/rules/pcStats.ts";
 import { draftDirty, draftProblems, editedRoll, lateSaveText, newRoll, openDraft, saveOutcome, savePatch, statsPatch, tidyPart, withAllBonus, withTotal, type PcDraft } from "./draft.ts";
 import { rollReading, rollTitle } from "./reading.ts";
 
-/** The stat block editor's draft (docs/design-v1-pc-stats.md 7.2). */
+/** The stat block editor's draft (docs/design/design-v1-pc-stats.md 7.2). */
 
 function stats(overrides: Partial<PcStats> = {}): PcStats {
   return { ...structuredClone(EMPTY_PC_STATS as PcStats), ...overrides };

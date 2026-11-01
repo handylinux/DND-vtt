@@ -16,7 +16,7 @@ import { buildVolume, type Volume } from "./volume.ts";
 import { assertClosed, ctxOf, mulberry32 } from "./volumeTesting.ts";
 
 /*
- * An area's ground cut on hexes (docs/design-v1-iso-hex-relief.md 8): each
+ * An area's ground cut on hexes (docs/design/design-v1-iso-hex-relief.md 8): each
  * face cut by the hexes it meets, a face along a hex side owned by the
  * one hex its solid lies in before any level cut, and squares' boundary
  * faces as they always were.

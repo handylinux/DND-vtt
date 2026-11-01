@@ -5,7 +5,7 @@ import type { FastifyInstance } from "fastify";
 import type { ApiErrorCode } from "#shared/apiErrors.ts";
 
 /**
- * The token icons' folder (docs/design-v1-dm-tools.md 3.12). Its name holds
+ * The token icons' folder (docs/design/design-v1-dm-tools.md 3.12). Its name holds
  * the first 8 characters of the pinned commit, so a new pin is a new URL
  * and a file under one name never changes: browsers may keep each icon for
  * good and never ask again, which is what lets a device that fetched an
@@ -27,7 +27,7 @@ const FONT_FILE = /[/\\]fonts[/\\][^/\\]+-[0-9a-f]{8}\.woff2$/;
  * 4,180 icons get one wildcard route of their own instead: a route each
  * made boot about 0.4 s slower and held about 50 MB more heap for routes
  * nothing else needs. The starter packs' files and thumbnails, about a
- * thousand (docs/design-v1-starter-art.md 8), get one too. They keep the
+ * thousand (docs/design/design-v1-starter-art.md 8), get one too. They keep the
  * default revalidation: a rebuilt work keeps its name, so a browser must
  * ask again.
  *

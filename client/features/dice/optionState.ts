@@ -5,7 +5,7 @@ import { scopeSlot, useScoped } from "../../state/scope.ts";
 
 /*
  * What the roll options remember for the page, room by room
- * (docs/design-v1-roll-options.md 4.2 and 4.3): each row's newest roll by
+ * (docs/design/design-v1-roll-options.md 4.2 and 4.3): each row's newest roll by
  * its tag, an attack's critical that its next Damage tap doubles, the
  * riders toggled on, the DM's Ask switch per creature, the creature a
  * player picked, the tags already acted on, the request to scroll to the
@@ -37,7 +37,7 @@ export type OptionState = {
   /** The last ask the panel scrolled for, so a later opening of the panel does not scroll again. */
   focused: number;
   /**
-   * The one open block of a player's ask for saves (docs/design-v1-player-save-spell.md 3.1),
+   * The one open block of a player's ask for saves (docs/design/design-v1-player-save-spell.md 3.1),
    * kept here so closing the sheet to select targets on the map keeps it. Opening it pins
    * `picked` to its creature.
    */
@@ -47,7 +47,7 @@ export type OptionState = {
   /**
    * The opening the block last took the focus for, so only a new opening
    * moves it: the block drawn again by a group reopened or a tab picked
-   * back leaves the focus where the viewer put it (docs/design-v1-dice-pass.md 6.6).
+   * back leaves the focus where the viewer put it (docs/design/design-v1-dice-pass.md 6.6).
    * 0 once the options go, so a panel shown again brings the block back as an opening would.
    */
   castFocused: number;

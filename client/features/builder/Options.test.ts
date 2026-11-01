@@ -4,7 +4,7 @@ import { describe, test } from "node:test";
 
 /*
  * The builder's options line while a gesture waits on the server's
- * answer to its asks (docs/design-v1-design-pass.md 2.4 rules 5 and 6,
+ * answer to its asks (docs/design/design-v1-design-pass.md 2.4 rules 5 and 6,
  * 4.4): a muted wait in the small loading line, phrasing inside the
  * line's words, and a reading's place kept, so the map's controls hold
  * still through the wait.

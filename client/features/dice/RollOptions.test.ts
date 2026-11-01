@@ -15,7 +15,7 @@ import { diceChoicesSlot } from "./useDicePanel.ts";
 import { receiptsSlot } from "./useReceipt.ts";
 
 /*
- * A row shows no result of its own (docs/design-v1-dice-ui.md 4.1 and 12.1):
+ * A row shows no result of its own (docs/design/design-v1-dice-ui.md 4.1 and 12.1):
  * after a save, an attack and a damage roll land, their totals are in the
  * panel's header line and nowhere under the buttons.
  */
@@ -139,7 +139,7 @@ test("skill names keep one line with room for their bonus in equal grid columns"
   }
 });
 
-describe("a roll option's result shows in the header line, never under its button (docs/design-v1-dice-ui.md 4.1)", () => {
+describe("a roll option's result shows in the header line, never under its button (docs/design/design-v1-dice-ui.md 4.1)", () => {
   test("before any roll, the options draw and no total is anywhere", () => {
     const markup = render(P1, false);
     assert.match(markup, /DEX \+7/, "the save's button");
@@ -178,7 +178,7 @@ describe("an ask for a skill opens the folded Skills group", () => {
 });
 
 /*
- * The card and the groups (docs/design-v1-dice-pass.md 5 and 6): drawn on a
+ * The card and the groups (docs/design/design-v1-dice-pass.md 5 and 6): drawn on a
  * server render, which reads a phone's starts, so Saves and checks, Skills
  * and Traits start folded and the rest open.
  */
@@ -314,7 +314,7 @@ describe("the creature's card and groups", () => {
   });
 });
 
-describe("whether the options end on a group, which Recent rolls joins (docs/design-v1-dice-pass.md 6.1)", () => {
+describe("whether the options end on a group, which Recent rolls joins (docs/design/design-v1-dice-pass.md 6.1)", () => {
   /** What the hook says for this viewer and selection, read from the data alone, as the panel reads it on any page it starts on. */
   function ends(viewer: Viewer, selectedIds: string[], edit?: (state: RoomState) => void): boolean {
     const state = table();
@@ -362,7 +362,7 @@ describe("whether the options end on a group, which Recent rolls joins (docs/des
 });
 
 /*
- * Used and X/Day are room state (docs/design-v1-combat-controls.md 6): a
+ * Used and X/Day are room state (docs/design/design-v1-combat-controls.md 6): a
  * row reads them from the creature's actor, so every device and a reload
  * show the same, and an X/Day row counts what is left with its Use.
  */
@@ -430,7 +430,7 @@ describe("a row's recharge and X/Day uses, read from the room", () => {
 /*
  * The Dice panel's death save row waits while this device shows the
  * creature's Regeneration open, as every death save Roll does
- * (docs/design-v1-combat-controls.md 2.3 and 4.4).
+ * (docs/design/design-v1-combat-controls.md 2.3 and 4.4).
  */
 describe("the death save row while Regeneration is open", () => {
   const TROLL = customMonster("troll", {

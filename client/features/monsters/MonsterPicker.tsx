@@ -19,7 +19,7 @@ const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompar
 
 /**
  * The monster browser for "Attach a stat block" on a token that is not a
- * companion (docs/design-v1-dm-tools.md 3.6): the room's own monsters and
+ * companion (docs/design/design-v1-dm-tools.md 3.6): the room's own monsters and
  * the SRD's, searched as the Monsters panel searches, with those of exactly
  * the token's name suggested first. A tap attaches and closes. A
  * companion's picker is CompanionPickerBody, in a dialog of its own steps.
@@ -76,7 +76,7 @@ export function MonsterPicker(props: { name: string; onPick(link: BlockLink): vo
 }
 
 /**
- * A companion's picker (docs/design-v1-companion-stat-blocks.md 6.1), the
+ * A companion's picker (docs/design/design-v1-companion-stat-blocks.md 6.1), the
  * body of a dialog its caller owns, so a pick can move it to the numbers
  * step in place and Back finds the search as it was: "Paste a stat block"
  * and "New stat block", then the character's own blocks, those of exactly

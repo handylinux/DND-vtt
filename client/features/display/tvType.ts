@@ -2,7 +2,7 @@
  * The table display's own scale: a TV read from across the room, typed on
  * with a remote. Larger than the app's (lib/theme.ts), which is made for a
  * phone in the hand, and kept apart from it so a change to the app's type
- * never shrinks what the table reads (docs/design-v1-visual.md 3.6).
+ * never shrinks what the table reads (docs/design/design-v1-visual.md 3.6).
  */
 export const TV_TEXT = {
   /** The notes under the menu, its errors and the text size row's name. */

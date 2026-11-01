@@ -4,7 +4,7 @@ import { Vector3 } from "three";
 import { splitD100 } from "./layout.ts";
 import { buildModel, labelsOf, landing, MAX_TILT, shownFace } from "./models.ts";
 
-/** The dice as solids, and the landing solved for every face (docs/design-v1-roll-animation.md 3.2). */
+/** The dice as solids, and the landing solved for every face (docs/design/design-v1-roll-animation.md 3.2). */
 
 const KINDS = ["d4", "d6", "d8", "d10", "d12", "d20", "tens", "units", "coin"] as const;
 const SIDES = { d4: 4, d6: 6, d8: 8, d10: 10, d12: 12, d20: 20, tens: 10, units: 10, coin: 1 } as const;

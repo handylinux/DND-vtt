@@ -40,7 +40,7 @@ import { useRoomActions, useRoomView } from "../state/view.ts";
  * choice applies at once as one `room.update` op, so the room changes for
  * everyone the moment the DM taps. Typed values apply on Save.
  *
- * Laid out as every panel's settings are (docs/design-v1-visual.md 2.3):
+ * Laid out as every panel's settings are (docs/design/design-v1-visual.md 2.3):
  * a capitals label over each group, so a group's title no longer reads
  * at the size of the settings under it, and one setting row per setting.
  */
@@ -115,7 +115,7 @@ function SettingControl(props: { field: SettingField; settings: RoomSettings; on
         </div>
       );
     case "gridShape":
-      // The scene's own Grid shape choice, so one choice has one look (docs/design-v1-design-pass.md 4.2). A room refuses no shape.
+      // The scene's own Grid shape choice, so one choice has one look (docs/design/design-v1-design-pass.md 4.2). A room refuses no shape.
       return <ShapeRow name={field.label} help={field.help} value={newScenesShape(settings)} onChange={(v) => onChange({ newScenes: v } as Partial<RoomSettings>)} />;
     case "choice":
       // Each key's options are typed to its own values, so the cast only widens for the shared component.
@@ -135,7 +135,7 @@ function SettingControl(props: { field: SettingField; settings: RoomSettings; on
 
 /**
  * Who may move tokens they do not own (features section 5), or who may draw
- * (docs/design-v1-dm-tools.md 3.9): no one, every player, or the players
+ * (docs/design/design-v1-dm-tools.md 3.9): no one, every player, or the players
  * ticked below. Each tap applies at once, like the switches. Only players
  * are listed, since a DM does both anyway.
  */
@@ -225,7 +225,7 @@ function FeetPerCell(props: { label: string; help: string; value: number; onSave
     if (text === String(synced)) setText(String(props.value));
   }
   const dirty = text.trim() !== String(props.value);
-  // Typed values apply on Save, so a sheet's swipe springs back until then (docs/design-v1-sheet-swipe.md 4.5).
+  // Typed values apply on Save, so a sheet's swipe springs back until then (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(dirty);
   const submit = (e: FormEvent) => {
     e.preventDefault();

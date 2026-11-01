@@ -13,7 +13,7 @@ import { ipKey } from "../auth/ipKey.ts";
 
 /**
  * A public D&D Beyond character read into a stat block's fill
- * (docs/design-v1-pc-stats.md 6.3): `POST /api/rooms/:id/ddb-import`, for
+ * (docs/design/design-v1-pc-stats.md 6.3): `POST /api/rooms/:id/ddb-import`, for
  * any member with a grant, under the app's CSRF rule. The server builds the
  * one address it fetches from the character's digits, so no member's URL
  * is ever fetched, and goes out on the strict egress port, whose squid

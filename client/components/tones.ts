@@ -1,7 +1,7 @@
 import { theme } from "../lib/theme.ts";
 
 /**
- * The fixed tone colors of status marks (docs/design-v1-visual.md 2.3).
+ * The fixed tone colors of status marks (docs/design/design-v1-visual.md 2.3).
  * A status never wears the accent: it means the same to every member,
  * whatever color they picked.
  */

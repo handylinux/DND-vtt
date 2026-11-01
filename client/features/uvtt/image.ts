@@ -1,7 +1,7 @@
 import { count, MAX_MAP_SIDE, MAX_MAP_UPLOAD_BYTES, MAX_SOURCE_PIXELS, MAX_SOURCE_SIDE, PHONE_CANVAS_PIXELS, type Device } from "./limits.ts";
 
 /**
- * The image step of a Universal VTT import (docs/design-v1-maps-vision.md
+ * The image step of a Universal VTT import (docs/design/design-v1-maps-vision.md
  * section 3.1 step 2): the base64 in the file becomes bytes, the bytes say
  * what they are, and their header says how big the picture is, all before
  * anything decodes a pixel. The server's sharp pipeline still checks and

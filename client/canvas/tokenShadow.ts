@@ -4,7 +4,7 @@ import { footprintGround } from "#shared/rules/heights.ts";
 import { landedElevation } from "#shared/rules/movement.ts";
 
 /**
- * The depth cue under a token off the ground (docs/design-v1-maps-vision.md
+ * The depth cue under a token off the ground (docs/design/design-v1-maps-vision.md
  * section 4.4): a soft shadow that drifts down and to the right as the
  * token rises, and shrinks and fades. Only a token above the ground under it
  * casts one. A token standing on raised ground stands on it, so a platform

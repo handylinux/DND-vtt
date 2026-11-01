@@ -7,7 +7,7 @@ import { ownWalk } from "./movement.ts";
 import { hexPiece, plainLegCost, routeWalk, straightCost, straightFeet, type SizedSpot } from "./route.ts";
 
 /**
- * Straight legs and walk spots on hexes (docs/design-v1-hex-grids.md 4.2
+ * Straight legs and walk spots on hexes (docs/design/design-v1-hex-grids.md 4.2
  * and 4.4): a leg's feet are the hex steps between its ends' reference
  * hexes, and its spots stand on the hex line between them.
  */

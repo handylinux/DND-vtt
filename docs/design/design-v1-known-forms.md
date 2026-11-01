@@ -1,6 +1,6 @@
 # raccoon-vtt v1: a Druid's known forms
 
-Status: built. It reached consensus in design review round 2, and the build follows it with the round 2 notes applied: the import's empty list is stored as none in a named place (3.1), and the rename mapper serves an import only from before snapshot version 14 (3.4). Code is cited from the batch tip `1145718c`. It builds on docs/design-v1-pc-stats.md (sections 3.6 and 7.3, a shape on the character's own token) and on the "Druid level" filter being built beside it in `client/features/pcstats/ShapePicker.tsx` and `shapeLevel.ts` (`shapeLimit`, `fitsShapeLimit`, `byCrThenName`, `DRUID_LEVELS`), which this note uses as that build has it and does not redesign.
+Status: built. It reached consensus in design review round 2, and the build follows it with the round 2 notes applied: the import's empty list is stored as none in a named place (3.1), and the rename mapper serves an import only from before snapshot version 14 (3.4). Code is cited from the batch tip `1145718c`. It builds on docs/design/design-v1-pc-stats.md (sections 3.6 and 7.3, a shape on the character's own token) and on the "Druid level" filter being built beside it in `client/features/pcstats/ShapePicker.tsx` and `shapeLevel.ts` (`shapeLimit`, `fitsShapeLimit`, `byCrThenName`, `DRUID_LEVELS`), which this note uses as that build has it and does not redesign.
 
 On 2026-10-18, right after asking for that filter, the project owner asked: "also as part of this druids should be able to pick a loadout of wild shapes they have prepared".
 
@@ -53,7 +53,7 @@ No change. `projectCharacter` (`shared/project.ts:618`) gives the DM the charact
 
 By the repository's rule (design 16.2's Versioning paragraph, as op 9 and schema 13 did for a grid import's mark in `shared/migrate.ts`): a new optional field in a stored op and in the stored room, which an older build's strict schemas refuse (`characterPatch` and the state schema are strict objects), moves both numbers with identity steps. An older build then refuses the room cleanly instead of failing its replay or its export. So this takes **`OP_VERSION` 11 and `SNAPSHOT_VERSION` 15** (both 10 and 14 today), each step returning what it is given, with the usual deploy and rollback comment: back up just before, and going back is the backup's restore (README, Updating).
 
-Known forms ships before movement, attach and traps. Each of those notes takes "the next free pair at build time" in the order movement, attach, traps (docs/design-v1-movement.md 248, docs/design-v1-attach.md 250, docs/design-v1-traps.md 245), so they become 12 and 16, 13 and 17, then 14 and 18, and their notes need no edit. Nothing here depends on the number: if another bump lands first, this takes the pair after it.
+Known forms ships before movement, attach and traps. Each of those notes takes "the next free pair at build time" in the order movement, attach, traps (docs/design/design-v1-movement.md 248, docs/design/design-v1-attach.md 250, docs/design/design-v1-traps.md 245), so they become 12 and 16, 13 and 17, then 14 and 18, and their notes need no edit. Nothing here depends on the number: if another bump lands first, this takes the pair after it.
 
 ## 4. Enforce the rule, or show it
 
@@ -148,7 +148,7 @@ One builder, after the Druid level filter lands:
 2. `feat(ui): known forms first in take a shape, and a step to choose them` (`shapeLevel.ts`'s `knownFormCount` and `shapeLimitMiss`, `client/features/pcstats/knownForms.ts` with 5.5's memory, `shape.ts`'s `shapeTempHp` level, `ShapePicker.tsx`, `client/features/monsters/MonsterList.tsx`'s `ListedRow` gaining `label` (a row's own accessible name), `pressed` and `disabled`, `client/components/Row.tsx`'s `pressed`, client tests).
 3. `feat(ui): a druid's known forms as one tap in the stat block group` (`PcStatBlock.tsx`, its loading and failure lines, the folded summary).
 4. `test(e2e): a druid's known forms` (`e2e/pcstats.e2e.ts`).
-5. `docs: a druid's known forms in the feature list, the dm guide and the design` (FEATURES.md's Take a shape bullet, docs/dm-guide.md's Take a shape paragraph, docs/design.md sections 6, 8.1 and 16.2's Versioning paragraph).
+5. `docs: a druid's known forms in the feature list, the dm guide and the design` (FEATURES.md's Take a shape bullet, docs/dm-guide.md's Take a shape paragraph, docs/design/design.md sections 6, 8.1 and 16.2's Versioning paragraph).
 
 **Deploy**: back up the database just before, as for every bump. Nothing to run after.
 

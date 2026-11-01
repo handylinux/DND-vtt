@@ -108,7 +108,7 @@ export function SetupHistory(props: { scope?: HistoryScope; direction?: HistoryD
       </div>
       {discard ? (
         <Dialog title="Discard this step" phone="sheet" width="sm" onClose={() => setDiscard(null)} footer={<>
-          {/* Each fills the line it stands on, so the pair wrapped on a narrow phone keeps one edge (docs/design-v1-polish.md R6). */}
+          {/* Each fills the line it stands on, so the pair wrapped on a narrow phone keeps one edge (docs/design/design-v1-polish.md R6). */}
           <Button onClick={() => setDiscard(null)} style={{ flex: "1 1 auto" }}>Cancel</Button>
           <Button variant="danger" disabled={disabled} style={{ flex: "1 1 auto" }} onClick={(event) => {
             actions[discard.direction]({ scope, expected: discard.head.id, discard: true, control: `discard-${scope}-${discard.direction}`, detail: event.detail });

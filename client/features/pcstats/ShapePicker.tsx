@@ -30,7 +30,7 @@ function isBeast(m: SrdMonster): boolean {
 }
 
 /**
- * "Take a shape" (docs/design-v1-pc-stats.md 7.3): the SRD's creatures with
+ * "Take a shape" (docs/design/design-v1-pc-stats.md 7.3): the SRD's creatures with
  * the Beasts filtered in, then one step that says what the shape keeps,
  * Wild Shape by default, and Take the shape, one `character.update` on the
  * character's own actor with the creature's AC and speeds and the shape's
@@ -39,7 +39,7 @@ function isBeast(m: SrdMonster): boolean {
  *
  * A Druid's known forms come first, each taking Wild Shape in one tap, and
  * "Change" opens the step that chooses them, sharing the search and both
- * filters with the first page (docs/design-v1-known-forms.md 5.1 and 5.2).
+ * filters with the first page (docs/design/design-v1-known-forms.md 5.1 and 5.2).
  *
  * A druid in Wild Shape reaches it from the row's button too: the form she
  * is in shows pressed and does nothing when tapped, the rest change her form,
@@ -160,7 +160,7 @@ export function ShapePicker(props: { character: Pick<Character, "id" | "name" | 
           </>
         }
       >
-        {/* Its step rises from the bottom on a phone, so a shape other than Wild Shape, which only Take the shape sends, holds it against a swipe (docs/design-v1-sheet-swipe.md 4.6). */}
+        {/* Its step rises from the bottom on a phone, so a shape other than Wild Shape, which only Take the shape sends, holds it against a swipe (docs/design/design-v1-sheet-swipe.md 4.6). */}
         <UnsavedInput unsaved={shapeKind !== "wild" || !gainTemp} />
         <div style={{ display: "grid", gap: theme.space(2), fontSize: theme.font.body14 }}>
           {refusalLine}

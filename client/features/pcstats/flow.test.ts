@@ -14,7 +14,7 @@ import { hash12 } from "#shared/rules/pcSync.ts";
 import { goneDroppedLine } from "./resync.ts";
 import { alsoLine } from "./resync.ts";
 
-/** The editor's steps and Save (docs/design-v1-pc-stats.md 7.2). */
+/** The editor's steps and Save (docs/design/design-v1-pc-stats.md 7.2). */
 
 const BLOCK: PcStats = structuredClone(EMPTY_PC_STATS as PcStats);
 const FILL: PcFill = { source: "paste", stats: { saves: ["dex"], rolls: [] }, actor: { ac: 16 }, warnings: [] };
@@ -134,7 +134,7 @@ describe("the editor's flow", () => {
     assert.equal(taken.state.draft.level, 5);
   });
 
-  test("a D&D Beyond read is reviewed by its ticks, and Use it takes the block, the fields beside it and the record it carries (docs/design-v1-resync.md 1.1)", () => {
+  test("a D&D Beyond read is reviewed by its ticks, and Use it takes the block, the fields beside it and the record it carries (docs/design/design-v1-resync.md 1.1)", () => {
     const ddb: PcFill = { ...FILL, source: "ddb" };
     const start = openFlow({ stats: BLOCK, level: 5 });
     let { state } = run(start, { t: "open", step: "ddb" }, { t: "get" });
@@ -175,7 +175,7 @@ function rng(seed: number): () => number {
   };
 }
 
-describe("the fill flow under random taps and answers (docs/design-v1-pc-stats.md 12)", () => {
+describe("the fill flow under random taps and answers (docs/design/design-v1-pc-stats.md 12)", () => {
   /*
    * Many random sequences of Get it, Read it, Back, Use it, edits, Save,
    * close, and late, refused, unknown and aborted answers, against the
@@ -273,7 +273,7 @@ describe("the fill flow under random taps and answers (docs/design-v1-pc-stats.m
   });
 });
 
-/** The editor's D&D Beyond step with class resources (docs/design-v1-ddb-resources.md 6.2), one row per letter. */
+/** The editor's D&D Beyond step with class resources (docs/design/design-v1-ddb-resources.md 6.2), one row per letter. */
 describe("the editor's class resources", () => {
   const AT = "2026-10-24T10:00:00.000Z";
   const SHEET = "https://www.dndbeyond.com/characters/12345678";

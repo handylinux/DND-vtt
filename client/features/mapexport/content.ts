@@ -10,7 +10,7 @@ import { drawOrder } from "../builder/stamps/rules.ts";
  * - The player view holds exactly what a player's client receives for the
  *   scene (design 7.3 and 13.4), drawn without the fog. With fog on that is
  *   the server's to say (playerViewContent): players hold the build only
- *   where they have seen it (docs/design-v1-map-discovery.md 5.1). With fog
+ *   where they have seen it (docs/design/design-v1-map-discovery.md 5.1). With fog
  *   off they receive the whole build, worked out here: an undiscovered
  *   secret door, on an edge or free, is the wall players see there, under
  *   the scene's automatic walls rule, and a locked door is closed. The
@@ -32,7 +32,7 @@ export type ExportContent = {
   secretDoors: number;
   /** Labels the player view leaves out because they are under the fog. */
   hiddenLabels: number;
-  /** The scene's stamps, bottom first. The player view keeps those a player receives (docs/design-v1-maps-vision.md 3.5). */
+  /** The scene's stamps, bottom first. The player view keeps those a player receives (docs/design/design-v1-maps-vision.md 3.5). */
   stamps: Stamp[];
   /** Stamps the player view leaves out: DM only, or fully under the fog by the labels' rule. */
   hiddenStamps: number;
@@ -57,7 +57,7 @@ export function fromServer(view: ExportView, scene: Pick<Scene, "fogEnabled">): 
 }
 
 /**
- * The player view of a scene with fog on (docs/design-v1-map-discovery.md
+ * The player view of a scene with fog on (docs/design/design-v1-map-discovery.md
  * 4): the server's shared projection (lib/api.ts PlayerSceneView), as
  * every player and display gets the scene, never-seen ground empty and
  * explored ground as the party last saw it, drawn as it comes. The DM's
@@ -113,7 +113,7 @@ export function exportContent(
   const stamps = Object.values(input.stamps).filter((s): s is Stamp => !!s && s.sceneId === scene.id).sort(drawOrder);
   if (view === "dm") return { role: "dm", chunks, labels, secretDoors: 0, hiddenLabels: 0, stamps, hiddenStamps: 0 };
 
-  // Free doors count as edge doors do: a hidden one is drawn as the wall players see (docs/design-v1-maps-vision.md 2.2).
+  // Free doors count as edge doors do: a hidden one is drawn as the wall players see (docs/design/design-v1-maps-vision.md 2.2).
   const hidden = (f: { kind: string; secret?: boolean; discovered?: boolean }) => f.kind === "door" && f.secret === true && !f.discovered;
   let secretDoors = 0;
   for (const chunk of chunks) {
@@ -140,7 +140,7 @@ export function exportContent(
 }
 
 /**
- * The fog players get on a scene (docs/design-v1-maps-vision.md 4.3.3): the
+ * The fog players get on a scene (docs/design/design-v1-maps-vision.md 4.3.3): the
  * DM's layer and the party's explored layer merged, a sub-cell revealed
  * where either reveals it, as the server's projection merges them. A DM's
  * view holds the two layers apart, so labels and stamps on ground only the
@@ -191,7 +191,7 @@ function chunkDraws(c: BuildChunk & { auto?: string }): boolean {
  * Whether a scene has anything of the build to export: floor, edges, free
  * walls, heights, stairs, difficult ground, labels or stamps, everything
  * the drawing draws. Heights and stairs draw on their own, over the
- * background (docs/design-v1-maps-vision.md 4.2), so a blank mat with only
+ * background (docs/design/design-v1-maps-vision.md 4.2), so a blank mat with only
  * those has something to export, and so does a mat with only stamps, which
  * is all a hex Battle mat can hold beside labels for now. Lights are not
  * drawn, so they do not count.

@@ -43,7 +43,7 @@ describe("duration form options", () => {
     assert.equal(defaultAnchorKey(state, options), SELF_KEY);
   });
 
-  test("a companion that acts on its character's turn reads as on that character's turn, and its durations count that row (docs/design-v1-combat-flow.md 3.6.8)", () => {
+  test("a companion that acts on its character's turn reads as on that character's turn, and its durations count that row (docs/design/design-v1-combat-flow.md 3.6.8)", () => {
     const state = fixture(true);
     state.tokens.ws = token("ws", { kind: "npc", name: "Wildfire Spirit", companion: { of: "hero", turn: "shared" } });
     const options = anchorOptions(state, { tokenId: "ws" }, "Wildfire Spirit");

@@ -6,7 +6,7 @@ import { TAG_TONES, type TagTone } from "./tones.ts";
 export type { TagTone } from "./tones.ts";
 
 /**
- * A read-only status (docs/design-v1-visual.md 2.3): "Healthy", "Online",
+ * A read-only status (docs/design/design-v1-visual.md 2.3): "Healthy", "Online",
  * "Under fog", "Players here", a legendary counter. A pill with a solid
  * `bg` fill and a 1 px outline in its tone, 13 px weight 600, or 11 px in
  * dense rows such as the tracker's counters. It is not a control, so it
@@ -26,7 +26,7 @@ export function Tag(props: {
    * the text itself unless `title` says otherwise.
    */
   cut?: number | "100%";
-  /** Before the words, at the text's size, such as `hidden` on a row players do not see (docs/design-v1-icons.md 3.1 rule 3). */
+  /** Before the words, at the text's size, such as `hidden` on a row players do not see (docs/design/design-v1-icons.md 3.1 rule 3). */
   icon?: IconName;
   children: ReactNode;
 }) {

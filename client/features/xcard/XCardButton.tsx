@@ -8,7 +8,7 @@ import { usePreview } from "../dm/previewContext.ts";
 import { sendXcard, type SendState } from "./send.ts";
 
 /**
- * "X-card" at the top of the Menu panel (docs/design-v1-dm-tools.md 3.11).
+ * "X-card" at the top of the Menu panel (docs/design/design-v1-dm-tools.md 3.11).
  * One tap opens a small card that says what the X does, and a tap on its
  * large X sends it, so a stray tap never asks the table for anything.
  *
@@ -73,7 +73,7 @@ export function XCardButton() {
           borderRadius: theme.radius.md,
           border: `${theme.line.border}px solid ${theme.color.border}`,
           background: theme.color.surfaceRaised,
-          // Unavailable keeps the card's shape and dims its words, never its opacity (docs/design-v1-visual.md 2.3).
+          // Unavailable keeps the card's shape and dims its words, never its opacity (docs/design/design-v1-visual.md 2.3).
           color: preview ? theme.color.textDisabled : theme.color.text,
           textAlign: "left",
           font: "inherit",

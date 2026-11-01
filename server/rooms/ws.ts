@@ -25,13 +25,13 @@ import type { RoomManager } from "./manager.ts";
  * socket is bound to that grant, the room loads (or the socket closes with
  * 4011), and every frame passes the budget before it is parsed.
  *
- * `/ws?room=&as=display` is a table display's socket (docs/design-v1-dm-tools.md
+ * `/ws?room=&as=display` is a table display's socket (docs/design/design-v1-dm-tools.md
  * 3.1): it takes only a display session from the display cookie, and its
  * connection keeps the role `'player'` with the `display` flag. Every other
  * socket reads only the room cookie, where a display session is none.
  *
  * `/ws?room=&as=<memberId>` is a DM's view as one player
- * (docs/design-v1-per-player-vision.md 7.4): only a DM grant may open one,
+ * (docs/design/design-v1-per-player-vision.md 7.4): only a DM grant may open one,
  * and only for a member of the room's roster who is a player, decided here
  * as the display's is, so anything else is refused before the upgrade
  * (review R2-SEC-1). It is read only, as a display is.
@@ -64,7 +64,7 @@ export const MAX_FRAME_BYTES = 64 * 1024;
 /**
  * The send buffer a socket may hold for `bufferedHoldMs` before it is
  * closed: 1 MiB over the largest DM snapshot, 6 MiB with companion stat
- * blocks (docs/design-v1-companion-stat-blocks.md 3.4), so one snapshot
+ * blocks (docs/design/design-v1-companion-stat-blocks.md 3.4), so one snapshot
  * alone never closes a slow socket.
  */
 export const DEFAULT_BUFFERED_LIMIT = 7 * 1024 * 1024;
@@ -317,7 +317,7 @@ export async function registerWebSocket(app: FastifyInstance, deps: { manager: R
 
       /**
        * A display's session ends 30 days after its last socket closed
-       * (docs/design-v1-dm-tools.md 3.1). A socket the server closed with
+       * (docs/design/design-v1-dm-tools.md 3.1). A socket the server closed with
        * 4001 renews nothing, so a sign out, a password change or an expired
        * session is never undone by the close that follows it.
        */

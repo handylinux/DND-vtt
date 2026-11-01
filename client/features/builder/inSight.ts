@@ -7,7 +7,7 @@ import type { BuilderState } from "./store.ts";
 
 /**
  * The builder's note on the players' scene while the party's sight meets
- * a cell being built (docs/design-v1-map-discovery.md 9, decision 15):
+ * a cell being built (docs/design/design-v1-map-discovery.md 9, decision 15):
  * players hold ground they see live, so what the DM builds in view shows
  * to them as it is built.
  */

@@ -6,7 +6,7 @@ import { planTray, seededRandom, tapDice, type DieKind, type TrayPlan } from "./
 import type { LoadState } from "./probe.ts";
 
 /**
- * The roll animation's state for one Room (docs/design-v1-roll-animation.md
+ * The roll animation's state for one Room (docs/design/design-v1-roll-animation.md
  * 3 to 7): which taps may throw, the throw on screen, the 1 s timer that
  * shows its result, every interruption, the warm-up, a lost context and
  * the renderer's disposal. It never imports three: the stage arrives from

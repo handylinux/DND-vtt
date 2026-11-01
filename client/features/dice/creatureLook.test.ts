@@ -8,7 +8,7 @@ import { kindLineText } from "../tokens/creatureKind.ts";
 import { characterLook, creatureLook, tokenLook } from "./creatureLook.ts";
 
 /*
- * The creature card's picture, badge and kind line (docs/design-v1-dice-pass.md 5),
+ * The creature card's picture, badge and kind line (docs/design/design-v1-dice-pass.md 5),
  * the same as the token panel's header shows for the token.
  */
 

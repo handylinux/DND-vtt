@@ -7,7 +7,7 @@ import { EMPTY_PC_STATS, pcDerived, pcRollFits, type PcNumber } from "#shared/ru
 import type { OpAnswer, OpRefusal } from "../../state/types.ts";
 
 /**
- * The stat block editor's draft (docs/design-v1-pc-stats.md 7.2), as plain
+ * The stat block editor's draft (docs/design/design-v1-pc-stats.md 7.2), as plain
  * functions for node --test: the totals a player types, the one patch a
  * Save sends, and the problems that keep Save off. A typed total keeps its
  * difference from what the rules give as that number's adjustment

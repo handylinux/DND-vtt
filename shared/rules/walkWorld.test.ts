@@ -10,7 +10,7 @@ import { findRoute } from "./walk.ts";
 import { creatureWay, groupWalkWorld, halvedAt, publicWorld, speedAreas, type PublicWorld, type WorldOptions } from "./walkWorld.ts";
 import { ownWalk } from "./movement.ts";
 
-/** The public world a route is searched in (docs/design-v1-movement.md 4.3 and 5.5). */
+/** The public world a route is searched in (docs/design/design-v1-movement.md 4.3 and 5.5). */
 
 const seenSet = new Set<never>();
 
@@ -206,7 +206,7 @@ describe("the same public world on every device (5.5, review MV-O-1 and MV-O-10)
     agree("gob", { creatures: false, seenGround: true });
   });
 
-  test("so does the DM's drag of a monster carrying the hero, which keeps to ground players have seen (docs/design-v1-attach.md 9)", () => {
+  test("so does the DM's drag of a monster carrying the hero, which keeps to ground players have seen (docs/design/design-v1-attach.md 9)", () => {
     agree("gob", {}, (s) => {
       s.tokens.gob = { ...s.tokens.gob!, size: "large" };
       s.tokens.hero = { ...s.tokens.hero!, x: 2, y: 8, attached: { to: "gob", kind: "ride" } };

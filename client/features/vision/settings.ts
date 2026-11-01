@@ -3,7 +3,7 @@ import type { LightLevel, MapPhase, RoomState, Scene, SceneVision } from "#share
 import type { ClientOp, OpOf } from "#shared/protocol.ts";
 
 /**
- * The rules of a scene's What players see settings (docs/design-v1-maps-vision.md
+ * The rules of a scene's What players see settings (docs/design/design-v1-maps-vision.md
  * sections 4.3.1 and 4.3.8), as plain functions for node --test.
  */
 
@@ -29,11 +29,11 @@ export function lightPatch(scene: Pick<Scene, "vision">, light: LightLevel): Sce
   return { on: scene.vision?.on === true, light };
 }
 
-/** A `vision` patch as the protocol takes it, which may name `perPlayer` (docs/design-v1-per-player-vision.md 6.7). */
+/** A `vision` patch as the protocol takes it, which may name `perPlayer` (docs/design/design-v1-per-player-vision.md 6.7). */
 export type VisionPatch = NonNullable<OpOf<"scene.update">["patch"]["vision"]>;
 
 /**
- * The `vision` patch of the Sight row (docs/design-v1-per-player-vision.md
+ * The `vision` patch of the Sight row (docs/design/design-v1-per-player-vision.md
  * 7.1): Per player or Whole party, leaving party vision and the light as
  * they are. The other two patches name no `perPlayer`, so the scene keeps
  * what it has (the merge rule of 6.7).

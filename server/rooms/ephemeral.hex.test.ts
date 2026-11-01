@@ -11,7 +11,7 @@ import { routeEphemeral } from "./ephemeral.ts";
 
 /**
  * A drag preview on a hex scene is judged as a creature standing there is
- * (docs/design-v1-hex-grids.md HX-D10): by the fog sub-cells inside the
+ * (docs/design/design-v1-hex-grids.md HX-D10): by the fog sub-cells inside the
  * hexes it stands on, never by its box.
  */
 

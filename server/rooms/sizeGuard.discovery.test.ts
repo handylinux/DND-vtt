@@ -31,7 +31,7 @@ import {
 } from "./sizeGuard.ts";
 
 /**
- * Map discovery's sizes (docs/design-v1-map-discovery.md 5.5): players'
+ * Map discovery's sizes (docs/design/design-v1-map-discovery.md 5.5): players'
  * copies of a scene with fog on hold each free wall at most at its largest
  * form and every chunk position at its widest, players' memory is
  * reserved at its cap on every marked scene with fog and party vision on,

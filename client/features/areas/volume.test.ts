@@ -36,7 +36,7 @@ import {
 } from "./volumeTesting.ts";
 
 /**
- * The mesh of an area's solid (docs/design-v1-iso-area-shapes.md 4.2 and
+ * The mesh of an area's solid (docs/design/design-v1-iso-area-shapes.md 4.2 and
  * the case table, section 8): closed and wound outward after every cut
  * but where it lies on the drawn ground, each face in one depth band at
  * every turn, and the very solid the rules catch with, cut by the clip

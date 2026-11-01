@@ -6,7 +6,7 @@ import type { StageModule, ThrowOrigin } from "./store.ts";
 
 /**
  * What code every member loads needs of the roll animation, and no more
- * (docs/design-v1-roll-animation.md 6). The panel's rolls go through
+ * (docs/design/design-v1-roll-animation.md 6). The panel's rolls go through
  * useDicePanel, which the fight's cards load with the room, so the throw's
  * store would ride along with them. Instead the store stays with the Dice
  * panel's chunk, and binds itself here when the panel first renders, which

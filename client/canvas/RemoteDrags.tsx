@@ -18,7 +18,7 @@ const NO_DRAGS: Readonly<Record<string, DragPreview>> = {};
  * they draw on the tokens layer, under the fog, so a creature dragged into
  * the dark stays hidden there even between the server's checks. In
  * Isometric they draw in the drag layer over everything, so the stand rule
- * judges each frame instead (`iso`, docs/design-v1-isometric-view.md 5.2):
+ * judges each frame instead (`iso`, docs/design/design-v1-isometric-view.md 5.2):
  * a ghost stands only where all of it is revealed, and otherwise lies flat,
  * clipped to the revealed sub-cells.
  *
@@ -31,7 +31,7 @@ const NO_DRAGS: Readonly<Record<string, DragPreview>> = {};
  * Frames arrive at up to 30 a second. Each ghost glides toward the latest
  * one, eased by the one clock (RemoteDragClock), which stops as soon as
  * every ghost arrives, so a preview at rest costs nothing (design 14.2). In
- * low power (docs/design-v1-dm-tools.md 3.15) it shows each frame as it
+ * low power (docs/design/design-v1-dm-tools.md 3.15) it shows each frame as it
  * arrives, with no loop at all.
  */
 export const RemoteDrags = memo(function RemoteDrags(props: {
@@ -44,7 +44,7 @@ export const RemoteDrags = memo(function RemoteDrags(props: {
   eased: EasedDrags;
   /**
    * In the isometric view: how each ghost draws at its eased spot, standing
-   * or flat and clipped by the stand rule (docs/design-v1-isometric-view.md
+   * or flat and clipped by the stand rule (docs/design/design-v1-isometric-view.md
    * 5.2), and where its tag goes, or null to leave the tag out.
    */
   iso?: ((token: ViewToken, at: { x: number; y: number }, name: string) => IsoGhost) | null;
@@ -95,7 +95,7 @@ export function createEasedDrags(): EasedDrags {
  * costs nothing (design 14.2). In low power it shows each frame as it
  * arrives, with no loop at all. It draws nothing and mounts once, outside
  * both of the board's drawing trees, which read the store
- * (docs/design-v1-isometric-view.md 5.1).
+ * (docs/design/design-v1-isometric-view.md 5.1).
  */
 export function RemoteDragClock(props: { eased: EasedDrags }) {
   const { eased } = props;

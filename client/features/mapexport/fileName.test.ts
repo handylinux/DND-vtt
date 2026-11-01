@@ -47,7 +47,7 @@ test("this app's map upload reads the scale back from every name", () => {
   }
 });
 
-test("a hex scene's name says hex where a square one has its size, and the upload reads no size from it (docs/design-v1-hex-grids.md HX-D13)", () => {
+test("a hex scene's name says hex where a square one has its size, and the upload reads no size from it (docs/design/design-v1-hex-grids.md HX-D13)", () => {
   for (const orient of ["rows", "columns"] as const) {
     const g = { shape: "hex", orient } as const;
     assert.equal(exportFileName(g, "Crypt", { w: 30, h: 20 }, 70, "player"), "crypt-hex-70px.png");

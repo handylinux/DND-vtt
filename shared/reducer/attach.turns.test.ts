@@ -11,7 +11,7 @@ import { sharedMounts } from "./encounter.ts";
 import { Tx } from "./tx.ts";
 
 /**
- * A controlled mount's turn is its rider's (docs/design-v1-attach.md 7.1):
+ * A controlled mount's turn is its rider's (docs/design/design-v1-attach.md 7.1):
  * the mount's row takes its rider's value and place, `skipRound` passes it
  * once, the turn's `mounts` list and `markRound`, the Reaction, every
  * player seeing the pair, the end of a ride, and Previous.

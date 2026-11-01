@@ -1,6 +1,6 @@
 # raccoon-vtt v1: a tool's key moves through its main choice
 
-Status: draft 2, with round 1 of the design review (D-261025-6), decided under guess mode (the owner's answers are off). Code is cited from public main at `f84624c1`, with the Trap tool's key X (D-261025-2) assumed landed. This design amends docs/design-v1-tool-options.md 5.5 (Keys) and 11.1 (the sheet's `toolKeyShow` row). Every other rule there stands.
+Status: draft 2, with round 1 of the design review (D-261025-6), decided under guess mode (the owner's answers are off). Code is cited from public main at `f84624c1`, with the Trap tool's key X (D-261025-2) assumed landed. This design amends docs/design/design-v1-tool-options.md 5.5 (Keys) and 11.1 (the sheet's `toolKeyShow` row). Every other rule there stands.
 
 The project owner, 2026-10-25: "Also pressing a shortcut while that tool is selected already should cycle through the primary options of that tool".
 
@@ -125,7 +125,7 @@ Builds after the Trap key lane lands. One lane, mostly wiring.
 - `client/state/shortcuts.ts`: `toolShortcut`'s run follows 4.1. `ShortcutEnv.tools` carries each tool's label and `cycle`. `stageKeysSlot` gains `busy`, which `canvas/Stage.tsx` sets from `toolPointerRef`. The sheet's row words (4.4).
 - `client/state/toolbar.ts`: `toolVoiceSlot`. `client/pages/Room.tsx`: the status beside the toolbar, a component of its own that alone reads the slot.
 
-**Commits.** (1) `refactor(ui)`: the lists and picks into `.ts`, no behavior change. (2) `feat(ui)`: the cycle, with its unit tests. (3) `test(e2e)`: the e2e below and the fixes of the audit. (4) the docs commit, last: FEATURES.md, the DM guide, the sheet's row with FEATURES.md's mirror of it (`shortcuts.test.ts` compares the two, so they land together), and docs/design-v1-tool-options.md 5.5 and 11.1 gain "Amended by docs/design-v1-tool-cycle.md". Sonnet suits commit 1.
+**Commits.** (1) `refactor(ui)`: the lists and picks into `.ts`, no behavior change. (2) `feat(ui)`: the cycle, with its unit tests. (3) `test(e2e)`: the e2e below and the fixes of the audit. (4) the docs commit, last: FEATURES.md, the DM guide, the sheet's row with FEATURES.md's mirror of it (`shortcuts.test.ts` compares the two, so they land together), and docs/design/design-v1-tool-options.md 5.5 and 11.1 gain "Amended by docs/design/design-v1-tool-cycle.md". Sonnet suits commit 1.
 
 **Unit tests.** `client/features/toolChoices.test.ts`: each tool's "shows when" and held states, and each pick's side effects (a spell draft held, a plain draft's new size and kept point, the ruler re-sent and stored, the builder's corners and note cleared), `cycleStep` forward, back and wrapping, a value missing from the list, a skipped option. `client/state/shortcuts.test.ts`: section 8's key rows, and one randomized run of 500 presses with and without Shift on each list, whose invariant is that the position equals the forward presses less the back ones, modulo the list's length. Mutation check: remove the wrap, the Shift branch, each held check, the drag check, the popover close and the status, one at a time, and each must fail a test.
 

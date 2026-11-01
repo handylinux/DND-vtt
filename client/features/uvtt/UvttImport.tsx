@@ -8,7 +8,7 @@ import { fileSizeProblem, thisDevice, type Device } from "./limits.ts";
 import { entryShown } from "./rules.ts";
 
 /**
- * Where a DM starts a Universal VTT import (docs/design-v1-maps-vision.md
+ * Where a DM starts a Universal VTT import (docs/design/design-v1-maps-vision.md
  * section 3.1): New scene in the Scenes panel, or a scene's phases for the
  * image alone. The button opens the file picker at once, and the dialog
  * takes over from the picked file.

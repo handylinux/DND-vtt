@@ -57,7 +57,7 @@ export function exportSize(bounds: { w: number; h: number }, requested: number, 
 /**
  * The export's words for the scene's cell: "square" or "hex" (grid.ts
  * cellWord), the size line, and the grid switch's name, "Hex lines" on a
- * hex scene (docs/design-v1-hex-grids.md 4, Words shown). A hex scene's
+ * hex scene (docs/design/design-v1-hex-grids.md 4, Words shown). A hex scene's
  * line names no count, since its rows hold a different number of hexes.
  */
 export function exportWords(g: Grid, bounds: { w: number; h: number }, size: Pick<ExportSize, "width" | "height" | "pxPerCell">): { cell: string; sizeLine: string; gridSwitch: string } {

@@ -4,7 +4,7 @@ import type { PcRoll, PcStats } from "../model.ts";
 import { checkedFill, fillSummary, mergeFill, type PcFill } from "./pcFill.ts";
 import { EMPTY_PC_STATS } from "./pcStats.ts";
 
-/** What a fill does to a block (docs/design-v1-pc-stats.md 6.1). */
+/** What a fill does to a block (docs/design/design-v1-pc-stats.md 6.1). */
 
 const roll = (id: string, ddb?: true): PcRoll => ({ id, name: id, kind: "other", dice: [{ formula: "1d6" }], ...(ddb ? { ddb } : {}) });
 const BASE: PcStats = { ...structuredClone(EMPTY_PC_STATS as PcStats), jack: true, spellAbility: "wis", rolls: [roll("own1"), roll("old1", true), roll("own2"), roll("old2", true)] };
@@ -50,7 +50,7 @@ describe("mergeFill", () => {
   });
 });
 
-describe("checkedFill with class resources (docs/design-v1-ddb-resources.md 3.1)", () => {
+describe("checkedFill with class resources (docs/design/design-v1-ddb-resources.md 3.1)", () => {
   test("a resolved Cleric 6/Paladin 3 fill passes with both classes, and an unknown class fails it (ASTRA-4)", () => {
     const resources = [
       { name: "Channel Divinity", max: 3, reset: "shortOne" as const, preset: "cleric-channel-divinity", level: 6, classId: "cleric" as const, used: 1 },

@@ -7,7 +7,7 @@ const HEX_ROWS = { shape: "hex", orient: "rows" } as const;
 import { chunkCharge, entryCharge, keyBytes, memoryCollectionKey, pieceBytes, wallLargestBytes, wallPieceBound } from "./memorySize.ts";
 
 /**
- * What players' maps cost (docs/design-v1-map-discovery.md 5.5): each free
+ * What players' maps cost (docs/design/design-v1-map-discovery.md 5.5): each free
  * wall at its largest form by its own spans (LK-36), and each memory entry
  * at no less than its own bytes, which MD1's bounds on a fold rest on.
  */

@@ -3,8 +3,8 @@ import type { ActorPatch } from "#shared/protocol.ts";
 import type { StatBlockMonster } from "#shared/srd/monsters.ts";
 
 /**
- * Which full stat block a token links to (docs/design-v1-dm-tools.md 3.6,
- * docs/design-v1-companion-stat-blocks.md 3.2), as plain functions for
+ * Which full stat block a token links to (docs/design/design-v1-dm-tools.md 3.6,
+ * docs/design/design-v1-companion-stat-blocks.md 3.2), as plain functions for
  * node --test. A token keeps one link: the room monster it came from
  * (`Actor.monsterId`, the DM's alone), the SRD monster (`Actor.srdId`), or
  * on a companion, one of its character's stat blocks (`Actor.blockId`).
@@ -54,12 +54,12 @@ export function statBlockFoldable(link: TokenStatBlock): boolean {
 /**
  * Who reads the block on this token. On a token of a player character, the
  * DM and the character's players, who read and edit its own stat block
- * (docs/design-v1-pc-stats.md 7.3). A player who owns only that token, such
+ * (docs/design/design-v1-pc-stats.md 7.3). A player who owns only that token, such
  * as the DM's NPC lent to them, never receives the block (4.2), so for them
  * the section would be an empty heading: `ownsCharacter` tells them apart
  * where the caller knows the character. On a companion, the DM and its
  * players, whatever it links, while it is a creature: an effect has no
- * block (docs/design-v1-companion-stat-blocks.md 5.5). Elsewhere the DM, on
+ * block (docs/design/design-v1-companion-stat-blocks.md 5.5). Elsewhere the DM, on
  * a monster or an NPC, and an owner only for an SRD monster they play, such
  * as a druid's Wild Shape the 2014 way: the SRD is openly licensed and the
  * owner already receives `srdId`. A room monster's block never reaches a
@@ -85,7 +85,7 @@ export type BlockLink = { monsterId: MonsterId } | { srdId: string } | { blockId
 
 /**
  * Links a block and only the link: never the token's numbers. Setting one
- * link clears the others (docs/design-v1-companion-stat-blocks.md 3.2), so
+ * link clears the others (docs/design/design-v1-companion-stat-blocks.md 3.2), so
  * the patch names only the one it sets, which lets a companion's player
  * replace a room monster's link they never see.
  */

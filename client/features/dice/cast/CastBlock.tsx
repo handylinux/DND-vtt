@@ -63,7 +63,7 @@ import {
 import { useCastTracker } from "./alerts.ts";
 
 /**
- * A player's ask for saves in the Dice panel (docs/design-v1-player-save-spell.md
+ * A player's ask for saves in the Dice panel (docs/design/design-v1-player-save-spell.md
  * 3.1 and 3.2): the block under a spell's row, the waiting lines, and the
  * closing toasts. The rules are cast.ts's.
  */
@@ -86,7 +86,7 @@ export function useCastEnv(): CastEnv {
       dispatch: (op, opts) => actions.dispatch(op, opts),
       rollDamage: (rolls, override) => {
         let parts = 0;
-        // Thrown from the tapped button's place, as the row's Damage throws (docs/design-v1-roll-animation.md 3.1).
+        // Thrown from the tapped button's place, as the row's Damage throws (docs/design/design-v1-roll-animation.md 3.1).
         const tag = panel.roll(rolls, { origin: throws.current?.origin(), parts: (n) => (parts = n), ...(override ? { override } : {}) });
         return tag === null ? null : { tag, parts };
       },
@@ -112,7 +112,7 @@ const OPTION_OUTLINE = `${theme.line.border}px solid ${theme.color.controlBorder
  * settled and went, or its send went from this page's sends (3.2). Run
  * above the options, never in the block, so a block its folded group or
  * another creature's tab keeps from drawing still closes, and the folded
- * line stops naming it (docs/design-v1-dice-pass.md 6.6).
+ * line stops naming it (docs/design/design-v1-dice-pass.md 6.6).
  */
 export function useCloseSettledBlock(view: Pick<RoomState, "casts"> | null): void {
   const store = useOptionStore();
@@ -138,7 +138,7 @@ export function AskForSavesButton(props: { spec: CastBlock; ref?: RefObject<HTML
     store.setState((s) => openedBlock(s, props.spec, pending?.id));
   };
   return (
-    // It acts beside Attack and Damage, so it wears their outline, not the raised look's dim one (docs/design-v1-dice-pass.md 7.3).
+    // It acts beside Attack and Damage, so it wears their outline, not the raised look's dim one (docs/design/design-v1-dice-pass.md 7.3).
     <Button ref={props.ref} size="sm" aria-label={`Ask the DM for saves against ${props.spec.spell}`} onClick={open} style={{ border: OPTION_OUTLINE }}>
       Ask for saves
     </Button>
@@ -306,7 +306,7 @@ function CastBlockView(props: Parameters<typeof RowCast>[0] & { spec: CastBlock 
   });
 
   // Focus goes to its first button that takes a tap, which with no target yet is Cancel (6, Accessibility), once the panel has drawn, with the block brought into its scroll box: a phone's sheet opening on an area's ask starts at its top.
-  // Only for a new opening, so a group reopened or a tab picked back keeps the focus on the control the viewer used (docs/design-v1-dice-pass.md 6.6).
+  // Only for a new opening, so a group reopened or a tab picked back keeps the focus on the control the viewer used (docs/design/design-v1-dice-pass.md 6.6).
   useEffect(() => {
     if (spec.opened !== undefined && store.getState().castFocused === spec.opened) return;
     const frame = requestAnimationFrame(() => {

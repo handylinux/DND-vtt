@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { theme } from "../lib/theme.ts";
 
 /**
- * What a panel shows with nothing in it yet (docs/design-v1-visual.md
+ * What a panel shows with nothing in it yet (docs/design/design-v1-visual.md
  * 2.3): one sentence at 14 px in muted text that says what will be here
  * and how to add it ("Tap a token to see it here."), and at most one
  * button under it. Every panel's empty state looks the same, so an empty

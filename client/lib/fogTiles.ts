@@ -83,7 +83,7 @@ export type FogDirty = { x: number; y: number; w: number; h: number };
  * `fogPixels(revealedMask(...))`, rewritten only where a tile changed.
  *
  * Why: with party vision on, the party's exploration changes the fog
- * players get on most moves (docs/design-v1-maps-vision.md section 4.3.3),
+ * players get on most moves (docs/design/design-v1-maps-vision.md section 4.3.3),
  * and building the whole image again took about 10 ms for a 200 x 200
  * scene on a laptop, several times that on a phone. A changed tile's
  * revealed bits are written again, then the pixels of that tile and the

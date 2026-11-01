@@ -213,7 +213,7 @@ export function srdImage(srdId: string, assetId: string, overrides: Partial<SrdI
 
 /**
  * A stat block a character keeps for its companions
- * (docs/design-v1-companion-stat-blocks.md 3.1), homebrew written for the
+ * (docs/design/design-v1-companion-stat-blocks.md 3.1), homebrew written for the
  * tests, with text of its own so a leak check on the room's monsters never
  * mistakes one for the other.
  */
@@ -238,7 +238,7 @@ export function companionBlock(id: string, characterId: string, overrides: Parti
 }
 
 /**
- * A player's open ask for saves (docs/design-v1-player-save-spell.md 5.2):
+ * A player's open ask for saves (docs/design/design-v1-player-save-spell.md 5.2):
  * by default p1's Fireball for the token `thorn` over the area `a1`, cast at
  * level 3. An override set to undefined leaves its field out, so a targets
  * ask reads `{ area: undefined, targets: [...] }`.
@@ -250,7 +250,7 @@ export function castAsk(id: string, overrides: Partial<CastAsk> = {}): CastAsk {
 }
 
 /**
- * The table the save spell tests share (docs/design-v1-player-save-spell.md
+ * The table the save spell tests share (docs/design/design-v1-player-save-spell.md
  * 8): Thorn, p1's character, with a token `thorn` on the players' scene and
  * p1's Fireball area `a1` around it, Bree, p2's, with the token `bree`, the
  * goblin `g1` in the open and `g2` hidden from players, and p2's own area
@@ -281,7 +281,7 @@ export function damageRoll(overrides: Partial<DiceRoll> = {}): DiceRoll {
   return { formula: "8d6", faces: [6, 5, 4, 3, 3, 3, 2, 2], total: 28, label: "Fireball damage, Fire", tokenId: "thorn", ...overrides };
 }
 
-/** A `dice` line under a tag (docs/design-v1-dice.md 5.1), by p1 to everyone unless told otherwise. */
+/** A `dice` line under a tag (docs/design/design-v1-dice.md 5.1), by p1 to everyone unless told otherwise. */
 export function diceLine(id: string, tag: string, rolls: DiceRoll[], overrides: Partial<Extract<LogEvent, { type: "dice" }>> = {}): LogEntry {
   return { id, at: AT, kind: "event", data: { type: "dice", tag, by: "p1", to: "all", rolls, ...overrides } };
 }
@@ -629,7 +629,7 @@ export function randomState(r: () => number): RoomState {
   for (let i = 0; i < int(r, 0, 3); i++) {
     const id = `h${i}`;
     state.handouts[id] = { id, rev: 0, assetId: `img-${id}`, title: "Map", to: pick(r, ["all", ["p1"], ["p2"], ["dm1"]]), shownAt: AT };
-    // The second is a handout of pages (docs/design-v1-pdf-handouts.md 3.1), with no draw of its own so the seeds keep what they hold.
+    // The second is a handout of pages (docs/design/design-v1-pdf-handouts.md 3.1), with no draw of its own so the seeds keep what they hold.
     if (i === 1) state.handouts[id]!.pages = [handoutPage(`img-${id}`), handoutPage(`img-${id}-2`)];
   }
   // A document in the DM's library, sharing a page with the second handout as a shown document would.
@@ -723,7 +723,7 @@ export function trap(id: string, overrides: Partial<Trap> = {}): Trap {
 }
 
 /**
- * Traps (docs/design-v1-traps.md 6.1): on either scene, squares, wires and
+ * Traps (docs/design/design-v1-traps.md 6.1): on either scene, squares, wires and
  * doors (secret ones among them), found or not, armed, sprung or disarmed,
  * with actions naming lights, stamps and tokens (some gone), occurrences
  * naming creatures seen or hidden, and both trap logs with their lines.
@@ -822,7 +822,7 @@ function addTraps(r: () => number, state: RoomState): void {
 }
 
 /**
- * Players' asks for saves (docs/design-v1-player-save-spell.md 5.2), each
+ * Players' asks for saves (docs/design/design-v1-player-save-spell.md 5.2), each
  * with its line, and the lines of asks closed before: for any token, a gone
  * one now and then, over an area or targets some of which are hidden or
  * gone, with a damage roll whose line is now and then Secret, or rolled by
@@ -870,7 +870,7 @@ function addCasts(r: () => number, state: RoomState): void {
   lines.forEach((data, i) => state.log.push({ id: `9:${i}`, at: AT, kind: "event", data }));
 }
 
-/** The order setting (docs/design-v1-combat-flow.md 11), and rows whose turn has come in the fight and its saved steps. */
+/** The order setting (docs/design/design-v1-combat-flow.md 11), and rows whose turn has come in the fight and its saved steps. */
 function addOrderReveal(r: () => number, state: RoomState): void {
   state.meta.settings.playersSeeOrder = pick(r, ORDER_REVEALS);
   const mark = (entries: InitEntry[]) => {
@@ -881,7 +881,7 @@ function addOrderReveal(r: () => number, state: RoomState): void {
 }
 
 /**
- * Companion stat blocks (docs/design-v1-companion-stat-blocks.md 3.1), with
+ * Companion stat blocks (docs/design/design-v1-companion-stat-blocks.md 3.1), with
  * no draw of their own so the seeds keep what they hold: the first
  * character keeps one with a picture and one copied from the SRD, and the
  * second one more.
@@ -907,7 +907,7 @@ function addCompanionBlocks(state: RoomState): void {
 }
 
 /**
- * Companions (docs/design-v1-combat-flow.md 3.6): creatures and effects of
+ * Companions (docs/design/design-v1-combat-flow.md 3.6): creatures and effects of
  * random characters, of every turn an effect may take, owned as their
  * characters are and never numbered, a `shared` one's Reaction spent now
  * and then. The rows of those that act on their character's turn leave the
@@ -940,7 +940,7 @@ const ROLL_TESTS: RollTest[] = [
   { kind: "check", choices: [{ ability: "str", skill: "athletics" }, { ability: "dex", skill: "acrobatics" }] },
 ];
 
-/** A journal page of each kind of reader, with plain, hidden and revealed blocks (docs/design-v1-dm-tools.md 3.7). */
+/** A journal page of each kind of reader, with plain, hidden and revealed blocks (docs/design/design-v1-dm-tools.md 3.7). */
 function randomPage(r: () => number, id: string): JournalPage {
   const blocks = BLOCK_IDS.slice(0, int(r, 0, 4)).map((blockId) => {
     const kind = int(r, 0, 2);
@@ -952,7 +952,7 @@ function randomPage(r: () => number, id: string): JournalPage {
 }
 
 /**
- * Wave 5's state (docs/design-v1-dm-tools.md): journal pages of every
+ * Wave 5's state (docs/design/design-v1-dm-tools.md): journal pages of every
  * reader, pins with and without pages (one naming a page that is gone, which
  * projection must survive), roll requests under both switches with answers,
  * marks and replaced answers, their log lines, the drawing setting, links to
@@ -1023,7 +1023,7 @@ function addDmTools(r: () => number, state: RoomState): void {
 }
 
 /**
- * Wave 5's ops (docs/design-v1-dm-tools.md): for the DM, journal pages and
+ * Wave 5's ops (docs/design/design-v1-dm-tools.md): for the DM, journal pages and
  * reveals, pins, roll requests with answers, marks, reopens and closes,
  * group edits and the drawing setting. For a player, answers, owners' group
  * edits and conditions on several creatures.
@@ -1124,7 +1124,7 @@ function randomExploredBits(r: () => number): string {
 }
 
 /**
- * Wave 4's data (docs/design-v1-maps-vision.md section 4): scenes with party
+ * Wave 4's data (docs/design/design-v1-maps-vision.md section 4): scenes with party
  * vision on or off, movement blocked or not, the party's explored layer on
  * tiles the DM's fog holds and on tiles it does not, a vision scene whose
  * vision was turned off after exploring, heights and stairs in chunks,
@@ -1180,7 +1180,7 @@ function randomFreeWall(r: () => number, id: string): FreeWall {
 const OVERLAYS: TerrainId[] = ["water", "difficult", "stairs", "pillar"];
 
 /**
- * Wave 3's map data (docs/design-v1-maps-vision.md section 3): each scene's
+ * Wave 3's map data (docs/design/design-v1-maps-vision.md section 3): each scene's
  * automatic walls rule, free walls with secret and locked doors, overlay
  * terrain beside secret edge doors, across a chunk border too, stamps
  * hidden or not and under fog or not, lights, a folder and a thumbnail, and
@@ -1424,17 +1424,17 @@ export function randomOp(r: () => number, state: RoomState, who: Viewer): Op {
 
   // The tracker's ops (features sections 7, 10 and 15), about one draw in five.
   if (chance(r, 0.2)) return trackerOp(r, state, who, { anyToken, target, seqId });
-  // Wave 5's journal, pins, rolls and group edits (docs/design-v1-dm-tools.md), about one in six.
+  // Wave 5's journal, pins, rolls and group edits (docs/design/design-v1-dm-tools.md), about one in six.
   if (chance(r, 0.16)) return dmToolOp(r, state, who, { anyToken, target, seqId });
-  // Companions (docs/design-v1-combat-flow.md 3.6), about one in twelve.
+  // Companions (docs/design/design-v1-combat-flow.md 3.6), about one in twelve.
   if (chance(r, 0.08)) return companionOp(r, state, who, { anyToken, anyCharacter, seqId });
-  // Asks for saves (docs/design-v1-player-save-spell.md 5.3), about one in sixteen.
+  // Asks for saves (docs/design/design-v1-player-save-spell.md 5.3), about one in sixteen.
   if (chance(r, 0.06)) return castOp(r, state, who, { anyToken, seqId });
-  // Attached tokens (docs/design-v1-attach.md), about one in fourteen.
+  // Attached tokens (docs/design/design-v1-attach.md), about one in fourteen.
   if (chance(r, 0.07)) return attachOp(r, state, anyToken);
-  // Traps (docs/design-v1-traps.md), about one in sixteen.
+  // Traps (docs/design/design-v1-traps.md), about one in sixteen.
   if (chance(r, 0.06)) return trapOp(r, state, anyToken, seqId);
-  // Combat uses (docs/design-v1-combat-controls.md 3.1), about one in sixteen.
+  // Combat uses (docs/design/design-v1-combat-controls.md 3.1), about one in sixteen.
   if (chance(r, 0.06)) return combatUseOp(r, target);
 
   if (who.role === "player") {
@@ -1671,7 +1671,7 @@ function mapOp(r: () => number, state: RoomState, sceneId: string, seqId: string
 }
 
 /**
- * Wave 4's ops (docs/design-v1-maps-vision.md section 4): vision turned on
+ * Wave 4's ops (docs/design/design-v1-maps-vision.md section 4): vision turned on
  * and off with its light, movement blocking, doors, heights and stairs
  * under tokens, squeezes and teleports, carried lights and party members,
  * and the server's explore, on vision scenes and others.
@@ -1938,7 +1938,7 @@ function trackerOp(
   }
 }
 
-/** A spend or a give back of every kind of combat use (docs/design-v1-combat-controls.md 3.1), some after a secret roll. */
+/** A spend or a give back of every kind of combat use (docs/design/design-v1-combat-controls.md 3.1), some after a secret roll. */
 export function combatUseOp(r: () => number, target: () => { tokenId: string } | { characterId: string }): Op {
   const back = chance(r, 0.3);
   const flags = { ...(back ? { back: true as const } : {}), ...(chance(r, 0.2) ? { quiet: true as const } : {}) };
@@ -1967,7 +1967,7 @@ export function combatUseOp(r: () => number, target: () => { tokenId: string } |
 }
 
 /**
- * A path without what each leg took and its bends (docs/design-v1-movement.md
+ * A path without what each leg took and its bends (docs/design/design-v1-movement.md
  * 6.2), for tests of the marks a stop carries, which read as they did
  * before walking routes. The route tests check those fields themselves.
  */

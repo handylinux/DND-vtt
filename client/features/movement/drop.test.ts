@@ -213,7 +213,7 @@ describe("a group drag", () => {
     assert.ok(climbed > 10, `${climbed} landed at another height`);
   });
 
-  test("a group's dragged token that sits on a holder straddling a step reads the landing the drop sends, judged by the holder (docs/design-v1-attach.md 4.3)", () => {
+  test("a group's dragged token that sits on a holder straddling a step reads the landing the drop sends, judged by the holder (docs/design/design-v1-attach.md 4.3)", () => {
     // The horse stands on the high half of a step, at its height, and the kite perches over the low half.
     for (const feet of [10, 30]) {
       const base = world({
@@ -268,7 +268,7 @@ describe("ops and words", () => {
   });
 });
 
-describe("a lone drop walks its route (docs/design-v1-movement.md 3.1)", () => {
+describe("a lone drop walks its route (docs/design/design-v1-movement.md 3.1)", () => {
   /** The wall along x = 6 stops at y = 10, so the way from 2, 5 to 9, 5 goes round its end. */
   const around = () => world({ edges: line("w", 6, 0, 10) });
   const searched = (state: ReturnType<typeof world>, t: ReturnType<typeof thorn>, to: { x: number; y: number }): Found => {
@@ -699,7 +699,7 @@ describe("a lone drop walks its route (docs/design-v1-movement.md 3.1)", () => {
   });
 });
 
-describe("a holder that drags a creature beside it (docs/design-v1-attach.md 4.2)", () => {
+describe("a holder that drags a creature beside it (docs/design/design-v1-attach.md 4.2)", () => {
   /** A wall along x = 6 from the top down to y = 5, so Thorn walks past its end at y = 5 and the goblin he drags at y = 4 does not. */
   const walled = () => world({ edges: line("w", 6, 0, 5) });
   const holder = () => thorn({ x: 2, y: 5 });
@@ -752,7 +752,7 @@ describe("a holder that drags a creature beside it (docs/design-v1-attach.md 4.2
   });
 });
 
-describe("drops on a hex scene (docs/design-v1-hex-grids.md 4.2, phase H1)", () => {
+describe("drops on a hex scene (docs/design/design-v1-hex-grids.md 4.2, phase H1)", () => {
   /** A 30 by 30 hex scene whose walls stop moves, with Thorn standing on hex (4, 4), a Large ogre on (9, 3) and a goblin on (6, 6). */
   function hexRoom(orient: "rows" | "columns") {
     const g: HexGrid = { shape: "hex", orient };

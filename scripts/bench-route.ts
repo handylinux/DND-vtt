@@ -1,5 +1,5 @@
 /**
- * The route search's performance gate (docs/design-v1-movement.md section
+ * The route search's performance gate (docs/design/design-v1-movement.md section
  * 10): how long a drag's search takes to find a creature's every route
  * within a Dash, within 30 squares, through the next door, and over a whole
  * 200 x 200 dungeon, for a Medium creature on whole squares and a Large one

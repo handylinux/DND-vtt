@@ -9,7 +9,7 @@ const STEADY = ["Conditions", "Hidden", "Multi-select"] as const;
 
 /**
  * Three hidden copies of the token window's small buttons, which measure
- * its default width (docs/design-v1-token-window.md 3.3). Being real
+ * its default width (docs/design/design-v1-token-window.md 3.3). Being real
  * buttons in the page, inside the chrome's zoom as the window is, they
  * carry this device's font and the browser's minimum font size, which a
  * width worked out from the labels' text would miss. Room draws them once

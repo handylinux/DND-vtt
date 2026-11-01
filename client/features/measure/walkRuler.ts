@@ -24,7 +24,7 @@ import { dragReading, EXTRA_WORDS, joinWords, walkWords, type DragWalk } from ".
 import { formatFeet, tokenStop, type Point, type RulerStop } from "./ruler.ts";
 
 /**
- * The ruler's walking mode (docs/design-v1-movement.md 3.3), kept free of
+ * The ruler's walking mode (docs/design/design-v1-movement.md 3.3), kept free of
  * React and Konva so it is tested under plain Node: the walk through every
  * stop for one creature, the token the ruler starts on, or a Medium
  * creature on the ground when it starts on empty ground. Each later stop is
@@ -78,7 +78,7 @@ const NO_ACTOR: Actor = { hp: { cur: 1, max: 1, temp: 0 }, life: "alive", ac: 10
 /**
  * The parts of the room a ruler's walk reads (publicWorld, walkerAt). While each is the same object, the walks and searches kept for it still hold.
  * Who players see reads the sight a copy holds, and on a per-player scene the shared sight and fog
- * (docs/design-v1-per-player-vision.md 6.6), so a light or a holder's change that moves only those still walks the ruler again.
+ * (docs/design/design-v1-per-player-vision.md 6.6), so a light or a holder's change that moves only those still walks the ruler again.
  */
 type Basis = Pick<RoomState, "buildChunks" | "templates" | "tokens" | "fogTiles" | "exploredTiles" | "meta" | "members" | "characters"> & { scene: unknown; sight: unknown; sightAll: unknown; fogAll: unknown };
 
@@ -180,7 +180,7 @@ function searchFor(view: RoomState, at: Walked, walker: Token & Walker, input: W
   else {
     // Who players see of the tokens the legs before moved, by where those legs left them, on every copy alike.
     const moved = new Set(Object.keys(at.sim.tokens).filter((id) => !samePose(at.sim.tokens[id], view.tokens[id])));
-    // A shared or kept ruler keeps to the ground every player shares, never this player's own memory (docs/design-v1-per-player-vision.md 6.6).
+    // A shared or kept ruler keeps to the ground every player shares, never this player's own memory (docs/design/design-v1-per-player-vision.md 6.6).
     const world = groupWalkWorld(at.sim, walker, input.viewer, at.left, ownRuler(input) ? { creatures: false, everything: true, moved } : { creatures: false, seenGround: true, sharedGround: true, moved, unseen: unseenAtStart(view, input) });
     search = routeSearch(routeWorld({ ...world.input, prone: false }));
     budget.charge(routeWorldUnits(search.world) + Math.ceil((search.world.nx * search.world.ny) / 400));
@@ -496,7 +496,7 @@ function stopLeft(sim: RoomState, id: string, left: PathStop[], drawn: PathStop)
 const rulerRooms = new WeakMap<RoomState, RoomState>();
 
 /**
- * The room as a walking ruler reads it (docs/design-v1-map-discovery.md
+ * The room as a walking ruler reads it (docs/design/design-v1-map-discovery.md
  * 5.2): a ruler sends nothing, so the pieces of a player's held build stop
  * its walk anywhere within their band (movement.ts previewChunks), where
  * a drag's drop reads them by the gate test. One per view, so what the
@@ -621,7 +621,7 @@ export function nextHeld(prev: HeldWalk, m: WalkMeasure | null, ruler: string): 
 
 /**
  * What a walking ruler's total and the Ruler's line say while its walk is
- * worked out, as a drag's label does (docs/design-v1-look-pass-2.md D16): a
+ * worked out, as a drag's label does (docs/design/design-v1-look-pass-2.md D16): a
  * walk still searching keeps the last walk's reading, and only once the
  * search has run past the shared loading delay (`slow`) does it wait grey,
  * "Finding the way…". So a ruler dragged over a large map never blinks.
@@ -668,7 +668,7 @@ export function saveWalk(walk: boolean, storage: () => Storage | undefined = () 
   }
 }
 
-/** The grid of the scene a ruler walks on: on hexes its walk steps from hex to hex (docs/design-v1-hex-grids.md phase H2). */
+/** The grid of the scene a ruler walks on: on hexes its walk steps from hex to hex (docs/design/design-v1-hex-grids.md phase H2). */
 function gridOfView(view: Pick<RoomState, "scenes">, sceneId: string) {
   const scene = view.scenes[sceneId];
   return scene ? sceneGrid(scene) : SQUARES;

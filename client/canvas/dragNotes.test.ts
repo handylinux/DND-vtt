@@ -65,7 +65,7 @@ describe("a token a player drops into the fog", () => {
     assert.deepEqual(droppedIntoFog({ role: "player", view: state, moves: [{ token: gob, owns: false, x: 20, y: 20 }] }), []);
   });
 
-  test("on a per-player scene with fog alone, is judged by the player's own fog, so ground only they remember keeps it (docs/design-v1-per-player-vision.md 6.6)", () => {
+  test("on a per-player scene with fog alone, is judged by the player's own fog, so ground only they remember keeps it (docs/design/design-v1-per-player-vision.md 6.6)", () => {
     const state = setup();
     state.scenes.s1!.vision = { on: false, light: "dark", perPlayer: true };
     state.holders.s1 = { sceneId: "s1", rev: 1, entries: [{ memberId: "p1", on: true }] };
@@ -88,7 +88,7 @@ describe("a token a player drops into the fog", () => {
     assert.equal(intoFogText(["Goblin 2", "Goblin 3"]), "2 creatures are in the fog now, so you can no longer see them.");
     assert.equal(intoFogText(["Goblin 2"], "party"), "Goblin 2 is out of the party's sight now.");
     assert.equal(intoFogText(["Goblin 2", "Goblin 3"], "party"), "2 creatures are out of the party's sight now.");
-    // On a per-player scene (docs/design-v1-per-player-vision.md 11).
+    // On a per-player scene (docs/design/design-v1-per-player-vision.md 11).
     assert.equal(intoFogText(["Goblin"], "yours"), "Goblin is out of your sight now.");
     assert.equal(intoFogText(["Goblin", "Goblin 2", "Goblin 3"], "yours"), "3 creatures are out of your sight now.");
   });
@@ -152,7 +152,7 @@ function darkTable() {
   return { begin, deliver, dmFirst, rejoin, drop, notes, outbox, view: () => store.store.getState().view! };
 }
 
-describe("a creature a player drops on a per-player vision scene (docs/design-v1-per-player-vision.md 11)", () => {
+describe("a creature a player drops on a per-player vision scene (docs/design/design-v1-per-player-vision.md 11)", () => {
   test("is named out of their own sight, once the server took the move and no longer sends it", () => {
     const state = room();
     state.scenes.s1!.vision = { on: true, light: "dark", perPlayer: true };

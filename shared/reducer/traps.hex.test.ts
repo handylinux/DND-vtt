@@ -11,7 +11,7 @@ import { ownWalk } from "../rules/movement.ts";
 import { hexWallRoom, onHex, wallsRound } from "../rules/hexWalls.testkit.ts";
 
 /**
- * Traps on a hex scene in the reducer (docs/design-v1-hex-grids.md phase
+ * Traps on a hex scene in the reducer (docs/design/design-v1-hex-grids.md phase
  * H2): a new trap is stamped with its scene's shape, its rectangles keep to
  * the scene's hex keys, a wire's ends may lie on hex corners, a square
  * scene's wire keeps to corners and edge midpoints, a walk sets a trap off

@@ -82,7 +82,7 @@ describe("showing a handout", () => {
     assert.ok(some.ok && some.op.handout.to !== "all" && some.op.handout.to.length === 2);
   });
 
-  test("shows a document's pages in order, as a copy, with a new handout id (docs/design-v1-pdf-handouts.md 8.2)", () => {
+  test("shows a document's pages in order, as a copy, with a new handout id (docs/design/design-v1-pdf-handouts.md 8.2)", () => {
     const pages = [
       { assetId: "p1", width: 1584, height: 2048 },
       { assetId: "p2", width: 2048, height: 1584 },

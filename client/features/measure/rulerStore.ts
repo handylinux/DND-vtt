@@ -8,7 +8,7 @@ import { saveWalk, savedWalk } from "./walkRuler.ts";
 /**
  * The ruler's state and the parts of it its row and its key both change,
  * apart from the tool's .tsx so the unit tests can load them
- * (docs/design-v1-tool-cycle.md 2.13).
+ * (docs/design/design-v1-tool-cycle.md 2.13).
  */
 
 export type RulerToolState = {
@@ -17,7 +17,7 @@ export type RulerToolState = {
   share: boolean;
   /** Whether a frame of the current ruler went to the server, so its end must too. */
   sent: boolean;
-  /** Measure: Walking rather than Straight (docs/design-v1-movement.md 3.3), as this device remembers it. */
+  /** Measure: Walking rather than Straight (docs/design/design-v1-movement.md 3.3), as this device remembers it. */
   walk: boolean;
 };
 

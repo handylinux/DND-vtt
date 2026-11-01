@@ -13,7 +13,7 @@ import { setupHistory } from "./helpers/undoScope.ts";
 import { chooseStarterWork, starterWork } from "./starterPick.ts";
 
 /**
- * Scene setup (docs/design-v1-map-discovery.md 8, lane MS1): what players
+ * Scene setup (docs/design/design-v1-map-discovery.md 8, lane MS1): what players
  * see of a scene, chosen once. The real server serves the production build
  * to a DM on a computer, in a room made as a DM makes one, so it starts on
  * Explore for new scenes.
@@ -40,7 +40,7 @@ import { chooseStarterWork, starterWork } from "./starterPick.ts";
  *   import is done, each held by the test: changed meanwhile, the new scene
  *   copies the change, and deleted, it starts on the room's choice and a
  *   toast says so.
- * - dp-1a, on a DM session of its own (docs/design-v1-design-pass.md 4.1
+ * - dp-1a, on a DM session of its own (docs/design/design-v1-design-pass.md 4.1
  *   and 6): the scene settings page's groups as the panel kit's groups,
  *   each folded with its summary, on the line under its name at 320 x 568
  *   and 130% and on its line at 390 x 844, the chevron by the name's first
@@ -217,7 +217,7 @@ async function view(sceneId: string, page: Page = dm): Promise<void> {
   const panel = await scenesPanel(page);
   // The row's button is named by the scene's name, then its size and kind.
   await panel.getByRole("button", { name: new RegExp(`^${name}(?![A-Za-z])`) }).first().click();
-  // The scene's name heads its settings with no section of its own, after New scene's (docs/design-v1-map-discovery.md 8.4).
+  // The scene's name heads its settings with no section of its own, after New scene's (docs/design/design-v1-map-discovery.md 8.4).
   const field = panel.getByRole("textbox", { name: "Scene name" }).last();
   await waitFor(`${name}'s settings`, async () => ((await field.inputValue()) === name ? true : null));
   if (page === dm) await waitFor(`the DM on ${name}`, () => dmSocket.you?.sceneId === sceneId || null);
@@ -498,7 +498,7 @@ describe("raccoon-vtt scene setup run", { timeout: 900_000 }, () => {
     const before = { arena: seeOf(run.arenaId), crypt: seeOf(run.cryptId), mat: seeOf(run.matId) };
     await copy.click();
     await sheet.getByRole("status").filter({ hasText: "Copied to 3 scenes." }).waitFor();
-    // Copying scene configuration is Setup (docs/design-v1-undo-scope.md 2), so the save says where its Undo is.
+    // Copying scene configuration is Setup (docs/design/design-v1-undo-scope.md 2), so the save says where its Undo is.
     await dm.getByText("Saved. Undo in Setup history.", { exact: true }).first().waitFor();
     const cave = { fog: true, vision: false, light: "bright", perPlayer: false };
     await waitFor("all 3 copied", () => ([run.arenaId, run.cryptId, run.matId].every((id) => JSON.stringify(seeOf(id)) === JSON.stringify(cave)) ? true : null));

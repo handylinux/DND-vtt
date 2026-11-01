@@ -9,7 +9,7 @@ import { zoneBox } from "../traps/rules.ts";
 import { unionView } from "../vision/union.ts";
 
 /**
- * The scene outliner's rows (docs/design-v1-dm-tools.md 3.2), as pure
+ * The scene outliner's rows (docs/design/design-v1-dm-tools.md 3.2), as pure
  * functions over the DM's view: everything on the scene in view, grouped,
  * each with what players get of it and the rectangle a tap frames.
  *
@@ -21,7 +21,7 @@ import { unionView } from "../vision/union.ts";
  * stamps and pins linked to pages.
  *
  * On a per-player scene that player sees what any player sees, the union
- * of every source and every player's map (docs/design-v1-per-player-vision.md
+ * of every source and every player's map (docs/design/design-v1-per-player-vision.md
  * decision 14, vision/union.ts), so a row is marked only when no player
  * gets it.
  */
@@ -114,7 +114,7 @@ const SHAPE_WORD: Record<AreaTemplate["shape"], string> = {
 };
 
 /**
- * A companion's detail and mark (docs/design-v1-combat-flow.md 3.6.10):
+ * A companion's detail and mark (docs/design/design-v1-combat-flow.md 3.6.10):
  * whose it is, in place of its kind word, so searching "companion" lists
  * them all, and "Away from Bree" when no token of its character stands on
  * the scene, as when the party moved on and left it behind.
@@ -221,7 +221,7 @@ export function outlineRows(view: RoomState, sceneId: string): OutlineRow[] {
     if (!t || t.sceneId !== sceneId) continue;
     const box = zoneBox(gridOfScene(view, sceneId), t, view.buildChunks);
     const doorGone = "door" in t.zone && box === null;
-    // Found is the party's (docs/design-v1-traps.md 4.5): a found trap reaches players by its name and place, unless the fog covers it.
+    // Found is the party's (docs/design/design-v1-traps.md 4.5): a found trap reaches players by its name and place, unless the fog covers it.
     const mark = !t.found ? "Hidden" : seen.traps[t.id] ? "Found" : "Found, under fog";
     add({
       group: "traps",

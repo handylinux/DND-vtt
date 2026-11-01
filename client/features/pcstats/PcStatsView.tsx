@@ -9,12 +9,12 @@ import { AbilityGrid } from "../monsters/AbilityGrid.tsx";
 import { defenseLinesOf, rollReading, rollTitle } from "./reading.ts";
 
 /**
- * A player character's stat block, read only (docs/design-v1-pc-stats.md
+ * A player character's stat block, read only (docs/design/design-v1-pc-stats.md
  * 7.3), in the stat block view's type: the level and proficiency, the six
  * abilities with their saves, the skills that differ from the plain
  * modifier, initiative and Passive Perception, spellcasting, defenses, and
  * one line per roll. React text, never Markdown. Only its six ability boxes
- * roll, and only with `roll` (docs/design-v1-stat-block-rolls.md). The rest
+ * roll, and only with `roll` (docs/design/design-v1-stat-block-rolls.md). The rest
  * of the rolls are made in the Dice panel.
  */
 export function PcStatsView(props: { character: Pick<Character, "stats" | "level">; roll?: BlockRoller | null | undefined }) {

@@ -4,7 +4,7 @@ import { seededRandom } from "./layout.ts";
 import { buildModel, landing, MAX_TILT } from "./models.ts";
 import { DROPPED_OPACITY, LAND_MS, LAST_FRAME_MS, pathFor, poseAt, type DiePath } from "./poses.ts";
 
-/** A die's scripted path (docs/design-v1-roll-animation.md 3.2 and 3.4). */
+/** A die's scripted path (docs/design/design-v1-roll-animation.md 3.2 and 3.4). */
 
 function paths(tag: string): DiePath[] {
   const random = seededRandom(tag);

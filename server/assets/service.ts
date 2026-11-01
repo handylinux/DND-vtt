@@ -39,7 +39,7 @@ export type AssetServiceOptions = {
    * Where uploads and variants are made before they move into place, on the
    * image volume so that move is a rename. The server's is `tmp` there. The
    * CLI's import passes a folder of its own, so its startup never clears the
-   * running server's temporary files (docs/design-v1-dm-tools.md 3.19).
+   * running server's temporary files (docs/design/design-v1-dm-tools.md 3.19).
    */
   tmpDir?: string;
   slotLimits?: SlotLimits;
@@ -63,7 +63,7 @@ export type AssetServiceOptions = {
  * What ingest is asked to store. How the row is paid for comes in one of
  * two ways: a reservation on the room's quota (design 11.1), or a starter
  * mark, the work's key, for a pick that never counts toward the quota
- * (docs/design-v1-starter-art.md 5). Nothing else skips the quota.
+ * (docs/design/design-v1-starter-art.md 5). Nothing else skips the quota.
  */
 export type IngestInput = {
   roomId: string;
@@ -97,7 +97,7 @@ export class AssetService {
   readonly hourly: WindowLimiter;
   readonly egress: Egress;
   readonly search: ImageSearch | null;
-  /** Always there: Openverse needs no key (docs/design-v1-dm-tools.md 3.13). */
+  /** Always there: Openverse needs no key (docs/design/design-v1-dm-tools.md 3.13). */
   readonly openverse: OpenverseSearch;
   readonly bodyTiming: AssetServiceOptions["bodyTiming"];
   readonly starter: StarterCatalog;
@@ -217,7 +217,7 @@ export class AssetService {
    * uploader is added to it, and the answer is built exactly as for a fresh
    * upload, so it shows neither who uploaded first nor when. A handout's
    * answer alone says `created`, whether this request made the row, so a
-   * PDF upload deletes only the pages it made (docs/design-v1-pdf-handouts.md
+   * PDF upload deletes only the pages it made (docs/design/design-v1-pdf-handouts.md
    * 3.9). Only a DM uploads one, and a DM's library lists every handout
    * image already, so it tells the DM nothing new. Every other kind keeps
    * the answer that never shows a reuse (design 11.1).
@@ -259,7 +259,7 @@ export class AssetService {
 
   /**
    * Copies a starter work's shipped file into the room as an image of
-   * `kind` (docs/design-v1-starter-art.md 5), with the catalog's credit and
+   * `kind` (docs/design/design-v1-starter-art.md 5), with the catalog's credit and
    * the work's key as the row's starter mark, outside the room's quota. The
    * caller has checked the kind is among the work's uses and holds an
    * intake slot, or is a room import.

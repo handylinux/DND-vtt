@@ -356,7 +356,7 @@ describe("the fit (6.3)", () => {
 });
 
 /**
- * Area's row with the From control (docs/design-v1-area-from-character.md
+ * Area's row with the From control (docs/design/design-v1-area-from-character.md
  * 3.6 and Appendix A): each room's row from the widths the dev room's
  * measuring layer gives in Inter at 1280 x 800, for a short name and one
  * at the name cap, as the toggle and as the chip, and the disabled "From

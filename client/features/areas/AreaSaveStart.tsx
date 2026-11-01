@@ -9,7 +9,7 @@ import { Note } from "../tokens/ui.tsx";
 import { areaTitle } from "./labels.ts";
 
 /**
- * An area's "Save and damage" (docs/design-v1-roll-options.md 5.6): starts
+ * An area's "Save and damage" (docs/design/design-v1-roll-options.md 5.6): starts
  * the group save with the area as its source, filled from the spell preset
  * whose name the area keeps and from its caster, or with No save for a
  * preset everyone takes. One group save at a time: one that holds rolls

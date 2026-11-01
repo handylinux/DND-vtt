@@ -1,5 +1,5 @@
 /**
- * What a player's copy may never hold (docs/design-v1-per-player-vision.md
+ * What a player's copy may never hold (docs/design/design-v1-per-player-vision.md
  * section 9, rule 3): the holder list, the explored layers apart from the
  * merged fog, and every list of who saw. A reader's copy of a mark says
  * `seen: true` and holds no list. Tests walk a parsed frame or state with

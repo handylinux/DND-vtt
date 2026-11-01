@@ -6,7 +6,7 @@ import { AT, actor, character, room } from "#shared/testutil.ts";
 import { remapState } from "./remap.ts";
 import { parseRoomState } from "./stateSchema.ts";
 
-/** A character's stat block in an exported room (docs/design-v1-pc-stats.md 3.5): it travels, by the op's own bounds, and sets its actor's numbers. */
+/** A character's stat block in an exported room (docs/design/design-v1-pc-stats.md 3.5): it travels, by the op's own bounds, and sets its actor's numbers. */
 
 const BLOCK: PcStats = {
   ...structuredClone(EMPTY_PC_STATS as PcStats),
@@ -49,7 +49,7 @@ describe("a stat block in room.json", () => {
   });
 });
 
-/** A sync record in an exported room (docs/design-v1-resync.md 4): it travels by the op's own bounds, its at required, and the remap leaves it alone. */
+/** A sync record in an exported room (docs/design/design-v1-resync.md 4): it travels by the op's own bounds, its at required, and the remap leaves it alone. */
 describe("a sync record in room.json", () => {
   const RECORD: DdbSync = {
     at: AT,

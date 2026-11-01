@@ -4,7 +4,7 @@ import { scopeSlot, useScoped } from "../../../state/scope.ts";
 import type { Point } from "../cells.ts";
 
 /**
- * Height mode's choices and its gesture in progress (docs/design-v1-maps-vision.md
+ * Height mode's choices and its gesture in progress (docs/design/design-v1-maps-vision.md
  * section 4.2), local to this device. Heights and stairs only change
  * through ops: the overlay draws the unsent part of a stroke and the
  * dragged area from here, so they show under the finger before the op goes.
@@ -12,7 +12,7 @@ import type { Point } from "../cells.ts";
 
 /** What a stroke paints: a height on cells, stair marks, or difficult ground marks (the builder's own Difficult ground mode). */
 export type HeightPaint = "height" | "stairs" | "rough";
-/** Difficult ground mode's choice: mark the cells or clear their marks (docs/design-v1-movement.md 3.4). */
+/** Difficult ground mode's choice: mark the cells or clear their marks (docs/design/design-v1-movement.md 3.4). */
 export type RoughChoice = "mark" | "clear";
 /** A brush of 1 to 3 cells, or an area dragged from corner to corner. Brush and Erase's size goes to 10 (D-261026-4), and this one keeps its three. */
 export type HeightShape = 1 | 2 | 3 | "area";
@@ -21,7 +21,7 @@ export type StairChoice = StairDirection | "remove";
 
 /**
  * The stepper's range and step (section 4.2, raised to 100 ft by
- * docs/design-v1-heights-readout.md section 5). The model allows -100 to
+ * docs/design/design-v1-heights-readout.md section 5). The model allows -100 to
  * 200 ft, which other tools may store.
  */
 export const HEIGHT_STEP_FT = 5;
@@ -70,7 +70,7 @@ export function useHeightStore(): StoreApi<HeightState> {
 }
 
 /**
- * The height readout's slot (docs/design-v1-heights-readout.md section 2):
+ * The height readout's slot (docs/design/design-v1-heights-readout.md section 2):
  * the cell a tap with the Select tool read, and the words the status line
  * speaks. The pill reads the cell's ground from the view on each render,
  * so it follows a repaint and goes when the ground does, and the host keeps

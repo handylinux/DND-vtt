@@ -17,7 +17,7 @@ export function wordsAt(view: Pick<RoomState, "buildChunks" | "fogTiles">, scene
 
 /**
  * A tap on empty map with the Select tool, as the height readout sees it
- * (docs/design-v1-heights-readout.md section 2): it shows the height of
+ * (docs/design/design-v1-heights-readout.md section 2): it shows the height of
  * raised or lowered ground, or a stair, under the tap, and any other tap
  * puts a readout away. The canvas calls it last, once no label or door
  * took the tap (canvas/emptyTap.ts). Returns whether it showed one.

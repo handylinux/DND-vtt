@@ -95,7 +95,7 @@ describe("the editor's draft", () => {
   });
 });
 
-describe("a companion block's save (docs/design-v1-companion-stat-blocks.md 6.2)", () => {
+describe("a companion block's save (docs/design/design-v1-companion-stat-blocks.md 6.2)", () => {
   test("an edit is diffed against the block as the editor opened it, so another's change to another line is kept", () => {
     const opened = companionBlock("b1", "bree", { name: "Moth Spirit", ac: 12 });
     // A co-owner renamed it meanwhile. This draft changed the AC alone.

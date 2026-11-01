@@ -71,7 +71,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   icon?: IconName;
   /**
    * The icon alone, its words (`children`, or `aria-label`) its name and
-   * its tooltip (docs/design-v1-icons.md 3.1): `always` for an icon read at
+   * its tooltip (docs/design/design-v1-icons.md 3.1): `always` for an icon read at
    * once without hover, such as the trash can (rule 1), and `fine` for one
    * a mouse learns from its tooltip, which a touch screen draws with its
    * words, since nothing may need hover (rule 2).
@@ -98,7 +98,7 @@ function wordsOf(children: ReactNode): string | undefined {
 }
 
 /**
- * The one button (docs/design-v1-visual.md 2.3). At least 44 px tall and
+ * The one button (docs/design/design-v1-visual.md 2.3). At least 44 px tall and
  * wide, the minimum touch target (design section 14.4). One primary per
  * view: the main action of a form, dialog, card or page. Buttons that open
  * something or act on the side are secondary, and `quiet` sits in rows and
@@ -161,7 +161,7 @@ export function Button(props: ButtonProps) {
  * An unseen copy of a button with its words and icon, the size the button
  * would draw at. A slot that stacks it under a button keeps the button's
  * widest form, so a button that grows into it moves nothing around it
- * (docs/design-v1-icons.md 4.1), such as Delete growing "Sure?". A span,
+ * (docs/design/design-v1-icons.md 4.1), such as Delete growing "Sure?". A span,
  * so nothing that counts a row's buttons, or focus, ever finds it.
  */
 export function ButtonGhost(props: { size?: "md" | "sm"; icon?: IconName; children: ReactNode; style?: CSSProperties }) {

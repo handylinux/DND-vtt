@@ -1,8 +1,8 @@
 # raccoon-vtt v1: the token panel, the stat summary and AC on tokens
 
-Status: draft 5, after design review round 3. The project owner's answers of 2026-10-15 and round 1's settled defaults are in section 9. The token action bar's whole body, its button rows included, is this doc's (3.3), since both this doc and docs/design-v1-layout-hierarchy.md had left the rows to the other. It builds on the docked token bar (docs/design-v1-bar-dock.md) and never undoes it. Code is cited from the `bar-dock` branch tip at `d1acdaf0`.
+Status: draft 5, after design review round 3. The project owner's answers of 2026-10-15 and round 1's settled defaults are in section 9. The token action bar's whole body, its button rows included, is this doc's (3.3), since both this doc and docs/design/design-v1-layout-hierarchy.md had left the rows to the other. It builds on the docked token bar (docs/design/design-v1-bar-dock.md) and never undoes it. Code is cited from the `bar-dock` branch tip at `d1acdaf0`.
 
-The project owner sent feedback after the group's first real session. This doc answers the points about the token panel, the stat summary a tap on a token shows, monster stat blocks, and AC on tokens. Two other docs answer the rest at the same time: docs/design-v1-combat-flow.md (the initiative tracker, death and revive, companions and summons) and docs/design-v1-layout-hierarchy.md (sideways phones, a collapsible sidebar, the handout viewer, and the app-wide grouping pass for every panel and bar not owned here or by the combat doc). Section 3.10 states where this doc meets each of them.
+The project owner sent feedback after the group's first real session. This doc answers the points about the token panel, the stat summary a tap on a token shows, monster stat blocks, and AC on tokens. Two other docs answer the rest at the same time: docs/design/design-v1-combat-flow.md (the initiative tracker, death and revive, companions and summons) and docs/design/design-v1-layout-hierarchy.md (sideways phones, a collapsible sidebar, the handout viewer, and the app-wide grouping pass for every panel and bar not owned here or by the combat doc). Section 3.10 states where this doc meets each of them.
 
 Every size below is in layout pixels (`features/device/layout.ts`), so the interface size changes them as it changes everything else. Widths "inside" a box are what its content gets after borders, safe-area padding and body padding (3.12).
 
@@ -49,7 +49,7 @@ So the stat block starts below every other section but the DM's setup, and below
 - A token of a character (`{ ref }`): the token carries only the reference (`:508-536`). The character is projected on its own: whole to its owners (`projectCharacter`, `:575-578`), and as life, effects and HP to everyone else (`:579-585`). So a player who owns a character's token but not the character holds that character as any other player does, without its AC.
 - A hidden token (`visibility: "dm"`) reaches its owners and no other player (`tokenVisibleTo`, `:310-314`).
 
-So a player's device holds AC, speeds, Passive Perception and `srdId` only for actors that player owns: a token's own actor they own, or a character they own. A table display is a player who owns nothing (docs/design-v1-dm-tools.md 2.1).
+So a player's device holds AC, speeds, Passive Perception and `srdId` only for actors that player owns: a token's own actor they own, or a character they own. A table display is a player who owns nothing (docs/design/design-v1-dm-tools.md 2.1).
 
 **The marks on a token** (`client/canvas/tokenMarks.ts:40-90`, `TokenNode.tsx:140-190`): condition chips along the top edge, the elevation badge at the top right, the HP bar under the bottom edge, a numbered token's number in the bottom right corner, the padlock in the bottom left corner, and the Bloodied notch on the right of the ring. The left half of the bottom edge holds only the padlock, and only on a locked token.
 
@@ -89,14 +89,14 @@ One component, `StatSummary` (`client/features/tokens/StatSummary.tsx`), with it
 **Vitals.** One line of items at 14 px, label muted and value at weight 600, which wraps onto more lines where it must. Each item is made of units that never break inside, and a line may break only between units, so no unit is wider than about 140 px (about 150 in Inter, which the app has drawn in since 2026-10-17) and nothing overflows even the narrowest place it shows (3.12):
 
 - AC: the shield badge (`AcBadge`, 3.9) holding the number, one unit. Its accessible name is "Armor Class 15". It is left out on a dead creature, for an AC of 0, and while `hpLess` holds (below), as on the map and in the tracker.
-- HP, in the bar only, since the panel has its own section: the same text and life tag the bar's HP line shows today (`TokenActionBar.tsx:125-126`). Its units are "HP 22/30", the temporary HP "+5", and the tag, so "HP 100000/100000" (the largest, `MAX_HP_AMOUNT`, `features/tokens/hpInput.ts:33`) is one unit of about 130 px. A player who sees labels gets "Bloodied". On a dead creature the DM's Revive follows the Dead tag as one more unit, with its line "Revive brings it back with 1 HP." under the vitals, and a player who may heal it gets the combat doc's healing line there instead (docs/design-v1-combat-flow.md 3.5). While `hpLess` holds there is no HP item, so no life tag and no Revive either, whatever HP and life the actor still stores.
+- HP, in the bar only, since the panel has its own section: the same text and life tag the bar's HP line shows today (`TokenActionBar.tsx:125-126`). Its units are "HP 22/30", the temporary HP "+5", and the tag, so "HP 100000/100000" (the largest, `MAX_HP_AMOUNT`, `features/tokens/hpInput.ts:33`) is one unit of about 130 px. A player who sees labels gets "Bloodied". On a dead creature the DM's Revive follows the Dead tag as one more unit, with its line "Revive brings it back with 1 HP." under the vitals, and a player who may heal it gets the combat doc's healing line there instead (docs/design/design-v1-combat-flow.md 3.5). While `hpLess` holds there is no HP item, so no life tag and no Revive either, whatever HP and life the actor still stores.
 - Speed: the token's own speeds, walk first, then fly, swim, climb and burrow. Each mode is one unit, so "Speed 30 ft," then "fly 60 ft (hover)," then "swim 30 ft" may each start a line, and an Adult White Dragon's four modes or the maximum of five at 1000 ft wrap between modes rather than run out of the box. A walk of 0 with another speed reads "Speed 0 ft, fly 30 ft (hover)".
 - Passive Perception, such as "Passive Perception 13", one unit.
 - For a creature whose actor has a sheet link, usually a player character: "Open the sheet ↗", the existing link (`StatsSection.tsx:214-240`), as a 44 px unit. In the bar it sits in the row of 3.3 instead.
 
 Each item shows only when the viewer's copy of the actor holds it, and AC, speed and Passive Perception only on a creature (kind `pc`, `npc` or `monster`). An object's summary is its HP alone, and nothing while `hpLess` holds. The initiative bonus and challenge rating stay out: auto initiative rolls monsters, players read their own sheet, and both stay in Stats and in the block (settled by default, section 9).
 
-**HP-less tokens.** One shared predicate, `hpLess(actor, token?)` in `shared/rules/hp.ts`, defined and owned by docs/design-v1-combat-flow.md 3.6.6, is true for a companion that is an effect, or any token with max HP 0. It takes the resolved actor (a token's own, or its character's) and the token where there is one, so the Characters panel's card, which has no token, asks it too. It gates every HP-less behavior in this doc: the vitals' HP and AC items (3.2), the bar's HP entry (3.3), the Hit points section (3.7) and the map's AC badge (3.9). No place here tests a maximum of 0 on its own. A creature turned into an effect keeps its stored HP, AC and life, as that doc says, and is treated as HP-less while it is an effect, so a living or a dead one shows no HP, life tag, Revive or AC until it is a creature again.
+**HP-less tokens.** One shared predicate, `hpLess(actor, token?)` in `shared/rules/hp.ts`, defined and owned by docs/design/design-v1-combat-flow.md 3.6.6, is true for a companion that is an effect, or any token with max HP 0. It takes the resolved actor (a token's own, or its character's) and the token where there is one, so the Characters panel's card, which has no token, asks it too. It gates every HP-less behavior in this doc: the vitals' HP and AC items (3.2), the bar's HP entry (3.3), the Hit points section (3.7) and the map's AC badge (3.9). No place here tests a maximum of 0 on its own. A creature turned into an effect keeps its stored HP, AC and life, as that doc says, and is treated as HP-less while it is an effect, so a living or a dead one shows no HP, life tag, Revive or AC until it is a creature again.
 
 **Saves**, when the token's stat block is shown to this viewer (`statBlockShown`, `features/monsters/statBlockLink.ts:45-48`) and has loaded: "Saves" and six units, "Str +5", "Dex −1", "Con +2", "Int +4", "Wis +2", "Cha +4", in the block's own numbers and minus sign (`signed`, `shared/statBlock.ts:89-91`). All six, not only the proficient ones, since any of them can be called for and six short units fit one or two lines.
 
@@ -110,9 +110,9 @@ Each item shows only when the viewer's copy of the actor holds it, and AC, speed
 
 ### 3.3 The token bar
 
-Status: changed by docs/design-v1-token-window.md (3.2, 5.8, 8.9). Undo move, Doesn't count and the door lead on a line of their own, then Conditions, Hidden and Multi-select ("Select several" here) on one line, with Request a roll after them. The less-often row loses Move bar and Reset bar position. The body gains Size after the steady line and before the less-often row. A window resized under 300 px tall takes the short layout.
+Status: changed by docs/design/design-v1-token-window.md (3.2, 5.8, 8.9). Undo move, Doesn't count and the door lead on a line of their own, then Conditions, Hidden and Multi-select ("Select several" here) on one line, with Request a roll after them. The less-often row loses Move bar and Reset bar position. The body gains Size after the steady line and before the less-often row. A window resized under 300 px tall takes the short layout.
 
-The single-token bar keeps its frame, header, dock behavior and every control (docs/design-v1-bar-dock.md). This doc owns its whole body, the button rows included.
+The single-token bar keeps its frame, header, dock behavior and every control (docs/design/design-v1-bar-dock.md). This doc owns its whole body, the button rows included.
 
 **Its body, in order:**
 
@@ -152,7 +152,7 @@ The less-often row, which starts on a line of its own:
 
 9. **Locked**, for the DM. Set once for a set piece.
 10. **Duplicate**, for the DM. Setup.
-11. **Delete**, for the DM, armed as today. For a companion's owners who are not the DM, the combat doc's **Dismiss** takes this place, armed the same way (docs/design-v1-combat-flow.md 3.6.9). The DM keeps Delete and gets no second button.
+11. **Delete**, for the DM, armed as today. For a companion's owners who are not the DM, the combat doc's **Dismiss** takes this place, armed the same way (docs/design/design-v1-combat-flow.md 3.6.9). The DM keeps Delete and gets no second button.
 12. **Move bar**, then **Reset bar position** while the bar is away from its spot, only while it docks (bar-dock section 2). They arrange the bar itself.
 
 Why two rows: the first holds what is used during play, the transient answers first. The second keeps the destructive and setup buttons apart from them, so a quick tap meant for Conditions or Hidden never lands on Delete or Dismiss, which still need their second tap. The second row costs at most one line over today's wrapping, and for most players it holds only Move bar.
@@ -282,7 +282,7 @@ The bar grows by the summary: about 40 px of vitals and, for a linked monster, a
 1. Selects the token, unless it is already the selection.
 2. Sets the request for it in the Room scope (`statBlockRequest`, now `{ tokenId, focus: true }`), so a "view as a player" preview never reaches the DM's own panel, as today.
 3. Opens the token panel (`ui.openPanel("token")`): the side panel's Token tab from 900 px up, the Token sheet below.
-4. Hides the bar (`ui.showActions(false)`) only where the bar cannot stand beside the panel: where it folds under the sheet (`foldsUnderSheet` with the sheet open, `pages/fold.ts:30-32`: a portrait layout under 900 px, or the very short mode of docs/design-v1-layout-hierarchy.md 4.2, its `sheetMode` "full", as at 480 x 320 at 130% and at 649 x 300 with the turn band), or where the free width beside a side sheet is under the bar's narrowest width, 230 px (bar-dock 1.3, as at 667 x 375 at 130%, whose sheet at its 60% cap leaves 189). Everywhere else, the side panel from 900 px up and the right sheet on a phone held sideways, it leaves the bar as it was: open when "Stat block" came from the bar, and as a tracker row found it otherwise (`ui.select` keeps the bar's state, `state/selection.ts:39-41`). There the DM applies damage in the bar while reading the block beside it (settled by default, section 9). Details keeps hiding the bar at every width, since its panel repeats every control in the bar.
+4. Hides the bar (`ui.showActions(false)`) only where the bar cannot stand beside the panel: where it folds under the sheet (`foldsUnderSheet` with the sheet open, `pages/fold.ts:30-32`: a portrait layout under 900 px, or the very short mode of docs/design/design-v1-layout-hierarchy.md 4.2, its `sheetMode` "full", as at 480 x 320 at 130% and at 649 x 300 with the turn band), or where the free width beside a side sheet is under the bar's narrowest width, 230 px (bar-dock 1.3, as at 667 x 375 at 130%, whose sheet at its 60% cap leaves 189). Everywhere else, the side panel from 900 px up and the right sheet on a phone held sideways, it leaves the bar as it was: open when "Stat block" came from the bar, and as a tracker row found it otherwise (`ui.select` keeps the bar's state, `state/selection.ts:39-41`). There the DM applies damage in the bar while reading the block beside it (settled by default, section 9). Details keeps hiding the bar at every width, since its panel repeats every control in the bar.
 
 The stat block section, once it shows that token, unfolds through the request override (3.5), scrolls itself to the top of the panel (`block: "start"`, smooth unless the device asks for reduced motion), moves focus to its fold button, whose name is "Stat block" and whose `aria-expanded` is true, and clears the request. The override keeps the block open across remounts, and neither the request nor the override writes the stored folds (3.5). Room does not also send focus to the panel for this path, unlike Details (`Room.tsx:238-246`). Pressing "Stat block" again while the block shows scrolls and focuses it again. Escape, Back and Close then hide the bar and keep the panel (3.3).
 
@@ -306,7 +306,7 @@ The new order. A part shows only where it does today (`TokenPanel.tsx:100-128` a
 | 9 | Rest | as today | open | A few times a session. |
 | 10 | Sight | as today | open | Scene changes. |
 | 11 | Stats: the fields and the "Sheet link" field | the DM and owners | folded | Setup. The summary shows the numbers. |
-| 12 | Token settings: the DM's today, plus Height, plus the "Make a companion" button on a token that is neither a PC nor a companion. For an owner who may rename the token (a PC's, or a companion's, docs/design-v1-combat-flow.md 3.6.4), Name and "Name others see" where they apply | the DM, an owner who may rename it | folded | Setup. |
+| 12 | Token settings: the DM's today, plus Height, plus the "Make a companion" button on a token that is neither a PC nor a companion. For an owner who may rename the token (a PC's, or a companion's, docs/design/design-v1-combat-flow.md 3.6.4), Name and "Name others see" where they apply | the DM, an owner who may rename it | folded | Setup. |
 | 13 | Companion, the combat doc's section (its 3.6.9): "Belongs to" and the turn | on a companion only: the DM and its owners | folded, with the character's name beside its label | Set once, then a turn change now and then. Next to Owners, which a companion's link decides. |
 | 14 | Owners | the DM | folded, with the names (or "None") beside its label | Setup. |
 | 15 | Remove | the DM | open | One button, also in the bar. |
@@ -321,7 +321,7 @@ The new order. A part shows only where it does today (`TokenPanel.tsx:100-128` a
 - **Defaults.** The stat block starts open on a layout at least 900 px wide and 600 tall, where the side panel has room for it beside the map. Elsewhere it starts folded: a phone, an upright tablet, and a large phone held sideways in the wide layout such as 932 x 430, whose side panel body is about 250 px tall. A block runs one to three phone screens and would push HP and conditions out of view. The other four start folded.
 - **Resolved once per Room.** A Room scope slot, `panelFoldsSlot` in `client/features/tokens/panelFolds.ts` (the `scopeSlot` pattern of `statBlockOpen.ts:11`), resolves the five values the first time a token panel reads it, from storage and, for missing values, the defaults at the layout size of that moment. It keeps them for the Room's lifetime. Room draws the Token sheet and the side panel's tab in separate trees (`Room.tsx:524`, `:585`), so crossing 900 px remounts the panel, and the slot keeps the folds as they were instead of resolving the defaults again.
 - **The request override.** A stat block request (3.4) sets a transient override in the Room scope, `statBlockOpened: { tokenId }`, beside `panelFoldsSlot` in the same file. While it names the selected token, that token's stat block shows open whatever the slot says. It lives in the Room scope, so it survives the remount when the layout crosses 900 px, either way. It clears when the selection changes to another token or to none, and when the viewer taps the stat block's fold, which then writes the slot and storage as any tap does. It never writes storage or the slot.
-- **Written.** A viewer's tap on a fold writes the slot and storage. A request writes neither (above). The DM's "view as a player" preview has its own Room scope and slot, which reads storage and never writes it, as layout's `rvtt.sidePanel` (docs/design-v1-layout-hierarchy.md 4.1).
+- **Written.** A viewer's tap on a fold writes the slot and storage. A request writes neither (above). The DM's "view as a player" preview has its own Room scope and slot, which reads storage and never writes it, as layout's `rvtt.sidePanel` (docs/design/design-v1-layout-hierarchy.md 4.1).
 
 **Stays put.** The panel still remounts per token (`TokenPanel.tsx:63-64`), so an armed Delete or a half-typed field never carries over, and the folds come from the slot, not from the old mount.
 
@@ -488,7 +488,7 @@ Two labeled number fields at today's 88 px (`NUMBER_FIELD_WIDTH`, `components/Fi
 It shows when all of these hold:
 
 - The token is a creature (`pc`, `npc` or `monster`).
-- The viewer's copy of its actor holds an `ac` from 1 to 100 (`shared/protocol.ts:204` allows 0 to 100). An AC of 0 is a companion with none, such as Spiritual Weapon (docs/design-v1-combat-flow.md 3.6.6), and shows nothing. The DM holds every creature's AC, and a player the AC of the actors they own (section 2), as the project owner decided (section 9). Other players, a player who owns a character's token but not the character, the table display and the DM's "view as a player" preview see no other AC, and nothing is added to any projection.
+- The viewer's copy of its actor holds an `ac` from 1 to 100 (`shared/protocol.ts:204` allows 0 to 100). An AC of 0 is a companion with none, such as Spiritual Weapon (docs/design/design-v1-combat-flow.md 3.6.6), and shows nothing. The DM holds every creature's AC, and a player the AC of the actors they own (section 2), as the project owner decided (section 9). Other players, a player who owns a character's token but not the character, the table display and the DM's "view as a player" preview see no other AC, and nothing is added to any projection.
 - It is not dead. A corpse's AC answers nothing, and the badge comes back with Revive.
 - `hpLess` does not hold (3.2). An effect has no AC to answer, whatever its actor stores.
 - The token is big enough for marks (`DECOR_MIN_PX`) and at least twice the badge's height tall, and its width holds the badge, a gap, and the number badge's width when the token has a picture and a number (since that badge may show at the bottom right, `showsNumberBadge`, `lib/boardText.ts:443-445`). Otherwise it gives way, and the bar and the tracker still say the AC.
@@ -550,7 +550,7 @@ What content gets inside each box, after borders, safe-area padding and body pad
 | Side panel on a large phone held sideways in the wide layout, 932 x 430, with a 59 px right inset | 268 |
 | Bottom sheet, phone held upright at 390, 1 px borders, 16 px padding | 356. At 130% (300 wide): 266. Upright tablet at 820: 786 |
 | Right sheet, phone held sideways, 340 wide | 306. With a 47 px right inset, as an 844 x 390 phone has at any interface size: 259 |
-| The very short mode (docs/design-v1-layout-hierarchy.md 4.2, `sheetMode` "full"): the whole screen less the side safe areas and 16 px padding, with no border | 243 at 480 x 320 at 130%, always. 523 at 649 x 300 with the turn band |
+| The very short mode (docs/design/design-v1-layout-hierarchy.md 4.2, `sheetMode` "full"): the whole screen less the side safe areas and 16 px padding, with no border | 243 at 480 x 320 at 130%, always. 523 at 649 x 300 with the turn band |
 | Docked bar, 304 wide, 1 px borders, 12 px side padding | 278 |
 | Spanning bar, phone held upright at 390 | 348. At 130%: 258 |
 | Compact bar at 480 x 320 at 130%, 259 wide | 234, as measured |
@@ -634,7 +634,7 @@ Under "Phones, tablets and connection", after the action bar line from bar-dock:
 
 Under "Characters and monsters", the line "Full stat blocks on tokens…" becomes: "Full stat blocks on tokens: a monster or NPC token's panel has its stat block right under its image for the DM, with abilities, saves, skills, senses, languages, CR, traits, actions, bonus actions, reactions and legendary actions, and folds. "Stat block" in the token's action bar or a tracker row's options opens it. Edit opens a room monster in the editor, and an SRD monster offers "Copy to this room's monsters and edit". "Attach a stat block" links a token that has none, and Detach unlinks it."
 
-docs/design-v1-visual.md 3.3's Token row gains "Order and folds: docs/design-v1-token-panel.md."
+docs/design/design-v1-visual.md 3.3's Token row gains "Order and folds: docs/design/design-v1-token-panel.md."
 
 ## 7. Tests
 
@@ -661,7 +661,7 @@ docs/design-v1-visual.md 3.3's Token row gains "Order and folds: docs/design-v1-
 
 No integration tests: nothing on the server changes.
 
-**e2e**, one file after another as docs/design-v1-visual.md 5.3 says:
+**e2e**, one file after another as docs/design/design-v1-visual.md 5.3 says:
 
 - New `e2e/tokenpanel.e2e.ts`, on E2E_PORT plus ten, as the other two docs assign it. A DM, a player who owns a character, an SRD Wild Shape token and a second character's token without that character, and a room with an SRD goblin, an Adult White Dragon, a room monster with a long Immunities line, a token with all five speeds at 1000 ft and AC 100, a token with AC 9, an unlinked NPC and a locked ogre.
   1. DM at 1280 x 800: tapping the goblin shows, in the bar, "Armor Class 15" by role img, "HP 10/10", "Speed 30 ft", "Passive Perception 9", then the HP entry, then the six saves, then "Stat block" and "Details". Its buttons come in 3.3's order, by their tops and lefts, with Locked starting a new line. The canvas holds an `ac-badge` with "15" on the goblin and none on the object. Damage that kills the goblin takes the shield off its vitals line and the map.
@@ -680,7 +680,7 @@ No integration tests: nothing on the server changes.
 One workspace from the bar-dock build, four commits, FEATURES.md lines in the commit that ships each:
 
 1. `feat(tokens): armor class shield on creature tokens`
-   - New `client/components/AcBadge.tsx` with its test: `SHIELD_PATH`, `acBadgeBox` and `AcBadge` (`sm`, `md`), sized to the number. `PartyBar.tsx` is not edited here: the party bar is docs/design-v1-layout-hierarchy.md M9's, and whichever build lands second keeps `AcBadge.tsx` as 3.9 says.
+   - New `client/components/AcBadge.tsx` with its test: `SHIELD_PATH`, `acBadgeBox` and `AcBadge` (`sm`, `md`), sized to the number. `PartyBar.tsx` is not edited here: the party bar is docs/design/design-v1-layout-hierarchy.md M9's, and whichever build lands second keeps `AcBadge.tsx` as 3.9 says.
    - `client/canvas/tokenMarks.ts` and its test: `ac` and `lock` in, their places out.
    - `client/canvas/useBoardText.ts`: passes `ac` (a creature, alive, 1 to 100, not `hpLess`), whether the lock shows, and the number badge reserve. `client/canvas/Stage.tsx`: hands `lockShown` (`:475`) to it.
    - `client/canvas/TokenNode.tsx`: `AcMark` (a Konva group named `ac-badge`: the shield path and the number), and LockMark at the place the marks give.
@@ -702,7 +702,7 @@ One workspace from the bar-dock build, four commits, FEATURES.md lines in the co
    - `client/features/tokens/StatBlockSection.tsx`: the fold through the slot, the disclosure, the summary line in its header, the one-row Attach, focus on a request.
    - `client/features/images/ImageField.tsx` (`previewSize`, `extra`, the wrapping rule), `client/features/images/ImagePicker.tsx` (`hint`), `client/features/tokens/AltImages.tsx` (the add button and the other images in the column).
    - `client/features/tokens/HpSection.tsx`: the Max and Temp row (the combat build edits the same section, whichever lands second keeps both). `StatsSection.tsx`: its parts exported. `TokenNotes.tsx`: the card's notes. `RestSection.tsx`: the warning after a choice. `client/features/measure/RangeRingsSection.tsx`: the hint.
-   - FEATURES.md: the panel and other images lines. docs/design-v1-visual.md 3.3's pointer.
+   - FEATURES.md: the panel and other images lines. docs/design/design-v1-visual.md 3.3's pointer.
 4. `test(e2e): token summary, AC badge and token panel order`: `e2e/tokenpanel.e2e.ts`, and any fold-opening or Escape step section 7 names in the existing files.
 
 ## 9. Decided
@@ -719,12 +719,12 @@ The project owner answered on 2026-10-15, and design review round 1 settled thre
 8. **"Stat block" keeps the bar open wherever the bar docks beside the panel**, by `foldsUnderSheet` and the bar's 230 px narrowest width rather than 900 px (D5). Settled by default (3.4).
 9. **A spanning bar's short layout is decided once per screen size**, from the least room any token's bar gets there, not from where the tapped token stands, so Apply sits in the same place on a device and in view (session 1 build review, Q2 and its round 2). Settled by default (3.3).
 
-The order of the token action bar's button rows is this doc's (3.3), since both this doc and docs/design-v1-layout-hierarchy.md had left it to the other.
+The order of the token action bar's button rows is this doc's (3.3), since both this doc and docs/design/design-v1-layout-hierarchy.md had left it to the other.
 
 ## As built: FL-13, proficiency in text (D-261030-539)
 
-The saves line in the bar and under "More stats" (3.3) draws "Saves" and six plain units. FL-12's borders on a proficient save are gone, and `LinkedBlock` no longer carries a proficiency map. The stat block section lists proficiencies in the two lines described in docs/design-v1-dice-ui.md.
+The saves line in the bar and under "More stats" (3.3) draws "Saves" and six plain units. FL-12's borders on a proficient save are gone, and `LinkedBlock` no longer carries a proficiency map. The stat block section lists proficiencies in the two lines described in docs/design/design-v1-dice-ui.md.
 
 ## As built: FL-15, the outlined ability box (D-261030-588)
 
-The stat block section lists no proficiencies in text. Its ability grid outlines the box of each proficient save instead (docs/design-v1-dice-ui.md). The saves line stays plain.
+The stat block section lists no proficiencies in text. Its ability grid outlines the box of each proficient save instead (docs/design/design-v1-dice-ui.md). The saves line stays plain.

@@ -6,7 +6,7 @@ import { BLOCKS_MOVES, cleanName, DEFAULT_GRID, MAP_BACKGROUND } from "../scenes
 import type { ImportPlan } from "./convert.ts";
 
 /**
- * The ops a Universal VTT import sends (docs/design-v1-maps-vision.md
+ * The ops a Universal VTT import sends (docs/design/design-v1-maps-vision.md
  * section 3.1 step 8): `scene.create`, then `build.edge`, `build.walls`
  * and `build.lights` in batches, every op under 48 KiB serialized. They are
  * ordinary bounded ops, which the server validates as it validates any
@@ -83,7 +83,7 @@ export function importScene(plan: Pick<ImportPlan, "frame">, map: SceneMap, choi
     autoWalls: "off",
     gridFromFile: true,
     ...BLOCKS_MOVES,
-    // The light level for when the DM turns party vision on (docs/design-v1-maps-vision.md 4.3.8). Vision itself stays off.
+    // The light level for when the DM turns party vision on (docs/design/design-v1-maps-vision.md 4.3.8). Vision itself stays off.
     ...(choices.light ? { vision: { on: false, light: choices.light } } : {}),
   };
 }

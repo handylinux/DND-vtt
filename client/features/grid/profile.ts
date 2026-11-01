@@ -1,6 +1,6 @@
 /**
  * The profile and fit code both grid finders share (detect.ts for
- * squares, detectHex.ts for hexes, docs/design-v1-grid-detect.md sections
+ * squares, detectHex.ts for hexes, docs/design/design-v1-grid-detect.md sections
  * 2 and 10.1). A profile is the thin-line filter's responses summed along
  * one family of lines. Each finder builds its own profiles and decides
  * what its lines mean: these only find where a profile repeats and where

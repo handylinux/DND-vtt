@@ -12,11 +12,11 @@ import { isHex, sceneGrid, SQUARES } from "../rules/grid.ts";
 import { placedOnHex } from "../rules/footprint.ts";
 import type { HexGrid } from "../rules/hex.ts";
 
-/** How near a creature must end its walk for the hint, in feet (docs/design-v1-traps.md 4.6). */
+/** How near a creature must end its walk for the hint, in feet (docs/design/design-v1-traps.md 4.6). */
 export const NOTICE_FT = 10;
 
 /**
- * The Passive Perception hint (docs/design-v1-traps.md 4.6), the DM's
+ * The Passive Perception hint (docs/design/design-v1-traps.md 4.6), the DM's
  * alone. A party creature that ends a walk within 10 ft of an armed trap
  * nobody found, by the room's distance rule from its footprint to the
  * zone's nearest square, while players can see the zone (in the party's
@@ -115,7 +115,7 @@ function near(state: RoomState, token: Token, trap: Trap): boolean {
 /**
  * Within 10 ft of the zone's nearest hex on a hex scene, by the room's rule
  * between the creature's hexes and that hex on its own ground
- * (docs/design-v1-hex-grids.md H2).
+ * (docs/design/design-v1-hex-grids.md H2).
  */
 function nearHexes(state: RoomState, token: Token, trap: Trap, g: HexGrid, fpc: number): boolean {
   const settings = state.meta.settings;
@@ -134,7 +134,7 @@ function zoneSeen(state: RoomState, sceneId: string): (trap: Trap) => boolean {
   if (!scene) return () => false;
   const g = sceneGrid(scene);
   if (scene.vision?.on === true) {
-    // The DM's own hint, so on a per-player scene it reads what any player's creatures see (docs/design-v1-per-player-vision.md decision 14).
+    // The DM's own hint, so on a per-player scene it reads what any player's creatures see (docs/design/design-v1-per-player-vision.md decision 14).
     const sight = unionSightOf(state, sceneId);
     // On hexes a hex of the zone is seen as a Medium creature on it would be, by its sub-cells.
     if (isHex(g)) return (trap) => zoneHexes(g, state, sceneId, trap.zone).some((h) => sight.seesToken({ size: "medium", ...placedOnHex(g, { size: "medium", x: 0, y: 0 }, h) }, g));

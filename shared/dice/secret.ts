@@ -18,7 +18,7 @@ export function playedCreature(state: Pick<RoomState, "members" | "characters" |
 }
 
 /**
- * Whether a roll starts hidden from players (docs/design-v1-dice.md 17,
+ * Whether a roll starts hidden from players (docs/design/design-v1-dice.md 17,
  * the project owner, 2026-10-17): only a DM's roll for a monster, a
  * creature no player plays, so the table never learns its numbers by
  * default. The Dice panel's Secret follows the selection, so a formula the

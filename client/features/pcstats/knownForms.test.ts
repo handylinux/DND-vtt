@@ -22,7 +22,7 @@ Object.assign(globalThis, {
   },
 });
 
-/** A Druid's known forms in Take a shape (docs/design-v1-known-forms.md 5). */
+/** A Druid's known forms in Take a shape (docs/design/design-v1-known-forms.md 5). */
 describe("a Druid's known forms", () => {
   let SRD: readonly SrdMonster[] = [];
   before(async () => {

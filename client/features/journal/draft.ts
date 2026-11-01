@@ -5,7 +5,7 @@ import type { OpAnswer, OpRefusal } from "../../state/types.ts";
 import { cleanFolderName } from "../scenes/folders.ts";
 
 /**
- * The journal's rules on this side (docs/design-v1-dm-tools.md 3.7): the
+ * The journal's rules on this side (docs/design/design-v1-dm-tools.md 3.7): the
  * editor's draft and the one op its Save sends, who a page is for in
  * words, and how the panel groups pages. Plain functions, so they run
  * under node --test. JournalPanel.tsx and JournalEditor.tsx draw them.

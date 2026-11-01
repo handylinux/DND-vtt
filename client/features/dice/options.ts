@@ -22,7 +22,7 @@ import { d20Text, parseBonus, TYPE_BONUS } from "../rolls/card.ts";
 import { ownsCharacter, ownsToken } from "../tokens/access.ts";
 
 /**
- * The rules of the Dice panel's roll options (docs/design-v1-roll-options.md
+ * The rules of the Dice panel's roll options (docs/design/design-v1-roll-options.md
  * 4), free of React so node --test covers them: each option's label and
  * roll, where a save or check tap goes, initiative written only to an
  * unchanged row, a damage tap's one line, and how a result reads on its
@@ -105,7 +105,7 @@ export function asSave(roll: PanelRoll, test: D20Test): PanelRoll {
 /**
  * A roll marked as its creature's initiative, so the server keeps it from
  * players while they may not know the creature's place in the order
- * (docs/design-v1-combat-flow.md 11.3). Any other test leaves it as it is.
+ * (docs/design/design-v1-combat-flow.md 11.3). Any other test leaves it as it is.
  */
 export function asInitiative(roll: PanelRoll, test: D20Test): PanelRoll {
   return test.kind === "initiative" ? { ...roll, initiative: true } : roll;
@@ -195,7 +195,7 @@ export function routeOf(input: { state: Pick<RoomState, "tokens" | "rolls">; cre
 }
 
 /**
- * The test a tap rolls by its route (docs/design-v1-roll-request.md 7.1):
+ * The test a tap rolls by its route (docs/design/design-v1-roll-request.md 7.1):
  * an answer rolls the request's own test, which carries its `spell` and
  * `cause`, so a creature with Magic Resistance answers a spell request
  * with advantage from the Dice panel as from its card. Any other route
@@ -213,7 +213,7 @@ export type TypedBonus = ReturnType<typeof parseBonus>;
 /**
  * A d20 tap for a creature whose numbers this viewer does not hold: one
  * with no stat block, or a character whose numbers go only to the DM and
- * its own players (docs/design-v1-pc-stats.md 4.2). Its saves, checks and
+ * its own players (docs/design/design-v1-pc-stats.md 4.2). Its saves, checks and
  * skills are listed all the same. An ask needs no bonus, since its player
  * answers it. A roll here, an answer included, takes the bonus typed, and
  * waits for one, so no "+0" goes that no one gave.
@@ -299,7 +299,7 @@ function riderName(part: DamagePart): string | null {
  * one roll per damage type, so a damage is never split across lines.
  * A critical hit sends every part as asked, riders included, marked
  * `critical`: the server rolls it by the room's rule (the critical hit
- * rules addendum of docs/design-v1-dice.md), so this device never needs
+ * rules addendum of docs/design/design-v1-dice.md), so this device never needs
  * to know it. Labels name the roll, never the creature: "Rend damage,
  * fire", with a rider "Rapier damage and Sneak Attack, piercing", and
  * "Rend critical damage, fire".
@@ -324,7 +324,7 @@ export function damageRolls(named: NamedRoll, opts: { on: ReadonlySet<number>; c
     const roll: PanelRoll = { formula: formatFormula(parsed.formula), label: cutLabel(type ? `${head}, ${damageTypeName(type)}` : head) };
     if (opts.creature) roll.creature = opts.creature;
     if (opts.critical) roll.critical = true;
-    // The line keeps the type itself, since a label is cut to fit or typed by hand (docs/design-v1-combat-controls.md 3.4).
+    // The line keeps the type itself, since a label is cut to fit or typed by hand (docs/design/design-v1-combat-controls.md 3.4).
     if (type) roll.type = type;
     out.push(roll);
   }
@@ -378,7 +378,7 @@ export function critical(roll: DiceRoll | undefined): boolean {
   return face !== undefined && face >= (roll?.critOn ?? 20);
 }
 
-// ------------------------------------------------------------ recharge and X/Day (docs/design-v1-combat-controls.md 6)
+// ------------------------------------------------------------ recharge and X/Day (docs/design/design-v1-combat-controls.md 6)
 
 /**
  * The per-tab Used marks of builds before recharge became room state
@@ -561,7 +561,7 @@ export function hpChips(log: readonly LogEntry[], me: string, kind: "damage" | "
   return [mine, theirs].filter((c): c is HpChip => c !== undefined && c !== null);
 }
 
-// ------------------------------------------------------------ the compact rows (docs/design-v1-dice-ui.md 4)
+// ------------------------------------------------------------ the compact rows (docs/design/design-v1-dice-ui.md 4)
 
 /**
  * A preset in a button's few characters, beside its bonus on one line:
@@ -582,7 +582,7 @@ export function presetTag(preset: RollPreset): string {
 /**
  * The tag parts every preset of a group carries ("+1d4" for a Blessed
  * creature's six saves), said once in the group's label and left off its
- * buttons (docs/design-v1-dice-ui.md 4.3). One preset without a part keeps
+ * buttons (docs/design/design-v1-dice-ui.md 4.3). One preset without a part keeps
  * it on every button that has it.
  */
 export function commonTags(presets: readonly RollPreset[]): string[] {
@@ -648,7 +648,7 @@ function shortRider(name: string): string {
   return name.length > 22 ? `${name.slice(0, 21).trimEnd()}…` : name;
 }
 
-// ------------------------------------------------------------ the folds (docs/design-v1-dice-pass.md 6)
+// ------------------------------------------------------------ the folds (docs/design/design-v1-dice-pass.md 6)
 
 /** Whether a row's name is the spell's, as the group save finds a caster's own spell by name (groupSave/fills.ts ownSpell). */
 export function sameSpell(a: string, b: string): boolean {
@@ -770,7 +770,7 @@ export type GroupAsks = Partial<Record<CreatureGroup, { ids: string[]; quiet?: s
 /**
  * The row a player's ask for saves goes under: its roll's row by key, else
  * the row of its spell by name. None puts an open block at the top of the
- * options (docs/design-v1-player-save-spell.md 3.1).
+ * options (docs/design/design-v1-player-save-spell.md 3.1).
  */
 export function castRowOf<R extends Pick<NamedRoll, "key" | "name">>(named: readonly R[], ask: { roll?: string | undefined; spell: string }): R | undefined {
   return (ask.roll !== undefined ? named.find((r) => r.key === ask.roll) : undefined) ?? named.find((r) => sameSpell(r.name, ask.spell));

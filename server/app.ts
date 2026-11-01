@@ -44,11 +44,11 @@ export type AppDeps = {
   rooms?: Partial<ManagerOptions>;
   ws?: WsOptions;
   export?: ExportOptions;
-  /** When image cleanup's daily job first runs (docs/design-v1-dm-tools.md 3.19). */
+  /** When image cleanup's daily job first runs (docs/design/design-v1-dm-tools.md 3.19). */
   cleanup?: CleanupOptions;
-  /** The D&D Beyond import's limits and way out, for tests (docs/design-v1-pc-stats.md 6.3). */
+  /** The D&D Beyond import's limits and way out, for tests (docs/design/design-v1-pc-stats.md 6.3). */
   ddb?: Partial<DdbImportOptions>;
-  /** The asset service's options, for tests: a starter catalog of their own (docs/design-v1-starter-art.md 5). */
+  /** The asset service's options, for tests: a starter catalog of their own (docs/design/design-v1-starter-art.md 5). */
   assets?: AssetRouteOptions;
   /** The log archive reader's admission and batches, its metadata worker, and the receipt lookup's archive reads, for tests. */
   log?: Omit<LogRouteOptions, "pool"> & { migration?: Partial<Omit<MigrationOptions, "budget" | "guard">>; receipts?: Omit<ReceiptRouteOptions, "lines"> & Pick<ReceiptLinesOptions, "checkoutMs" | "queryMs" | "beforeQuery"> };
@@ -182,7 +182,7 @@ export async function buildApp({ config, pool, gateway, hasher, rooms, ws, expor
   await registerReceiptRoutes(app, kit, { manager, options: { deadlineMs: receiptOptions?.deadlineMs, lines: receiptLines } });
   await registerXCardRoutes(app, kit, { manager });
   await registerPlayerViewRoutes(app, kit, { manager });
-  // On the strict egress port, whose squid list names D&D Beyond's character service alone (docs/design-v1-pc-stats.md 6.3).
+  // On the strict egress port, whose squid list names D&D Beyond's character service alone (docs/design/design-v1-pc-stats.md 6.3).
   await registerDdbImportRoutes(app, { dispatcher: app.assets.egress.strict, ...ddb });
 
   // The built SPA, when there is one. In development Vite serves it instead.

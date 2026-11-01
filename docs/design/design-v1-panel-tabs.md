@@ -1,6 +1,6 @@
 # raccoon-vtt v1: the side panel's tabs in one row with a grouped More menu
 
-Status: draft 2, with the project owner's answers of 2026-10-16 (section 14) and the fixes from the design review's round 1 (9.3). Code is cited from main `e4ec8696`. This design builds on docs/design-v1-layout-hierarchy.md ("the layout design" below): its hidden side panel (4.1) and its panels' order and groups (M3, 6.4). Section 10 lists what changes in it.
+Status: draft 2, with the project owner's answers of 2026-10-16 (section 14) and the fixes from the design review's round 1 (9.3). Code is cited from main `e4ec8696`. This design builds on docs/design/design-v1-layout-hierarchy.md ("the layout design" below): its hidden side panel (4.1) and its panels' order and groups (M3, 6.4). Section 10 lists what changes in it.
 
 The project owner asked on 2026-10-16: "This section of the app for the DM is getting super busy, please come up with a way to clean it up." The section is the side panel's tab list on a wide screen, where a DM has 13 tabs (Token, Initiative, Log, Journal, Areas, DM, Scenes, Monsters, Encounters, Characters, Outliner, Library, Menu) on four rows beside Hide panels. Of three ways offered (one row with More, a Play and Prepare switch, an icon rail), the project owner chose one row with More, and added: "make sure they are based on 'order of use' in the guess sense and do not actually change location over time based on how often the DM uses in reality. We just want the most used ones to be most prevalent statically." And: "Maybe it can just be an organized dropdown? Open to ideas."
 
@@ -13,7 +13,7 @@ Every size is in layout px, the chrome's own (`features/device/layout.ts`). "Wid
 - **More opens an organized menu** under itself: the panels not in the row, in order, under the same headings as a DM's phone list ("In play", "Prepare", and Menu after a line). A pick opens the panel, and More then shows its name and the caret in the chosen look, "Monsters ▾", so the open panel is always named in the row.
 - **Badges sit on each tab's corner**, so a count never widens a tab. A count on a panel inside More shows on More too.
 - **Menu stays a panel**, last in More. As an icon beside Hide panels it would push Log out of the row (section 3.6). The project owner decided this (section 14).
-- **More is a tab with a menu** (`role="tab"`, `aria-haspopup="menu"`), so the tab list always has one selected tab. The menu has arrow keys, typeahead and focus back to More. It is a popover on the base that docs/design-v1-tool-options.md 7.1 ("The shared popover base") sets, and follows that section's rules. The shortcut sheet's "Side panel tabs" section changes for its keys (5.4).
+- **More is a tab with a menu** (`role="tab"`, `aria-haspopup="menu"`), so the tab list always has one selected tab. The menu has arrow keys, typeahead and focus back to More. It is a popover on the base that docs/design/design-v1-tool-options.md 7.1 ("The shared popover base") sets, and follows that section's rules. The shortcut sheet's "Side panel tabs" section changes for its keys (5.4).
 - **The open panel gets the room back.** A DM's tab row goes from four rows, 199 px, to one, 61 px.
 - Phones change nothing. No op, no schema, no stored key.
 
@@ -63,7 +63,7 @@ Focus asked for "the panel" goes to the chosen tab from 900 px up (`Room.tsx:627
 - the panes anchored to map points (`features/movement/anchor.ts`)
 - the modal dialog hook (`lib/modalDialog.ts`)
 
-docs/design-v1-tool-options.md adds anchored popovers above the tool options row, and its 7.1 ("The shared popover base") sets the base the two designs share. More's menu is a popover on it (4.4).
+docs/design/design-v1-tool-options.md adds anchored popovers above the tool options row, and its 7.1 ("The shared popover base") sets the base the two designs share. More's menu is a popover on it (4.4).
 
 ## 3. The row
 
@@ -75,7 +75,7 @@ The project owner's other idea, one organized dropdown for every panel, was weig
 
 ### 3.2 What fits
 
-**Measured, not a set per role.** The tab font is `system-ui`, so a title's width differs by system (San Francisco, Segoe UI, Roboto, a Linux font). (Since 2026-10-17 the app ships Inter for every system, docs/design-v1-visual.md 2.1, but the system font still draws until Inter loads.) A browser's minimum font size can widen every tab. The side panel holds the right safe area inside its 360 px (`Room.tsx:1808` `paddingRight: theme.safe.right`), so a large phone held sideways has 59 px less. A set chosen for one of these would overflow or waste the row on another.
+**Measured, not a set per role.** The tab font is `system-ui`, so a title's width differs by system (San Francisco, Segoe UI, Roboto, a Linux font). (Since 2026-10-17 the app ships Inter for every system, docs/design/design-v1-visual.md 2.1, but the system font still draws until Inter loads.) A browser's minimum font size can widen every tab. The side panel holds the right safe area inside its 360 px (`Room.tsx:1808` `paddingRight: theme.safe.right`), so a large phone held sideways has 59 px less. A set chosen for one of these would overflow or waste the row on another.
 
 **The rule**, `fitTabs` in a new `client/pages/tabFit.ts`:
 
@@ -132,7 +132,7 @@ Tabs and More take 6 px side padding, down from 8 (`Room.tsx:1779`). Measured at
 
 ### 3.5 Badges
 
-Changed by docs/design-v1-side-headers.md: the row has no padding above or below, and a badge sits on the corner of its tab's 32 px pill, inside the row.
+Changed by docs/design/design-v1-side-headers.md: the row has no padding above or below, and a badge sits on the corner of its tab's 32 px pill, inside the row.
 
 - **On the corner.** Every badge in the row sits on its button's top right corner (`Badge` with `corner`, as on the toolbar's Panels button), so a count never changes a tab's width and the fit never reads one. Each tab is `position: relative` for it. The row's 8 px top padding holds the badge's 6 px rise.
 - **On More.** More shows the sum of the counts of the panels it holds, the open one included, capped at "9+" as every badge is. So the Journal's count shows on More while the Journal is in More, and on the Journal's own tab wherever the row holds it, as a chosen Journal tab shows its count today.
@@ -155,8 +155,8 @@ The row is the same on a short layout. The `ScrollStrip`, its chevron and the ru
 Today the side panel draws a header only for a subpage, "since the chosen tab already names the panel" (`Room.tsx` `SidePanel`'s comment). A cut name on More breaks that reason, and since the second icon pass so does an icon-only tab, so the rule becomes: **the side panel draws its header for a subpage, and on a touch pointer whenever the row does not show the open page's whole name.**
 
 - **A subpage**: as today, the subpage's name with "Back to" its panel's whole name.
-- **A panel whose name More cuts**: the panel's whole name, with no Back. The fit says when: the open panel is in More and its More width is over More's room. It is worked out from the fit's numbers, not read from the span, so it never flickers. Since the second icon pass More then draws the panel's icon alone (docs/design-v1-icons-2.md 3.1).
-- **A tab that draws its icon alone** (docs/design-v1-icons-2.md 3.1, decision D-261024-36): the panel's whole name, with no Back, worked out from the fit's numbers in the same way (`tabFit.ts` `headerNamesOpen`).
+- **A panel whose name More cuts**: the panel's whole name, with no Back. The fit says when: the open panel is in More and its More width is over More's room. It is worked out from the fit's numbers, not read from the span, so it never flickers. Since the second icon pass More then draws the panel's icon alone (docs/design/design-v1-icons-2.md 3.1).
+- **A tab that draws its icon alone** (docs/design/design-v1-icons-2.md 3.1, decision D-261024-36): the panel's whole name, with no Back, worked out from the fit's numbers in the same way (`tabFit.ts` `headerNamesOpen`).
 - **On a touch pointer only** (D-261024-36 amended): a computer names an icon tab, and More's icon alone, on hover and focus, so its panel keeps its height.
 - **Otherwise** no header, as today. A phone's sheet names the panel in its own header, and the split bar names the panel below, so neither draws this one.
 
@@ -170,11 +170,11 @@ This header moves no focus and is not a subpage: `useSubpageFocus` keys on subpa
 - Grouped as the phone's list groups them, through one helper both use: `panelSections(panels, grouped)` in `features/panels.ts`, in place of PanelPicker's own loop (`Room.tsx:1601-1645`, `GROUP_LABELS` at `:1591`). For a DM: "In play" and "Prepare" headings over their panels, and Menu after a plain line. A heading shows only for a group with a panel in More. A player's menu has no headings or line, as a player's list has none (the layout design's 6.4): five panels read at a glance.
 - Each item: the panel's title, its badge at the end, 44 px tall, the menu's full width. The open panel's item is in the chosen look, and checked (5.1).
 - The headings take the section label's look (`SectionLabel`, `components/Panel.tsx:23`), not its heading element (5.1).
-- Extended by docs/design-v1-split-panel.md 6: "Two panels", a checkbox item, heads the menu with a line under it, and the panel shown below carries "below" at its end.
+- Extended by docs/design/design-v1-split-panel.md 6: "Two panels", a checkbox item, heads the menu with a line under it, and the panel shown below carries "below" at its end.
 
 ### 4.2 Where and how big
 
-More's menu is a popover on the base in docs/design-v1-tool-options.md 7.1 ("The shared popover base"), which places it, closes it and returns focus by that section's rules and draws it in the base's look. What this design gives the base:
+More's menu is a popover on the base in docs/design/design-v1-tool-options.md 7.1 ("The shared popover base"), which places it, closes it and returns focus by that section's rules and draws it in the base's look. What this design gives the base:
 
 - **Its bound** is the side panel's inner box, inside its safe areas, and the menu is drawn in the side panel, not in a portal. So it takes the side panel's interface size, hides with it, lies over the panel's body and its sticky headers, and never covers the map. It has no region to rise into.
 - **Its side** is below More, its left edge at More's, moved left as the base moves it to stay inside the bound.
@@ -205,7 +205,7 @@ What the menu adds:
 
 ### 4.4 The menu
 
-The menu's roles, keys, typeahead and groups are this design's `components/Menu.tsx`, its key logic pure in `components/menuKeys.ts` (5.1, 5.2), drawn in a popover on the shared base. docs/design-v1-tool-options.md builds Setup and Tools on the same `Menu`, drawn as tiles, so all three pick lists in the room take the same keys.
+The menu's roles, keys, typeahead and groups are this design's `components/Menu.tsx`, its key logic pure in `components/menuKeys.ts` (5.1, 5.2), drawn in a popover on the shared base. docs/design/design-v1-tool-options.md builds Setup and Tools on the same `Menu`, drawn as tiles, so all three pick lists in the room take the same keys.
 
 ## 5. Accessibility
 
@@ -291,11 +291,11 @@ The section's intro (`SURFACE_INTRO`) becomes: "On a screen 900 px or wider, wit
 
 The comment above the section's rows names its code: `pages/Room.tsx`, `pages/tabFit.ts`, `components/Menu.tsx` and `menuKeys.ts`, `lib/a11y.ts` `tabKeyIndex`, in place of `components/ScrollStrip.tsx`.
 
-**Rows this design does not add.** No click or tap: a click or tap on a tab, on More, on a panel in the list, or outside the list is a plain pointer press, which the sheet no longer lists. The row and the menu add no key-plus-pointer combination. Android's Back closes the list as it closes any popover on the shared base, under the room rows that docs/design-v1-tool-options.md keeps for an open popover. Escape anywhere closes the list under that design's room Escape row too, and `tabsListEscape` says what it does inside the list, where focus then goes back to More. S ("Hide or show the side panel") and `/` keep their rows and roles in "Keys".
+**Rows this design does not add.** No click or tap: a click or tap on a tab, on More, on a panel in the list, or outside the list is a plain pointer press, which the sheet no longer lists. The row and the menu add no key-plus-pointer combination. Android's Back closes the list as it closes any popover on the shared base, under the room rows that docs/design/design-v1-tool-options.md keeps for an open popover. Escape anywhere closes the list under that design's room Escape row too, and `tabsListEscape` says what it does inside the list, where focus then goes back to More. S ("Hide or show the side panel") and `/` keep their rows and roles in "Keys".
 
 ## 6. Opening a panel from anywhere
 
-Changed by docs/design-v1-split-panel.md 5.1: every caller now says how it asked for the panel, and with two panels a link opens in the pane it was not pressed in. With one panel what follows still holds.
+Changed by docs/design/design-v1-split-panel.md 5.1: every caller now says how it asked for the panel, and with two panels a link opens in the pane it was not pressed in. With one panel what follows still holds.
 
 No caller changes. Every path in 2.2 sets `tab`, and the row shows it: a tab in the row is chosen, or More names the panel and is chosen. No tab moves, the menu stays shut, and focus goes where the caller sends it. So `/` shows "Outliner ▾" chosen with focus in its search, a pin's journal page shows "Journal ▾" for a DM, and Add token's Monsters shows "Monsters ▾". A reload that opens a panel in More again shows it the same way. Details, "Stat block" and "Open the sheet" open Token, which is always first in the row.
 
@@ -470,10 +470,10 @@ After the design review's round 1, by class:
 
 ## 10. What this changes in other designs
 
-- **docs/design-v1-layout-hierarchy.md 4.1, "A short side panel":** the tabs no longer scroll in a `ScrollStrip` on a short layout. Every side panel has the fitted row. The party bar's folded start stays.
+- **docs/design/design-v1-layout-hierarchy.md 4.1, "A short side panel":** the tabs no longer scroll in a `ScrollStrip` on a short layout. Every side panel has the fitted row. The party bar's folded start stays.
 - **Its M3**, "The wide tab row puts an 8 px gap before each group's first tab": still true between tabs in the row, and the menu groups the rest.
 - **Its 4.1 focus rules** ("Panels moves it to the chosen tab"): the chosen tab may be More.
-- **docs/design-v1-tool-options.md**: More's menu is a popover on its 7.1 ("The shared popover base"), and its Setup and Tools use this design's `Menu` (4.4).
+- **docs/design/design-v1-tool-options.md**: More's menu is a popover on its 7.1 ("The shared popover base"), and its Setup and Tools use this design's `Menu` (4.4).
 
 ## 11. Tests
 
@@ -544,7 +544,7 @@ Five commits, in this order. Run `pnpm -s typecheck`, `pnpm -s test` and `pnpm -
    - `client/pages/RoomChrome.tsx` `Badge`: the prop that leaves out its hidden words.
    - `client/features/panels.ts` `useSubpageFocus`: `[data-tabs-menu]` beside the tab list (`:347`).
    - The shortcut sheet's "Side panel tabs" section (5.4) in the sheet build's `BEHAVIORS` and `SURFACE_INTRO` (`client/state/shortcuts.ts`, drawn by `client/features/device/ShortcutSheet.tsx`): two rows changed, six new, `tabsWheel` removed, the new intro, and the section's code comment. Its FEATURES.md table changes in the same commit, so the sheet build's check passes. If that build has not landed yet, this one writes the paragraph of section 12, and the rows go into the registry in the same piece of work as whichever build lands second.
-   - `FEATURES.md` as in section 12, its "Keyboard shortcuts" part matching the sheet, and in docs/design-v1-layout-hierarchy.md a line under 4.1's "A short side panel" and under M3 pointing here.
+   - `FEATURES.md` as in section 12, its "Keyboard shortcuts" part matching the sheet, and in docs/design/design-v1-layout-hierarchy.md a line under 4.1's "A short side panel" and under M3 pointing here.
    - Commit: `feat(ui): the side panel's tabs in one row with a grouped more menu`.
 4. **Existing e2e** (11.3).
    - `e2e/harness.ts` `openSideTab`, and the call sites, `desk.e2e.ts` 2 and 4, and `layout.e2e.ts` 6.
@@ -553,7 +553,7 @@ Five commits, in this order. Run `pnpm -s typecheck`, `pnpm -s test` and `pnpm -
    - `e2e/paneltabs.e2e.ts`.
    - Commit: `test(e2e): the side panel's one row, its more menu and their reach`.
 
-Files another build may also edit: `client/pages/Room.tsx`, where docs/design-v1-tool-options.md replaces the options rail and this design changes `SidePanel` and its focus request, in separate parts of the file. Whichever lands second keeps the other's change. The popover base is the other shared piece: tool options 7.1 rules it.
+Files another build may also edit: `client/pages/Room.tsx`, where docs/design/design-v1-tool-options.md replaces the options rail and this design changes `SidePanel` and its focus request, in separate parts of the file. Whichever lands second keeps the other's change. The popover base is the other shared piece: tool options 7.1 rules it.
 
 ## 14. Decided
 

@@ -153,7 +153,7 @@ export function roomSocketUrl(roomId: string, loc: { protocol: string; host: str
   return `${scheme}://${loc.host}/ws?room=${encodeURIComponent(roomId)}`;
 }
 
-/** A DM's preview socket for one player (docs/design-v1-per-player-vision.md 7.4): the room's, asking `as` that member. */
+/** A DM's preview socket for one player (docs/design/design-v1-per-player-vision.md 7.4): the room's, asking `as` that member. */
 export function previewSocketUrl(roomId: string, memberId: string, loc: { protocol: string; host: string } = location): string {
   return `${roomSocketUrl(roomId, loc)}&as=${encodeURIComponent(memberId)}`;
 }
@@ -181,7 +181,7 @@ export type RoomSocketOptions = {
    */
   recheck?: () => Promise<You | null>;
   /**
-   * A DM's preview of this player (docs/design-v1-per-player-vision.md
+   * A DM's preview of this player (docs/design/design-v1-per-player-vision.md
    * 7.4, previewSocketUrl). It is read only: it sends only `hello` and
    * pings, never an op, an ephemeral event or a scene, which the server
    * answers by closing it. A snapshot for anyone but this player as a

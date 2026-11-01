@@ -6,7 +6,7 @@ import { shapePatch, shapeTempHp } from "./shape.ts";
 import { byCrThenName, DRUID_LEVELS, knownFormCount, shapeLimitMiss, type ShapeLimit } from "./shapeLevel.ts";
 
 /*
- * A Druid's known forms (docs/design-v1-known-forms.md 5), as plain
+ * A Druid's known forms (docs/design/design-v1-known-forms.md 5), as plain
  * functions for node --test: the list a tap sends, the count's words, the
  * marks against a Druid level, and the Druid level this device remembers.
  * The rule is shown, never enforced, so nothing here refuses a form but the

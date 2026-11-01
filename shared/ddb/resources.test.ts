@@ -10,7 +10,7 @@ import { resourceNameKey, resourceNameOf } from "./resources.ts";
 
 /**
  * The class resources a D&D Beyond character's limited uses read as
- * (docs/design-v1-ddb-resources.md 1 to 3), over hand-built JSON in the
+ * (docs/design/design-v1-ddb-resources.md 1 to 3), over hand-built JSON in the
  * shape of public sample characters: an invented character and only the
  * paths the reader reads, so no D&D Beyond text is in the repository. One
  * fixture per row of 1.1's table and per path through 1.2.

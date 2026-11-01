@@ -13,7 +13,7 @@ import { uiScale } from "../device/settings.ts";
 import { overrideAfterSelect, statBlockOpenedSlot } from "./panelFolds.ts";
 
 /**
- * A request to show a token's stat block (docs/design-v1-token-panel.md
+ * A request to show a token's stat block (docs/design/design-v1-token-panel.md
  * 3.4): the token panel's stat block section, once it shows that token,
  * unfolds, scrolls itself to the top of the panel, takes focus when
  * `focus` asks and clears the request. `seq` tells one press from the
@@ -34,7 +34,7 @@ export function requestStatBlock(scope: RoomScope, tokenId: string, focus = true
  * Whether the token bar steps aside when the stat block opens: only where
  * it cannot stand beside the panel. That is where it folds under the sheet
  * (a portrait layout under 900 px, or the very short sideways sheet of
- * docs/design-v1-layout-hierarchy.md 4.2, `veryShort`), or where the free
+ * docs/design/design-v1-layout-hierarchy.md 4.2, `veryShort`), or where the free
  * width a side sheet leaves is under the bar's narrowest, 230 px. From 900
  * px up, and on a phone held sideways with room beside its sheet, the bar
  * stays, so the DM applies damage while reading the block.
@@ -57,7 +57,7 @@ export function statBlockHidesBar(input: { width: number; height: number; safeLe
  *
  * `from` is the panel the press was in (features/panels.ts usePanelHere),
  * a tracker row's Initiative, so with two panels Token opens in the other
- * pane and Initiative stays (docs/design-v1-split-panel.md 5.1). `layout`
+ * pane and Initiative stays (docs/design/design-v1-split-panel.md 5.1). `layout`
  * is the window in the chrome's px, read when left out.
  */
 export function openStatBlock(scope: RoomScope, ui: Pick<RoomUi, "select" | "showActions" | "openPanel">, tokenId: string, options: { from?: string | null; layout?: Size } = {}): void {

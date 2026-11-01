@@ -8,7 +8,7 @@ import { isDynamicXfa } from "./reader.ts";
 const PDFJS = new URL("../../../../node_modules/pdfjs-dist/", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, PDFJS), "utf8");
 
-describe("PDF_OPTIONS (docs/design-v1-pdf-handouts.md 4.2.4)", () => {
+describe("PDF_OPTIONS (docs/design/design-v1-pdf-handouts.md 4.2.4)", () => {
   test("no WebAssembly, no XFA, warnings on, the decoders from the app's folder, nothing else fetched, and images bounded", () => {
     assert.deepEqual(PDF_OPTIONS, {
       useWasm: false,
@@ -40,7 +40,7 @@ describe("PDF_OPTIONS (docs/design-v1-pdf-handouts.md 4.2.4)", () => {
   });
 });
 
-describe("IMAGE_FAILURES (docs/design-v1-pdf-handouts.md 4.2.1)", () => {
+describe("IMAGE_FAILURES (docs/design/design-v1-pdf-handouts.md 4.2.1)", () => {
   test("each matches a warning the pinned pdf.js writes, in its built worker as shipped", () => {
     const texts = ["Unable to decode image", "Unable to decode inline image", "#getJsModule: ", "#instantiateWasm: ", "Image exceeded maximum allowed size and was removed."];
     for (const file of ["build/pdf.worker.mjs", "build/pdf.worker.min.mjs"]) {
@@ -90,7 +90,7 @@ describe("IMAGE_FAILURES (docs/design-v1-pdf-handouts.md 4.2.1)", () => {
   });
 });
 
-describe("XFA forms (docs/design-v1-pdf-handouts.md 4.1.3)", () => {
+describe("XFA forms (docs/design/design-v1-pdf-handouts.md 4.1.3)", () => {
   test("a dynamic XFA form is refused, and a hybrid form and an ordinary PDF open, by the flags pdf.js reports", async () => {
     assert.equal(isDynamicXfa({ IsXFAPresent: true, IsAcroFormPresent: false }), true);
     assert.equal(isDynamicXfa({ IsXFAPresent: true, IsAcroFormPresent: true }), false, "a hybrid form draws its AcroForm");
@@ -115,7 +115,7 @@ describe("XFA forms (docs/design-v1-pdf-handouts.md 4.1.3)", () => {
   });
 });
 
-describe("drawing size (docs/design-v1-pdf-handouts.md 4.2.2)", () => {
+describe("drawing size (docs/design/design-v1-pdf-handouts.md 4.2.2)", () => {
   test("the long side 2048 px whatever the paper, each side at least 1 px", () => {
     assert.deepEqual(renderSize(612, 792), { scale: 2048 / 792, width: 1583, height: 2048 }, "Letter, portrait");
     assert.deepEqual(renderSize(792, 612), { scale: 2048 / 792, width: 2048, height: 1583 }, "Letter, landscape");
@@ -126,7 +126,7 @@ describe("drawing size (docs/design-v1-pdf-handouts.md 4.2.2)", () => {
   });
 });
 
-describe("encoding a page under the upload cap (docs/design-v1-pdf-handouts.md 4.1.4)", () => {
+describe("encoding a page under the upload cap (docs/design/design-v1-pdf-handouts.md 4.1.4)", () => {
   /** A page that encodes to `sizes(step)` bytes, as a browser that can or cannot write WebP. */
   function source(sizes: (step: EncodeStep) => number, webp = true, width = 1584, height = 2048) {
     const asked: string[] = [];

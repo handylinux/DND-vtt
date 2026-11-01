@@ -25,7 +25,7 @@ import type { SightSet, WallSet } from "./walls.ts";
 import { isWritable } from "../writable.ts";
 
 /**
- * Party vision (docs/design-v1-maps-vision.md section 4.3): who lends the
+ * Party vision (docs/design/design-v1-maps-vision.md section 4.3): who lends the
  * party sight, what each source sees by its senses and the light around it,
  * and the union of it all as 2-bit levels per fog sub-cell, encoded as the
  * sight tiles players receive. Computed on the server only.
@@ -71,7 +71,7 @@ export type VisionWorld = {
  * at its stored position, where the map draws it, never snapped. While it
  * squeezes, the squeezed footprint centered on the same point (footprint.ts).
  * Squares only: on hexes sight reads the sub-cells inside the creature's
- * hexes (footprint.ts footprintSubcells, docs/design-v1-hex-grids.md
+ * hexes (footprint.ts footprintSubcells, docs/design/design-v1-hex-grids.md
  * HX-D10), never a rectangle.
  */
 export function sightRect(probe: SightProbe): Bounds {
@@ -93,7 +93,7 @@ function firstCenterFrom(x: number): number {
 
 /**
  * The sight walls that clip a hex creature's sub-cells
- * (docs/design-v1-hex-grids.md HX-D10): the stored segments tagged SIGHT,
+ * (docs/design/design-v1-hex-grids.md HX-D10): the stored segments tagged SIGHT,
  * the set an eye steps off (walls.ts `sight`), as players see them. Raised
  * edges stay out, since hex scenes have no heights yet. Null when the
  * scene has none, so the clip costs nothing there.
@@ -304,7 +304,7 @@ type Candidate = { token: Token; actor: Actor | undefined; group: number; reason
  * characters, other player-owned creatures, creatures the DM marked, then
  * companions, each by token ID), with why each other one lends no sight.
  * Companions come last so a party's familiars never push out a DM's
- * lantern bearer (docs/design-v1-combat-flow.md 3.6.5). The cap is taken
+ * lantern bearer (docs/design/design-v1-combat-flow.md 3.6.5). The cap is taken
  * here, before the step off a wall, so a source standing on a wall keeps
  * its place.
  */
@@ -317,7 +317,7 @@ function candidatesOf(state: RoomState, tokens: readonly Token[]): Candidate[] {
     const group = token.companion ? 3 : owned && token.kind === "pc" ? 0 : owned ? 1 : 2;
     let reason: NoSightReason | undefined;
     if (token.visibility !== "all") reason = "hidden";
-    // An effect companion has no eyes, whatever party mark it carries (docs/design-v1-combat-flow.md 3.6.5). Its mark
+    // An effect companion has no eyes, whatever party mark it carries (docs/design/design-v1-combat-flow.md 3.6.5). Its mark
     // stays stored, so a companion made a creature again lends sight as the DM marked it.
     else if (token.kind === "object" && (token.companion !== undefined || token.partyVision !== true)) reason = "object";
     else if (!actor || actor.life !== "alive" || hasEffect(actor, "unconscious")) reason = "down";
@@ -1209,7 +1209,7 @@ type LightRow = { starts: Int16Array; levels: Uint8Array } | null;
  * and light level, the entries of the sources drawn and the light rows,
  * and nothing else (renderTile). The union's computation is one, drawing
  * every source, and so is each sight holder's raster
- * (docs/design-v1-per-player-vision.md 6.1).
+ * (docs/design/design-v1-per-player-vision.md 6.1).
  */
 type Drawn = {
   w: number;
@@ -2204,7 +2204,7 @@ export function coldPartySight(state: RoomState, sceneId: SceneId, world: Vision
 }
 
 // ---------------------------------------------------------------------------
-// Sight holders (docs/design-v1-per-player-vision.md 6.1)
+// Sight holders (docs/design/design-v1-per-player-vision.md 6.1)
 
 /**
  * What one viewer sees on a per-player scene whose vision is on: with a

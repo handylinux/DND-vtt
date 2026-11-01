@@ -17,12 +17,12 @@ import { findDoor, segmentDistance, type Point } from "../doors/doors.ts";
 import { cellWord, isHex, type Grid } from "#shared/rules/grid.ts";
 
 /*
- * The Trap tool's rules (docs/design-v1-traps.md 4.1 and 4.2), as plain
+ * The Trap tool's rules (docs/design/design-v1-traps.md 4.1 and 4.2), as plain
  * functions for node --test: snapping the zone being drawn, finding the
  * trap under a tap, a new trap from Blank, Alarm or an SRD preset, the
  * pane's one-line summaries, and what Ask to search and Ask to disarm fill.
  *
- * On a hex scene (docs/design-v1-hex-grids.md phase H2) a zone's
+ * On a hex scene (docs/design/design-v1-hex-grids.md phase H2) a zone's
  * rectangles are of hex keys, a column and a row, drawn from the hex under
  * each end of the drag, and a wire's ends snap to hex corners, which lie on
  * the 1/64 lattice the server keeps them on.
@@ -620,7 +620,7 @@ export function triggerSummary(trap: Pick<Trap, "zone"> & { rig: TrapRig }): str
 /**
  * "Goes off once, stops the creature" or "Arms again at the start of the
  * next turn, 3 uses left": the words of the pane's own switch and uses
- * field, one wording per idea (docs/design-v1-look-pass-2.md 2.10).
+ * field, one wording per idea (docs/design/design-v1-look-pass-2.md 2.10).
  */
 export function afterSummary(rig: TrapRig, pitDepth: number | null, opened = false): string {
   const parts = [rig.resets === "never" ? "Goes off once" : "Arms again at the start of the next turn"];
@@ -689,7 +689,7 @@ export function noteSummary(rig: Pick<TrapRig, "note">): string {
 /**
  * The toast when a toast's Save and damage cannot start the group save,
  * since the open one holds rolls: where to go instead, and that nothing is
- * lost without asking (docs/design-v1-look-pass-2.md D26).
+ * lost without asking (docs/design/design-v1-look-pass-2.md D26).
  */
 export const GROUP_SAVE_HELD = "A group save with rolls is already open. Use Save and damage on the trap's card, which asks before replacing it.";
 
@@ -759,7 +759,7 @@ export function trapAreaOf(t: TrapArea): TrapArea {
  * square: only where a Medium creature's name shows (canvas/useBoardText.ts,
  * which drops a token's name under DECOR_MIN_PX), so a crowded map zoomed
  * out keeps its badges and no names that run into each other and the
- * creatures' (docs/design-v1-traps.md 4.1).
+ * creatures' (docs/design/design-v1-traps.md 4.1).
  */
 export function trapNameShown(scale: number): boolean {
   return scale >= DECOR_MIN_PX;

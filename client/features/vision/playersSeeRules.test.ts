@@ -25,7 +25,7 @@ import {
   walllessImage,
 } from "./playersSeeRules.ts";
 
-/** Players see (docs/design-v1-map-discovery.md 8.1, decisions 10 and 16). */
+/** Players see (docs/design/design-v1-map-discovery.md 8.1, decisions 10 and 16). */
 
 const MAP = { assetId: "a", widthPx: 700, heightPx: 700, cellPx: 70, originPx: { x: 0, y: 0 } };
 

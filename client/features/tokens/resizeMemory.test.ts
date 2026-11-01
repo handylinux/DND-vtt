@@ -4,7 +4,7 @@ import { afterResize, rememberedReturn, type Growth, type Pose } from "./resizeM
 
 const pose = (size: Pose["size"], x: number, y: number): Pose => ({ size, x, y });
 
-describe("the growths this page sent (docs/design-v1-token-window.md 8.2)", () => {
+describe("the growths this page sent (docs/design/design-v1-token-window.md 8.2)", () => {
   test("a growth is remembered, and a shrink to its starting size goes back to its place", () => {
     const grown = afterResize([], pose("medium", 4, 4), pose("large", 4, 4), true, null);
     assert.deepEqual(grown, [{ from: pose("medium", 4, 4), to: pose("large", 4, 4) }]);

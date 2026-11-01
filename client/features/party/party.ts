@@ -4,7 +4,7 @@ import { hpLabel, type HpLabel } from "../../lib/tokenView.ts";
 import { characterToken, partyCharacters } from "../rolls/logic.ts";
 
 /**
- * The party bar (docs/design-v1-dm-tools.md 3.4), the DM's: AC, Passive
+ * The party bar (docs/design/design-v1-dm-tools.md 3.4), the DM's: AC, Passive
  * Perception and HP of every party member at a glance, as plain functions
  * for node --test. The party is the one request a roll asks (rolls/logic.ts
  * partyCharacters): every character a member of kind player owns, in
@@ -25,7 +25,7 @@ export type PartyEntry = {
   /**
    * The AC its shield shows, or null: none for the dead, whose AC answers
    * nothing, or for a character with no HP to show (hpLess), as on its
-   * token and in the tracker (docs/design-v1-token-panel.md 3.9).
+   * token and in the tracker (docs/design/design-v1-token-panel.md 3.9).
    */
   shield: number | null;
   passivePerception: number;
@@ -43,7 +43,7 @@ export function partyEntries(view: Pick<RoomState, "members" | "characters" | "t
       character,
       hp: actor.hp,
       label: hpLabel(actor),
-      // A character with no HP to show is never drawn dying or dead (docs/design-v1-combat-flow.md 3.6.6).
+      // A character with no HP to show is never drawn dying or dead (docs/design/design-v1-combat-flow.md 3.6.6).
       life: shownLife(actor) ?? "alive",
       fraction: actor.hp.max > 0 ? Math.max(0, Math.min(1, actor.hp.cur / actor.hp.max)) : 0,
       ac: actor.ac,

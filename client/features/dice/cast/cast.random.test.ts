@@ -11,7 +11,7 @@ import type { PanelRoll } from "../useDicePanel.ts";
 import { askAgain, askFor, forgetSend, pendingSend, phaseOf, restoreSends, waitingCount, waitingLines, withdrawAsk, type CastEnv, type CastSend, type CastSends } from "./cast.ts";
 
 /**
- * The player's send, randomized (docs/design-v1-player-save-spell.md 8, the
+ * The player's send, randomized (docs/design/design-v1-player-save-spell.md 8, the
  * state machine rule): many sequences of taps with and without the roll,
  * answers that commit, refuse, come back unknown or come late, withdraws,
  * the DM's closes, Cancel, Ask again, reloads that lose every pending

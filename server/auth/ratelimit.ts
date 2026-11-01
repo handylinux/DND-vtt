@@ -52,7 +52,7 @@ function isAssetRead(req: FastifyRequest): boolean {
   return path.startsWith("/api/assets/") || path === DISPLAY_ASSET_ROUTE;
 }
 
-/** The display image route (docs/design-v1-dm-tools.md 3.1), as Fastify reports the route it matched. */
+/** The display image route (docs/design/design-v1-dm-tools.md 3.1), as Fastify reports the route it matched. */
 const DISPLAY_ASSET_ROUTE = "/api/rooms/:id/display/assets/:assetId/:variant";
 
 /** Routes and sockets a table display uses with its own cookie. */
@@ -102,7 +102,7 @@ const FAILURES_PER_IP = 20;
 const FAILURE_WINDOW = 10 * 60;
 const LOCKOUT = 15 * 60;
 /**
- * The session log (docs/design-v1-dm-tools.md 3.10): every listing and every
+ * The session log (docs/design/design-v1-dm-tools.md 3.10): every listing and every
  * export, per member and room, with a loose cap per address against a
  * flood, sized for a table of phones behind one home connection.
  */
@@ -182,7 +182,7 @@ export class SlowLimits {
   }
 
   /**
-   * Wrong table display codes from one address (docs/design-v1-dm-tools.md
+   * Wrong table display codes from one address (docs/design/design-v1-dm-tools.md
    * 3.1), in a bucket of their own with the joins' growing delays. A code
    * names no room until it matches, and a TV's typos must never use up the
    * join budget of the players at the same home address.
@@ -196,7 +196,7 @@ export class SlowLimits {
   }
 
   /**
-   * The session log's listing and export (docs/design-v1-dm-tools.md 3.10),
+   * The session log's listing and export (docs/design/design-v1-dm-tools.md 3.10),
    * checked before anything is read. Every request is charged, a cached
    * answer as much as a fresh one: the cache key moves with the room's seq,
    * which hidden ops move too, so charging only misses would let a player
@@ -215,7 +215,7 @@ export class SlowLimits {
   }
 
   /**
-   * The receipt lookup (docs/design-v1-dice.md 1.2), per member and room,
+   * The receipt lookup (docs/design/design-v1-dice.md 1.2), per member and room,
    * checked and charged before anything is read. A device asks it only for
    * an op whose answer it lost, so 60 an hour is far more than a session
    * needs.

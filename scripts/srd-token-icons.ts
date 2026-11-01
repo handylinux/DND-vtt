@@ -1,6 +1,6 @@
 /**
  * Writes shared/srd/tokenIcons.ts, the default token of every SRD monster
- * (docs/design-v1-starter-art.md section 6), from the reviewed table beside
+ * (docs/design/design-v1-starter-art.md section 6), from the reviewed table beside
  * this script. Run by hand when the table changes:
  *
  *   node scripts/srd-token-icons.ts
@@ -74,7 +74,7 @@ export function tokenIconsModule(rows: readonly TokenIconRow[]): string {
   return `/**
  * Written by \`node scripts/srd-token-icons.ts\` from scripts/srd-token-icons.json. Do not edit by hand.
  *
- * The default token of every SRD monster (docs/design-v1-starter-art.md
+ * The default token of every SRD monster (docs/design/design-v1-starter-art.md
  * section 6): a shipped game-icons.net icon on a disk colored by its
  * creature type. A room's own image for the monster wins over it
  * (client/features/monsters/images.ts). Nothing here is stored in a room,

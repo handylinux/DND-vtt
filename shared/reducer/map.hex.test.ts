@@ -9,7 +9,7 @@ import { labelBox } from "../rules/labels.ts";
 import { env, member, room, scene } from "../testutil.ts";
 
 /*
- * The builder's cell data on a hex scene (docs/design-v1-hex-grids.md
+ * The builder's cell data on a hex scene (docs/design/design-v1-hex-grids.md
  * phase H2): difficult ground and Erase by hex keys, in chunks of 16 by 16
  * hexes by key, each chunk stamped with its shape (HX-D14), and free walls
  * in the world chunk of their midpoint.

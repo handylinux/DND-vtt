@@ -30,7 +30,7 @@ const FOLD_KEY = "rvtt.partyFolded";
 
 /**
  * The fold this device stored. With none, a short layout's side panel
- * starts folded (docs/design-v1-layout-hierarchy.md 4.1), where the whole
+ * starts folded (docs/design/design-v1-layout-hierarchy.md 4.1), where the whole
  * bar left the open panel almost no body.
  */
 function readFolded(short: boolean): boolean {
@@ -51,7 +51,7 @@ function storeFolded(folded: boolean): void {
 }
 
 /**
- * The party bar (docs/design-v1-dm-tools.md 3.4): each party member's
+ * The party bar (docs/design/design-v1-dm-tools.md 3.4): each party member's
  * portrait, name, HP with temporary HP and a thin bar by its label, AC on a
  * shield, Passive Perception as "PP 13", up to three condition chips, and
  * Dying, Stable or Dead in place of the bar. A tap frames the character's
@@ -59,7 +59,7 @@ function storeFolded(folded: boolean): void {
  * opens Request a roll for the same party.
  *
  * `dock` is its place at the top of the side panel from 900 px up, where
- * it folds to one line (docs/design-v1-side-headers.md): Party, the names
+ * it folds to one line (docs/design/design-v1-side-headers.md): Party, the names
  * and HP in a strip that scrolls sideways, and Ask, so the folded bar
  * takes one header row. On a phone it is the Party panel, and `onLeave`
  * closes that sheet before the map moves.
@@ -237,7 +237,7 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
           </span>
         )}
         <span style={{ display: "flex", alignItems: "center", gap: theme.space(2), fontSize: theme.font.small, color: theme.color.textMuted }}>
-          {/* Both say what they are on screen, not in a tooltip a touch screen never shows (docs/design-v1-layout-hierarchy.md M9). */}
+          {/* Both say what they are on screen, not in a tooltip a touch screen never shows (docs/design/design-v1-layout-hierarchy.md M9). */}
           {ac !== null ? <AcBadge ac={ac} size="sm" /> : null}
           <span style={{ position: "relative", whiteSpace: "nowrap" }}>
             <span aria-hidden>
@@ -267,7 +267,7 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
                   justifyContent: "center",
                 }}
               >
-                {/* The tracker's chip face with no counter, as before (docs/design-v1-icons-2.md 4): exhaustion keeps "E2". */}
+                {/* The tracker's chip face with no counter, as before (docs/design/design-v1-icons-2.md 4): exhaustion keeps "E2". */}
                 <ChipFace effect={effect} size={14} />
               </span>
             );

@@ -19,7 +19,7 @@ import { COLUMNS, ROWS } from "./hexWalls.testkit.ts";
 import { groupWalkWorld } from "./walkWorld.ts";
 
 /**
- * Heights, ledges and stairs on hexes (docs/design-v1-hex-grids.md phase
+ * Heights, ledges and stairs on hexes (docs/design/design-v1-hex-grids.md phase
  * H3): a stair faces one of a hex's six sides, ground that differs across
  * a side raises it as a ledge unless a stair runs through it, and walking,
  * flying, a stair's climb and a light's height read them as on squares.

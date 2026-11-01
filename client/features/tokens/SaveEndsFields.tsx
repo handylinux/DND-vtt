@@ -7,7 +7,7 @@ import { FieldRow, NumberField, Select } from "./ui.tsx";
 
 /**
  * "A Wisdom save at the end of each of its turns ends it"
- * (docs/design-v1-roll-options.md 6.1): the DM's switch, ability, DC and
+ * (docs/design/design-v1-roll-options.md 6.1): the DM's switch, ability, DC and
  * "Against a spell" on one creature's effect form, and on the group save's
  * conditions (5.4), one form for both.
  */

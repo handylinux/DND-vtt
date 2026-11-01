@@ -34,7 +34,7 @@ const HP_VISIBILITY: { value: HpVisibility; label: string }[] = [
 ];
 
 /**
- * The group action bar's More (docs/design-v1-dm-tools.md 3.5), the DM's:
+ * The group action bar's More (docs/design/design-v1-dm-tools.md 3.5), the DM's:
  * what makes sense to set alike on every selected token. Each control
  * shows the value all of them share, or that they differ, and a change is
  * one `token.updateMany` for all of them, one undo step, but for the size,
@@ -52,7 +52,7 @@ export function GroupMoreSheet(props: { tokens: readonly Token[]; onClose(): voi
   const patch = (p: TokenGroupPatch) => send(updateManyOps(ids, p));
   /*
    * One resize patch for each token, sent as one gesture, one undo step:
-   * each keeps its own middle (docs/design-v1-token-window.md 8.6), which
+   * each keeps its own middle (docs/design/design-v1-token-window.md 8.6), which
    * one patch for all of them could not. The DM's resizes are never
    * checked against walls. Each goes through this page's growth memory, as
    * a single token's does, so a shrink here or in a token's own window
@@ -143,7 +143,7 @@ export function GroupMoreSheet(props: { tokens: readonly Token[]; onClose(): voi
       </Section>
       <Section title="Owners">
         {tokens.some((t) => t.companion) ? (
-          // The server refuses owners over a companion, whose owners are its character's (docs/design-v1-combat-flow.md 3.6.4).
+          // The server refuses owners over a companion, whose owners are its character's (docs/design/design-v1-combat-flow.md 3.6.4).
           <Note>A companion is played by whoever plays its character. Leave the companions out of the selection to set owners.</Note>
         ) : (
           <>

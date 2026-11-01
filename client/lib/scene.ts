@@ -28,7 +28,7 @@ export function footprint(token: Pick<Token, "size" | "w" | "h">): { w: number; 
  * square centers and even-size tokens on grid intersections, as the feature
  * list asks, with no special case.
  *
- * On hexes (docs/design-v1-hex-grids.md 4.2) the box's middle goes to the
+ * On hexes (docs/design/design-v1-hex-grids.md 4.2) the box's middle goes to the
  * nearest anchor of its size, a hex's center or for Large and Gargantuan
  * the corner their top three hexes share, ties as the rules break them.
  * The size is read from the box alone, as the rules read a custom size by
@@ -47,7 +47,7 @@ export function snapPosition(g: Grid, x: number, y: number, size: { w: number; h
 
 /**
  * The outline round a creature's hexes on a hex scene, the selected token's
- * outline (docs/design-v1-hex-grids.md 3, "a hex outline when selected"):
+ * outline (docs/design/design-v1-hex-grids.md 3, "a hex outline when selected"):
  * one closed loop of points in cells, `[x0, y0, x1, y1, ...]`, clockwise on
  * screen, along the sides no two of its hexes share. A footprint's 1, 3, 7
  * or 12 hexes are joined without holes, so its outline is one loop.
@@ -68,7 +68,7 @@ export function hexOutline(g: HexGrid, hexes: readonly Hex[]): number[] {
 
 /**
  * The outline round every hex within `steps` of a set of hexes, as one
- * closed loop: an emanation's on a hex scene (docs/design-v1-hex-grids.md
+ * closed loop: an emanation's on a hex scene (docs/design/design-v1-hex-grids.md
  * HX-D11). Only the ring of hexes exactly `steps` out is walked, so a
  * 1,000 ft emanation costs the hexes round its edge, not the thousands
  * inside it.
@@ -220,7 +220,7 @@ export function drawsAboveFog(
 ): boolean {
   if (typeof token.aboveFog === "boolean") return token.aboveFog;
   // A DM's view carries the raw fields instead, so apply the same rule,
-  // party membership included (docs/design-v1-maps-vision.md 4.3.2).
+  // party membership included (docs/design/design-v1-maps-vision.md 4.3.2).
   // A player's token without the derived field stays below the fog.
   if (role !== "dm") return false;
   if (token.fogExempt || token.partyVision === true) return true;

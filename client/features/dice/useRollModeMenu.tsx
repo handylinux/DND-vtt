@@ -70,7 +70,7 @@ export type RollPressHandlers = Partial<Pick<DOMAttributes<HTMLElement>, "onPoin
 
 /**
  * The press machines of one owner's controls, by key, and the window
- * listeners they share (docs/design-v1-stat-block-rolls.md 10). A machine
+ * listeners they share (docs/design/design-v1-stat-block-rolls.md 10). A machine
  * belongs to the owner, not to its control's element, so a held press
  * outlives a control that goes while the finger is down (5.1): its
  * listeners, its consumed touch and its swallowed click stay with it. Free

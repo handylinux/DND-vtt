@@ -221,7 +221,7 @@ export type SnapshotBudgetLimits = {
 /*
  * The byte budgets hold ten of the largest DM snapshot a minute per session
  * and twenty per address: 6 MiB since companion stat blocks ride on top of
- * the 3 MiB for everything else (docs/design-v1-companion-stat-blocks.md 3.4).
+ * the 3 MiB for everything else (docs/design/design-v1-companion-stat-blocks.md 3.4).
  */
 export const DEFAULT_SNAPSHOT_BUDGET: SnapshotBudgetLimits = {
   windowMs: 60_000,

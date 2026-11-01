@@ -14,7 +14,7 @@ import { SQUARES } from "#shared/rules/grid.ts";
 
 /**
  * The areas a committed walk reminds a creature of, against an oracle that
- * reads each walk's footprint by the rule itself (docs/design-v1-attach.md
+ * reads each walk's footprint by the rule itself (docs/design/design-v1-attach.md
  * 9, reviews AT-SOL-4, AT-ASTRA-23 and AT-O-29): a creature that walks on
  * its own is squeezed only on its walk's first piece short of its end, as it
  * started, a creature a holder drags is never squeezed on the way, and the
@@ -131,7 +131,7 @@ function inArea(area: AreaTemplate, t: Token, ctx: AreaContext): boolean {
   return creaturesInArea(area, [t as AreaToken], ctx).length > 0;
 }
 
-describe("a walk reminds a creature of every area its walk's footprint enters (docs/design-v1-attach.md 9)", () => {
+describe("a walk reminds a creature of every area its walk's footprint enters (docs/design/design-v1-attach.md 9)", () => {
   test("random squeezed and full size creatures walking on their own or dragged, past random areas", () => {
     let cases = 0;
     let reminders = 0;

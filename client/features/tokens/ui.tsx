@@ -16,7 +16,7 @@ import { theme } from "../../lib/theme.ts";
  * and one line in everyone's event stream.
  *
  * Most of these are now thin wrappers over the shared components
- * (docs/design-v1-visual.md 2.3), kept with their old props so the many
+ * (docs/design/design-v1-visual.md 2.3), kept with their old props so the many
  * panels that import them look the same as every other panel without each
  * changing at once.
  */
@@ -399,7 +399,7 @@ export function ConfirmButton(props: {
   describedBy?: string;
   wrap?: boolean;
   icon?: IconName;
-  /** The icon alone until armed, then the icon and the confirm words (docs/design-v1-icons.md 3.1 rule 6). */
+  /** The icon alone until armed, then the icon and the confirm words (docs/design/design-v1-icons.md 3.1 rule 6). */
   iconOnly?: boolean;
 }) {
   const [armed, setArmed] = useState(false);

@@ -23,7 +23,7 @@ import { standeeShape } from "./standee.ts";
 
 /**
  * The stand rule is the isometric view's security rule
- * (docs/design-v1-isometric-view.md 5.2 and 12): whatever stands up stands
+ * (docs/design/design-v1-isometric-view.md 5.2 and 12): whatever stands up stands
  * only where every fog sub-cell under it is revealed to that viewer, and
  * anything else lies flat under the fog. These tests check it as a
  * property over random fogged scenes, against an oracle that reads the fog
@@ -700,7 +700,7 @@ function sphereAt(ground: (x: number, y: number) => number = () => 0, x = 10, y 
   return buildVolume({ area, bounds, ground, px: 40 });
 }
 
-describe("an area stands as its real shape only over a player's live ground (docs/design-v1-iso-area-shapes.md 4.4 and 9, D-261027-06)", () => {
+describe("an area stands as its real shape only over a player's live ground (docs/design/design-v1-iso-area-shapes.md 4.4 and 9, D-261027-06)", () => {
   test("everything stands for a viewer who sees all the ground, and over wholly revealed live ground", () => {
     const vol = sphereAt();
     assert.ok(volumeStands(new FogView(null, "s1", { w: 32, h: 32 }), null, vol.footprint));

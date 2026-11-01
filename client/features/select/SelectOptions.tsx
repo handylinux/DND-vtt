@@ -8,7 +8,7 @@ const SENTENCE = "Tap tokens to add or remove them, or drag a box on the map.";
 
 /**
  * The select tool's row while "Multi-select" is on (state/selection.ts,
- * docs/design-v1-tool-options.md 9.1). A phone has no Shift key, so the
+ * docs/design/design-v1-tool-options.md 9.1). A phone has no Shift key, so the
  * row says what a tap does now, and Done ends the mode and lets go of the
  * group. A tap on empty map hides the group's action bar and keeps the
  * group, and Actions, shown only while the bar is hidden, brings it back

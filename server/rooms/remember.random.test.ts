@@ -21,7 +21,7 @@ import { chunkCharge, MEMORY_CAP } from "./memorySize.ts";
 import { layerKey, mapStepOps, memoryGrowth } from "./remember.ts";
 
 /**
- * MX2 end to end through the map step (docs/design-v1-map-discovery.md 13):
+ * MX2 end to end through the map step (docs/design/design-v1-map-discovery.md 13):
  * over random rooms and random batches, each run as the actor runs it (the
  * ops, the explore, then the map step's `sys.remember`, applied as stored),
  * every element a layer holds out of its sight reads, by memory where an

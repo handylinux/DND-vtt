@@ -115,7 +115,7 @@ describe("ops", () => {
     ok(clientOpSchema, { t: "character.update", characterId: "c", patch: { level: null } });
   });
 
-  test("a character's known forms are up to 8 SRD ids, each once, and an empty list clears them (docs/design-v1-known-forms.md 3.1)", () => {
+  test("a character's known forms are up to 8 SRD ids, each once, and an empty list clears them (docs/design/design-v1-known-forms.md 3.1)", () => {
     const forms = (knownForms: unknown) => ({ t: "character.update", characterId: "c", patch: { knownForms } });
     const eight = ["wolf", "owl", "black-bear", "brown-bear", "boar", "giant-wasp", "mastiff", "dragon-turtle"];
     ok(clientOpSchema, forms(eight));
@@ -373,7 +373,7 @@ describe("wave 3 map ops", () => {
   });
 });
 
-describe("wave 4 ops (docs/design-v1-maps-vision.md section 4)", () => {
+describe("wave 4 ops (docs/design/design-v1-maps-vision.md section 4)", () => {
   const bits = "A".repeat(683) + "=";
 
   test("moves may squeeze or teleport, and nothing else rides on them", () => {
@@ -431,7 +431,7 @@ describe("wave 4 ops (docs/design-v1-maps-vision.md section 4)", () => {
   });
 });
 
-describe("wave 5 ops and messages (docs/design-v1-dm-tools.md)", () => {
+describe("wave 5 ops and messages (docs/design/design-v1-dm-tools.md)", () => {
   const BLOCK = "abcdefghijkl";
   const page = { id: "pg1", title: "Old map", access: "all", blocks: [{ id: BLOCK, text: "North." }] };
 
@@ -523,7 +523,7 @@ describe("wave 5 ops and messages (docs/design-v1-dm-tools.md)", () => {
   });
 });
 
-describe("pdf handout ops (docs/design-v1-pdf-handouts.md 3.3)", () => {
+describe("pdf handout ops (docs/design/design-v1-pdf-handouts.md 3.3)", () => {
   const page = (assetId: string, width = 1584, height = 2048) => ({ assetId, width, height });
   const pages = (n: number) => Array.from({ length: n }, (_, i) => page(`a${i}`));
   const show = (handout: Record<string, unknown>) => ({ t: "handout.show", handout: { id: "h", title: "Strange letter", to: "all", ...handout } });
@@ -578,7 +578,7 @@ describe("pdf handout ops (docs/design-v1-pdf-handouts.md 3.3)", () => {
 });
 
 describe("companion block ops", () => {
-  test("a companion block op carries the monsters' lines with its character, at most 16 KiB, far inside the 64 KiB frame (docs/design-v1-companion-stat-blocks.md 3.3)", () => {
+  test("a companion block op carries the monsters' lines with its character, at most 16 KiB, far inside the 64 KiB frame (docs/design/design-v1-companion-stat-blocks.md 3.3)", () => {
     const { rev: _rev, ...plain } = companionBlock("b1", "c1");
     /** The block with its traits' text grown to exactly `bytes` serialized, in three-byte characters where it can. */
     const sized = (bytes: number) => {
@@ -614,7 +614,7 @@ describe("companion block ops", () => {
   });
 });
 
-describe("a player's ask for saves (docs/design-v1-player-save-spell.md 5.3)", () => {
+describe("a player's ask for saves (docs/design/design-v1-player-save-spell.md 5.3)", () => {
   const cast = (fields: Record<string, unknown> = {}) => ({ t: "cast.ask", cast: { id: "k1", caster: "thorn", sceneId: "s1", spell: "Fireball", area: "a1", ...fields } });
 
   test("names an area or its targets, one of the two", () => {
@@ -655,12 +655,12 @@ describe("a player's ask for saves (docs/design-v1-player-save-spell.md 5.3)", (
     const outcome = { t: "actor.outcome", plan: "pl1", targets: [{ target: { tokenId: "g1" }, amount: 5 }] };
     ok(clientOpSchema, outcome);
     ok(clientOpSchema, { ...outcome, cast: "k1" });
-    // Traps' `trap` joins `cast` under a refine that refuses both (docs/design-v1-traps.md 6.2). Until then no outcome carries one.
+    // Traps' `trap` joins `cast` under a refine that refuses both (docs/design/design-v1-traps.md 6.2). Until then no outcome carries one.
     bad(clientOpSchema, { ...outcome, cast: "k1", trap: "tr1" });
   });
 });
 
-describe("walking routes (docs/design-v1-movement.md 6)", () => {
+describe("walking routes (docs/design/design-v1-movement.md 6)", () => {
   test("a move may carry its route, ending where it lands, never with a teleport", () => {
     const move = { t: "token.move", tokenId: "t1", x: 4, y: 2 };
     ok(clientOpSchema, { ...move, route: [[2, 0, 0, 0], [4, 2, 1, 0]] });

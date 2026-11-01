@@ -17,7 +17,7 @@ export type LoadFailedAction =
   | { reload: ReactNode; retry?: never; focusTo?: never };
 
 /**
- * A load that failed beside what still works (docs/design-v1-look-pass.md
+ * A load that failed beside what still works (docs/design/design-v1-look-pass.md
  * 2.9): one muted line, an alert, that says what failed and what still
  * shows, with its one way out at the right. It wraps under the words only
  * where the line cannot hold both. Every such line looks the same, so a

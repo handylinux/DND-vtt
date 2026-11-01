@@ -10,7 +10,7 @@ import { hexAt, hexCenter, hexNeighbors, type Hex, type HexGrid } from "../rules
 import { DM, entry, env, room, scene, template, token } from "../testutil.ts";
 
 /**
- * Area reminders on a hex scene (docs/design-v1-hex-grids.md 4.4 and
+ * Area reminders on a hex scene (docs/design/design-v1-hex-grids.md 4.4 and
  * HX-D11): a leg is swept on its hex line with its height, and a stationary
  * emanation's hexes move with its origin.
  */

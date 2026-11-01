@@ -6,7 +6,7 @@ import type { Op, OpOf } from "./protocol.ts";
 import { DM, P1, P2, character, room, scene, token } from "./testutil.ts";
 
 /**
- * Who may roll for what (docs/design-v1-dice.md 4.3), row by row: anyone
+ * Who may roll for what (docs/design/design-v1-dice.md 4.3), row by row: anyone
  * for no creature, the DM for any creature that exists, a player only for
  * their own. A creature a player cannot see answers `gone`, as a missing
  * one does, so no refusal says a hidden creature exists.
@@ -36,7 +36,7 @@ function decide(op: Op, who = P1) {
   return canApply(op, who, setup(), deps);
 }
 
-describe("dice.roll permissions (docs/design-v1-dice.md 4.3)", () => {
+describe("dice.roll permissions (docs/design/design-v1-dice.md 4.3)", () => {
   test("anyone rolls with no creature", () => {
     for (const who of [DM, P1, P2]) assert.deepEqual(decide(diceRoll([{ formula: "1d20" }]), who), { ok: true });
   });

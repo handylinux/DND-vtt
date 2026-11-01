@@ -13,7 +13,7 @@ describe("settings form", () => {
     assert.deepEqual(keys, [...(Object.keys(DEFAULT_SETTINGS) as (keyof RoomSettings)[]), ...optional].sort());
   });
 
-  test("New scenes comes last, with Players see on new scenes, and As before only while a room never set it (docs/design-v1-map-discovery.md 8.2)", () => {
+  test("New scenes comes last, with Players see on new scenes, and As before only while a room never set it (docs/design/design-v1-map-discovery.md 8.2)", () => {
     const group = SETTING_GROUPS.at(-1)!;
     assert.equal(group.heading, "New scenes");
     assert.deepEqual(group.fields.map((f) => f.key), ["newScenePlayers"]);
@@ -51,7 +51,7 @@ describe("settings form", () => {
     assert.deepEqual(settingsOp({ ...DEFAULT_SETTINGS, playersDraw: [] }, { playersDraw: withMover([], "p1", true) }), { t: "room.update", settings: { playersDraw: ["p1"] } });
   });
 
-  test("healing brings back the dead sits after Monsters die at 0 HP, and reads an absent value as on (docs/design-v1-combat-flow.md 3.4)", () => {
+  test("healing brings back the dead sits after Monsters die at 0 HP, and reads an absent value as on (docs/design/design-v1-combat-flow.md 3.4)", () => {
     const combat = allFields().map((f) => f.key);
     assert.equal(combat.indexOf("healRevives"), combat.indexOf("monstersDieAtZero") + 1);
     const field = allFields().find((f) => f.key === "healRevives")!;
@@ -93,7 +93,7 @@ describe("settings form", () => {
     assert.deepEqual(settingsOp(older as RoomSettings, { critRule: "maxPlusRoll" }), { t: "room.update", settings: { critRule: "maxPlusRoll" } });
   });
 
-  test("the initiative order players see sits after Reveal hidden combatants, starts new rooms on the party, and reads an older room as everyone (docs/design-v1-combat-flow.md 11.1)", () => {
+  test("the initiative order players see sits after Reveal hidden combatants, starts new rooms on the party, and reads an older room as everyone (docs/design/design-v1-combat-flow.md 11.1)", () => {
     const combat = allFields().map((f) => f.key);
     assert.equal(combat.indexOf("playersSeeOrder"), combat.indexOf("revealHiddenOnTurn") + 1);
     const field = allFields().find((f) => f.key === "playersSeeOrder");
@@ -200,7 +200,7 @@ describe("settings form", () => {
     assert.equal(parseRoomName("x".repeat(81)).ok, false);
   });
 
-  test("Grid on new scenes is last in Grid and distance, squares by default, and squares in a square room send nothing (docs/design-v1-hex-grids.md HX-D19)", () => {
+  test("Grid on new scenes is last in Grid and distance, squares by default, and squares in a square room send nothing (docs/design/design-v1-hex-grids.md HX-D19)", () => {
     const group = SETTING_GROUPS.find((g) => g.heading === "Grid and distance")!;
     const field = group.fields.at(-1)!;
     assert.equal(field.key, "newScenes");
@@ -216,7 +216,7 @@ describe("settings form", () => {
     assert.ok(back && clientOpSchema.safeParse(back).success, "squares take the shape away again");
   });
 
-  test("a room with hexes names squares or hexes, and a square room's words stay as they were (docs/design-v1-hex-grids.md section 6)", () => {
+  test("a room with hexes names squares or hexes, and a square room's words stay as they were (docs/design/design-v1-hex-grids.md section 6)", () => {
     assert.equal(settingGroups(false), SETTING_GROUPS);
     const hex = settingGroups(true).flatMap((g) => g.fields);
     const by = (key: string) => hex.find((f) => f.key === key)!;

@@ -26,17 +26,17 @@ const SEARCH_BASIS = 240;
  * each with its name, for the shipped art, then the room's own token images
  * under "This room's images". Picking one sets what the next tap places.
  * Its Starter tab offers the starter packs' props by pack and category
- * (docs/design-v1-starter-art.md 4), which a stamp names by key as the
+ * (docs/design/design-v1-starter-art.md 4), which a stamp names by key as the
  * shipped ones do, so a pick copies nothing and asks the server nothing.
  *
- * It is the one Dialog shell (docs/design-v1-visual.md 2.3), a bottom
+ * It is the one Dialog shell (docs/design/design-v1-visual.md 2.3), a bottom
  * sheet on a phone, so the room behind is inert, Escape and Android's Back
  * close it, and focus goes back to the button that chooses a stamp, also
  * when a tap on the map opened it. The search sits in the header, so it
  * stays in reach while the tiles scroll under it.
  *
  * A pasted image joins the room's images as a token image does, and
- * becomes what the next tap places, at its own shape (docs/design-v1-paste.md
+ * becomes what the next tap places, at its own shape (docs/design/design-v1-paste.md
  * 1.2).
  */
 export function StampPicker(props: {
@@ -80,7 +80,7 @@ export function StampPicker(props: {
     [],
   );
   const paste = usePasteTarget(whole, { accepts: "image", takes: "open", disabled: upload.busy, onFile: (f) => void takePasted(f) });
-  // The room's "Use the pasted image" opens the picker on its picture (docs/design-v1-paste.md 4).
+  // The room's "Use the pasted image" opens the picker on its picture (docs/design/design-v1-paste.md 4).
   useHandoff("stamp", !upload.busy, (file) => void takePasted(file));
 
   const chosenKey = props.chosen && "key" in props.chosen.art ? props.chosen.art.key : null;

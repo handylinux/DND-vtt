@@ -9,7 +9,7 @@ import type { Op } from "./protocol.ts";
 import { chance, int, pick, room, scene } from "./testutil.ts";
 
 /**
- * Fixtures for the map discovery tests (docs/design-v1-map-discovery.md):
+ * Fixtures for the map discovery tests (docs/design/design-v1-map-discovery.md):
  * rooms whose build, fog layers and memory are written straight into the
  * state, so a test sets up exactly the ground each case names. Nothing
  * here runs in the app.

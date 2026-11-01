@@ -95,7 +95,7 @@ describe("the DM's library cleanup", () => {
   });
 });
 
-describe("a library list that failed to load (docs/design-v1-look-pass.md 2.9)", () => {
+describe("a library list that failed to load (docs/design/design-v1-look-pass.md 2.9)", () => {
   test("Try again asks once more, reads as loading meanwhile, and its answer replaces the failure", async () => {
     api.listAssets = async () => {
       throw new ApiError(0, "offline", "network", null);
@@ -138,7 +138,7 @@ describe("a library list that failed to load (docs/design-v1-look-pass.md 2.9)",
 
 /*
  * The DM's Library lists a PDF handout as one document with its pages
- * (docs/design-v1-pdf-handouts.md 8.1 and 11.1).
+ * (docs/design/design-v1-pdf-handouts.md 8.1 and 11.1).
  */
 const page = (assetId: string) => ({ assetId, width: 1584, height: 2048 });
 const doc = (id: string, assetIds: string[], createdAt = "2026-10-16T10:00:00.000Z"): HandoutDoc => ({ id, rev: 1, title: `Doc ${id}`, pages: assetIds.map(page), createdAt });
@@ -220,7 +220,7 @@ describe("documents in the DM's library", () => {
   });
 });
 
-describe("starter picks apart from the room's own images (docs/design-v1-starter-art.md 5)", () => {
+describe("starter picks apart from the room's own images (docs/design/design-v1-starter-art.md 5)", () => {
   test("rows with a starter mark go apart, each side keeping the listing's order", () => {
     const rows = [row("a"), row("b", { starter: "bestiary/owlbear" }), row("c", { kind: "map" }), row("d", { kind: "map", starter: "dyson/inn" })];
     const { own, starter } = apartFromStarter(rows, (r) => r);

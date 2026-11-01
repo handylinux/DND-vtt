@@ -10,7 +10,7 @@ import { drawMap } from "../client/features/grid/synthetic.ts";
 import { ConsoleWatch, openSideTab, OpSocket, pagePoint, pickOption, pickTool, Shots, SocketWatch, startServer, waitFor, type Server } from "./harness.ts";
 
 /**
- * Pasting images (docs/design-v1-paste.md 8.2): the real server serving the
+ * Pasting images (docs/design/design-v1-paste.md 8.2): the real server serving the
  * production build, a DM on a desktop and a player on a phone, as
  * maps.e2e.ts sets them up. Every paste here is a synthetic
  * `ClipboardEvent("paste")` carrying a DataTransfer, which reaches the
@@ -390,7 +390,7 @@ describe("raccoon-vtt paste run", { timeout: 300_000 }, () => {
     const sheet = dm.getByRole("dialog", { name: "Use the pasted image" });
     await sheet.waitFor();
     await sheet.getByText("320 × 240 px").waitFor();
-    // The offer's choices are card rows, each named by its title and described by its line (docs/design-v1-look-pass-2.md 2.5), under the file's name at 16 px.
+    // The offer's choices are card rows, each named by its title and described by its line (docs/design/design-v1-look-pass-2.md 2.5), under the file's name at 16 px.
     const rows = await offerRows(sheet);
     assert.deepEqual(rows.map((r) => r.title), ["New scene", "Stamp", "Handout"]);
     assert.deepEqual(rows.map((r) => r.detail), ["Make a scene with it as the map.", "Then tap the map to place it.", "Then choose who sees it."]);

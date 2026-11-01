@@ -6,7 +6,7 @@ import { useAnyPending } from "../encounter/hooks.ts";
 import { reasonText } from "../resources/logic.ts";
 
 /**
- * A card's or a list's op other than a roll (docs/design-v1-combat-controls.md
+ * A card's or a list's op other than a roll (docs/design/design-v1-combat-controls.md
  * 4.1): its button busy until the server answers, deaf to a second tap
  * meanwhile, and a refusal kept for the card's status line, in the
  * server's words, since the toast would show far from the tap.

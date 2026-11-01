@@ -11,7 +11,7 @@ import { DM, entry, env, member, pick, rng, room, scene, token } from "#shared/t
 import { parseRoomState } from "./stateSchema.ts";
 
 /**
- * Per-player vision's stored fields (docs/design-v1-per-player-vision.md
+ * Per-player vision's stored fields (docs/design/design-v1-per-player-vision.md
  * 6.7, lane PV1): the Sight row's flag, the holder lists, each holder's
  * layer and the lists of who saw, each bounded as the reducer writes it.
  */
@@ -39,7 +39,7 @@ function perPlayer(): RoomState {
   return s;
 }
 
-describe("roomStateSchema, per-player vision (docs/design-v1-per-player-vision.md 6.7)", () => {
+describe("roomStateSchema, per-player vision (docs/design/design-v1-per-player-vision.md 6.7)", () => {
   test("a per-player room parses, with its lists, its layers and who saw", () => {
     const parsed = parseRoomState(perPlayer());
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.message);

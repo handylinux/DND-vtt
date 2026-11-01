@@ -180,7 +180,7 @@ export function sheetPaneRoom(input: { viewport: Size; insets: Insets }): number
  *
  * A card keeps out of the fight's alerts while their column shows a card
  * (`lane`, canvas/barDock.ts paneLaneBox), whose cards would otherwise
- * cover its header, Close and folds (docs/design-v1-look-pass-2.md 2.8):
+ * cover its header, Close and folds (docs/design/design-v1-look-pass-2.md 2.8):
  * left of the lane where the room there holds it, else under the
  * column's summary row where it meets the lane across. A bottom sheet
  * leaves the lane to usePaneDock (pages/RoomDock.tsx), which folds the

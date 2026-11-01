@@ -13,7 +13,7 @@ function placed(p: TrapPreset): unknown {
   return { t: "trap.create", trap: { id: `t-${p.id}`, sceneId: "s1", name: p.name, zone, rig: { ...p.rig, hits, ...(p.pitDepth !== undefined ? { pit: { floor: Math.max(-100, -p.pitDepth) } } : {}) } } };
 }
 
-describe("the SRD's example traps as presets (docs/design-v1-traps.md Appendix A)", () => {
+describe("the SRD's example traps as presets (docs/design/design-v1-traps.md Appendix A)", () => {
   test("every preset at every party level is a trap the protocol takes", () => {
     for (const id of TRAP_PRESET_IDS) {
       for (const band of LEVEL_BANDS) {

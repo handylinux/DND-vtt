@@ -37,7 +37,7 @@ import { EMPTY_PC_STATS } from "./pcStats.ts";
 import { DM, P1, actor, character, room } from "../testutil.ts";
 
 /**
- * The re-sync merge (docs/design-v1-resync.md 2 and 5): a table of each
+ * The re-sync merge (docs/design/design-v1-resync.md 2 and 5): a table of each
  * field's and each roll's cases, then the cases the note names one by one.
  * The randomized test of section 5 is in pcSync.random.test.ts.
  */
@@ -781,7 +781,7 @@ describe("the review's checks (3.3)", () => {
   });
 });
 
-/** The class resources as one more group of the review (docs/design-v1-ddb-resources.md 6.1). */
+/** The class resources as one more group of the review (docs/design/design-v1-ddb-resources.md 6.1). */
 describe("class resources in the review", () => {
   const rage = (over: Partial<NonNullable<PcFill["resources"]>[number]> = {}) => ({ name: "Rage", max: 3, reset: "shortOne" as const, preset: "barbarian-rage", level: 3, classId: "barbarian" as const, used: 0, ...over });
   const withResources = (resources: NonNullable<PcFill["resources"]>, read = true): PcFill => fillOf(empty(), { resources, read: { weapon: true, spell: true, other: true, resource: read } });

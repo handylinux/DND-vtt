@@ -1,7 +1,7 @@
 /**
  * The keys of a menu on the shared popover base (components/Menu.tsx,
- * docs/design-v1-panel-tabs.md 4.4 and 5.2): the side panel's More, and
- * Setup and Tools in the toolbar (docs/design-v1-tool-options.md 5.1 and
+ * docs/design/design-v1-panel-tabs.md 4.4 and 5.2): the side panel's More, and
+ * Setup and Tools in the toolbar (docs/design/design-v1-tool-options.md 5.1 and
  * 5.2), so every pick list in the room takes the same keys. Pure, so the
  * rules are tested without a page.
  *
@@ -65,7 +65,7 @@ export type OpeningItem = { kind?: "radio" | "checkbox" | "action"; checked?: bo
 /**
  * The item a key open focuses: the checked one, else the first, or with
  * Up ("last") the last. Only radio items count, so a checkbox at the top
- * of the menu, such as More's "Two panels" (docs/design-v1-split-panel.md
+ * of the menu, such as More's "Two panels" (docs/design/design-v1-split-panel.md
  * 6), never takes the place a key open lands on, checked or not. A menu
  * of checkboxes or actions alone opens at its first or last.
  */

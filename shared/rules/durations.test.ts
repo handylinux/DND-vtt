@@ -113,7 +113,7 @@ describe("re-anchoring", () => {
   });
 });
 
-describe("companions acting on their character's turn (docs/design-v1-combat-flow.md 3.6.8)", () => {
+describe("companions acting on their character's turn (docs/design/design-v1-combat-flow.md 3.6.8)", () => {
   /** Bree (c1) with her spirit, which acts on her turn, and a goblin, each with a row but the spirit. */
   function spirit(turn: "own" | "shared" | "none" = "shared") {
     const state = fixture();

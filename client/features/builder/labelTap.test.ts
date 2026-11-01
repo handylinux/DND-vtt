@@ -35,7 +35,7 @@ function ctxFor(state: RoomState, role: "dm" | "player") {
   return { ctx: { getState: () => ({ view: state }) as never, scene: state.scenes.s1!, camera: () => CAM, scope }, pick };
 }
 
-describe("a map label tapped in Isometric (docs/design-v1-isometric-view.md 6.2)", () => {
+describe("a map label tapped in Isometric (docs/design/design-v1-isometric-view.md 6.2)", () => {
   test("a label standing on a 10 ft platform is reached by its text on screen, not where it would lie at 0", () => {
     const state = roomWithLabel();
     const { ctx, pick } = ctxFor(state, "dm");

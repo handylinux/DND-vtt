@@ -6,7 +6,7 @@ import { formatKeyChanges, parseKeyChanges, type KeyChanges } from "../../state/
 import { parseDiceSet } from "../dice/throw/sets.ts";
 
 /**
- * This device's own settings (docs/design-v1-dm-tools.md 2.7): the
+ * This device's own settings (docs/design/design-v1-dm-tools.md 2.7): the
  * interface size, low power, the map detail and the keys. They belong to
  * one device, never to the room, so each lives in local storage, read and
  * written inside try and catch as every `rvtt.*` key is. A device that
@@ -158,7 +158,7 @@ export function ephRate(low: boolean): number {
 
 // ---------------------------------------------------------------- others' rolls
 
-/** "Show others' rolls as they happen" (docs/design-v1-dice.md 8.5), on by default. */
+/** "Show others' rolls as they happen" (docs/design/design-v1-dice.md 8.5), on by default. */
 export function parseRollToasts(raw: string | null): boolean {
   return raw !== "off";
 }
@@ -168,7 +168,7 @@ const rollToastsSetting = setting("rvtt.rollToasts", parseRollToasts, (on) => (o
 export const setRollToasts = rollToastsSetting.set;
 export const useRollToastsOn = rollToastsSetting.use;
 
-/** "Roll animation" (docs/design-v1-roll-animation.md 9.2): this device's own rolls in the Dice panel throw dice. On by default. */
+/** "Roll animation" (docs/design/design-v1-roll-animation.md 9.2): this device's own rolls in the Dice panel throw dice. On by default. */
 export function parseRollAnimation(raw: string | null): boolean {
   return raw !== "off";
 }
@@ -237,7 +237,7 @@ export const useKeyChanges = keyChangesSetting.use;
 // ---------------------------------------------------------------- sheet handle
 
 /**
- * "Sheet handle" (docs/design-v1-sheet-swipe.md 4.8): the grabber a phone's
+ * "Sheet handle" (docs/design/design-v1-sheet-swipe.md 4.8): the grabber a phone's
  * sheets that swipe show, by id (components/grabberDesigns.ts), Ringed
  * tail when unset or unknown. Every open sheet follows a change at once.
  */

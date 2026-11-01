@@ -11,7 +11,7 @@ import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
 import { barControl, ConsoleWatch, openPage, openSideTab, OpSocket, Shots, SocketWatch, startServer, tapCell, waitFor, wholeInReach, type Server } from "./harness.ts";
 
 /**
- * The combat flow (docs/design-v1-combat-flow.md section 8) on the real
+ * The combat flow (docs/design/design-v1-combat-flow.md section 8) on the real
  * server serving the production build: the tracker's round header that
  * sticks to the order, the tracker's order, AC in the rows, Revive where a
  * tap lands, healing the dead, and companions a player adds beside their
@@ -247,7 +247,7 @@ async function roundNotWhole(page: Page): Promise<string | null> {
 /**
  * Scrolls the order through one whole standard row interval from `from`,
  * 2 px at a time, and fails at an offset where the stuck header leaves the
- * scroller's top or no whole row shows under it (docs/design-v1-combat-flow.md 3.1).
+ * scroller's top or no whole row shows under it (docs/design/design-v1-combat-flow.md 3.1).
  */
 async function sweepRowInterval(page: Page, from: number, label: string): Promise<void> {
   const { row } = await headerRoom(page);
@@ -354,7 +354,7 @@ function headings(page: Page): Promise<string[]> {
   });
 }
 
-/** Opens one of the token panel's folds (docs/design-v1-token-panel.md 3.5), unless this device already keeps it open. */
+/** Opens one of the token panel's folds (docs/design/design-v1-token-panel.md 3.5), unless this device already keeps it open. */
 async function openFold(panel: Locator, name: string): Promise<void> {
   const fold = panel.getByRole("button", { name, exact: true });
   if ((await fold.getAttribute("aria-expanded")) === "false") await fold.click();
@@ -472,7 +472,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
     await cy.getByRole("status", { name: "Connected" }).first().waitFor();
   });
 
-  test("1b. the new room keeps every goblin's place out of Ana's order and frames before its turn, and Everyone shows her the whole order (docs/design-v1-combat-flow.md 11)", async () => {
+  test("1b. the new room keeps every goblin's place out of Ana's order and frames before its turn, and Everyone shows her the whole order (docs/design/design-v1-combat-flow.md 11)", async () => {
     await waitFor("Ana's order of the party alone", () => (anaSocket.state?.encounter?.entries.length === 2 ? true : null));
     assert.deepEqual(anaSocket.state!.encounter!.entries.map((e) => e.id), ["e-bree", "e-cy"]);
     assert.equal(anaSocket.state!.encounter!.activeEntryId, "e-bree");
@@ -544,7 +544,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
     await sheet.waitFor();
     /*
      * The sheet's body is about 169 layout px, the full-screen dialog
-     * drawing no border (docs/design-v1-layout-hierarchy.md 4.2). That
+     * drawing no border (docs/design/design-v1-layout-hierarchy.md 4.2). That
      * holds the compact header (49) and two standard rows (116), not the
      * full header (56) and two, so the header sticks as one compact row
      * (logic.ts roundHeaderForm).
@@ -564,7 +564,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
      * the sheet's header holds the folded bar's button, and the round header
      * still sticks with the order in reach under it. The sheet's header
      * stacks only with the alerts' button beside it too
-     * (docs/design-v1-layout-hierarchy.md 4.2), which layout.e2e.ts checks.
+     * (docs/design/design-v1-layout-hierarchy.md 4.2), which layout.e2e.ts checks.
      */
     await dm.getByRole("button", { name: /^Goblin 3[.,]/ }).first().click();
     await bar(dm, "Goblin 3").waitFor();
@@ -572,7 +572,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
     await sheet.waitFor();
     await sheet.getByRole("button", { name: "Show Goblin 3 actions" }).waitFor();
     assert.ok((await measure(dm)).sticky, "the header does not stick with the bar's button in the sheet's header");
-    // The bar's button alone does not stack the sheet's header (docs/design-v1-layout-hierarchy.md 4.2), so the body keeps room for the compact header.
+    // The bar's button alone does not stack the sheet's header (docs/design/design-v1-layout-hierarchy.md 4.2), so the body keeps room for the compact header.
     assert.equal((await headerRoom(dm)).form, "compact", "the bar's button took the compact header's room");
     assert.ok(await valueBoxInReach(7), "a value box is out of reach under the header");
     assert.ok(await wholeInReach(dm.locator("[data-round-header]").getByRole("button", { name: "Next" })), "Next is out of reach");
@@ -1003,7 +1003,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
     assert.deepEqual(await headings(ana), ["Several at once", "HP changes", "This device"], "Bree is in the fight already, so Join the fight is gone");
   });
 
-  test("5b. auto initiative's dice are the server's, secret to the DM, and a row's Roll sets the goblin's row and Ana's sets Bree's to the total that landed (docs/design-v1-roll-options.md 4.5, 7)", async () => {
+  test("5b. auto initiative's dice are the server's, secret to the DM, and a row's Roll sets the goblin's row and Ana's sets Bree's to the total that landed (docs/design/design-v1-roll-options.md 4.5, 7)", async () => {
     type DiceLine = Extract<LogEvent, { type: "dice" }>;
     const lines = (): DiceLine[] => (dmSocket.state?.log ?? []).flatMap((e) => (e.data?.type === "dice" ? [e.data] : []));
     const auto = lines().filter((l) => l.rolls.some((r) => r.label?.startsWith("Initiative")));
@@ -1180,7 +1180,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
     const lines = dmSocket.state!.log.filter((e) => e.data?.type === "companion").map((e) => (e.data?.type === "companion" ? e.data.name : ""));
     assert.deepEqual(lines, ["Spiritual Weapon", "Wildfire Spirit"]);
     assert.equal(anaSocket.state!.log.some((e) => e.data?.type === "companion"), false, "the line is the DM's alone");
-    // The Dice tab took the Log's place in the row, so the Log may stand behind More (docs/design-v1-dice.md 8.1).
+    // The Dice tab took the Log's place in the row, so the Log may stand behind More (docs/design/design-v1-dice.md 8.1).
     await openSideTab(dm, "Log");
     await dm.getByText("Ana added Wildfire Spirit beside Bree.").waitFor();
     await shots.take(dm, "combat-companion-log");
@@ -1323,7 +1323,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
     await preview.getByRole("textbox", { name: "Name" }).click();
     await preview.getByRole("button", { name: "Add and place" }).click();
     await preview.getByText("Read-only: nothing you do here is saved.").waitFor();
-    // What was typed was never taken, so Cancel asks before it throws it away (docs/design-v1-look-pass.md 3.1).
+    // What was typed was never taken, so Cancel asks before it throws it away (docs/design/design-v1-look-pass.md 3.1).
     await preview.getByRole("button", { name: "Cancel" }).first().click();
     await preview.getByRole("button", { name: "Discard changes?" }).last().click();
     await preview.getByRole("button", { name: /^Wildfire Spirit\. Show it on the map/ }).click();
@@ -1345,7 +1345,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
     const sheet = dm.locator('dialog[data-rvtt-sheet][aria-modal="true"]');
     await sheet.waitFor();
     const panel = sheet.getByRole("region", { name: "Token" });
-    // The name block's tag, in the tracker's words (docs/design-v1-token-panel.md 3.6).
+    // The name block's tag, in the tracker's words (docs/design/design-v1-token-panel.md 3.6).
     await panel.getByText("Companion of Bree", { exact: true }).waitFor();
     const heading = panel.getByRole("heading", { name: "Companion", exact: true });
     assert.equal(await heading.getByRole("button").getAttribute("aria-expanded"), "false", "the Companion section starts folded");
@@ -1609,7 +1609,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
     await lands(dm, /^button Wildfire Spirit, acts on Bree's turn/, "Revive in the sub-row's options");
   });
 
-  test("13g-2. by keyboard, a bar's Uses drawer keeps focus on Restore as the last restore turns it off, so Escape then closes the drawer alone (LP21-COMBAT-2, docs/design-v1-monster-uses.md 5)", async () => {
+  test("13g-2. by keyboard, a bar's Uses drawer keeps focus on Restore as the last restore turns it off, so Escape then closes the drawer alone (LP21-COMBAT-2, docs/design/design-v1-monster-uses.md 5)", async () => {
     const focused = () =>
       dm.evaluate(() => {
         const a = (globalThis as unknown as { document: { activeElement: { tagName: string; getAttribute(n: string): string | null; textContent: string | null } | null } }).document.activeElement;
@@ -1713,7 +1713,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
     await ops.send({ t: "encounter.update", entryId: rowOf(pair[0]!)!.id, patch: { hidden: false } });
   });
 
-  test("13i. back on the party alone, an ogre added mid-fight stays out of Ana's order and frames until its turn comes, then joins her tracker in its place (docs/design-v1-combat-flow.md 11)", async () => {
+  test("13i. back on the party alone, an ogre added mid-fight stays out of Ana's order and frames until its turn comes, then joins her tracker in its place (docs/design/design-v1-combat-flow.md 11)", async () => {
     await ops.send({ t: "room.update", settings: { playersSeeOrder: "party" } });
     const ogre = randomUUID();
     await ops.send({ t: "token.create", token: { id: ogre, sceneId: run.sceneId, size: "large", visibility: "all", kind: "monster", name: "Ogre", x: 20, y: 12, disposition: "hostile", actor: { inline: actor(59, 11) } } });
@@ -1869,7 +1869,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
     }
   });
 
-  test("s1-c-a. the DM's row options lead with the creature's uses, its counts of 10 in words at their title lines' right end, Reaction used and Ready, then the row's own from Row hidden from players to Remove, and a companion's sub-row lists its uses first, in line at 1280 x 800, 390 x 844 at 100% and 130% and 320 x 568 at 130%, the row's own line with its LA and LR together where they fit (docs/design-v1-token-sections.md 4, S1-ROW-1)", async () => {
+  test("s1-c-a. the DM's row options lead with the creature's uses, its counts of 10 in words at their title lines' right end, Reaction used and Ready, then the row's own from Row hidden from players to Remove, and a companion's sub-row lists its uses first, in line at 1280 x 800, 390 x 844 at 100% and 130% and 320 x 568 at 130%, the row's own line with its LA and LR together where they fit (docs/design/design-v1-token-sections.md 4, S1-ROW-1)", async () => {
     const boss = randomUUID();
     const skitter = randomUUID();
     await ops.send({ t: "token.create", token: { id: boss, sceneId: run.sceneId, kind: "monster", name: "Goblin Boss", size: "medium", x: 17, y: 15, visibility: "all", disposition: "hostile", actor: { inline: { ...actor(21), legendary: { actionsMax: 10, actionsUsed: 3, resistMax: 10, resistUsed: 1 } } } } });
@@ -1908,7 +1908,7 @@ describe("raccoon-vtt: the combat flow", { timeout: 900_000 }, () => {
         // A filter's inner locator is read inside each row, so it starts from the page, not the tracker.
         const row = tracker.locator("li[data-entry-row]").filter({ has: dm.getByRole("button", { name: "Goblin Boss options", exact: true }) });
         const uses = row.locator('[data-uses-group][aria-label="Goblin Boss\'s uses"]');
-        // Past 6, each count reads in words where its pips would stand (docs/design-v1-monster-uses.md 3.1).
+        // Past 6, each count reads in words where its pips would stand (docs/design/design-v1-monster-uses.md 3.1).
         await uses.locator('[data-use-row="legendary"] [data-use-pips]').getByText(/^\d+ of 10$/).waitFor();
         await tops(row, [
           ["Uses", uses],

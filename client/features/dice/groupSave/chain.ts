@@ -18,7 +18,7 @@ import { d20Of, rowResult, type GroupTest, type Mark, type RowBase, type RowStat
 
 /**
  * A group save's page as one state and the steps that move it
- * (docs/design-v1-roll-options.md 5.1 to 5.5 and 5.10), pure, so the
+ * (docs/design/design-v1-roll-options.md 5.1 to 5.5 and 5.10), pure, so the
  * randomized test drives every order of events through the same code the
  * page runs. A step returns the page after it and the commands to send:
  * the page itself never sends anything on its own, and nothing that rolls
@@ -31,7 +31,7 @@ export type Phase = "setup" | "rolled" | "applying" | "applied";
  * Where a page's rows come from until the roll freezes them (5.1): the
  * tokens a quick tap rolled, the room's selection as it changes (`live`,
  * less the creature acting, `except`), an area's caught creatures, or a
- * trap's springing (docs/design-v1-traps.md 4.4), whose rows are the
+ * trap's springing (docs/design/design-v1-traps.md 4.4), whose rows are the
  * creatures it hits, frozen when it went off, and which Apply settles.
  * `tokenIds` of a live source are its last picks (followSelection), kept in
  * the draft, so a reload, which selects nothing, shows the same rows.
@@ -74,7 +74,7 @@ export type Fill = {
   /**
    * The name every string the page sends to players uses, each request's
    * note and the label of a roll made in the open, where it differs from
-   * `name`: a trap's name once found, else "Trap" (docs/design-v1-traps.md
+   * `name`: a trap's name once found, else "Trap" (docs/design/design-v1-traps.md
    * 4.4), so the page never names a trap the players have not found.
    */
   publicName?: string;
@@ -133,7 +133,7 @@ export type Page = {
   rolledAt?: string;
   /** A quick tap from the Dice panel (4.4): the page rolls as soon as its rows are read, with the choices the tap took. */
   rollNow?: { sources: AdvantageSource[] };
-  /** The player's ask for saves the page answers (docs/design-v1-player-save-spell.md 3.3), until it reads the ask's end. */
+  /** The player's ask for saves the page answers (docs/design/design-v1-player-save-spell.md 3.3), until it reads the ask's end. */
   cast?: PageCast;
   /** Why the page let go of its ask: "Thorn withdrew the ask." Apply then works as a plain group save. */
   castNote?: string;
@@ -534,7 +534,7 @@ export function damageSettled(page: Page, tag: string, settled: { state: "commit
 export function apply(page: Page, plan: OpOf<"actor.outcome"> & SaveOutcomeFields): Step {
   if (page.phase !== "rolled" && !(page.phase === "setup" && page.test.kind === "none")) return { page, send: [] };
   if (page.apply === "sending" || page.apply === "unknown" || page.apply === "taken") return { page, send: [] };
-  // An ask resolved elsewhere, or closed with an end the page cannot read, is never applied (docs/design-v1-player-save-spell.md 3.3).
+  // An ask resolved elsewhere, or closed with an end the page cannot read, is never applied (docs/design/design-v1-player-save-spell.md 3.3).
   if (page.cast?.blocked) return { page, send: [], error: page.cast.blocked };
   // The plan closes the ask the page holds now, and only that one, so a page that let its ask go closes none.
   const { cast: _built, ...rest } = plan;
@@ -573,7 +573,7 @@ export function applyAgain(page: Page, now: number = Date.now()): Step {
   return { page: { ...page, apply: "sending" }, send: [{ kind: "outcome", op: page.plan! }] };
 }
 
-// ------------------------------------------------------------ a player's ask (docs/design-v1-player-save-spell.md 3.3)
+// ------------------------------------------------------------ a player's ask (docs/design/design-v1-player-save-spell.md 3.3)
 
 /** Apply's refusal when the ask closed before the outcome landed: "Thorn's ask was closed meanwhile." */
 export function closedMeanwhile(cast: Pick<PageCast, "who">): string {

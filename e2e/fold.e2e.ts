@@ -8,7 +8,7 @@ import { chromium, type Browser, type BrowserContext, type CDPSession, type Loca
 import { ConsoleWatch, OpSocket, pagePoint, reopenRoom, Shots, SocketWatch, startServer, waitFor, type Server } from "./harness.ts";
 
 /**
- * What floats over a phone's map under a sheet (docs/design-v1-visual.md
+ * What floats over a phone's map under a sheet (docs/design/design-v1-visual.md
  * 3.2.1), and the turn strip in a landscape phone's top bar (3.2):
  *
  * - The token bar and the fight alerts fold under a portrait sheet into a
@@ -208,7 +208,7 @@ async function assertHeaderFits(sheet: Locator, scale: number, label: string): P
   const buttons = await header.locator("button").evaluateAll((els) =>
     els
       .map((e) => ({ name: e.getAttribute("aria-label") ?? e.textContent ?? "", r: e.getBoundingClientRect() }))
-      // An upright sheet's Expand sheet button is visually hidden until it has keyboard focus (docs/design-v1-sheet-swipe.md 4.7), so it is no target on screen. Every other header button is held to the rule.
+      // An upright sheet's Expand sheet button is visually hidden until it has keyboard focus (docs/design/design-v1-sheet-swipe.md 4.7), so it is no target on screen. Every other header button is held to the rule.
       .filter(({ name, r }) => r.width > 0 && name !== "Expand sheet")
       .map(({ name, r }) => ({ name, left: r.left, right: r.right, h: r.height })),
   );
@@ -276,7 +276,7 @@ async function assertDocked(page: Page, scale: number, label: string): Promise<v
   assert.ok(b.sheet.height >= 120 * scale - 1, `${label}: the sheet is ${b.sheet.height} px, under 120 layout px`);
   assert.ok(b.sheet.bottom <= b.toolbar.top + 1, `${label}: the sheet runs under the toolbar`);
   assert.ok(b.dock.left >= 0 && b.dock.right <= size.width, `${label}: the dock leaves the window`);
-  // It takes the sheet's width and place, a phone's whole width or a tablet's centered sheet (docs/design-v1-look-pass.md 2.8). No case here has side safe areas.
+  // It takes the sheet's width and place, a phone's whole width or a tablet's centered sheet (docs/design/design-v1-look-pass.md 2.8). No case here has side safe areas.
   const inset = 8 * scale;
   assert.ok(
     Math.abs(b.dock.left - b.sheet.left - inset) <= 1.5 && Math.abs(b.sheet.right - b.dock.right - inset) <= 1.5,
@@ -507,7 +507,7 @@ describe("raccoon-vtt: what floats over a phone's map folds under a sheet", { ti
     await waitFor("the status region to read the time-up", async () => /Time is up for your turn/.test((await status.textContent()) ?? ""), 15_000);
     const summary = player.getByRole("button", { name: /^Time is up/ });
     await summary.waitFor();
-    // It ends in the chevron Show has beside it (docs/design-v1-look-pass-2.md D28).
+    // It ends in the chevron Show has beside it (docs/design/design-v1-look-pass-2.md D28).
     assert.equal(await summary.locator("svg").count(), 1, "the summary has no chevron");
     assert.equal(await player.locator('[data-alert="timeUp"]').isVisible(), false, "the column did not fold");
     await shots.take(player, "fold-dock-time-up");
@@ -529,7 +529,7 @@ describe("raccoon-vtt: what floats over a phone's map folds under a sheet", { ti
     assert.ok(words);
     await player.mouse.click(words.x + 4, words.y + words.height / 2);
     assert.equal(await card.count(), 1, "a tap on the words dismissed the time-up");
-    // Its kind leads its words, and its Dismiss is the close alone (docs/design-v1-icons-2.md 4).
+    // Its kind leads its words, and its Dismiss is the close alone (docs/design/design-v1-icons-2.md 4).
     assert.equal(await card.locator(":scope > span:first-child svg").count(), 1, "the timer leads the time-up");
     assert.equal((await card.getByRole("button", { name: /^Dismiss Time is up/ }).innerText()).trim(), "", "Dismiss draws its close alone");
     await card.getByRole("button", { name: /^Dismiss Time is up/ }).click();
@@ -537,7 +537,7 @@ describe("raccoon-vtt: what floats over a phone's map folds under a sheet", { ti
     await ops.send({ t: "room.update", settings: { turnTimerSec: 0 } });
   });
 
-  test("ic2-fold. an effect that ends leads its line with its art, then its words and the close (docs/design-v1-icons-2.md 4)", async () => {
+  test("ic2-fold. an effect that ends leads its line with its art, then its words and the close (docs/design/design-v1-icons-2.md 4)", async () => {
     // Frightened on Thorn until the end of the next goblin's turn, which ends one turn on: an effect set to end with the turn of the creature acting runs to the end of its next one.
     const active = () => dmSocket.state?.encounter?.activeEntryId;
     assert.equal(active(), run.entries.thorn, "Thorn's turn, as test 5 left it");
@@ -632,7 +632,7 @@ describe("raccoon-vtt: what floats over a phone's map folds under a sheet", { ti
     // Here the column has room for no whole card, so the three stand as its summary row.
     await dm.locator('[data-alert="concentration"]').nth(2).waitFor({ state: "attached" });
     await selectThornAsDm();
-    // This screen is too short to dock the bar, so it opens compact over the toolbar (docs/design-v1-bar-dock.md 1.4), and a pointer reaches Panels only once it closes. The keyboard still does.
+    // This screen is too short to dock the bar, so it opens compact over the toolbar (docs/design/design-v1-bar-dock.md 1.4), and a pointer reaches Panels only once it closes. The keyboard still does.
     await panelsButton(dm).press("Enter");
     const sheet = dm.getByRole("region", { name: "Panels" });
     await sheet.waitFor();
@@ -649,7 +649,7 @@ describe("raccoon-vtt: what floats over a phone's map folds under a sheet", { ti
     assert.ok(b.sheet.top >= b.bars.bottom - 0.5, "the sheet runs under the top bars");
     assert.ok(b.sheet.bottom <= b.toolbar.top + 1, "the sheet runs under the toolbar");
     await assertHeaderFits(sheet, 1.3, "the Panels list");
-    // The header's buttons are the kit's small buttons, not hand-made pills (docs/design-v1-look-pass-2.md D28).
+    // The header's buttons are the kit's small buttons, not hand-made pills (docs/design/design-v1-look-pass-2.md D28).
     for (const b of [show, summary]) assert.equal(await b.evaluate((el) => el.ownerDocument.defaultView!.getComputedStyle(el).borderTopLeftRadius), "10px", `${await b.getAttribute("aria-label")} is not a small button`);
     assert.equal(await header.getByRole("button", { name: /^Close/ }).count(), 1, "two closes in the header");
     await shots.take(dm, "fold-header-forced");
@@ -693,7 +693,7 @@ describe("raccoon-vtt: what floats over a phone's map folds under a sheet", { ti
   describe("with a roll waiting for the player (needs the rolls' side of the dock)", { skip: WITHOUT_ROLLS ? "FOLD_WITHOUT_ROLLS=1" : false }, () => {
     test("10. Escape, Back and each Show button with a token selected and a roll asked", async () => {
       await setUp(player, playerCdp, { width: 375, height: 667, scale: 1 });
-      // The card at the screen's foot stands taller with its roll row (docs/design-v1-roll-request.md 5.7) and covers Thorn's
+      // The card at the screen's foot stands taller with its roll row (docs/design/design-v1-roll-request.md 5.7) and covers Thorn's
       // cell, so Later puts it aside while Thorn is tapped, and the summary brings it back.
       await player.getByRole("dialog", { name: "The DM asks for a roll" }).getByRole("button", { name: "Later" }).click();
       await tapThorn(player);
@@ -752,7 +752,7 @@ describe("raccoon-vtt: what floats over a phone's map folds under a sheet", { ti
       await shots.take(dm, "fold-landscape-dm-column");
 
       // Checks for a Thorn with a stat block: a save's card, or one with a bonus field, no longer fits the column on its side
-      // with its roll row and folds behind the Roll asked row (docs/design-v1-roll-request.md 5.7). This step is about a card
+      // with its roll row and folds behind the Roll asked row (docs/design/design-v1-roll-request.md 5.7). This step is about a card
       // over chips in one scrolling column.
       await ops.send({
         t: "character.update",
@@ -871,7 +871,7 @@ describe("raccoon-vtt: what floats over a phone's map folds under a sheet", { ti
     await dm.keyboard.press("Escape");
   });
 
-  test("lp3-dock-a. an upright tablet at 820 x 1180: the sheet stands no wider than a medium dialog in the middle of the map, and the dock row on its edge takes its width and place (docs/design-v1-look-pass.md 2.8)", async () => {
+  test("lp3-dock-a. an upright tablet at 820 x 1180: the sheet stands no wider than a medium dialog in the middle of the map, and the dock row on its edge takes its width and place (docs/design/design-v1-look-pass.md 2.8)", async () => {
     // Still 820 x 1180 from the step before, which resized rather than reloaded for the server's snapshot budget.
     await tapThorn(dm);
     await panelsButton(dm).click();

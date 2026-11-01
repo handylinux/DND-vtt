@@ -3,7 +3,7 @@ import { PAGE_LONG_SIDE } from "./options.ts";
 
 /**
  * A drawn page's size and its encoding under the upload cap
- * (docs/design-v1-pdf-handouts.md 4.1.4 and 4.2.2). Nothing here loads
+ * (docs/design/design-v1-pdf-handouts.md 4.1.4 and 4.2.2). Nothing here loads
  * pdf.js, so the job and its tests use it freely.
  */
 

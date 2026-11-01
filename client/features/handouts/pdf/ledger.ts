@@ -1,5 +1,5 @@
 /**
- * The device's record of a PDF upload's own pages (docs/design-v1-pdf-handouts.md
+ * The device's record of a PDF upload's own pages (docs/design/design-v1-pdf-handouts.md
  * 4.1.2), in localStorage per room and member. Each page the upload made is
  * written here before the next upload starts, so an upload that never
  * finished, after a reload, a crash or a closed tab, can be cleaned up

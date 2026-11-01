@@ -5,7 +5,7 @@ import { measureWalk, nextHeld, walkJob, type HeldWalk, type WalkInput, type Wal
 
 /**
  * A walking ruler's walk, worked through the board's route work
- * (routeWork.ts) as a drag's route is (docs/design-v1-movement.md 5.2), so
+ * (routeWork.ts) as a drag's route is (docs/design/design-v1-movement.md 5.2), so
  * a stop with no way through on a large map never holds the page, and all
  * the rulers on the board share one budget a frame, each in turn. A render
  * reads what is known. The ruler being drawn, `live`, also works on what is

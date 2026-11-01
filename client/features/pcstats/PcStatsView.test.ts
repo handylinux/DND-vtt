@@ -17,7 +17,7 @@ const THORN: PcStats = {
   rolls: [],
 };
 
-describe("a PC block's abilities three across (docs/design-v1-dice-ui.md 6.1)", () => {
+describe("a PC block's abilities three across (docs/design/design-v1-dice-ui.md 6.1)", () => {
   const markup = withoutFrames(renderToStaticMarkup(createElement(PcStatsView, { character: { stats: THORN, level: 5 } })));
   const boxes = [...markup.matchAll(/<div[^>]*><dt[^>]*>(.*?)<\/div>/g)].map((m) => m[1]!);
 

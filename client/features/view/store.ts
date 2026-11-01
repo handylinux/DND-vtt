@@ -3,7 +3,7 @@ import type { Scene } from "#shared/model.ts";
 import { isometric, TOP_DOWN, type Turn, type View, type ViewKind } from "../../lib/view.ts";
 
 /**
- * Which view this device shows the board in (docs/design-v1-isometric-view.md
+ * Which view this device shows the board in (docs/design/design-v1-isometric-view.md
  * 7, ISO-D2): a pick per device and room, "Follow the scene" until the user
  * picks one, and a turn per scene. It is kept in the device's storage, as
  * the table display's settings are, and never on the server: the view

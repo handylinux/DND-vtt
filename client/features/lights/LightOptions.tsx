@@ -4,10 +4,10 @@ import { ChoiceRows, PickCloses, ValueChip } from "../measure/controls.tsx";
 import { PLACED_LIGHTS } from "../vision/presets.ts";
 import { lightModeSlot } from "./store.ts";
 
-/** The chip's short word for a long name: "Lantern" for the Hooded Lantern (docs/design-v1-tool-options.md 6.2). */
+/** The chip's short word for a long name: "Lantern" for the Hooded Lantern (docs/design/design-v1-tool-options.md 6.2). */
 const SHORT: Partial<Record<string, string>> = { "Hooded Lantern": "Lantern" };
 
-/** Light mode's chip in the builder's row: the SRD source a tap places (docs/design-v1-maps-vision.md section 4.3.1), its rows keeping the whole names. */
+/** Light mode's chip in the builder's row: the SRD source a tap places (docs/design/design-v1-maps-vision.md section 4.3.1), its rows keeping the whole names. */
 export function LightChip() {
   const store = useScoped(lightModeSlot).store;
   const preset = useStore(store, (s) => s.preset);

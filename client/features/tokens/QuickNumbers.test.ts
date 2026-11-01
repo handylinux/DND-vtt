@@ -11,7 +11,7 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const { QuickNumbers } = await import("./QuickNumbers.tsx");
 
 /**
- * The quick numbers under a token's name (docs/design-v1-token-panel-groups.md 3),
+ * The quick numbers under a token's name (docs/design/design-v1-token-panel-groups.md 3),
  * from each viewer's own copy of the room, as the panel reads it: what
  * `vitals()` gives that viewer, initiative by the same rule, and each unit
  * named in full.

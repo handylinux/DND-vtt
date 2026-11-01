@@ -8,7 +8,7 @@ import { parseRoomState } from "./stateSchema.ts";
 
 /**
  * A room import carries players' memory and both marks
- * (docs/design-v1-map-discovery.md 5.4 and 5.5): under the new scene and
+ * (docs/design/design-v1-map-discovery.md 5.4 and 5.5): under the new scene and
  * member ids, a holder's only where their entry is on (ASTRA-5), labels
  * and stamps under the ids the live ones take or fresh ones, and a
  * remembered stamp's art mapped as a live stamp's, or dropped.

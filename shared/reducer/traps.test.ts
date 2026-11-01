@@ -55,7 +55,7 @@ function withDue(state: RoomState, trapId: string, due: TrapDue[]): RoomState {
 
 const occurrence = (id: string, overrides: Partial<TrapDue> = {}): TrapDue => ({ id, at: "2026-10-12T20:00:00.000Z", how: "enter", by: ["thorn"], hits: ["thorn"], ...overrides });
 
-describe("making, changing and deleting traps (docs/design-v1-traps.md 6.2)", () => {
+describe("making, changing and deleting traps (docs/design/design-v1-traps.md 6.2)", () => {
   test("a new trap is armed, unfound unless it says so, with its rig whole", () => {
     const state = create(table(), input("pit"));
     const t = state.traps.pit!;

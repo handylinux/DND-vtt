@@ -23,7 +23,7 @@ const EMPTY_PAGES: Record<string, JournalPage> = {};
 const EMPTY_MEMBERS: Record<string, Member> = {};
 
 /**
- * The Journal panel (docs/design-v1-dm-tools.md 3.7), for everyone: pages
+ * The Journal panel (docs/design/design-v1-dm-tools.md 3.7), for everyone: pages
  * in folders, sorted by title. The DM writes them, chooses who reads each
  * (only the DM, everyone, or one player), and reveals secret blocks one at
  * a time. A player sees the pages shared with them, with revealed secrets

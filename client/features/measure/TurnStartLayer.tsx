@@ -40,10 +40,10 @@ import { sceneGrid, type Grid } from "#shared/rules/grid.ts";
  * also read what the turn used where it differs ("Moved 25 ft, used 35
  * ft"), and what is left by the Speed the creature has where it stands,
  * halved inside a Half Speed area that affects it
- * (docs/design-v1-movement.md 3.2 and 4.2).
+ * (docs/design/design-v1-movement.md 3.2 and 4.2).
  *
  * While the active creature rides a controlled mount that shares its turn
- * (docs/design-v1-attach.md 7.2, attach/turns.ts), the mount's walk is the
+ * (docs/design/design-v1-attach.md 7.2, attach/turns.ts), the mount's walk is the
  * turn's movement: the one pill sits on the mount and reads its path and
  * speeds, with a second line for the rider's own feet when they are not
  * 0. The rider's own trail still draws, without a pill. Until the mount
@@ -51,7 +51,7 @@ import { sceneGrid, type Grid } from "#shared/rules/grid.ts";
  *
  * In Isometric the trail lies on the ground stage, above the fog, and the
  * pill stands on the overlay at the drawn height under its point, since
- * Top-down draws it above the fog (docs/design-v1-isometric-view.md 5.3).
+ * Top-down draws it above the fog (docs/design/design-v1-isometric-view.md 5.3).
  */
 
 const LINE_PX = 2.5;

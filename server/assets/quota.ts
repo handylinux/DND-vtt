@@ -6,11 +6,11 @@ import { KeyedMutex } from "./locks.ts";
 /**
  * The bytes a room's storage quota counts (design sections 10.1 and 10.5):
  * asset variants, the snapshot, op rows, watermark rows and roll receipts
- * (docs/design-v1-dice.md 1.2), for the room id `$1`. Row sizes come from
+ * (docs/design/design-v1-dice.md 1.2), for the room id `$1`. Row sizes come from
  * pg_column_size, which is what the room actually costs on disk after TOAST
  * compression.
  *
- * A starter pick's row is left out (docs/design-v1-starter-art.md 5): its
+ * A starter pick's row is left out (docs/design/design-v1-starter-art.md 5): its
  * files are shared by every room that picked the work, and the catalog
  * bounds how many a room can hold, so it is nothing a room can grow
  * without end.

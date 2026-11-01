@@ -1,7 +1,7 @@
 import type { AssetId, HandoutPage, RoomState } from "./model.ts";
 
 /**
- * A handout's pages as every reader takes them (docs/design-v1-pdf-handouts.md
+ * A handout's pages as every reader takes them (docs/design/design-v1-pdf-handouts.md
  * 3.1): the references, the visible set, the remap, the popup, the display
  * and download. The size is known for a handout of pages, and unknown for
  * one image, whose reader waits for the image itself.
@@ -21,7 +21,7 @@ export function handoutPages(handout: PagesOf): HandoutPageRef[] {
  * The handout pages a room holds against its limit (shared/limits.ts): every
  * page of every document and of every handout showing, one image as one
  * page. A document shown counts its pages again while it shows, and a page
- * two documents share counts in each (docs/design-v1-pdf-handouts.md 3.7).
+ * two documents share counts in each (docs/design/design-v1-pdf-handouts.md 3.7).
  */
 export function roomHandoutPages(state: Pick<RoomState, "handouts" | "handoutDocs">): number {
   let pages = 0;

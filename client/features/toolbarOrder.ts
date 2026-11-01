@@ -1,5 +1,5 @@
 /*
- * The toolbar's order in one table (docs/design-v1-layout-hierarchy.md M1),
+ * The toolbar's order in one table (docs/design/design-v1-layout-hierarchy.md M1),
  * so the hierarchy reads in one place and runs under node --test, which
  * cannot load the tools' own files. Each tool's definition takes its
  * `order` from here.
@@ -33,7 +33,7 @@ export function setupDivider(tools: readonly { id: string }[]): number | null {
   return at > 0 ? at : null;
 }
 
-/** Setup in the toolbar, which stands for the setup tools on a phone (docs/design-v1-tool-options.md 5.1). */
+/** Setup in the toolbar, which stands for the setup tools on a phone (docs/design/design-v1-tool-options.md 5.1). */
 export const SETUP_BUTTON = "setup";
 
 /**

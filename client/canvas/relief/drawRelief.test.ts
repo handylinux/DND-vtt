@@ -7,7 +7,7 @@ import { drawRun, drawVolume, NO_AREA_PITS, pitSweep, type AreaPits, type DrawCo
 import { K, turnAxes } from "../../lib/view.ts";
 
 /*
- * How an area standing as its real shape draws (docs/design-v1-iso-area-shapes.md
+ * How an area standing as its real shape draws (docs/design/design-v1-iso-area-shapes.md
  * 4.3 and 5), read off a canvas that writes down what it is told: far
  * loops filled, near loops filled, hidden lines, then the outline, and what
  * lies inside a pit's opening only inside the openings' clip.

@@ -8,7 +8,7 @@ import { ipKey } from "../auth/ipKey.ts";
 
 /**
  * `POST /api/rooms/:id/image-search` (design section 11.3 and
- * docs/design-v1-dm-tools.md 3.13). A POST because it spends quota and
+ * docs/design/design-v1-dm-tools.md 3.13). A POST because it spends quota and
  * writes the cache. The answer names its source, so the picker can say
  * where the results came from and credit Openverse's.
  *

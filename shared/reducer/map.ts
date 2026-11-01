@@ -50,15 +50,15 @@ function applyFogOps(tx: Tx, scene: Scene, ops: FogOp[]): void {
 
 /**
  * A hide also makes players forget what the party explored under it
- * (docs/design-v1-maps-vision.md 4.3.3), except where the party looks now,
+ * (docs/design/design-v1-maps-vision.md 4.3.3), except where the party looks now,
  * which the batch's explore records again. Reveals leave the explored layer
  * alone, and so the order of the ops does not matter to it. The clearing is
  * bookkeeping outside any undo step: undoing the hide brings back the DM's
  * fog and not what it cleared. Every sight holder's own layer forgets it
- * too (docs/design-v1-per-player-vision.md 6.3), whatever the scene's mode
+ * too (docs/design/design-v1-per-player-vision.md 6.3), whatever the scene's mode
  * now, so no layer kept since keeps ground the DM hid. What players
  * remember there goes with it, in keepMemory's pass after the op
- * (docs/design-v1-map-discovery.md 5.4).
+ * (docs/design/design-v1-map-discovery.md 5.4).
  */
 function forgetUnderHides(tx: Tx, scene: Scene, ops: FogOp[]): void {
   const hides = ops.filter((o) => o.mode === "hide");
@@ -84,7 +84,7 @@ function forgetUnderHides(tx: Tx, scene: Scene, ops: FogOp[]): void {
 
 /**
  * Takes away every explored tile of the scene, the holders' layers too, and
- * what every layer remembers (docs/design-v1-map-discovery.md 5.4), as
+ * what every layer remembers (docs/design/design-v1-map-discovery.md 5.4), as
  * bookkeeping: a reset to hidden, or the scene going.
  */
 export function forgetExplored(tx: Tx, sceneId: string): void {
@@ -98,7 +98,7 @@ export function forgetExplored(tx: Tx, sceneId: string): void {
 
 /**
  * Takes away one holder's layer of a scene, and their memory with it
- * (docs/design-v1-map-discovery.md 5.4), as bookkeeping: they no longer see
+ * (docs/design/design-v1-map-discovery.md 5.4), as bookkeeping: they no longer see
  * for themselves there, or left the room.
  */
 export function forgetHolder(tx: Tx, sceneId: string, memberId: string): void {
@@ -130,7 +130,7 @@ function layerOf(state: RoomState, sceneId: string, memberId: string): Record<st
 export function sysExplore(tx: Tx, op: OpOf<"sys.explore">): void {
   const scene = tx.scene(op.sceneId);
   if ((op.members || op.join) && scene.vision?.perPlayer !== true) throw invalid("the scene's sight is the whole party's");
-  // Joins first, so a player who joins in this op may get their layer's first tiles in it (docs/design-v1-per-player-vision.md 6.1).
+  // Joins first, so a player who joins in this op may get their layer's first tiles in it (docs/design/design-v1-per-player-vision.md 6.1).
   if (op.join) joinHolders(tx, scene, op.join);
   for (const t of op.tiles) {
     const held = tx.state.exploredTiles[tileKey(scene.id, t.tx, t.ty)];
@@ -150,7 +150,7 @@ export function sysExplore(tx: Tx, op: OpOf<"sys.explore">): void {
 }
 
 /**
- * What players remember (docs/design-v1-map-discovery.md 5.3), as the map
+ * What players remember (docs/design/design-v1-map-discovery.md 5.3), as the map
  * step found it after a batch: each layer's chunks, the keys each drops and
  * then the entries it sets, and the fog tiles a layer past its cap
  * forgets. A forgotten tile keeps only the sub-cells of its `keep` the
@@ -192,7 +192,7 @@ function holderLayer(tx: Tx, scene: Scene, memberId: string): void {
 
 /**
  * Memory's bookkeeping after every op's dispatch and the fold
- * (docs/design-v1-map-discovery.md 5.4), so an edit, an undo and a redo
+ * (docs/design/design-v1-map-discovery.md 5.4), so an edit, an undo and a redo
  * keep it alike: a scene that went loses its memory and its marks, one
  * whose fog or party vision went off loses its memory and its share mark,
  * and a grid shape switch, whose cell keys mean other cells now, drops the
@@ -256,7 +256,7 @@ function joinedBits(scene: Scene, t: { tx: number; ty: number; bits: string }, h
 
 /**
  * The players the explore step found owning a seeing creature on the scene
- * with no entry (docs/design-v1-per-player-vision.md 6.1), each added at
+ * with no entry (docs/design/design-v1-per-player-vision.md 6.1), each added at
  * the end as the step decided: the step turns one on only while fewer than
  * the cap in force are. A player already listed, or no longer a player on
  * the roster, is passed over, so the op replays to the same list.
@@ -273,12 +273,12 @@ function joinHolders(tx: Tx, scene: Scene, join: readonly { memberId: string; on
   if (entries.length !== list.entries.length) tx.write(keys.holders(scene.id), { ...list, entries });
 }
 
-/** The refusal of a seventh player who would see for themselves (docs/design-v1-per-player-vision.md 7.1), as the live cap writes it (limits.ts). */
+/** The refusal of a seventh player who would see for themselves (docs/design/design-v1-per-player-vision.md 7.1), as the live cap writes it (limits.ts). */
 export const HOLDERS_FULL = SIGHT_HOLDERS_FULL;
 
 /**
  * The DM's pick of who sees for themselves on a per-player scene
- * (docs/design-v1-per-player-vision.md 6.1): exactly the players named,
+ * (docs/design/design-v1-per-player-vision.md 6.1): exactly the players named,
  * each a player on the roster, one with no entry getting one at the end.
  * A holder turned off forgets their map of the scene, outside the undo
  * step, so undoing the pick turns them on again from the party's map.
@@ -300,7 +300,7 @@ export function visionHolders(tx: Tx, op: OpOf<"vision.holders">): void {
 }
 
 /**
- * The fold (docs/design-v1-per-player-vision.md 6.3), after every op's
+ * The fold (docs/design/design-v1-per-player-vision.md 6.3), after every op's
  * dispatch: a scene that stopped being a per-player one, by any op, an
  * undo's included, pools every holder's layer into the party's and empties
  * its holder list, and a scene that is gone loses both. All of it outside
@@ -332,7 +332,7 @@ export function foldSight(tx: Tx, before: RoomState): void {
     const list = tx.state.holders?.[sceneId];
     const owners = layerOwners(tx.state, sceneId);
     if (!list && owners.length === 0) continue;
-    // Memory first, while the party's layer is still its own (docs/design-v1-map-discovery.md 5.4).
+    // Memory first, while the party's layer is still its own (docs/design/design-v1-map-discovery.md 5.4).
     if (now) poolMemory(tx, now, inListOrder(list, owners));
     if (now) pool(tx, now, owners);
     for (const memberId of owners) forgetHolder(tx, sceneId, memberId);
@@ -461,7 +461,7 @@ export function parseCell(key: string): Cell {
 }
 
 /**
- * Whether a cell of a cell key lies in the scene (docs/design-v1-hex-grids.md
+ * Whether a cell of a cell key lies in the scene (docs/design/design-v1-hex-grids.md
  * 4.3): a square inside the bounds, or on a hex scene, where a key names a
  * hex by its column and row, a hex wholly inside the scene's rectangle.
  */
@@ -477,7 +477,7 @@ export function emptyChunk(sceneId: string, cx: number, cy: number): BuildChunk 
 
 /**
  * Whether an edge key names an edge of the scene, its east and south
- * borders included (docs/design-v1-maps-vision.md 3.1): a west edge `x,y,w`
+ * borders included (docs/design/design-v1-maps-vision.md 3.1): a west edge `x,y,w`
  * runs from x = 0 to the width, a north edge `x,y,n` from y = 0 to the
  * height. Every edge inside the scene was already allowed, so every stored
  * op still applies as it did.
@@ -515,7 +515,7 @@ type ChunkChange = { cx: number; cy: number; cells: Cell[]; edges: string[] };
  * under the neighbor below or to the right, which may sit in another chunk.
  *
  * It also takes the free walls whose midpoint, and the stamps and lights
- * whose center, lie in an erased cell (docs/design-v1-maps-vision.md 2.2,
+ * whose center, lie in an erased cell (docs/design/design-v1-maps-vision.md 2.2,
  * 3.5, 3.6). A free wall lives in its midpoint's chunk, which is the erased
  * cell's own.
  *
@@ -596,7 +596,7 @@ export function standingOn(tx: Tx, sceneId: string, cells: ReadonlySet<string> |
   const groups = attaches(tx.env.opVersion);
   for (const token of sortedById(Object.values(tx.state.tokens))) {
     if (token.sceneId !== sceneId) continue;
-    // What sits on its holder stands on the holder, not the floor, and moves only with it (docs/design-v1-attach.md 5.2).
+    // What sits on its holder stands on the holder, not the floor, and moves only with it (docs/design/design-v1-attach.md 5.2).
     if (groups && token.attached && onHolder(token.attached.kind) && holderOf(tx.state.tokens, token)) continue;
     if (cells && !standsOnCells(tx, token, cells)) continue;
     if (token.elevation === footprintGround(tx.state.buildChunks, token)) out.push(token);
@@ -614,7 +614,7 @@ function standsOnCells(tx: Tx, token: Token, cells: ReadonlySet<string>): boolea
 
 /**
  * Tokens that stood on the ground, set on the ground under them now, in
- * the same op as the change of ground (docs/design-v1-maps-vision.md 4.2):
+ * the same op as the change of ground (docs/design/design-v1-maps-vision.md 4.2):
  * a height paint, an erase or a clear. Nobody ends up inside a ledge or
  * hanging in the air over cleared ground, which would draw a flight shadow
  * and let the token pass ledges as a flier. A landing, not a move, so it
@@ -631,7 +631,7 @@ export function landOnGround(tx: Tx, standing: readonly Token[]): void {
     if (ground === token.elevation) continue;
     const rise = ground - token.elevation;
     // From op version 14 what sits on it rises or sinks with it, down its chain, while a dragged creature keeps to its
-    // own ground. The link pass at the end of the op lets loose one left out of reach (docs/design-v1-attach.md 5.2).
+    // own ground. The link pass at the end of the op lets loose one left out of reach (docs/design/design-v1-attach.md 5.2).
     const riding = links && holders?.has(token.id) ? ridingGroup(links, token.id).slice(1) : [];
     tx.write(keys.token(token.id), { ...token, elevation: ground });
     for (const id of riding) {
@@ -657,7 +657,7 @@ function withoutHeights(chunk: BuildChunk, cells: readonly Cell[]): BuildChunk {
     marks[i] = ".";
     rough[i] = false;
   }
-  // Difficult ground marks go with the rest of a cell (docs/design-v1-movement.md 6.3). No older chunk holds any.
+  // Difficult ground marks go with the rest of a cell (docs/design/design-v1-movement.md 6.3). No older chunk holds any.
   return withRough(withHeightFields(chunk, encodeHeights(heights), encodeStairs(marks)), encodeRough(rough));
 }
 
@@ -962,7 +962,7 @@ export function buildClear(tx: Tx, op: OpOf<"build.clear">): void {
 }
 
 /**
- * Free walls (docs/design-v1-maps-vision.md 2.2). Removals apply first,
+ * Free walls (docs/design/design-v1-maps-vision.md 2.2). Removals apply first,
  * each naming its chunk, then each put lands in its midpoint's chunk and
  * replaces a wall of the same id there. Ends must lie in the scene, its
  * border included. The protocol already holds them to the 1/64 lattice and
@@ -1054,7 +1054,7 @@ export function buildLights(tx: Tx, op: OpOf<"build.lights">): void {
 }
 
 /**
- * One door's state (docs/design-v1-maps-vision.md 4.1): open, closed or
+ * One door's state (docs/design/design-v1-maps-vision.md 4.1): open, closed or
  * locked, and for a secret door, found or hidden again. It writes only that
  * door, in its chunk, so a player's tap and its second tap need no undo,
  * and the walls version moves as for any build change. Who may set what is

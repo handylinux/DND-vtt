@@ -8,7 +8,7 @@ import { DM, P1, actor, character, entry, room, token } from "#shared/testutil.t
 
 /*
  * A creature companion made an effect keeps its stored life and death saves
- * underneath (docs/design-v1-combat-flow.md 3.6.6), and nothing draws them:
+ * underneath (docs/design/design-v1-combat-flow.md 3.6.6), and nothing draws them:
  * its tracker sub-row is never dimmed or struck through as dead, and its
  * panel's Stats show no AC. Made a creature again, they show as they were.
  * Each case renders as the DM and as its owner.

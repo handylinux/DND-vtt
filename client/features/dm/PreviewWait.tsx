@@ -7,7 +7,7 @@ import { chromeZoom } from "../device/layout.ts";
 /**
  * What the preview waits on, centered over the stage at the interface
  * size: "Loading what Ana sees…" after the shared delay, or that it could
- * not load, with Try again (docs/design-v1-design-pass.md 4.4). The wait
+ * not load, with Try again (docs/design/design-v1-design-pass.md 4.4). The wait
  * speaks through one status, mounted from the start with no words, so a
  * screen reader hears it as it comes. The failure is an alert beside that
  * status, never read inside it. The stage around them keeps the window's

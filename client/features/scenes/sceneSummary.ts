@@ -9,7 +9,7 @@ import type { SceneGroup } from "./settingsFolds.ts";
 
 /*
  * What a folded group of the scene settings page says it holds
- * (docs/design-v1-design-pass.md 4.1), so a phone that starts three of the
+ * (docs/design/design-v1-design-pass.md 4.1), so a phone that starts three of the
  * four folded still reads the scene at a glance. Plain functions, for node
  * --test.
  */

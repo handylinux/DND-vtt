@@ -34,7 +34,7 @@ type Step = { kind: "pick" } | { kind: "crop"; assetId: string; initial: Crop };
  * the monster's initials as its tokens do on the map.
  *
  * `fallback` is what shows while `value` is unset: an SRD monster's
- * shipped icon (docs/design-v1-starter-art.md section 6). It is never
+ * shipped icon (docs/design/design-v1-starter-art.md section 6). It is never
  * stored, so it cannot be removed, and removing the DM's own image goes
  * back to it.
  */
@@ -47,7 +47,7 @@ export function MonsterImageField(props: {
 }) {
   const [step, setStepState] = useState<Step | null>(null);
   const shown = props.value ?? props.fallback;
-  // A shipped icon has no crop (docs/design-v1-dm-tools.md 3.12).
+  // A shipped icon has no crop (docs/design/design-v1-dm-tools.md 3.12).
   const value = shown && isAssetImage(shown) ? shown : undefined;
   const set = props.value !== undefined;
   const setStep = (next: Step | null) => {

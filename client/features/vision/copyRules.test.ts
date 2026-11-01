@@ -5,7 +5,7 @@ import { apply, room, scene } from "#shared/testutil.ts";
 import { COPY_UNDO, copiedAll, copiesNothing, copyButtonText, copyLine, copyNotes, copyPatch, copyResult, copyTitle, MAPS_JOIN, MAPS_RESET, PLAYERS_HERE } from "./copyRules.ts";
 import { playersSeeOf } from "./playersSeeRules.ts";
 
-/** "Use these settings on other scenes…" (docs/design-v1-map-discovery.md 8.3, decision 18). */
+/** "Use these settings on other scenes…" (docs/design/design-v1-map-discovery.md 8.3, decision 18). */
 
 const crypt = scene("s1", { name: "Crypt", fogEnabled: true, vision: { on: true, light: "dark", perPlayer: true }, blockMovement: true, autoWalls: "floor" });
 

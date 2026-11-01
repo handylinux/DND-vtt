@@ -100,7 +100,7 @@ function subsets<T>(items: readonly T[]): T[][] {
   return out;
 }
 
-describe("the pit border counted ahead (docs/design-v1-traps.md 6.7)", () => {
+describe("the pit border counted ahead (docs/design/design-v1-traps.md 6.7)", () => {
   test("every set of opened pits, in either order, is within the counted geometry, and opening never raises the count", () => {
     let compared = 0;
     for (let seed = 1; seed <= 300; seed++) {

@@ -18,10 +18,10 @@ import { reportHoldPing } from "./hold.ts";
  * LaserLayer.tsx), as one of the board's controllers (features/layers.ts
  * CONTROLLERS), mounted once outside both drawing trees, so each ping
  * plays its tone and buzzes once, and one frame clock runs, whichever view
- * shows (docs/design-v1-isometric-view.md 5.1):
+ * shows (docs/design/design-v1-isometric-view.md 5.1):
  *
  * - The frame clock (frameClock.ts) runs while a ping or a laser trail is on
- *   screen, outside low power (docs/design-v1-dm-tools.md 3.15).
+ *   screen, outside low power (docs/design/design-v1-dm-tools.md 3.15).
  * - Each new ping plays a tone, and someone else's buzzes an Android phone.
  *   A DM's "look here" buzzes too: the store has already moved the camera.
  * - The select tool's tap-and-hold ping: a press held still for 500 ms on

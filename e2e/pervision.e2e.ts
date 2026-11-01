@@ -15,7 +15,7 @@ import { assertNoticeCover, watchNoticeCover } from "./fu38b.steps.ts";
 import { assertCanvasAt, ConsoleWatch, dragCells, expandBar, openSideTab, OpSocket, pagePoint, Shots, sideTabName, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
 
 /**
- * Per-player vision (docs/design-v1-per-player-vision.md section 10, steps
+ * Per-player vision (docs/design/design-v1-per-player-vision.md section 10, steps
  * pv-1 to pv-8): the real server serving the production build, a DM on a
  * computer, Ana and Ben on phones and a table display, on one dark scene
  * whose Sight the DM sets to Per player.
@@ -286,7 +286,7 @@ function scenesPanel(): Locator {
 /**
  * Picks an option of the DM's Sight row, and waits for the DM's copy to say
  * it. Whole party asks first while players hold maps of their own
- * (docs/design-v1-map-discovery.md 8.1), and Change answers it.
+ * (docs/design/design-v1-map-discovery.md 8.1), and Change answers it.
  */
 async function pickSight(choice: "Whole party" | "Per player"): Promise<void> {
   await openSideTab(dm, "Scenes");
@@ -455,7 +455,7 @@ async function leavePage(page: Page, side: boolean): Promise<void> {
 }
 
 /**
- * What is wrong with a header's actions row (docs/design-v1-design-pass.md
+ * What is wrong with a header's actions row (docs/design/design-v1-design-pass.md
  * 4.3): it holds `want`, under the quick numbers, from the header's own
  * left edge rather than the name's, and above the part after the header.
  */
@@ -737,7 +737,7 @@ describe("raccoon-vtt per-player vision run", { timeout: 600_000 }, () => {
     await shots.take(ana, "pervision-ana-door-open");
     await tapAway(ana, { x: 13, y: 3 });
 
-    // Players hold the build only where they have seen it (D-261026-25, docs/design-v1-map-discovery.md rule 1): Ben never
+    // Players hold the build only where they have seen it (D-261026-25, docs/design/design-v1-map-discovery.md rule 1): Ben never
     // explored the door's ground, so his copy holds no door there at all, open or shut. A line every page gets after the
     // opening marks his copy as past it.
     await ops.send({ t: "log.chat", text: DOOR_MARK });
@@ -807,7 +807,7 @@ describe("raccoon-vtt per-player vision run", { timeout: 600_000 }, () => {
     try {
       const wait = preview.locator("[data-preview-wait]");
       const status = wait.getByRole("status");
-      // The failure is an alert beside the wait's status, never inside it (docs/design-v1-design-pass.md 4.4).
+      // The failure is an alert beside the wait's status, never inside it (docs/design/design-v1-design-pass.md 4.4).
       const failed = wait.getByRole("alert").filter({ hasText: "Could not load what Ana sees." });
       await failed.waitFor();
       assert.equal(await failed.getByText("Close and try again").count(), 0, "the failure still says to close");

@@ -47,7 +47,7 @@ Postgres holds the rooms, and uploaded images live on a volume. In
 production it runs with Docker Compose behind any HTTPS reverse proxy or
 tunnel that passes WebSockets through.
 
-- [docs/design.md](docs/design.md) is the technical design.
+- [docs/design/design.md](docs/design/design.md) is the technical design.
 - [CREDITS.md](CREDITS.md) lists every piece of third-party art, its source
   and its license. None of the art is AI generated.
 - [License](#license): the code is under the GNU AGPL v3.0.
@@ -939,12 +939,12 @@ list in force. Image search and imports fail for the second or two squid
 takes to start again.
 
 After the update that stands ruler stops on raised ground
-(docs/design-v1-heights-readout.md section 3), reload every page left open
+(docs/design/design-v1-heights-readout.md section 3), reload every page left open
 across it, table displays included. Until it reloads, an old page does not
 show live rulers that carry heights, and reads kept ones as if on flat
 ground, so its numbers differ from everyone else's.
 
-The update that adds PDF handouts (docs/design-v1-pdf-handouts.md) saves
+The update that adds PDF handouts (docs/design/design-v1-pdf-handouts.md) saves
 rooms in a format the builds before it cannot read: they answer "Something
 went wrong" for every room. To go back, check out the commit you ran before
 (`git log` lists it), rebuild with
@@ -956,7 +956,7 @@ shows only the first page of a handout of several pages, and an old DM page
 cannot upload a PDF.
 
 The update that adds companion stat blocks
-(docs/design-v1-companion-stat-blocks.md) saves rooms at snapshot version 10
+(docs/design/design-v1-companion-stat-blocks.md) saves rooms at snapshot version 10
 and stores changes at op version 6, which the builds before it cannot read:
 they answer "Something went wrong" for every room. Going back is the same
 restore: check out the commit you ran before (`git log` lists it), rebuild
@@ -969,7 +969,7 @@ pages and the pages of that companion's players receive them. A DM's room
 snapshot can now be up to 6 MiB, 3 MiB more than before for the stat blocks,
 so a DM's page may take a few seconds longer to load a room that holds many.
 
-The update that adds dice rolled on the server (docs/design-v1-dice.md), the
+The update that adds dice rolled on the server (docs/design/design-v1-dice.md), the
 first of wave 7, saves rooms at snapshot version 11 and stores changes at op
 version 7, which the builds before it cannot read: they answer "Something
 went wrong" for every room. It also adds the `roll_receipts` table, which
@@ -1000,7 +1000,7 @@ finds no stat block for a dragon turtle. A dragon turtle an old DM page
 places, saves in an encounter or gives an image is stored under the new id,
 so it has its stat block once the page reloads.
 
-Hex grids, phase H1 (docs/design-v1-hex-grids.md), came in two updates.
+Hex grids, phase H1 (docs/design/design-v1-hex-grids.md), came in two updates.
 The first, just before the isometric view, saves rooms at snapshot version 25
 and stores changes at op version 24, which the builds before it cannot read:
 they answer "Something went wrong" for every room. Back up first. Going back
@@ -1016,7 +1016,7 @@ reloads, an old page treats a hex scene as squares: it draws and snaps to the
 wrong grid and counts distances wrongly. Scenes made before the update stay
 squares.
 
-The update that adds the isometric view (docs/design-v1-isometric-view.md)
+The update that adds the isometric view (docs/design/design-v1-isometric-view.md)
 saves rooms at snapshot version 26 and stores changes at op version 25,
 which the builds before it cannot read: they answer "Something went wrong"
 for every room. Going back is the same restore: check out the commit you ran
@@ -1030,7 +1030,7 @@ old table display drops what a DM in Isometric shows it, so Follow the DM
 stands still there.
 
 The update that splits Undo into Play and Setup history
-(docs/design-v1-undo-scope.md, batch A) saves rooms at snapshot version 30
+(docs/design/design-v1-undo-scope.md, batch A) saves rooms at snapshot version 30
 and stores changes at op version 34, which the builds before it cannot read:
 they answer "Something went wrong" for every room, even a room whose stored
 changes hold none of the new ones. Back up first. Rooms, backups and stored
@@ -1053,7 +1053,7 @@ queued changes that this build still accepts may still arrive. An old page
 shows no Setup history.
 
 The update that lets an undone group save open again
-(docs/design-v1-undo-scope.md, batch B) saves rooms at snapshot version 31
+(docs/design/design-v1-undo-scope.md, batch B) saves rooms at snapshot version 31
 and stores changes at op version 35, which the builds before it, batch A's
 included, cannot read: they answer "Something went wrong" for every room,
 even a room that holds no group save yet. Back up first. Rooms, backups and

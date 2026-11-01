@@ -9,7 +9,7 @@ import { theme } from "../lib/theme.ts";
  * and on every phone. Glyphs inside text ("30 × 20", "↑10 ft") stay text.
  *
  * Each name is a meaning, not a picture, so one icon means one thing
- * everywhere (docs/design-v1-icons.md 2). Most are drawn for the app. Those
+ * everywhere (docs/design/design-v1-icons.md 2). Most are drawn for the app. Those
  * marked Lucide copy that set's path data (lucide.dev, ISC license, credited
  * in shared/credits.ts and CREDITS.md), on the same 24 unit grid and 2 px
  * round stroke, so the two sets read as one.
@@ -218,14 +218,14 @@ const SHAPES: Record<IconName, ReactNode> = {
   chevronRight: <path {...STROKE} d="M9 5l7 7-7 7" />,
   chevronDown: <path {...STROKE} d="M5 9l7 7 7-7" />,
   chevronUp: <path {...STROKE} d="M5 15l7-7 7 7" />,
-  // Lucide chevrons-down: the resting strip's Scroll for more, two chevrons so it never reads as Collapse's one in the same place (docs/design-v1-bar-compact.md 5.4).
+  // Lucide chevrons-down: the resting strip's Scroll for more, two chevrons so it never reads as Collapse's one in the same place (docs/design/design-v1-bar-compact.md 5.4).
   scrollMore: (
     <>
       <path {...STROKE} d="m7 6 5 5 5-5" />
       <path {...STROKE} d="m7 13 5 5 5-5" />
     </>
   ),
-  // The small mark in a value chip, or in the corner of a toolbar button, that says a tap opens a pop-up (docs/design-v1-tool-options.md 5.1, 6.2).
+  // The small mark in a value chip, or in the corner of a toolbar button, that says a tap opens a pop-up (docs/design/design-v1-tool-options.md 5.1, 6.2).
   caret: <path {...STROKE} d="M8 10l4 4 4-4" />,
   plus: <path {...STROKE} d="M12 5v14M5 12h14" />,
   minus: <path {...STROKE} d="M5 12h14" />,
@@ -262,7 +262,7 @@ const SHAPES: Record<IconName, ReactNode> = {
       <path d="M15 4v16M8 9l3 3-3 3" />
     </g>
   ),
-  // A framed panel split across its middle, for More's "Two panels" (docs/design-v1-split-panel.md 4.1): one panel above another.
+  // A framed panel split across its middle, for More's "Two panels" (docs/design/design-v1-split-panel.md 4.1): one panel above another.
   splitPanel: (
     <g {...STROKE}>
       <rect x="4" y="3" width="16" height="18" rx="2" />
@@ -296,7 +296,7 @@ const SHAPES: Record<IconName, ReactNode> = {
   ),
   // A double arrow on the top-left to bottom-right diagonal, for the token window's resize handle: turned a quarter for the other diagonal.
   resize: <path {...STROKE} d="M6 6l12 12M6 6v6M6 6h6M18 18v-6M18 18h-6" />,
-  // Setup in the toolbar (docs/design-v1-tool-options.md 5.1): three sliders, for the tools that set a scene up.
+  // Setup in the toolbar (docs/design/design-v1-tool-options.md 5.1): three sliders, for the tools that set a scene up.
   sliders: (
     <g {...STROKE}>
       <path d="M4 6h4m4 0h8M4 12h10m4 0h2M4 18h2m4 0h10" />
@@ -308,7 +308,7 @@ const SHAPES: Record<IconName, ReactNode> = {
   // Undo and Redo, in the top bar and a tool's own row. Lucide's undo-2 and redo-2: the filled arrows they replace were the only filled shapes in a stroked set.
   undo: <path {...STROKE} d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11" />,
   redo: <path {...STROKE} d="m15 14 5-5-5-5M20 9H9.5A5.5 5.5 0 0 0 4 14.5 5.5 5.5 0 0 0 9.5 20H13" />,
-  // The plain glyphs of a tool's choices (docs/design-v1-tool-options.md 17.2): each draws the thing itself.
+  // The plain glyphs of a tool's choices (docs/design/design-v1-tool-options.md 17.2): each draws the thing itself.
   shapeLine: <path {...STROKE} d="M5 19L19 5" />,
   shapeArrow: <path {...STROKE} d="M5 19L19 5M10 5h9v9" />,
   shapeBox: <rect {...STROKE} x="4" y="6" width="16" height="12" rx="1" />,
@@ -337,7 +337,7 @@ const SHAPES: Record<IconName, ReactNode> = {
   ),
   fogBrush: <path {...STROKE} d="M4 16c2.5-5 4.5-6 6-3s3.5 2 5-1.5S19 8 20 9" />,
   fogRoom: <path {...STROKE} d="M4 4h16v16H4zM4 13h7M14 4v9h6" />,
-  // A plain circle crossed by a slash, where the area tool's From control names no creature: No caster, or "From you" (docs/design-v1-area-from-character.md 3.2).
+  // A plain circle crossed by a slash, where the area tool's From control names no creature: No caster, or "From you" (docs/design/design-v1-area-from-character.md 3.2).
   noCaster: <path {...STROKE} d="M12 4a8 8 0 1 0 0 16 8 8 0 1 0 0-16zM6.3 17.7L17.7 6.3" />,
   // Lucide repeat: a roll sent again as it went. Never Redo, which takes back an undo.
   again: <path {...STROKE} d="m17 2 4 4-4 4M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v1a4 4 0 0 1-4 4H3" />,
@@ -472,7 +472,7 @@ const SHAPES: Record<IconName, ReactNode> = {
   // The DM desk's Pass and Fail, beside their words: a check and a cross, the one place they mean a save's outcome.
   pass: CHECK,
   fail: CROSS,
-  // The panels' own icons (docs/design-v1-icons-2.md 2), one per panel, in its tab, More's list and a phone's Panels list.
+  // The panels' own icons (docs/design/design-v1-icons-2.md 2), one per panel, in its tab, More's list and a phone's Panels list.
   // Lucide circle-user-round: the Token panel, the token picked on the map.
   token: (
     <g {...STROKE}>
@@ -483,7 +483,7 @@ const SHAPES: Record<IconName, ReactNode> = {
   ),
   // Lucide swords: the fight, the Initiative panel and the Token panel's Combat group. Never Remove from the fight.
   combat: <path {...STROKE} d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M14.5 6.5 18 3h3v3l-3.5 3.5M5 14l4 4M7 17l-3 3M3 19l2 2" />,
-  // The app's own d20 (features/dice/throw/D20Icon.tsx) as a line drawing at half its 48 unit size: its hexagon and the face toward the viewer, without the spokes or the number. A die is a game concept, so not Lucide's dices (docs/design-v1-icons.md 1).
+  // The app's own d20 (features/dice/throw/D20Icon.tsx) as a line drawing at half its 48 unit size: its hexagon and the face toward the viewer, without the spokes or the number. A die is a game concept, so not Lucide's dices (docs/design/design-v1-icons.md 1).
   dice: <path {...STROKE} d="M12 1l9.525 5.5v11L12 23l-9.525-5.5v-11zM12 4.5l6.75 11.75H5.25z" />,
   // Lucide scroll-text: the Log, what happened.
   log: <path {...STROKE} d="M15 12h-5M15 8h-5M19 17V5a2 2 0 0 0-2-2H4M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3" />,
@@ -540,7 +540,7 @@ const SHAPES: Record<IconName, ReactNode> = {
       <circle cx="12" cy="14" r="8" />
     </g>
   ),
-  // The Token panel's and a character's page's groups (docs/design-v1-icons-2.md 5), one per group, before its name. Combat takes the fight's swords and Owners the members' two people.
+  // The Token panel's and a character's page's groups (docs/design/design-v1-icons-2.md 5), one per group, before its name. Combat takes the fight's swords and Owners the members' two people.
   // Lucide file-text: a creature's stat block.
   statBlock: <path {...STROKE} d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8" />,
   // Lucide sticky-note: a token's or a character's notes. Never the Journal's pages.
@@ -571,7 +571,7 @@ const SHAPES: Record<IconName, ReactNode> = {
       <path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z" />
     </g>
   ),
-  // Lucide zap: the token bar's Uses, what a creature can spend (docs/design-v1-icons-2.md 8). Never a lightning damage type, which stays words.
+  // Lucide zap: the token bar's Uses, what a creature can spend (docs/design/design-v1-icons-2.md 8). Never a lightning damage type, which stays words.
   uses: <path {...STROKE} d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />,
   /*
    * The map builder's modes (D-261026-3), each in its picker's tile and on
@@ -605,7 +605,7 @@ const SHAPES: Record<IconName, ReactNode> = {
   light: <path {...STROKE} d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5M9 18h6M10 22h4" />,
   // Lucide stamp: the builder's Stamp, a picture placed on the map.
   stamp: <path {...STROKE} d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1zM5 22h14" />,
-  // The board's two views (docs/design-v1-isometric-view.md 7): the map from above as a square grid, and from the side as a 2:1 diamond.
+  // The board's two views (docs/design/design-v1-isometric-view.md 7): the map from above as a square grid, and from the side as a 2:1 diamond.
   viewTopDown: (
     <g {...STROKE}>
       <rect x="4" y="4" width="16" height="16" rx="1" />

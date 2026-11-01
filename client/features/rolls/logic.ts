@@ -13,7 +13,7 @@ import { NO_INPUTS, type RollInputs } from "./card.ts";
 import { displayName } from "../../lib/scene.ts";
 
 /**
- * Request a roll (docs/design-v1-dm-tools.md 3.3), as plain functions for
+ * Request a roll (docs/design/design-v1-dm-tools.md 3.3), as plain functions for
  * node --test: who the party is and which creatures a request starts with,
  * the op the DM's sheet sends, and the words of the cards and chips. A
  * player rolls the answer on the server or types the total they rolled.
@@ -65,7 +65,7 @@ export function characterToken(tokens: Readonly<Record<string, Token | undefined
 export type TargetOption = { key: string; ref: ActorTarget; name: string; ticked: boolean; why?: string; blocked?: boolean };
 
 /**
- * What a request opens the sheet with (docs/design-v1-roll-request.md
+ * What a request opens the sheet with (docs/design/design-v1-roll-request.md
  * 4.8): its creatures, and with `fill` the roll already chosen, as doc 3's
  * Ask path opens it with the tapped test. The party bar passes none.
  */
@@ -126,7 +126,7 @@ export function defaultTargets(view: View, from: AskFrom, viewing?: string | nul
  * player, is asked by its token, as a familiar is, since `roll.ask` refuses
  * that character. A token target off the players' scene is listed but
  * cannot be asked. An object, such as a Spiritual Weapon its cleric moves,
- * rolls nothing of its own (docs/design-v1-token-panel.md 3.3), so neither
+ * rolls nothing of its own (docs/design/design-v1-token-panel.md 3.3), so neither
  * bar offers "Request a roll" for it and the sheet does not list it.
  */
 export function askTarget(view: Pick<RoomState, "members" | "characters" | "meta">, token: Token): TargetOption | null {
@@ -146,7 +146,7 @@ export function offersRequest(view: Pick<RoomState, "members" | "characters" | "
 }
 
 /**
- * One choice of a request (docs/design-v1-roll-request.md 3): a whole roll,
+ * One choice of a request (docs/design/design-v1-roll-request.md 3): a whole roll,
  * a save of an ability, a check of an ability, or a check of a skill with
  * its ability, usually the skill's own. The sheet's three rows are views of
  * this one value, so a tap in any of them replaces it whole, and no earlier
@@ -338,7 +338,7 @@ export function allSaves(draft: Pick<AskDraft, "choices">): boolean {
 }
 
 /**
- * What a request asks (docs/design-v1-roll-request.md 7.3), whoever sends
+ * What a request asks (docs/design/design-v1-roll-request.md 7.3), whoever sends
  * it: the sheet through `draftInput`, or doc 3's save-ends and group save
  * pages directly. Each caller passes both switches itself, since
  * `askSwitches` is only the sheet's default.
@@ -559,7 +559,7 @@ export function answered(target: RollAnswer): boolean {
 /**
  * "Close all answered": every request whose targets have all answered and
  * hold no player's ask to change a roll, which waits for the DM's Allow or
- * Keep (docs/design-v1-roll-request.md 1.1). The server checks the same
+ * Keep (docs/design/design-v1-roll-request.md 1.1). The server checks the same
  * again when the op runs (`ifSettled`), so an ask that arrives meanwhile
  * keeps its request open.
  */
@@ -612,7 +612,7 @@ export function dcText(request: Pick<RollRequest, "dc" | "dcShown" | "dcHidden">
 
 /**
  * What the player's card says, its DC joined to the question
- * (docs/design-v1-roll-request.md 5.1): "The DM asks for a Strength
+ * (docs/design/design-v1-roll-request.md 5.1): "The DM asks for a Strength
  * (Athletics) or Dexterity (Acrobatics) check, DC 12: to break free of the
  * grapple.", "…saving throw against a spell, DC hidden."
  */
@@ -659,7 +659,7 @@ export const CHANGE_REASONS: Record<RollChange["reason"], string> = {
 };
 
 /**
- * One answer as the DM reads it (docs/design-v1-roll-request.md 6): "rolled
+ * One answer as the DM reads it (docs/design/design-v1-roll-request.md 6): "rolled
  * 17 (1d20+5: 12)", "typed 17", "failed without rolling", "marked Pass",
  * with a natural 20 or 1, a condition that failed a rolled save, the DM's
  * own mark beside a total, and the choice first when the test offered two,
@@ -732,7 +732,7 @@ export function wantsMark(request: Pick<RollRequest, "dc">, target: RollTarget):
 
 /**
  * Whether a player's answer is final in their own projection: a rolled one
- * at once (docs/design-v1-dice.md 5.4), and a typed one when the DC is
+ * at once (docs/design/design-v1-dice.md 5.4), and a typed one when the DC is
  * hidden, pass or fail is shown, and the answer has a result, the reducer's
  * from the DC or a DM's mark. Then the chip reads "Final." and the card
  * offers no change of its own. The reducer holds to it whatever this says
@@ -786,7 +786,7 @@ export function chipName(request: Pick<RollRequest, "targets" | "dcHidden" | "re
   const text = lines.join(" ");
   const done = request.targets.filter(answered);
   if (done.length === 0) return text;
-  // An answer the player may still change opens to change it. A final one opens to ask the DM (docs/design-v1-roll-request.md 5.4).
+  // An answer the player may still change opens to change it. A final one opens to ask the DM (docs/design/design-v1-roll-request.md 5.4).
   if (done.some((t) => !finalForPlayer(request, t))) return `${text} Open to change it.`;
   // The name says the ask once, at its end: a line's own "Ask the DM to change it." would say it twice (LP7-DICE-12).
   const asked = text.replaceAll(ASK_THE_DM, "");
@@ -831,7 +831,7 @@ export function draftKey(requestId: string, target: Pick<RollTarget, "tokenId" |
  * A target's answer as the player's view holds it, as one value: equal keys
  * mean the server's answer has not changed. The tag tells a roll or a mark
  * from the answer before it, and an ask or an allowed retype changes it too
- * (docs/design-v1-roll-request.md 5.7), so an answer or an ask from the
+ * (docs/design/design-v1-roll-request.md 5.7), so an answer or an ask from the
  * player's other device forgets the draft.
  */
 export function answerKey(target: RollAnswer & Pick<RollTarget, "change" | "retype">): string {
@@ -904,7 +904,7 @@ export function shownRequest(
 
 /**
  * The request the folded summary opens when the player activates it
- * (docs/design-v1-visual.md 3.3.1). A card already mounted under the sheet
+ * (docs/design/design-v1-visual.md 3.3.1). A card already mounted under the sheet
  * comes first, the one shownRequest shows, a chip the player tapped open
  * included, so a total typed into it is never dropped. Only with no card
  * mounted does it take the newest request still waiting for this player,
@@ -957,7 +957,7 @@ export function lookAtRequests(
 }
 
 /**
- * The requests a save-ends card holds (docs/design-v1-dice-ui.md 7 and
+ * The requests a save-ends card holds (docs/design/design-v1-dice-ui.md 7 and
  * 12.3): its reroll asked of a player, or the player's ask waiting for
  * Allow or Keep. The card settles them there, so their live cards fold to
  * one line and Allow and Keep show once. A request is held while its
@@ -1028,7 +1028,7 @@ export const PHONE_CHIPS = 2;
  * folds into the same summary. On a phone otherwise only the newest two
  * do, since a stack would cover most of the map until the DM closes the
  * requests, and the button shows the rest or folds them again
- * (LP5-ROLLS-8, docs/design-v1-visual.md 3.3.1). From 900 px up the
+ * (LP5-ROLLS-8, docs/design/design-v1-visual.md 3.3.1). From 900 px up the
  * column has room for all of them.
  */
 export function chipStack(input: { count: number; phone: boolean; underSheet: boolean; expanded: boolean }): { shown: number; button: ChipButton | null } {
@@ -1055,7 +1055,7 @@ export const CARD_MIN_WIDTH = 600;
 
 /**
  * Whether the player's card folds while a sheet is open
- * (docs/design-v1-visual.md 3.3.1): whenever it would cover the sheet. The
+ * (docs/design/design-v1-visual.md 3.3.1): whenever it would cover the sheet. The
  * card across the screen (under 600 layout px, portrait or landscape) would
  * cover the sheet's lower half, and in portrait the column's card would
  * cover the sheet's header (the desk's rule). It folds rather than moving
@@ -1114,7 +1114,7 @@ export function sheetSummary(requests: readonly RollRequest[], opens: string | n
 
 // ------------------------------------------------------------ one creature's answer on the card
 
-/** What one creature's answer may send (docs/design-v1-roll-request.md 5.6). */
+/** What one creature's answer may send (docs/design/design-v1-roll-request.md 5.6). */
 export type AnswerOp = "roll" | "send" | "fail" | "ask" | "withdraw";
 
 /**

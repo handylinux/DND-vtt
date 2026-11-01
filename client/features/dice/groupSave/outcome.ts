@@ -9,7 +9,7 @@ export { parseParts, partsText, typedOnly, partAmounts, defenseKey, rowDamage, d
 import { effectName } from "#shared/logText.ts";
 
 /**
- * A group save's conditions, outcome plan and op bounds (docs/design-v1-roll-options.md 5.4 and 5.5).
+ * A group save's conditions, outcome plan and op bounds (docs/design/design-v1-roll-options.md 5.4 and 5.5).
  * Damage parsing and defenses use shared/rules/typedDamage.ts on both the device and the server.
  */
 

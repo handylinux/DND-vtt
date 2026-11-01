@@ -12,7 +12,7 @@ import { DM, P1, P2, env, randomOp, randomState, rng } from "./testutil.ts";
 
 /**
  * Square scenes are byte for byte as before hex grids
- * (docs/design-v1-hex-grids.md section 10): random rooms, every scene of
+ * (docs/design/design-v1-hex-grids.md section 10): random rooms, every scene of
  * them on squares, go through random ops, and every permission decision,
  * every state the reducer leaves, every answer it gives, every viewer's
  * projection and the undo of each step hash as they did on the build
@@ -39,7 +39,7 @@ const VIEWS: readonly [Viewer, string][] = [
  * Map discovery's collections hold nothing on these rooms, and so say
  * nothing the build before held. The played marks a move of the players
  * writes are bookkeeping no build before wrote, so they are left out with
- * their keys (docs/design-v1-map-discovery.md 5.5).
+ * their keys (docs/design/design-v1-map-discovery.md 5.5).
  */
 const DISCOVERY = ["memory", "memoryBy", "memoryShared"] as const;
 
@@ -55,7 +55,7 @@ function stored(state: RoomState): string {
 /*
  * What map discovery changed in a player's copy of a scene with fog on, by
  * design, left out of its hash: the chunks they hold and the scene copy's
- * automatic walls rule (docs/design-v1-map-discovery.md 5.2), the route
+ * automatic walls rule (docs/design/design-v1-map-discovery.md 5.2), the route
  * corners of a private leg on a scene with vision (decision 12), and which
  * area reminders there they read (onFoggedArea). Legs seen whole keep their
  * corners. Scenes with fog off stay byte for byte, and so does everything
@@ -91,7 +91,7 @@ function seenBy(state: RoomState, viewer: Viewer, view: ProjectedState): string 
 
 /*
  * A player's refusal of an op on a scene with fog on, in words the touch
- * rule may change by design (docs/design-v1-map-discovery.md 6, decision
+ * rule may change by design (docs/design/design-v1-map-discovery.md 6, decision
  * 11): what stopped a move, a resize or a placement, its code kept, and a
  * door's answers but the DM's own, words and code: reach is now judged
  * before whether the door is still there, and a door on ground the player
@@ -138,7 +138,7 @@ function opScene(state: RoomState, op: Op): string | null {
 /*
  * An area's reminder about a creature on a scene with fog on, or one no
  * longer in the room: map discovery reads its rays against each player's
- * live ground (docs/design-v1-map-discovery.md decision 13), so whom it is
+ * live ground (docs/design/design-v1-map-discovery.md decision 13), so whom it is
  * for may change by design, and with that how many copies are written (one
  * for those who saw it, one for the DM alone) and the numbers they take.
  * Such lines are kept as the reminders they give, each once, without ids

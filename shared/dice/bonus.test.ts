@@ -4,7 +4,7 @@ import type { RollRequest } from "../model.ts";
 import { actor, character, companionBlock, customMonster, room, token } from "../testutil.ts";
 import { abilityOf, blockRollNumbers, bonusFor, creatureBonus, creatureNumbers, isCheck, isSave, testOf, type RollNumbers, type RollSources } from "./bonus.ts";
 
-/** A creature's numbers and the d20 rolls they feed (docs/design-v1-dice.md 6.1). */
+/** A creature's numbers and the d20 rolls they feed (docs/design/design-v1-dice.md 6.1). */
 const NUMBERS: RollNumbers = {
   abilities: {
     str: { mod: 2, save: 5 },
@@ -18,7 +18,7 @@ const NUMBERS: RollNumbers = {
   deathSave: 1,
 };
 
-describe("bonusFor (docs/design-v1-dice.md 6.1)", () => {
+describe("bonusFor (docs/design/design-v1-dice.md 6.1)", () => {
   test("each kind of test reads its own number", () => {
     assert.equal(bonusFor(NUMBERS, { kind: "save", ability: "str" }), 5);
     assert.equal(bonusFor(NUMBERS, { kind: "save", ability: "con", cause: "concentration" }), 1, "a concentration save is a Constitution save");

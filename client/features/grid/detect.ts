@@ -1,5 +1,5 @@
 /**
- * Finding the square grid drawn on a map image (docs/design-v1-grid-detect.md).
+ * Finding the square grid drawn on a map image (docs/design/design-v1-grid-detect.md).
  *
  * A drawn grid is thin lines, all the same distance apart, running the
  * length of the map. The method looks for exactly that and nothing looser:

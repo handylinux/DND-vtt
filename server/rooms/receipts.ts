@@ -3,7 +3,7 @@ import type { Op, RefusalCode } from "#shared/protocol.ts";
 import type { Clock } from "./budgets.ts";
 
 /**
- * Receipts (docs/design-v1-dice.md 1.2): the dedupe record of every
+ * Receipts (docs/design/design-v1-dice.md 1.2): the dedupe record of every
  * admitted op that rolls or applies, by member, tag and part. A receipt
  * says whether its op committed, with the seq that names its log lines, or
  * was refused after admission, with the refusal's words. It never holds the
@@ -44,9 +44,9 @@ const CAPS: ReceiptCaps = { perDay: LIMITS.receiptsPerDay, perPlayer: LIMITS.rec
 
 /** The receipt key an op carries, for every op that rolls or applies: its client `tag`, and a batch's `part`. Null for every other op. */
 export function tagOf(op: Op): { tag: string; part: number } | null {
-  // A group save's outcome is settled by its plan's id (docs/design-v1-roll-options.md 5.5).
+  // A group save's outcome is settled by its plan's id (docs/design/design-v1-roll-options.md 5.5).
   if (op.t === "actor.outcome") return { tag: op.plan, part: 0 };
-  // A player's ask for saves is settled by its own id (docs/design-v1-player-save-spell.md 5.3), so an ask sent again asks once.
+  // A player's ask for saves is settled by its own id (docs/design/design-v1-player-save-spell.md 5.3), so an ask sent again asks once.
   if (op.t === "cast.ask") return { tag: op.cast.id, part: 0 };
   if (!("tag" in op) || typeof op.tag !== "string") return null;
   const part = "part" in op && typeof op.part === "number" ? op.part : 0;

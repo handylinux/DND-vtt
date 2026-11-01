@@ -15,7 +15,7 @@ import { alertsSummary, DOCK_PX, dockSlot, rollsLineSays, useFoldUnderPane, type
 import { inModal, useModalSlot } from "./modalSlot.tsx";
 
 /*
- * The dock on a phone's sheet (docs/design-v1-visual.md 3.2.1, pages/fold.ts):
+ * The dock on a phone's sheet (docs/design/design-v1-visual.md 3.2.1, pages/fold.ts):
  * while a portrait sheet folds the token bar and the fight alerts column,
  * one 48 px row on the sheet's top edge holds what they were. When the
  * dock and the sheet's minimum do not both fit, the same buttons sit in
@@ -138,7 +138,7 @@ export function DockRow(props: {
  * A map pane shown as a bottom sheet (`on`: a label's, pin's, light's or
  * trap's, features/builder/labelEdit.ts panePlacement) folds the alerts
  * column (fold.ts useFoldUnderPane), and their summary docks on the pane's
- * top edge in its place, as on a panel sheet (docs/design-v1-visual.md
+ * top edge in its place, as on a panel sheet (docs/design/design-v1-visual.md
  * 3.2.1), with advice to close the pane. The token bar keeps the panel
  * sheets' rule. `reserve` is the room the pane keeps free above itself
  * under the top bars while the summary shows, so the row never stands
@@ -416,7 +416,7 @@ export function FoldStatus(props: { folded: boolean }) {
       setText("");
       return;
     }
-    // The column's summary row beside the token bar can take an alert's place a frame after it arrived (docs/design-v1-bar-dock.md 1.3).
+    // The column's summary row beside the token bar can take an alert's place a frame after it arrived (docs/design/design-v1-bar-dock.md 1.3).
     const fresh = items.filter((i) => !before.has(i.id) || (justFolded && now - (arrived.current.get(i.id) ?? 0) < FRESH_MS));
     if (fresh.length > 0) setText(fresh.map((i) => i.says).join(" "));
   }, [alerts, rollsKey, rollsSays, props.folded]);

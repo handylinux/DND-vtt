@@ -18,7 +18,7 @@ import { useAssets, useRoomView } from "../state/view.ts";
  * player their own uploads and the token images in their view, the DM
  * every one. Images are added and used from the picker, which the empty
  * library says. Starter picks fold apart after the room's own images
- * (docs/design-v1-starter-art.md 5). For a player the panel also lists the handouts the DM is
+ * (docs/design/design-v1-starter-art.md 5). For a player the panel also lists the handouts the DM is
  * showing them, so one closed by mistake can be opened again (features
  * section 16).
  */
@@ -94,7 +94,7 @@ function ShowingHandouts() {
   );
 }
 
-/** "12 pages" under a handout of two or more pages (docs/design-v1-pdf-handouts.md 5.9). One image says nothing more, as before. */
+/** "12 pages" under a handout of two or more pages (docs/design/design-v1-pdf-handouts.md 5.9). One image says nothing more, as before. */
 function pagesDetail(h: Handout): string | undefined {
   const count = handoutPages(h).length;
   return count > 1 ? pageCountText(count) : undefined;

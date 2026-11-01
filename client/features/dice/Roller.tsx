@@ -31,7 +31,7 @@ import { usePanelShown } from "../panels.ts";
 import { useReceipt, useReceiptVoice, type ReceiptState } from "./useReceipt.ts";
 
 /**
- * The top of the Dice panel (docs/design-v1-dice.md 8.2): the newest panel
+ * The top of the Dice panel (docs/design/design-v1-dice.md 8.2): the newest panel
  * roll, sticky at the scroller's top, then the formula field with Roll, its
  * reading, the quick dice and the one-roll choices.
  */
@@ -57,7 +57,7 @@ const QUICK_DICE = [20, 4, 6, 8, 10, 12, 100] as const;
 /**
  * The quick dice strip's room at each end for its first and last focus
  * ring. The strip stands this much wider on each side, in the pane's
- * padding, so the d20 starts on the field's edge (docs/design-v1-dice-pass.md
+ * padding, so the d20 starts on the field's edge (docs/design/design-v1-dice-pass.md
  * 7.7). The second box allowed past the content box, after the sticky
  * line's top, for the same reason: it must be wider than what it shows.
  */
@@ -65,7 +65,7 @@ const QUICK_EDGE = 3;
 
 /**
  * The field's hint, shortened where the long one would be cut, as it was at
- * 320 x 568 at 130% (docs/design-v1-dice-pass.md 7.9).
+ * 320 x 568 at 130% (docs/design/design-v1-dice-pass.md 7.9).
  */
 const PLACEHOLDER = { long: "1d20+5 or 2d6+3 fire", short: "1d20+5" } as const;
 
@@ -146,7 +146,7 @@ export function ResultTotal(props: { total: number }) {
  * on it opens the whole roll in Recent rolls.
  *
  * A roll the panel throws holds its result until the dice land
- * (docs/design-v1-roll-animation.md 3.4): the live region says it at once,
+ * (docs/design/design-v1-roll-animation.md 3.4): the live region says it at once,
  * and the line shows it 1 s later, or at once on any tap or key. Again
  * stays as a busy button while the roll waits, so a keyboard press keeps
  * its focus, and is live from the answer on.
@@ -163,7 +163,7 @@ export function LastResult(props: { onOpen(lineId: string): void }) {
   const receipt = useReceipt(tag);
   const waiting = receipt !== null && (receipt.state === "sending" || receipt.state === "checking");
   const { rolls, first, head, data, firstLine, level, said: spoken } = useCommittedRoll(receipt, last && "once" in last ? last.label : undefined);
-  // Only the surface that may say a roll puts it in a live region or gives its refusal an alert: a roll sent from a stat block is said there (docs/design-v1-stat-block-rolls.md 8).
+  // Only the surface that may say a roll puts it in a live region or gives its refusal an alert: a roll sent from a stat block is said there (docs/design/design-v1-stat-block-rolls.md 8).
   const speaks = useReceiptVoice(tag, false);
   const said = speaks ? spoken : "";
   const again = againOf(last);
@@ -207,8 +207,8 @@ export function LastResult(props: { onOpen(lineId: string): void }) {
         position: "sticky",
         top: `calc(-1 * ${PAD_TOP})`,
         zIndex: theme.z.stickyHeader,
-        // Only the top takes the pane's padding back, so nothing scrolls past above the line. Sideways it keeps to the column, as every row does (docs/design-v1-dice-ui.md 3.1).
-        // The padding taken back is given half above the row and half below it, so the row sits in the middle of the painted box, resting or stuck (docs/design-v1-dice-pass.md 7.4).
+        // Only the top takes the pane's padding back, so nothing scrolls past above the line. Sideways it keeps to the column, as every row does (docs/design/design-v1-dice-ui.md 3.1).
+        // The padding taken back is given half above the row and half below it, so the row sits in the middle of the painted box, resting or stuck (docs/design/design-v1-dice-pass.md 7.4).
         margin: `calc(-1 * ${PAD_TOP}) 0 0`,
         padding: `calc(${PAD_TOP} / 2) 0`,
         background: theme.color.surface,
@@ -275,7 +275,7 @@ function LineStart(props: { reverse?: boolean; dice?: boolean }) {
  * critical hit's sum. The total and Again stay. A `mode` ("with Advantage")
  * goes before all of them, whole, so it never costs a line. Each step is a box inside
  * the last, so a part gives up nothing while one before it in turn still
- * has room (docs/design-v1-dice-ui.md 4.1).
+ * has room (docs/design/design-v1-dice-ui.md 4.1).
  *
  * The mode words go by measurement (LP27-A-BLOCK-2): flex wraps a part only
  * by its basis, and the label's box must keep a basis of 0 to shrink to its
@@ -399,7 +399,7 @@ export function Roller() {
   const panel = useDicePanel();
   const throws = useThrows();
   const [text, setText] = useState("");
-  // A formula only Roll sends keeps the sheet from a swipe's close, and the field clears once it goes (docs/design-v1-sheet-swipe.md 4.6).
+  // A formula only Roll sends keeps the sheet from a swipe's close, and the field clears once it goes (docs/design/design-v1-sheet-swipe.md 4.6).
   useUnsavedInput(text.trim() !== "");
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<string | null>(null);
@@ -593,7 +593,7 @@ function ModeHalf(props: { shape: Exclude<ModeShape, "pill">; pressed: boolean; 
 }
 
 /**
- * The one-roll choices (docs/design-v1-dice-pass.md 4): "Next roll" in the
+ * The one-roll choices (docs/design/design-v1-dice-pass.md 4): "Next roll" in the
  * section label's look, Advantage and Disadvantage joined as one choice of
  * two, as D&D Beyond's roll menu puts them, and Secret apart, since it
  * answers who sees the roll. The visible words sit inside the group's name,
@@ -601,7 +601,7 @@ function ModeHalf(props: { shape: Exclude<ModeShape, "pill">; pressed: boolean; 
  * says what they see still finds it.
  *
  * Where the row has no room for all three, Secret wraps under the pair and
- * fills its line, which a lone part may (docs/design-v1-polish.md 4). A
+ * fills its line, which a lone part may (docs/design/design-v1-polish.md 4). A
  * flex item grows only once it is known to be alone, and its growing never
  * moves where the line breaks, which its own width decides. Exported for
  * its render test.

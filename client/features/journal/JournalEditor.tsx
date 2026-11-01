@@ -21,7 +21,7 @@ const EMPTY_MEMBERS: Record<string, Member> = {};
 type AccessMode = "dm" | "all" | "member";
 
 /**
- * A journal page's editor (docs/design-v1-dm-tools.md 3.7), for the DM:
+ * A journal page's editor (docs/design/design-v1-dm-tools.md 3.7), for the DM:
  * full screen on a phone, a dialog from 600 px up. The title, the folder,
  * who can read it, and the blocks, each a text area with a Secret checkbox,
  * move up and down, and delete.

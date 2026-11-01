@@ -20,7 +20,7 @@ export function countWords(count: Count): string {
 }
 
 /**
- * A use's name line (docs/design-v1-monster-uses.md 3.1): the name at its
+ * A use's name line (docs/design/design-v1-monster-uses.md 3.1): the name at its
  * left, in bold, and `end` at its right end, a count's pips or a
  * recharge's state. `spoken` follows the name for a screen reader, since
  * `end` is hidden from it.

@@ -16,7 +16,7 @@ import { assertCanvasAt, ConsoleWatch, dragCells, openSideTab, OpSocket, pagePoi
 import { SQUARES } from "../shared/rules/grid.ts";
 
 /**
- * The v1 wave 4 run (docs/design-v1-maps-vision.md section 4): the real
+ * The v1 wave 4 run (docs/design/design-v1-maps-vision.md section 4): the real
  * server serving the production build, a DM on a desktop and a player on a
  * phone, on a dark scene where players see only what their character sees.
  *
@@ -27,11 +27,11 @@ import { SQUARES } from "../shared/rules/grid.ts";
  * and back out, the player's drag stops at a closed door and the player
  * opens it, stops at a ledge no stair it has seen leads up and takes the
  * stair, reads the platform's and the stair's height with a tap
- * (docs/design-v1-heights-readout.md), measures up onto the platform,
+ * (docs/design/design-v1-heights-readout.md), measures up onto the platform,
  * teleports past a wall, and leaves explored ground behind. Back in the
  * first room, on its turn, it walks round a wall's end, pays double for a
  * square of rubble, and its marker says what that used
- * (docs/design-v1-movement.md 12, steps mv-1 to mv-3).
+ * (docs/design/design-v1-movement.md 12, steps mv-1 to mv-3).
  *
  * Every frame the player receives is kept. After each step the player's
  * creatures and sight tiles are checked against the party's sight computed
@@ -564,7 +564,7 @@ describe("raccoon-vtt vision run", { timeout: 300_000 }, () => {
   test("5. a ledge stops a walking token, and the stair takes it up", async () => {
     // The platform is 10 ft up, so the torch below has not shown the party its top, and the player's map holds none of it.
     // The walk goes, and the server stops it at the ledge, at its last free spot, in words that name nothing
-    // (docs/design-v1-map-discovery.md decision 11).
+    // (docs/design/design-v1-map-discovery.md decision 11).
     await dragCells(player, BOUNDS, { x: 3, y: 12 }, { x: 7, y: 12 });
     await thornAt({ x: 5, y: 12, elevation: 0 });
     await stopNote(SOMETHING_BLOCKS).waitFor();

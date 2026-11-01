@@ -288,7 +288,7 @@ describe("raccoon-vtt smoke run", { timeout: 300_000 }, () => {
   test("6. the player aims a cone from their token and sees what it catches", async () => {
     await player.getByRole("button", { name: "Area", exact: true }).click();
     const bar = player.getByRole("toolbar", { name: "Area options" });
-    // Thorn is the player's only creature here, so areas start from him (docs/design-v1-area-from-character.md 3.3).
+    // Thorn is the player's only creature here, so areas start from him (docs/design/design-v1-area-from-character.md 3.3).
     await bar.getByRole("button", { name: "From Thorn", pressed: true }).first().waitFor();
     await pickOption(player, "Area", "Shape", "Cone");
     await dragCells(player, run.bounds, { x: 3, y: 5 }, { x: 6, y: 5 });
@@ -311,7 +311,7 @@ describe("raccoon-vtt smoke run", { timeout: 300_000 }, () => {
     await player.getByRole("button", { name: "Close Initiative" }).click();
     await waitFor("every value in", () => dmSocket.state?.encounter?.entries.every((e) => e.value !== null) || null);
     const playerEntries = playerSocket.state?.encounter?.entries ?? [];
-    // A new room keeps a monster's place in the order from players until its turn (docs/design-v1-combat-flow.md 11), and the Boss is under the fog besides.
+    // A new room keeps a monster's place in the order from players until its turn (docs/design/design-v1-combat-flow.md 11), and the Boss is under the fog besides.
     assert.equal(playerEntries.length, 1, "only Thorn's entry is the player's to see before the monsters act");
     assert.ok(!playerEntries.some((e) => e.tokenId === run.bossId));
 

@@ -6,7 +6,7 @@ import { pcProficiency } from "../rules/pcStats.ts";
 
 /**
  * A D&D Beyond character's limited uses read as class resources
- * (docs/design-v1-ddb-resources.md 1 to 3), beside the rolls and the block
+ * (docs/design/design-v1-ddb-resources.md 1 to 3), beside the rolls and the block
  * that read.ts reads. The same rules as the rest of the reader: named paths
  * only, never a walk of the tree, every loop bounded, never throws, and a
  * missing or mistyped value is skipped, never assumed. It reads numbers,
@@ -106,7 +106,7 @@ const KINDS: readonly Kind[] = ["class", "race", "feat"];
  * Whether every action list was read to its end: each is null, absent, or
  * a list of at most 200. One cut at its bound, or not a list, may hold a
  * linked resource or roll, so a merge must not read it as gone (rule 7 of
- * docs/design-v1-ddb-resources.md, DDBBUILD-ASTRA-01). read.ts says so once
+ * docs/design/design-v1-ddb-resources.md, DDBBUILD-ASTRA-01). read.ts says so once
  * for the other rolls and the class resources, which read the same lists.
  */
 export function actionsWhole(data: Obj): boolean {

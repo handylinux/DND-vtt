@@ -52,7 +52,7 @@ export const SIZE_OPTIONS: { value: CreatureSize; label: string }[] = [
 
 /**
  * A player character's page in the Characters panel (features section 15,
- * docs/design-v1-look-pass.md 3.1), for the DM and the character's players.
+ * docs/design/design-v1-look-pass.md 3.1), for the DM and the character's players.
  * The character lives at room level and every token of it points here, so
  * HP and conditions follow the PC from scene to scene. It opens as the token
  * panel does, with the creature's header and the stat block under it, then
@@ -63,7 +63,7 @@ export const SIZE_OPTIONS: { value: CreatureSize; label: string }[] = [
  *
  * The DM edits everything. The owning player edits the fields design 8.1
  * allows: name, image, level, HP and the stat card's numbers, senses,
- * notes, the sheet link and the stat block (docs/design-v1-pc-stats.md 7.1).
+ * notes, the sheet link and the stat block (docs/design/design-v1-pc-stats.md 7.1).
  */
 export function CharacterPage(props: { character: Character; close: PanelClose; onAddCompanion(): void; onBlocks(): void; onDelete(): number | null }) {
   const { character } = props;
@@ -77,7 +77,7 @@ export function CharacterPage(props: { character: Character; close: PanelClose; 
     [you, character],
   );
   const self = useMemo(() => ({ characterId: character.id }), [character.id]);
-  // The page's stat block rolls for the character itself (docs/design-v1-stat-block-rolls.md 2).
+  // The page's stat block rolls for the character itself (docs/design/design-v1-stat-block-rolls.md 2).
   const blockRoll = useBlockRoller(self);
   // Each a yes or no, so the page draws again only when one changes, not on every change to the room.
   const reaction = useRoomView((s) => (s.view ? reactionFor(s.view, s.you, self) !== null : false));

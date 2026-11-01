@@ -27,7 +27,7 @@ import { FOLLOW_THE_SCENE, isoReady, withPick } from "./store.ts";
 
 const state = (over: Partial<ViewState> = {}): ViewState => ({ sceneId: "s1", shown: TOP_DOWN, pick: null, wanted: "topDown", forcedBy: null, ...over });
 
-describe("the view choice (docs/design-v1-isometric-view.md 7, 8)", () => {
+describe("the view choice (docs/design/design-v1-isometric-view.md 7, 8)", () => {
   test("Isometric is offered on every page now that isoReady is on, the test hook's flag or none", () => {
     assert.equal(isoReady, true);
     assert.equal(isoOffered, true);

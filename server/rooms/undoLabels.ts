@@ -51,7 +51,7 @@ export function describeOp(op: ClientOp, before: RoomState, viewer?: Viewer, aft
         // The What players see settings send one of the four at a time: Players see, party vision on or off, the light level, or the Sight row.
         const was = before.scenes[op.sceneId]?.vision;
         const { on, light, perPlayer } = op.patch.vision;
-        // Players see sends fog and party vision together and names no Sight (docs/design-v1-map-discovery.md 8.1).
+        // Players see sends fog and party vision together and names no Sight (docs/design/design-v1-map-discovery.md 8.1).
         const shown = before.scenes[op.sceneId];
         if (op.patch.fogEnabled !== undefined && perPlayer === undefined && shown) {
           const to = playersSeeOf({ fogEnabled: op.patch.fogEnabled, vision: { on, light } });
@@ -105,7 +105,7 @@ export function describeOp(op: ClientOp, before: RoomState, viewer?: Viewer, aft
       return op.teleport ? `teleporting ${token(op.tokenId)}` : `moving ${token(op.tokenId)}`;
     case "token.countLeg":
       return op.counts ? `counting the last move of ${token(op.tokenId)} again` : `not counting the last move of ${token(op.tokenId)}`;
-    // Attached tokens (docs/design-v1-attach.md 8.3): "putting Bree on Warhorse", "letting go of Goblin 2".
+    // Attached tokens (docs/design/design-v1-attach.md 8.3): "putting Bree on Warhorse", "letting go of Goblin 2".
     case "token.attach":
       if (op.kind === "drag") return `letting ${token(op.to)} drag ${token(op.tokenId)}`;
       if (op.kind === "carry") return `letting ${token(op.to)} carry ${token(op.tokenId)}`;
@@ -144,7 +144,7 @@ export function describeOp(op: ClientOp, before: RoomState, viewer?: Viewer, aft
       const targets = op.targets ?? [];
       const first = targets[0];
       const who = targets.length === 1 && first ? target(first.target) : String(targets.length);
-      // A trap's springing that changed no one is only settled (docs/design-v1-traps.md 4.4).
+      // A trap's springing that changed no one is only settled (docs/design/design-v1-traps.md 4.4).
       if (targets.length === 0 && op.trap) return `settling ${op.label ?? "a trap"}`;
       return op.label ? `applying ${op.label} to ${who}` : `applying a group save to ${who}`;
     }
@@ -159,7 +159,7 @@ export function describeOp(op: ClientOp, before: RoomState, viewer?: Viewer, aft
     case "character.update": {
       // A stat block edit names the block, which the DM's undo puts back with the two numbers it gave the actor.
       const name = before.characters[op.characterId]?.name;
-      // A sync's patch never carries `at`, which the server writes, so a record with one, or none, is the dialog's Undo (docs/design-v1-resync.md 4).
+      // A sync's patch never carries `at`, which the server writes, so a record with one, or none, is the dialog's Undo (docs/design/design-v1-resync.md 4).
       if (op.patch.ddbSync === null || op.patch.ddbSync?.at !== undefined) return `undoing ${quoted(name, "a character")}'s re-sync`;
       if (op.patch.ddbSync !== undefined) return `re-syncing ${quoted(name, "a character")} from D&D Beyond`;
       if (op.patch.stats === null) return `removing ${quoted(name, "a character")}'s stat block`;
@@ -252,7 +252,7 @@ export function describeOp(op: ClientOp, before: RoomState, viewer?: Viewer, aft
       return op.up === null ? "clearing stairs" : "marking stairs";
     case "build.rough": {
       const count = op.cells?.length ?? 0;
-      // The scene's own cell word: "3 hexes" on a hex scene (docs/design-v1-hex-grids.md section 8).
+      // The scene's own cell word: "3 hexes" on a hex scene (docs/design/design-v1-hex-grids.md section 8).
       const g = gridOfScene(before, op.sceneId);
       const cells = count === 1 ? `1 ${cellWord(g)}` : `${count} ${cellWord(g, true)}`;
       return op.on ? `marking ${cells} as difficult ground on ${scene(op.sceneId)}` : `clearing difficult ground from ${cells} on ${scene(op.sceneId)}`;
@@ -277,7 +277,7 @@ export function describeOp(op: ClientOp, before: RoomState, viewer?: Viewer, aft
     case "encounter.prev":
       return "going back a turn";
     case "encounter.update": {
-      // In lair changes the creature's counts too (docs/design-v1-combat-controls.md 3.5).
+      // In lair changes the creature's counts too (docs/design/design-v1-combat-controls.md 3.5).
       if (op.patch.inLair === undefined || Object.keys(op.patch).length !== 1) return "changing an Initiative entry";
       const row = before.encounter?.entries.find((e) => e.id === op.entryId);
       const who = row?.tokenId !== undefined ? token(row.tokenId) : row?.characterId !== undefined ? quoted(before.characters[row.characterId]?.name, "a character") : quoted(row?.label, "a creature");
@@ -312,7 +312,7 @@ export function describeOp(op: ClientOp, before: RoomState, viewer?: Viewer, aft
       return before.pins[op.pin.id] ? "changing a pin" : "placing a pin";
     case "pin.remove":
       return "deleting a pin";
-    // Traps (docs/design-v1-traps.md 6.5), by the name the trap had before the op.
+    // Traps (docs/design/design-v1-traps.md 6.5), by the name the trap had before the op.
     case "trap.create":
       return `making the trap ${op.trap.name}`;
     case "trap.update":
@@ -340,7 +340,7 @@ export function describeOp(op: ClientOp, before: RoomState, viewer?: Viewer, aft
       if (first) return `closing the request for ${testText(first.test)}`;
       return op.rollIds.length === 1 ? "closing a roll request" : `closing ${op.rollIds.length} roll requests`;
     }
-    // Neither goes on a stack (docs/design-v1-player-save-spell.md 5.6), but every op has a phrase.
+    // Neither goes on a stack (docs/design/design-v1-player-save-spell.md 5.6), but every op has a phrase.
     case "cast.ask":
       return `asking for saves against ${op.cast.spell}`;
     case "cast.close": {
@@ -348,7 +348,7 @@ export function describeOp(op: ClientOp, before: RoomState, viewer?: Viewer, aft
       const what = spell ? `the ask for saves against ${spell}` : "an ask for saves";
       return op.end === "dismissed" ? `setting aside ${what}` : op.end === "withdrawn" ? `withdrawing ${what}` : `resolving ${what}`;
     }
-    // A roll is on no stack (docs/design-v1-dice.md 4.5): the stored op is the server's `sys.dice`.
+    // A roll is on no stack (docs/design/design-v1-dice.md 4.5): the stored op is the server's `sys.dice`.
     case "dice.roll":
       return "rolling dice";
     case "roll.dice":
@@ -378,7 +378,7 @@ function actorOf(state: RoomState, t: ActorTarget): Actor | undefined {
 }
 
 /**
- * A group's conditions (docs/design-v1-dm-tools.md 3.5): "adding Frightened
+ * A group's conditions (docs/design/design-v1-dm-tools.md 3.5): "adding Frightened
  * to 4 creatures", "removing Poisoned from Thorn", or "changing effects on
  * 3 creatures" when the step did several things.
  */
@@ -421,10 +421,10 @@ export type Tally =
   | { verb: "adding" | "moving" | "changing" | "deleting"; tokenIds: string[] }
   | { verb: "renaming"; folder: string; to: string }
   | ({ verb: "erasing" } & Erased)
-  /** A group's conditions over 100 creatures, sent in batches (docs/design-v1-dm-tools.md 3.5): creature keys and effect names. */
+  /** A group's conditions over 100 creatures, sent in batches (docs/design/design-v1-dm-tools.md 3.5): creature keys and effect names. */
   | { verb: "effects"; creatures: string[]; added: string[]; removed: string[] }
   /**
-   * One scene's vision settings used on others (docs/design-v1-map-discovery.md
+   * One scene's vision settings used on others (docs/design/design-v1-map-discovery.md
    * 8.3): the settings every op sends, the scenes it went to by id with their
    * names, and the scenes that could be the source by id with their names:
    * those with the settings before the step, that the copy did not go to.
@@ -444,7 +444,7 @@ export function tallyOf(op: ClientOp, before?: RoomState, after?: RoomState): Ta
       return { verb: "moving", tokenIds: op.moves.map((m) => m.tokenId) };
     case "token.update":
       return { verb: "changing", tokenIds: [op.tokenId] };
-    // A selection over 100 tokens goes as several group ops under one undo group (docs/design-v1-dm-tools.md 3.5).
+    // A selection over 100 tokens goes as several group ops under one undo group (docs/design/design-v1-dm-tools.md 3.5).
     case "token.updateMany":
       return { verb: "changing", tokenIds: op.tokenIds };
     case "token.deleteMany":
@@ -658,7 +658,7 @@ export function describeHpEvent(event: Extract<LogEvent, { type: "hp" }>, state:
 }
 
 /**
- * A use as its step names it (docs/design-v1-combat-controls.md 3.5): "using
+ * A use as its step names it (docs/design/design-v1-combat-controls.md 3.5): "using
  * Fiery Rays for Adult Red Dragon", "restoring Fire Breath for Young Red
  * Dragon", "Regeneration for Troll", "using Rage for Thorn".
  */
@@ -730,7 +730,7 @@ function doorPhrase(op: OpOf<"door.set">, before: RoomState): string {
 /**
  * A resize's new size as its step names it: "Large", or a Custom size's
  * squares, its width and height from the patch or the token. On a hex
- * scene a Custom size reads as its category (docs/design-v1-hex-grids.md
+ * scene a Custom size reads as its category (docs/design/design-v1-hex-grids.md
  * 4.2), so its step names that.
  */
 function sizeWords(patch: TokenPatch, token: Token | undefined, grid: Grid): string {

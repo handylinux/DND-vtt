@@ -13,7 +13,7 @@ import { abilityMod, monsterView, speedsOf } from "#shared/statBlock.ts";
 import { NO_CHALLENGE_RATING, NO_SIZE_LINE } from "../monsters/parse.ts";
 
 /**
- * A stat block read into a player character's (docs/design-v1-pc-stats.md
+ * A stat block read into a player character's (docs/design/design-v1-pc-stats.md
  * 6.2): the pasted text goes through the monster editor's reader, then
  * each printed number reads as the derivation it matches, else as typed,
  * by one rule. Of the derivations a number could have, the nearest is

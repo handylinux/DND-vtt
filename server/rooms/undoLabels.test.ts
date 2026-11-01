@@ -45,7 +45,7 @@ describe("undo step labels", () => {
     assert.equal(describeOp({ t: "savedEncounter.delete", encounterId: "gone" }, s), "deleting an encounter");
   });
 
-  test("a document of handout pages is saved and deleted by its title, and a show of one says showing (docs/design-v1-pdf-handouts.md 3.3)", () => {
+  test("a document of handout pages is saved and deleted by its title, and a show of one says showing (docs/design/design-v1-pdf-handouts.md 3.3)", () => {
     const s = state();
     const pages = [{ assetId: "a", width: 1584, height: 2048 }];
     const saved = { ...s, handoutDocs: { d1: { id: "d1", rev: 0, title: "Strange letter", pages, createdAt: "" } } };
@@ -55,7 +55,7 @@ describe("undo step labels", () => {
     assert.equal(describeOp({ t: "handout.show", handout: { id: "h1", pages, title: "Strange letter", to: "all" } }, s), "showing the handout Strange letter");
   });
 
-  test("a companion block is added, changed and deleted by its name, and goes on the DM's stack alone (docs/design-v1-companion-stat-blocks.md 3.3)", () => {
+  test("a companion block is added, changed and deleted by its name, and goes on the DM's stack alone (docs/design/design-v1-companion-stat-blocks.md 3.3)", () => {
     const s = { ...state(), companionBlocks: { b1: companionBlock("b1", "c1", { name: "Owl" }) } };
     const { rev: _rev, ...block } = companionBlock("b2", "c1", { name: "Owl" });
     assert.equal(describeOp({ t: "companionBlock.create", block }, s), "adding the stat block Owl");
@@ -112,7 +112,7 @@ describe("undo step labels", () => {
     assert.equal(describeOp({ t: "scene.update", sceneId: "s1", patch: { blockMovement: true, name: "Lair" } }, s), "changing the scene Goblin cave");
   });
 
-  test("a resize names the new size (docs/design-v1-token-window.md 8.7)", () => {
+  test("a resize names the new size (docs/design/design-v1-token-window.md 8.7)", () => {
     const s = state();
     s.tokens.thorn = token("thorn", { kind: "pc", name: "Thorn", ownerIds: ["p1"] });
     assert.equal(describeOp({ t: "token.update", tokenId: "thorn", patch: { size: "large" } }, s), "resizing Thorn to Large");
@@ -222,7 +222,7 @@ describe("an erase's undo label", () => {
   });
 });
 
-describe("wave 5 undo labels (docs/design-v1-dm-tools.md 2.2)", () => {
+describe("wave 5 undo labels (docs/design/design-v1-dm-tools.md 2.2)", () => {
   function wave5() {
     const s = state();
     s.journal.pg1 = { id: "pg1", rev: 0, title: "Old map", access: "all", blocks: [] };
@@ -252,7 +252,7 @@ describe("wave 5 undo labels (docs/design-v1-dm-tools.md 2.2)", () => {
     assert.equal(describeOp({ t: "roll.close", rollIds: ["r1", "r9"] }, s), "closing 2 roll requests");
   });
 
-  test("an ask for saves and its end name the spell, though neither goes on a stack (docs/design-v1-player-save-spell.md 5.6)", () => {
+  test("an ask for saves and its end name the spell, though neither goes on a stack (docs/design/design-v1-player-save-spell.md 5.6)", () => {
     const s = wave5();
     s.casts.k1 = { id: "k1", rev: 1, by: "p1", caster: "g2", sceneId: "s1", spell: "Fireball", area: "a1", at: "2026-10-18T20:00:00.000Z" };
     assert.equal(describeOp({ t: "cast.ask", cast: { id: "k2", caster: "g2", sceneId: "s1", spell: "Hold Person", targets: ["g2"] } }, s), "asking for saves against Hold Person");
@@ -301,7 +301,7 @@ describe("wave 5 undo labels (docs/design-v1-dm-tools.md 2.2)", () => {
   });
 });
 
-describe("a known forms undo label (docs/design-v1-known-forms.md 3.4)", () => {
+describe("a known forms undo label (docs/design/design-v1-known-forms.md 3.4)", () => {
   test("names the character's known forms, and a character the room lacks", () => {
     const s = room({ characters: { bree: character("bree", { name: "Bree" }) } });
     assert.equal(describeOp({ t: "character.update", characterId: "bree", patch: { knownForms: ["wolf"] } }, s), "changing Bree's known forms");
@@ -310,7 +310,7 @@ describe("a known forms undo label (docs/design-v1-known-forms.md 3.4)", () => {
   });
 });
 
-describe("undo step labels for traps (docs/design-v1-traps.md 6.5)", () => {
+describe("undo step labels for traps (docs/design/design-v1-traps.md 6.5)", () => {
   test("each trap op says what it did, by the trap's name before the op", () => {
     const s = state();
     s.traps.pit = trap("pit", { name: "Hidden Pit" });

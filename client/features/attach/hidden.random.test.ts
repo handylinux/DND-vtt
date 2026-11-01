@@ -28,7 +28,7 @@ import { replayPending } from "../../state/store.ts";
 import { SQUARES } from "#shared/rules/grid.ts";
 
 /**
- * The hidden-state generator (docs/design-v1-attach.md 8.0, the class of
+ * The hidden-state generator (docs/design/design-v1-attach.md 8.0, the class of
  * reviews AT-ASTRA-1, AT-ASTRA-10, AT-ASTRA-13, AT-O-16, AT-O-20 and
  * AT-O-22): no hidden link or hidden token changes anything a player
  * receives. Each run builds a room with random holder chains up to four

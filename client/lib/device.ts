@@ -47,7 +47,7 @@ export function isCoarsePointer(): boolean {
 
 /**
  * A computer: a device whose main pointer is fine, a mouse or a trackpad.
- * The token window resizes only here (docs/design-v1-token-window.md 5.1),
+ * The token window resizes only here (docs/design/design-v1-token-window.md 5.1),
  * since its 24 px handle is a fine pointer's target.
  */
 export function isFinePointer(): boolean {

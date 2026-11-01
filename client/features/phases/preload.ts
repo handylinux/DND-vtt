@@ -4,7 +4,7 @@ import type { AssetVariant } from "../../lib/api.ts";
 
 /**
  * A DM device fetches every other phase's image when it opens a scene
- * (docs/design-v1-maps-vision.md section 3.4), so the DM's own switches
+ * (docs/design/design-v1-maps-vision.md section 3.4), so the DM's own switches
  * need only a decode. The bytes go to the browser's HTTP cache, where map
  * variants live for a year (server/assets/serve.ts), and nothing decoded is
  * held: a decoded map can take 256 MiB. Players never preload, since their

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
 /*
- * What a paste leaves under its entry (docs/design-v1-look-pass-2.md 2.2
+ * What a paste leaves under its entry (docs/design/design-v1-look-pass-2.md 2.2
  * and 2.9, D21 and D38). Its errors had three looks across the entries, so
  * the note's error is the one ErrorText and its other words Help. The paste
  * box's words stood inside the empty box, where they read as a placeholder

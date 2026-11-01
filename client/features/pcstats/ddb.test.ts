@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { ApiError } from "../../lib/api.ts";
 import { DDB_WORDS, importErrorText, PASTE_LIMIT, quotaWords, readPastedJson } from "./ddb.ts";
 
-/** The D&D Beyond step's words and pasted JSON (docs/design-v1-pc-stats.md 6.3 and Appendix D). */
+/** The D&D Beyond step's words and pasted JSON (docs/design/design-v1-pc-stats.md 6.3 and Appendix D). */
 describe("the import's words", () => {
   test("each code's words, each ending with the way out", () => {
     const err = (code: ConstructorParameters<typeof ApiError>[2], retryAfterMs: number | null = null) => new ApiError(400, "x", code, retryAfterMs);

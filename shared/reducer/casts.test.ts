@@ -9,7 +9,7 @@ import { applyOp } from "../reducer.ts";
 import { DM, P1, P2, castAsk, castTable, damageRoll, diceLine, env } from "../testutil.ts";
 import { labelDamageType } from "./casts.ts";
 
-/** A player's asks for saves in the room's state (docs/design-v1-player-save-spell.md 5.3). */
+/** A player's asks for saves in the room's state (docs/design/design-v1-player-save-spell.md 5.3). */
 
 /** The id of an op's first line only Thorn's player reads, at seq 50 (shared/logRings.ts). */
 const theirs = () => `50:${partyIndex(rosterRanks(castTable().members).get("p1")!, 0)}`;

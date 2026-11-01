@@ -17,7 +17,7 @@ import { undoSetup } from "./helpers/undoScope.ts";
 import { assetRow, chooseStarterWork, starterWork } from "./starterPick.ts";
 
 /**
- * The v1 wave 3 run (docs/design-v1-maps-vision.md section 3): the real
+ * The v1 wave 3 run (docs/design/design-v1-maps-vision.md section 3): the real
  * server serving the production build, a DM on a desktop and a player on a
  * phone. The DM imports a Universal VTT file written here, switches its map
  * between two phases with the player watching, stamps the map, and
@@ -486,7 +486,7 @@ describe("raccoon-vtt maps run", { timeout: 300_000 }, () => {
       );
     };
     const gridOptions = dm.getByRole("toolbar", { name: "Line up grid options" });
-    // The line's tone (docs/design-v1-design-pass.md 2.4 rule 5): the success green only for a grid that was applied, the warning tone for a search that failed.
+    // The line's tone (docs/design/design-v1-design-pass.md 2.4 rule 5): the success green only for a grid that was applied, the warning tone for a search that failed.
     const rgb = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
     const lineTone = (words: string) =>
       gridOptions
@@ -811,7 +811,7 @@ describe("raccoon-vtt maps run", { timeout: 300_000 }, () => {
     // Nothing more is said once the scene is made.
     assert.equal(await dm.getByText(/^This map brings/).count(), 0);
 
-    // An import is one Setup gesture (docs/design-v1-undo-scope.md 3), taken back whole by one Undo setup.
+    // An import is one Setup gesture (docs/design/design-v1-undo-scope.md 3), taken back whole by one Undo setup.
     await undoSetup(dm);
     await waitFor("one undo taking the scene, its walls and its lights away", () => {
       const state = dmSocket.state;

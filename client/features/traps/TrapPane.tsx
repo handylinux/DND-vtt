@@ -66,7 +66,7 @@ import { trapSlot } from "./store.ts";
 const NO_CHUNKS: Readonly<Record<string, BuildChunk>> = {};
 
 /**
- * A trap's pane (docs/design-v1-traps.md 4.1), for the DM: where it started,
+ * A trap's pane (docs/design/design-v1-traps.md 4.1), for the DM: where it started,
  * then its nine parts folded to one line each, and at its foot Armed and
  * Found, the asks for rolls, Set it off and Delete. It hangs over the map
  * beside the trap where the map is 600 px wide or more, and is a bottom
@@ -234,7 +234,7 @@ function TrapEditor(props: { trap: Trap; sheet: boolean; onClose(): void }) {
       {from ? <Help>{from}</Help> : null}
       {doorGone ? <Note>Its door is gone, so it cannot go off. Delete it, or put a door back.</Note> : null}
 
-      {/* The groups stack as the token panel's do, their lines doing the parting (docs/design-v1-look-pass-2.md 2.6). */}
+      {/* The groups stack as the token panel's do, their lines doing the parting (docs/design/design-v1-look-pass-2.md 2.6). */}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)" }}>
         {/* No summary: the pane's title already shows the name. */}
         <Group label="Name" holds="rows" {...fold("name")}>
@@ -253,7 +253,7 @@ function TrapEditor(props: { trap: Trap; sheet: boolean; onClose(): void }) {
                     key={t}
                     label={TRIGGER_LABELS[t]}
                     checked={on}
-                    // The last way it goes off keeps its tick and its place in the focus order, with the reason (docs/design-v1-look-pass-2.md 2.7).
+                    // The last way it goes off keeps its tick and its place in the focus order, with the reason (docs/design/design-v1-look-pass-2.md 2.7).
                     aria-disabled={last}
                     help={last ? `A trap on ${cellWord(grid, true)} goes off at least one way.` : undefined}
                     onChange={(next) => setRig({ on: TRIGGER_ORDER.filter((o) => (o === t ? next : rig.on.includes(o))) })}
@@ -284,7 +284,7 @@ function TrapEditor(props: { trap: Trap; sheet: boolean; onClose(): void }) {
         </Group>
 
         <Group label="Afterwards" summary={afterSummary(rig, pitDepth, opened)} holds="rows" {...fold("after")}>
-          {/* Off is the plain case, a trap that goes off once (docs/design-v1-look-pass-2.md 2.7). */}
+          {/* Off is the plain case, a trap that goes off once (docs/design/design-v1-look-pass-2.md 2.7). */}
           <Switch label="Arms again at the start of the next turn" checked={rig.resets === "nextTurn"} onChange={(on) => setRig({ resets: on ? "nextTurn" : "never" })} />
           <UsesField value={rig.usesLeft ?? null} onChange={(usesLeft) => setRig({ usesLeft })} />
           <Switch label="Stops the creature where it goes off" help="A silent trap should not stop the creature: its player would notice." checked={rig.stops} onChange={(stops) => setRig({ stops })} />
@@ -539,7 +539,7 @@ function UsesField(props: { value: number | null; onChange(value: number | null)
 function UsesPrompt(props: { onArm(uses: number | null): void; onCancel(): void }) {
   const [uses, setUses] = useState(1);
   return (
-    // A line and its buttons under Armed, with no box of its own: Done stays the pane's one primary (docs/design-v1-look-pass-2.md 2.2).
+    // A line and its buttons under Armed, with no box of its own: Done stays the pane's one primary (docs/design/design-v1-look-pass-2.md 2.2).
     <div role="group" aria-label="Give it uses" style={{ display: "grid", gap: theme.space(2) }}>
       <Help>It has no uses left. How many more times can it go off?</Help>
       {/* Arm beside the number it takes, and No limit with Cancel, so no button trails alone where the row wraps. */}
@@ -573,7 +573,7 @@ function hitsKind(hits: TrapRig["hits"]): HitsKind {
  * Who it hits (4.1): the creature that set it off, everyone on the trap
  * (squares only), everyone in squares drawn on the map, or everyone in an
  * area aimed with the area tool. A choice of longer names, so rows with a
- * check (docs/design-v1-look-pass-2.md 2.7). An arrow key both moves and
+ * check (docs/design/design-v1-look-pass-2.md 2.7). An arrow key both moves and
  * chooses in a radio group, so choosing writes only what needs no map:
  * drawn squares start as the trap's own, and an area is written once
  * "Place the area" saves one, the choice held here until then. The map's
@@ -620,7 +620,7 @@ function HitsChoice(props: { trap: Trap; rig: TrapRig; chunks: Readonly<Record<s
   ];
   return (
     <>
-      {/* Its names wrap, so a narrow pane never scrolls sideways for them (docs/design-v1-look-pass-2.md D2). */}
+      {/* Its names wrap, so a narrow pane never scrolls sideways for them (docs/design/design-v1-look-pass-2.md D2). */}
       <ChoiceRows<HitsKind> label="Hits" value={shown} options={options} onChange={choose} wrap />
       {shown === "cells" ? (
         <PartRow>
@@ -737,7 +737,7 @@ function SaveFields(props: { rig: TrapRig; setRig(patch: RigPatch): void }) {
         </Button>
       ) : null}
       {conditions.length > 0 ? (
-        // Removable choices, as the group save's conditions (docs/design-v1-look-pass-2.md 2.4).
+        // Removable choices, as the group save's conditions (docs/design/design-v1-look-pass-2.md 2.4).
         <ChipRow label="On a fail">
           {conditions.map((c) => (
             <Chip key={c} remove aria-label={`Remove ${CONDITIONS[c].name}`} onClick={() => setConditions(conditions.filter((o) => o !== c))}>
@@ -790,7 +790,7 @@ function SaveFields(props: { rig: TrapRig; setRig(patch: RigPatch): void }) {
  * One part of the damage: its dice, sent when they read as a formula, its
  * type and its remove. Dice that do not read keep the last good ones, and
  * say why in a line under the row once typing rests or on Enter, as every
- * field's error does (docs/design-v1-look-pass-2.md 2.9), not only in an
+ * field's error does (docs/design/design-v1-look-pass-2.md 2.9), not only in an
  * outline and a title.
  */
 function DamagePart(props: { part: { formula: string; type: DamageType }; onFormula(formula: string): void; onType(type: DamageType): void; onRemove(): void }) {

@@ -21,7 +21,7 @@ export type Reject = { n: number; code: RefusalCode; message: string };
 /** An undo or redo that applied, and what it took back (design 7.7). */
 export type Restored = { n: number; what: string };
 
-/** An op that wrote a sync record without `at`, and the `at` the server wrote (docs/design-v1-resync.md 3.4). */
+/** An op that wrote a sync record without `at`, and the `at` the server wrote (docs/design/design-v1-resync.md 3.4). */
 export type Stamped = { n: number; at: string };
 
 export type CommittedBatch = {
@@ -34,11 +34,11 @@ export type CommittedBatch = {
   ackDetails?: Map<ClientKey, OpAcknowledgment[]>;
   rejects: Map<ClientKey, Reject[]>;
   restored: Map<ClientKey, Restored[]>;
-  /** Each player client's ops in the batch whose trap step refuses their Undo move (docs/design-v1-traps.md 6.5). */
+  /** Each player client's ops in the batch whose trap step refuses their Undo move (docs/design/design-v1-traps.md 6.5). */
   trapped?: Map<ClientKey, number[]>;
   /** Each client's ops in the batch that wrote a sync record without `at`, with the `at` written. */
   stamped?: Map<ClientKey, Stamped[]>;
-  /** Each player client's walks the real build stopped short of where their device let them go, each landed at its last clear spot (docs/design-v1-map-discovery.md 6). */
+  /** Each player client's walks the real build stopped short of where their device let them go, each landed at its last clear spot (docs/design/design-v1-map-discovery.md 6). */
   blocked?: Map<ClientKey, number[]>;
 };
 
@@ -50,7 +50,7 @@ function viewerClass(conn: Connection, state: RoomState): string {
 
 /**
  * Whether a DM's view as a player leaves a line out
- * (docs/design-v1-per-player-vision.md 7.4, decision 13): a whisper the
+ * (docs/design/design-v1-per-player-vision.md 7.4, decision 13): a whisper the
  * DM is not party to, so the preview never shows whispers between
  * players. Its snapshot, its events and the log pages asked for it
  * (server/http/log.ts) all read this.
@@ -64,7 +64,7 @@ export function previewOmits(line: Pick<LogEntry, "kind" | "from" | "to">, by: s
  * someone is looking at, sight can change without the op touching anything
  * there (a door, a light, a death), so the sight tiles that changed join
  * the touched keys, and with them what stands on those tiles
- * (docs/design-v1-maps-vision.md 4.3.5). Scenes nobody looks at need no
+ * (docs/design/design-v1-maps-vision.md 4.3.5). Scenes nobody looks at need no
  * diff: a viewer arriving on one gets a snapshot.
  */
 export function candidateKeys(batch: CommittedBatch, watched: Iterable<string> = [], viewers: Iterable<Viewer> = []): Set<EntityKey> {
@@ -91,7 +91,7 @@ function watchedScenes(after: RoomState, connections: Iterable<Connection>): Set
  * Values are the state's own entities or built by projection, and are
  * never changed after, so an object is hashed once however many
  * connections and batches compare it: a sight tile of 1,368 characters
- * every player receives (docs/design-v1-maps-vision.md 4.3.5), or a chunk
+ * every player receives (docs/design/design-v1-maps-vision.md 4.3.5), or a chunk
  * that projection hands every player again as the same object.
  */
 const hashes = new WeakMap<object, string>();
@@ -104,12 +104,12 @@ function hashOf(projected: unknown): string {
 }
 
 /*
- * Projection classes (docs/design-v1-per-player-vision.md 6.9): the kinds
+ * Projection classes (docs/design/design-v1-per-player-vision.md 6.9): the kinds
  * whose projection for a player reads no more than one of three things,
  * each projected once per batch for every player who shares that thing
  * rather than once per player. A change that re-projects the whole map,
  * such as a light level switch, then costs one projection per class
- * (docs/design-v1-maps-vision.md 4.3.6), and each value is hashed once.
+ * (docs/design/design-v1-maps-vision.md 4.3.6), and each value is hashed once.
  *
  * - The scene a player is on: the scene itself, the shared sight and fog
  *   (`sightAll`, `fogAll`), and the DM's kinds, which project to nothing
@@ -131,7 +131,7 @@ const FOG_KINDS = new Set(["fog", "label", "stamp", "trap"]);
 /**
  * What a player reads on a per-player scene, by which both the fan-out and
  * the drag preview's judgment (ephemeral.ts judgedBy) put players who read
- * the same together (docs/design-v1-per-player-vision.md 6.9 and 7.5). One
+ * the same together (docs/design/design-v1-per-player-vision.md 6.9 and 7.5). One
  * rule for both, so they never drift apart (review PV3-OPUS-6).
  *
  * - The sight: with vision on, the sight object the player's projection
@@ -165,7 +165,7 @@ type PlayerClasses = { scene: string; sight: string; fog: string };
  * returns the same answer without testing a cell, and a changed one never
  * hits. The scene and blackout checks run before it. A label or stamp some
  * layer's memory names also reads that memory, the class's sight and the
- * remembered box (docs/design-v1-map-discovery.md decision 6), which the
+ * remembered box (docs/design/design-v1-map-discovery.md decision 6), which the
  * path does not hold, so it is projected afresh (MD2-O-1, MD2-LK-2).
  */
 type Memo = WeakMap<object, Memo | { value: unknown }>;
@@ -215,7 +215,7 @@ class Projector {
       const kind = key.slice(0, key.indexOf(":"));
       if (SCENE_KINDS.has(kind)) out.set(key, this.#shared(of.scene, key, own(key)));
       else if (kind === "sight") out.set(key, this.#shared(of.sight, key, own(key)));
-      // A chunk holds what its fog class holds (docs/design-v1-map-discovery.md 5.6), a holder's own sight and fog among them.
+      // A chunk holds what its fog class holds (docs/design/design-v1-map-discovery.md 5.6), a holder's own sight and fog among them.
       else if (kind === "fog" || kind === "chunk") out.set(key, this.#shared(of.fog, key, own(key)));
       else if (FOG_KINDS.has(kind)) out.set(key, this.#shared(of.fog, key, () => this.#fogged(conn, of.fog, key)));
       else out.set(key, own(key)());
@@ -387,7 +387,7 @@ export type Snapshot = { message: { t: "snapshot"; seq: number; state: unknown; 
  * The full projected snapshot for one connection, and the held map that
  * goes with it, holding the values unhashed (shared/project.ts HeldEntry):
  * a room's first snapshot, which also computes sight from nothing, is the
- * longest pause a room load makes (docs/design-v1-maps-vision.md 4.3.6).
+ * longest pause a room load makes (docs/design/design-v1-maps-vision.md 4.3.6).
  */
 export function buildSnapshot(state: RoomState, seq: number, conn: Connection, watermark: number): Snapshot {
   const viewed = projectState(state, conn.viewer, { sceneId: conn.sceneId });

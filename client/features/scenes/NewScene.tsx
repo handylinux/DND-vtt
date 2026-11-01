@@ -42,7 +42,7 @@ const MAX_SCENES = 50;
  * whose scale is only a guess, the builder for a builder scene.
  *
  * A map whose name gives no size is searched for a drawn grid while it
- * uploads (docs/design-v1-grid-detect.md section 6), in a Worker started
+ * uploads (docs/design/design-v1-grid-detect.md section 6), in a Worker started
  * when the file is picked, or on a phone or an iPad, for a large file, on
  * the server's phone-sized copy once the upload answers (findGrid.ts
  * `importSearchFrom`). A grid found with high confidence goes on the
@@ -50,13 +50,13 @@ const MAX_SCENES = 50;
  * A search of the copy still running when the wait ends goes on in Line
  * up grid, as Find the grid's does.
  *
- * A map from the starter packs (docs/design-v1-starter-art.md 7) is copied
+ * A map from the starter packs (docs/design/design-v1-starter-art.md 7) is copied
  * into the room and starts on the grid the catalog measured, so it is
  * never searched and skips grid alignment. One the catalog has no grid,
  * or only a square's size, for opens on Line up grid, as an upload with
  * no size does.
  *
- * Players see (docs/design-v1-map-discovery.md 8.1 and 8.2) starts on the
+ * Players see (docs/design/design-v1-map-discovery.md 8.1 and 8.2) starts on the
  * room's default for the kind, or Like the scene on the DM's screen, and is
  * applied to whatever the kind makes. It holds still during an upload, so
  * the scene that upload makes is the one the DM chose. An upload or a
@@ -65,13 +65,13 @@ const MAX_SCENES = 50;
  * with it, and a scene deleted meanwhile leaves the kind's start, said in
  * a toast.
  *
- * The Grid row (docs/design-v1-hex-grids.md HX-D19) starts on the room's
+ * The Grid row (docs/design/design-v1-hex-grids.md HX-D19) starts on the room's
  * New scenes shape for a Battle mat or a Map image and on Squares for a
  * Builder scene, and changes the shape for this one scene. A starter map
  * starts on squares, its art's own grid, unless the DM picks a hex shape
  * here, and then opens Line up grid. A map image is searched for squares
  * and hexes whatever the Grid row says, and a sure find of one shape alone
- * starts the scene on that shape (docs/design-v1-grid-detect.md 10.7).
+ * starts the scene on that shape (docs/design/design-v1-grid-detect.md 10.7).
  *
  * The kind is a choice of native radios, and a tap on the chosen radio does
  * nothing, so the form folds with its own Cancel. During an upload that
@@ -122,11 +122,11 @@ export function NewScene(props: { sceneCount: number; close: PanelClose }) {
     },
     [],
   );
-  // Only Create sends it, so a sheet's swipe springs back once a name or a size is typed or a map picked (docs/design-v1-sheet-swipe.md 4.5).
+  // Only Create sends it, so a sheet's swipe springs back once a name or a size is typed or a map picked (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedSince({ name, w, h, background, file: file?.name ?? null, seen, shapePick });
 
   const full = props.sceneCount >= MAX_SCENES;
-  // A paste lands here while the Map image form is open, as a chosen file does: picked, and searched for its grid (docs/design-v1-paste.md 1.2).
+  // A paste lands here while the Map image form is open, as a chosen file does: picked, and searched for its grid (docs/design/design-v1-paste.md 1.2).
   const formRef = useRef<HTMLDivElement>(null);
   const paste = usePasteTarget(formRef, { accepts: "image", takes: kind === "map" ? "open" : "none", disabled: status.busy || kind !== "map", closed: kind !== "map", onFile: (f) => pickFile(f, true) });
 
@@ -252,7 +252,7 @@ export function NewScene(props: { sceneCount: number; close: PanelClose }) {
     if (next && searchOnImport({ source: "image", named: !hexFor("map") && nameGivesSize(next.name) })) searchRef.current = { file: next, search: importSearch(next, thisDevice()) };
   };
 
-  // The room's "Use the pasted image" hands its picture here: Map image opens with it picked, and the grid search starts (docs/design-v1-paste.md 4).
+  // The room's "Use the pasted image" hands its picture here: Map image opens with it picked, and the grid search starts (docs/design/design-v1-paste.md 4).
   useHandoff("scene", !status.busy && !full, (handed) => {
     pick("map");
     pickFile(handed, true);
@@ -471,7 +471,7 @@ function FeetNote(props: { found: FoundWork; roomFeet: number }) {
 /**
  * Maps already in the room, so one image can back several scenes. The list
  * is fetched when the form opens, never polled. The DM's own uploads come
- * first and starter picks after, apart (docs/design-v1-starter-art.md 5),
+ * first and starter picks after, apart (docs/design/design-v1-starter-art.md 5),
  * as the Library panel lists them.
  */
 function UploadedMaps(props: { roomId: string; disabled: boolean; onPick(row: AssetRow): void }) {

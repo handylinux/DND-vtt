@@ -9,7 +9,7 @@ import { RouteDrag, type Settled } from "./routeDrag.ts";
 import { RouteWork, type Frames } from "./routeWork.ts";
 
 /**
- * The drag's search as a state machine (docs/design-v1-movement.md 12):
+ * The drag's search as a state machine (docs/design/design-v1-movement.md 12):
  * random runs of finger moves, often back to a spot visited before while
  * another spot's trace is under way, frames, frames other work has spent
  * so the drag's work waits queued, drops, cancels, wall changes and frames

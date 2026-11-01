@@ -186,7 +186,7 @@ describe("raccoon-vtt: keys and focus for a DM at a computer", { timeout: 300_00
       assert.equal(await dm.getByRole("menu").count(), 0, "and opens nothing");
     };
 
-    // At 1280 x 800 the row holds Token, Initiative, Dice and Log, each its icon alone (docs/design-v1-icons-2.md 3.1).
+    // At 1280 x 800 the row holds Token, Initiative, Dice and Log, each its icon alone (docs/design/design-v1-icons-2.md 3.1).
     await list.getByRole("tab", { name: sideTabName("Dice") }).focus();
     await dm.keyboard.press("ArrowLeft");
     await on("Initiative");
@@ -253,7 +253,7 @@ describe("raccoon-vtt: keys and focus for a DM at a computer", { timeout: 300_00
     const list = dm.getByRole("tablist", { name: "Panels" });
     const more = list.locator('[role="tab"][aria-haspopup="menu"]');
     const isFocused = (target: Locator) => target.evaluate((el) => el === el.ownerDocument.activeElement);
-    // The row's last tab before More: Log, the fourth of its icon tabs (docs/design-v1-icons-2.md 3.1).
+    // The row's last tab before More: Log, the fourth of its icon tabs (docs/design/design-v1-icons-2.md 3.1).
     const last = list.getByRole("tab", { name: sideTabName("Log") });
     await last.click();
     await dm.keyboard.press("ArrowRight");
@@ -377,7 +377,7 @@ describe("raccoon-vtt: keys and focus for a DM at a computer", { timeout: 300_00
       return doc.getElementById(id)?.textContent ?? "";
     });
     assert.match(described, /^The players are on this scene\./);
-    // Paste an image sits beside the picker (docs/design-v1-paste.md 2.2), then Cancel.
+    // Paste an image sits beside the picker (docs/design/design-v1-paste.md 2.2), then Cancel.
     await dm.keyboard.press("Tab");
     assert.equal((await focused(dm)).name, "Paste an image", "Tab goes from the picker to its Paste an image");
     await dm.keyboard.press("Tab");

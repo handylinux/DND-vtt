@@ -34,9 +34,9 @@ import { PcStatBlock } from "../pcstats/PcStatBlock.tsx";
 type Keeper = { id: string; name: string };
 
 /**
- * The full stat block on a monster's or NPC's token (docs/design-v1-dm-tools.md
+ * The full stat block on a monster's or NPC's token (docs/design/design-v1-dm-tools.md
  * 3.6), directly under the token panel's image
- * (docs/design-v1-token-panel.md 3.5): the room monster or SRD monster it
+ * (docs/design/design-v1-token-panel.md 3.5): the room monster or SRD monster it
  * is linked to, read where the token is, with Edit or "Copy to this room's
  * monsters and edit", and Detach, under what they act on. Its heading is
  * the disclosure "Stat block", folded as this device last left it (the
@@ -51,11 +51,11 @@ type Keeper = { id: string; name: string };
  * disclosure, which is named "Stat block" whether open or folded.
  *
  * On a player character's token the section is its character's own stat
- * block (docs/design-v1-pc-stats.md 7.3, pcstats/PcStatBlock.tsx), for the
+ * block (docs/design/design-v1-pc-stats.md 7.3, pcstats/PcStatBlock.tsx), for the
  * DM and the character's players.
  *
  * On a creature companion the DM and its players share the section
- * (docs/design-v1-companion-stat-blocks.md 6.5): Attach, Change and Detach
+ * (docs/design/design-v1-companion-stat-blocks.md 6.5): Attach, Change and Detach
  * for both, the block kept by its character with Edit, and an SRD block's
  * "Copy to Bree's stat blocks and edit". Attaching and changing go through
  * the numbers step. A room monster's link, which only "Make a companion"
@@ -72,10 +72,10 @@ export function StatBlockSection(props: {
   const monsters = useRoomView((s) => s.view?.monsters);
   const blocks = useRoomView((s) => s.view?.companionBlocks);
   const keeperName = useRoomView((s) => (token.companion ? s.view?.characters[token.companion.of]?.name : undefined));
-  // A player character's token shows its character's own stat block (docs/design-v1-pc-stats.md 7.3).
+  // A player character's token shows its character's own stat block (docs/design/design-v1-pc-stats.md 7.3).
   const pc = useRoomView((s) => ("ref" in token.actor ? s.view?.characters[token.actor.ref] : undefined));
   const you = useRoomView((s) => s.you);
-  // The creature behind this token, whose rolls the block's ability boxes make where the viewer may (docs/design-v1-stat-block-rolls.md 2).
+  // The creature behind this token, whose rolls the block's ability boxes make where the viewer may (docs/design/design-v1-stat-block-rolls.md 2).
   const roll = useBlockRoller({ tokenId: token.id });
   const keeper: Keeper | null = token.companion ? { id: token.companion.of, name: keeperName ?? "its character" } : null;
   const { folds, slot } = usePanelFolds();
@@ -132,7 +132,7 @@ export function StatBlockSection(props: {
   const editBlock = (block: CompanionBlock, of: Keeper) => openEditor({ monster: null, initial: blockLines(block), block: { character: of, existing: block } });
   const copySrd = (monster: SrdMonster) => {
     const attach = (id: string) => props.patchActor(attachPatch(keeper ? { blockId: id } : { monsterId: id }));
-    // A companion's copy is its character's block, which never takes the DM's image and keeps the SRD's credit (docs/design-v1-companion-stat-blocks.md 6.1).
+    // A companion's copy is its character's block, which never takes the DM's image and keeps the SRD's credit (docs/design/design-v1-companion-stat-blocks.md 6.1).
     if (keeper) {
       openEditor({ monster: null, initial: statBlockFromSrd(monster), block: { character: keeper, existing: null, fromSrd: monster.srdId }, onSaved: attach });
       return;

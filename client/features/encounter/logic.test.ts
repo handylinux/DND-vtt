@@ -556,7 +556,7 @@ describe("the drag handle's slot (SFB-P-13)", () => {
   });
 });
 
-describe("the round header's form (docs/design-v1-combat-flow.md 3.1)", () => {
+describe("the round header's form (docs/design/design-v1-combat-flow.md 3.1)", () => {
   // The sheet's header: 56 px in full, 49 compact (4 px of pane padding, the 44 px row and its border), over 58 px rows.
   const sheet = { fullHeader: 56, compactHeader: 49, row: 58, width: 300, compactNeed: 0 };
 
@@ -611,7 +611,7 @@ describe("the round header's form (docs/design-v1-combat-flow.md 3.1)", () => {
   });
 });
 
-describe("the AC a row shows (docs/design-v1-combat-flow.md 3.3)", () => {
+describe("the AC a row shows (docs/design/design-v1-combat-flow.md 3.3)", () => {
   test("whatever AC the viewer's copy holds, above 0, alive, and with HP to show", () => {
     assert.equal(rowAc(actor({ ac: 15 })), 15);
     assert.equal(rowAc({ life: "alive", effects: [], hpLabel: "Healthy" }), null, "a player's copy of a monster holds no AC");
@@ -624,7 +624,7 @@ describe("the AC a row shows (docs/design-v1-combat-flow.md 3.3)", () => {
   });
 });
 
-describe("companions in the tracker (docs/design-v1-combat-flow.md 3.6.7)", () => {
+describe("companions in the tracker (docs/design/design-v1-combat-flow.md 3.6.7)", () => {
   /** Bree (p1) with a spirit listed under her, a weapon not listed, and an owl with its own turn, and Cy's (p2) character. */
   function party(): RoomState {
     const state = room({ characters: { bree: character("bree", { name: "Bree", ownerIds: ["p1"] }), cy: character("cy", { name: "Cy", ownerIds: ["p2"] }) } });
@@ -671,7 +671,7 @@ describe("companions in the tracker (docs/design-v1-combat-flow.md 3.6.7)", () =
   });
 });
 
-describe("the DM's tag on a row players do not see yet (docs/design-v1-combat-flow.md 11)", () => {
+describe("the DM's tag on a row players do not see yet (docs/design/design-v1-combat-flow.md 11)", () => {
   function fight(): RoomState {
     const state = room();
     state.meta.settings.playersSeeOrder = "party";

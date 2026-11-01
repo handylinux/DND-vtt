@@ -8,10 +8,10 @@ import { theme } from "../../lib/theme.ts";
 import { SHAPE_CHOICES, storedShape, type ShapeChoice } from "./words.ts";
 
 /**
- * A grid shape choice (docs/design-v1-hex-grids.md section 8): Squares,
+ * A grid shape choice (docs/design/design-v1-hex-grids.md section 8): Squares,
  * Hex rows and Hex columns as one radio group sharing one row evenly, a
  * label wrapping between its words, and one per row where a third of the
- * row cannot hold a word (docs/design-v1-design-pass.md 4.2). A choice the
+ * row cannot hold a word (docs/design/design-v1-design-pass.md 4.2). A choice the
  * scene cannot take is off, and the reason shows under the group and
  * describes it, so focus stays on the chosen radio and a screen reader
  * hears why. `refused` holds each choice's reason, `note` a line about

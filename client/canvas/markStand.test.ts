@@ -19,7 +19,7 @@ import { cellAtPoint, groundSurface } from "../lib/groundCells.ts";
 
 /**
  * The stand rule for the board's marks (markStand.ts) is security
- * (docs/design-v1-isometric-view.md 5.2 and 12): a player never sees more
+ * (docs/design/design-v1-isometric-view.md 5.2 and 12): a player never sees more
  * in Isometric than Top-down shows. Each test is a property over random
  * fogged scenes, against an oracle that reads the fog through the fog
  * image's own decoding (lib/fogTiles.ts revealedMask) and the mark's own

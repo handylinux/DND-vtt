@@ -4,7 +4,7 @@ import { describe, test } from "node:test";
 
 /*
  * A Library tile opens what it shows in the handout viewer
- * (docs/design-v1-layout-hierarchy.md 5.3, docs/design-v1-pdf-handouts.md
+ * (docs/design/design-v1-layout-hierarchy.md 5.3, docs/design/design-v1-pdf-handouts.md
  * 8.4): the largest copy the row lists, under the title of a handout
  * showing it, or else what the image is.
  */
@@ -34,7 +34,7 @@ describe("viewing a library image", () => {
     assert.equal(viewTitle("c", undefined, []), "Token image");
   });
 
-  test("a handout of pages names the page the image fills, and one image keeps the handout's title alone (docs/design-v1-pdf-handouts.md 8.1)", () => {
+  test("a handout of pages names the page the image fills, and one image keeps the handout's title alone (docs/design/design-v1-pdf-handouts.md 8.1)", () => {
     const page = (assetId: string) => ({ assetId, width: 1584, height: 2048 });
     const letter = { assetId: "p1", pages: ["p1", "blank", "p3", "blank"].map(page), title: "Strange letter", shownAt: "2026-10-16T20:00:00.000Z" };
     assert.equal(viewTitle("p3", row("handout"), [letter]), "Strange letter, page 3");
@@ -50,7 +50,7 @@ describe("viewing a library image", () => {
   });
 });
 
-describe("a library tile's name and status (docs/design-v1-pdf-handouts.md 8.4)", () => {
+describe("a library tile's name and status (docs/design/design-v1-pdf-handouts.md 8.4)", () => {
   test("an image's name says not in use or uploading, and only the DM's tile shows a status", () => {
     const handout = { ...row("handout"), inUse: false };
     assert.deepEqual(imageTile(handout, { dm: true }), { label: "Handout, not in use", status: "Not in use" });
@@ -84,7 +84,7 @@ describe("a library tile's name and status (docs/design-v1-pdf-handouts.md 8.4)"
   });
 });
 
-describe("focus after the open tile is deleted (docs/design-v1-pdf-handouts.md 8.4)", () => {
+describe("focus after the open tile is deleted (docs/design/design-v1-pdf-handouts.md 8.4)", () => {
   const handouts = (keys: string[]) => ({ id: "handouts", heading: true, keys });
   const maps = (keys: string[]) => ({ id: "map", heading: true, keys });
 

@@ -4,7 +4,7 @@ import { sceneHexSpan } from "#shared/rules/hex.ts";
 import { SIZE_WORDS } from "../tokens/sizeWords.ts";
 
 /*
- * The words a hex scene shows (docs/design-v1-hex-grids.md section 6's UI
+ * The words a hex scene shows (docs/design/design-v1-hex-grids.md section 6's UI
  * words table and section 8). Every string that names the grid's cell
  * reads the scene's cell word through `cellWord`, the one the server's
  * refusals and undo labels read too, so a hex scene never says "square"

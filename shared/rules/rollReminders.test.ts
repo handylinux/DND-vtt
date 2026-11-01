@@ -18,7 +18,7 @@ function plain(text: string): string {
   return text.replaceAll("’", "'");
 }
 
-describe("roll reminders (docs/design-v1-dm-tools.md 3.3)", () => {
+describe("roll reminders (docs/design/design-v1-dm-tools.md 3.3)", () => {
   test("every reminder rests on words its SRD 5.2.1 rule says", () => {
     for (const rule of ROLL_REMINDER_RULES) {
       const entry = rule.source === "conditions" ? RULES_TEXT.conditions[rule.key as keyof typeof RULES_TEXT.conditions] : RULES_TEXT.statuses[rule.key as keyof typeof RULES_TEXT.statuses];
@@ -93,7 +93,7 @@ function onlyOn(keys: string[], expected: Map<D20Test, Partial<Short>>, level?: 
   }
 }
 
-describe("presets for every d20 roll (docs/design-v1-roll-options.md 3.2, Appendix C)", () => {
+describe("presets for every d20 roll (docs/design/design-v1-roll-options.md 3.2, Appendix C)", () => {
   test("Paralyzed, Petrified, Stunned and Unconscious fail Strength and Dexterity saves, and give initiative the tracker's hint", () => {
     for (const key of ["paralyzed", "petrified", "stunned", "unconscious"]) {
       onlyOn(

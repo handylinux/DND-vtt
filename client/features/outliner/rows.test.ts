@@ -26,7 +26,7 @@ function byKey(rows: OutlineRow[]): Map<string, OutlineRow> {
 }
 
 describe("the scene outliner's rows", () => {
-  test("traps (docs/design-v1-traps.md 4.6): each with its state, Found or Hidden as players get it, and a door trap whose door is gone", () => {
+  test("traps (docs/design/design-v1-traps.md 4.6): each with its state, Found or Hidden as players get it, and a door trap whose door is gone", () => {
     const state = room({
       scenes: { s1: scene("s1", { fogEnabled: true }) },
       traps: {
@@ -115,7 +115,7 @@ describe("the scene outliner's rows", () => {
     );
   });
 
-  test("a companion reads whose it is, away from its character when none of its tokens stands here, and searching companion finds it (docs/design-v1-combat-flow.md 3.6.10)", () => {
+  test("a companion reads whose it is, away from its character when none of its tokens stands here, and searching companion finds it (docs/design/design-v1-combat-flow.md 3.6.10)", () => {
     const state = room({ characters: { bree: character("bree", { name: "Bree" }) } });
     state.tokens.bt = token("bt", { kind: "pc", actor: { ref: "bree" }, sceneId: "s1" });
     state.tokens.ws = token("ws", { kind: "npc", name: "Wildfire Spirit", sceneId: "s1", ownerIds: ["p1"], companion: { of: "bree", turn: "shared" } });

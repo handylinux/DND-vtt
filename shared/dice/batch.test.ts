@@ -10,7 +10,7 @@ function rolls(n: number, roll: BatchRoll & { label?: string }): (BatchRoll & { 
   return Array.from({ length: n }, () => ({ ...roll }));
 }
 
-describe("the splitter (docs/design-v1-dice.md 8.4)", () => {
+describe("the splitter (docs/design/design-v1-dice.md 8.4)", () => {
   test("20 rolls go in one op with no part, and the 21st starts a second, both under the tag", () => {
     const one = batchRolls(rolls(20, { formula: "1d20+5" }), ENVELOPE);
     assert.ok(one.ok);

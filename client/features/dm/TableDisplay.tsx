@@ -15,7 +15,7 @@ import { usePreview } from "./previewContext.ts";
 import { displaysText, setShowView, useShowView } from "./tableDisplay.ts";
 
 /**
- * The DM panel's Table display section (docs/design-v1-dm-tools.md 3.1).
+ * The DM panel's Table display section (docs/design/design-v1-dm-tools.md 3.1).
  *
  * - "Open on this device" is for a laptop wired to the TV: a new window
  *   redeems a fresh code and draws only from the display's own session, so

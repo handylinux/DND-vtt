@@ -11,7 +11,7 @@ import { findRolls } from "./logic.ts";
 
 /**
  * What became of an op that rolls or applies, by its tag
- * (docs/design-v1-dice.md 1.2 and 8.7), for every surface that sends one:
+ * (docs/design/design-v1-dice.md 1.2 and 8.7), for every surface that sends one:
  * `sending` until its answer, `committed` with the lines it wrote,
  * `refused` with the reason, `checking` while the receipt lookup asks the
  * server, or `unknown`. It is the one place that reads acks, refusals and
@@ -51,7 +51,7 @@ function refusedPart(code: string, message: string): PartState {
 
 /**
  * A refused roll's or answer's words, as the server words them
- * (docs/design-v1-dice.md 7): the store's toast words open a refusal with
+ * (docs/design/design-v1-dice.md 7): the store's toast words open a refusal with
  * "Not saved.", which says the wrong thing where nothing was being saved.
  */
 export function refusalWords(refusal: Pick<OpRefusal, "text" | "message"> | undefined): string {
@@ -76,7 +76,7 @@ type Entry = {
   announced: boolean;
   /**
    * Its surface closed while the roll animation still held the result back
-   * (docs/design-v1-roll-animation.md 3.5), so no surface showed it and it
+   * (docs/design/design-v1-roll-animation.md 3.5), so no surface showed it and it
    * goes to the toasts, whatever the closing surfaces say.
    */
   unseen: boolean;
@@ -280,7 +280,7 @@ export class ReceiptTracker {
 
   /**
    * The surface that sent a roll claims its tag's voice while it is mounted
-   * (docs/design-v1-stat-block-rolls.md 8, D-261031-133), so of two lines
+   * (docs/design/design-v1-stat-block-rolls.md 8, D-261031-133), so of two lines
    * that show one result only the sender says it. Returns the release.
    */
   claimVoice(tag: string): () => void {
@@ -354,7 +354,7 @@ export function useReceipts(): ReceiptTracker {
 
 /**
  * Whether this surface says a tag's settled state: puts its result in its
- * live region, or gives its refusal `role="alert"` (docs/design-v1-stat-block-rolls.md
+ * live region, or gives its refusal `role="alert"` (docs/design/design-v1-stat-block-rolls.md
  * 8, D-261031-133). With `claim` the surface sent the roll and claims its
  * voice while mounted. A surface that said it keeps saying it, so its
  * words never leave its live region.
@@ -404,7 +404,7 @@ export class SurfaceVoice {
  * While mounted and shown the surface shows its result, so no toast tells it
  * again. A hidden sheet or pane keeps its panel mounted, so a surface there
  * watches nothing and reads null until shown, and the toast says what lands
- * meanwhile (docs/design-v1-stat-block-rolls.md 8). Gating here, not in each
+ * meanwhile (docs/design/design-v1-stat-block-rolls.md 8). Gating here, not in each
  * caller, keeps every surface in a panel to that rule.
  */
 export function useReceipt(watched: string | null): ReceiptState | null {

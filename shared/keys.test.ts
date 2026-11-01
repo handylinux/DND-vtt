@@ -21,7 +21,7 @@ describe("keys", () => {
     }
   });
 
-  test("wave 5's collections read and write by key (docs/design-v1-dm-tools.md 2.2)", () => {
+  test("wave 5's collections read and write by key (docs/design/design-v1-dm-tools.md 2.2)", () => {
     const state = room();
     const page = { id: "pg1", rev: 0, title: "P", access: "all" as const, blocks: [] };
     const pin = { id: "p1", rev: 0, sceneId: "s1", x: 1, y: 1, color: "#ffffff", visibility: "all" as const };
@@ -39,7 +39,7 @@ describe("keys", () => {
     }
   });
 
-  test("documents of handout pages read and write by key (docs/design-v1-pdf-handouts.md 3.3)", () => {
+  test("documents of handout pages read and write by key (docs/design/design-v1-pdf-handouts.md 3.3)", () => {
     const state = room();
     const doc = { id: "d1", rev: 0, title: "Strange letter", pages: [{ assetId: "a", width: 1584, height: 2048 }], createdAt: "x" };
     const key = keys.handoutDoc("d1");
@@ -51,7 +51,7 @@ describe("keys", () => {
     assert.equal(readEntity(writeEntity(next, key, null), key), null);
   });
 
-  test("companion stat blocks read and write by key (docs/design-v1-companion-stat-blocks.md 3.6)", () => {
+  test("companion stat blocks read and write by key (docs/design/design-v1-companion-stat-blocks.md 3.6)", () => {
     const state = room();
     const block = companionBlock("b1", "c1");
     const key = keys.companionBlock("b1");
@@ -75,7 +75,7 @@ describe("keys", () => {
     assert.equal(collectionOf(keys.sight("s", 0, 0)), null, "sight is derived, never a stored collection");
   });
 
-  test("memory and the scenes' marks read and write by key (docs/design-v1-map-discovery.md 5.3, 5.5)", () => {
+  test("memory and the scenes' marks read and write by key (docs/design/design-v1-map-discovery.md 5.3, 5.5)", () => {
     assert.deepEqual(parseKey(keys.memory("s1", 2, 3)), { kind: "memory", id: "s1:2,3", sceneId: "s1", cx: 2, cy: 3 });
     assert.deepEqual(parseKey(keys.memoryBy("s1", "p1", 2, 3)), { kind: "memoryBy", id: "s1:p1:2,3", sceneId: "s1", memberId: "p1", cx: 2, cy: 3 });
     assert.deepEqual(parseKey(keys.played("s1")), { kind: "played", id: "s1" });

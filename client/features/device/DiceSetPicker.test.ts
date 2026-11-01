@@ -4,7 +4,7 @@ import { describe, test } from "node:test";
 import { createStore } from "zustand/vanilla";
 
 /*
- * The dice set picker's tiles in rows of four (docs/design-v1-roll-animation.md
+ * The dice set picker's tiles in rows of four (docs/design/design-v1-roll-animation.md
  * 9.2). The chosen tile drew a 2 px border where the others drew 1 px, so its
  * row stood 2 px taller than the other, and choosing a set in the other row
  * moved every tile under it (LP9-DICE-1).
@@ -40,7 +40,7 @@ describe("the dice set picker's tiles", () => {
     assert.equal(tileStyle(false, true).border, `${theme.line.border}px solid ${theme.color.border}`);
   });
 
-  test("with the switch off the chosen tile keeps its mark, a dim outline with no tint, as a chosen option that cannot change now does (docs/design-v1-look-pass-2.md D37)", () => {
+  test("with the switch off the chosen tile keeps its mark, a dim outline with no tint, as a chosen option that cannot change now does (docs/design/design-v1-look-pass-2.md D37)", () => {
     assert.equal(tileStyle(true, false).border, `${theme.line.strong}px solid ${theme.color.textDisabled}`);
     assert.equal(tileStyle(true, false).background, "transparent");
     assert.equal(tileStyle(false, false).border, `${theme.line.border}px solid ${theme.color.border}`);
@@ -50,7 +50,7 @@ describe("the dice set picker's tiles", () => {
 /*
  * The Dice legend stood right on its tiles, and on its help with Roll
  * animation off: a fieldset's gap never reaches a rendered legend, which
- * is no grid item (docs/design-v1-spacing-pass.md S2).
+ * is no grid item (docs/design/design-v1-spacing-pass.md S2).
  */
 describe("the dice legend's gaps", () => {
   /** The picker as a room draws it, with no room loaded: it reads this device's settings alone. */

@@ -12,7 +12,7 @@ import type { RoomGateway } from "./gateway.ts";
 import type { Pool } from "./persistence.ts";
 
 /**
- * A DM's view as a player in the room actor (docs/design-v1-per-player-vision.md
+ * A DM's view as a player in the room actor (docs/design/design-v1-per-player-vision.md
  * 7.4, review R2-SEC-6): its key is its own, so its hello never cancels
  * the delayed snapshot of its DM's device with the same client id, it never
  * becomes that device's socket, and it ends when its player leaves.

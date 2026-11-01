@@ -12,7 +12,7 @@ import { solid } from "./testImages.ts";
 
 /**
  * Deleting an image only players remember (decision D-261026-34,
- * docs/design-v1-map-discovery.md 5.4): the library does not mark it in
+ * docs/design/design-v1-map-discovery.md 5.4): the library does not mark it in
  * use, and the delete drops the remembered stamps of it from the party's
  * memory and every holder's, through a stored `sys.remember`, then deletes
  * it. A live use still refuses, and a remembered stamp of it written again

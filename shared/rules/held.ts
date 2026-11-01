@@ -10,7 +10,7 @@ import { cornerAt, hexAt, hexCorners, hexInScene, hexKey, hexNeighbors, hexSubce
 import { seenFogBits } from "./vision.ts";
 
 /*
- * What a player holds of a scene's build (docs/design-v1-map-discovery.md
+ * What a player holds of a scene's build (docs/design/design-v1-map-discovery.md
  * 5.1, 5.2 and decision 1), read by the projection, the touch rule's words
  * and the area rule (decision 13), so all three read one ground.
  *
@@ -68,7 +68,7 @@ export type Ground = {
   rangeOwn(r: CellRange): boolean;
 };
 
-/** Whether a member sees for themselves on a scene (docs/design-v1-per-player-vision.md 6.1). */
+/** Whether a member sees for themselves on a scene (docs/design/design-v1-per-player-vision.md 6.1). */
 export function holdsOwnSight(state: RoomState, sceneId: string, memberId: string): boolean {
   if (state.scenes[sceneId]?.vision?.perPlayer !== true || state.members[memberId]?.kind !== "player") return false;
   return state.holders?.[sceneId]?.entries.some((e) => e.on && e.memberId === memberId) === true;
@@ -294,7 +294,7 @@ function hexProbe(grid: HexGrid, hx: Hex): SightProbe {
 
 /**
  * The ground a player's own device reads from its copy of the room
- * (docs/design-v1-map-discovery.md 6, the device's live ground): its fog
+ * (docs/design/design-v1-map-discovery.md 6, the device's live ground): its fog
  * is the held layer, with fog on and vision off all of it is live, and
  * with both on only its sight is, since its fog merges the DM's reveals
  * into explored ground (ASTRA-28). The server's live ground holds this

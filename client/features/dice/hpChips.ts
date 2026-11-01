@@ -7,7 +7,7 @@ import { hpChips, type HpChip } from "./options.ts";
 
 /*
  * The damage and healing lines this device already applied through an HP
- * entry's chip (docs/design-v1-roll-options.md 4.3), kept for the Room page
+ * entry's chip (docs/design/design-v1-roll-options.md 4.3), kept for the Room page
  * so the chip goes on every entry at once, the token bar's and the panel's
  * alike. Applying is this device's own act, so nothing is sent for it and
  * another viewer still sees the line as a chip.

@@ -15,9 +15,9 @@ import { formatFeet, keptStops, measureStops } from "./ruler.ts";
  * already starts a ruler or adds a waypoint.
  *
  * They sit behind a chip in the Ruler's row, "Kept rulers (2)", whose
- * setting popover holds one danger row per ruler (docs/design-v1-tool-options.md
+ * setting popover holds one danger row per ruler (docs/design/design-v1-tool-options.md
  * 9.2), the eraser before its words as Clear has it, and at the left as
- * ⋯'s rows are (docs/design-v1-look-pass-2.md D17). The popover stays open
+ * ⋯'s rows are (docs/design/design-v1-look-pass-2.md D17). The popover stays open
  * as rulers go, and closes with its chip when none is left.
  */
 

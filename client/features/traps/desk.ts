@@ -4,7 +4,7 @@ import { displayName } from "../../lib/scene.ts";
 import { findDoor } from "../doors/doors.ts";
 
 /*
- * What a trap going off shows the DM (docs/design-v1-traps.md 4.3), as
+ * What a trap going off shows the DM (docs/design/design-v1-traps.md 4.3), as
  * plain functions for node --test: a card on the DM desk for each
  * springing still waiting, newest first, and the lines it reads.
  */

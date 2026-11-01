@@ -8,7 +8,7 @@ import { attachAllowed, type AttachViewer, type RightsView } from "./rights.ts";
 
 /**
  * The words a link adds to the token panel's name block and the tracker's
- * rows (docs/design-v1-attach.md 4.5 and 7.1), as plain functions for
+ * rows (docs/design/design-v1-attach.md 4.5 and 7.1), as plain functions for
  * node --test. They read only the links in the viewer's own copy (8.5), so
  * a player never reads a link their projection left out, and every name is
  * as the viewer sees it.
@@ -57,7 +57,7 @@ export function steerChoice(view: RightsView, viewer: AttachViewer, rider: Token
 
 /**
  * What a ride's Controlled or Independent means, as the Help line under the
- * two words (docs/design-v1-look-pass-2.md 2.7), which is also the
+ * two words (docs/design/design-v1-look-pass-2.md 2.7), which is also the
  * choice's description: "Warhorse moves on Thorn's turn."
  */
 export function steerWords(controlled: boolean, holderName: string, riderName: string): string {

@@ -51,7 +51,7 @@ export function oneTarget(target: ActorTarget, access: HpAccessLevel, atZero: bo
 }
 
 /**
- * An upright phone's bar around the entry (docs/design-v1-bar-compact.md
+ * An upright phone's bar around the entry (docs/design/design-v1-bar-compact.md
  * 3.3 and 5.3), while it rests as the strip or is expanded from it. The
  * field row stands in the strip's quick row (canvas/RestRow.tsx) in both,
  * so the same field, with its text, caret, focus and the phone's keyboard,
@@ -88,7 +88,7 @@ export function HpEntry(props: {
   /**
    * The field and Apply above the mode buttons, for a short bar, so Apply
    * shows without a scroll on a phone held sideways
-   * (docs/design-v1-token-panel.md 3.3). Typed math works from the field alone.
+   * (docs/design/design-v1-token-panel.md 3.3). Typed math works from the field alone.
    */
   fieldFirst?: boolean;
   rest?: HpRest;
@@ -126,7 +126,7 @@ export function HpEntry(props: {
   const dm = useRoomView((s) => s.you?.role === "dm");
   const operation = entryOperation(props.access, mode, preview);
   const lines = deadLines(props.targets, operation, { revives, dm });
-  // The newest rolled damage or healing, offered under Damage and Heal (docs/design-v1-roll-options.md 4.3).
+  // The newest rolled damage or healing, offered under Damage and Heal (docs/design/design-v1-roll-options.md 4.3).
   const chips = useHpChips(mode === "damage" || mode === "heal" ? mode : null);
   const markApplied = useMarkChipApplied();
   const rest = props.rest;
@@ -199,7 +199,7 @@ export function HpEntry(props: {
    * flip while focus is inside the entry, as the window is resized or alert
    * cards come and go, keeps that order and shows the new one by CSS order
    * alone, since moving the focused element would drop its focus
-   * (docs/design-v1-token-window.md 5.8). Once focus leaves, the order
+   * (docs/design/design-v1-token-window.md 5.8). Once focus leaves, the order
    * follows what shows again.
    */
   const fieldFirst = props.fieldFirst === true;
@@ -434,7 +434,7 @@ function modeFill(mode: HpMode): string {
   return mode === "set" ? theme.color.accentTint : `${modeColor(mode)}33`;
 }
 
-/** The chosen mode in its own color rather than the accent: red for damage and green for healing carry meaning (docs/design-v1-visual.md 2.3). */
+/** The chosen mode in its own color rather than the accent: red for damage and green for healing carry meaning (docs/design/design-v1-visual.md 2.3). */
 function modeLook(mode: HpMode): CSSProperties {
   return { border: `${theme.line.border}px solid ${modeColor(mode)}`, background: modeFill(mode), color: theme.color.text };
 }
@@ -448,7 +448,7 @@ export function HpSection(props: {
   access: { full: boolean; hp: HpAccessLevel; deathSaves: boolean; life: boolean };
   /** The creature's name, for the entry's lines on the dead. */
   name?: string;
-  /** The token, when there is one: an effect companion and every object have no life controls (docs/design-v1-combat-flow.md 3.6.6). */
+  /** The token, when there is one: an effect companion and every object have no life controls (docs/design/design-v1-combat-flow.md 3.6.6). */
   token?: { kind: TokenKind; companion?: unknown };
 }) {
   const { actor, access, target } = props;
@@ -502,7 +502,7 @@ export function HpSection(props: {
       ) : null}
 
       {access.hp === "all" && hp ? (
-        // Side by side at every width (docs/design-v1-token-panel.md 3.7): two equal columns, and where a column cannot hold a
+        // Side by side at every width (docs/design/design-v1-token-panel.md 3.7): two equal columns, and where a column cannot hold a
         // label beside its field, both labels go above their fields together (globals.css), so the pair never staggers.
         <div
           role="group"
@@ -635,13 +635,13 @@ export function DeathSaves(props: { saves: { ok: number; fail: number }; canEdit
 }
 
 /**
- * The death save row's Roll (docs/design-v1-roll-options.md 4.5), beside
+ * The death save row's Roll (docs/design/design-v1-roll-options.md 4.5), beside
  * the row's note, with its result on one line under it. It sends
  * `actor.deathRoll`, which the server rolls and counts from the state
  * then, so nothing follows once the line lands and a heal meanwhile is
  * never overwritten. The row key is the Dice panel's own, so both show
  * the same newest result. It waits, saying why, while this device shows
- * the creature's Regeneration open (docs/design-v1-combat-controls.md 2.3).
+ * the creature's Regeneration open (docs/design/design-v1-combat-controls.md 2.3).
  */
 function DeathRoll(props: { target: ActorTarget; children: ReactNode }) {
   const { target } = props;
@@ -664,7 +664,7 @@ function DeathRoll(props: { target: ActorTarget; children: ReactNode }) {
   const roll = (override?: RollModeOverride) => {
     if (waiting || blocked || !dice) return;
     if (override && !valid()) return;
-    // The preset is read at the tap, from the creature's effects then (presets.ts). While its turn's death save is open, the roll settles it (docs/design-v1-combat-controls.md 2.3).
+    // The preset is read at the tap, from the creature's effects then (presets.ts). While its turn's death save is open, the roll settles it (docs/design/design-v1-combat-controls.md 2.3).
     option.deathSave(target, presetFor(dice, target, { kind: "deathSave" }), row, openRecord(dice.view.encounter, actorOf(dice.view, target), "deathSave"), override);
   };
   const menu = useRollModeMenu({

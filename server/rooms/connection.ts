@@ -52,7 +52,7 @@ export class Connection {
   readonly roomId: string;
   readonly ip: string;
   /**
-   * A table display (docs/design-v1-dm-tools.md 3.1). Its role stays
+   * A table display (docs/design/design-v1-dm-tools.md 3.1). Its role stays
    * `'player'`, the role every projection and routing rule reads, so it
    * receives what a player who owns nothing receives. This flag is read
    * only where a display differs: it sends nothing but `hello` and `ping`,
@@ -62,7 +62,7 @@ export class Connection {
   readonly display: boolean;
   /**
    * The DM who opened this socket to view as a player
-   * (docs/design-v1-per-player-vision.md 7.4), or null. Its `memberId` is
+   * (docs/design/design-v1-per-player-vision.md 7.4), or null. Its `memberId` is
    * then the player's and its role `'player'`, so every projection and
    * routing rule treats it as that player's socket. It sends nothing but
    * `hello` and `ping`, never takes acknowledgments, is in no presence

@@ -26,7 +26,7 @@ function world() {
   });
 }
 
-describe("the DM's trap cards (docs/design-v1-traps.md 4.3)", () => {
+describe("the DM's trap cards (docs/design/design-v1-traps.md 4.3)", () => {
   test("every waiting springing, newest first", () => {
     assert.deepEqual(
       deskTraps(world().traps).map((d) => `${d.trap.id} ${d.due.id}`),

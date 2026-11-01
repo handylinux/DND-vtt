@@ -1,7 +1,7 @@
 import { scopeSlot } from "../../state/scope.ts";
 
 /**
- * The page a reader was on, per showing (docs/design-v1-pdf-handouts.md
+ * The page a reader was on, per showing (docs/design/design-v1-pdf-handouts.md
  * 5.1): the popup's `showingKey`, or the Library's `doc:<id>` or
  * `image:<id>`. The viewer writes it whenever its current page changes and
  * reads it every time a showing starts in it, so a handout closed on page 2

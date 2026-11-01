@@ -4,7 +4,7 @@ import type { WebGLRenderer } from "three";
 import { createStage, type StageDeps } from "./stage.ts";
 
 /*
- * The stage's lifecycle under Node (docs/design-v1-roll-animation.md 7):
+ * The stage's lifecycle under Node (docs/design/design-v1-roll-animation.md 7):
  * canvases and the renderer are stand-ins that record what reaches them,
  * so a warm-up or previews still waiting for the font when the stage goes
  * are seen never to touch the renderer after it.

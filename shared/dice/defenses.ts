@@ -5,7 +5,7 @@ import type { StatBlockMonster } from "../srd/monsters.ts";
 
 /**
  * A creature's damage and condition defenses for the rules
- * (docs/design-v1-roll-options.md 3.3), with their qualifiers kept: a
+ * (docs/design/design-v1-roll-options.md 3.3), with their qualifiers kept: a
  * resistance "from nonmagical attacks" or an immunity "except from its
  * vampire master" is not one the app can apply alone. The monster filters
  * (client/features/tokens/monsterFilters.ts monsterFacts) drop qualifiers on

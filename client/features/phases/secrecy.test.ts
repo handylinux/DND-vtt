@@ -8,7 +8,7 @@ import { addPhase, movePhase, renamePhase } from "./rules.ts";
 
 /*
  * Players receive the active phase's image and nothing about the others
- * (docs/design-v1-maps-vision.md section 3.4), so "On fire" never spoils
+ * (docs/design/design-v1-maps-vision.md section 3.4), so "On fire" never spoils
  * ahead. The projection is the boundary. These run the DM's real edits from
  * this folder through the reducer and look at everything a player is sent:
  * the whole projection, the scene entity the fan-out compares, and the

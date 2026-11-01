@@ -13,7 +13,7 @@ import { amountOutcome, backLabel, emptyText, fullText, left, reasonText, RESET_
 
 /**
  * Where a character's class resource rows stand
- * (docs/design-v1-combat-controls.md 7.2): `card` in its turn card, and
+ * (docs/design/design-v1-combat-controls.md 7.2): `card` in its turn card, and
  * `list` in its tracker row's Uses group and its token bar's Uses drawer,
  * the off-turn list.
  */
@@ -21,7 +21,7 @@ export type ResourceRowsForm = "card" | "list";
 
 /**
  * A character's class resources as rows, each with its count and Use, Use…
- * for a pool, and Restore (docs/design-v1-combat-controls.md 7.2).
+ * for a pool, and Restore (docs/design/design-v1-combat-controls.md 7.2).
  * The turn card shows Use alone, as its rows are the turn's menu, and the
  * off-turn list adds Restore, and Edit where the Combat section's Uses
  * passes `edit`. Nothing at all for a character with none, or for a
@@ -152,7 +152,7 @@ function ResourceRow(props: { characterId: CharacterId; resource: ClassResource;
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: theme.space(2), rowGap: theme.space(1), minHeight: theme.touch }}>
         <div style={{ flex: "1 1 auto", minWidth: 0 }}>
           {/*
-           * The count stands at the name line's right end, as pips do for monster rows (docs/design-v1-monster-uses.md 3.7).
+           * The count stands at the name line's right end, as pips do for monster rows (docs/design/design-v1-monster-uses.md 3.7).
            * A pool keeps its words at every size: it is spent by an amount, not a pip at a time, and a small one would flip to words as it grows (D-261026-2).
            */}
           <NameLine name={r.name} spoken={countWords({ left: remaining, max: r.max })} end={<CountPips left={remaining} max={r.max} words={pool} />} />
@@ -181,7 +181,7 @@ function ResourceRow(props: { characterId: CharacterId; resource: ClassResource;
             </RowButton>
           ) : null}
           {props.edit ? (
-            // The pencil alone, at its 44 px, so Use and Restore take the rest of the line (docs/design-v1-token-sections.md 3.1).
+            // The pencil alone, at its 44 px, so Use and Restore take the rest of the line (docs/design/design-v1-token-sections.md 3.1).
             <Button size="sm" icon="edit" iconOnly="always" onClick={(e) => props.edit?.(r, e.currentTarget)} style={{ flex: "none" }}>
               {`Edit ${r.name}`}
             </Button>
@@ -248,7 +248,7 @@ function ResourceRow(props: { characterId: CharacterId; resource: ClassResource;
 
 /**
  * A row's Use or Restore. Off, it keeps its focus and says why through
- * the line `off` names (docs/design-v1-combat-controls.md 9), rather than
+ * the line `off` names (docs/design/design-v1-combat-controls.md 9), rather than
  * dropping out of the Tab order as a disabled button would.
  */
 function RowButton(props: { ref?: Ref<HTMLButtonElement>; label: string; off?: string; busy?: boolean; expanded?: boolean; onClick(): void; children: ReactNode }) {

@@ -13,10 +13,10 @@ import { BAR_PX, dragTop, gripStep, separatorValue, type PaneSizes } from "./spl
 
 /**
  * The bar between the side panel's two panels
- * (docs/design-v1-split-panel.md 3.1, 3.3 and 3.4): the bottom pane's
+ * (docs/design/design-v1-split-panel.md 3.1, 3.3 and 3.4): the bottom pane's
  * header and the divider. Left to right, the grip, the bottom panel's
  * name, which opens "Panel below", then Swap and Close. It takes the tab
- * row's look (docs/design-v1-side-headers.md): the same band, padding and
+ * row's look (docs/design/design-v1-side-headers.md): the same band, padding and
  * icons, and the name in the chosen tab's pill, as More wears it for a
  * panel it holds, so the panel below reads as the same kind of thing as
  * the one on top.
@@ -27,7 +27,7 @@ import { BAR_PX, dragTop, gripStep, separatorValue, type PaneSizes } from "./spl
  * passes the slop a tap on the map has, the top pane following the
  * pointer within both panes' least heights, and the release stores it.
  * Escape or a cancelled pointer puts it back. These are the token
- * window's drag rules (docs/design-v1-token-window.md 4.2), on one axis.
+ * window's drag rules (docs/design/design-v1-token-window.md 4.2), on one axis.
  */
 
 /** Marks the bar, so a pane's subpage focus leaves focus on its name (features/panels.ts useSubpageFocus) and the O key knows which side of it focus is. */
@@ -221,7 +221,7 @@ export function SplitBar(props: {
         {...PILL_FOCUS}
         style={{ ...NAME, ...tabLook(true).button }}
       >
-        {/* The panel's icon before its name, as its tab draws it (docs/design-v1-icons-2.md 3.1). The title cuts in its own span, and the name keeps the whole title and says where it is, so speech input that says "Token" finds it. */}
+        {/* The panel's icon before its name, as its tab draws it (docs/design/design-v1-icons-2.md 3.1). The title cuts in its own span, and the name keeps the whole title and says where it is, so speech input that says "Token" finds it. */}
         <Icon name={props.below.icon} size="sm" style={{ marginRight: theme.space(0.5) }} />
         <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
           {props.below.title}

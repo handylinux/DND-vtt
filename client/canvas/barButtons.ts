@@ -4,7 +4,7 @@ import type { HpMode, HpParse } from "../features/tokens/hpInput.ts";
 
 /*
  * The single-token bar's buttons and its short layout
- * (docs/design-v1-token-panel.md 3.3), as plain functions for node --test.
+ * (docs/design/design-v1-token-panel.md 3.3), as plain functions for node --test.
  */
 
 export type BarButtonId =
@@ -37,16 +37,16 @@ export type BarButtonInput = {
   door: boolean;
   /** The viewer may change the token's light, on a vision scene or while it is lit. */
   light: boolean;
-  /** The token is a companion (docs/design-v1-combat-flow.md 3.6), whose owners dismiss it. */
+  /** The token is a companion (docs/design/design-v1-combat-flow.md 3.6), whose owners dismiss it. */
   companion: boolean;
   /**
    * On a carried token, Get off, Put down or Let go for whoever may undo the
    * link, then Attach for whoever may attach the token to anything
-   * (docs/design-v1-attach.md 4.1 and 4.3), in that order. Empty for neither.
+   * (docs/design/design-v1-attach.md 4.1 and 4.3), in that order. Empty for neither.
    */
   attach: readonly ("detach" | "attach")[];
   /**
-   * The creature's combat uses (docs/design-v1-combat-controls.md 6): "yes"
+   * The creature's combat uses (docs/design/design-v1-combat-controls.md 6): "yes"
    * for an actor with legendary counts, spent uses or class resources, or a
    * block that lists a use, "loading" while its block loads, whose place is
    * held, and "no" for none. Left out, none.
@@ -60,13 +60,13 @@ export type BarButtonInput = {
  * just reached, which come and go with it, so it leads only while one of
  * them shows. The steady line starts with Conditions, Hidden and
  * Multi-select, which the default width keeps on one line
- * (docs/design-v1-token-window.md 3.2), so nothing that comes and goes
+ * (docs/design/design-v1-token-window.md 3.2), so nothing that comes and goes
  * moves them: Roll, Uses for a creature with combat uses, Light and
  * Attach (after Get off on a carried token) follow, on the same line where
  * room is left.
  * Roll opens the Dice panel's options, whose Ask switch asks the player of
  * a creature a player plays, so the single bar has no Request a roll
- * (docs/design-v1-roll-options.md 4.5). The less-often row keeps the
+ * (docs/design/design-v1-roll-options.md 4.5). The less-often row keeps the
  * destructive and setup buttons apart, so a quick tap meant for Conditions
  * or Hidden never lands on Delete. Each button shows only where it always
  * has. Details is in none: it sits in the read-more row with the summary
@@ -84,7 +84,7 @@ export function barButtons(input: BarButtonInput): { passing: BarButtonId[]; pla
   play.push("multiSelect");
   // After Multi-select: any earlier, Roll would push Multi-select to a second line at the default width.
   if (dm || owner) play.push("roll");
-  // After Roll, held while the block loads, so Light and Attach do not jump when it shows (docs/design-v1-combat-controls.md 6).
+  // After Roll, held while the block loads, so Light and Attach do not jump when it shows (docs/design/design-v1-combat-controls.md 6).
   if ((dm || owner) && input.uses !== undefined && input.uses !== "no") play.push("uses");
   if ((dm || owner) && input.light) play.push("light");
   play.push(...input.attach);
@@ -95,7 +95,7 @@ export function barButtons(input: BarButtonInput): { passing: BarButtonId[]; pla
   return { passing, play, less };
 }
 
-/** A token that belongs to a character as its companion (docs/design-v1-combat-flow.md 3.6), whose owners who are not the DM dismiss it. */
+/** A token that belongs to a character as its companion (docs/design/design-v1-combat-flow.md 3.6), whose owners who are not the DM dismiss it. */
 export function isCompanion(token: object): boolean {
   return "companion" in token && token.companion !== undefined && token.companion !== null;
 }
@@ -124,7 +124,7 @@ export type BarRoom = Omit<Parameters<typeof placeBar>[0], "height">;
  * what the lane gives the bar, so tall alert cards over a docked bar count.
  *
  * On an upright phone the bar rests as a strip and expands up from it
- * (docs/design-v1-bar-compact.md 5.1), so its capacity is the expanded
+ * (docs/design/design-v1-bar-compact.md 5.1), so its capacity is the expanded
  * bar's room on that screen (barDock.ts spanRoomAtWorst), the screen's
  * alone: a phone keeps one layout, and Apply one place in view, whichever
  * token is tapped. That room leaves the full layout's Apply out of view
@@ -149,7 +149,7 @@ export function barCapacity(room: BarRoom): number | null {
  * span, a docked bar under tall alert cards while they stand there, and an
  * upright phone's bar where the expanded bar's room would leave its full
  * layout's Apply out of view, which now holds only on the smallest phones
- * at a larger interface size (docs/design-v1-bar-compact.md 9.1). It keeps
+ * at a larger interface size (docs/design/design-v1-bar-compact.md 9.1). It keeps
  * AC, HP and the HP entry at the top, and "More stats" holds the rest.
  */
 export function barShort(room: BarRoom): boolean {
@@ -163,7 +163,7 @@ export function barShort(room: BarRoom): boolean {
  * The mode the bar draws in, by the rule placeBar uses (barDock.ts
  * heldOrOpenMode): the strip held since it showed, or else the opening
  * rule, which counts a roll card standing at the foot as map
- * (docs/design-v1-bar-compact.md 2).
+ * (docs/design/design-v1-bar-compact.md 2).
  */
 function roomMode(room: BarRoom, free: Box): BarMode {
   return heldOrOpenMode({ layout: room.layout, free, foot: room.foot, cardAt: room.cardAt ?? null, heldMode: room.heldMode ?? null });
@@ -174,7 +174,7 @@ function roomMode(room: BarRoom, free: Box): BarMode {
 /** The HP field's least width in the strip, where three digits and a sign still show (R14). The fit counts the lead's field at this. */
 export const REST_FIELD_MIN = 56;
 
-/** The passing actions, newest first, which take Roll's place in the strip while one applies (docs/design-v1-bar-compact.md 3.3). */
+/** The passing actions, newest first, which take Roll's place in the strip while one applies (docs/design/design-v1-bar-compact.md 3.3). */
 const PASSING: readonly string[] = ["undoMove", "countLeg", "door"];
 
 /*

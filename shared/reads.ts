@@ -46,7 +46,7 @@ function holderRead(state: RoomState, target: ActorTarget, fields: string[]): Re
 
 /**
  * A "save ends" request's creature, whose effect a pass removes and a close
- * settles (docs/design-v1-roll-request.md 7.5): an answer or a close of such
+ * settles (docs/design/design-v1-roll-request.md 7.5): an answer or a close of such
  * a request reads its effects, so a DM's view that lacks the creature, a
  * token on a scene the DM is not viewing, waits for the server.
  */
@@ -70,15 +70,15 @@ export function reads(op: Op, state: RoomState): Reads {
     case "sys.restore":
     case "sys.explore":
     case "sys.remember":
-    // Who sees for themselves joins with each player's layer, which only the server holds (docs/design-v1-per-player-vision.md 6.1).
+    // Who sees for themselves joins with each player's layer, which only the server holds (docs/design/design-v1-per-player-vision.md 6.1).
     case "vision.holders":
-    // The server rolls (docs/design-v1-dice.md 4.5), so no client predicts a roll. It waits for the `ev`.
+    // The server rolls (docs/design/design-v1-dice.md 4.5), so no client predicts a roll. It waits for the `ev`.
     case "sys.dice":
     case "dice.roll":
     case "roll.dice":
     case "actor.deathRoll":
     case "actor.rechargeRoll":
-    // An ask reads its damage roll's lines from the log, which only the server holds whole (docs/design-v1-player-save-spell.md 5.6).
+    // An ask reads its damage roll's lines from the log, which only the server holds whole (docs/design/design-v1-player-save-spell.md 5.6).
     case "cast.ask":
       return NEVER;
 
@@ -110,7 +110,7 @@ export function reads(op: Op, state: RoomState): Reads {
 
     case "token.create": {
       // A companion's checks read its character's tokens and the walls, and a player's writes the DM's line, so its
-      // form waits for the server (docs/design-v1-combat-flow.md 4.6).
+      // form waits for the server (docs/design/design-v1-combat-flow.md 4.6).
       if (op.token.companion) return NEVER;
       const r: Read[] = [{ key: keys.scene(op.token.sceneId) }];
       if ("ref" in op.token.actor) r.push({ key: keys.character(op.token.actor.ref) });
@@ -124,16 +124,16 @@ export function reads(op: Op, state: RoomState): Reads {
       const r: Read[] = [{ key: keys.token(op.tokenId), ...(op.patch.companionReaction !== undefined ? { fields: ["companion"] } : {}) }];
       if (op.patch.sceneId !== undefined) r.push({ key: keys.scene(op.patch.sceneId) });
       if (op.patch.actor) r.push(holderRead(state, { tokenId: op.tokenId }, op.patch.actor.hp ? ["hp", "life"] : ["life"]));
-      // A companion's block link reads the block's character, which the DM's and the owners' views hold (docs/design-v1-companion-stat-blocks.md 4.4).
+      // A companion's block link reads the block's character, which the DM's and the owners' views hold (docs/design/design-v1-companion-stat-blocks.md 4.4).
       if (op.patch.actor?.blockId) r.push({ key: keys.companionBlock(op.patch.actor.blockId), fields: ["characterId"] });
       return of(r);
     }
-    // A companion's deletion rewrites the fight's history (docs/design-v1-combat-flow.md 3.6.8).
+    // A companion's deletion rewrites the fight's history (docs/design/design-v1-combat-flow.md 3.6.8).
     case "token.delete": {
       const token = state.tokens[op.tokenId];
       return of([{ key: keys.token(op.tokenId) }, { key: keys.encounterHistory }], token ? [`scene:${token.sceneId}`, "encounter"] : ["encounter"]);
     }
-    // A holder's move reads its group as the viewer's copy holds it (docs/design-v1-attach.md 8.4). A visible token that
+    // A holder's move reads its group as the viewer's copy holds it (docs/design/design-v1-attach.md 8.4). A visible token that
     // rides a holder the viewer cannot see moves only in the server's answer.
     case "token.move":
       return of(groupReads(state, [op.tokenId]));
@@ -175,7 +175,7 @@ export function reads(op: Op, state: RoomState): Reads {
     }
     case "actor.deathSave":
       return of([holderRead(state, op.target, ["deathSaves", "life"])]);
-    // A use reads only its creature's counts, which its owners' views hold whole (docs/design-v1-combat-controls.md 2.2). A prompt reads
+    // A use reads only its creature's counts, which its owners' views hold whole (docs/design/design-v1-combat-controls.md 2.2). A prompt reads
     // the turn that runs, and Regeneration's heal writes a line whose take back reads the fight, so it waits for the server.
     case "actor.use":
       return op.use.kind === "regenerate" ? NEVER : of([holderRead(state, op.target, ["life"])]);
@@ -215,7 +215,7 @@ export function reads(op: Op, state: RoomState): Reads {
     case "monster.update":
     case "monster.delete":
       return of([{ key: keys.monster(op.monsterId) }]);
-    // A companion's stat blocks (docs/design-v1-companion-stat-blocks.md 4.4). The DM's and the character's owners'
+    // A companion's stat blocks (docs/design/design-v1-companion-stat-blocks.md 4.4). The DM's and the character's owners'
     // views hold the character and its blocks, so both predict a save at once.
     case "companionBlock.create":
       return of([{ key: keys.character(op.block.characterId) }]);
@@ -318,7 +318,7 @@ export function reads(op: Op, state: RoomState): Reads {
     case "handoutDoc.delete":
       return of([{ key: keys.handoutDoc(op.docId) }]);
 
-    // Wave 5 (docs/design-v1-dm-tools.md). A group edit reads only its tokens, so a DM's on tokens in view replays at
+    // Wave 5 (docs/design/design-v1-dm-tools.md). A group edit reads only its tokens, so a DM's on tokens in view replays at
     // once, and a player's waits when any target is redacted (section 3.5).
     case "token.updateMany":
       return of(op.tokenIds.map((id) => ({ key: keys.token(id) })));
@@ -360,7 +360,7 @@ export function reads(op: Op, state: RoomState): Reads {
     }
     case "pin.remove":
       return of([{ key: keys.pin(op.pinId) }]);
-    // A trap names the doors, lights, stamps and tokens of its scene (docs/design-v1-traps.md 6.2), so the DM's view of it reads the scene whole.
+    // A trap names the doors, lights, stamps and tokens of its scene (docs/design/design-v1-traps.md 6.2), so the DM's view of it reads the scene whole.
     case "trap.create":
       return of([{ key: keys.scene(op.trap.sceneId) }], [`scene:${op.trap.sceneId}`]);
     case "trap.update": {
@@ -412,7 +412,7 @@ function groupReads(state: RoomState, named: readonly string[]): Read[] {
 }
 
 /**
- * The scene whose `shared` companions a Next clears (docs/design-v1-combat-flow.md
+ * The scene whose `shared` companions a Next clears (docs/design/design-v1-combat-flow.md
  * 3.6.8 and 4.6): the landing row token's scene, or the players' scene for
  * a row with no token. A DM's view that holds every row's token holds the
  * token's scene whole, so the DM's Next stays predicted there.

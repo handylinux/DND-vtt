@@ -1,5 +1,5 @@
 /**
- * The starter packs' catalog (docs/design-v1-starter-art.md). Written by
+ * The starter packs' catalog (docs/design/design-v1-starter-art.md). Written by
  * `node scripts/starter-art.ts` from scripts/starter-art.json, so change
  * those, not this file. Its shapes and the rules that read it are in
  * shared/starter.ts.

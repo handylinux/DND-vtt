@@ -14,7 +14,7 @@ import type { Growth } from "./resizeMemory.ts";
 
 /**
  * Companion stat blocks as the picker, the numbers step and the stat
- * blocks page build them (docs/design-v1-companion-stat-blocks.md 5 and
+ * blocks page build them (docs/design/design-v1-companion-stat-blocks.md 5 and
  * 6), as plain functions for node --test. Every block a companion can link
  * is read in the SRD monsters' shape, a stored one through `monsterView`,
  * so an SRD block and a pasted one go through one path.

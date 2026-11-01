@@ -228,7 +228,7 @@ describe("labels", () => {
   });
 });
 
-describe("healing brings back the dead (docs/design-v1-combat-flow.md 3.4)", () => {
+describe("healing brings back the dead (docs/design/design-v1-combat-flow.md 3.4)", () => {
   const dead = (overrides: Partial<Actor> = {}) =>
     actor({ hp: { cur: 0, max: 20, temp: 0 }, life: "dead", deathSaves: { ok: 1, fail: 3 }, effects: [effect("p", { key: "poisoned" })], ...overrides });
 
@@ -301,7 +301,7 @@ describe("healing brings back the dead (docs/design-v1-combat-flow.md 3.4)", () 
   });
 });
 
-describe("Revive gives exactly 1 HP (docs/design-v1-combat-flow.md 3.5)", () => {
+describe("Revive gives exactly 1 HP (docs/design/design-v1-combat-flow.md 3.5)", () => {
   test("a dead creature holding 12 HP comes back at 1 with reviveToOne, and keeps 12 without", () => {
     const dead = actor({ hp: { cur: 12, max: 20, temp: 0 }, life: "dead", deathSaves: { ok: 0, fail: 3 }, effects: [effect("p", { key: "poisoned" })] });
     const now = applyLife(dead, "alive", true);
@@ -321,7 +321,7 @@ describe("Revive gives exactly 1 HP (docs/design-v1-combat-flow.md 3.5)", () => 
   });
 });
 
-describe("hpLess (docs/design-v1-combat-flow.md 3.6.6)", () => {
+describe("hpLess (docs/design/design-v1-combat-flow.md 3.6.6)", () => {
   const companion = { of: "c1", turn: "none" as const };
   test("an effect companion and any actor at max HP 0", () => {
     assert.equal(hpLess(actor({ hp: { cur: 0, max: 0, temp: 0 }, ac: 0 }), { kind: "object", companion }), true);

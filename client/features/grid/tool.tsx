@@ -49,7 +49,7 @@ const Options = retryableLazy(() => import("./Options.tsx"), { roles: ["dm"] });
 /**
  * Lining up the app's grid with a map (design section 5). The DM drags a
  * box over three by three squares of the art, or on a hex scene over 3
- * hexes across (docs/design-v1-hex-grids.md HX-D12), adjusts it with its
+ * hexes across (docs/design/design-v1-hex-grids.md HX-D12), adjusts it with its
  * corners or the nudge buttons, and applies it. Only `cellPx` and
  * `originPx` change.
  *

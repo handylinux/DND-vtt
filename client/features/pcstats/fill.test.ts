@@ -4,7 +4,7 @@ import type { PcFill } from "#shared/rules/pcFill.ts";
 import { actor, character } from "#shared/testutil.ts";
 import { alsoLines, alsoPatch, alsoSet, pendingCharacter, readLine } from "./fill.ts";
 
-/** The review's "Also set" (docs/design-v1-pc-stats.md 6.1). */
+/** The review's "Also set" (docs/design/design-v1-pc-stats.md 6.1). */
 
 const FILL: PcFill = {
   source: "ddb",
@@ -69,7 +69,7 @@ describe("max HP by one rule", () => {
   });
 });
 
-describe("the character as Save would leave it (docs/design-v1-resync.md 1.1)", () => {
+describe("the character as Save would leave it (docs/design/design-v1-resync.md 1.1)", () => {
   test("takes the fields a fill set and its record, else keeps the saved ones", () => {
     const saved = { name: "Bree", actor: actor({ ac: 14, hp: { cur: 30, max: 30, temp: 2 }, speeds: { walk: 25 }, senses: "" }), ddbSync: { at: "2026-10-20T19:00:00.000Z", base: { ac: 14 }, rolls: {} } };
     const record = { base: { ac: 16 }, rolls: {} };

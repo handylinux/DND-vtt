@@ -7,7 +7,7 @@ import { EMPTY_PC_STATS } from "./rules/pcStats.ts";
 import { AT, DM, P1, P2, character, member, room, token } from "./testutil.ts";
 
 /**
- * Who receives a character's stat block (docs/design-v1-pc-stats.md 4.2):
+ * Who receives a character's stat block (docs/design/design-v1-pc-stats.md 4.2):
  * the DM whole, the character's players whole, and no one else. The only
  * path is the character's existing projection, held here as a matrix so a
  * later edit of its fixed list cannot leak the block.
@@ -65,7 +65,7 @@ describe("who receives a stat block", () => {
 /** A sync record with a marker no other field holds, so a search of the whole view finds any copy of it. */
 const RECORD: DdbSync = { at: AT, from: "987654321", base: { level: 5 }, rolls: { "fedcba987654": { k: "w:0123456789ab", h: "abcdef012345" } } };
 
-describe("who receives a character's D&D Beyond sync record (docs/design-v1-resync.md 4)", () => {
+describe("who receives a character's D&D Beyond sync record (docs/design/design-v1-resync.md 4)", () => {
   function synced(): RoomState {
     const state = setup();
     state.characters.bree!.ddbSync = RECORD;

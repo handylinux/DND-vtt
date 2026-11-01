@@ -8,7 +8,7 @@ import srdRolls from "#shared/srd/rolls.json" with { type: "json" };
 export { isDiceOp, type DiceOp, type Resolved } from "#shared/dice/resolve.ts";
 
 /**
- * The server's dice (docs/design-v1-dice.md 4.2): the resolve with the
+ * The server's dice (docs/design/design-v1-dice.md 4.2): the resolve with the
  * secure draw (shared/dice/roll.ts serverDraw), and each op's batch id.
  * Only the actor calls it, after admission and permissions, so no refusal
  * of a roll ever depends on what it would draw.

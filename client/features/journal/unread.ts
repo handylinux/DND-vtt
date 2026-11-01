@@ -2,7 +2,7 @@ import type { JournalPage } from "#shared/model.ts";
 
 /**
  * Which journal pages a player has not read since they last changed
- * (docs/design-v1-dm-tools.md 3.7), tracked per device. A page counts as
+ * (docs/design/design-v1-dm-tools.md 3.7), tracked per device. A page counts as
  * read once the player opens it, and as unread again when what they read
  * changes: a new page shared with them, a block edited, a secret revealed.
  *

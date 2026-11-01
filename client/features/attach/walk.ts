@@ -8,7 +8,7 @@ import type { Blocker } from "#shared/ruleHooks.ts";
 import { dragWalkers } from "./groups.ts";
 
 /**
- * A holder's walk as a drag searches it (docs/design-v1-attach.md 4.2 and
+ * A holder's walk as a drag searches it (docs/design/design-v1-attach.md 4.2 and
  * 7.3), as plain functions for node --test, so the drag pipeline
  * (features/movement/stageHooks.ts) needs a line for each. The world it
  * walks in is shared/rules/walkWorld.ts groupWalkWorld.

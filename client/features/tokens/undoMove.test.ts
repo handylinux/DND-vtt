@@ -32,7 +32,7 @@ describe("Undo move in the token bar", () => {
     assert.deepEqual(undoOf(top!), { of: 1 });
   });
 
-  test("an attach or a detach offers it on the holder's bar too, and a rider's bar offers its mount's move (docs/design-v1-attach.md 8.3)", () => {
+  test("an attach or a detach offers it on the holder's bar too, and a rider's bar offers its mount's move (docs/design/design-v1-attach.md 8.3)", () => {
     const carry: ClientOp = { t: "token.attach", tokenId: "kobold", to: "thorn", kind: "carry", x: 5, y: 5, elevation: 0 };
     assert.equal(offersUndo(offered(after([carry])), ["thorn"]), true);
     const letGo = afterQueued(NONE, "player", queued(1, { t: "token.detach", tokenId: "kobold" }), (id) => (id === "kobold" ? "thorn" : undefined));
@@ -110,7 +110,7 @@ describe("Undo move in the token bar", () => {
     assert.deepEqual(noted.offers, [{ tokenIds: ["a"], ns: [1] }]);
   });
 
-  test("a resize goes on the player's stack but is no move, so the bar offers no Undo move after it (docs/design-v1-token-window.md 8.7)", () => {
+  test("a resize goes on the player's stack but is no move, so the bar offers no Undo move after it (docs/design/design-v1-token-window.md 8.7)", () => {
     const resized = after([move("a"), { t: "token.update", tokenId: "a", patch: { size: "large", x: 0, y: 0 } }]);
     assert.deepEqual(resized.offers, []);
   });

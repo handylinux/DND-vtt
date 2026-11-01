@@ -14,7 +14,7 @@ import { routeWalk } from "../rules/route.ts";
 import { DM, env, room, scene, token } from "../testutil.ts";
 
 /**
- * A turn's path on a hex scene (docs/design-v1-hex-grids.md 4.2 and 4.3):
+ * A turn's path on a hex scene (docs/design/design-v1-hex-grids.md 4.2 and 4.3):
  * each leg records the hex steps between its ends' reference hexes, with
  * the room's rule only for height.
  */
@@ -113,7 +113,7 @@ describe("a leg through one fogged hex (section 9)", () => {
   });
 });
 
-describe("on a per-player scene with fog, a leg's every spot stands on shared ground (docs/design-v1-per-player-vision.md 6.5)", () => {
+describe("on a per-player scene with fog, a leg's every spot stands on shared ground (docs/design/design-v1-per-player-vision.md 6.5)", () => {
   /** A per-player scene with fog alone, every sub-cell revealed in the shared fog but those of `hidden`. */
   function sharedBut(state: RoomState, g: HexGrid, hidden: Hex | null): void {
     state.scenes.s1 = { ...state.scenes.s1!, fogEnabled: true, vision: { on: false, light: "bright", perPlayer: true } };

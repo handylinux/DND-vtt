@@ -8,7 +8,7 @@ import { DM, env, room, scene, template, token, trap } from "#shared/testutil.ts
 import { parseRoomState } from "./stateSchema.ts";
 
 /**
- * Hex grids' stored fields (docs/design-v1-hex-grids.md section 7, lane
+ * Hex grids' stored fields (docs/design/design-v1-hex-grids.md section 7, lane
  * HX-1): a scene's shape, the room's New scenes, a stationary emanation's
  * size and the stamps, and the import's hold on the shape's invariant.
  */
@@ -22,7 +22,7 @@ function hexRoom(): RoomState {
 
 const ROUGH = "d".padEnd(256, ".");
 
-describe("roomStateSchema, hex grids (docs/design-v1-hex-grids.md section 7)", () => {
+describe("roomStateSchema, hex grids (docs/design/design-v1-hex-grids.md section 7)", () => {
   test("a room with a hex scene, its New scenes and a stationary size loads as it was", () => {
     const parsed = parseRoomState(hexRoom());
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.message);

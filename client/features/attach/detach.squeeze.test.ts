@@ -47,7 +47,7 @@ function takes(s: RoomState, op: Op, who: Viewer, opVersion?: number): RoomState
  * walk off reads the ledge into `low` at op version 29 and live, and at
  * version 28 as it did: on squares its walk crosses the ledge by the full
  * footprint, and on hexes, where a walk off a holder takes no ledge as its
- * own (docs/design-v1-hex-grids.md), it meets it as ever.
+ * own (docs/design/design-v1-hex-grids.md), it meets it as ever.
  */
 function getsOffClear(s: RoomState, low: { x: number; y: number }, oldCrosses: boolean): void {
   const there = { ...low, elevation: 0 };

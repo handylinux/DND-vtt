@@ -51,7 +51,7 @@ import {
 import { promptId, turnId } from "./state.ts";
 
 /*
- * The combat uses' rules (docs/design-v1-combat-controls.md 4 to 6), on
+ * The combat uses' rules (docs/design/design-v1-combat-controls.md 4 to 6), on
  * fixtures and on rooms the real reducer moved through turn starts, so
  * what the cards read is what lane A's records write.
  */
@@ -194,7 +194,7 @@ describe("the list", () => {
         ["Wing Attack (2)", null],
       ],
     );
-    // The title says the name alone, as its pips show the count (docs/design-v1-monster-uses.md 3.1, D-261026-6).
+    // The title says the name alone, as its pips show the count (docs/design/design-v1-monster-uses.md 3.1, D-261026-6).
     assert.equal(LEGENDARY_ACTIONS, "Legendary Actions");
     assert.deepEqual(rowCount(la), { left: 3, max: 3 });
     const resist = rows.find((r) => r.kind === "resist")!;

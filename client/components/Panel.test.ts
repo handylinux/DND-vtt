@@ -6,7 +6,7 @@ const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { GROUP_BOX, GROUP_FOLD, Group, Section, summaryClip } = await import("./Panel.tsx");
 
-/** A panel's groups (docs/design-v1-dice-ui.md 3.2, docs/design-v1-token-panel-groups.md 4), as markup. */
+/** A panel's groups (docs/design/design-v1-dice-ui.md 3.2, docs/design/design-v1-token-panel-groups.md 4), as markup. */
 describe("Group", () => {
   test("its name is an h3 holding the disclosure, which says open or folded in aria-expanded and is named by the name alone", () => {
     const folded = renderToStaticMarkup(createElement(Group, { label: "Combat", open: false, onToggle: () => {}, summary: "HP 3/7 · 2 conditions" }, "inside"));
@@ -81,7 +81,7 @@ describe("Group", () => {
     assert.doesNotMatch(gone, /the upload/);
   });
 
-  test("a folded header lays the chevron and icon in a lead column, the name and summary in a row that wraps, by CSS alone (docs/design-v1-design-pass.md 4.1)", () => {
+  test("a folded header lays the chevron and icon in a lead column, the name and summary in a row that wraps, by CSS alone (docs/design/design-v1-design-pass.md 4.1)", () => {
     const markup = renderToStaticMarkup(createElement(Group, { label: "Walls and movement", icon: "walls", open: false, onToggle: () => {}, summary: "Walls block moves" }, "inside"));
     const button = /<button[^>]*style="([^"]*)"[^>]*>(.*)<\/button>/.exec(markup);
     assert.ok(button, "the fold's button");

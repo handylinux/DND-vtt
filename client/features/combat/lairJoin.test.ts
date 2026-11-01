@@ -14,7 +14,7 @@ import { joinState, lairState } from "./state.ts";
 
 /*
  * A creature placed in its lair joins a fight with In lair on, by one rule
- * on every path into it (docs/design-v1-combat-controls.md 13.4), and In
+ * on every path into it (docs/design/design-v1-combat-controls.md 13.4), and In
  * lair never goes without the counts its block gives (3.1): a block still
  * loading holds the join and the switch busy, and one that did not load
  * stops them with its reload, so neither marks a creature off unread.

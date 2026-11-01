@@ -29,14 +29,14 @@ const measureBoardPill = (text: string, px: number) => measurePill(text, px, the
 
 /**
  * Height mode's marks on the overlay, for the DM while the mode is open
- * (docs/design-v1-maps-vision.md section 4.2): each raised or lowered
+ * (docs/design/design-v1-maps-vision.md section 4.2): each raised or lowered
  * region's height, a "?" on each stair the rule cannot point, and the
  * stroke or area being painted. It draws in the slot under the token decor
  * (features/layers.ts `underDecor`): over the tokens, so a creature on a
  * platform never hides its number, and under their names, chips and plates,
  * so a name always reads. Each pill also keeps off the placed names,
  * plates, chips, elevation badges and HP bars, so none hides under one
- * (docs/design-v1-visual.md 3.4).
+ * (docs/design/design-v1-visual.md 3.4).
  */
 export function HeightLayer(props: LayerProps) {
   const building = useRoomView((s) => s.local.tool === "build");
@@ -46,7 +46,7 @@ export function HeightLayer(props: LayerProps) {
   return mode === "height" ? <HeightMarks {...props} /> : null;
 }
 
-/** Difficult ground mode's stroke or area being marked (docs/design-v1-movement.md 3.4): ochre to mark, red to clear. */
+/** Difficult ground mode's stroke or area being marked (docs/design/design-v1-movement.md 3.4): ochre to mark, red to clear. */
 function RoughPreview(props: Pick<LayerProps, "scene" | "scale">) {
   const gesture = useStore(
     useHeightStore(),

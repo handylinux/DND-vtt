@@ -1,5 +1,5 @@
 /**
- * The sheet grabber's designs (docs/design-v1-sheet-swipe.md 4.8), in the
+ * The sheet grabber's designs (docs/design/design-v1-sheet-swipe.md 4.8), in the
  * order This device offers them, the default first. Each is drawn in one
  * color (components/SheetGrabber.tsx), in a `width` x `height` box of
  * layout px, which the interface size scales as it scales the header

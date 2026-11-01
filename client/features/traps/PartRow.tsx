@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { theme } from "../../lib/theme.ts";
 
 /**
- * One row of a trap part's fields (docs/design-v1-polish.md R3): the
+ * One row of a trap part's fields (docs/design/design-v1-polish.md R3): the
  * fields wrap inside the first cell, and the row's remove holds the
  * second, level with the first line, so a remove never wraps alone under
  * the fields it takes away. `under` takes the row's whole width below

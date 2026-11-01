@@ -6,7 +6,7 @@ import { createStore } from "zustand/vanilla";
 import { receiptsSlot, ReceiptTracker, SurfaceVoice } from "./useReceipt.ts";
 
 /*
- * One announcer per roll (docs/design-v1-stat-block-rolls.md 8,
+ * One announcer per roll (docs/design/design-v1-stat-block-rolls.md 8,
  * D-261031-133 and D-261031-166): of the surfaces that show a tag, the one
  * that sent it says it while mounted, any other only where nobody claims
  * it and nobody said it yet, and the toast is one of those voices.

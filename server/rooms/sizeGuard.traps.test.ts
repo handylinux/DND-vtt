@@ -35,7 +35,7 @@ function trapped(): RoomState {
   return state;
 }
 
-describe("a springing never moves a measure (docs/design-v1-traps.md 6.7)", () => {
+describe("a springing never moves a measure (docs/design/design-v1-traps.md 6.7)", () => {
   test("the room's measure, its stored bytes' measure and every DM projection part are the same however often a trap went off", () => {
     const quiet = trapped();
     const busy = sprung(quiet);

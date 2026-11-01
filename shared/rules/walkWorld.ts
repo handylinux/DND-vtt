@@ -14,7 +14,7 @@ import { isHex, sceneGrid, SQUARES } from "./grid.ts";
 import { hexKey } from "./hex.ts";
 
 /**
- * The public world a route is searched in (docs/design-v1-movement.md 5.5):
+ * The public world a route is searched in (docs/design/design-v1-movement.md 5.5):
  * what every player can observe, built the same from the DM's whole state
  * as from a player's copy, so a hidden monster, an unfound door or a
  * DM-only area never bends a route, on any device. The search itself is
@@ -59,7 +59,7 @@ export type WorldOptions = {
    */
   seenGround?: boolean;
   /**
-   * Keep to the ground every player shares (docs/design-v1-per-player-vision.md
+   * Keep to the ground every player shares (docs/design/design-v1-per-player-vision.md
    * 6.6): a shared or kept walking ruler reads the same on every device, so
    * on a per-player scene it never reads one player's own memory, which a
    * player's copy holds as its fog. Elsewhere it is the ground players see.
@@ -88,7 +88,7 @@ export type WorldOptions = {
  * (project.ts inSightOfNonOwners, review AT-O-24). A player's copy of a
  * whole-party scene holds only such tokens. On a per-player scene it holds
  * creatures only that player sees too, so there every device judges by
- * what every viewer shares (docs/design-v1-per-player-vision.md decision
+ * what every viewer shares (docs/design/design-v1-per-player-vision.md decision
  * 10): the shared sight with vision on, the shared fog with fog alone, and
  * every token with both off. A copy holds no owners of another's token, so
  * there a party member reads as one by the projection's `aboveFog`, as in
@@ -190,7 +190,7 @@ export function publicWorld(state: RoomState, token: Token & Walker, viewer: Wal
     if (kind === "halfSpeed") halfSpeed.push(template);
     else {
       const covered = computeCoverage(template, areaCtx);
-      // On hexes an area covers hexes (docs/design-v1-hex-grids.md HX-D11), each as its column and row.
+      // On hexes an area covers hexes (docs/design/design-v1-hex-grids.md HX-D11), each as its column and row.
       areas.push({ extra: kind === "quarter" ? 3 : 1, cells: isHex(grid) ? (covered.hexes ?? []).map((h) => ({ x: h.col, y: h.row })) : covered.cells });
     }
   }
@@ -210,7 +210,7 @@ export function publicWorld(state: RoomState, token: Token & Walker, viewer: Wal
 
 /**
  * The public world for a walk by `token` and what it carries
- * (docs/design-v1-attach.md 7.3 and 9), read from its public members alone,
+ * (docs/design/design-v1-attach.md 7.3 and 9), read from its public members alone,
  * those every player sees by links every player sees, so no hidden link
  * changes a route. It keeps to ground players have seen when any of them
  * is a party member, the mover included. While it drags or carries a
@@ -281,7 +281,7 @@ function areaContext(state: RoomState, token: Token, shown: ReadonlyMap<string, 
   return {
     settings: state.meta.settings,
     bounds: scene?.bounds ?? { w: 0, h: 0 },
-    // On hexes an area covers hexes and a creature stands on its hexes (docs/design-v1-hex-grids.md HX-D11).
+    // On hexes an area covers hexes and a creature stands on its hexes (docs/design/design-v1-hex-grids.md HX-D11).
     grid: scene ? sceneGrid(scene) : SQUARES,
     walls: scene ? sceneWalls(scene, asPlayers ? playersChunks(state, scene.id) : state.buildChunks) : null,
     tokens: Object.fromEntries([...shown].map(([id, t]) => [id, t as AreaToken])),
@@ -289,7 +289,7 @@ function areaContext(state: RoomState, token: Token, shown: ReadonlyMap<string, 
 }
 
 /**
- * The mover and the tokens carried rigidly with it (docs/design-v1-movement.md
+ * The mover and the tokens carried rigidly with it (docs/design/design-v1-movement.md
  * 15, review AT-ASTRA-28): its public members on links that sit on their
  * holder (attach.ts onHolder), which go where it goes. A creature it drags
  * trails behind it, and its holder stays where it is. Only links every

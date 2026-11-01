@@ -1,5 +1,5 @@
 /*
- * A canvas for the kept picture's tests (docs/design-v1-relief-pan.md 10.2):
+ * A canvas for the kept picture's tests (docs/design/design-v1-relief-pan.md 10.2):
  * a grid of device pixels, each holding the paints it took in order, folded
  * into one number, so two pictures agree only where every pixel took the
  * same paints in the same order. A fill paints the pixels whose centers lie

@@ -7,7 +7,7 @@ import { scopeSlot, useScoped } from "../../state/scope.ts";
 
 /**
  * The character whose page the Characters panel shows
- * (docs/design-v1-look-pass.md 3.1), per Room page (state/scope.ts), as
+ * (docs/design/design-v1-look-pass.md 3.1), per Room page (state/scope.ts), as
  * `journalSlot` holds the open journal page: so the page survives the
  * remount a crossing of 900 px makes, a companion's "Companion of Thorn"
  * opens Thorn's page from the token panel, and "view as a player" keeps
@@ -149,7 +149,7 @@ export const DISCARD = "Discard changes?";
 export type LeaveFor = "back" | "page";
 
 /**
- * Leaving a form of the Characters panel (docs/design-v1-look-pass.md 3.1):
+ * Leaving a form of the Characters panel (docs/design/design-v1-look-pass.md 3.1):
  * with typed changes the first press of Back or Cancel asks DISCARD and the
  * second leaves. A change in between takes the question back, since it was
  * asked of the draft as it stood. `draft` is what the form holds, compared

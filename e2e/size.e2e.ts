@@ -12,7 +12,7 @@ import { A5, LETTER, LETTER_WIDE, pdfOf } from "./pdfFixture.ts";
 
 /**
  * Every dialog stays on the screen at the larger interface sizes
- * (docs/design-v1-dm-tools.md 3.16, review finding W5UI-1). The interface
+ * (docs/design/design-v1-dm-tools.md 3.16, review finding W5UI-1). The interface
  * size zooms the chrome with CSS `zoom`, which multiplies viewport units as
  * it does pixels, so a card sized `100dvh` ran off a phone at 130% with its
  * Save button out of reach. Each dialog the room offers is opened at 115%
@@ -21,7 +21,7 @@ import { A5, LETTER, LETTER_WIDE, pdfOf } from "./pdfFixture.ts";
  * only: a row wider than the card (the icon picker's swatches, W5UI-10)
  * scrolled it sideways and cut off its right edge.
  *
- * Every dialog is the one shell of docs/design-v1-visual.md 2.3, and the
+ * Every dialog is the one shell of docs/design/design-v1-visual.md 2.3, and the
  * run checks its structure in each (checkShell): the request a roll and
  * image dialogs, the editors, the scene sheet, the monster filters, the
  * stamp picker and stamp sheet, the shortcut sheet, a companion's stat
@@ -169,7 +169,7 @@ async function assertNoSideScroll(dialog: Locator, label: string): Promise<void>
 }
 
 /**
- * The shell of docs/design-v1-visual.md 2.3, which components/Dialog.tsx
+ * The shell of docs/design/design-v1-visual.md 2.3, which components/Dialog.tsx
  * draws for every dialog: the card is the dialog's first `section`, right
  * inside it; the card holds the header, one body that scrolls, and the
  * footer when there is one, in that order; the header holds the title and
@@ -288,7 +288,7 @@ async function useAtFoot(dialog: Locator, label: string): Promise<void> {
   }
 }
 
-/** A popover above the tool's row (docs/design-v1-tool-options.md 7.1): on the screen, no side scroll, and every control a 44 px target. */
+/** A popover above the tool's row (docs/design/design-v1-tool-options.md 7.1): on the screen, no side scroll, and every control a 44 px target. */
 async function checkPopover(popover: Locator, label: string): Promise<void> {
   const owner = popover.page();
   await popover.waitFor();
@@ -399,7 +399,7 @@ describe("raccoon-vtt dialogs at the larger interface sizes", { timeout: 600_000
     const handout = await context.request.put(`${server.origin}/api/rooms/${run.roomId}/assets?kind=handout`, { headers: { Origin: server.origin, "content-type": "image/png" }, data: letter });
     assert.ok(handout.ok(), `uploading a handout answered ${handout.status()}`);
     run.handoutImage = ((await handout.json()) as { id: string }).id;
-    // A handout of three pages, as a PDF's pages are stored (docs/design-v1-pdf-handouts.md 11.3).
+    // A handout of three pages, as a PDF's pages are stored (docs/design/design-v1-pdf-handouts.md 11.3).
     for (const [i, [width, height]] of ([[1584, 2048], [2048, 1584], [1448, 2048]] as const).entries()) {
       const pageImage = await sharp({ create: { width, height, channels: 3, background: { r: 240, g: 236 - i * 20, b: 220 } } }).png().toBuffer();
       const res = await context.request.put(`${server.origin}/api/rooms/${run.roomId}/assets?kind=handout`, { headers: { Origin: server.origin, "content-type": "image/png" }, data: pageImage });
@@ -491,7 +491,7 @@ describe("raccoon-vtt dialogs at the larger interface sizes", { timeout: 600_000
         await picker.getByRole("tab", { name: "Search the web" }).click();
         await picker.getByLabel("Search for").waitFor();
         await checkDialog(picker, `${label}, Search the web`, { name: "Search", in: "body" });
-        // The Starter tab: a work chosen, its credit and Use in reach (docs/design-v1-starter-art.md 4).
+        // The Starter tab: a work chosen, its credit and Use in reach (docs/design/design-v1-starter-art.md 4).
         await picker.getByRole("tab", { name: "Starter" }).click();
         await chooseStarterWork(picker, starterWork("token"), "browse", false);
         await checkDialog(picker, `${label}, Starter`, { name: "Use", in: "body" });
@@ -677,7 +677,7 @@ describe("raccoon-vtt dialogs at the larger interface sizes", { timeout: 600_000
   }
 
   test("2b. the DM panel's PDF upload block at 246 px wide: nothing past its edge, and 44 px targets", async () => {
-    // A phone at 320 x 480 with the interface at 130% leaves the DM panel's Handouts section 246 px of its own (docs/design-v1-pdf-handouts.md 11.3).
+    // A phone at 320 x 480 with the interface at 130% leaves the DM panel's Handouts section 246 px of its own (docs/design/design-v1-pdf-handouts.md 11.3).
     await page.setViewportSize({ width: 320, height: 480 });
     await page.evaluate(() => localStorage.setItem("rvtt.uiScale", "1.3"));
     // The sweep before may end anywhere, Home included, so the room is opened by its address.
@@ -760,7 +760,7 @@ describe("raccoon-vtt dialogs at the larger interface sizes", { timeout: 600_000
     }
   });
 
-  test("lp3-sheet-a. an upright tablet's panels stand in a sheet no wider than a medium dialog, centered over the map, and nothing in them scrolls sideways, at 100% and 130%, while a phone's sheet still spans it (docs/design-v1-look-pass.md 2.8)", async () => {
+  test("lp3-sheet-a. an upright tablet's panels stand in a sheet no wider than a medium dialog, centered over the map, and nothing in them scrolls sideways, at 100% and 130%, while a phone's sheet still spans it (docs/design/design-v1-look-pass.md 2.8)", async () => {
     for (const view of [
       { width: 820, height: 1180, scale: 1 },
       { width: 820, height: 1180, scale: 1.3 },
@@ -791,7 +791,7 @@ describe("raccoon-vtt dialogs at the larger interface sizes", { timeout: 600_000
     }
   });
 
-  test("lp2-3a-size. on a 320 x 568 phone at 100% and 130%, the Attach sheet's rows span it, a long name wraps whole, and nothing in it scrolls sideways (docs/design-v1-look-pass-2.md 2.5)", async () => {
+  test("lp2-3a-size. on a 320 x 568 phone at 100% and 130%, the Attach sheet's rows span it, a long name wraps whole, and nothing in it scrolls sideways (docs/design/design-v1-look-pass-2.md 2.5)", async () => {
     // A cart with a long name beside the goblin, so its row must wrap to read whole.
     const cart = randomUUID();
     await ops.send({ t: "token.create", token: { id: cart, sceneId: run.sceneId, size: "large", visibility: "all", kind: "object", layer: "object", name: "Treasure chest of the drowned king", x: run.goblin.x, y: run.goblin.y + 1, actor: { inline: actor() } } });

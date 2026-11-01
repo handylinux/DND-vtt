@@ -2,7 +2,7 @@ import { LICENSES } from "#shared/licenses.ts";
 import { categoriesOf, searchWorks, type FoundWork, type StarterPack, type StarterWork } from "#shared/starter.ts";
 
 /**
- * What the Starter tab shows (docs/design-v1-starter-art.md 4), apart from
+ * What the Starter tab shows (docs/design/design-v1-starter-art.md 4), apart from
  * React so it is tested: a pack's line, its works by category, a search's
  * results by pack, and the credit under the chosen tile.
  */

@@ -24,7 +24,7 @@ import type { RoomManager } from "../rooms/manager.ts";
 import { errorHandler } from "./assets.ts";
 
 /**
- * Table displays (docs/design-v1-dm-tools.md 3.1): a TV that shows the
+ * Table displays (docs/design/design-v1-dm-tools.md 3.1): a TV that shows the
  * players' view to the table, as a viewer that is no member.
  *
  * A display holds a grant of its own role on a session of its own purpose,

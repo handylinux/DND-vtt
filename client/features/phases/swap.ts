@@ -1,6 +1,6 @@
 /**
  * Which map image the map layer draws while the map changes under a scene
- * (docs/design-v1-maps-vision.md section 3.4). A phase switch, or a new
+ * (docs/design/design-v1-maps-vision.md section 3.4). A phase switch, or a new
  * image for the scene on screen, keeps the old image up until the new one
  * has decoded and then swaps, so the map never flashes to the bare
  * background. A different scene never inherits the last scene's image, and

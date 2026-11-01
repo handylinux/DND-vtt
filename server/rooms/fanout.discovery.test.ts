@@ -14,7 +14,7 @@ import { Connection } from "./connection.ts";
 import { buildSnapshot, candidateKeys, publishBatch, type CommittedBatch } from "./fanout.ts";
 
 /**
- * The fan-out over map discovery's rooms (docs/design-v1-map-discovery.md
+ * The fan-out over map discovery's rooms (docs/design/design-v1-map-discovery.md
  * 5.6, MD2-O-1, MD2-LK-2, MD2-ASTRA-2): whatever a socket's events add up
  * to after every batch is the fresh projection of a copy of the room that
  * shares no object with it, so no answer kept across batches, the fan-out's

@@ -4,7 +4,7 @@ import { count, MAX_FILE_LIGHTS, MAX_POINTS, MAX_POLYLINES, MAX_PORTALS, NO_IMAG
 
 /**
  * The subset of a Universal VTT file the import reads
- * (docs/design-v1-maps-vision.md section 3.1). Dungeondraft, Dungeon
+ * (docs/design/design-v1-maps-vision.md section 3.1). Dungeondraft, Dungeon
  * Alchemist and DungeonFog write the same JSON under three extensions.
  * Unknown keys are ignored, a missing optional key reads as empty, and
  * every count and coordinate is bounded, since the file is untrusted.

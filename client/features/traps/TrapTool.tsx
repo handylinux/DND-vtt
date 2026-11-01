@@ -19,7 +19,7 @@ import { BAND_NAMES, newTrapInput, rectBetween, START_ALARM, START_BLANK, startC
 import { pickZone, trapSlot, zoneKinds, type TrapDraft, type TrapPicking } from "./store.ts";
 
 /**
- * The Trap tool (docs/design-v1-traps.md 4.1), the DM's: draw a new trap's
+ * The Trap tool (docs/design/design-v1-traps.md 4.1), the DM's: draw a new trap's
  * squares, drag its trip wire or tap the door it guards, and tap a trap to
  * open its pane. While the pane asks for something on the map (squares to
  * add, the squares it hits, a door, light, creature or stamp it sets), the

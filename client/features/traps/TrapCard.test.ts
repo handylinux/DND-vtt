@@ -13,7 +13,7 @@ const { RoomProvider } = await import("../../state/view.ts");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
 
 /*
- * The trap card's lines (docs/design-v1-look-pass-2.md D24): what it could
+ * The trap card's lines (docs/design/design-v1-look-pass-2.md D24): what it could
  * not do reads as an error by the line's own outcome, and a springing out of
  * the players' sight as a warning, since the trap is still armed for them.
  */

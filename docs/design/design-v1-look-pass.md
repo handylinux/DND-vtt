@@ -1,6 +1,6 @@
 # raccoon-vtt v1: the look pass
 
-Status: built, in the eight lanes of section 4 with their review fixes, and the docs commit (4.2) on top. The guide screenshots of section 6 are still to retake. Reviewed in round 1. The coordinator decided its open questions (section 7): this note's recommendations, with two decisions of its own, that only the stat block's fold is shared with the token panel and that Hovers stays a 16 px Switch. Code is cited from the stacked tip `sztyppyr` (04564e15), with the roll animation. Two designs in flight are prerequisites, built on their own lanes before this pass's build: docs/design-v1-paste.md and docs/design-v1-known-forms.md (section 5).
+Status: built, in the eight lanes of section 4 with their review fixes, and the docs commit (4.2) on top. The guide screenshots of section 6 are still to retake. Reviewed in round 1. The coordinator decided its open questions (section 7): this note's recommendations, with two decisions of its own, that only the stat block's fold is shared with the token panel and that Hovers stays a 16 px Switch. Code is cited from the stacked tip `sztyppyr` (04564e15), with the roll animation. Two designs in flight are prerequisites, built on their own lanes before this pass's build: docs/design/design-v1-paste.md and docs/design/design-v1-known-forms.md (section 5).
 
 The project owner asked on 2026-10-14: "in general we should also do a design review pass of the entire app once done with all waves and try to make the app look consistent and unified/sleek while not sacrificing functionality". On 2026-10-18 they named three things for this pass, "these aren't necessarily hard rules either i just want things that make sense given a design review":
 
@@ -8,7 +8,7 @@ The project owner asked on 2026-10-14: "in general we should also do a design re
 - "the player stat block should be higher or even near the top. just looking for consistency here."
 - "for me at least companion and character stat blocks are not differentiated the greatest right now at a glance."
 
-This pass builds on the visual design (docs/design-v1-visual.md, "the visual design"), whose tokens, components and rules stand. It adds no tokens of its own. It finds where screens drifted from that system since it was built, answers the three call-outs, and gives the two patterns the call-outs need: a creature's page and its header. The accent stays the viewer's own member color in a room and the crest yellow `#f7df00` outside one. The old orange never returns as an interface color.
+This pass builds on the visual design (docs/design/design-v1-visual.md, "the visual design"), whose tokens, components and rules stand. It adds no tokens of its own. It finds where screens drifted from that system since it was built, answers the three call-outs, and gives the two patterns the call-outs need: a creature's page and its header. The accent stays the viewer's own member color in a room and the crest yellow `#f7df00` outside one. The old orange never returns as an interface color.
 
 Screenshots: `screenshots/look-pass/`, kept outside the repository, taken on the stacked tip in the dev room (fixture `pcstats=1`, with `rolls=1`, `diceui=1` or `ask=...` where a name says) and on the real server for pages outside a room. Sizes in names: `p390` is 390 x 844 on touch, `p375` 375 x 667, `p360` 360 x 780, `l844` 844 x 390, `p390-130` 390 x 844 at 130%, `t820` an 820 x 1180 tablet, `d1440` 1440 x 900 with a mouse. A `tall` shot is the same width with a tall window, to show a whole panel at once. The dev room's own "Fixture" button at the top left is not part of the app.
 
@@ -60,7 +60,7 @@ The tokens are `client/lib/theme.ts` as the visual design landed them (its 2.1),
 
 ### 2.3 Icon buttons and icons
 
-- Exists: `IconButton` at 44 px with the tooltip, the vocabulary of docs/design-v1-icons.md 2.2, and its rules 3.1.
+- Exists: `IconButton` at 44 px with the tooltip, the vocabulary of docs/design/design-v1-icons.md 2.2, and its rules 3.1.
 - Rule unchanged. One addition, for L11 only: a tool row's slot may give an icon its compact form when the row cannot hold the words, as section 3.4 says.
 
 ### 2.4 Chips and tags
@@ -93,7 +93,7 @@ Folds remember their state per device where a panel opens often (`panelFolds.ts`
 ### 2.8 Sheets and dialogs
 
 - Exists: `Sheet` (from the foot on a phone upright, at the right on a phone sideways), `Dialog` (`fill` or `sheet` on a phone, `sm`, `md` or `lg` on a computer).
-- Rule, new for L7: a bottom sheet is never wider than a `md` dialog, 560 layout px, and centers over the map. The dock row on its top edge (docs/design-v1-visual.md 3.2.1) takes the sheet's width and place. A phone, under 560 layout px wide, sees no change.
+- Rule, new for L7: a bottom sheet is never wider than a `md` dialog, 560 layout px, and centers over the map. The dock row on its top edge (docs/design/design-v1-visual.md 3.2.1) takes the sheet's width and place. A phone, under 560 layout px wide, sees no change.
 
 ### 2.9 Empty, loading and error states
 
@@ -163,7 +163,7 @@ The shapes take `shapeNote`'s words for each kind (features/pcstats/shape.ts), a
    REMOVE                                       Delete Thorn, or the shared note
 ```
 
-- **Order**, by use as the token panel's: the header, the stat block (3.2), Combat, Companions, Notes, then setup folded at the foot. Companions sits after Combat: a player opens the page for companions more often than to edit its numbers (docs/design-v1-combat-flow.md 3.7.5), and it stays open by default, so it is one short scroll from the top.
+- **Order**, by use as the token panel's: the header, the stat block (3.2), Combat, Companions, Notes, then setup folded at the foot. Companions sits after Combat: a player opens the page for companions more often than to edit its numbers (docs/design/design-v1-combat-flow.md 3.7.5), and it stays open by default, so it is one short scroll from the top.
 - **`cardGroups(input)`** in `panelOrder.ts`, beside `panelGroups`, a pure function: which groups show for the DM, a player who plays it, and with or without a block, companions or notes.
 - **Folds** live in the token panel's store (`panelFolds.ts`). The page shares one key with the token panel, `statBlock` in the `own` relation, so a character's block opens or folds alike in both places and opens by default from 900 x 600. Its other groups get keys of their own, `page.combat`, `page.companions`, `page.notes`, `page.image`, `page.stats` and `page.owners`, since fold keys hold no creature: shared, a DM folding Combat on a character would fold Combat on every monster in the next fight (7.2). Combat and Companions start open, the rest folded.
 - **Empty groups are not drawn**: Notes with nothing to read and no right to write, Played by for a player, Companions for a viewer who may add none and sees none.
@@ -206,7 +206,7 @@ The portrait badge shows in the panel's header only. The board keeps its token r
 
 ### 3.4 The known item: the DM's Ruler at 360 px
 
-**The problem** (L11). Shared (98 px), Keep (60.6), Clear (86) and "Kept (2)" (94) need 350.6 px with their gaps, and a 360 px phone's row has 344. The fit's step 1 already takes every compact form, so Kept goes behind ⋯ by step 2 (docs/design-v1-tool-options.md 6.3).
+**The problem** (L11). Shared (98 px), Keep (60.6), Clear (86) and "Kept (2)" (94) need 350.6 px with their gaps, and a 360 px phone's row has 344. The fit's step 1 already takes every compact form, so Kept goes behind ⋯ by step 2 (docs/design/design-v1-tool-options.md 6.3).
 
 **Options.**
 
@@ -265,14 +265,14 @@ Everything not listed keeps its role and accessible name.
 
 ### 4.2 The docs commit
 
-After the lanes merge, one commit makes the FEATURES.md and docs/dm-guide.md edits the lanes listed, and the "Changed by docs/design-v1-look-pass.md" lines in docs/design-v1-pc-stats.md 7.1, docs/design-v1-companion-stat-blocks.md 6.4 and docs/design-v1-token-panel-groups.md. A character's "card" becomes its "page" wherever the words mean the details: dm-guide.md lines 791, 797, 812, 822 and 1003, and FEATURES.md lines 60, 270, 322, 324, 327 and 328.
+After the lanes merge, one commit makes the FEATURES.md and docs/dm-guide.md edits the lanes listed, and the "Changed by docs/design/design-v1-look-pass.md" lines in docs/design/design-v1-pc-stats.md 7.1, docs/design/design-v1-companion-stat-blocks.md 6.4 and docs/design/design-v1-token-panel-groups.md. A character's "card" becomes its "page" wherever the words mean the details: dm-guide.md lines 791, 797, 812, 822 and 1003, and FEATURES.md lines 60, 270, 322, 324, 327 and 328.
 
 ## 5. What is in flight
 
 Two designs are being built on other lanes, and their notes land with them, so neither file is at this tip. They are prerequisites: the look pass's lanes start after both merge. This pass does not redesign them. Their new UI follows the system as below.
 
-- **Pasting images** (docs/design-v1-paste.md). "Paste an image" is a secondary `Button` at `sm` in the row of its entry's file control, words only, as the icons design kept paste. The paste box is drawn with `fieldStyle()`: 44 px, 16 px text, the `bg` fill and the `controlBorder` outline, with its line under it as `Help`. "Use the pasted image" is the one `Dialog` in `sheet` mode, its choices as card `Row`s with a title and a detail line, none of them a primary. A refusal or an empty clipboard shows as `ErrorText` under its entry, "The clipboard held 3 images" as `Help`, and every wait as the entry's own busy button and `Loading`. It changes ImagePicker.tsx and StampPicker.tsx, which lanes 7 and 4 touch after it.
-- **A Druid's known forms** (docs/design-v1-known-forms.md). The "Known forms" section inside the Stat block group is a `Section`, so its label is a 13 px capitals h4 under the group's row, with Change as a secondary `sm` button in its action slot. The forms are `sm` buttons that act, not chips. The current form is pressed and cannot be taken again, so it takes the `CHOSEN_DISABLED` look through `aria-disabled` with a handler that does nothing, keeping focus where it is (2.2). `Row`'s new `pressed` takes the chosen look (accent tint and border) with a check in its leading slot. Marks are muted `Tag`s. The folded summary "4 known forms" joins lane 1's summary (3.3). It changes PcStatBlock.tsx, which lane 1 touches after it.
+- **Pasting images** (docs/design/design-v1-paste.md). "Paste an image" is a secondary `Button` at `sm` in the row of its entry's file control, words only, as the icons design kept paste. The paste box is drawn with `fieldStyle()`: 44 px, 16 px text, the `bg` fill and the `controlBorder` outline, with its line under it as `Help`. "Use the pasted image" is the one `Dialog` in `sheet` mode, its choices as card `Row`s with a title and a detail line, none of them a primary. A refusal or an empty clipboard shows as `ErrorText` under its entry, "The clipboard held 3 images" as `Help`, and every wait as the entry's own busy button and `Loading`. It changes ImagePicker.tsx and StampPicker.tsx, which lanes 7 and 4 touch after it.
+- **A Druid's known forms** (docs/design/design-v1-known-forms.md). The "Known forms" section inside the Stat block group is a `Section`, so its label is a 13 px capitals h4 under the group's row, with Change as a secondary `sm` button in its action slot. The forms are `sm` buttons that act, not chips. The current form is pressed and cannot be taken again, so it takes the `CHOSEN_DISABLED` look through `aria-disabled` with a handler that does nothing, keeping focus where it is (2.2). `Row`'s new `pressed` takes the chosen look (accent tint and border) with a check in its leading slot. Marks are muted `Tag`s. The folded summary "4 known forms" joins lane 1's summary (3.3). It changes PcStatBlock.tsx, which lane 1 touches after it.
 
 ## 6. Tests
 

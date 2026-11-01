@@ -38,7 +38,7 @@ export type BuilderState = {
   note: string | null;
   /** The party's sight met a cell of the gesture since the last press, so the option bar says they see it as it is built (inSight.ts). */
   inSight: boolean;
-  /** On a hex scene, whether a Wall line's points snap to hex corners, else to the 1/64 lattice (docs/design-v1-hex-grids.md HX-D7). */
+  /** On a hex scene, whether a Wall line's points snap to hex corners, else to the 1/64 lattice (docs/design/design-v1-hex-grids.md HX-D7). */
   snapCorners: boolean;
   /** A Wall line's points tapped so far on a hex scene, sent as free walls on Done, and the scene it is drawn on. */
   line: readonly Point[];
@@ -67,7 +67,7 @@ export const TERRAINS: readonly { value: TerrainId; label: string }[] = [
 
 /**
  * Each mode's whole name, which its tile shows, the short word the chip
- * shows (docs/design-v1-tool-options.md 6.2), and its icon, on its tile and
+ * shows (docs/design/design-v1-tool-options.md 6.2), and its icon, on its tile and
  * as the chip's glyph (D-261026-3), in the row's order, which the tool's
  * key steps through too. `spoken` is the name a screen reader says where
  * the shown one has a slash, which it would read as "slash": its tile's

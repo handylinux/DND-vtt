@@ -4,7 +4,7 @@ import { dispatchGesture } from "../../state/actions.ts";
 import type { RoomActions } from "../../state/types.ts";
 
 /**
- * Scene folders in the Scenes panel (docs/design-v1-maps-vision.md section
+ * Scene folders in the Scenes panel (docs/design/design-v1-maps-vision.md section
  * 3.3). A folder is only a name on its scenes, so there is no folder to
  * create or delete: the first scene moved into a name makes the folder, and
  * the last one moved out ends it. Pure, so the order rules are tested.

@@ -14,7 +14,7 @@ import { useDiceView } from "../useDiceView.ts";
 import { castCardText, castStart, readingWords } from "./castStart.ts";
 
 /**
- * A player's ask for saves on the DM's desk (docs/design-v1-player-save-spell.md
+ * A player's ask for saves on the DM's desk (docs/design/design-v1-player-save-spell.md
  * 3.3 and 6): the ask in a line, the caster's roll, the area's count (hidden
  * creatures included) or the targets, then Open, which starts the group save
  * filled from the DM's own view, and Dismiss, which is final. It sits above

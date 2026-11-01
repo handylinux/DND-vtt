@@ -5,7 +5,7 @@ import type { AssetVariant } from "../../lib/api.ts";
 import type { ExportSize } from "../mapexport/size.ts";
 
 /**
- * Scene thumbnails for the Scenes panel (docs/design-v1-maps-vision.md
+ * Scene thumbnails for the Scenes panel (docs/design/design-v1-maps-vision.md
  * section 3.3): the rules, kept pure so they are tested without a canvas.
  * The map export's renderer draws them, and thumbs.ts decides when.
  */

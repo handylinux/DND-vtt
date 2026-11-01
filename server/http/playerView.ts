@@ -9,7 +9,7 @@ import { TooBusyError } from "../rooms/errors.ts";
 import type { RoomManager } from "../rooms/manager.ts";
 
 /**
- * The map export's player view (docs/design-v1-map-discovery.md 4 and 5.1):
+ * The map export's player view (docs/design/design-v1-map-discovery.md 4 and 5.1):
  * one scene as the shared fog class holds it, every player who does not see
  * for themselves and a table display. The DM's own store holds the whole
  * build, which on a scene with fog on is more than players hold, so the

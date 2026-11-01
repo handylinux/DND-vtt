@@ -140,7 +140,7 @@ function note(notes: string[], text: string): void {
 }
 
 /**
- * The damage types a row actually takes (docs/design-v1-combat-controls.md
+ * The damage types a row actually takes (docs/design/design-v1-combat-controls.md
  * 3.4), for the Regeneration note: each type of a part still above 0 once
  * its save, immunity, resistance, vulnerability and rounding are applied,
  * once, in the rules' order. A part that comes to 0 adds nothing, and an

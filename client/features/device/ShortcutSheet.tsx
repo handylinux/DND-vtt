@@ -13,7 +13,7 @@ import { keyChanges, setKeyChanges } from "./settings.ts";
 import { useLayoutSize } from "./layout.ts";
 
 /**
- * The shortcut sheet (docs/design-v1-dm-tools.md 3.14): the keys this role
+ * The shortcut sheet (docs/design/design-v1-dm-tools.md 3.14): the keys this role
  * has, then the keys and buttons that change a click, a drag or the wheel,
  * then the keys that work inside one surface, all from the registries in
  * state/shortcuts.ts, so the sheet and the app never disagree. `?` opens
@@ -30,7 +30,7 @@ import { useLayoutSize } from "./layout.ts";
  * kept beside its other settings (settings.ts). A touch screen's sheet
  * stays a plain list, since it has no key to press.
  *
- * The shared dialog (docs/design-v1-visual.md 3.5): a narrow card on a
+ * The shared dialog (docs/design/design-v1-visual.md 3.5): a narrow card on a
  * computer, the whole screen on a phone, where the list runs long.
  */
 export function ShortcutSheetHost(props: { role: "dm" | "player" }) {

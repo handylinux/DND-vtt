@@ -8,7 +8,7 @@ import type { WallPiece } from "./runs.ts";
 
 /**
  * The pieces the relief layer draws in depth order
- * (docs/design-v1-isometric-view.md 5.5 and 5.6): columns for raised cells,
+ * (docs/design/design-v1-isometric-view.md 5.5 and 5.6): columns for raised cells,
  * openings for pits, and standing wall pieces. Standees are the fourth kind,
  * placed among them by buckets.ts. Everything here is in world cells and
  * heights in cells, the drawn heights of view.ts (`drawnGround`), so a
@@ -26,7 +26,7 @@ export const SIDES = [
 /** How a cell's side is drawn: its terrain's texture, or a flat tone where it has none or its texture has not loaded. */
 export type SideLook = { texture: TerrainId | null; color: string };
 
-/** A connected set of pit cells, side by side, whose openings at 0 clip what is drawn below 0 in any of them (docs/design-v1-iso-hex-relief.md 5.2). */
+/** A connected set of pit cells, side by side, whose openings at 0 clip what is drawn below 0 in any of them (docs/design/design-v1-iso-hex-relief.md 5.2). */
 export type PitRegion = { id: number; cells: CellPiece[] };
 
 /**
@@ -189,7 +189,7 @@ export function sortKey(turn: Turn, x: number, y: number): number {
  * The point a piece sorts by: a cell's center, and a wall piece's midpoint
  * on squares. A hex wall piece sorts with its host hex's center, the nearer
  * host's at this turn on a shared side, so a run at a far hex's near corner
- * never passes the next hex's center (docs/design-v1-iso-hex-relief.md 6.1).
+ * never passes the next hex's center (docs/design/design-v1-iso-hex-relief.md 6.1).
  */
 export function keyOf(p: StaticPiece, turn: Turn): number {
   if (p.kind === "wall") {

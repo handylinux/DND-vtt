@@ -1,7 +1,7 @@
 import { Quaternion, Vector3 } from "three";
 
 /**
- * A die's path through a throw (docs/design-v1-roll-animation.md 3.2 and
+ * A die's path through a throw (docs/design/design-v1-roll-animation.md 3.2 and
  * 3.4): a scripted tumble, never a physics engine. The die eases from the
  * control that rolled to its slot while a rotation about its rolling axis,
  * put in front of the solved landing, shrinks to exactly 0 at 1 s. So it

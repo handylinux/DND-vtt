@@ -48,7 +48,7 @@ export function labelAt(view: RoomState | null, sceneId: string, p: Point, opts:
  * reducer erases it: an edge feature on any of its sides, a label whose
  * text covers part of it, a free wall whose midpoint lies in it, a stamp
  * or light whose center does, or a height or stair mark painted on it
- * (docs/design-v1-maps-vision.md sections 2.2, 3.5, 3.6 and 4.2). An edge on
+ * (docs/design/design-v1-maps-vision.md sections 2.2, 3.5, 3.6 and 4.2). An edge on
  * the scene's east or south border stays when the cell beside it is erased,
  * so it does not count.
  */

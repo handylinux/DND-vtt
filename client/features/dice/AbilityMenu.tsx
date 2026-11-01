@@ -10,7 +10,7 @@ import { RollModeTitle } from "./RollModeMenu.tsx";
 import { hasRollModeMenu, rollModeHint } from "./rollMode.ts";
 
 /**
- * An ability's list (docs/design-v1-stat-block-rolls.md 4): its title, then
+ * An ability's list (docs/design/design-v1-stat-block-rolls.md 4): its title, then
  * its rows, the blocked line under the title where rolls cannot go, or the
  * shared loading line while its numbers load. Render inside its Popover.
  */

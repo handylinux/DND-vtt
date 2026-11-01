@@ -385,7 +385,7 @@ Changes, as the About page states them:
 <!-- starter-packs: written by node scripts/starter-art.ts -->
 ## Starter packs
 
-Art a DM can pick from the Starter tab wherever art is chosen (docs/design-v1-starter-art.md): sets from one artist or project in one style, each under its own license. `node scripts/starter-art.ts` downloads every original from where its author published it, checks it against a pinned SHA-256 in `scripts/starter-art.json`, which also records each pack's license in its page's own words, a Wayback snapshot of that page and the check for AI art, and writes the files, their catalog (`shared/starterArt.ts`) and this section. A picked image keeps its work's credit in the room's library.
+Art a DM can pick from the Starter tab wherever art is chosen (docs/design/design-v1-starter-art.md): sets from one artist or project in one style, each under its own license. `node scripts/starter-art.ts` downloads every original from where its author published it, checks it against a pinned SHA-256 in `scripts/starter-art.json`, which also records each pack's license in its page's own words, a Wayback snapshot of that page and the check for AI art, and writes the files, their catalog (`shared/starterArt.ts`) and this section. A picked image keeps its work's credit in the room's library.
 
 The files under CC BY-SA licenses (the Illustrated Bestiary and Flare Portrait Pack Number One) are adaptations, resized and re-encoded, and stay under the same CC BY-SA license as their originals. RaccoonVTT's code is a separate work and is not affected.
 

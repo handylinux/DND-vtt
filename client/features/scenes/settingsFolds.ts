@@ -6,7 +6,7 @@ import { layoutWidth } from "../device/layout.ts";
 
 /*
  * The scene settings page's groups and their folds
- * (docs/design-v1-map-discovery.md 8.4): which groups show open, as this
+ * (docs/design/design-v1-map-discovery.md 8.4): which groups show open, as this
  * device last left them. Plain functions and a slot, for node --test, in
  * the token panel's pattern (features/tokens/panelFolds.ts): resolved once
  * per Room page, so a tablet turned across 900 px, which remounts the
@@ -25,7 +25,7 @@ export const SCENE_GROUP_LABELS: Readonly<Record<SceneGroup, string>> = {
   scene: "Size and view",
 };
 
-/** Each group's icon, after its chevron (docs/design-v1-design-pass.md 4.1). */
+/** Each group's icon, after its chevron (docs/design/design-v1-design-pass.md 4.1). */
 export const SCENE_GROUP_ICONS: Readonly<Record<SceneGroup, IconName>> = {
   players: "shown",
   map: "image",

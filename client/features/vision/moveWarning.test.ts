@@ -28,7 +28,7 @@ describe("moving players to a scene", () => {
     assert.match(moveWarning({ scene: scene({ vision: dark }), viewing: false, sight: undefined }) ?? "", /only what their characters on this scene see/);
   });
 
-  test("on a map image the DM is not looking at it adds that a map with no walls yet shows players all of it (docs/design-v1-map-discovery.md 8.1)", () => {
+  test("on a map image the DM is not looking at it adds that a map with no walls yet shows players all of it (docs/design/design-v1-map-discovery.md 8.1)", () => {
     assert.equal(
       moveWarning({ scene: scene({ vision: dark, map: MAP }), viewing: false, sight: undefined }),
       "Players will see only what their characters on this scene see. If none of them can see, players see only what they explored before. If its map has no walls yet, party vision shows players all of it at once.",

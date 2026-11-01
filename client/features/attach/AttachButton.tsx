@@ -22,11 +22,11 @@ import type { AttachViewer } from "./rights.ts";
 import { STEER_OPTIONS, steerWords } from "./tags.ts";
 
 /**
- * Attach in the token's bar (docs/design-v1-attach.md 4.1): a popover from
+ * Attach in the token's bar (docs/design/design-v1-attach.md 4.1): a popover from
  * 900 px up, a bottom sheet on a phone, listing what the selected token can
  * ride, carry or drag within reach (list.ts). `onOpen` hears whether the
  * popover is open, so the bar can stand over the notices while it is
- * (docs/design-v1-tool-options.md 7.6).
+ * (docs/design/design-v1-tool-options.md 7.6).
  */
 export function AttachButton(props: { token: Token; onOpen?(open: boolean): void }) {
   const layout = useLayoutSize();
@@ -97,7 +97,7 @@ const ROW_DATA = { [ROW_ATTR]: "" };
 /**
  * The rows, each a card `Row` with a portrait and its sentence, which wraps
  * rather than cut, so "Get on Treasure chest" reads whole on a small phone
- * (docs/design-v1-look-pass-2.md 2.5). Ride opens its one more question
+ * (docs/design/design-v1-look-pass-2.md 2.5). Ride opens its one more question
  * under its row, Controlled or Independent, with Ride under it, and ends
  * in the chevron every unfolding row has. The rows take the keys every
  * list does (components/menuKeys.ts): Down and Up move and wrap, Home and

@@ -7,7 +7,7 @@ import { clientOpSchema, ddbSyncForImport, EXPECT_PARTS, syncStamp, syncStampFit
 import { EMPTY_PC_STATS } from "./rules/pcStats.ts";
 import { actor, AT } from "./testutil.ts";
 
-/** A character's stat block's bounds (docs/design-v1-pc-stats.md 3.2 and 3.5). */
+/** A character's stat block's bounds (docs/design/design-v1-pc-stats.md 3.2 and 3.5). */
 
 const BLOCK: PcStats = { ...structuredClone(EMPTY_PC_STATS as PcStats), saves: ["dex"], skills: { stealth: "expert" } };
 
@@ -118,7 +118,7 @@ describe("a stat block's schema", () => {
   });
 });
 
-/** A sync record's bounds and a re-sync's `expect` (docs/design-v1-resync.md 4). */
+/** A sync record's bounds and a re-sync's `expect` (docs/design/design-v1-resync.md 4). */
 describe("a re-sync's schema", () => {
   const hex12 = (n: number) => n.toString(16).padStart(12, "0");
   const RECORD: DdbSyncPatch = {
@@ -235,7 +235,7 @@ describe("a re-sync's schema", () => {
   });
 });
 
-/** The record's class resources and a character update's counts spent (docs/design-v1-ddb-resources.md 4.1 and 5). */
+/** The record's class resources and a character update's counts spent (docs/design/design-v1-ddb-resources.md 4.1 and 5). */
 describe("class resources in a sync's schema", () => {
   const hex12 = (n: number) => n.toString(16).padStart(12, "0");
   const RECORD: DdbSyncPatch = { base: {}, rolls: {}, res: { [hex12(1)]: { k: "r:0123456789ab", h: "abcdef012345" } }, gone: ["r:00000000000a", "w:00000000000b"] };
@@ -308,7 +308,7 @@ describe("class resources in a sync's schema", () => {
   });
 });
 
-/** A fill's class resources (docs/design-v1-ddb-resources.md 3.1). */
+/** A fill's class resources (docs/design/design-v1-ddb-resources.md 3.1). */
 describe("class resources in a fill's schema", () => {
   test("a fill's class resources: each field bounded, a class of the twelve, at most 12, and read.resource", () => {
     const fill = { source: "ddb", stats: { rolls: [] }, actor: {}, warnings: [], read: { weapon: true, spell: true, other: true, resource: true } };

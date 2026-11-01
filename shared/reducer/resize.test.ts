@@ -10,7 +10,7 @@ import { RESHAPE_NOT_A_MOVE } from "./tokens.ts";
 import { SQUARES } from "../rules/grid.ts";
 
 /**
- * A resize as the reducer applies it (docs/design-v1-token-window.md 8.5
+ * A resize as the reducer applies it (docs/design/design-v1-token-window.md 8.5
  * and 8.7): a token update of the size and the spot, which clears a
  * squeeze, keeps the elevation, and on the acting creature's turn is no
  * movement. Its old size goes on every earlier stop, and it appends an

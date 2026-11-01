@@ -7,7 +7,7 @@ import { formulaRange, parseExtra, parseFormula, type Formula } from "./formula.
 import { CANNOT_REROLL, rerolled, rerollFace, rollFormula, withDie, withLucky, type Changed, type Draw } from "./roll.ts";
 
 /**
- * The resolve (docs/design-v1-dice.md 4.2 step 4): a dice op the actor has
+ * The resolve (docs/design/design-v1-dice.md 4.2 step 4): a dice op the actor has
  * admitted and permitted, turned into the `sys.dice` it stores in its place,
  * holding every die drawn. It runs once, on the server, before the reducer,
  * as an undo is built into `sys.restore`, so replay never rolls. It is
@@ -28,7 +28,7 @@ export type ResolveDeps = {
   draw: Draw;
   /** The op's batch id, the same for every batch of its tag (5.1). */
   batch: string;
-  /** The SRD creatures' numbers, where they are loaded (docs/design-v1-roll-options.md). */
+  /** The SRD creatures' numbers, where they are loaded (docs/design/design-v1-roll-options.md). */
   srd?: SrdRolls | null;
 };
 
@@ -152,7 +152,7 @@ function changedAnswer(op: OpOf<"roll.dice">, change: string, state: RoomState, 
       changed = ask.die === undefined ? { ok: false, error: "Bardic Inspiration names its die." } : withDie(dice, ask.die, deps.draw);
       break;
     case "fix-total":
-      // A typed total is fixed by typing it again, which the DM allows by reopening it (docs/design-v1-roll-request.md 7.5).
+      // A typed total is fixed by typing it again, which the DM allows by reopening it (docs/design/design-v1-roll-request.md 7.5).
       return refuse("Only a rolled answer can be changed this way.");
   }
   if (!changed.ok) return refuse(changed.error);
@@ -162,7 +162,7 @@ function changedAnswer(op: OpOf<"roll.dice">, change: string, state: RoomState, 
 }
 
 /**
- * A death save (docs/design-v1-roll-options.md 4.3): 1d20 with the
+ * A death save (docs/design/design-v1-roll-options.md 4.3): 1d20 with the
  * creature's death save bonus, 0 where none is known, and the extra. The
  * reducer counts it from the state then.
  */
@@ -176,7 +176,7 @@ function deathRoll(op: OpOf<"actor.deathRoll">, state: RoomState, deps: ResolveD
 }
 
 /**
- * A recharge roll (docs/design-v1-combat-controls.md 3.1): "Each time the
+ * A recharge roll (docs/design/design-v1-combat-controls.md 3.1): "Each time the
  * monster starts its turn, roll 1d6" (SRD 5.2.1). The reducer compares it
  * with the op's `min`.
  */

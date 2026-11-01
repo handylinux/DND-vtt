@@ -26,7 +26,7 @@ import { MEMBER_COLORS, theme } from "../lib/theme.ts";
 
 /**
  * Every shared component in every state, at `/dev/kit` in development only
- * (docs/design-v1-visual.md 5.1, part 1). The design pass is reviewed
+ * (docs/design/design-v1-visual.md 5.1, part 1). The design pass is reviewed
  * here before any screen moves onto the kit, and e2e/kit.e2e.ts drives it
  * with real keys.
  *

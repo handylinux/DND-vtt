@@ -9,7 +9,7 @@ const NO_SIGHT: Readonly<Record<string, SightTile>> = {};
 
 /**
  * A player's device's live ground on a scene, for its caught lists and
- * target rings (coverage.ts raysLive, docs/design-v1-map-discovery.md
+ * target rings (coverage.ts raysLive, docs/design/design-v1-map-discovery.md
  * decision 13): its sight with fog and party vision on, its revealed fog
  * with vision off (rules/held.ts deviceGround). Null for the DM, who reads
  * every area whole, and with fog off, where all ground is live.

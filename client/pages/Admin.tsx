@@ -20,7 +20,7 @@ type Phase =
   | { name: "failed"; message: string };
 
 /**
- * The admin page (docs/design-v1-dm-tools.md 3.18), a chunk of its own that
+ * The admin page (docs/design/design-v1-dm-tools.md 3.18), a chunk of its own that
  * no room ever loads. It exists only when the server has an admin password:
  * otherwise the server answers 404 and this is the not-found page. The page
  * lists rooms and storage and can pin or delete a room. It never shows what

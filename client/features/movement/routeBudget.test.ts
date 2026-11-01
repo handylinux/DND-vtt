@@ -13,7 +13,7 @@ import { seenRoom, world } from "./testing.ts";
 
 /**
  * Every public entry point of route work, driven through one board's work
- * on adversarial scenes (docs/design-v1-movement.md 5.2, reviews ASTRA-08,
+ * on adversarial scenes (docs/design/design-v1-movement.md 5.2, reviews ASTRA-08,
  * ASTRA-14, MV-O-22 and MV-O-23): a drag's aims and its drop, every
  * ruler's render and its turns, and an arrow key's press. Each frame has
  * a budget of LIMIT units, counted, not timed. A frame is the events since

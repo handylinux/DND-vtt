@@ -28,7 +28,7 @@ const BODY_HEIGHT = Math.round(FONT_PX * 1.15 + 2 * PAD_PX);
 const EDGE_PX = 1.5;
 
 /**
- * The height readout (docs/design-v1-heights-readout.md section 2): a small
+ * The height readout (docs/design/design-v1-heights-readout.md section 2): a small
  * pill over the cell a tap with the Select tool read, such as "↑10 ft" or
  * "Stairs", and a status line that speaks it. It is a DOM element rather
  * than a Konva pill, so it keeps clear of the top bar and the docks, which
@@ -52,7 +52,7 @@ export function ReadoutHost(props: { scene: Scene; tool: string; chrome: ChromeC
   const fogTiles = useRoomView((s) => s.view?.fogTiles ?? EMPTY_FOG);
   const role = useRoomView((s) => s.you?.role ?? "player");
   const tokenSelected = useRoomView((s) => s.local.selectedId !== null);
-  // A table display takes no taps (docs/design-v1-dm-tools.md 3.1), so it never shows one.
+  // A table display takes no taps (docs/design/design-v1-dm-tools.md 3.1), so it never shows one.
   const display = useIsDisplay();
   const { scene } = props;
   const words = useMemo(() => {
@@ -94,10 +94,10 @@ export function ReadoutHost(props: { scene: Scene; tool: string; chrome: ChromeC
   );
 }
 
-/** The pill points at its cell's middle, on the cell's top as the isometric view raises it (docs/design-v1-isometric-view.md 5.3). */
+/** The pill points at its cell's middle, on the cell's top as the isometric view raises it (docs/design/design-v1-isometric-view.md 5.3). */
 function ReadoutPill(props: { words: ReadoutWords; cell: { x: number; y: number }; grid: Grid; chrome: ChromeCamera; viewport: Size; insets: Insets }) {
   const { words, grid } = props;
-  // At the camera the canvas last drew, subscribed only while the pill shows (docs/design-v1-relief-pan.md 6.3).
+  // At the camera the canvas last drew, subscribed only while the pill shows (docs/design/design-v1-relief-pan.md 6.3).
   const { camera, pick } = useChromeCamera(props.chrome, true)!;
   const width = Math.ceil(measurePill(words.pill, FONT_PX, theme.font.body)) + 2 * PAD_PX;
   // A hex's middle is its center, its cell being its key.

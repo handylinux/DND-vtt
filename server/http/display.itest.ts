@@ -14,7 +14,7 @@ import { ipKey } from "../auth/ipKey.ts";
 import { startEngine, type Engine, type TestClient } from "../rooms/testing.ts";
 
 /**
- * Table displays (docs/design-v1-dm-tools.md 3.1) against the real server:
+ * Table displays (docs/design/design-v1-dm-tools.md 3.1) against the real server:
  * codes, display sessions and their cookie, the display socket, its
  * lifetime, and its image route.
  */
@@ -653,7 +653,7 @@ describe("the display image route", () => {
     assert.equal((await dm.get(`/api/rooms/${roomId}/display/assets/${map}/full`)).statusCode, 404);
   });
 
-  test("reads every page of a handout of pages shown to everyone, and no page of one shown to chosen players or kept in a document (docs/design-v1-pdf-handouts.md 3.4)", async () => {
+  test("reads every page of a handout of pages shown to everyone, and no page of one shown to chosen players or kept in a document (docs/design/design-v1-pdf-handouts.md 3.4)", async () => {
     const dm = t.client();
     const { roomId } = await dm.createRoom("Pages");
     const dmSocket = await t.connect(roomId, dm);

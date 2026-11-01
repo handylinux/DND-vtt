@@ -4,7 +4,7 @@ import { Icon } from "./Icon.tsx";
 import { choiceLook } from "./looks.ts";
 
 /**
- * A filter or a quick pick (docs/design-v1-visual.md 2.3): the outliner's
+ * A filter or a quick pick (docs/design/design-v1-visual.md 2.3): the outliner's
  * filters, the monster filters, DC chips, range ring presets. A pill 44 px
  * tall at 14 px weight 600, with an optional count in muted text, and the
  * pressed look when on (`aria-pressed`). A row of them wraps with

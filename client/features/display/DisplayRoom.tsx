@@ -61,7 +61,7 @@ import { chooseDisplayUiScale, forgetDisplayRoom, readDisplayMode, readDisplayTu
 import { TV_BUTTON_HEIGHT, TV_HANDOUT_SCRIM, TV_TEXT } from "./tvType.ts";
 
 /**
- * A table display's room (docs/design-v1-dm-tools.md 3.1): the player scene
+ * A table display's room (docs/design/design-v1-dm-tools.md 3.1): the player scene
  * full screen, as a player who owns nothing gets it, with no bars, toolbar,
  * panels, chips, toasts, log, roll requests or initiative strip. It mounts
  * the room's own canvas, and reads everything through the display's session
@@ -138,7 +138,7 @@ function DisplayTable(props: { roomId: string }) {
   const overlay: Overlay = xcard.showing ? "xcard" : handout.current ? "handout" : null;
   const menu = useMenu();
   const cursorHidden = useIdleCursor();
-  // The display's own pick, apart from a member's in the same browser (docs/design-v1-isometric-view.md ISO-D16).
+  // The display's own pick, apart from a member's in the same browser (docs/design/design-v1-isometric-view.md ISO-D16).
   const suggested = useRoomView((s) => (s.sceneId ? s.view?.scenes[s.sceneId]?.suggestedView : undefined));
   const viewChoice = useViewChoice({ key: displayViewKey(props.roomId), sceneId, suggested });
   useViewVoice(viewChoice);
@@ -315,7 +315,7 @@ function Centered(props: { children: ReactNode }) {
  *   scene the display keeps its last view.
  *
  * Each fits in the display's own view (`shown`), raised by the heights the
- * display has seen, through its shared fog (docs/design-v1-isometric-view.md
+ * display has seen, through its shared fog (docs/design/design-v1-isometric-view.md
  * 4.2): never a height hidden from the players.
  */
 function useDisplayCamera(gate: ReturnType<typeof sceneGate>, mode: DisplayMode, shown: View): ((viewport: Size) => Camera) | null {
@@ -514,7 +514,7 @@ type Paging = ReturnType<typeof useHandoutPaging>;
 
 /**
  * The page a handout of two or more pages shows on this display, and its
- * bar (docs/design-v1-pdf-handouts.md 7). The page is kept per showing for
+ * bar (docs/design/design-v1-pdf-handouts.md 7). The page is kept per showing for
  * as long as the display shows the room, and never stored: a resync of the
  * same showing keeps it, a blackout lifting finds it again, a new showing
  * starts at page 1, and a reload starts again. The DM's device never moves
@@ -614,7 +614,7 @@ function useBoxSize(ref: RefObject<HTMLElement | null>): Size | null {
 }
 
 /**
- * A handout of two or more pages on the TV (docs/design-v1-pdf-handouts.md
+ * A handout of two or more pages on the TV (docs/design/design-v1-pdf-handouts.md
  * 7): one page at a time, fitted whole as one image is, with "Page 2 of 5"
  * under the title. The page showing and the next one load, so Next page is
  * usually instant. A tap shows the bar, and a tap beside it hides it.
@@ -950,7 +950,7 @@ function DisplayMenu(props: {
 }
 
 /**
- * The View menu's rows at the TV's size (docs/design-v1-isometric-view.md
+ * The View menu's rows at the TV's size (docs/design/design-v1-isometric-view.md
  * 7): Follow the scene with the scene's suggestion under it, Top-down and
  * Isometric, kept for this display apart from any member's pick in the
  * same browser, then Turn left and Turn right while it shows Isometric.
@@ -1044,7 +1044,7 @@ function MenuButton(props: {
   compact?: boolean;
   /** Grows to fill its row in a wrapping bar. */
   grow?: boolean;
-  /** The icon alone, at the TV's size, its words (`children`) its name and tooltip (docs/design-v1-icons.md 3.1 rule 1). */
+  /** The icon alone, at the TV's size, its words (`children`) its name and tooltip (docs/design/design-v1-icons.md 3.1 rule 1). */
   icon?: IconName;
   /** The id of a line that says what it means, such as Follow the scene's suggestion. */
   describedBy?: string;

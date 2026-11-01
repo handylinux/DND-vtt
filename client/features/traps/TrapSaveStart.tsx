@@ -4,7 +4,7 @@ import { trapFill } from "../dice/groupSave/fills.ts";
 import { ReplaceConfirm } from "../dice/groupSave/ReplaceConfirm.tsx";
 import { useStartGroupSave, type StartInput } from "../dice/groupSave/start.ts";
 
-/** The group save a springing starts (docs/design-v1-traps.md 4.4): its rows the creatures it hits, frozen when it went off, and Apply settles it. */
+/** The group save a springing starts (docs/design/design-v1-traps.md 4.4): its rows the creatures it hits, frozen when it went off, and Apply settles it. */
 export function trapStart(trap: Trap, due: TrapDue): StartInput {
   return { source: { kind: "trap", trapId: trap.id, due: due.id, tokenIds: [...due.hits] }, ...trapFill(trap), panel: "dice" };
 }

@@ -22,7 +22,7 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-describe("routeFeet (docs/design-v1-movement.md 6.2)", () => {
+describe("routeFeet (docs/design/design-v1-movement.md 6.2)", () => {
   const opts = { swimSpeed: false, step: 1 };
 
   test("every diagonal 5 ft: each piece by its longer side, extras multiplying its feet", () => {

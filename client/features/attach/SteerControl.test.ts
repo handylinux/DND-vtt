@@ -6,7 +6,7 @@ import type { RoomState, Token } from "#shared/model.ts";
 import { DM, room, token } from "#shared/testutil.ts";
 
 /*
- * Ride's question in the rider's panel (docs/design-v1-look-pass-2.md 2.7
+ * Ride's question in the rider's panel (docs/design/design-v1-look-pass-2.md 2.7
  * and 3.1): two short words side by side, where two sentences stacked as
  * pills of different widths, and a Help line under them that says what the
  * chosen one does and is the radiogroup's description, so the short words

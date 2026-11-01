@@ -16,7 +16,7 @@ import { returnedRollMode } from "../rolls/card.ts";
 import { pressChip, type CardButton, type CardChip } from "./saveCards.ts";
 
 /*
- * What the fight alerts' cards that roll share (docs/design-v1-roll-options.md
+ * What the fight alerts' cards that roll share (docs/design/design-v1-roll-options.md
  * 6.3). The card's roll is kept by its tag in the roll options' store, so
  * it shows busy, then its result in place, and survives the card being
  * drawn again. Each card has its own Adv and Dis chips, and its other

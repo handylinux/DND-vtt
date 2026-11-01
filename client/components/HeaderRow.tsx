@@ -3,7 +3,7 @@ import { theme } from "../lib/theme.ts";
 import { buttonLook } from "./looks.ts";
 
 /**
- * The side panel's header rows (docs/design-v1-side-headers.md): the party
+ * The side panel's header rows (docs/design/design-v1-side-headers.md): the party
  * line, each pane's tab row or bar, and a subpage's header. One look for
  * all of them, so the panel below reads as the same kind of thing as the
  * one on top: a line of 44 px targets with a 1 px rule at its foot and no

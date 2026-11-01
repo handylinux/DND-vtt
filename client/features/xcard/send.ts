@@ -1,5 +1,5 @@
 /**
- * The sender's side of the X-card (docs/design-v1-dm-tools.md 3.11), as
+ * The sender's side of the X-card (docs/design/design-v1-dm-tools.md 3.11), as
  * plain functions so they run under node --test. XCardButton.tsx draws it.
  *
  * Only the device that tapped shows any of this. The card everyone sees,

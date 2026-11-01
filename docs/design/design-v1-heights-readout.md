@@ -6,7 +6,7 @@ The project owner asked: "As a player what's the easiest way to see the height o
 
 ## 1. What a player may learn
 
-- A player's client holds the player scene's build chunks with `heights` and `up` (stair marks) exactly as stored, under fog or not, explored or not (`shared/project.ts:713-717`). They are map data, not secrets (`docs/design-v1-maps-vision.md` 4.2, Projection).
+- A player's client holds the player scene's build chunks with `heights` and `up` (stair marks) exactly as stored, under fog or not, explored or not (`shared/project.ts:713-717`). They are map data, not secrets (`docs/design/design-v1-maps-vision.md` 4.2, Projection).
 - It holds nothing of another scene. Chunks, kept rulers and ephemeral frames go only to viewers of their scene (`project.ts:632`, `project.ts:615`, `server/rooms/ephemeral.ts` `routeEphemeral`). Behind a blackout a player has no scene at all (`viewerSceneId`).
 - A live ruler reaches a player only when every stop on a token is on one they can see (`ephemeral.ts` `allowed`). A kept ruler follows the same rule (`projectDrawingCtx`).
 - So every viewer of a scene holds the same heights. What differs is the screen: the fog hides the ground. The app never says what the fog hides, even from data the client holds: a door under the fog cannot be tapped or named (`client/features/doors/doors.ts` `doorSeen`, `noteDoor`). Both features keep that rule through one helper, `seenGround(cell)`. It is the cell's ground for the DM. For a player on a scene with fog on, it is unknown on a cell the merged fog fully covers (`isCellFullyFogged`, the doors' test). A cell with any revealed part counts as seen, as for doors, and explored ground counts as seen.
@@ -40,7 +40,7 @@ Every other tool keeps its tap as it is: the ruler adds a stop, Ping pings, the 
 
 The pill's height is Height mode's `regionText`, so it reads like the DM's pills and a token's badge. Ground at 0 shows nothing, so the common tap to deselect stays quiet on an ordinary map.
 
-**The look.** That of the board's small screen-size pill (`features/measure/Pill.tsx` with `small`: 12 px bold, the `overlay` fill, a 1.5 px outline, 6 px corners), at a fixed size on screen like a ruler's readings, which must read at any zoom (`docs/design.md:1502`). Its outline is Height mode's: light for raised ground and for every stair, a stair in a pit included, and grey for lowered ground (`RAISED_EDGE` and `LOWERED_EDGE`, exported from `heights/boardText.ts`). It reads the cell from the viewer's view on each render, so it follows a DM's repaint and goes when the ground turns 0 or the fog covers it.
+**The look.** That of the board's small screen-size pill (`features/measure/Pill.tsx` with `small`: 12 px bold, the `overlay` fill, a 1.5 px outline, 6 px corners), at a fixed size on screen like a ruler's readings, which must read at any zoom (`docs/design/design.md:1502`). Its outline is Height mode's: light for raised ground and for every stair, a stair in a pit included, and grey for lowered ground (`RAISED_EDGE` and `LOWERED_EDGE`, exported from `heights/boardText.ts`). It reads the cell from the viewer's view on each render, so it follows a DM's repaint and goes when the ground turns 0 or the fog covers it.
 
 **Where it sits.** On a phone the top bar and the docks cover the map's edges, and the Konva `Pill` ignores them: with `above` or `below` it neither slides nor clamps (`Pill.tsx` `pillPlace`), and its pointer stays at its middle. So the readout is a DOM element in a host beside `DoorPillHost`, which gets the camera, the viewport and the room's insets as the door pill does, with `pointer-events: none`. `cardPlace` (`features/movement/anchor.ts`, the door pill's) places its box over the tapped cell's center, flips it below when the top inset leaves no room, and slides and clamps it inside the insets. A pointer marks the cell when the box sits wholly above or below the cell's center and that x lies along the box's straight edge. Otherwise the pill shows clamped, with no pointer. The clamped form holds only while the cell's center is in the area the insets leave clear: once a pan or a pinch takes the center under a bar or a dock, the pill hides, and it comes back if the cell does before the readout ends (`readoutPlace` in `heights/ground.ts`).
 
@@ -106,7 +106,7 @@ At 100 ft:
   The build puts the repeat's state machine in `client/lib/holdRepeat.ts`, with its test beside it, since a `.tsx` file cannot load under `node --test`. `controls.tsx` wires it to `OptButton` (`repeat`, `onHold`, `repeatValue`) and `StepValue` (`hushed`). A pointer press keeps the value quiet from press to lift, a tap included, so each press is spoken once, at its end.
 
   A typed number was the alternative, and it opens the keyboard over the map being painted.
-- **Tests and docs naming 30 ft.** No test pins the stepper's top. `canvas/tokenShadow.test.ts` names 30 ft as a flier's full lift, which stays. The docs that say 30 ft up are `docs/design-v1-maps-vision.md:541` (4.2's "-20 ft to +30 ft"), `docs/design.md:1379`, `docs/features.md:117` and `FEATURES.md:80`.
+- **Tests and docs naming 30 ft.** No test pins the stepper's top. `canvas/tokenShadow.test.ts` names 30 ft as a flier's full lift, which stays. The docs that say 30 ft up are `docs/design/design-v1-maps-vision.md:541` (4.2's "-20 ft to +30 ft"), `docs/design/design.md:1379`, `docs/features.md:117` and `FEATURES.md:80`.
 
 ## 6. Tests
 
@@ -156,7 +156,7 @@ One part, scheduled after the design pass deploys. It touches:
 - Shared constants: `TOAST_MS` moves from `pages/Room.tsx:53` to an export in `client/state/store.ts`. `VISUALLY_HIDDEN` has three copies, in `pages/Room.tsx:730`, `pages/RoomDock.tsx:217` and inline in `pages/RoomChrome.tsx:350`. They move to one export in `client/lib/a11y.ts`, which the readout uses too, rather than a fourth copy.
 - `e2e/vision.e2e.ts`.
 - Deploy notes: reload every open page, table displays included, after the deploy (section 3, Rollout). The README's Updating section says so.
-- Docs: `FEATURES.md` (section 7), `docs/features.md:117`, `docs/design-v1-maps-vision.md` 4.2 (the stepper's "-20 ft to +30 ft" at line 541 becomes "+100 ft", and Player behavior gains the readout and the ruler), and `docs/design.md` sections 6 (`Drawing.z`), 7.6 (free stops carry `z`, line 649), 9.2 (a free stop stands on its ground, line 778) and 12 (the stepper, line 1379).
+- Docs: `FEATURES.md` (section 7), `docs/features.md:117`, `docs/design/design-v1-maps-vision.md` 4.2 (the stepper's "-20 ft to +30 ft" at line 541 becomes "+100 ft", and Player behavior gains the readout and the ruler), and `docs/design/design.md` sections 6 (`Drawing.z`), 7.6 (free stops carry `z`, line 649), 9.2 (a free stop stands on its ground, line 778) and 12 (the stepper, line 1379).
 
 ## 9. Questions for the project owner
 

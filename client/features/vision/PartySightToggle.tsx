@@ -6,7 +6,7 @@ import { partySightSlot, visionOn } from "./sightMode.ts";
 
 /**
  * The DM's "Party sight" switch, beside "View as a player"
- * (docs/design-v1-maps-vision.md section 4.3.1). The DM's own map stays
+ * (docs/design/design-v1-maps-vision.md section 4.3.1). The DM's own map stays
  * fully lit to work on, and this veils what the party cannot see, so the
  * DM can check a torch's reach without leaving it. It shows on a scene with
  * party vision, since only those have sight to show.

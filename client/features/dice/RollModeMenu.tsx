@@ -37,7 +37,7 @@ export function rollModeBound() {
 /**
  * A roll menu's title and choices without the Popover, so a popover that
  * already stands can show them, as an ability's list swaps to one roll's
- * options in place (docs/design-v1-stat-block-rolls.md 5.1).
+ * options in place (docs/design/design-v1-stat-block-rolls.md 5.1).
  */
 export function RollModeMenuBody({ name, title, capability, dm, onPick }: Omit<RollModeMenuProps, "handle">) {
   const items = rollModeItems(capability, dm);

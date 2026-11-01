@@ -13,12 +13,12 @@ import { OUTCOME_RESTORED, OUTCOME_UNDONE, OUTCOME_UNAVAILABLE, assertPrivateOut
 import { ConsoleWatch, diceFoldsOpen, multiSelect, OpSocket, reopenRoom, resultLine, Shots, SocketWatch, startServer, tapCell, waitFor, wholeInReach, type Server } from "./harness.ts";
 
 /**
- * Roll options and the group save (docs/design-v1-roll-options.md 11), on
+ * Roll options and the group save (docs/design/design-v1-roll-options.md 11), on
  * the real server serving the production build, with the DM and a player
  * each on a phone at 375 x 667 and the DM's interface at 130%: one
  * goblin's options from its bar's Roll, a tap on an option scrolled to
  * the foot of the sheet showing its result in the header line, in view
- * (docs/design-v1-dice-ui.md 4.1), a critical hit's
+ * (docs/design/design-v1-dice-ui.md 4.1), a critical hit's
  * damage under the room's "Max plus a roll" rule, then three goblins and
  * Bree selected for a DC 13 Dexterity save. The goblins roll on the
  * server, Bree's player answers on her card, 5d6 fire + 5d6 radiant rolls
@@ -28,7 +28,7 @@ import { ConsoleWatch, diceFoldsOpen, multiSelect, OpSocket, reopenRoom, resultL
  * The player's card has no Roll of its own in this tree, so Bree's player
  * types her total, the card's other way to answer.
  *
- * The dice pass's part (docs/design-v1-dice-pass.md 5.3, steps `dp-`):
+ * The dice pass's part (docs/design/design-v1-dice-pass.md 5.3, steps `dp-`):
  * three goblins selected show one card with their names and cells that say
  * "DEX" under "Saves for 3", and their shared Scimitar keeps its hits and
  * Roll damage through folds and selection changes that keep two or more,
@@ -298,7 +298,7 @@ describe("raccoon-vtt group save", { timeout: 300_000 }, () => {
     const before = diceLines(dmSocket.state?.log).length;
     await save.tap();
     const line = await waitFor("the Cha save's line", () => diceLines(dmSocket.state?.log).slice(before)[0] ?? null);
-    // The result lands in the panel's header line, which stays in view, and never under the cell (docs/design-v1-dice-ui.md 4.1).
+    // The result lands in the panel's header line, which stays in view, and never under the cell (docs/design/design-v1-dice-ui.md 4.1).
     const result = sheet.locator("[data-dice-last]").getByText(String(line.rolls[0]!.total), { exact: true });
     await result.waitFor();
     await waitFor("the result inside the sheet's view", async () => {

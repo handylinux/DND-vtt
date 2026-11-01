@@ -9,7 +9,7 @@ import { lightText } from "../vision/presets.ts";
 import { overlaps } from "./heights/boardText.ts";
 
 /**
- * Lights in the builder (docs/design-v1-maps-vision.md sections 3.6 and
+ * Lights in the builder (docs/design/design-v1-maps-vision.md sections 3.6 and
  * 4.3.1). Wave 3 stores the lights a Universal VTT file brings and shows
  * them to the DM as small suns. In the builder's Lights mode a tap on a sun
  * selects it, which draws its reach as faint rings. Wave 4 places, edits

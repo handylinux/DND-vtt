@@ -31,14 +31,14 @@ type Export =
   | { kind: "error"; key: string; message: string };
 
 /**
- * The Log panel's Export sheet (docs/design-v1-dm-tools.md 3.10): the
+ * The Log panel's Export sheet (docs/design/design-v1-dm-tools.md 3.10): the
  * evenings this viewer's log holds, newest first, and Everything. The
  * server renders the file from what this viewer may read, so it names
  * creatures on every scene and needs no hundred page loads here.
  *
  * Listing and each export count against one hourly limit, so the list is
  * asked for once per opening and kept, 25 sessions at a time with Older
- * sessions for the next 25 (docs/design-v1-log-history.md 5.3). A file is
+ * sessions for the next 25 (docs/design/design-v1-log-history.md 5.3). A file is
  * saved as the map export saves its picture (mapexport/save.ts): a download
  * on a computer, and the share sheet on a phone that has one, which needs a
  * second tap of its own. A file past 8 MiB is not read into the page: its

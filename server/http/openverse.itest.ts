@@ -12,7 +12,7 @@ import { solid, tempDir } from "../assets/testImages.ts";
 
 /**
  * Openverse as the second image search, and the credit an image from it
- * keeps (docs/design-v1-dm-tools.md 3.13). Openverse and SerpApi are local
+ * keeps (docs/design/design-v1-dm-tools.md 3.13). Openverse and SerpApi are local
  * fakes. Each app runs Openverse on a day of its own, long past, so the
  * server-wide day budget it counts is this test's alone.
  */

@@ -66,7 +66,7 @@ import { isHex, sceneGrid } from "#shared/rules/grid.ts";
 import { flatPressTokens, keepRingPairs, sameIso } from "./renderCache.ts";
 
 /**
- * The isometric board (docs/design-v1-isometric-view.md 5.1): two stages,
+ * The isometric board (docs/design/design-v1-isometric-view.md 5.1): two stages,
  * one over the other. The ground stage never listens. It is taller than the
  * canvas by the lift margin, and draws the map, the grid, the board layers,
  * the creatures the stand rule lays flat, sight, fog and the still ground
@@ -272,7 +272,7 @@ function IsoBoardImpl(props: IsoBoardProps) {
   const { box: cull, key: cullKey } = cullOf(cam, size);
 
   /*
-   * Areas standing as their real shapes (docs/design-v1-iso-area-shapes.md):
+   * Areas standing as their real shapes (docs/design/design-v1-iso-area-shapes.md):
    * the still areas the ground stage draws, read where their tokens stand
    * and without those being dragged, as TemplateLayer reads them, and the
    * area the Area tool aims once the finger rests. Each stands where heights
@@ -333,7 +333,7 @@ function IsoBoardImpl(props: IsoBoardProps) {
    * (scheduler.ts background): after the frame's draw, with what the frame
    * leaves of its budget, and never in a frame that repaints the relief
    * whole or began with a repaint waiting, so a standing area's publish
-   * and its repaint never share a frame with a slice (docs/design-v1-relief-pan.md 8).
+   * and its repaint never share a frame with a slice (docs/design/design-v1-relief-pan.md 8).
    */
   useEffect(() => {
     const scheduler = schedulerRef.current;
@@ -453,7 +453,7 @@ function IsoBoardImpl(props: IsoBoardProps) {
   };
 
   /*
-   * The camera reaches the stages without React (docs/design-v1-relief-pan.md
+   * The camera reaches the stages without React (docs/design/design-v1-relief-pan.md
    * 6.2): the room's live camera holds the camera on screen, and the applier
    * positions both stages at it, its translation on the relief canvas's
    * device grid, inside the scheduler's camera move, so the relief scrolls.
@@ -840,7 +840,7 @@ function AimProbe(props: {
   return null;
 }
 
-/** Where "Building area shapes…" shows: at the top of the canvas, clear of the bar over it, taking no presses (docs/design-v1-iso-area-shapes.md 7). */
+/** Where "Building area shapes…" shows: at the top of the canvas, clear of the bar over it, taking no presses (docs/design/design-v1-iso-area-shapes.md 7). */
 function buildingStyle(insets: Insets | undefined): CSSProperties {
   return {
     position: "absolute",

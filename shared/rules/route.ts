@@ -37,7 +37,7 @@ import {
 
 /**
  * A move's route, what it costs and the spots it passes
- * (docs/design-v1-movement.md sections 4 and 6), shared by the client, the
+ * (docs/design/design-v1-movement.md sections 4 and 6), shared by the client, the
  * reducer and the features that build on a move (attached tokens, traps).
  *
  * A route is straight pieces from where the token stands, each piece's end
@@ -46,7 +46,7 @@ import {
  * costs and spots from the stored op. If any rule here changes, the op
  * version moves with it.
  *
- * On a hex scene (docs/design-v1-hex-grids.md 4.2 to 4.4) a leg is
+ * On a hex scene (docs/design/design-v1-hex-grids.md 4.2 to 4.4) a leg is
  * straight from its start's reference hex to its end's: its feet are the
  * hex steps between them, and its spots stand on the hex line between them.
  * A route's pieces end on anchors, of the creature's size or, where it

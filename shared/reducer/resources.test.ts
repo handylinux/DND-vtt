@@ -6,7 +6,7 @@ import type { Op } from "../protocol.ts";
 import { DM, P1, P2, actor, apply, character, room, token } from "../testutil.ts";
 
 /**
- * Class resources on the character (docs/design-v1-combat-controls.md 3.1
+ * Class resources on the character (docs/design/design-v1-combat-controls.md 3.1
  * and 7), and what each rest brings back of them and of a creature's spent
  * abilities (2.4).
  */
@@ -25,7 +25,7 @@ function table(resources: ClassResource[] = [rage, focus, loh], over: Partial<Ac
 const update = (resources: Omit<ClassResource, "used">[]): Op => ({ t: "character.update", characterId: "thorn", patch: { resources } });
 const sent = ({ used: _used, ...r }: ClassResource) => r;
 
-describe("class resources (docs/design-v1-combat-controls.md 3.1)", () => {
+describe("class resources (docs/design/design-v1-combat-controls.md 3.1)", () => {
   test("an update keeps each count spent by id, at most its new count, and a new one starts at none", () => {
     const state = apply(table(), update([sent(loh), { ...sent(rage), max: 1, edited: true }, { id: "surge", name: "Action Surge", max: 1, reset: "short" }]));
     assert.deepEqual(state.characters.thorn!.resources, [
@@ -48,7 +48,7 @@ describe("class resources (docs/design-v1-combat-controls.md 3.1)", () => {
   });
 });
 
-describe("a count spent sent with the list (docs/design-v1-ddb-resources.md 5)", () => {
+describe("a count spent sent with the list (docs/design/design-v1-ddb-resources.md 5)", () => {
   type Sent = Omit<ClassResource, "used"> & { used?: number };
   const send = (resources: Sent[]): Op => ({ t: "character.update", characterId: "thorn", patch: { resources } });
 
@@ -67,7 +67,7 @@ describe("a count spent sent with the list (docs/design-v1-ddb-resources.md 5)",
   });
 });
 
-describe("what a rest brings back (docs/design-v1-combat-controls.md 2.4)", () => {
+describe("what a rest brings back (docs/design/design-v1-combat-controls.md 2.4)", () => {
   const marks: Record<string, UseMark> = {
     "actions:fire-breath": { kind: "recharge", name: "Fire Breath", used: 1, max: 1, min: 5 },
     "actions:phantasms": { kind: "rest", name: "Phantasms", used: 1, max: 1 },

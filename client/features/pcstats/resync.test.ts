@@ -35,7 +35,7 @@ import {
 } from "./resync.ts";
 import { ddbCharacterId } from "#shared/ddb/link.ts";
 
-/** A re-sync's words (docs/design-v1-resync.md 3), over the merge's own items. */
+/** A re-sync's words (docs/design/design-v1-resync.md 3), over the merge's own items. */
 
 const SHEET = "https://www.dndbeyond.com/characters/12345678";
 const AT = "2026-10-20T19:00:00.000Z";
@@ -261,7 +261,7 @@ describe("the done line, the size refusals and the answers (3.4, 3.5)", () => {
     assert.equal(doneLine({ cameIn: 0, removed: 0, cameBack: 2, stayed: 0, ...none }), "2 rolls came back.");
   });
 
-  test("class resources count beside the rolls (docs/design-v1-ddb-resources.md 6.1)", () => {
+  test("class resources count beside the rolls (docs/design/design-v1-ddb-resources.md 6.1)", () => {
     assert.equal(doneLine({ cameIn: 2, removed: 1, cameBack: 0, stayed: 1, resourcesRemoved: 2, resourcesBack: 1 }), "2 changes came in, 1 roll and 2 class resources were removed, 1 came back, and 1 of your changes stayed.");
     assert.equal(doneLine({ cameIn: 0, removed: 0, cameBack: 0, stayed: 0, resourcesRemoved: 1, resourcesBack: 0 }), "1 class resource was removed.");
     assert.equal(doneLine({ cameIn: 0, removed: 0, cameBack: 1, stayed: 0, resourcesRemoved: 0, resourcesBack: 1 }), "1 roll and 1 class resource came back.");
@@ -278,7 +278,7 @@ describe("the done line, the size refusals and the answers (3.4, 3.5)", () => {
   });
 });
 
-/** Every line of the Class resources group (docs/design-v1-ddb-resources.md 6.1). */
+/** Every line of the Class resources group (docs/design/design-v1-ddb-resources.md 6.1). */
 describe("class resources' words", () => {
   const blocks: ReadingBlocks = { now: { stats: empty(), level: 5 }, after: { stats: empty(), level: 5 } };
   const mine: ClassResource = { id: "rage", name: "Rage", max: 3, used: 1, reset: "shortOne", preset: "barbarian-rage", level: 3 };

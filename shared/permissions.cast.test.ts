@@ -6,7 +6,7 @@ import { AREA_ASKED, AREA_ASKED_DM, ASKS_WAITING, ASK_CLOSED, DM_RUNS_GROUP_SAVE
 import type { CastInput, Op } from "./protocol.ts";
 import { DM, P1, P2, castAsk, castTable, token } from "./testutil.ts";
 
-/** Who may ask for saves, close an ask and change an asked area (docs/design-v1-player-save-spell.md 5.4). */
+/** Who may ask for saves, close an ask and change an asked area (docs/design/design-v1-player-save-spell.md 5.4). */
 
 const deps = { canUseAsset: () => true };
 const decide = (state: RoomState, op: Op, who: Viewer = P1) => {

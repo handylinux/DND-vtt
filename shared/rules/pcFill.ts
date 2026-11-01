@@ -4,7 +4,7 @@ import type { ClassId } from "./classResources.ts";
 import { EMPTY_PC_STATS } from "./pcStats.ts";
 
 /**
- * What a fill read (docs/design-v1-pc-stats.md 6.1): pasted text through
+ * What a fill read (docs/design/design-v1-pc-stats.md 6.1): pasted text through
  * the stat block reader, or a D&D Beyond character. One shape for both, so
  * one review step says what it read, what it replaces and what else it
  * sets, and nothing is saved until the player's Save.
@@ -35,11 +35,11 @@ export type PcFill = {
   /** One line each, for "Check these". */
   warnings: string[];
   /**
-   * Whether each kind of roll was read whole (docs/design-v1-resync.md
+   * Whether each kind of roll was read whole (docs/design/design-v1-resync.md
    * 2.5): its sources were all there and the 40-roll cut took none of it.
    * A re-sync removes a synced roll only of a kind read whole. Absent reads
    * as all three, as a pasted-text fill is. `resource` says the same of the
-   * class resources (docs/design-v1-ddb-resources.md 3.2), and absent while
+   * class resources (docs/design/design-v1-ddb-resources.md 3.2), and absent while
    * `resources` is there reads as false, so such a fill never removes one.
    */
   read?: { weapon: boolean; spell: boolean; other: boolean; resource?: boolean };
@@ -48,7 +48,7 @@ export type PcFill = {
 };
 
 /**
- * A class resource as a D&D Beyond fill reads it (docs/design-v1-ddb-resources.md
+ * A class resource as a D&D Beyond fill reads it (docs/design/design-v1-ddb-resources.md
  * 3.1): `preset` and `level` a preset match and its class's level, `classId`
  * the class its feature resolved to, and `used` D&D Beyond's spent count,
  * absent when it was not read.

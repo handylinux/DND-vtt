@@ -150,20 +150,20 @@ export const theme = {
    * component (1 or 2) and the table display's own order stay local.
    */
   z: {
-    /** The tracker's round header while it sticks (docs/design-v1-combat-flow.md 3.1): above a row being dragged (2), so a row dragged upward passes under it. */
+    /** The tracker's round header while it sticks (docs/design/design-v1-combat-flow.md 3.1): above a row being dragged (2), so a row dragged upward passes under it. */
     stickyHeader: 3,
     pane: 5,
     sheet: 10,
     options: 14,
     bars: 15,
-    /** The token action bar on a screen too short to dock it (docs/design-v1-bar-dock.md 1.4): over the toolbar and the options it covers, under the notices. */
+    /** The token action bar on a screen too short to dock it (docs/design/design-v1-bar-dock.md 1.4): over the toolbar and the options it covers, under the notices. */
     barOverlay: 16,
     /** A map pane's bottom sheet on a screen too short for it under the top bars (features/builder/labelEdit.ts panePlacement): over the bars, so its header and Close show, and under the notices, so a toast still shows over it. */
     paneOverBars: 17,
     notices: 20,
     /**
      * An open popover or menu and the element that holds it, in a browser with no popovers
-     * (docs/design-v1-tool-options.md 7.6): over notices and toasts, under the fight's alerts opened
+     * (docs/design/design-v1-tool-options.md 7.6): over notices and toasts, under the fight's alerts opened
      * over the screen, a player's roll card and dialogs. With popovers its box stands in the top layer
      * over all of these, and only a modal dialog opened after it stands above it (FL-17).
      */
@@ -204,19 +204,19 @@ export const theme = {
      * The widest a floating notice stands over the map: the connection
      * banner, the quiet load, the starting view's bar, a toast and the
      * preview's banner, so the map either side still takes a tap
-     * (docs/design-v1-design-pass.md 4.4).
+     * (docs/design/design-v1-design-pass.md 4.4).
      */
     notice: 520,
     /**
-     * The shared popover base (components/Popover.tsx, docs/design-v1-tool-options.md 7.1 and 7.2): its
+     * The shared popover base (components/Popover.tsx, docs/design/design-v1-tool-options.md 7.1 and 7.2): its
      * gap from its anchor, its margin inside its bound, and the size of a tile in a menu of tiles.
      */
     popover: { gap: 6, margin: 8, tile: 60 },
     /**
-     * A tool's options in one row (docs/design-v1-tool-options.md 4.2, 6 and 8): the stacked row's height (44 px
+     * A tool's options in one row (docs/design/design-v1-tool-options.md 4.2, 6 and 8): the stacked row's height (44 px
      * controls, 4 px padding above and below and a 1 px top edge), the line's gap above the row, the least width of a
      * flexible field and of flexible text, a color chip's disk, and the most a creature's name takes in a control
-     * before it ends in an ellipsis, about ten characters (docs/design-v1-area-from-character.md 3.2).
+     * before it ends in an ellipsis, about ten characters (docs/design/design-v1-area-from-character.md 3.2).
      */
     options: { row: 53, lineGap: 6, field: 96, text: 48, disk: 24, name: 68 },
   },
@@ -233,12 +233,12 @@ export const theme = {
      * The right safe area as the map's own chrome sees it (the top bar, the
      * toolbar, the tool's options and the alerts column): the inset where
      * the map reaches the right edge, and none beside the side panel, which
-     * holds it (docs/design-v1-layout-hierarchy.md 4.3). Room sets the
+     * holds it (docs/design/design-v1-layout-hierarchy.md 4.3). Room sets the
      * property on the map's area.
      */
     mapRight: "var(--rvtt-map-safe-right, env(safe-area-inset-right, 0px))",
   },
-  /** The isometric view's raised ground, walls and standees (docs/design-v1-isometric-view.md 5.4 and 5.5). */
+  /** The isometric view's raised ground, walls and standees (docs/design/design-v1-isometric-view.md 5.4 and 5.5). */
   relief: {
     /** A standee's ring on the ground, under its disposition's outline. */
     ring: "rgba(0, 0, 0, 0.25)",
@@ -266,7 +266,7 @@ export const theme = {
   },
   /**
    * An area standing as its real shape in Isometric
-   * (docs/design-v1-iso-area-shapes.md 5): the area's own color at these
+   * (docs/design/design-v1-iso-area-shapes.md 5): the area's own color at these
    * strengths, each fill once on its far faces and once on its near ones,
    * so what lies behind it takes about twice the tint of what lies inside.
    * Widths and dashes are screen pixels.

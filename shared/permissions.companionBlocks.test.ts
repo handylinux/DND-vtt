@@ -7,7 +7,7 @@ import { DM, P1, P2, actor, character, companionBlock, imageRef, room, token } f
 
 /**
  * The permissions of companion stat blocks
- * (docs/design-v1-companion-stat-blocks.md 4.1): a character's players and
+ * (docs/design/design-v1-companion-stat-blocks.md 4.1): a character's players and
  * the DM keep its blocks, with no room setting, and a player never learns
  * that a block outside their view exists.
  */

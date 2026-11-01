@@ -52,7 +52,7 @@ function onVisionScene(view: RoomState, token: ViewToken): boolean {
  * The DM sees through the fog, so nothing vanishes for a DM.
  *
  * On a per-player scene that fog is the player's own, which their copy
- * holds as its fog (docs/design-v1-per-player-vision.md 6.6), not the fog
+ * holds as its fog (docs/design/design-v1-per-player-vision.md 6.6), not the fog
  * every player shares: a creature dropped on ground only they remember
  * stays on their map. A copy holds no holder list, so any member id reads
  * the copy's own fog.
@@ -132,7 +132,7 @@ export function watchDrop(input: { role: "dm" | "player"; store: SettleStore; mo
     const now = input.store.getState().view;
     if (now === null || !stillOn(now)) return;
     const gone = watched.filter((m) => taken.get(m.token.id) === true && now.tokens[m.token.id] === undefined).map((m) => displayName(m.token));
-    // On a per-player scene the creature left this player's own sight, which may still be another's (docs/design-v1-per-player-vision.md 11).
+    // On a per-player scene the creature left this player's own sight, which may still be another's (docs/design/design-v1-per-player-vision.md 11).
     const text = intoFogText(gone, perPlayerScene(now.scenes[now.meta.playerSceneId ?? ""]) ? "yours" : "party");
     if (text) input.notify(text);
   }

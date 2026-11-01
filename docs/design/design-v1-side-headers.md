@@ -1,6 +1,6 @@
 # raccoon-vtt v1: compact, consistent headers in the side panel
 
-Status: decided and built. The project owner chose option A on 2026-10-17, with "Ask" on the folded party line and one 45 px row height everywhere (section 14). Prototypes B and C were dropped. Section 12 lists the build. Code is cited from the stacked tip `wotwryrz` (main with the live play dice fixes and the critical hit rules). This design builds on docs/design-v1-panel-tabs.md ("the tabs design"), docs/design-v1-split-panel.md ("the split design"), docs/design-v1-visual.md 2.3 ("the visual design") and docs/design-v1-layout-hierarchy.md 4.1, and keeps what they decided except where section 10 says.
+Status: decided and built. The project owner chose option A on 2026-10-17, with "Ask" on the folded party line and one 45 px row height everywhere (section 14). Prototypes B and C were dropped. Section 12 lists the build. Code is cited from the stacked tip `wotwryrz` (main with the live play dice fixes and the critical hit rules). This design builds on docs/design/design-v1-panel-tabs.md ("the tabs design"), docs/design/design-v1-split-panel.md ("the split design"), docs/design/design-v1-visual.md 2.3 ("the visual design") and docs/design/design-v1-layout-hierarchy.md 4.1, and keeps what they decided except where section 10 says.
 
 The project owner asked on 2026-10-17, with a screenshot of the side panel on a computer: "the collapsed party header should take up less space. it could be side scrolling when collapsed, also, the headers in the sidebar when in split mode should take up less room if possible? open to ideas here." And: "i also just generally want the headers in the sidebar to be more consistent looking (between the top and bottom split panels)".
 
@@ -221,10 +221,10 @@ Each stays a labeled control with a tooltip. Ask, the tabs and the chips keep th
 
 ## 10. What this changes in other designs
 
-- **docs/design-v1-visual.md 2.3**: a panel subpage's header in the side panel is 44 px with a 16 px title. Sheets and dialogs keep 56 px. The side panel's chosen tab takes the pressed look on a pill.
-- **docs/design-v1-panel-tabs.md 3.5**: badges sit on the pill's corner, inside the row, not in the row's top padding, which is gone. 3.7: the tab row is one 45 px line.
-- **docs/design-v1-split-panel.md 3.1, 3.3**: the bar is a 45 px header row, its name wears the chosen tab's pill, and it has 8 px side padding. 3.2: a pane's minimum counts the 45 px header, 133 px, so room for two is 311.
-- **docs/design-v1-dm-tools.md 3.4** and **docs/design-v1-layout-hierarchy.md 4.1**: the folded party bar is one line, its names scrolling sideways.
+- **docs/design/design-v1-visual.md 2.3**: a panel subpage's header in the side panel is 44 px with a 16 px title. Sheets and dialogs keep 56 px. The side panel's chosen tab takes the pressed look on a pill.
+- **docs/design/design-v1-panel-tabs.md 3.5**: badges sit on the pill's corner, inside the row, not in the row's top padding, which is gone. 3.7: the tab row is one 45 px line.
+- **docs/design/design-v1-split-panel.md 3.1, 3.3**: the bar is a 45 px header row, its name wears the chosen tab's pill, and it has 8 px side padding. 3.2: a pane's minimum counts the 45 px header, 133 px, so room for two is 311.
+- **docs/design/design-v1-dm-tools.md 3.4** and **docs/design/design-v1-layout-hierarchy.md 4.1**: the folded party bar is one line, its names scrolling sideways.
 
 ## 11. Tests
 

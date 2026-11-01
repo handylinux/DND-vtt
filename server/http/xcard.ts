@@ -4,7 +4,7 @@ import { accessRoutes, type AuthKit, HttpError, roomParam } from "../auth/http.t
 import type { RoomManager } from "../rooms/manager.ts";
 
 /**
- * The X-card (docs/design-v1-dm-tools.md 3.11): John Stavropoulos's safety
+ * The X-card (docs/design/design-v1-dm-tools.md 3.11): John Stavropoulos's safety
  * tool, a tap that asks the table to edit out what just happened, with
  * nobody knowing who tapped it.
  *

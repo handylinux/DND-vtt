@@ -12,7 +12,7 @@ import { startEngine, type Engine, type TestClient } from "../rooms/testing.ts";
 import type { PlayerView } from "./playerView.ts";
 
 /*
- * The map export's player view (docs/design-v1-map-discovery.md 4 and 5.1):
+ * The map export's player view (docs/design/design-v1-map-discovery.md 4 and 5.1):
  * a scene the players left answers what they hold of it, remembered ground
  * as last seen, nothing of ground never seen, the live build where the DM
  * revealed it, and the players' own scene what a table display holds.

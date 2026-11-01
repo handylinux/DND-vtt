@@ -17,7 +17,7 @@ import { roomStoredBytes } from "./quota.ts";
 import { deleteUnreferencedFiles, purgeTrash, type FileKey } from "./store.ts";
 
 /**
- * Cleanup of unused images (docs/design-v1-dm-tools.md 3.19).
+ * Cleanup of unused images (docs/design/design-v1-dm-tools.md 3.19).
  *
  * Every picker lists a room's images as its library, so an image the
  * room's state does not name may still be one the DM keeps for later. On
@@ -27,7 +27,7 @@ import { deleteUnreferencedFiles, purgeTrash, type FileKey } from "./store.ts";
  * each image the state uses outside players' memory. An image only the
  * stamps players remember show is no use the DM can see or act on, so its
  * delete goes through and drops those stamps from every memory first
- * (decision D-261026-34, docs/design-v1-map-discovery.md 5.4).
+ * (decision D-261026-34, docs/design/design-v1-map-discovery.md 5.4).
  *
  * A row is deleted only inside one deletion step for its room
  * (RoomManager.deletionStep). On a loaded room the step runs on the actor's
@@ -202,7 +202,7 @@ export async function deleteLibraryImages(deps: CleanupDeps, roomId: string, req
 /**
  * Drops from every memory of the room, the party's and each holder's, the
  * stamps players remember with these images (decision D-261026-34), as a
- * stamp made DM only drops from them (docs/design-v1-map-discovery.md 5.4):
+ * stamp made DM only drops from them (docs/design/design-v1-map-discovery.md 5.4):
  * one `sys.remember` per scene through the room's actor, stored and
  * replayed as any op, so a reload drops the same entries. Nothing drops
  * while a live use names any of them, since the deletion step then refuses

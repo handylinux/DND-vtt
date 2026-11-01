@@ -1,6 +1,6 @@
 /**
  * Where image search thumbnails may come from (design 11.3 and
- * docs/design-v1-dm-tools.md 3.13). The server keeps only results whose
+ * docs/design/design-v1-dm-tools.md 3.13). The server keeps only results whose
  * thumbnail passes this rule, the CSP lets the picker show them, and a
  * failed original falls back to a thumbnail that passes it.
  *

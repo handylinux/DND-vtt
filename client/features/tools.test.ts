@@ -7,7 +7,7 @@ function toolbar(ids: readonly (keyof typeof TOOL_ORDER)[]) {
   return [...ids].sort((a, b) => TOOL_ORDER[a] - TOOL_ORDER[b]).map((id) => ({ id }));
 }
 
-describe("the toolbar's order (docs/design-v1-layout-hierarchy.md M1)", () => {
+describe("the toolbar's order (docs/design/design-v1-layout-hierarchy.md M1)", () => {
   test("the DM's play tools come first, Fog fourth, then a divider and the setup tools", () => {
     const dm = toolbar(["select", "add-token", "ruler", "area", "draw", "ping", "trap", "pin", "fog", "build", "grid"]);
     assert.deepEqual(
@@ -34,7 +34,7 @@ describe("the toolbar's order (docs/design-v1-layout-hierarchy.md M1)", () => {
   });
 });
 
-describe("the buttons a toolbar draws (docs/design-v1-tool-options.md 5.1)", () => {
+describe("the buttons a toolbar draws (docs/design/design-v1-tool-options.md 5.1)", () => {
   const dm = toolbar(["select", "add-token", "ruler", "area", "draw", "ping", "pin", "trap", "fog", "build", "grid"]);
   const player = toolbar(["select", "ruler", "area", "draw", "ping"]);
 

@@ -9,7 +9,7 @@ import { actor, apply, character, reveal, room, scene, token } from "#shared/tes
 import { exploreOp } from "./explore.ts";
 
 /**
- * The explore step (docs/design-v1-maps-vision.md 4.3.3) on real party
+ * The explore step (docs/design/design-v1-maps-vision.md 4.3.3) on real party
  * sight: a player character with darkvision on a dark scene, and a goblin
  * three cells from it.
  */

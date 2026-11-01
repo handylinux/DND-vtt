@@ -35,7 +35,7 @@ function landed(at: { x: number; y: number; z: number }, t: Token) {
   return { cell: `${Math.floor(at.x + fp.w / 2)},${Math.floor(at.y + fp.h / 2)}`, feet: at.z * 5 };
 }
 
-describe("the isometric drag adapter (docs/design-v1-isometric-view.md 6.3)", () => {
+describe("the isometric drag adapter (docs/design/design-v1-isometric-view.md 6.3)", () => {
   test("the grab offset: the first move, before the finger goes anywhere, leaves the token where it stood, at every turn", () => {
     const state = world({ blockMovement: false, heights: raised(6, 6, 9, 9, 10), tokens: [token("walker", { x: 7, y: 7, elevation: 10 })] });
     for (const turn of [0, 1, 2, 3] as Turn[]) {
@@ -287,7 +287,7 @@ describe("the isometric drag adapter (docs/design-v1-isometric-view.md 6.3)", ()
   });
 });
 
-describe("an isometric drag on a hex scene (docs/design-v1-hex-grids.md, ISOREB-OPUS-01)", () => {
+describe("an isometric drag on a hex scene (docs/design/design-v1-hex-grids.md, ISOREB-OPUS-01)", () => {
   test("snaps to the hex anchor Top-down's drop snaps to", () => {
     for (const orient of ["rows", "columns"] as const) {
       const g = { shape: "hex", orient } as const;

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
 /*
- * The side panel's header rows share one shape (docs/design-v1-side-headers.md
+ * The side panel's header rows share one shape (docs/design/design-v1-side-headers.md
  * 3.1 and 5): a 44 px line of targets with a 1 px rule at its foot and no
  * padding above or below, so the tab row, the bar between two panes, the
  * party line and a subpage's header are one height. A shaped control draws

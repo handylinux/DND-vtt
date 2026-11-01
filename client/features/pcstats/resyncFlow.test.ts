@@ -4,7 +4,7 @@ import type { PcFill } from "#shared/rules/pcFill.ts";
 import { openResync, stepResync, type ResyncEvent, type ResyncState, type SyncOp } from "./resyncFlow.ts";
 
 /**
- * The re-sync dialog's state machine (docs/design-v1-resync.md 5) under
+ * The re-sync dialog's state machine (docs/design/design-v1-resync.md 5) under
  * many random orders of taps and answers: opens, Get it, late, refused
  * and aborted answers, pasted JSON, ticks, bulk buttons, live changes,
  * Apply and its answers, Undo and its answers, and closing.

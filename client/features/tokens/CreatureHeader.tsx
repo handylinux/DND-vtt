@@ -9,7 +9,7 @@ import type { KindLine } from "./creatureKind.ts";
 
 /**
  * A tag with the icon its state wears elsewhere, such as the tracker's
- * Hidden (docs/design-v1-icons-2.md 5). Where its words are shorter than
+ * Hidden (docs/design/design-v1-icons-2.md 5). Where its words are shorter than
  * its meaning, `title` is the whole as its tooltip, and `spoken` the rest
  * of it, read after the words by a screen reader, which may not read a
  * title (D-261024-46).
@@ -32,7 +32,7 @@ export type CreaturePicture = {
 };
 
 /**
- * The top of a creature's details (docs/design-v1-look-pass.md 2.11): its
+ * The top of a creature's details (docs/design/design-v1-look-pass.md 2.11): its
  * picture at 48 px beside its name, whole and wrapping, then the kind line,
  * which says what it is and its size (creatureKind.ts), its tags, a
  * control that belongs with them (`afterTags`, a rider's Controlled or
@@ -43,7 +43,7 @@ export type CreaturePicture = {
  * headerActions: Place a token, View as Pat) takes one row under it all,
  * from the picture's edge, which is the panel's, so the numbers keep their
  * place under the kind line and both pages put their actions in one place
- * (docs/design-v1-design-pass.md 4.3). No actions, no row and no gap.
+ * (docs/design/design-v1-design-pass.md 4.3). No actions, no row and no gap.
  *
  * A companion's picture carries its character's portrait (`badge`) as a
  * 20 px disk at its lower right, so the tie reads before the words (3.3).

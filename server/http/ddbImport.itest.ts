@@ -8,7 +8,7 @@ import { registerDdbImportRoutes, type DdbImportOptions } from "./ddbImport.ts";
 import { registerSecurity } from "./security.ts";
 
 /**
- * The D&D Beyond import route (docs/design-v1-pc-stats.md 6.3) against a
+ * The D&D Beyond import route (docs/design/design-v1-pc-stats.md 6.3) against a
  * fake of D&D Beyond's character service, with no network: CSRF, the
  * grant, the one address built from the digits, no redirect followed, the
  * 5 MiB cap, the time limit, each answer's code, the budgets, the slots

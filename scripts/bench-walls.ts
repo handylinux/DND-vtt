@@ -1,6 +1,6 @@
 /**
  * The geometry rows of the wave 3 performance gate
- * (docs/design-v1-maps-vision.md section 4.3.6): the split's counting pass
+ * (docs/design/design-v1-maps-vision.md section 4.3.6): the split's counting pass
  * on an op that writes geometry, and deriving, splitting and indexing a
  * scene's walls, on scenes at the split's caps and just past them. Wave 4
  * adds raised edges and stairs to the derive, and the movement rows: the leg

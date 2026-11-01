@@ -115,7 +115,7 @@ const FOOT_NEED_ESTIMATE: FootNeed = { whole: 134, least: 106 };
 type FootStand = "options" | "toolbar" | "screen";
 
 /**
- * A player's side of request a roll (docs/design-v1-dm-tools.md 3.3). A
+ * A player's side of request a roll (docs/design/design-v1-dm-tools.md 3.3). A
  * request for one of their creatures comes up as a card, a bottom sheet on
  * a phone and a card in the fight alerts column from 600 px up, with a
  * vibration on Android and the turn chime when sound is on. After Send it
@@ -125,17 +125,17 @@ type FootStand = "options" | "toolbar" | "screen";
  * can show another player's answer, a hidden DC or a hidden result.
  *
  * The card is the prompt, but it never covers an open sheet
- * (docs/design-v1-visual.md 3.3.1): under one it folds, mounted but
+ * (docs/design/design-v1-visual.md 3.3.1): under one it folds, mounted but
  * hidden so what was typed survives, and with the chips it becomes one
  * summary whose tap closes the sheet and opens the request to answer. A
  * card at a narrow screen's foot folds the same way while a popover of the
  * tool's options is open, since that popover rises from the row the card
- * stands on and the card stands over popovers (docs/design-v1-tool-options.md 7.6).
+ * stands on and the card stands over popovers (docs/design/design-v1-tool-options.md 7.6).
  */
 export function PlayerRolls() {
   const rolls = useRoomView((s) => s.view?.rolls ?? NO_ROLLS);
   const requests = useMemo(() => newestFirst(rolls), [rolls]);
-  // The layout size at the interface size, as the room lays out (docs/design-v1-dm-tools.md 3.16).
+  // The layout size at the interface size, as the room lays out (docs/design/design-v1-dm-tools.md 3.16).
   const size = useLayoutSize();
   const width = size.width;
   const ui = useRoomUi();
@@ -176,7 +176,7 @@ export function PlayerRolls() {
   const chips = requests.filter((r) => r.id !== shown?.id);
   /*
    * A card at a narrow screen's foot and the token action bar must never
-   * cover each other (docs/design-v1-bar-dock.md, LPD-PLAYER-2). The card
+   * cover each other (docs/design/design-v1-bar-dock.md, LPD-PLAYER-2). The card
    * says how tall it stands, and a docked or spanning bar keeps above it.
    * Where that leaves the bar too little room, it opens compact, and then
    * the card folds as under a sheet, with what was typed kept, and the
@@ -201,7 +201,7 @@ export function PlayerRolls() {
   const dockStore = useScoped(barDockSlot);
   const zoom = useUiScale();
   const compactBar = useStore(dockStore, (s) => s.bar?.mode === "compact");
-  // An upright phone's strip held open, shown or hidden for a drag: a card that would take the free area under 148 folds for it (docs/design-v1-bar-compact.md 3.2, review BC-OPUS-21).
+  // An upright phone's strip held open, shown or hidden for a drag: a card that would take the free area under 148 folds for it (docs/design/design-v1-bar-compact.md 3.2, review BC-OPUS-21).
   const heldStrip = useStore(dockStore, (s) => s.heldMode === "span" && s.barOpen);
   const footHeight = useStore(dockStore, (s) => s.foot);
   const chrome = useStore(dockStore, (s) => s.chrome);
@@ -214,7 +214,7 @@ export function PlayerRolls() {
    * without the on-screen keyboard (barDock.ts Typing), and held as they
    * were while someone types in the card: a keyboard that left the card
    * too little room would fold it away with its Total in focus, and a page
-   * a browser shrinks for its keyboard would too (docs/design.md 14.4).
+   * a browser shrinks for its keyboard would too (docs/design/design.md 14.4).
    */
   const typingHere = useTypingWithin(cardRef);
   const room = chrome ? size.height - chrome.top - chrome.bottom : Infinity;
@@ -425,7 +425,7 @@ export function PlayerRolls() {
 /**
  * The creature a target names, as this player's view holds it: its name,
  * the effects its reminders read, and the character with no stat block
- * yet, whose card offers "Add a stat block" (docs/design-v1-roll-request.md 5.2).
+ * yet, whose card offers "Add a stat block" (docs/design/design-v1-roll-request.md 5.2).
  */
 function useCreature(target: RollTarget): { name: string; effects: readonly Effect[]; noBlock: string | null } {
   const token = useRoomView((s) => (target.tokenId !== undefined ? s.view?.tokens[target.tokenId] : undefined));
@@ -481,7 +481,7 @@ export function RollCard(props: {
   const chrome = useMemo(() => (measured ? placedChrome(measured, typing, cramped > 0) : null), [measured, typing, cramped]);
   // Only while it shows, so a card folded under a sheet, or one that arrived there, never takes Back from the sheet.
   useBackClose(props.sheet && !props.hidden, props.onFold);
-  // At the screen's foot a swipe down puts it off as Later does, with what was typed kept, so unsaved input never holds it (docs/design-v1-sheet-swipe.md section 3).
+  // At the screen's foot a swipe down puts it off as Later does, with what was typed kept, so unsaved input never holds it (docs/design/design-v1-sheet-swipe.md section 3).
   useSheetSwipe(props.cardRef, { enabled: props.sheet && !props.hidden, onClose: props.onFold, item: props.request.id, clip: "screen", keeps: true });
   // At the foot it stands on the on-screen keyboard (placedChrome above), and its total shows with Send.
   const view = useKeyboardView();
@@ -489,7 +489,7 @@ export function RollCard(props: {
   /*
    * A roll that lands while the card shows, from its Roll or from the Dice
    * panel, is news to the player, so the card shows its result in place
-   * and stays up until Done (docs/design-v1-roll-request.md 5.4). Each
+   * and stays up until Done (docs/design/design-v1-roll-request.md 5.4). Each
    * target's answer is remembered as the card first saw it, so a rolled
    * answer it opened on is no news.
    */
@@ -572,7 +572,7 @@ export function RollCard(props: {
    * answer block whole under the header as it sticks. Where the block is
    * taller than that room, its top wins: Roll, Adv and Dis stay in sight
    * first and the total follows a scroll, since Roll is the card's primary
-   * (docs/design-v1-roll-request.md 5.2). A scroll left from an earlier,
+   * (docs/design/design-v1-roll-request.md 5.2). A scroll left from an earlier,
    * smaller stand never keeps the block's top under the header.
    */
   useLayoutEffect(() => {
@@ -616,7 +616,7 @@ export function RollCard(props: {
       >
         {/* In the header's top padding, the grabber's room. */}
         {props.sheet ? <SheetGrabber /> : null}
-        {/* Set down so its first line's middle meets Later's, as a checkbox meets its label's first line (docs/design-v1-polish.md R1): a question on several lines starts beside Later rather than centering on it. */}
+        {/* Set down so its first line's middle meets Later's, as a checkbox meets its label's first line (docs/design/design-v1-polish.md R1): a question on several lines starts beside Later rather than centering on it. */}
         <div style={{ flex: 1, minWidth: 0, display: "grid", gap: theme.space(0.5), paddingTop: QUESTION_DROP }}>
           {/* The DC joins the question's line (5.1), one line less on every card. */}
           <div style={{ fontSize: theme.font.input, fontWeight: theme.weight.bold, lineHeight: theme.leading.tight }}>
@@ -674,7 +674,7 @@ export function RollCard(props: {
     );
   }
   // Portaled out of the zoomed room, so it takes the interface size itself, as Sheet does: its bottom inset
-  // and text then scale with the toolbar it stands on (docs/design-v1-dm-tools.md 3.16). It stands on the
+  // and text then scale with the toolbar it stands on (docs/design/design-v1-dm-tools.md 3.16). It stands on the
   // active tool's options too, once Room has measured them, so Multi-select's Actions and Done stay in reach.
   return (
     <section
@@ -718,7 +718,7 @@ export function RollCard(props: {
 }
 
 /**
- * One creature's answer (docs/design-v1-roll-request.md 5): which choice it
+ * One creature's answer (docs/design/design-v1-roll-request.md 5): which choice it
  * rolls when there are two, the reminders its conditions and statuses give,
  * and one answer path at a time. While the creature waits, Roll rolls on the
  * server with its bonus, or one the player types, the presets and the
@@ -1007,7 +1007,7 @@ function CreatureAnswer(props: {
                  * both fit whole, else start the next line together, so the
                  * extra field never stands alone under the rest (Appendix A).
                  * Roll and the fields grow to share the line they stand on, as
-                 * a window's buttons do (docs/design-v1-polish.md R6).
+                 * a window's buttons do (docs/design/design-v1-polish.md R6).
                  */}
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: theme.space(2) }}>
                   <Button
@@ -1280,7 +1280,7 @@ export function RollChip(props: { buttonRef?: RefObject<HTMLButtonElement | null
   // Each line is one creature's, so each marks its test with that creature's level.
   const levelOf = useProficiency();
   const marks = request.targets.map((t, i) => requestMarks(lines[i]!, request, t, levelOf, { short: true }));
-  // A final answer opens the card too, to ask the DM to change it (docs/design-v1-roll-request.md 5.4). Only an answer from before tags, which no ask can name, leaves nothing to open.
+  // A final answer opens the card too, to ask the DM to change it (docs/design/design-v1-roll-request.md 5.4). Only an answer from before tags, which no ask can name, leaves nothing to open.
   const changeable = request.targets.some((t) => !finalForPlayer(request, t) || t.tag !== undefined);
   const style = {
     ...cardStyle,

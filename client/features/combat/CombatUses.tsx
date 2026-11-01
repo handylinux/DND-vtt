@@ -58,14 +58,14 @@ import {
 } from "./logic.ts";
 
 /**
- * One creature's combat uses (docs/design-v1-combat-controls.md 4.2, 5 and
+ * One creature's combat uses (docs/design/design-v1-combat-controls.md 4.2, 5 and
  * 6), the one list the turn card (`card`), the tracker row's Uses group
  * and the token bar's Uses drawer (`list`) share: Legendary Resistance and
  * Legendary Actions, the block's recharge, rest and X/Day abilities, the
  * marks its block no longer lists, Regeneration's line, the turn's skipped
  * prompts and the character's class resources. Each count shows as pips at
  * the right end of its row's title line, to read only, or in words there
- * past 6 and for a class resource's pool (docs/design-v1-monster-uses.md):
+ * past 6 and for a class resource's pool (docs/design/design-v1-monster-uses.md):
  * Use and Restore change it. `uses` is the block's (state.ts
  * useCreaturesUses), null while it loads, so counts on the actor show at
  * once and the rows that need the block wait under the shared Loading.
@@ -122,7 +122,7 @@ export function CombatUses(props: UsesSlots & { target: ActorTarget; form: UsesF
         </ul>
       ) : null}
       {waits ? props.failed ? <SrdLoadFailed what="The uses" inline /> : <Loading text="Loading the uses…" style={{ minHeight: theme.touch }} /> : null}
-      {/* Named as the uses list where it is the only one (docs/design-v1-token-sections.md 7), and apart from it beside a block's uses. */}
+      {/* Named as the uses list where it is the only one (docs/design/design-v1-token-sections.md 7), and apart from it beside a block's uses. */}
       {characterId !== undefined ? <ClassResourceRows characterId={characterId} form={form} label={rows.length > 0 ? `${props.name}'s class resources` : `${props.name}'s uses`} edit={props.edit} /> : null}
       {shown ? (
         <p role="status" style={{ margin: 0, fontSize: theme.font.small, lineHeight: theme.leading.body, color: shown.refused ? theme.color.dangerText : theme.color.textMuted }}>
@@ -144,7 +144,7 @@ export function CreatureUses(props: UsesSlots & { target: ActorTarget; name: str
 }
 
 /**
- * The token bar's Uses drawer (docs/design-v1-combat-controls.md 6): the
+ * The token bar's Uses drawer (docs/design/design-v1-combat-controls.md 6): the
  * creature's off-turn list, as its tracker row's group holds it. It opens
  * on its first button, so a keyboard lands in it, and Escape closes it
  * alone, never the bar around it. It takes focus itself when a press
@@ -263,7 +263,7 @@ type LineProps = {
 
 /**
  * One row: its title line, the name with its count's pips or its state at
- * the right end (docs/design-v1-monster-uses.md 3.1), then its buttons on a
+ * the right end (docs/design/design-v1-monster-uses.md 3.1), then its buttons on a
  * line of their own under it.
  */
 function UseLine(props: LineProps) {
@@ -410,7 +410,7 @@ function UseLine(props: LineProps) {
  * Rays again. On the creature's own turn its actions read as off for that
  * (legendaryOff), never as once-marked, so Restore gives back one and
  * leaves any mark. Undo is the exact correction
- * (docs/design-v1-monster-uses.md 3.3).
+ * (docs/design/design-v1-monster-uses.md 3.3).
  */
 function legendaryBackOp(target: ActorTarget, buttons: readonly LegendaryButton[], actor: LineProps["actor"]): ClientOp {
   const marked = buttons.find((b) => b.key !== undefined && b.off === "once");
@@ -519,7 +519,7 @@ type UseButtonProps = {
   onClick?(): void;
 };
 
-/** A use's button, 44 px. Off, it looks disabled but keeps its focus and says why (docs/design-v1-combat-controls.md 9). */
+/** A use's button, 44 px. Off, it looks disabled but keeps its focus and says why (docs/design/design-v1-combat-controls.md 9). */
 function UseButton(props: UseButtonProps) {
   const off = props.off !== undefined && props.off !== null;
   return (

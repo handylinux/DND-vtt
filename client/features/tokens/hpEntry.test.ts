@@ -113,7 +113,7 @@ describe("the HP entry's modes are native radios", () => {
   });
 });
 
-describe("the HP entry's lines on the dead (docs/design-v1-combat-flow.md 3.5)", () => {
+describe("the HP entry's lines on the dead (docs/design/design-v1-combat-flow.md 3.5)", () => {
   const dead = { name: "Thorn", dead: true, max: 20 };
   test("with healing off, Heal chosen before anything is typed says healing does nothing, and the DM is told to Revive first", () => {
     // The entry opens on Damage, which adds no line. The lines follow the mode only until the text parses.
@@ -126,7 +126,7 @@ describe("the HP entry's lines on the dead (docs/design-v1-combat-flow.md 3.5)",
   });
 });
 
-describe("the Hit points section of a creature with no HP to show (docs/design-v1-combat-flow.md 3.6.6)", () => {
+describe("the Hit points section of a creature with no HP to show (docs/design/design-v1-combat-flow.md 3.6.6)", () => {
   const section = (actor: object, token: { kind: "object" | "npc" | "monster"; companion?: unknown }, life = true) => {
     const store = createStore(() => ({ view: { meta: { settings: {} } }, you: { role: "dm" } }));
     const el = createElement(HpSection, { actor: actor as never, hpVisibility: "exact", target: { tokenId: "t1" }, access: { full: true, hp: "all", deathSaves: true, life }, name: "Thorn", token });
@@ -159,7 +159,7 @@ describe("the Hit points section of a creature with no HP to show (docs/design-v
 /*
  * The token panel's and the token bar's death save Roll (DeathSaves) waits
  * while this device shows the creature's Regeneration open, with the reason
- * under it (docs/design-v1-combat-controls.md 2.3 and 4.4).
+ * under it (docs/design/design-v1-combat-controls.md 2.3 and 4.4).
  */
 describe("the death save Roll while Regeneration is open", () => {
   const TROLL = customMonster("troll", {

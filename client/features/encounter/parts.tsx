@@ -51,7 +51,7 @@ export function Portrait(props: { entry: Pick<InitEntry, "tokenId" | "characterI
   // Two letters fit the strip's 22 to 26 px disks at the smallest size, and the rows' 32 and 36 px disks at the next.
   const letterSize = size >= 30 ? theme.font.small : theme.font.tiny;
   if (shown && !isAssetImage(shown)) {
-    // A shipped icon on its disk (docs/design-v1-dm-tools.md 3.12), initials until its file arrives.
+    // A shipped icon on its disk (docs/design/design-v1-dm-tools.md 3.12), initials until its file arrives.
     const letters = <span style={{ fontSize: letterSize, fontWeight: theme.weight.bold }}>{initials(name)}</span>;
     return <IconDisk icon={shown.icon} color={shown.color} width={size} shape="circle" style={frame} fallback={letters} />;
   }
@@ -84,7 +84,7 @@ export function Portrait(props: { entry: Pick<InitEntry, "tokenId" | "characterI
 
 /**
  * Condition chips: the condition's art on its color, as the map's chips and
- * the Token panel draw it (docs/design-v1-icons-2.md 4), never color alone,
+ * the Token panel draw it (docs/design/design-v1-icons-2.md 4), never color alone,
  * with the full name for screen readers. Its face (`ChipFace`) is the
  * party bar's too. One hidden from players, which only the DM's view
  * holds, is dimmed with a dashed edge.
@@ -133,7 +133,7 @@ export function Chips(props: { effects: readonly Effect[]; max?: number }) {
   );
 }
 
-/** The health states in the Tag tones of docs/design-v1-visual.md 2.3, the same look as the Token panel's. */
+/** The health states in the Tag tones of docs/design/design-v1-visual.md 2.3, the same look as the Token panel's. */
 const LABEL_TONES: Record<string, TagTone> = {
   Healthy: "success",
   Bloodied: "warning",
@@ -189,7 +189,7 @@ export function RollBadge(props: { kind: "adv" | "dis" }) {
 }
 
 /**
- * A row's second line as the row's description (docs/design-v1-combat-flow.md
+ * A row's second line as the row's description (docs/design/design-v1-combat-flow.md
  * 3.3): its items in order, with an unseen ", " between them, so a screen
  * reader hears "Armor Class 15, HP 7/7, Reaction used" after the row's name.
  * Absent items are left out, so no separator stands alone. The separators
@@ -351,7 +351,7 @@ export function TimerClock(props: { state: TimerState; size?: number; stack?: bo
   }
   return (
     <span role="timer" aria-label={label} style={props.icon ? { ...style, display: "inline-flex", alignItems: "center", gap: theme.space(1), verticalAlign: "bottom" } : style}>
-      {/* Where the room has the clock read alone, such as the tracker's round header: a timer at the text's size, so the line keeps its height (docs/design-v1-icons-2.md 4). */}
+      {/* Where the room has the clock read alone, such as the tracker's round header: a timer at the text's size, so the line keeps its height (docs/design/design-v1-icons-2.md 4). */}
       {props.icon ? <Icon name="timer" size={props.size ?? theme.font.small} /> : null}
       {state.over ? `Time's up${past ? ` ${text}` : ""}` : text}
     </span>

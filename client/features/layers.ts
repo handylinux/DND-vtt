@@ -49,7 +49,7 @@ const ExploredEdgeLayer = quietLazy<LayerProps>(() => import("./vision/ExploredE
  * - `underDecor`: on the overlay layer too, but before the tokens' chips,
  *   labels and plates, so token text always reads on top of it. For marks
  *   that would otherwise cover a name, such as the height pills
- *   (docs/design-v1-visual.md 3.4). The same fog rule as `overlay` holds.
+ *   (docs/design/design-v1-visual.md 3.4). The same fog rule as `overlay` holds.
  * - `overlay`: above the fog image and the party's tokens. Rulers, pings,
  *   the laser and AoE previews. Anything drawn here shows through the fog,
  *   so draw only what every viewer of the scene may see.
@@ -71,7 +71,7 @@ const ExploredEdgeLayer = quietLazy<LayerProps>(() => import("./vision/ExploredE
  * A renderer reads the room through useTreeShownView (canvas/relief/context.ts),
  * which holds its last read while its drawing tree is hidden.
  *
- * The isometric view (docs/design-v1-isometric-view.md 5.1) draws the board
+ * The isometric view (docs/design/design-v1-isometric-view.md 5.1) draws the board
  * in a second tree, and `iso` says where each renderer goes there. A
  * renderer that runs effects (sounds, reminders, listeners, its own frame
  * clock) must not draw in both trees, or its effects run twice once

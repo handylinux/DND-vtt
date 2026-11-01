@@ -38,13 +38,13 @@ import { useRollModeMenu } from "../useRollModeMenu.tsx";
 import type { RollModeOverride, RollModeCapability } from "../rollMode.ts";
 
 /**
- * Several selected creatures (docs/design-v1-roll-options.md 4.4): a DC,
+ * Several selected creatures (docs/design/design-v1-roll-options.md 4.4): a DC,
  * then one tap rolls a save or check for every monster and asks every
  * player's creature, opening the group save with its results coming in.
  * The attacks every selected block shares by name roll each with its own
  * bonus against an optional AC, and the hits' damage rolls in one line.
  *
- * Drawn as the Dice panel draws one creature (docs/design-v1-dice-pass.md
+ * Drawn as the Dice panel draws one creature (docs/design/design-v1-dice-pass.md
  * 5.3): a card with their pictures, "3 selected" and their names, holding
  * what acts on the whole selection, then Saves and checks, Skills and
  * Shared attacks as folding groups, each remembered for the device.
@@ -66,7 +66,7 @@ export function GroupOptions(props: { tokenIds: readonly string[] }) {
   const attacks = slot.store;
   const attackState = useStore(attacks, (s) => s.byName);
   const room = useRoomStore();
-  // Only a tap below sends the DC or an attack's AC, so a sheet's swipe springs back once one is typed (docs/design-v1-sheet-swipe.md 4.6). The page it starts takes the DC with it.
+  // Only a tap below sends the DC or an attack's AC, so a sheet's swipe springs back once one is typed (docs/design/design-v1-sheet-swipe.md 4.6). The page it starts takes the DC with it.
   // An attack's AC is read here rather than in its row, so folding Shared attacks keeps the sheet from a swipe that would lose it.
   useUnsavedInput(dc !== null || shared.some((s) => unsentAc(attackState[s.name])));
   // The attacks' state belongs to the view of several, which goes once fewer than two are selected. A phone's Dice sheet closed to pick on the map is not that, so the watch outlives this view.
@@ -160,12 +160,12 @@ export function GroupOptions(props: { tokenIds: readonly string[] }) {
  * One option for the whole selection, in the look of a creature's option
  * cells (RollOptions.tsx OptionCell): the control outline on the raised
  * fill, its words at the start. The card's actions take it too, so the
- * card's buttons and the groups' share one look (docs/design-v1-dice-pass.md 7.3).
+ * card's buttons and the groups' share one look (docs/design/design-v1-dice-pass.md 7.3).
  * Those span the card, so `center` sets their words in the middle, as a
  * row's filling option cells do (RollOptions.tsx OptionCell `fill`), and the
  * card's rows keep one left edge. The words drop what the label above says
  * once, "DEX" under "Saves for 3", and the name keeps them all, "DEX save
- * for 3" (docs/design-v1-dice-pass.md 5.3), so the words take one line at
+ * for 3" (docs/design/design-v1-dice-pass.md 5.3), so the words take one line at
  * every size and a voice user still says the whole name.
  */
 type CellMode = { source: string; capability: RollModeCapability; valid(): boolean; onRoll(override: RollModeOverride): void };
@@ -254,7 +254,7 @@ export function sharedAttacksOf(dice: DiceView, creatures: readonly ActorTarget[
 
 /**
  * A shared attack's state, kept out of its row so a fold that unmounts the
- * row keeps it (docs/design-v1-dice-pass.md 5.3 and 6.6): the AC typed, the
+ * row keeps it (docs/design/design-v1-dice-pass.md 5.3 and 6.6): the AC typed, the
  * AC as the last attack sent it, the attackers and AC as sent, so the
  * results and their damage stay theirs when the selection changes after
  * the tap, and the damage roll's tag.
@@ -291,7 +291,7 @@ function useSharedAttacksStore() {
 
 /**
  * Watches the selection for the attacks' state, whether the view of
- * several is drawn then or not (docs/design-v1-dice-pass.md 5.3): fewer
+ * several is drawn then or not (docs/design/design-v1-dice-pass.md 5.3): fewer
  * than two selected clears every attack, so a selection that goes to one
  * and back never shows the old hits, and a selection that no longer shares
  * an attack drops that one, so a phone's Dice sheet closed while the DM
@@ -383,7 +383,7 @@ function SharedAttack(props: { name: string; each: Attacker[]; dice: DiceView; b
     const ac = state.ac;
     set({ damageTag: null });
     const tag = panel.roll(rolls, { ...(ac !== null ? { ac } : {}), ...(override ? { override } : {}) });
-    // The attack sends the AC, and the field stays to read the hits, so the AC counts from the last attack on (docs/design-v1-sheet-swipe.md 4.6).
+    // The attack sends the AC, and the field stays to read the hits, so the AC counts from the last attack on (docs/design/design-v1-sheet-swipe.md 4.6).
     set({ sent: tag ? { tag, each: [...props.each], ac } : null, acSent: ac });
   };
   const rollDamage = (override?: RollModeOverride) => {

@@ -8,7 +8,7 @@ import { scopeSlot, useScoped } from "../../state/scope.ts";
  * store's time, Date.now(), written on each animation frame while a ping
  * or a laser trail is on screen, and idle otherwise. It runs in the board's
  * ping controller (PingController.ts), mounted once outside both drawing
- * trees (docs/design-v1-isometric-view.md 5.1), so a second tree adds no
+ * trees (docs/design/design-v1-isometric-view.md 5.1), so a second tree adds no
  * second loop, and both trees' layers read it.
  */
 export type FrameClock = StoreApi<{ now: number }>;

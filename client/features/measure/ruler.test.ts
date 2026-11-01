@@ -308,7 +308,7 @@ describe("kept rulers", () => {
   });
 });
 
-describe("the ruler on a hex scene (docs/design-v1-hex-grids.md 4.3)", () => {
+describe("the ruler on a hex scene (docs/design/design-v1-hex-grids.md 4.3)", () => {
   for (const orient of ["rows", "columns"] as const) {
     const g: HexGrid = { shape: "hex", orient };
     const on = (id: string, size: RulerToken["size"], hex: { col: number; row: number }) => tok(id, { size, ...placedOnHex(g, { size, x: 0, y: 0 }, hex) });

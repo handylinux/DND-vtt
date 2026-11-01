@@ -43,7 +43,7 @@ const OUTLINE_MIN_WIDTH = COLUMN + OUTLINE_GAP + OUTLINE_WIDTH + theme.space(12)
 /**
  * The DM guide at /docs/dm-guide, for anyone, signed in or not. It is the
  * repository's docs/dm-guide.md, drawn as a printed guide
- * (docs/design-v1-guide-look.md): a title, a contents of numbered parts
+ * (docs/design/design-v1-guide-look.md): a title, a contents of numbered parts
  * and sections built from the headings (features/guide/outline.ts), and
  * each part opening like a chapter. Each heading has the id GitHub gives
  * it, so /docs/dm-guide#areas opens on Areas here and on GitHub alike.

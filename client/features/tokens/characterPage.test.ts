@@ -7,7 +7,7 @@ const BREE = { id: "bree" };
 const CYRA = { id: "cyra" };
 const ZED = { id: "zed" };
 
-describe("which character's page shows (docs/design-v1-look-pass.md 3.1)", () => {
+describe("which character's page shows (docs/design/design-v1-look-pass.md 3.1)", () => {
   test("a player with one character lands on its page until they pick, and the DM on the list", () => {
     assert.equal(shownPage(undefined, [BREE], false), "bree");
     assert.equal(shownPage(undefined, [BREE, CYRA], false), null, "with two, the list");

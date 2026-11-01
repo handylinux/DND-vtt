@@ -12,7 +12,7 @@ import { readLine } from "./fill.ts";
 import { rollReading, rollTitle } from "./reading.ts";
 
 /**
- * A re-sync's words (docs/design-v1-resync.md 3), as plain functions for
+ * A re-sync's words (docs/design/design-v1-resync.md 3), as plain functions for
  * node --test: each item's line in the review, the read line, Check these,
  * the losses warning, the done line and every refusal. The merge's items
  * hold values (shared/rules/pcSync.ts), and these say them in the stat
@@ -158,7 +158,7 @@ function lower(text: string): string {
 
 type ResourceShape = Pick<ClassResource, "max" | "reset"> & { pool?: true | undefined };
 
-/** A class resource's count and rest (docs/design-v1-ddb-resources.md 6.1): "3 uses, one back on a Short Rest, all on a Long Rest", "a pool of 25, back on a Long Rest". */
+/** A class resource's count and rest (docs/design/design-v1-ddb-resources.md 6.1): "3 uses, one back on a Short Rest, all on a Long Rest", "a pool of 25, back on a Long Rest". */
 export function resourceReading(r: ResourceShape): string {
   return `${lower(countWords(r.max, r.pool === true))}, ${lower(RESET_WORDS[r.reset])}`;
 }
@@ -303,7 +303,7 @@ export function groupSummary(items: readonly SyncItem[], blocks: ReadingBlocks, 
   return `${items.length}: ${shortLine(head, blocks, first)}${items.length > 1 ? `, and ${items.length - 1} more` : ""}`;
 }
 
-/** An Also set line with its help, in today's words (docs/design-v1-pc-stats.md 6.1) and the help 3.3 adds. */
+/** An Also set line with its help, in today's words (docs/design/design-v1-pc-stats.md 6.1) and the help 3.3 adds. */
 export function alsoLine(item: AlsoItem, character: Pick<Character, "name" | "actor">, source: PcFill["source"]): { text: string; help?: string } {
   switch (item.key) {
     case "name":
@@ -361,7 +361,7 @@ export function ownRollsLine(n: number): string {
 
 /**
  * The removed markers the 40 cap drops (2.1), which rolls and class
- * resources share (docs/design-v1-ddb-resources.md 4.1): names up to three,
+ * resources share (docs/design/design-v1-ddb-resources.md 4.1): names up to three,
  * then a count of each kind (RS-UX-25).
  */
 export function goneDroppedLine(dropped: SyncResult["goneDropped"]): string | null {
@@ -449,7 +449,7 @@ function kindsWere(rolls: number, resources: number): string {
 /**
  * The done line (3.4): "6 changes came in, 1 roll was removed, 1 came
  * back, and 2 of your changes stayed." Class resources count beside the
- * rolls (docs/design-v1-ddb-resources.md 6.1). A part that is 0 is left out.
+ * rolls (docs/design/design-v1-ddb-resources.md 6.1). A part that is 0 is left out.
  */
 export function doneLine(counts: SyncResult["counts"]): string {
   const parts: string[] = [];
@@ -478,7 +478,7 @@ export function recordTooBigText(name: string): string {
 
 export const NOTHING_NEW = "Nothing new from D&D Beyond.";
 
-/** The editor's notice when a Save was refused because the class resources changed elsewhere (docs/design-v1-ddb-resources.md 6.2). */
+/** The editor's notice when a Save was refused because the class resources changed elsewhere (docs/design/design-v1-ddb-resources.md 6.2). */
 export const RESOURCES_STALE = (name: string) => `${whose(name)} class resources changed on another device before this saved, so nothing was saved. Check the review again.`;
 
 /** The dialog's other words (3.2 to 3.5). */

@@ -14,7 +14,7 @@ export type SegmentedOption<T extends string | number> = {
   /**
    * Drawn over the pressed look while this option is chosen and enabled,
    * for a choice whose color carries meaning, such as the HP entry's red
-   * Damage and green Heal (docs/design-v1-visual.md 2.3). A disabled
+   * Damage and green Heal (docs/design/design-v1-visual.md 2.3). A disabled
    * option keeps the disabled look, so "cannot change now" reads the same
    * in every group.
    */
@@ -22,7 +22,7 @@ export type SegmentedOption<T extends string | number> = {
 };
 
 /**
- * One choice of two to six (docs/design-v1-visual.md 2.3): the new scene
+ * One choice of two to six (docs/design/design-v1-visual.md 2.3): the new scene
  * kind, light, who can read a page, the interface size, the tool modes.
  *
  * Each option is a native `<input type="radio">` lying unseen over its
@@ -57,9 +57,9 @@ export function Segmented<T extends string | number>(props: {
    * into uneven pieces. The side padding shrinks so four labels still fit,
    * and under 210 px, too narrow even so, they go two by two. Six options,
    * such as the six abilities, go three by three where six cannot keep
-   * 44 px each (docs/design-v1-roll-request.md 4.2). Three options with
+   * 44 px each (docs/design/design-v1-roll-request.md 4.2). Three options with
    * `wrap`, such as Grid shape, never go two over one: under 220 px they
-   * stand one per row (docs/design-v1-design-pass.md 4.2).
+   * stand one per row (docs/design/design-v1-design-pass.md 4.2).
    */
   even?: boolean;
   /** Labels wrap inside their option, for a choice that names something of any length, such as a creature. */
@@ -67,7 +67,7 @@ export function Segmented<T extends string | number>(props: {
   /**
    * What the chosen option means, as a Help line under the group that is
    * also its description, so short option words such as "Controlled" keep
-   * their meaning for a screen reader too (docs/design-v1-look-pass-2.md 2.7).
+   * their meaning for a screen reader too (docs/design/design-v1-look-pass-2.md 2.7).
    */
   description?: ReactNode;
   /** Ids of lines placed elsewhere that also describe the group, such as a setting row's help and why a choice is off. */

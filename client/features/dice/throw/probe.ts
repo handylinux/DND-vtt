@@ -1,6 +1,6 @@
 /**
  * Whether this device can draw the dice, asked once per page without
- * three.js (docs/design-v1-roll-animation.md 6 and 7), and the background
+ * three.js (docs/design/design-v1-roll-animation.md 6 and 7), and the background
  * load of the dice chunk that waits on it.
  *
  * The probe asks a fresh canvas for the very context the stage asks for:

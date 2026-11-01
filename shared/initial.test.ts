@@ -5,7 +5,7 @@ import type { Member } from "./model.ts";
 
 const dm: Member = { id: "dm1", rev: 0, name: "DM", color: "#f38400", kind: "dm", createdAt: "2026-10-26T00:00:00.000Z" };
 
-describe("a new room (docs/design-v1-map-discovery.md 8.2 and 5.5)", () => {
+describe("a new room (docs/design/design-v1-map-discovery.md 8.2 and 5.5)", () => {
   test("makes new scenes on Explore, while its first mat stays on Everything", () => {
     const state = createInitialState({ roomName: "New", dm });
     assert.equal(state.meta.settings.newScenePlayers, "explore");

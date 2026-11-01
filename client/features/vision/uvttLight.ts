@@ -2,7 +2,7 @@ import type { LightLevel, ScenePreset } from "#shared/model.ts";
 
 /**
  * The light level a Universal VTT import proposes for its scene
- * (docs/design-v1-maps-vision.md section 4.3.8), from the file's
+ * (docs/design/design-v1-maps-vision.md section 4.3.8), from the file's
  * `environment` and the lights the import keeps:
  *
  * - Lights inside the map: Dark under party vision, so those lights light

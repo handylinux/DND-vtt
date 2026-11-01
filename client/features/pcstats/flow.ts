@@ -12,7 +12,7 @@ import { alsoSet, pendingCharacter, type AlsoKey, type AlsoLine, type AlsoSet } 
 
 /**
  * The stat block editor's steps and its Save as one state machine
- * (docs/design-v1-pc-stats.md 7.2), free of React so a randomized test can
+ * (docs/design/design-v1-pc-stats.md 7.2), free of React so a randomized test can
  * run it through many orders of taps and answers (flow.test.ts). The
  * editor's own fields change the draft through `edit`, a fill's "Use it"
  * through `use`, and nothing else does. A Save sends one op and nothing
@@ -22,7 +22,7 @@ import { alsoSet, pendingCharacter, type AlsoKey, type AlsoLine, type AlsoSet } 
  * closing aborts the one in flight, and an answer that is not the latest
  * request's changes nothing.
  *
- * A D&D Beyond read is reviewed as a re-sync is (docs/design-v1-resync.md
+ * A D&D Beyond read is reviewed as a re-sync is (docs/design/design-v1-resync.md
  * 1.1): its ticks are the review's line ids, and its "Use it" carries the
  * block, the fields beside it and the sync record the editor worked out
  * from the draft as it is then, so Save sends the record with the block.
@@ -31,7 +31,7 @@ import { alsoSet, pendingCharacter, type AlsoKey, type AlsoLine, type AlsoSet } 
  *
  * The class resources live beside the block, so a D&D Beyond read's Use it
  * holds their part of the result apart (`HeldResources`), planned against
- * the live list and the saved record (docs/design-v1-ddb-resources.md
+ * the live list and the saved record (docs/design/design-v1-ddb-resources.md
  * 6.2). Where the held part and the pending record meet, each part comes
  * from its own source: the rolls' markers and the rest of the record from
  * the pending one, the resources' entries and `r:` markers, and the source
@@ -213,9 +213,9 @@ export type FlowState = {
   draft: PcDraft;
   /** The fields beside the block the last "Use it" set, sent with the next Save. */
   also: AlsoSet;
-  /** The sync record a D&D Beyond "Use it" made, sent with the next Save (docs/design-v1-resync.md 1.1). */
+  /** The sync record a D&D Beyond "Use it" made, sent with the next Save (docs/design/design-v1-resync.md 1.1). */
   record: DdbSyncPatch | null;
-  /** The class resources a D&D Beyond "Use it" set, sent with the next Save (docs/design-v1-ddb-resources.md 6.2). */
+  /** The class resources a D&D Beyond "Use it" set, sent with the next Save (docs/design/design-v1-ddb-resources.md 6.2). */
   resources: HeldResources | null;
   review: Review | null;
   /** A Save's op waits for its answer. */

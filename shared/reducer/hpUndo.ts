@@ -130,7 +130,7 @@ export function revertedActor(current: Actor, revert: HpRevert): Actor | null {
 
 /**
  * A Regeneration heal taken back reopens its prompt while the record it
- * settled is current and its turn runs (docs/design-v1-combat-controls.md
+ * settled is current and its turn runs (docs/design/design-v1-combat-controls.md
  * 3.4), so the card comes back. Later, the turn is over and nothing opens.
  */
 function reopenedRegeneration(state: RoomState, actor: Actor, record: number | undefined): Actor {

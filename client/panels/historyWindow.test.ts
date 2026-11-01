@@ -7,7 +7,7 @@ import { ApiError } from "../lib/api.ts";
 import { HISTORY_ROWS, historyKey, HistoryWindow, type HistoryPage, type HistoryState, type PageAsk } from "./historyWindow.ts";
 
 /**
- * The Log panel's history window (docs/design-v1-log-history.md 5.3 and
+ * The Log panel's history window (docs/design/design-v1-log-history.md 5.3 and
  * 5.5): bounded, never merged from a stale or foreign answer, and an empty
  * page never takes a readable window away.
  */

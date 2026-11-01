@@ -19,7 +19,7 @@ export const ALT_IMAGE_PURPOSE = "Another image this token can wear, for Wild Sh
 
 /**
  * A token's other images in its panel (features section 5), in the image
- * row's button column (docs/design-v1-token-panel.md 3.6): "Add another
+ * row's button column (docs/design/design-v1-token-panel.md 3.6): "Add another
  * image" beside "Change image" (`beside`), and under Crop and Remove the
  * images themselves, a tap on one to wear it, and "Remove one" (`below`).
  * Shown to whoever may change the token's image, the DM and its owners,

@@ -69,7 +69,7 @@ describe("an Openverse image's credit", () => {
   });
 });
 
-describe("a starter pick's credit (docs/design-v1-starter-art.md 9)", () => {
+describe("a starter pick's credit (docs/design/design-v1-starter-art.md 9)", () => {
   const picked: AssetCredit = {
     title: "Ruined keep",
     creator: "A. Cartographer",

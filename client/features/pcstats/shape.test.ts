@@ -5,7 +5,7 @@ import type { PcStats } from "#shared/model.ts";
 import { EMPTY_PC_STATS } from "#shared/rules/pcStats.ts";
 import { effectiveShapeKind, END_SHAPE, shapeNote, shapePatch, shapeTempHp, wildShapeDetail } from "./shape.ts";
 
-/** Take a shape and the section's words (docs/design-v1-pc-stats.md 7.3). The numbers a shape rolls with are doc 1's creatureNumbers (shared/rules/pcStats.shape.test.ts). */
+/** Take a shape and the section's words (docs/design/design-v1-pc-stats.md 7.3). The numbers a shape rolls with are doc 1's creatureNumbers (shared/rules/pcStats.shape.test.ts). */
 describe("shapes", () => {
   const bear = { srdId: "brown-bear", ac: 11, speeds: { walk: 40, climb: 30 }, hp: { average: 22, formula: "3d10 + 6" } };
 

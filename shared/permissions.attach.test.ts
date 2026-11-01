@@ -7,7 +7,7 @@ import type { Op } from "./protocol.ts";
 import { DM, P1, P2, actor, effect, entry, room, token } from "./testutil.ts";
 
 /**
- * Who may attach, detach, drag and direct a mount (docs/design-v1-attach.md
+ * Who may attach, detach, drag and direct a mount (docs/design/design-v1-attach.md
  * 6): each rule for a player, the leg test on a seat step and a get-off
  * leg, the right to steer a controlled mount and to re-seat a carried token.
  */

@@ -13,7 +13,7 @@ import { CANNOT_REROLL, LUCKY_CHANGES_NOTHING, type Draw } from "./roll.ts";
 
 /**
  * A request's answer rolled on the server, end to end without the actor
- * (docs/design-v1-dice.md 4.1, 4.3, 5.1 and 5.4): permissions, the resolve
+ * (docs/design/design-v1-dice.md 4.1, 4.3, 5.1 and 5.4): permissions, the resolve
  * with a scripted draw, and the reducer, as the actor runs them in order.
  */
 const BATCH = "AbCdEfGhIjKlMnOp";
@@ -327,7 +327,7 @@ describe("a death save rolled on the server", () => {
   });
 
   test("a DM's death roll for a player's creature is open, one for a monster secret, and an extra adds to the total", () => {
-    // docs/design-v1-dice.md 17: only a DM's roll for a monster starts hidden from players.
+    // docs/design/design-v1-dice.md 17: only a DM's roll for a monster starts hidden from players.
     const state = deathRoll(dying(), DM, [8], { extra: "2" });
     const line = state.log.find((e) => e.data?.type === "dice")!.data as Extract<LogEvent, { type: "dice" }>;
     assert.equal(line.to, "all");

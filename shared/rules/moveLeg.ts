@@ -11,7 +11,7 @@ import { groundUnder, hexFullStop, landing, storedBuild } from "./movement.ts";
 import { followerTrace, pieceReach, routeWalkers, walkSqueezes, type RoutePoint, type WalkTrace } from "./route.ts";
 
 /**
- * One description of a move (contract section 1, docs/design-v1-attach.md
+ * One description of a move (contract section 1, docs/design/design-v1-attach.md
  * 9): each token an op moves, where from and to, along which walk, how,
  * and, for a token that moved only because its holder did, which holder.
  * `planMove` reads it from the op and the state before, so the reducer
@@ -223,7 +223,7 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
  * hexes its own seat is the anchor nearest its place, so every walk there
  * seats it, and one nudged off its anchor sits on it again, as a device
  * reads it (review DP34-OPUS-10). Its link reads the full footprint
- * (docs/design-v1-attach.md 5.1), which every such seat lies in, so it
+ * (docs/design/design-v1-attach.md 5.1), which every such seat lies in, so it
  * never lets go mid-corridor.
  */
 function squeezedSeats(before: RoomState, member: Token, holder: MovedToken, env: Versioned): (Point | null)[] | null {
@@ -238,7 +238,7 @@ function squeezedSeats(before: RoomState, member: Token, holder: MovedToken, env
 }
 
 /**
- * A routed walk's reach as the 300-square cap reads it (docs/design-v1-movement.md
+ * A routed walk's reach as the 300-square cap reads it (docs/design/design-v1-movement.md
  * 10, review R7-OPUS-1): piece by piece, the largest over the walker and
  * its public members, each on its own elevation path as the move takes it
  * along (`follow`), so a creature it drags over ground that rises and falls

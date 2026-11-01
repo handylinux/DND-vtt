@@ -4,7 +4,7 @@ import type { OpOf } from "../protocol.ts";
 import { gone, invalid, type Tx } from "./tx.ts";
 
 /**
- * Map pins (docs/design-v1-dm-tools.md 3.8), the DM's. A put creates a pin
+ * Map pins (docs/design/design-v1-dm-tools.md 3.8), the DM's. A put creates a pin
  * or replaces the one of the same id on the same scene, as stamps are put.
  * A pin names only a page that exists: deleting a page unlinks its pins in
  * the same op (reducer/journal.ts), and a restore never brings back a pin

@@ -61,7 +61,7 @@ function attached(state: RoomState, patch: Record<string, unknown>): Actor {
   return a.inline;
 }
 
-describe("the numbers a block sets (docs/design-v1-companion-stat-blocks.md 5.1)", () => {
+describe("the numbers a block sets (docs/design/design-v1-companion-stat-blocks.md 5.1)", () => {
   test("an SRD owl on Hoot: each number that changes, with the one it has now, and the HP it keeps at full", () => {
     const n = blockNumbers(OWL, HOOT, hoot(), average);
     assert.deepEqual(n.lines, ["AC 11, now 10", "Speed 5 ft, Fly 60 ft, now 30 ft", "Darkvision 120 ft, now none", "Passive Perception 15, now 10", "Initiative +1, now +0"]);
@@ -132,7 +132,7 @@ describe("the numbers a block sets (docs/design-v1-companion-stat-blocks.md 5.1)
   });
 });
 
-describe("current HP when a block is attached (docs/design-v1-companion-stat-blocks.md 5.2)", () => {
+describe("current HP when a block is attached (docs/design/design-v1-companion-stat-blocks.md 5.2)", () => {
   const hpOf = (a: Actor) => [a.life, a.hp.cur, a.hp.max, a.hp.temp];
   const apply = (over: Partial<Actor>, hp: HpChoice = average) => {
     const state = room_(over);
@@ -184,7 +184,7 @@ describe("the attach's answer and its words", () => {
 
 });
 
-describe("the attach's size, through the token window's resize (docs/design-v1-companion-stat-blocks.md 5.1)", () => {
+describe("the attach's size, through the token window's resize (docs/design/design-v1-companion-stat-blocks.md 5.1)", () => {
   /** Hoot, Bree's Small owl, at (4, 4) on a scene that blocks moves, with walls as given, and a Large block for it. */
   function scene(edges: Record<string, EdgeFeature> = {}, over: Partial<Token> = {}): RoomState {
     const state = room({ characters: { bree: character("bree", { name: "Bree", ownerIds: ["p1"] }) } });
@@ -364,7 +364,7 @@ describe("the attach's size, through the token window's resize (docs/design-v1-c
   });
 });
 
-describe("the companion picker's lists (docs/design-v1-companion-stat-blocks.md 6.1)", () => {
+describe("the companion picker's lists (docs/design/design-v1-companion-stat-blocks.md 6.1)", () => {
   const blocks = [companionBlock("moth", "bree"), companionBlock("owl2", "bree", { name: "Owl", size: "tiny", type: "Beast", cr: "0" })];
 
   test("the character's blocks and the SRD's, the same name from both, and never a room monster, for a player or the DM", () => {

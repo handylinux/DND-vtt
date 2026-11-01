@@ -6,7 +6,7 @@ import { cornerAt, hexAt, hexCenter, hexCorners, hexInScene, hexKey, hexNeighbor
 import { deriveWalls, floodHexRoom, indexBuild, type WallSet } from "./walls.ts";
 
 /**
- * Reveal room on a hex scene (docs/design-v1-hex-grids.md HX-D10, phase
+ * Reveal room on a hex scene (docs/design/design-v1-hex-grids.md HX-D10, phase
  * H3): the hexes reachable from the tapped one, a step blocked where a
  * movement wall touches the line between two centers, and the fog a flood
  * writes read by the hexes' sub-cells.

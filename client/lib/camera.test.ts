@@ -96,7 +96,7 @@ describe("camera", () => {
   });
 });
 
-describe("the camera in view space (docs/design-v1-isometric-view.md 4.1, 4.2)", () => {
+describe("the camera in view space (docs/design/design-v1-isometric-view.md 4.1, 4.2)", () => {
   const cam: Camera = { x: 100, y: 50, scale: 40 };
 
   test("view and screen round trip", () => {
@@ -154,7 +154,7 @@ describe("the camera in view space (docs/design-v1-isometric-view.md 4.1, 4.2)",
   });
 });
 
-describe("the camera's bounds with a token bar over the map (docs/design-v1-bar-compact.md 4 and 3.6)", () => {
+describe("the camera's bounds with a token bar over the map (docs/design/design-v1-bar-compact.md 4 and 3.6)", () => {
   // A 390 x 844 canvas, a 30 x 20 scene at 44 px a cell (1320 x 880), and the strip's cover of 182 px at the foot over a 52 px top bar.
   const viewport = { width: 390, height: 844 };
   const bounds = { w: 30, h: 20 };
@@ -365,7 +365,7 @@ describe("long press", () => {
   });
 });
 
-describe("keep in view in Isometric (docs/design-v1-isometric-view.md ISO-D14)", () => {
+describe("keep in view in Isometric (docs/design/design-v1-isometric-view.md ISO-D14)", () => {
   const viewport = { width: 400, height: 800 };
   const bounds = { w: 20, h: 30 };
   const insets = { top: 60, right: 0, bottom: 140, left: 0 };

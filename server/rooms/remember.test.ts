@@ -15,7 +15,7 @@ import { chunkCharge, MEMORY_CAP } from "./memorySize.ts";
 import { forgetAllOps, layerKey, mapStepOps, memoryGrowth, type DoorTouch } from "./remember.ts";
 
 /**
- * The map step (docs/design-v1-map-discovery.md 5.3), batch by batch as the
+ * The map step (docs/design/design-v1-map-discovery.md 5.3), batch by batch as the
  * actor runs it: the batch's ops, the explore step, then the map step's
  * `sys.remember`, each applied as stored. Sight is perPlayerTestutil.ts's
  * stub, whole cells 3 out in bright light, so each case sets the ground it

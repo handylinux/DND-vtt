@@ -70,7 +70,7 @@ describe("a scene's What players see settings", () => {
     assert.equal(carriedLightsNote(tokens, "s1", "bright"), null);
   });
 
-  test("the Sight row's patch keeps party vision and the light, and the other two name no perPlayer, so the scene keeps it (docs/design-v1-per-player-vision.md 6.7)", () => {
+  test("the Sight row's patch keeps party vision and the light, and the other two name no perPlayer, so the scene keeps it (docs/design/design-v1-per-player-vision.md 6.7)", () => {
     const perPlayer = { vision: { on: false, light: "dark" as const, perPlayer: true as const } };
     assert.deepEqual(sightPatch({ vision: { on: true, light: "dim" } }, true), { on: true, light: "dim", perPlayer: true });
     assert.deepEqual(sightPatch(perPlayer, false), { on: false, light: "dark", perPlayer: false });

@@ -8,7 +8,7 @@ import type { RollCase, SyncSection, SyncSource } from "./pcSync.ts";
 
 /**
  * A D&D Beyond sync's class resources merged three ways
- * (docs/design-v1-ddb-resources.md 4), beside the rolls of pcSync.ts and by
+ * (docs/design/design-v1-ddb-resources.md 4), beside the rolls of pcSync.ts and by
  * the same rule: one resource is one item, found again by the record's
  * entry for it, else by its class and name. What only D&D Beyond changed
  * comes in, what the player changed is kept with an offer to overwrite it,

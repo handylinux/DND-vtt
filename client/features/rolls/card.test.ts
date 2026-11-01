@@ -7,7 +7,7 @@ import { askedText, askItems, askKept, askRowText, bestChoice, BONUS_WORDS, card
 const DEX = { kind: "save", ability: "dex" } as const;
 const restrained = [{ key: "restrained" as const }];
 
-describe("the card's Roll (docs/design-v1-roll-request.md 5.2, 5.3)", () => {
+describe("the card's Roll (docs/design/design-v1-roll-request.md 5.2, 5.3)", () => {
   test("with a known bonus it reads Roll +3, and with none it waits for a typed one", () => {
     assert.equal(cardRoll({ bonus: 3, preset: null, inputs: NO_INPUTS, text: "" }).label, "Roll +3");
     // A draft total hidden by typed totals off never holds Roll back, nor says to clear it (B7B-ASTRA-03).
@@ -149,7 +149,7 @@ describe("asking the DM to change an answer (5.5)", () => {
   });
 });
 
-describe("an ask that went away (docs/design-v1-roll-request.md 5.5)", () => {
+describe("an ask that went away (docs/design/design-v1-roll-request.md 5.5)", () => {
   const ask = { id: "ask-1", on: "answer-1" };
 
   test("reads as kept only while the answer it named still stands and this device did not withdraw it", () => {

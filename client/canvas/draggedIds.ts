@@ -7,7 +7,7 @@ import { useTreeShownStore, useTreeShownView } from "./relief/context.ts";
 /**
  * The tokens being dragged now, whose range rings, attached areas and
  * tethers leave the isometric view's ground stage for the drag's moving
- * marks until the drop (docs/design-v1-isometric-view.md 5.1, DragMarks.tsx):
+ * marks until the drop (docs/design/design-v1-isometric-view.md 5.1, DragMarks.tsx):
  * this device's own, by the spots the canvas writes for them
  * (state/localDrags.ts), and other members', by the room's drag previews,
  * an ended one included while it holds the drop point. Each list sorted,

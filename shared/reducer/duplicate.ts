@@ -9,7 +9,7 @@ import { invalid, type Env, type Tx } from "./tx.ts";
 import { withoutTurnScoped } from "./uses.ts";
 
 /**
- * Duplicate a scene (docs/design-v1-maps-vision.md section 3.2), in one op.
+ * Duplicate a scene (docs/design/design-v1-maps-vision.md section 3.2), in one op.
  *
  * The map with its phases, the build, labels, stamps, lights, map pins
  * (wave 5) and traps are always copied. A copied pin keeps its page, so it reaches
@@ -78,12 +78,12 @@ export function sceneDuplicate(tx: Tx, op: OpOf<"scene.duplicate">): void {
     if (id === undefined) continue;
     const { path: _path, attached, ...kept } = token;
     const next: Token = { ...kept, id, sceneId: to, fogExemptAuto: false };
-    // A link joins the copies of the two tokens, and goes when the holder was not copied (docs/design-v1-attach.md 5.2).
+    // A link joins the copies of the two tokens, and goes when the holder was not copied (docs/design/design-v1-attach.md 5.2).
     const holder = attached ? copied.get(attached.to) : undefined;
     if (attached && holder !== undefined) next.attached = { ...attached, to: holder };
     if ("inline" in token.actor) {
       // The copy keeps its counted uses, as it keeps its HP and pips, and drops what lasts a turn or a fight
-      // (docs/design-v1-combat-controls.md 2.4): the original's turn record would count as the copy's while the
+      // (docs/design/design-v1-combat-controls.md 2.4): the original's turn record would count as the copy's while the
       // original's row acts. The token bar's Duplicate makes a new creature instead, so its uses start empty.
       const actor = withoutTurnScoped(token.actor.inline);
       next.actor = { inline: { ...actor, effects: actor.effects.map((e) => pausedOn(e, id)) } };
@@ -91,7 +91,7 @@ export function sceneDuplicate(tx: Tx, op: OpOf<"scene.duplicate">): void {
     tx.write(keys.token(id), next);
   }
 
-  // Traps come with the map (docs/design-v1-traps.md 6.8), their actions naming the copies. A token left behind is
+  // Traps come with the map (docs/design/design-v1-traps.md 6.8), their actions naming the copies. A token left behind is
   // dropped from them, and a door stays, since free walls keep their ids. What the reducer wrote on a trap stays behind.
   const ownCopy = new Map<string, string>();
   for (const stamp of Object.values(s.stamps)) if (stamp.sceneId === original.id) ownCopy.set(`stamp:${stamp.id}`, copyId(stamp.id));
@@ -119,7 +119,7 @@ export function sceneDuplicate(tx: Tx, op: OpOf<"scene.duplicate">): void {
       if (s.exploredTiles[tileKey(to, tile.tx, tile.ty)]) throw invalid("a copied id is taken");
       tx.writeBookkeeping(keys.explored(to, tile.tx, tile.ty), { ...tile, sceneId: to });
     }
-    // And so do the sight holder list and each holder's own layer (docs/design-v1-per-player-vision.md 6.3), the same way.
+    // And so do the sight holder list and each holder's own layer (docs/design/design-v1-per-player-vision.md 6.3), the same way.
     const list = s.holders?.[original.id];
     if (list) {
       if (s.holders[to]) throw invalid("a copied id is taken");
@@ -131,7 +131,7 @@ export function sceneDuplicate(tx: Tx, op: OpOf<"scene.duplicate">): void {
       if (s.exploredBy[holderTileKey(to, tile.memberId, tile.tx, tile.ty)]) throw invalid("a copied id is taken");
       tx.writeBookkeeping(keys.exploredBy(to, tile.memberId, tile.tx, tile.ty), { ...tile, sceneId: to });
     }
-    // And so does what each layer remembers (docs/design-v1-map-discovery.md 5.4), the same way, with the played mark
+    // And so does what each layer remembers (docs/design/design-v1-map-discovery.md 5.4), the same way, with the played mark
     // that reserves room for it (5.5).
     copyMemory(tx, original.id, to, copyId);
     if (s.playedScenes?.[original.id]) tx.writeBookkeeping(keys.played(to), { sceneId: to, rev: 0 });

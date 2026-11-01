@@ -13,7 +13,7 @@ const { RoomProvider } = await import("../../state/view.ts");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
 
 /*
- * Combat's Reaction section (docs/design-v1-token-sections.md 3.2): the
+ * Combat's Reaction section (docs/design/design-v1-token-sections.md 3.2): the
  * row's Reaction used switch alone, while the creature has a Reaction in
  * the fight, for the DM or the row's owner as the server allows, and a
  * shared companion's own for the DM and its owners.

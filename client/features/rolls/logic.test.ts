@@ -111,7 +111,7 @@ function setup(): RoomState {
 }
 
 function run(state: RoomState, op: ClientOp, who: Viewer = DM, seq = 1): RoomState {
-  // Every answer carries its tag, as the cards send it (docs/design-v1-roll-request.md 7.5).
+  // Every answer carries its tag, as the cards send it (docs/design/design-v1-roll-request.md 7.5).
   if (op.t === "roll.answer" && op.tag === undefined) op = { ...op, tag: `answer-${seq}` };
   assert.ok(clientOpSchema.safeParse(op).success, `${op.t} is a valid op`);
   const allowed = canApply(op, who, state, deps);
@@ -240,7 +240,7 @@ describe("who a request asks", () => {
 });
 
 /**
- * The picker's randomized test (docs/design-v1-roll-request.md 11.1): 2,000
+ * The picker's randomized test (docs/design/design-v1-roll-request.md 11.1): 2,000
  * sequences of 40 random steps through the sheet's own handlers (a row
  * tap, a skill, "Choose a skill", another ability for a skill, Or, Remove,
  * a DC typed or a chip, "Against a spell", and a recent request or a fill),
@@ -534,7 +534,7 @@ describe("the DM's sheet", () => {
   test("the words a card reads", () => {
     const grapple = { test: { kind: "check" as const, choices: [{ ability: "str" as const, skill: "athletics" as const }, { ability: "dex" as const, skill: "acrobatics" as const }] }, dcShown: true, note: "to break free of the grapple" };
     assert.equal(askLine(grapple), "The DM asks for a Strength (Athletics) or Dexterity (Acrobatics) check: to break free of the grapple.");
-    // The DC joins the question (docs/design-v1-roll-request.md 5.1), and a save against a spell says so.
+    // The DC joins the question (docs/design/design-v1-roll-request.md 5.1), and a save against a spell says so.
     assert.equal(askLine({ ...grapple, dc: 12 }), "The DM asks for a Strength (Athletics) or Dexterity (Acrobatics) check, DC 12: to break free of the grapple.");
     assert.equal(askLine({ test: DEX_SAVE, dcShown: false, dcHidden: true, spell: true }), "The DM asks for a Dexterity saving throw against a spell, DC hidden.");
     assert.equal(testTitle({ kind: "save", choices: [{ ability: "str" }, { ability: "dex" }] }), "Strength or Dexterity saving throw");
@@ -814,7 +814,7 @@ describe("the player's card and chip", () => {
   });
 });
 
-describe("the player's card under a sheet (docs/design-v1-visual.md 3.3.1)", () => {
+describe("the player's card under a sheet (docs/design/design-v1-visual.md 3.3.1)", () => {
   const at = (min: number) => `2026-10-14T19:0${min}:00.000Z`;
   const request = (id: string, min: number, test: RollRequest["test"] = DEX_SAVE): RollRequest => ({
     id,
@@ -919,7 +919,7 @@ describe("the player's card under a sheet (docs/design-v1-visual.md 3.3.1)", () 
   });
 });
 
-describe("the DM's cards on a phone with no sheet open (docs/design-v1-visual.md 3.3.1)", () => {
+describe("the DM's cards on a phone with no sheet open (docs/design/design-v1-visual.md 3.3.1)", () => {
   test("the newest two show, then one Rolls d/a disclosure for the rest, the player's rule", () => {
     const desk = (count: number, expanded = false) => chipStack({ count, phone: true, underSheet: false, expanded });
     assert.deepEqual(desk(2), { shown: 2, button: null });
@@ -998,7 +998,7 @@ describe("a total typed into a card and not sent (LPD-PLAYER-1)", () => {
   });
 });
 
-describe("the card's one answer path (docs/design-v1-roll-request.md 5.2, 5.6)", () => {
+describe("the card's one answer path (docs/design/design-v1-roll-request.md 5.2, 5.6)", () => {
   const request = { test: DEX_SAVE, dc: 13, dcShown: true, resultShown: true, targets: [{ characterId: "ayla" }] };
   const rolled = { characterId: "ayla", total: 17, result: "pass" as const, tag: "t1", dice: { formula: "1d20+5", faces: [12], total: 17 } };
   const offers = (target: RollTarget, text = "", connected = true) => answerOffers({ holds: true, request, target, text, connected, bonusReady: true, typeTotals: true });
@@ -1093,7 +1093,7 @@ describe("the card's one answer path (docs/design-v1-roll-request.md 5.2, 5.6)",
   });
 });
 
-describe("the DM's live card (docs/design-v1-roll-request.md 6)", () => {
+describe("the DM's live card (docs/design/design-v1-roll-request.md 6)", () => {
   const dice = (formula: string, faces: number[], total: number, extra: object = {}) => ({ formula, faces, total, ...extra });
   test("an answer tells how it came: rolled with its dice, typed, marked, failed by a condition, changed", () => {
     assert.equal(dmAnswerText({ characterId: "a", total: 17, result: "pass", tag: "t", dice: dice("1d20+5", [12], 17) }, DEX_SAVE), "rolled 17 (1d20+5: 12)");
@@ -1137,7 +1137,7 @@ describe("the DM's live card (docs/design-v1-roll-request.md 6)", () => {
   });
 });
 
-describe("a live card its save-ends card holds (docs/design-v1-dice-ui.md 7 and 12.3)", () => {
+describe("a live card its save-ends card holds (docs/design/design-v1-dice-ui.md 7 and 12.3)", () => {
   function table(state: "pending" | "resolved", linked = true): RoomState {
     const frightened = effect("e1", { key: "frightened", save: { ability: "wis", dc: 15 }, due: { id: "7:0", state } });
     return room({

@@ -207,7 +207,7 @@ export function snapToCorner(p: Point): Point {
 
 /**
  * Whether an edge may carry a feature: it must lie on the scene, its
- * borders included (docs/design-v1-maps-vision.md section 3.1 step 5). A
+ * borders included (docs/design/design-v1-maps-vision.md section 3.1 step 5). A
  * west edge `x,y,w` runs down the line at x, so x may be the scene's width,
  * and a north edge `x,y,n` runs along the line at y, so y may be its height.
  * That is how the east and south borders hold a wall, as the reducer checks.
@@ -330,7 +330,7 @@ export function doorLabel(door: Door): string {
 }
 
 /*
- * Free walls (docs/design-v1-maps-vision.md section 2.2) are walls, doors
+ * Free walls (docs/design/design-v1-maps-vision.md section 2.2) are walls, doors
  * and windows off the grid lines, which a Universal VTT import brings. The
  * DM does not draw them by hand: the builder taps a free door through its
  * states, Remove takes a free wall off, and the eraser takes the ones whose

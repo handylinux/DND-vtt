@@ -220,7 +220,7 @@ describe("room export and import", () => {
     assert.deepEqual(kept.rows.map((r) => r.credit), [null]);
   });
 
-  test("a room's journal, pins, roll requests, icons and room monster links come through an export and an import (docs/design-v1-dm-tools.md 2.5)", async () => {
+  test("a room's journal, pins, roll requests, icons and room monster links come through an export and an import (docs/design/design-v1-dm-tools.md 2.5)", async () => {
     const dm = t.client();
     const { roomId } = await dm.createRoom("Wave five");
     const player = t.client();
@@ -274,7 +274,7 @@ describe("room export and import", () => {
     dmSocket.close();
   });
 
-  test("an import drops a player's open asks for saves, as it drops open requests, and keeps their lines on the caster's new id (docs/design-v1-player-save-spell.md 5.7)", async () => {
+  test("an import drops a player's open asks for saves, as it drops open requests, and keeps their lines on the caster's new id (docs/design/design-v1-player-save-spell.md 5.7)", async () => {
     const dm = t.client();
     const { roomId } = await dm.createRoom("Save spell");
     const player = t.client();
@@ -552,7 +552,7 @@ describe("room export and import", () => {
     assert.deepEqual(rows[0]!.state.savedEncounters, {});
   });
 
-  test("a document and a showing handout of pages come back with every page row, under new ids, in order and as handout images (docs/design-v1-pdf-handouts.md 3.6)", async () => {
+  test("a document and a showing handout of pages come back with every page row, under new ids, in order and as handout images (docs/design/design-v1-pdf-handouts.md 3.6)", async () => {
     const dm = t.client();
     const { roomId } = await dm.createRoom("Pdf handouts");
     const dmSocket = await t.connect(roomId, dm);

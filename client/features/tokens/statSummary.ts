@@ -9,7 +9,7 @@ import { hpDisplay, type HpView } from "../../lib/tokenView.ts";
 import { tokenStatBlock } from "../monsters/statBlockLink.ts";
 
 /*
- * The stat summary's rules (docs/design-v1-token-panel.md 3.2), as plain
+ * The stat summary's rules (docs/design/design-v1-token-panel.md 3.2), as plain
  * functions for node --test: what a tap on a token tells its viewer before
  * anything else. AC, HP, speeds and Passive Perception come from the
  * viewer's own copy of the actor, so the summary can never show what the
@@ -145,7 +145,7 @@ export function vitals(input: {
 /**
  * Speed and Passive Perception as the quick numbers draw them, alike in
  * the token panel's header and the token window's summary
- * (docs/design-v1-look-pass.md 2.10): the name a screen reader reads in
+ * (docs/design/design-v1-look-pass.md 2.10): the name a screen reader reads in
  * full, and the short words a screen shows, each speed mode after the
  * footprints ("30 ft", "Fly 60 ft") or the number after "PP". Null for
  * the other items, which each place draws its own way.
@@ -181,7 +181,7 @@ export function saveUnits(block: Pick<StatBlock, "abilities">): string[] {
   return ABILITY_KEYS.map((k) => `${ABILITY_ABBR[k]} ${signed(block.abilities[k].save)}`);
 }
 
-/** The same from the numbers a creature rolls with, such as a player character's stat block's (docs/design-v1-pc-stats.md 7.4). */
+/** The same from the numbers a creature rolls with, such as a player character's stat block's (docs/design/design-v1-pc-stats.md 7.4). */
 export function saveUnitsOf(saves: Readonly<Record<AbilityKey, number>>): string[] {
   return ABILITY_KEYS.map((k) => `${ABILITY_ABBR[k]} ${signed(saves[k])}`);
 }
@@ -200,7 +200,7 @@ export function defenseLines(block: Pick<StatBlock, "vulnerabilities" | "resista
 /**
  * Where the saves and defenses stand: no block to read, the SRD chunk on
  * its way, its load failed, or the block. A player character's own stat
- * block gives its numbers and defense lines instead (docs/design-v1-pc-stats.md 7.4).
+ * block gives its numbers and defense lines instead (docs/design/design-v1-pc-stats.md 7.4).
  */
 export type LinkedBlock =
   | { kind: "none" }

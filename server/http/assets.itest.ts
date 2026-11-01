@@ -265,7 +265,7 @@ describe("intake slots", () => {
     assert.equal(map.statusCode, 200, map.body);
   });
 
-  test("handouts have their own hourly budget per session and per room, so a PDF's pages leave maps and tokens alone (docs/design-v1-pdf-handouts.md 3.7)", async () => {
+  test("handouts have their own hourly budget per session and per room, so a PDF's pages leave maps and tokens alone (docs/design/design-v1-pdf-handouts.md 3.7)", async () => {
     const roomId = await room();
     const dm = auth.allow(roomId, "dm");
     // The shared budget spent: a map is refused, and a handout still goes up.
@@ -289,7 +289,7 @@ describe("intake slots", () => {
     assert.equal((await upload(app, busy, auth.allow(busy, "dm"), "handout", otherPng)).statusCode, 429);
   });
 
-  test("a handout upload says whether it made the image, true for new bytes and false for bytes the room has, and a token's answer never says (docs/design-v1-pdf-handouts.md 3.9)", async () => {
+  test("a handout upload says whether it made the image, true for new bytes and false for bytes the room has, and a token's answer never says (docs/design/design-v1-pdf-handouts.md 3.9)", async () => {
     const roomId = await room();
     const dm = auth.allow(roomId, "dm");
     // Bytes no other test uploads, so no other room's row or file is shared with these.
@@ -669,7 +669,7 @@ describe("URL import", () => {
   });
 });
 
-describe("who reads a handout's pages (docs/design-v1-pdf-handouts.md 3.4)", () => {
+describe("who reads a handout's pages (docs/design/design-v1-pdf-handouts.md 3.4)", () => {
   let t: Engine;
   before(async () => {
     t = await startEngine();

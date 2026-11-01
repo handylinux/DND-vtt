@@ -83,7 +83,7 @@ export type BoardTextInput = {
   fontEpoch: number;
   /**
    * Where a token's decor lays out, in view units, and the ring under it,
-   * as the isometric board draws it (docs/design-v1-isometric-view.md 5.4,
+   * as the isometric board draws it (docs/design/design-v1-isometric-view.md 5.4,
    * relief/IsoBoard.tsx): the box's top left, the art's frame, and the ring
    * that hangs below the frame's bottom. Top-down's box is the token's own,
    * at its cell.
@@ -149,7 +149,7 @@ export function layoutBoardText(input: Omit<BoardTextInput, "plateIds">, kept: M
     if (ring) obstacles.push({ box: ring, owner: t.id, kind: "body" });
     const actor: Partial<Actor> | undefined = "inline" in t.actor ? t.actor.inline : characters?.[t.actor.ref]?.actor;
     const fullAccess = role === "dm" || ownsToken(t);
-    // A creature with no HP to show, such as an effect companion, gets no HP bar, label or Bloodied notch (docs/design-v1-combat-flow.md 3.6.6).
+    // A creature with no HP to show, such as an effect companion, gets no HP bar, label or Bloodied notch (docs/design/design-v1-combat-flow.md 3.6.6).
     const less = hpLess(actor, t);
     const hp: HpDisplay = less ? { kind: "none" } : hpDisplay({ actor, hpVisibility: t.hpVisibility, fullAccess });
     const state = less ? null : healthState({ actor, hpVisibility: t.hpVisibility, fullAccess });

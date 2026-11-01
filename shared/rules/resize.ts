@@ -7,7 +7,7 @@ import { footprintHexes, hexDistance, hexInScene, hexKey, sameHex, type Hex, typ
 import { LEDGE_IN_THE_WAY, resizeLegStop, resizeStands, WALL_IN_THE_WAY, type MovingToken } from "./movement.ts";
 
 /**
- * Where a resized creature stands (docs/design-v1-token-window.md 8.2 to
+ * Where a resized creature stands (docs/design/design-v1-token-window.md 8.2 to
  * 8.6). One rule for every place that changes a size: the device finds the
  * spot with `resizeSpot` before it sends the patch, and the permission
  * judges the spot it is sent with `resizeRefusal`. Both read the same
@@ -26,7 +26,7 @@ import { LEDGE_IN_THE_WAY, resizeLegStop, resizeStands, WALL_IN_THE_WAY, type Mo
  * indirection serves the core built before those rules existed: the resize
  * came after them, and nothing swaps them out for it.
  *
- * On a hex scene (docs/design-v1-hex-grids.md 4.2) a resize keeps the
+ * On a hex scene (docs/design/design-v1-hex-grids.md 4.2) a resize keeps the
  * reference hex where it was: a Medium growing Large keeps its hex as the
  * top one, and a Large shrinking Medium keeps its top hex. That spot is the
  * base, and an owner's growth that would leave the scene tries the other

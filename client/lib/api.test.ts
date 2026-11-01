@@ -106,7 +106,7 @@ describe("retryOn503", () => {
   });
 });
 
-describe("the device's upload queue (docs/design-v1-pdf-handouts.md 4.1.4)", () => {
+describe("the device's upload queue (docs/design/design-v1-pdf-handouts.md 4.1.4)", () => {
   /** Work that finishes when the test says, recording when it started. */
   function gate(log: string[], name: string) {
     let open!: () => void;
@@ -202,7 +202,7 @@ describe("the device's upload queue (docs/design-v1-pdf-handouts.md 4.1.4)", () 
 });
 
 /**
- * The log's export file (docs/design-v1-log-history.md 4.2): read a chunk at
+ * The log's export file (docs/design/design-v1-log-history.md 4.2): read a chunk at
  * a time up to 8 MiB, cancelled past that, and an error when its body breaks
  * off, never a shorter file.
  */

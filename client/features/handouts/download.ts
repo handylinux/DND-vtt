@@ -4,7 +4,7 @@ import { writePdf, type PdfImagePage } from "./pdfWrite.ts";
  * Saving a handout to this device (features section 16): the image the
  * popup shows, as the server stores it (at most 2048 px on its long side,
  * downscale.ts), under the handout's title. A handout of several pages
- * saves as a PDF built in the browser (docs/design-v1-pdf-handouts.md
+ * saves as a PDF built in the browser (docs/design/design-v1-pdf-handouts.md
  * section 6, pdfWrite.ts), with its own lifecycle below.
  *
  * It fetches the image rather than pointing a download link at it, so a
@@ -147,7 +147,7 @@ export function saveThroughLink(file: File): void {
   setTimeout(() => URL.revokeObjectURL(objectUrl), REVOKE_AFTER_MS);
 }
 
-// ---------------------------------------------------------------- a handout of pages as a PDF (docs/design-v1-pdf-handouts.md 6)
+// ---------------------------------------------------------------- a handout of pages as a PDF (docs/design/design-v1-pdf-handouts.md 6)
 
 /** A prepared PDF unused this long is dropped, and its Share with it, so a phone does not hold tens of MB of pages for a tap that never comes. */
 export const PREPARED_MS = 3 * 60_000;

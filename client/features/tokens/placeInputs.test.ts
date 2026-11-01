@@ -53,7 +53,7 @@ describe("what one tap of Add token places", () => {
   });
 });
 
-describe("Add token on a hex scene (docs/design-v1-hex-grids.md 4.2)", () => {
+describe("Add token on a hex scene (docs/design/design-v1-hex-grids.md 4.2)", () => {
   test("a batch of goblins lands each on its own hex's anchor, as a drop would snap it", () => {
     const state = room();
     state.scenes.s1 = { ...state.scenes.s1!, bounds: { w: 20, h: 20 }, gridShape: "hexRows" };

@@ -35,7 +35,7 @@ export const CREATURE_TYPES = [
 ] as const;
 export type CreatureType = (typeof CREATURE_TYPES)[number];
 
-// One list of damage types for the filters and the dice (docs/design-v1-dice.md 6.2).
+// One list of damage types for the filters and the dice (docs/design/design-v1-dice.md 6.2).
 export { DAMAGE_TYPES, type DamageType } from "#shared/rules/damage.ts";
 
 /** The nine alignments by the law and good axes, then Unaligned, as a 3 by 3 grid reads. */

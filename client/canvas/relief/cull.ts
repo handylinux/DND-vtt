@@ -2,7 +2,7 @@ import { screenToView, type Camera } from "../../lib/camera.ts";
 import type { CameraFit } from "../../state/liveCamera.ts";
 import type { VBox } from "./pieces.ts";
 
-/** The culling box grows in steps of screen pixels, so a pan sorts the view again only when it crosses one (docs/design-v1-relief-pan.md 5.6). */
+/** The culling box grows in steps of screen pixels, so a pan sorts the view again only when it crosses one (docs/design/design-v1-relief-pan.md 5.6). */
 export const CULL_STEP_PX = 128;
 
 /** The layout's cull box at a camera, its key, and the view on screen, in view units. */

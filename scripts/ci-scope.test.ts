@@ -8,7 +8,7 @@ import { changedFiles, isDoc, scopeOf, type Changes } from "./ci-scope.ts";
 
 describe("a doc", () => {
   test("is Markdown, a picture or a drawing's source under docs/, or Markdown at the root", () => {
-    for (const f of ["docs/design.md", "docs/dm-guide.md", "docs/dm-guide/areas-phone.webp", "docs/a.png", "docs/a.jpg", "docs/a.svg", "docs/diagrams/a.excalidraw", "README.md", "FEATURES.md", "CREDITS.md"])
+    for (const f of ["docs/design/design.md", "docs/dm-guide.md", "docs/dm-guide/areas-phone.webp", "docs/a.png", "docs/a.jpg", "docs/a.svg", "docs/diagrams/a.excalidraw", "README.md", "FEATURES.md", "CREDITS.md"])
       assert.ok(isDoc(f), f);
   });
 
@@ -48,8 +48,8 @@ describe("a run's scope", () => {
   });
 
   test("a push to main, a run by hand, nothing changed or git failing check everything", () => {
-    assert.equal(scopeOf("push", "refs/heads/main", onTip(["docs/design.md"])).docsOnly, false);
-    assert.equal(scopeOf("workflow_dispatch", "refs/heads/ci/x", onTip(["docs/design.md"])).docsOnly, false);
+    assert.equal(scopeOf("push", "refs/heads/main", onTip(["docs/design/design.md"])).docsOnly, false);
+    assert.equal(scopeOf("workflow_dispatch", "refs/heads/ci/x", onTip(["docs/design/design.md"])).docsOnly, false);
     assert.equal(push(onTip([])).docsOnly, false);
     assert.equal(push(null).docsOnly, false);
   });

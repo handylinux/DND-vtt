@@ -5,7 +5,7 @@ import { cornerAt, hexCenter, hexCorners, hexInScene, type HexGrid } from "#shar
 import { mergeRects, wallRuns } from "../geometry.ts";
 
 /**
- * How raised areas and stairs draw (docs/design-v1-maps-vision.md section
+ * How raised areas and stairs draw (docs/design/design-v1-maps-vision.md section
  * 4.2), as paths in world cells, so the board and the map export draw them
  * alike. Pure, so the shapes are tested without a canvas.
  *
@@ -183,7 +183,7 @@ export function reliefPaths<P extends Sink>(chunks: readonly BuildChunk[], walls
 }
 
 /**
- * The relief on a hex scene (docs/design-v1-hex-grids.md H3), lit from the
+ * The relief on a hex scene (docs/design/design-v1-hex-grids.md H3), lit from the
  * top left as on squares: each level's hexes washed, a shadow falling from
  * each raised side that faces away from the light onto the lower hex
  * beyond it, and the sides between two heights drawn as a pale rim where

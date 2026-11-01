@@ -1,7 +1,7 @@
 import type { AssetImage, IconImage, ImageRef } from "./model.ts";
 
 /**
- * Reading an image either way (docs/design-v1-dm-tools.md 3.12): an upload
+ * Reading an image either way (docs/design/design-v1-dm-tools.md 3.12): an upload
  * from the room's library, or a shipped game-icons.net icon on a colored
  * disk. Every reader of a token's, a portrait's or a monster's image goes
  * through these, so an icon is never taken for an asset that is missing.

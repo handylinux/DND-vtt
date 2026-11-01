@@ -4,7 +4,7 @@ import { scopeSlot } from "../../state/scope.ts";
 
 /**
  * The stat block editors open on this page, held apart from whatever opened
- * them (docs/design-v1-companion-stat-blocks.md 6.2). An editor opened from
+ * them (docs/design/design-v1-companion-stat-blocks.md 6.2). An editor opened from
  * a token's panel, a picker or a character's stat blocks page used to live
  * inside it, so a change that took its opener away took the draft with it:
  * the block deleted or replaced on the token, the companion or its

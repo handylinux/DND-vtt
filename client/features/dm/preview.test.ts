@@ -44,7 +44,7 @@ function source() {
 
 const byName = (view: RoomState, name: string) => Object.values(view.tokens).find((t) => t.name === name);
 
-describe("view as a player (docs/design-v1-per-player-vision.md 7.4)", () => {
+describe("view as a player (docs/design/design-v1-per-player-vision.md 7.4)", () => {
   test("follows the player's own store as the server sent it, and stays read-only", () => {
     const src = source();
     const preview = createPreview(src, thorn, { name: "Thorn" });

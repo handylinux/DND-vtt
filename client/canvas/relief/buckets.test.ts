@@ -374,7 +374,7 @@ function along(turn: Turn, x: number, y: number, d: number): { x: number; y: num
   return { x: x + d * dx, y: y + d * dy };
 }
 
-describe("areas standing as their real shapes in the depth list (docs/design-v1-iso-area-shapes.md 4.3)", () => {
+describe("areas standing as their real shapes in the depth list (docs/design/design-v1-iso-area-shapes.md 4.3)", () => {
   test("a 20 ft sphere 10 ft up: a flier inside between its far and near bands, one above, one in front after every band under its art, one behind before them, at each turn", () => {
     const relief = index({});
     for (const turn of TURNS) {

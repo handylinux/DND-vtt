@@ -30,8 +30,8 @@ export type Listed = { key: string; view: StatBlockMonster } & ({ source: "room"
 /**
  * A row of any list: a room monster, an SRD monster, or a character's
  * companion stat block, which `tag` marks with whose it is, such as "Bree's"
- * (docs/design-v1-companion-stat-blocks.md 6.1). A known form in Take a
- * shape (docs/design-v1-known-forms.md 5.1 and 5.2) has its own name for
+ * (docs/design/design-v1-companion-stat-blocks.md 6.1). A known form in Take a
+ * shape (docs/design/design-v1-known-forms.md 5.1 and 5.2) has its own name for
  * what a tap does, `label`, such as "Wild Shape as Wolf", and a `tag` for a
  * form the picked Druid level may not take. In the step that chooses them a
  * row is a toggle, `pressed`, and `disabled` once the list is full.

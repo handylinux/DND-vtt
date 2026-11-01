@@ -216,7 +216,7 @@ export const FOUND_SNAP_PX = 1;
 
 /**
  * The calibration a grid found in the map's pixels describes
- * (docs/design-v1-grid-detect.md section 6). The detector places the lines
+ * (docs/design/design-v1-grid-detect.md section 6). The detector places the lines
  * to a fraction of a pixel, so its origin is kept as measured. The wide
  * snap of a hand-drawn box (ORIGIN_SNAP) would move a line found 6 px in
  * onto the image's edge, off the drawn lines.
@@ -239,7 +239,7 @@ export function calibrationFromFind(found: { cellPx: number; originPx: Point }):
 
 /**
  * The calibration a hex grid found in the map's pixels describes
- * (docs/design-v1-grid-detect.md 10.7): its center taken as a hex center
+ * (docs/design/design-v1-grid-detect.md 10.7): its center taken as a hex center
  * and the origin reduced as Line up grid's hex box reduces it, so Apply
  * and the box agree. As for a square find, the measured origin is kept:
  * only one just under a whole row or hex folds onto the image's edge
@@ -272,7 +272,7 @@ export function calibrationFromCounts(map: MapSize, across: number, down: number
  * lined up just now would show counts that do not match it (LP3-TABLE-3).
  * Not the scene's size: a Universal VTT import with a fractional origin
  * also covers the partial square before the image
- * (docs/design-v1-maps-vision.md section 3.1, step 3), and the DM can size
+ * (docs/design/design-v1-maps-vision.md section 3.1, step 3), and the DM can size
  * a scene past its image. Either would show counts the image does not have.
  */
 export function imageSquares(map: MapSize & Calibration): { across: number; down: number } {

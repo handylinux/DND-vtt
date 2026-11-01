@@ -6,7 +6,7 @@ import { MAX_ENTRIES_PER_OP, type ActorTarget, type ClientOp, type EntryInput, t
 import { tokenAccess, type Role } from "./access.ts";
 
 /**
- * Editing several selected tokens at once (docs/design-v1-dm-tools.md 3.5),
+ * Editing several selected tokens at once (docs/design/design-v1-dm-tools.md 3.5),
  * as plain functions for node --test: what the group action bar offers this
  * viewer, whether a condition is lit for the group, and the ops each tap
  * sends. Every tap is one undo step: one many-op, or several sent as one
@@ -130,7 +130,7 @@ export function flagPatch(tokens: readonly GroupToken[], flag: "hidden" | "locke
  * show too (the project owner, 2026-10-17), so a creature revealed on the
  * map is revealed in the order at once, not only at its first turn, where
  * the order setting shows it: under its new-room default a monster's row
- * still waits for its first turn (docs/design-v1-combat-flow.md 11). A row
+ * still waits for its first turn (docs/design/design-v1-combat-flow.md 11). A row
  * can still be hidden on its own from the tracker, and hiding a token
  * leaves its rows as they are. The caller sends these with the tokens'
  * change as one gesture, so one undo takes both back.
@@ -217,7 +217,7 @@ export function deleteButtonWords(armed: boolean, armedText?: string): { text: s
  */
 export function fightCandidates<T extends Pick<Token, "id" | "kind"> & { companion?: Token["companion"] }>(tokens: readonly T[], encounter: Pick<Encounter, "entries"> | null | undefined): T[] {
   const taken = new Set((encounter?.entries ?? []).map((e) => e.tokenId));
-  // A companion that acts on its character's turn takes no row of its own (docs/design-v1-combat-flow.md 3.6.7).
+  // A companion that acts on its character's turn takes no row of its own (docs/design/design-v1-combat-flow.md 3.6.7).
   return tokens.filter((t) => t.kind !== "object" && !taken.has(t.id) && !actsOnCharacterTurn(t));
 }
 

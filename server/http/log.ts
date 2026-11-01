@@ -12,7 +12,7 @@ import type { RoomManager } from "../rooms/manager.ts";
 import { ExportFormatter, exportFileName, validTimeZone } from "./logExport.ts";
 
 /**
- * The log archive's routes (design 10.8, docs/design-v1-dm-tools.md 3.10):
+ * The log archive's routes (design 10.8, docs/design/design-v1-dm-tools.md 3.10):
  * Show older and newer pages, the session listing and the session export,
  * every one read through the history reader (server/rooms/logHistory.ts),
  * projected for the caller exactly as the live log is (design 7.3), so a
@@ -25,7 +25,7 @@ import { ExportFormatter, exportFileName, validTimeZone } from "./logExport.ts";
  * files hold every scene's lines.
  *
  * A DM may also ask a page `as` a player of the roster, for View as a
- * player (docs/design-v1-per-player-vision.md 7.4): the page is that
+ * player (docs/design/design-v1-per-player-vision.md 7.4): the page is that
  * player's, less every whisper the DM is not party to, as the preview's
  * socket gets its log, and it names the player it was answered as (`as`),
  * which the preview checks (D-261026-10). `as` from a player, or naming

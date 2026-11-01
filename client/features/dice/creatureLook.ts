@@ -9,7 +9,7 @@ import { characterKind, kindLine, sizeText, tokenKind, type KindLine } from "../
 
 /*
  * What the Dice panel's creature card shows of who it rolls for
- * (docs/design-v1-dice-pass.md 5): the picture, a companion's badge and
+ * (docs/design/design-v1-dice-pass.md 5): the picture, a companion's badge and
  * the kind line, built as the token panel's header builds them
  * (panels/TokenPanel.tsx NameBlock), so a creature reads alike in both.
  * Plain functions for node --test. The card itself reads no room.

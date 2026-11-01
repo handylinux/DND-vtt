@@ -1,5 +1,5 @@
 /**
- * Builds the starter packs (docs/design-v1-starter-art.md section 8): the
+ * Builds the starter packs (docs/design/design-v1-starter-art.md section 8): the
  * files in public/starter/ and the packs' stamps in public/stamps/, the
  * catalog in shared/starterArt.ts, the stamps' list in
  * shared/starterStamps.ts, and the "Starter packs" section of CREDITS.md.
@@ -936,7 +936,7 @@ function catalogSource(packs: StarterPack[]): string {
     })
     .join("\n");
   return `/**
- * The starter packs' catalog (docs/design-v1-starter-art.md). Written by
+ * The starter packs' catalog (docs/design/design-v1-starter-art.md). Written by
  * \`node scripts/starter-art.ts\` from scripts/starter-art.json, so change
  * those, not this file. Its shapes and the rules that read it are in
  * shared/starter.ts.
@@ -954,7 +954,7 @@ function stampListSource(stamps: StarterStamp[]): string {
     (s) => `  { key: ${JSON.stringify(s.key)}, name: ${JSON.stringify(s.name)}, w: ${s.w}, h: ${s.h}, pack: ${JSON.stringify(s.pack)} },`,
   );
   return `/**
- * The starter packs' stamps (docs/design-v1-starter-art.md 5), drawn from
+ * The starter packs' stamps (docs/design/design-v1-starter-art.md 5), drawn from
  * \`/stamps/<key>.webp\` beside the shipped stamps of shared/stamps.ts, so
  * the board can draw one without loading the catalog. Written by
  * \`node scripts/starter-art.ts\`, so change the script, not this file.
@@ -985,7 +985,7 @@ function creditsSection(packs: StarterPack[]): string {
     MD_START,
     "## Starter packs",
     "",
-    "Art a DM can pick from the Starter tab wherever art is chosen (docs/design-v1-starter-art.md): sets from one artist or project in one style, each under its own license. `node scripts/starter-art.ts` downloads every original from where its author published it, checks it against a pinned SHA-256 in `scripts/starter-art.json`, which also records each pack's license in its page's own words, a Wayback snapshot of that page and the check for AI art, and writes the files, their catalog (`shared/starterArt.ts`) and this section. A picked image keeps its work's credit in the room's library.",
+    "Art a DM can pick from the Starter tab wherever art is chosen (docs/design/design-v1-starter-art.md): sets from one artist or project in one style, each under its own license. `node scripts/starter-art.ts` downloads every original from where its author published it, checks it against a pinned SHA-256 in `scripts/starter-art.json`, which also records each pack's license in its page's own words, a Wayback snapshot of that page and the check for AI art, and writes the files, their catalog (`shared/starterArt.ts`) and this section. A picked image keeps its work's credit in the room's library.",
     "",
     "The files under CC BY-SA licenses (the Illustrated Bestiary and Flare Portrait Pack Number One) are adaptations, resized and re-encoded, and stay under the same CC BY-SA license as their originals. RaccoonVTT's code is a separate work and is not affected.",
     "",

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Database and image backups (docs/design-v1-dm-tools.md 3.17).
+# Database and image backups (docs/design/design-v1-dm-tools.md 3.17).
 #
 # The `backup` service in docker-compose.server.yml runs this file, mounted
 # read-only, in the postgres service's own pinned image, so pg_dump matches

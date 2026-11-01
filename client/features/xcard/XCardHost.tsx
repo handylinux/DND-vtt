@@ -6,7 +6,7 @@ import { useRoomActions, useRoomUi, useRoomView } from "../../state/view.ts";
 import { XMark } from "./XCardButton.tsx";
 
 /**
- * The X-card as every device in the room shows it (docs/design-v1-dm-tools.md
+ * The X-card as every device in the room shows it (docs/design/design-v1-dm-tools.md
  * 3.11), the sender's included, so nobody can tell from a screen who tapped
  * it. It is mounted once per room page, outside the room's own screens, so
  * it shows on a player behind a blackout too.

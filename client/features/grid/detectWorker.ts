@@ -4,7 +4,7 @@ import { DECODE_MAX_SIDE, decodeSize, HEADER_BYTES, type SearchAnswer, type Sear
 import { runSearch } from "./searchRun.ts";
 
 /**
- * The grid finder's Worker (docs/design-v1-grid-detect.md section 6). It
+ * The grid finder's Worker (docs/design/design-v1-grid-detect.md section 6). It
  * decodes the map at most DECODE_MAX_SIDE on its long side, so a large map
  * costs a phone tens of megabytes rather than hundreds, and runs the
  * detector away from the page, which never pauses for it. Any failure,

@@ -4,7 +4,7 @@ import { revealedMask } from "../../lib/fogTiles.ts";
 
 /**
  * The party's explored ground as the DM sees it
- * (docs/design-v1-maps-vision.md section 4.3.3). A DM receives the two fog
+ * (docs/design/design-v1-maps-vision.md section 4.3.3). A DM receives the two fog
  * layers apart: `fogTiles` is the DM's own, and `exploredTiles` is what the
  * party has seen. Players get them merged by the server. The DM's fog view
  * draws explored ground like revealed ground, with a dotted edge, so the DM

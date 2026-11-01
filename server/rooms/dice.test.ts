@@ -9,7 +9,7 @@ import { parseRoomState } from "./stateSchema.ts";
 
 const TAG = "0192f0a8-6c1e-7a4b-9c3d-2e1f0a9b8c7d";
 
-describe("the server's dice (docs/design-v1-dice.md 4.2)", () => {
+describe("the server's dice (docs/design/design-v1-dice.md 4.2)", () => {
   test("a batch id is 16 characters of the roller and the tag, the same for every batch of one tag, and says nothing of the tag", () => {
     const id = batchOf("p1", TAG);
     assert.match(id, /^[A-Za-z0-9_-]{16}$/);
@@ -47,7 +47,7 @@ describe("the server's dice (docs/design-v1-dice.md 4.2)", () => {
     assert.equal(resolved.op.asked.t, "dice.roll");
   });
 
-  test("an SRD creature's save rolls with the table loaded at boot (docs/design-v1-roll-options.md 3.4), and with none it has no bonus", () => {
+  test("an SRD creature's save rolls with the table loaded at boot (docs/design/design-v1-roll-options.md 3.4), and with none it has no bonus", () => {
     const state = room({
       tokens: { gob: token("gob", { kind: "monster", name: "Goblin", actor: { inline: actor({ srdId: "goblin-warrior" }) } }) },
       rolls: {
@@ -149,7 +149,7 @@ describe("dice lines in a room's export (5.3)", () => {
     const otherRule = JSON.parse(JSON.stringify(withLines()));
     otherRule.log[0].data.rolls[2].crit = "tripleDice";
     assert.equal(parseRoomState(otherRule).ok, false, "a crit's rule is one of the four");
-    // An initiative roll the DM kept from players (docs/design-v1-combat-flow.md 11.3).
+    // An initiative roll the DM kept from players (docs/design/design-v1-combat-flow.md 11.3).
     const kept = JSON.parse(JSON.stringify(withLines()));
     kept.log[0].data.rolls[0].hidden = true;
     kept.log[0].data.rolls[0].initiative = true;

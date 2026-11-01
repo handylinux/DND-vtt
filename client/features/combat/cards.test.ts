@@ -9,7 +9,7 @@ import type { PromptCard } from "./alerts.ts";
 import type { DeathSavePrompt } from "./logic.ts";
 
 /*
- * The turn-start cards as they render (docs/design-v1-combat-controls.md
+ * The turn-start cards as they render (docs/design/design-v1-combat-controls.md
  * 4.4): what a death save card says before and after it is settled.
  */
 

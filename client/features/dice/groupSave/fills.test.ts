@@ -7,7 +7,7 @@ import type { DiceView } from "../creature.ts";
 import { pcNamedRolls } from "#shared/rules/pcStats.ts";
 import { actionFill, areaFill } from "./fills.ts";
 
-/** Where a group save's fields start (docs/design-v1-roll-options.md 5.6, Appendix C). */
+/** Where a group save's fields start (docs/design/design-v1-roll-options.md 5.6, Appendix C). */
 
 const MAGE: PcStats = {
   abilities: { str: 8, dex: 14, con: 12, int: 18, wis: 10, cha: 10 },

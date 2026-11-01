@@ -26,7 +26,7 @@ function refOf(state: RoomState, tokenId: string): string | undefined {
 
 /**
  * The character whose turn a companion acts on, when it acts on its
- * character's turn (docs/design-v1-combat-flow.md 3.6.8). Its durations
+ * character's turn (docs/design/design-v1-combat-flow.md 3.6.8). Its durations
  * count that character's row.
  */
 function actsOnTurnOf(state: RoomState, tokenId: string): string | undefined {

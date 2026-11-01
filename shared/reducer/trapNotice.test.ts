@@ -9,7 +9,7 @@ import { applyOp } from "../reducer.ts";
 import { rasterizeFogOps } from "../rules/fog.ts";
 import { actor, character, DM, env, P1, reveal, room, token, trap as trapOf } from "../testutil.ts";
 
-/** The Passive Perception hint (docs/design-v1-traps.md 4.6). */
+/** The Passive Perception hint (docs/design/design-v1-traps.md 4.6). */
 
 const plate = (over: Partial<TrapRig> = {}): Partial<Trap> => ({
   zone: { cells: [{ x: 10, y: 5, w: 1, h: 1 }] },
@@ -112,7 +112,7 @@ describe("the Passive Perception hint", () => {
   });
 });
 
-describe("the hint on a per-player scene (docs/design-v1-per-player-vision.md decision 14, review PV1-O11)", () => {
+describe("the hint on a per-player scene (docs/design/design-v1-per-player-vision.md decision 14, review PV1-O11)", () => {
   test("with fog alone, the zone counts as seen on ground only one holder remembers", () => {
     const s = world();
     s.scenes.s1 = { ...s.scenes.s1!, fogEnabled: true, vision: { on: false, light: "bright", perPlayer: true } };

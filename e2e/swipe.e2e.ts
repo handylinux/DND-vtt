@@ -11,7 +11,7 @@ import { barControl, ConsoleWatch, OpSocket, openSceneGroup, pagePoint, pickOpti
 
 /**
  * Swipe a phone's bottom sheet down to close it, and the panel sheet up to
- * fill the screen (docs/design-v1-sheet-swipe.md section 9), on the real
+ * fill the screen (docs/design/design-v1-sheet-swipe.md section 9), on the real
  * server serving the production build, through Chromium's touch input in
  * contexts with `isMobile` and `hasTouch`. A slow drag spaces its moves by
  * 30 ms, about 0.3 px per ms, and a flick sends them back to back.
@@ -288,7 +288,7 @@ async function settled(surface: Locator): Promise<"gone" | "rest"> {
 }
 
 /*
- * A slow release settles on the nearest stand (docs/design-v1-sheet-swipe.md
+ * A slow release settles on the nearest stand (docs/design/design-v1-sheet-swipe.md
  * 4.4): closed past half the way to fully off screen, full past half the way
  * up, never for less than one touch target. `off` is how far below its
  * normal top a surface is fully off screen: its height and what rides it.
@@ -739,7 +739,7 @@ describe("raccoon-vtt: swipe a phone's bottom sheet", { timeout: 1_500_000 }, ()
     await swipe(dmCdp, await headerPoint(sheet), far(await steadyRect(sheet)));
     assert.equal(await settled(sheet), "rest", "a companion being added let the sheet close");
     assert.equal(await companion.inputValue(), "Ash the wolf");
-    // Typed, Cancel asks before it throws the name away (docs/design-v1-look-pass.md 3.1).
+    // Typed, Cancel asks before it throws the name away (docs/design/design-v1-look-pass.md 3.1).
     await sheet.getByRole("button", { name: "Cancel", exact: true }).click();
     await sheet.getByRole("button", { name: "Discard changes?" }).last().click();
     await add.click();
@@ -747,7 +747,7 @@ describe("raccoon-vtt: swipe a phone's bottom sheet", { timeout: 1_500_000 }, ()
     await swipe(dmCdp, await headerPoint(sheet), far(await steadyRect(sheet)));
     assert.equal(await settled(sheet), "gone", "an untouched companion form kept the sheet open");
 
-    // Request a roll with its DC typed, asked of the party, since Roll took its place on the DM's single bar (docs/design-v1-roll-options.md 4.5).
+    // Request a roll with its DC typed, asked of the party, since Roll took its place on the DM's single bar (docs/design/design-v1-roll-options.md 4.5).
     // The party's Ask is in its dock where that shows, else in the Party panel, whose place the request's sheet takes on a phone.
     const askParty = async () => {
       const shown = dm.getByRole("button", { name: "Ask the party" }).filter({ visible: true });
@@ -941,7 +941,7 @@ describe("raccoon-vtt: swipe a phone's bottom sheet", { timeout: 1_500_000 }, ()
     const request = randomUUID();
     await ops.send({ t: "roll.ask", request: { id: request, test: { kind: "save", choices: [{ ability: "con" }] }, dcShown: true, resultShown: true, targets: [{ characterId: run.thorn.characterId }] } });
     const card = player.getByRole("dialog", { name: "The DM asks for a roll" });
-    // With its roll row the card no longer fits over Thorn's bar, so it starts folded behind Roll asked, whose tap brings it up on Multi-select's bar (docs/design-v1-roll-request.md 5.7).
+    // With its roll row the card no longer fits over Thorn's bar, so it starts folded behind Roll asked, whose tap brings it up on Multi-select's bar (docs/design/design-v1-roll-request.md 5.7).
     const asked = player.getByRole("button", { name: /^Roll asked/ });
     await asked.or(card).first().waitFor();
     if (await card.isHidden()) await asked.tap();

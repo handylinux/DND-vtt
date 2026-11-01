@@ -9,7 +9,7 @@ import { formatDisplayCode } from "../auth/displaySessions.ts";
 import { Socket, startEngine, type Engine, type TestClient } from "./testing.ts";
 
 /**
- * Per-player vision over real sockets (docs/design-v1-per-player-vision.md
+ * Per-player vision over real sockets (docs/design/design-v1-per-player-vision.md
  * sections 6 and 7, lane PV3): two players on one dark per-player scene,
  * each with a character the other's cannot see. Each player's socket gets
  * only their own sight, fog, labels and stamps, a table display only what

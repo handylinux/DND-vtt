@@ -7,7 +7,7 @@ import { encodeTile, TILE_BYTES } from "./rules/fog.ts";
 import { DM, env, room, scene, token } from "./testutil.ts";
 import { sightPieces, sightPiecesCheck, tooManySightPieces } from "./visionLimits.ts";
 
-/** The wave 4 caps (docs/design-v1-maps-vision.md 2.4). */
+/** The wave 4 caps (docs/design/design-v1-maps-vision.md 2.4). */
 
 /** A scene's chunks holding a wall on every other north edge of every other row, so no two touch and none merge. */
 function scatteredWalls(sceneId: string, rows: number): Record<string, BuildChunk> {

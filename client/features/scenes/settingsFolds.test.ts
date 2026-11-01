@@ -8,7 +8,7 @@ import { RoomScope } from "../../state/scope.ts";
 import { createSceneFolds, resolveSceneFolds, SCENE_FOLDS_KEY, SCENE_GROUP_LABELS, SCENE_GROUPS, sceneFoldStarts, sceneFoldsSlot, writeSceneFold, type SceneFolds } from "./settingsFolds.ts";
 
 /*
- * The scene settings page's groups and folds (docs/design-v1-map-discovery.md
+ * The scene settings page's groups and folds (docs/design/design-v1-map-discovery.md
  * 8.4): their order and names, where each starts on a phone and a wide
  * screen, what a device remembers, and the page as it draws them.
  */
@@ -52,7 +52,7 @@ describe("the scene settings page's groups (8.4)", () => {
     assert.equal(SCENE_FOLDS_KEY, "rvtt.sceneSettingsFolds");
   });
 
-  test("a device that folded the group when it was named Scene opens Size and view folded (docs/design-v1-design-pass.md 4.1)", () => {
+  test("a device that folded the group when it was named Scene opens Size and view folded (docs/design/design-v1-design-pass.md 4.1)", () => {
     const before = storage(JSON.stringify({ scene: false }));
     assert.equal(resolveSceneFolds(before, 1440).scene, false);
     assert.equal(SCENE_GROUP_LABELS.scene, "Size and view");
@@ -200,7 +200,7 @@ describe("the page as it draws its groups (8.4)", () => {
     assert.deepEqual(headings(page(ALL_OPEN)).slice(1, 5), ["What players see open", "Map image and grid open", "Walls and movement open", "Size and view open"]);
   });
 
-  test("a folded group says what it holds beside its name, with its icon, and an open one says nothing (docs/design-v1-design-pass.md 4.1)", () => {
+  test("a folded group says what it holds beside its name, with its icon, and an open one says nothing (docs/design/design-v1-design-pass.md 4.1)", () => {
     const html = page(PHONE);
     const summaries = [...html.matchAll(/<span id="([^"]+)-summary"[^>]*>([^<]*)<\/span>/g)].map((m) => m[2]);
     assert.deepEqual(summaries, ["No map image · Squares", "Walls do not block moves", "40 × 30 squares"]);

@@ -4,7 +4,7 @@ import { calibrationFromFind, fitBounds, MAX_CELL_PX, MIN_CELL_PX } from "../gri
 import { DEFAULT_GRID, mapScene, type MapAsset, type SceneInput } from "../scenes/create.ts";
 
 /**
- * A scene from a starter map (docs/design-v1-starter-art.md 7). The build
+ * A scene from a starter map (docs/design/design-v1-starter-art.md 7). The build
  * measured each map's drawn grid on the file as shipped, so the scene
  * starts on it and skips grid alignment, as a size in a file's name does:
  * the cell size goes in as that hint, and a measured origin goes through
@@ -71,7 +71,7 @@ export function starterMapScene(input: {
   asset: MapAsset;
   work: Pick<StarterWork, "name" | "grid" | "gridColor">;
   grid: StarterGrid | null;
-  /** A starter map made on hexes (docs/design-v1-hex-grids.md HX-D19): its art is drawn on squares, so the scene opens Line up grid rather than take the measured square grid. */
+  /** A starter map made on hexes (docs/design/design-v1-hex-grids.md HX-D19): its art is drawn on squares, so the scene opens Line up grid rather than take the measured square grid. */
   gridShape?: GridShape;
 }): StarterMapScene {
   const { asset, work } = input;

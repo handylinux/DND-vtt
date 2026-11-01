@@ -19,7 +19,7 @@ export function useGrabberRoom(): number {
 
 /**
  * The grabber centered at the top of a phone's sheet that swipes
- * (docs/design-v1-sheet-swipe.md), as video apps draw over their comments:
+ * (docs/design/design-v1-sheet-swipe.md), as video apps draw over their comments:
  * it shows that the sheet can be swiped, in the design This device chose
  * (4.8). A host draws it only inside a grab area that swipes, so the
  * grabber and the swipe share one condition (SheetHeader's and

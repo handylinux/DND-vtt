@@ -15,7 +15,7 @@ const EMPTY_PINS: Record<string, Pin> = {};
 const EMPTY_PAGES: Record<string, JournalPage> = {};
 
 /**
- * Map pins (docs/design-v1-dm-tools.md 3.8) on the overlay layer, above the
+ * Map pins (docs/design/design-v1-dm-tools.md 3.8) on the overlay layer, above the
  * fog: a pin that reaches a player is never under it, since projection
  * withholds one on a fully fogged cell. Each is a marker of one size on
  * screen, 28 px tall, in its color, with its label under it once the map
@@ -23,14 +23,14 @@ const EMPTY_PAGES: Record<string, JournalPage> = {};
  * receive faded.
  *
  * In Isometric a pin stands upright on the overlay, its tip at the drawn
- * ground under it (docs/design-v1-isometric-view.md 5.3). Top-down draws a
+ * ground under it (docs/design/design-v1-isometric-view.md 5.3). Top-down draws a
  * pin above the fog wherever it is, so it stands wherever it is, and its
  * height reads only ground this viewer has seen.
  *
  * This layer only draws. A tap on a pin, its popover's timer and the
  * popover's closing on a selection run in the board's pin controller
  * (PinController.ts), mounted once outside both drawing trees
- * (docs/design-v1-isometric-view.md 5.1).
+ * (docs/design/design-v1-isometric-view.md 5.1).
  */
 export const PinLayer = memo(function PinLayer(props: LayerProps) {
   const pins = useTreeShownView((s) => s.view?.pins ?? EMPTY_PINS);

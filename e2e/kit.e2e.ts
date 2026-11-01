@@ -8,7 +8,7 @@ import { ConsoleWatch, ROOT, Shots, sleep } from "./harness.ts";
 
 /**
  * The shared components on the dev-only kit page (client/dev/Kit.tsx,
- * docs/design-v1-visual.md 5.3, part 1), with real keys in a real browser:
+ * docs/design/design-v1-visual.md 5.3, part 1), with real keys in a real browser:
  * a Segmented or Swatches row is one Tab stop whose arrow keys move and
  * choose, Space flips a Switch, the focus ring shows in the accent and in
  * ink on a highlight Notice, a body folded with `hidden` over an inline

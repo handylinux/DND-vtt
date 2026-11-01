@@ -40,7 +40,7 @@ export function ViewAsHost() {
 /**
  * "View as a player": the whole Room page again, over the DM's, drawn from
  * that player's own projection, which a socket of its own asks the server
- * for (docs/design-v1-per-player-vision.md 7.4, preview.ts), with every
+ * for (docs/design/design-v1-per-player-vision.md 7.4, preview.ts), with every
  * action refused. It is the real page, top bar, toolbar and panels
  * included, so the DM sees what that player can see on any scene, fog
  * and all, and nothing more. It keeps its own framing, so it is not a
@@ -57,7 +57,7 @@ export function ViewAsHost() {
  *
  * The banner stays here, outside the previewed page, so a blackout and the
  * ended screen keep its Exit. The page places it among its own notices
- * (pages/Room.tsx, docs/design-v1-bar-dock.md 1.3): it hears the banner's
+ * (pages/Room.tsx, docs/design/design-v1-bar-dock.md 1.3): it hears the banner's
  * height and answers with where it goes, left of the lane the token bar
  * and the alerts column share, so it never covers a card (LPD-DESK-6).
  * While the page answers nothing (a blackout, the ended screen, the first

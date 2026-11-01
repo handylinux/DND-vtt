@@ -18,7 +18,7 @@ import { randomIp, startEngine, type Engine, type TestClient } from "../rooms/te
 import { backupWarning, type AdminRoom, type AdminStorage, type BackupRun } from "./admin.ts";
 
 /**
- * The admin page's routes (docs/design-v1-dm-tools.md 3.18) on the real
+ * The admin page's routes (docs/design/design-v1-dm-tools.md 3.18) on the real
  * server: off without ADMIN_PASSWORD_HASH, the login with its limits and
  * Turnstile, the session's cookie and its ends, the listing against the
  * quota's own numbers, pin, and delete through the DM's path.

@@ -23,7 +23,7 @@ export function shapeLimit(level: number): ShapeLimit {
  * Fly Speed, or null when they may. Below level 2 every form misses on its
  * CR, since `maxCr` is null there. The Beast type is the picker's own
  * checkbox. A known form's mark and the level filter both read this, so
- * they never disagree (docs/design-v1-known-forms.md 5.1).
+ * they never disagree (docs/design/design-v1-known-forms.md 5.1).
  */
 export function shapeLimitMiss(limit: ShapeLimit, m: StatBlockMonster): "cr" | "fly" | null {
   if (limit.maxCr === null) return "cr";

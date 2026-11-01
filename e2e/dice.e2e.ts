@@ -11,7 +11,7 @@ import type { DiceRoll, LogEntry, LogEvent } from "#shared/model.ts";
 import { ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, reopenRoom, Shots, sideTabName, sleep, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
 
 /**
- * Dice on the server (docs/design-v1-dice.md 13), on the real server serving
+ * Dice on the server (docs/design/design-v1-dice.md 13), on the real server serving
  * the production build: a player rolls 2d6+3 on a phone and the DM's
  * computer shows the same dice, as a toast while its Dice panel is closed,
  * a DM's free formula starts in the open and, hidden with one tap, reads
@@ -22,7 +22,7 @@ import { ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, reopenRoom, Shots, 
  * one of two panels, rolling there and counting as on screen, and a roll
  * of 100 dice keeping the sticky line to one line on a phone, and Roll
  * waiting in the DM's view as a player. Then Pat's Thorn with a stat block
- * (docs/design-v1-dice-ui.md): a weapon row's controls on one line at
+ * (docs/design/design-v1-dice-ui.md): a weapon row's controls on one line at
  * 390 px, a result in the header line and never in its row, a save
  * spell's DC in its row, the header line inside its column at 100% and
  * 130%, and an answer's line with no Again. Last, the two faults the
@@ -31,7 +31,7 @@ import { ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, reopenRoom, Shots, 
  * die (a long critical damage with three riders), each at 390 x 844 at
  * 100% and 130%, and the header line at 320 x 568 at 130% as well.
  *
- * Then the roll animation (docs/design-v1-roll-animation.md 10), its steps
+ * Then the roll animation (docs/design/design-v1-roll-animation.md 10), its steps
  * labeled `ra-`: Pat's own roll throws dice that land on the result, and
  * reduced motion, no WebGL, Low power, the switch, a tap during a throw,
  * the tracker's Roll, a secret roll, the DM's toast of Pat's attack, a
@@ -396,7 +396,7 @@ function sideways(page: Page, selector: string): Promise<number> {
   );
 }
 
-/** A roll's one-roll menu (docs/design-v1-roll-mode-menu.md 3.3), by its source's name. */
+/** A roll's one-roll menu (docs/design/design-v1-roll-mode-menu.md 3.3), by its source's name. */
 function rollMenu(page: Page, name: RegExp): Locator {
   return page.getByRole("menu", { name });
 }
@@ -541,7 +541,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
 
   test("3. a DM's free formula starts in the open, one tap hides it, and Pat reads only that the DM rolled in secret", async () => {
     const secret = dm.getByRole("button", { name: "Hide from players" });
-    // Only a DM's roll for a monster starts secret (docs/design-v1-dice.md 17).
+    // Only a DM's roll for a monster starts secret (docs/design/design-v1-dice.md 17).
     assert.equal(await secret.getAttribute("aria-pressed"), "false", "a DM's free formula starts in the open");
     await secret.click();
     assert.equal(await secret.getAttribute("aria-pressed"), "true");
@@ -613,7 +613,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
       assert.ok(sheetView, "the Dice sheet's body");
       for (const selector of ["[data-dice-last]", 'input[aria-label="Dice formula"]', 'button:has-text("Roll")', '[aria-label="Quick dice"]', 'button[aria-label="Add a d20"]', `${modes} button[aria-label="Advantage"]`, `${modes} button[aria-label="Disadvantage"]`, secret]) {
         assert.ok(await inView(player, selector), `${selector} in view at ${Math.round(scale * 100)}%`);
-        // Inside the sheet's first screen too, where nothing covers it. At 130% the row has no room for Secret beside the pair, so it wraps under them, one short scroll down (docs/design-v1-dice-pass.md 4).
+        // Inside the sheet's first screen too, where nothing covers it. At 130% the row has no room for Secret beside the pair, so it wraps under them, one short scroll down (docs/design/design-v1-dice-pass.md 4).
         if (scale !== 1 && selector === secret) continue;
         const box = (await player.locator(selector).first().boundingBox())!;
         assert.ok(box.y >= sheetView.y - 1 && box.y + box.height <= sheetView.y + sheetView.height + 1, `${selector} inside the sheet's view at ${Math.round(scale * 100)}%: ${box.y}-${box.y + box.height} in ${sheetView.y}-${sheetView.y + sheetView.height}`);
@@ -631,7 +631,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
   });
 
   test("7. with two panels, Dice rolls in the bottom pane, and Pat's roll makes no toast while Dice shows there", async () => {
-    // The bottom pane counts as on screen (docs/design-v1-split-panel.md 3, docs/design-v1-dice.md 8.5).
+    // The bottom pane counts as on screen (docs/design/design-v1-split-panel.md 3, docs/design/design-v1-dice.md 8.5).
     await openSideTab(dm, "Initiative");
     await dm.getByRole("tablist", { name: "Panels" }).locator('[role="tab"][aria-haspopup="menu"]').click();
     await dm.getByRole("menu", { name: "More panels" }).getByRole("menuitemcheckbox", { name: "Two panels" }).click();
@@ -680,7 +680,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
     assert.ok(fit.height <= oneLine, `the sticky line is ${fit.height} px tall, over one line's ${oneLine}`);
     assert.equal(fit.sideways, 0, "the Dice sheet scrolls sideways");
     assert.ok(await inView(player, '[data-dice-last] button:has-text("Again")'), "Again is on screen");
-    // Again is a whole touch target, as every button is (docs/design-v1-look-pass-2.md D37).
+    // Again is a whole touch target, as every button is (docs/design/design-v1-look-pass-2.md D37).
     const again = (await sticky.getByRole("button", { name: "Again" }).boundingBox())!;
     assert.ok(again.height >= 44, `Again is ${again.height} px tall`);
     await shots.take(player, "dice-hundred-dice-sticky");
@@ -772,7 +772,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
       }),
     );
     assert.ok(middles.every((m) => Math.abs(m - middles[0]!) < 1), `the row's controls take more than one line: ${middles.join(", ")}`);
-    // The numbers stand in the row's header, after its name, as a stat block prints them (docs/design-v1-dice-ui.md 4.4).
+    // The numbers stand in the row's header, after its name, as a stat block prints them (docs/design/design-v1-dice-ui.md 4.4).
     const header = (await namedRow(attack).locator("div").first().innerText()).replace(/\s+/g, " ");
     assert.match(header, /^Longsword ?\+6 to hit, 1d8\+3 Slashing/);
     await shots.take(player, "dice-weapon-row-390");
@@ -1020,7 +1020,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
     // The scrim stands until the dice fade at 1.8 s, whatever React drew in between.
     const scrim = await js<number>(player, `return Number(getComputedStyle(document.querySelector("[data-dice-tray]").firstElementChild).opacity);`);
     assert.ok(scrim > 0.9, `the scrim is at ${scrim} as the dice land`);
-    // Square under the header line's straight edge, rounded at its foot (docs/design-v1-look-pass-2.md D37).
+    // Square under the header line's straight edge, rounded at its foot (docs/design/design-v1-look-pass-2.md D37).
     const corners = await js<string[]>(player, `const s = getComputedStyle(document.querySelector("[data-dice-tray]").firstElementChild); return [s.borderTopLeftRadius, s.borderTopRightRadius, s.borderBottomLeftRadius];`);
     assert.deepEqual(corners.slice(0, 2), ["0px", "0px"], "the scrim rounds its top corners");
     assert.notEqual(corners[2], "0px", "the scrim's foot is rounded");
@@ -1241,7 +1241,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
       assert.equal(await sideways(player, "[data-dice-last]"), 0, `${label}: the pane scrolls sideways during the throw`);
       const backing = hook.cssWidth * hook.ratio * hook.zoom;
       assert.ok(Math.abs(hook.width - backing) <= 1, `${label}: the canvas is ${hook.width} px wide, not ${backing} (${hook.cssWidth} CSS px, ratio ${hook.ratio}, zoom ${hook.zoom})`);
-      // The "+N" disc's number is in the tray's own pixels, as the disc is, so it keeps one size inside it at every interface size (docs/design-v1-look-pass-2.md D37).
+      // The "+N" disc's number is in the tray's own pixels, as the disc is, so it keeps one size inside it at every interface size (docs/design/design-v1-look-pass-2.md D37).
       const disc = await js<{ font: number; box: number } | null>(player, `const d = document.querySelector("[data-dice-more]"); if (!d) return null; return { font: parseFloat(getComputedStyle(d).fontSize), box: parseFloat(getComputedStyle(d).width) };`);
       assert.ok(disc, `${label}: 20d6 shows no +N disc`);
       discs.push(disc.font / disc.box);

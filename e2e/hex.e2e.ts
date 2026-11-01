@@ -22,7 +22,7 @@ import { undoSetup } from "./helpers/undoScope.ts";
 import { wallsRound } from "../shared/rules/hexWalls.testkit.ts";
 
 /**
- * The board on a hex scene (docs/design-v1-hex-grids.md 10, lane HX-3):
+ * The board on a hex scene (docs/design/design-v1-hex-grids.md 10, lane HX-3):
  * hex lines in the scene's 22 rows, a goblin dropped between hexes landing
  * on the nearest one, a drag of 4 hexes on its turn reading 20 ft, the
  * arrow keys in both views, the Straight ruler, an area's limit line, the
@@ -413,7 +413,7 @@ async function describedBy(target: Locator): Promise<string[]> {
 
 /**
  * What is wrong with a choice of three even options that wrap
- * (docs/design-v1-design-pass.md 4.2), as lines: `stack` wants one option
+ * (docs/design/design-v1-design-pass.md 4.2), as lines: `stack` wants one option
  * per row at the group's full width, else all three on one row. Every
  * option is 44 px or more each way, no word breaks across lines, and
  * `wraps` names an option whose words take two lines, broken between them.
@@ -944,7 +944,7 @@ describe("raccoon-vtt hex grids: the board", { timeout: 600_000 }, () => {
   test("HX4-1. Room settings start new scenes on hex rows, and the new scene form shows it: a battle mat and a map image on hex rows, a builder scene and starter maps on squares", async () => {
     await dm.bringToFront();
     const menu = await openRoomSettings(dm);
-    // The scene's own Grid shape choice, described by the setting's help (docs/design-v1-design-pass.md 4.2).
+    // The scene's own Grid shape choice, described by the setting's help (docs/design/design-v1-design-pass.md 4.2).
     const start = menu.getByRole("radiogroup", { name: "Grid on new scenes" });
     await menu.getByText(NEW_SCENES_HELP, { exact: true }).waitFor();
     assert.deepEqual(await describedBy(start), [NEW_SCENES_HELP]);
@@ -1149,7 +1149,7 @@ describe("raccoon-vtt hex grids: the board", { timeout: 600_000 }, () => {
     assert.deepEqual(off, [], "out of line by more than 1 px");
   });
 
-  test("dp-2a. Grid shape, Kind of scene, the new scene form's Grid and Room settings' Grid on new scenes stand one per row at full width at 320 x 568 and 130%, else share one row, Hex columns wrapping between its words at 390 x 844 and 130%, with no option under 44 px, no sideways scroll, and within 1 px at each size (docs/design-v1-design-pass.md 4.2)", async () => {
+  test("dp-2a. Grid shape, Kind of scene, the new scene form's Grid and Room settings' Grid on new scenes stand one per row at full width at 320 x 568 and 130%, else share one row, Hex columns wrapping between its words at 390 x 844 and 130%, with no option under 44 px, no sideways scroll, and within 1 px at each size (docs/design/design-v1-design-pass.md 4.2)", async () => {
     const wrong: string[] = [];
     const off: string[] = [];
     let phone: Awaited<ReturnType<typeof dmPhone>> | null = null;
@@ -2039,7 +2039,7 @@ describe("raccoon-vtt hex grids: the board", { timeout: 600_000 }, () => {
 
   /*
    * HX-9c: the grid finder looks for squares and hexes on every search
-   * (docs/design-v1-grid-detect.md 10.7). Every map here is drawn by code
+   * (docs/design/design-v1-grid-detect.md 10.7). Every map here is drawn by code
    * (client/features/grid/synthetic.ts): noise with hexes of a known size
    * and center, written as a PNG whose name gives no size.
    */
@@ -2105,7 +2105,7 @@ describe("raccoon-vtt hex grids: the board", { timeout: 600_000 }, () => {
     // Use default puts back the form's squares and the first guess, 47 px for a 1400 by 1000 image.
     await bar.getByRole("button", { name: "Use default", exact: true }).click();
     await waitFor("squares and the guess back", () => hx9cGuess(made.id, undefined, 47));
-    // Grid calibration is Setup (docs/design-v1-undo-scope.md 2): Undo setup takes Use default back, then the find, each in one step.
+    // Grid calibration is Setup (docs/design/design-v1-undo-scope.md 2): Undo setup takes Use default back, then the find, each in one step.
     await undoSetup(dm);
     await waitFor("the found hexes again", () => hx9cOnHexes(made.id, "rows", 64));
     await undoSetup(dm);

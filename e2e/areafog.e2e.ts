@@ -19,7 +19,7 @@ import { ConsoleWatch, OpSocket, openSideTab, pagePoint, pickTool, Shots, sideTa
  * origin lies: in the fog beside revealed ground, or across a fogged strip
  * from revealed ground beyond it. A player's copy holds the build only on
  * cells with a revealed sub-cell, and edges by either cell beside them
- * (docs/design-v1-map-discovery.md decision 1), so each hidden wall stands
+ * (docs/design/design-v1-map-discovery.md decision 1), so each hidden wall stands
  * a sub-cell or more past revealed ground that ends inside a cell: the
  * device holds it, and no revealed sub-cell lies beside it. Each check reads the page's pixels at the
  * middle of sub-cells the sphere reaches, once with the wall and once
@@ -82,7 +82,7 @@ const EDGE_IN_CELL: Layout = { name: "edge-in-cell", reveal: [{ x: 0, y: 0, w: 7
  * The origin in the fogged part of column 7, whose first sub-cell is
  * revealed, and a free wall in that fogged part between the origin and the
  * goblin. Every ray to the goblin lies on cells Pat holds, so Pat's lists
- * may name it (docs/design-v1-map-discovery.md decision 13), and the wall
+ * may name it (docs/design/design-v1-map-discovery.md decision 13), and the wall
  * would take every one of those rays.
  */
 const ORIGIN_IN_CELL: Layout = { name: "origin-in-cell", reveal: [{ x: 0, y: 0, w: 7.25, h: BOUNDS.h }], origin: { x: 7.5, y: 6.5 }, size: 30, free: { id: "aimfogcell01", a: [7.375, 2], b: [7.375, 10] } };

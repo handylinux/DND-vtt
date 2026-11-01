@@ -9,7 +9,7 @@ import { patternOf } from "./looks.ts";
 import { boundsOf, facesOf, type CellPiece, type Face, type PitRegion, type SideLook, type StaticPiece, type VBox, type WallItem } from "./pieces.ts";
 
 /**
- * Drawing a run of relief pieces (docs/design-v1-isometric-view.md 5.5):
+ * Drawing a run of relief pieces (docs/design/design-v1-isometric-view.md 5.5):
  * one Konva shape that does not listen draws every piece between two
  * standees, in depth order. A column draws its sides, then its top: the
  * ground stage's pixels under the cell, copied up by the lift into the
@@ -19,9 +19,9 @@ import { boundsOf, facesOf, type CellPiece, type Face, type PitRegion, type Side
  * clipped to its own floor polygon, then its far sides, all inside the
  * openings of its connected region, so a floor seen through a neighbor's
  * opening shows its own pixels and its own shade
- * (docs/design-v1-iso-hex-relief.md 5.2). Consecutive
+ * (docs/design/design-v1-iso-hex-relief.md 5.2). Consecutive
  * bands of one area standing as its real shape draw as one
- * (docs/design-v1-iso-area-shapes.md 4.3 and 5).
+ * (docs/design/design-v1-iso-area-shapes.md 4.3 and 5).
  */
 
 export type DrawContext = {
@@ -44,14 +44,14 @@ export type DrawContext = {
    * each tested on its own. Absent, the canvas's whole view.
    */
   regions?: readonly VBox[] | null;
-  /** Where a draw records the painted box, in device pixels, of each cell it draws whose top or floor takes the face tone (docs/design-v1-relief-pan.md 5.3). */
+  /** Where a draw records the painted box, in device pixels, of each cell it draws whose top or floor takes the face tone (docs/design/design-v1-relief-pan.md 5.3). */
   toned?: VBox[];
 };
 
 /**
  * How far a relief piece's paint reaches past its geometric bounds, in
  * device pixels: half of its 1 device pixel outline, and 1 more for the
- * antialiasing of its edges (docs/design-v1-relief-pan.md 5.2).
+ * antialiasing of its edges (docs/design/design-v1-relief-pan.md 5.2).
  */
 const PIECE_REACH_PX = 1.5;
 /** The same for an area's bands, in CSS pixels before the 1 device pixel: half of a selected area's 2.5 px outline, the widest it draws. */
@@ -134,7 +134,7 @@ function paints(box: VBox, dc: DrawContext, view: VBox): boolean {
  * the canvas copies ground from past the ground canvas's top or bottom.
  * The test is the cell's own, so its look never depends on the cells it
  * batches with. A copy reads straight up or down from where it shows, so
- * the canvas's sides never tone a pixel that shows (docs/design-v1-relief-pan.md 5.3).
+ * the canvas's sides never tone a pixel that shows (docs/design/design-v1-relief-pan.md 5.3).
  */
 function tonedCell(c: CellPiece, dc: DrawContext, view: VBox): boolean {
   const ground = dc.ground;
@@ -205,7 +205,7 @@ type CellShape = {
  * Kept with each piece, turn by turn. A piece's geometry never changes once
  * built (buckets.ts makes new pieces when their cells or neighbors change),
  * so a pan reads these back instead of projecting every corner again each
- * frame (docs/design-v1-iso-hex-relief.md 9).
+ * frame (docs/design/design-v1-iso-hex-relief.md 9).
  */
 const cellShapes = new WeakMap<CellPiece, (CellShape | undefined)[]>();
 const wallBounds = new WeakMap<WallItem, (VBox | undefined)[]>();
@@ -432,7 +432,7 @@ function copyGround(g: CanvasRenderingContext2D, cells: readonly CellPiece[], dc
  * The ground's pixels as a pattern. A pattern holds the canvas as it was
  * when made, so one made once for each ground draw serves every top the
  * relief copies after it, where a clip and an image copy for each top
- * cost a phone's frame on alternating heights (docs/design-v1-iso-hex-relief.md 9).
+ * cost a phone's frame on alternating heights (docs/design/design-v1-iso-hex-relief.md 9).
  */
 function groundPattern(g: CanvasRenderingContext2D, dc: DrawContext): CanvasPattern | null {
   const ground = dc.ground;
@@ -546,7 +546,7 @@ function drawStanding(g: CanvasRenderingContext2D, w: WallItem, dc: DrawContext)
  * by the run itself, never by what a draw culls: a batch is consecutive
  * columns at one lift, parted by any other piece, drawn or not. A scroll's
  * strip and a whole draw of one layout then fill the same unions, so their
- * pixels agree where neighboring tops meet (docs/design-v1-relief-pan.md 5.2).
+ * pixels agree where neighboring tops meet (docs/design/design-v1-relief-pan.md 5.2).
  */
 export function drawRun(g: CanvasRenderingContext2D, pieces: readonly DrawPiece[], dc: DrawContext): void {
   g.save();
@@ -609,7 +609,7 @@ export function drawRun(g: CanvasRenderingContext2D, pieces: readonly DrawPiece[
   g.restore();
 }
 
-/** How an area standing as its real shape draws (docs/design-v1-iso-area-shapes.md 5). */
+/** How an area standing as its real shape draws (docs/design/design-v1-iso-area-shapes.md 5). */
 export type VolumeLook = {
   color: string;
   /** A DM-only area on the DM's device: all of it at 60%, its outline dashed 6 4. */
@@ -680,7 +680,7 @@ export function pitSweep(turn: Turn, poly: readonly Pt[]): Pt[] {
 /**
  * Clips to pit openings swept up past the canvas's top, in view units, so
  * the near rim hides what lies below it, as it hides a standee there
- * (docs/design-v1-isometric-view.md 5.5). `pits` are the openings' world
+ * (docs/design/design-v1-isometric-view.md 5.5). `pits` are the openings' world
  * polygons, the connected region's that meet what is clipped.
  */
 export function clipToPits(g: CanvasRenderingContext2D, pits: readonly (readonly Pt[])[], turn: Turn): void {
@@ -763,7 +763,7 @@ function sharesOf(part: BandPart, pits: AreaPits): Map<number, BandPart> {
 }
 
 /**
- * Draws bands of one area as one run (docs/design-v1-iso-area-shapes.md
+ * Draws bands of one area as one run (docs/design/design-v1-iso-area-shapes.md
  * 4.3 and 5): its far loops filled, its near loops filled, its hidden
  * lines, then its outline and guides, in view units with `unit` view
  * units to a screen pixel. The parts inside a pit's opening draw clipped

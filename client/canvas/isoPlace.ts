@@ -5,7 +5,7 @@ import type { IsoGround } from "./relief/context.ts";
 
 /**
  * Where the board's marks go in the isometric view
- * (docs/design-v1-isometric-view.md 5.1 and 5.3), as plain functions, so the
+ * (docs/design/design-v1-isometric-view.md 5.1 and 5.3), as plain functions, so the
  * rules run under node --test. A renderer may draw in up to three places
  * (features/layers.ts IsoPlace), and reads which one through
  * useIsoGround().place:
@@ -106,7 +106,7 @@ export function pressCells(at: Point, size: { w: number; h: number }, ground: (x
  * each piece on the drawn ground under its middle, and pieces side by side
  * in a row on one ground merged: within a quarter cell of where the
  * ground stage's hex tops lift the picture, which no rectangle follows
- * exactly (docs/design-v1-iso-hex-relief.md 7).
+ * exactly (docs/design/design-v1-iso-hex-relief.md 7).
  */
 function hexPressCells(at: Point, size: { w: number; h: number }, ground: (x: number, y: number) => number): PressCell[] {
   const out: PressCell[] = [];

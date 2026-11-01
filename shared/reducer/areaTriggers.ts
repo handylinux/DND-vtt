@@ -140,7 +140,7 @@ function remind(tx: Tx, template: AreaTemplate, token: Token, trigger: AreaTrigg
  * line is read, and `hidden` for an area the DM hid or one on a token
  * players cannot see. On a per-player scene the players who saw both the
  * creature and the area (project.ts areaSeenMark,
- * docs/design-v1-per-player-vision.md 6.5).
+ * docs/design/design-v1-per-player-vision.md 6.5).
  */
 function marksOf(tx: Tx, template: AreaTemplate, there: Token, at: RoomState): { seen?: true; seenBy?: string[]; hidden?: true } {
   const rays = discoversMap(tx.env.opVersion) ? raysOnLiveGround(at, template, there) : null;
@@ -159,7 +159,7 @@ function marksOf(tx: Tx, template: AreaTemplate, there: Token, at: RoomState): {
  * A per-player scene's witnesses kept only where the rays lie on each
  * one's own live ground (decision 13): `seen` stays only when every
  * player's does, and otherwise the players whose ground holds them, as a
- * line only some read (docs/design-v1-per-player-vision.md 6.5).
+ * line only some read (docs/design/design-v1-per-player-vision.md 6.5).
  */
 function byLiveGround(at: RoomState, seen: { seen?: true; seenBy?: string[] }, rays: (holder: string | null) => boolean): { seen?: true; seenBy?: string[] } {
   const players = Object.values(at.members).flatMap((m) => (m.kind === "player" ? [m.id] : []));
@@ -172,7 +172,7 @@ function byLiveGround(at: RoomState, seen: { seen?: true; seenBy?: string[] }, r
 /**
  * Whether every ray an area's inclusion test reads, from where it starts
  * to the creature's footprint, lies on a player's live ground
- * (docs/design-v1-map-discovery.md decision 13): their sight or the DM's
+ * (docs/design/design-v1-map-discovery.md decision 13): their sight or the DM's
  * reveals, or revealed ground on a scene with fog and no vision. Asked by
  * fog class, a holder's own or null for the shared one, and null on a
  * scene with fog off, where every ray does. The rays start at the area's
@@ -304,7 +304,7 @@ type Moved = { tokens: Set<string>; templateId: string | null; walks?: GroupWalk
 function movedBy(tx: Tx, op: Op, before: RoomState, after: RoomState): Moved {
   const tokens = new Set<string>();
   const templateId = op.t === "template.update" ? op.templateId : null;
-  // From op version 14 a holder's group moves with it, and the move's one description names every token (docs/design-v1-attach.md 9).
+  // From op version 14 a holder's group moves with it, and the move's one description names every token (docs/design/design-v1-attach.md 9).
   if (attaches(tx.env.opVersion)) {
     const described = describeMove(op, before, after, tx.actor, tx.env).filter((m) => placeChanged(before.tokens[m.tokenId], after.tokens[m.tokenId]));
     for (const m of described) tokens.add(m.tokenId);
@@ -336,7 +336,7 @@ function lerp(a: number, b: number, f: number): number {
   return a + (b - a) * f;
 }
 
-/** A routed move's walk (docs/design-v1-movement.md 7.2): its token and its points, elevations by the walk's rule from the state before. */
+/** A routed move's walk (docs/design/design-v1-movement.md 7.2): its token and its points, elevations by the walk's rule from the state before. */
 type Walked = { tokenId: string; points: RoutePoint[] };
 
 /**
@@ -421,7 +421,7 @@ function alongWalkBeforeV14(after: RoomState, walk: Walked): RoomState[] {
 }
 
 /**
- * The room along an op's walks since op version 14 (docs/design-v1-attach.md
+ * The room along an op's walks since op version 14 (docs/design/design-v1-attach.md
  * 9): every moved token, a holder's group included, at the same progress
  * along its own walk. How finely is decided by the tokens the op names
  * alone, as before groups, so a hidden passenger never changes where a
@@ -435,7 +435,7 @@ function alongWalkBeforeV14(after: RoomState, walk: Walked): RoomState[] {
  * On a hex scene a straight leg's reach is the larger of its hex steps,
  * between its ends' reference hexes, and its vertical steps, and each point
  * stands on the hex line's hex at its fraction, its elevation even between
- * the ends (docs/design-v1-hex-grids.md 4.4). So a creature rising through
+ * the ends (docs/design/design-v1-hex-grids.md 4.4). So a creature rising through
  * a sphere on a steep diagonal enters it, and the sweep reads the same
  * hexes as the walk's spots.
  */
@@ -584,7 +584,7 @@ function alongLeg(before: RoomState, after: RoomState, moved: Moved): RoomState[
 /**
  * The ops that can bring a creature into an area. Since op version 14 a
  * step onto a seat and a get-off leg are walks of the shared move
- * description too (docs/design-v1-attach.md 9), so they remind as a move does.
+ * description too (docs/design/design-v1-attach.md 9), so they remind as a move does.
  */
 function movesIntoAreas(op: Op, opVersion: number | undefined): boolean {
   if (op.t === "token.move" || op.t === "token.moveMany" || op.t === "token.update" || op.t === "template.update") return true;
@@ -607,7 +607,7 @@ export function remindAfter(tx: Tx, before: RoomState, op: Op): void {
   const walk = moved.tokens.size > 0 && !moved.walks ? walkOf(before, after, op, tx.env.opVersion) : null;
   const grouped = moved.walks && moved.walks.named.length > 0 ? { ...moved, walks: moved.walks } : null;
   const routed = op.t === "token.move" && op.route !== undefined && walksRoutes(tx.env.opVersion);
-  // A teleport enters an area only where it lands, as it sets off a trap only there (docs/design-v1-traps.md 6.6, 13.2). Ops stored
+  // A teleport enters an area only where it lands, as it sets off a trap only there (docs/design/design-v1-traps.md 6.6, 13.2). Ops stored
   // before op version 15 swept its straight leg, and replay so.
   const landsOnly = op.t === "token.move" && op.teleport !== undefined && trapsGoOff(tx.env.opVersion);
   let swept: RoomState[] | null = null;

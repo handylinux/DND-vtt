@@ -186,7 +186,7 @@ describe("inverses", () => {
   /**
    * States compared without walls versions, which an undo moves forward
    * rather than back, and without played marks, which stay while their
-   * scene does (docs/design-v1-map-discovery.md 5.5).
+   * scene does (docs/design/design-v1-map-discovery.md 5.5).
    */
   function withoutWalls(state: RoomState): unknown {
     const scenes = Object.fromEntries(Object.entries(state.scenes).map(([id, { wallsVersion: _w, ...rest }]) => [id, rest]));
@@ -724,7 +724,7 @@ describe("characters, templates and drawings", () => {
     assert.equal(leveled.characters.c1!.level, 4);
     assert.equal("level" in apply(leveled, { t: "character.update", characterId: "c1", patch: { level: null } }, DM, 5).characters.c1!, false);
     assert.equal(apply(fresh(), { t: "character.create", character: { id: "c3", name: "Cy", size: "medium", ownerIds: [], actor: actor(), level: 9 } }).characters.c3!.level, 9);
-    // Known forms are set and replaced whole, and an empty list is stored as none, the other fields kept (docs/design-v1-known-forms.md 3.2).
+    // Known forms are set and replaced whole, and an empty list is stored as none, the other fields kept (docs/design/design-v1-known-forms.md 3.2).
     const known = apply(apply(leveled, { t: "character.update", characterId: "c1", patch: { knownForms: ["wolf", "owl"] } }, DM, 5), { t: "character.update", characterId: "c1", patch: { knownForms: ["black-bear", "wolf"] } }, DM, 6);
     assert.deepEqual(known.characters.c1!.knownForms, ["black-bear", "wolf"]);
     assert.equal(known.characters.c1!.level, 4);
@@ -1429,7 +1429,7 @@ describe("log and handouts", () => {
     assert.equal(refused(closed, { t: "handout.close", handoutId: "h1" }).code, "gone");
   });
 
-  test("a show of pages names its first page as the handout's image, and a re-show as one image drops the pages (docs/design-v1-pdf-handouts.md 3.3)", () => {
+  test("a show of pages names its first page as the handout's image, and a re-show as one image drops the pages (docs/design/design-v1-pdf-handouts.md 3.3)", () => {
     const pages = [
       { assetId: "p1", width: 1584, height: 2048 },
       { assetId: "p2", width: 2048, height: 1584 },
@@ -1446,7 +1446,7 @@ describe("log and handouts", () => {
     assert.deepEqual(again.handouts.h1!.pages, pages.slice(1));
   });
 
-  test("a document is saved under its own id with the time of the save, never twice, logs nothing, and deleting one not there is gone (docs/design-v1-pdf-handouts.md 3.3)", () => {
+  test("a document is saved under its own id with the time of the save, never twice, logs nothing, and deleting one not there is gone (docs/design/design-v1-pdf-handouts.md 3.3)", () => {
     const pages = [handoutPage("page3"), handoutPage("page3")];
     const saved = applyOp(fresh(), { t: "handoutDoc.create", doc: { id: "doc2", title: "Map pack", pages } }, DM, env(4));
     assert.ok(saved.ok);

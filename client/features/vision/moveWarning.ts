@@ -4,7 +4,7 @@ import { visionOn } from "./sightMode.ts";
 
 /**
  * What "Move players" asks the DM to confirm first, or null when it moves
- * them at once (design 13.2, docs/design-v1-maps-vision.md section 4.3.1).
+ * them at once (design 13.2, docs/design/design-v1-maps-vision.md section 4.3.1).
  *
  * - Fog off: players will see the whole scene.
  * - Party vision on, where no party creature can see: players will see only
@@ -14,7 +14,7 @@ import { visionOn } from "./sightMode.ts";
  *   holds neither its creatures nor its sight, so the warning says what to
  *   check rather than guess. Nor does it hold that scene's walls, so on a
  *   map image it adds that a map with no walls yet shows players all of it
- *   (docs/design-v1-map-discovery.md 8.1, MD-O-28). The scene on screen
+ *   (docs/design/design-v1-map-discovery.md 8.1, MD-O-28). The scene on screen
  *   says that in its own settings, where its walls are counted.
  */
 export function moveWarning(input: {

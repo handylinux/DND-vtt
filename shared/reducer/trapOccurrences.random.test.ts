@@ -8,7 +8,7 @@ import { applyOp } from "../reducer.ts";
 import { DM, P1, chance, env, int, pick, rng, room, token } from "../testutil.ts";
 
 /**
- * Trap occurrences over many random sequences (docs/design-v1-traps.md 11,
+ * Trap occurrences over many random sequences (docs/design/design-v1-traps.md 11,
  * "The occurrence state machine, randomized"): springings public (Thorn's
  * walks) and private (the player's hidden imp, the DM's hidden goblin),
  * Apply from two DM devices that may hold a stale view, Dismiss, Mark

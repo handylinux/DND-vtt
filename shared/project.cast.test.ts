@@ -8,7 +8,7 @@ import type { Op } from "./protocol.ts";
 import { applyOp } from "./reducer.ts";
 import { DM, P1, P2, castAsk, castTable, damageRoll, diceLine, env } from "./testutil.ts";
 
-/** Who receives a player's ask for saves and its lines (docs/design-v1-player-save-spell.md 5.5). */
+/** Who receives a player's ask for saves and its lines (docs/design/design-v1-player-save-spell.md 5.5). */
 
 const DISPLAY: Viewer = { memberId: "display:abcdefghijkl", role: "player" };
 const P3: Viewer = { memberId: "p3", role: "player" };

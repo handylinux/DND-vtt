@@ -8,7 +8,7 @@ import { PDF_MAX_BYTES } from "./options.ts";
 import type { RefusalKind } from "./reader.ts";
 
 /**
- * A PDF upload (docs/design-v1-pdf-handouts.md 4.1): its state, the rules
+ * A PDF upload (docs/design/design-v1-pdf-handouts.md 4.1): its state, the rules
  * that need no browser, and its words. One job per device, in the room's
  * scope, so it outlives the DM panel and the form, and the room page can
  * badge it. run.ts drives it.

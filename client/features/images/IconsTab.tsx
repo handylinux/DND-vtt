@@ -14,7 +14,7 @@ import { Glyph, IconDisk } from "./IconDisk.tsx";
 import { DEFAULT_ICON_COLOR, ICON_COLORS, iconCredit, iconUrl, searchIcons, useIconGlyph, useIconIndex, type IconEntry } from "./icons.ts";
 
 /**
- * The image picker's Icons tab (docs/design-v1-dm-tools.md 3.12): search
+ * The image picker's Icons tab (docs/design/design-v1-dm-tools.md 3.12): search
  * the game-icons.net set by the words of a name and its author, pick one
  * from a windowed grid, pick the disk's color, and Use. It needs no upload,
  * no search quota and no outside service, so it works when the server's

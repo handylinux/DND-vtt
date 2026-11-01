@@ -3,7 +3,7 @@ import { statBlockFromSrd } from "../statBlock.ts";
 import type { SrdMonster } from "./monsters.ts";
 
 /**
- * Every SRD creature's roll numbers by its id (docs/design-v1-dice.md 6.1
+ * Every SRD creature's roll numbers by its id (docs/design/design-v1-dice.md 6.1
  * `SrdRolls`), generated into rolls.json from monsters.json by
  * scripts/srd-import.ts, so the server and a player's device know an SRD
  * token's saves and skills without the half-megabyte monsters chunk. The

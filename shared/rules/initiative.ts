@@ -41,7 +41,7 @@ export function actorOfEntry(state: RoomState, entry: InitEntry): Actor | undefi
 
 /**
  * The character a row stands for, for its companions
- * (docs/design-v1-combat-flow.md 3.6.7 and 3.6.8): its token's character
+ * (docs/design/design-v1-combat-flow.md 3.6.7 and 3.6.8): its token's character
  * when the row has a token, none for a token with its own actor, and the
  * row's `characterId` only for a row with no token. So a row naming one
  * player's token and another player's character, which the protocol
@@ -167,7 +167,7 @@ export function nextTurn(state: RoomState, encounter: Encounter, settings: RoomS
     }
     const entry = entries[index]!;
     // A controlled mount mounted after its row acted is passed over for the rest of that round, its durations untouched,
-    // so they never tick twice in one round (docs/design-v1-attach.md 7.1). Ops from before op version 14 pass none.
+    // so they never tick twice in one round (docs/design/design-v1-attach.md 7.1). Ops from before op version 14 pass none.
     if (passOver && entry.skipRound !== undefined && entry.skipRound === encounter.round + (wrapped ? 1 : 0)) continue;
     if (settings.skipDefeated && isDefeated(state, entry)) {
       skipped.push(entry.id);

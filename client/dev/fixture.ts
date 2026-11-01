@@ -379,7 +379,7 @@ function bigParty(state: RoomState): void {
 /**
  * An open roll request for Thorn and Vex (`ask=save|check|two`, or with
  * `ask=saveends` a save-ends request of Thorn's with a pending ask,
- * docs/design-v1-roll-request.md 5): a Dexterity save against DC 13 with
+ * docs/design/design-v1-roll-request.md 5): a Dexterity save against DC 13 with
  * Thorn Restrained and Blessed, a Wisdom (Perception) check, or a
  * Strength or Dexterity save. The DM sees its live card, a player its card.
  */
@@ -433,7 +433,7 @@ function askThorn(state: RoomState, ask: "save" | "check" | "two" | "saveends"):
   };
 }
 
-/** The goblins linked to the SRD's Goblin Warrior (`rolls=1`), so the Dice panel lists their saves and actions (docs/design-v1-roll-options.md 4). */
+/** The goblins linked to the SRD's Goblin Warrior (`rolls=1`), so the Dice panel lists their saves and actions (docs/design/design-v1-roll-options.md 4). */
 function srdGoblins(state: RoomState): void {
   for (const token of Object.values(state.tokens)) {
     if (token.name !== "Goblin" || !("inline" in token.actor)) continue;
@@ -441,7 +441,7 @@ function srdGoblins(state: RoomState): void {
   }
 }
 
-/** Thorn at level 5 with a stat block (`pcstats=1`, docs/design-v1-pc-stats.md), its actor's numbers following it. */
+/** Thorn at level 5 with a stat block (`pcstats=1`, docs/design/design-v1-pc-stats.md), its actor's numbers following it. */
 function thornStats(state: RoomState): void {
   const thorn = state.characters[FIXTURE_IDS.thornChar]!;
   state.characters[thorn.id] = withPcActorNumbers({
@@ -476,7 +476,7 @@ function thornStats(state: RoomState): void {
 }
 
 /**
- * The Dice panel and stat blocks at their fullest (`diceui=1`, docs/design-v1-dice-ui.md): Thorn's
+ * The Dice panel and stat blocks at their fullest (`diceui=1`, docs/design/design-v1-dice-ui.md): Thorn's
  * block with save spells, a long weapon name and three riders, the Owlbear linked to the SRD's, the
  * Stone giant an Adult Red Dragon with recharge and legendary actions, and rolls in the log.
  */
@@ -609,7 +609,7 @@ function textStress(state: RoomState): void {
 }
 
 /**
- * Tokens to attach (`attach=1`, docs/design-v1-attach.md): beside Thorn a
+ * Tokens to attach (`attach=1`, docs/design/design-v1-attach.md): beside Thorn a
  * warhorse his player owns, a torch, a Grappled kobold and a cart, and by
  * Goblin 1 a lantern it carries and a prisoner it drags, so a group, its
  * draw order and its tether show at once. `riding` puts Thorn on the
@@ -636,7 +636,7 @@ function attachedTokens(state: RoomState, riding: boolean): void {
   state.tokens[thorn.id] = { ...thorn, x: 6, y: 5, attached: { to: "t-attach-horse", kind: "ride", steer: true } };
   add(token({ name: "Saddlebag", size: "tiny", kind: "object", layer: "object", x: 7.5, y: 6.5, disposition: "neutral", ownerIds: [FIXTURE_IDS.thorn], hpVisibility: "hidden", attached: { to: "t-attach-horse", kind: "carry" }, actor: { inline: actor([1, 1]) } }), "t-attach-bag");
   add(token({ name: "Pack mule", x: 6, y: 7, disposition: "ally", kind: "npc", ownerIds: [FIXTURE_IDS.thorn], hpVisibility: "label", attached: { to: "t-attach-horse", kind: "drag" }, actor: { inline: actor([11, 11]) } }), "t-attach-mule");
-  // In the fight, the warhorse shares Thorn's turn (docs/design-v1-attach.md 7.1): its row right after his marks time, and
+  // In the fight, the warhorse shares Thorn's turn (docs/design/design-v1-attach.md 7.1): its row right after his marks time, and
   // this turn Thorn walked to it, got on, and rode it two squares, which its own path holds and his marks as carried.
   const encounter = state.encounter;
   if (!encounter?.turnStart) return;
@@ -691,7 +691,7 @@ function meleeGuardians(state: RoomState): void {
 
 /**
  * Walls, doors and windows off the grid, and lights, as a Universal VTT
- * import leaves them (docs/design-v1-maps-vision.md sections 2.2 and 3.6):
+ * import leaves them (docs/design/design-v1-maps-vision.md sections 2.2 and 3.6):
  * a slanted room with a window and a door, then a locked door, an open one
  * and a hidden secret one. Every coordinate is on the 1/64 cell lattice.
  */

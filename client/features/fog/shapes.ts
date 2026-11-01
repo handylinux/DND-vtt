@@ -119,7 +119,7 @@ export function roomShapes(build: BuildIndex, at: Point, bounds: Bounds): { shap
 }
 
 /**
- * "Reveal room" on a hex scene (docs/design-v1-hex-grids.md HX-D10): the
+ * "Reveal room" on a hex scene (docs/design/design-v1-hex-grids.md HX-D10): the
  * hexes flooded from the tap up to wall lines, windows and closed doors,
  * or to the scene's edge where nothing walls them in, as hex keys the
  * server reads by their sub-cells. The flood never leaves the scene's
@@ -297,7 +297,7 @@ export function publishLabel(ops: readonly { id?: string; mode: FogMode }[]): st
   return `Show players the changes (${n})`;
 }
 
-/** The publish button's short words where the row is narrow (docs/design-v1-tool-options.md 9.6): "Reveal (4)", "Fog (4)" or "Show (4)". Its tooltip keeps the whole sentence. */
+/** The publish button's short words where the row is narrow (docs/design/design-v1-tool-options.md 9.6): "Reveal (4)", "Fog (4)" or "Show (4)". Its tooltip keeps the whole sentence. */
 export function publishShort(ops: readonly { id?: string; mode: FogMode }[]): string {
   const n = draftEdits(ops).length;
   if (ops.every((o) => o.mode === "reveal")) return `Reveal (${n})`;

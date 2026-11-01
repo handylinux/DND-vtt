@@ -13,7 +13,7 @@ import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
 import { barControl, ConsoleWatch, openSideTab, OpSocket, Shots, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
 
 /**
- * Class resources (docs/design-v1-combat-controls.md 7 and 11), on the
+ * Class resources (docs/design/design-v1-combat-controls.md 7 and 11), on the
  * real server serving the production build. Pat plays Thorn, level 5:
  * - On a phone, Pat adds Barbarian resources at level 5 from a class
  *   (Rage, 3 uses), Lay on Hands from Paladin 3, and Superiority Dice of
@@ -158,7 +158,7 @@ async function thornsPanel(page: Page): Promise<Locator> {
   return panel;
 }
 
-/** Combat's Uses section in a panel, which lists, edits and adds a character's class resources (docs/design-v1-token-sections.md 3.1). */
+/** Combat's Uses section in a panel, which lists, edits and adds a character's class resources (docs/design/design-v1-token-sections.md 3.1). */
 function section(scope: Locator): Locator {
   // The section whose own heading it is, not a panel's region around it.
   return scope.locator('xpath=.//section[*[self::h3 or self::h4][normalize-space()="Uses"]]');
@@ -173,7 +173,7 @@ function row(scope: Locator, name: string): Locator {
  * Waits for a resource's count to read `count` ("2 of 3"): as its pips, filled
  * for each one left, with a most of 6 or fewer and no `pool`, else as words at
  * the same place, the line's right end. Either way the same words are spoken
- * once after its name (docs/design-v1-monster-uses.md 3.7).
+ * once after its name (docs/design/design-v1-monster-uses.md 3.7).
  */
 async function countReads(scope: Locator, name: string, count: string, pool = false): Promise<void> {
   const r = row(scope, name);
@@ -558,12 +558,12 @@ describe("raccoon-vtt: class resources", { timeout: 900_000 }, () => {
     if ((await combat.getAttribute("aria-expanded")) === "false") await combat.click();
     await countReads(panel, "Rage", "2 of 4");
     const order = await panel.evaluate((root) => Array.from((root as unknown as DomNode).querySelectorAll("h3, h4")).map((h) => h.textContent ?? ""));
-    // Out of the fight: Uses after Conditions, then the rings and Rest, and no Class resources heading (docs/design-v1-token-sections.md 3).
+    // Out of the fight: Uses after Conditions, then the rings and Rest, and no Class resources heading (docs/design/design-v1-token-sections.md 3).
     const conditions = order.indexOf("Conditions");
     assert.deepEqual(order.slice(conditions, conditions + 4), ["Conditions", "Uses", "Range rings", "Rest"], `Combat's order: ${order.join(", ")}`);
     assert.equal(order.includes("Class resources"), false, `no Class resources heading: ${order.join(", ")}`);
 
-    // A use's line names the resource to everyone who sees Thorn (docs/design-v1-combat-controls.md 8), so the list and its counts are what must never reach Quin.
+    // A use's line names the resource to everyone who sees Thorn (docs/design/design-v1-combat-controls.md 8), so the list and its counts are what must never reach Quin.
     for (const words of ['"resources"', "barbarian-rage", '"atLevel"']) assert.equal(quinSocket.everSaw(words), false, `Quin's copy holds ${words}`);
     assert.ok(quinSocket.state?.characters[run.thorn], "Quin's copy holds Thorn");
     assert.equal(quinSocket.state?.characters[run.thorn]?.resources, undefined);
@@ -730,7 +730,7 @@ describe("raccoon-vtt: class resources", { timeout: 900_000 }, () => {
     await setUp(dm, dmCdp, DESK);
   });
 
-  test("s2-cr-a. Pat on Thorn's token panel: Uses holds Rage with Use, Restore and Edit, then Add, under no Class resources heading, and Add's sheet gives focus back to Add as it closes (docs/design-v1-token-sections.md 3.1)", async () => {
+  test("s2-cr-a. Pat on Thorn's token panel: Uses holds Rage with Use, Restore and Edit, then Add, under no Class resources heading, and Add's sheet gives focus back to Add as it closes (docs/design/design-v1-token-sections.md 3.1)", async () => {
     await setUp(pat, patCdp, PHONE);
     const rage = stored().find((x) => x.name === "Rage")!;
     if (rage.used === 0) await ops.send({ t: "actor.use", target: { characterId: run.thorn }, use: { kind: "resource", id: rage.id } });

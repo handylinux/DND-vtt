@@ -7,7 +7,7 @@ import { gridOfShape, SQUARES } from "./grid.ts";
 import { hexInScene, sceneHexes, type HexGrid } from "./hex.ts";
 
 /**
- * The solid an area catches with (docs/design-v1-iso-area-shapes.md 4.1):
+ * The solid an area catches with (docs/design/design-v1-iso-area-shapes.md 4.1):
  * every shape reports the heights over a map point that lie inside it,
  * one interval since every shape is convex, and names its parameters in
  * cells so the isometric drawing reads the rules' own numbers.

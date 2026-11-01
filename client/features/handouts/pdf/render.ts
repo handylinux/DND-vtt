@@ -4,7 +4,7 @@ import { renderSize } from "./encode.ts";
 import { DESTROY_GRACE_MS, DrawCancelled, endWithin, isDynamicXfa, OpenCancelled, PageDrawFailure, ReaderRefusal, WORKER_READY_MS, type PdfDocument } from "./reader.ts";
 
 /**
- * pdf.js for the upload job (docs/design-v1-pdf-handouts.md 4.2): the job's
+ * pdf.js for the upload job (docs/design/design-v1-pdf-handouts.md 4.2): the job's
  * own worker, the document pdf.js opens in it, and one page at a time drawn
  * onto the job's canvas. This module and pdf.js load together by `import()`
  * when a DM picks a PDF, in chunks players and displays never download.

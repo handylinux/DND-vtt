@@ -9,7 +9,7 @@ import { loginErrorText } from "./format.ts";
 
 /**
  * The admin password, and the Turnstile check whenever the server has
- * Turnstile, not only after failures (docs/design-v1-dm-tools.md 3.18).
+ * Turnstile, not only after failures (docs/design/design-v1-dm-tools.md 3.18).
  */
 export function LoginCard(props: { notice?: string | null; onSignedIn(): void }) {
   const [password, setPassword] = useState("");

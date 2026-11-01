@@ -138,7 +138,7 @@ describe("import limits", () => {
   });
 });
 
-describe("wave 4 import limits (docs/design-v1-maps-vision.md 2.4)", () => {
+describe("wave 4 import limits (docs/design/design-v1-maps-vision.md 2.4)", () => {
   test("a vision scene with more potential sight pieces than the cap is refused, and the same scene without vision passes", () => {
     const state = room({ scenes: { s1: scene("s1", { bounds: { w: 200, h: 200 } }), s2: scene("s2", { order: 1 }) } });
     for (let y = 0; y < 162; y += 2) {
@@ -198,7 +198,7 @@ describe("wave 4 import limits (docs/design-v1-maps-vision.md 2.4)", () => {
     assert.ok(serializedBytes(fits) < LIMITS.stateBytes);
     assert.doesNotThrow(() => assertWithinLimits(fits));
     // A player's first move there passes, and so does any op that leaves the scene as it is: what players' copies may hold
-    // beyond the DM's (docs/design-v1-map-discovery.md 5.5) refuses only a DM's edit that grows it, as at the deploy.
+    // beyond the DM's (docs/design/design-v1-map-discovery.md 5.5) refuses only a DM's edit that grows it, as at the deploy.
     assert.deepEqual(new SizeGuard().check(fits, ["s1"], 0, fits, "player"), { ok: true }, "the scene the import keeps takes its first move");
     assert.deepEqual(new SizeGuard().check(fits, ["s1"], 0, fits), { ok: true }, "and an op that does not grow it");
     // A byte more, and the stored room still fits, but the scene's exploration does not: the DM reads what to do.
@@ -222,7 +222,7 @@ describe("wave 4 import limits (docs/design-v1-maps-vision.md 2.4)", () => {
   test("a room whose player scene's explored layer could not grow to its full size is refused with the message for the DM", () => {
     const reserve = exploredReserve(roomOf(1_000_000));
     assert.ok(reserve > 100_000);
-    // Players' memory of the scene is reserved at its cap beside it (docs/design-v1-map-discovery.md 5.5).
+    // Players' memory of the scene is reserved at its cap beside it (docs/design/design-v1-map-discovery.md 5.5).
     assert.doesNotThrow(() => assertWithinLimits(roomOf(LIMITS.stateBytes - reserve - MEMORY_CAP)));
     const tight = roomOf(LIMITS.stateBytes - reserve + 1);
     assert.throws(
@@ -235,7 +235,7 @@ describe("wave 4 import limits (docs/design-v1-maps-vision.md 2.4)", () => {
   });
 });
 
-describe("pdf handout import caps (docs/design-v1-pdf-handouts.md 3.6)", () => {
+describe("pdf handout import caps (docs/design/design-v1-pdf-handouts.md 3.6)", () => {
   test("a room at its handout pages comes back: two entries a page beside room.json and assets.json, and every page in the manifest", () => {
     const pages = LIMITS.handoutPagesPerRoom;
     assert.ok(IMPORT_LIMITS.entries >= 2 * pages + 2, `${IMPORT_LIMITS.entries} entries`);

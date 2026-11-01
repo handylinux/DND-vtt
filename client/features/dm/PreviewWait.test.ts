@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
 /*
- * View as a player's wait as it is drawn (docs/design-v1-per-player-vision.md
+ * View as a player's wait as it is drawn (docs/design/design-v1-per-player-vision.md
  * 7.4 and 11, review PV4-ASTRA-2 and PV4-OP-5, and
- * docs/design-v1-design-pass.md 4.4): its words at the interface size, one
+ * docs/design/design-v1-design-pass.md 4.4): its words at the interface size, one
  * status mounted before they come and after a failure, which takes focus
  * from Try again, and the failure as an alert outside it.
  */

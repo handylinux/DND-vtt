@@ -4,7 +4,7 @@ import { describe, test } from "node:test";
 
 /*
  * The one look of a load that failed beside what still works
- * (docs/design-v1-look-pass.md 2.9): an alert that says what failed, with
+ * (docs/design/design-v1-look-pass.md 2.9): an alert that says what failed, with
  * Try again and its icon where a second request can succeed, or the reload
  * it is handed where only a reload can.
  */

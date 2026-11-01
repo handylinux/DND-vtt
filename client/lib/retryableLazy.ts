@@ -108,7 +108,7 @@ export function preloadLazies(role: Role, network: Network = browserNetwork): vo
 
 /**
  * A load that is no component, such as the token icon index, started with
- * the panels' preloads (docs/design-v1-dm-tools.md 3.12), so it is on the
+ * the panels' preloads (docs/design/design-v1-dm-tools.md 3.12), so it is on the
  * device before the connection might drop.
  */
 export function preloadInBackground(load: () => Promise<unknown>, roles: readonly Role[]): void {

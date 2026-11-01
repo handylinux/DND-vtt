@@ -1,5 +1,5 @@
 /**
- * The isometric view's bench (docs/design-v1-isometric-view.md 10 and 11):
+ * The isometric view's bench (docs/design/design-v1-isometric-view.md 10 and 11):
  * each kind of frame timed in Chrome on a phone-sized page, its CPU slowed 4
  * times to stand in for a mid phone, by the main thread's busy time
  * (Performance.getMetrics TaskDuration), as bench-height-pills.ts reads it.
@@ -17,13 +17,13 @@
  *   and a horse with its rider.
  * - crowd: 60 by 60 with 500 tokens, a scene's most.
  * - areas: the typical scene with four areas standing as their real shapes
- *   around the camera (docs/design-v1-iso-area-shapes.md 6): a 20 ft sphere
+ *   around the camera (docs/design/design-v1-iso-area-shapes.md 6): a 20 ft sphere
  *   10 ft up, a 30 ft cone aimed 40 degrees up, a 10 by 40 ft cylinder and a
  *   15 ft emanation on a creature, and four fliers among them, 16 tokens.
  * - cap: 200 areas, a scene's most, over an 80 by 80 scene.
  * - giant: a 200 by 200 hex rows scene where a 500 ft emanation comes in.
  * - hexRows and hexColumns: a fully raised 40 by 40 hex scene on each
- *   orientation (docs/design-v1-iso-hex-relief.md 9): a terrace,
+ *   orientation (docs/design/design-v1-iso-hex-relief.md 9): a terrace,
  *   alternating heights, pits and a seeded field over the whole height
  *   range, a wall across levels, 40 creatures of mixed sizes and four
  *   areas, with pans at 40 px, 12 px and fit, a local drag, a warm turn
@@ -276,8 +276,8 @@ function giant(sceneId: string): Built {
 
 /**
  * A fully raised 40 by 40 hex scene on one orientation
- * (docs/design-v1-iso-hex-relief.md 9), or the same on squares
- * (docs/design-v1-relief-pan.md 9): its 1,778 hexes all off the
+ * (docs/design/design-v1-iso-hex-relief.md 9), or the same on squares
+ * (docs/design/design-v1-relief-pan.md 9): its 1,778 hexes all off the
  * ground, a flat-topped 10 ft terrace over its west third, hexes
  * alternating 5 ft and 15 ft over the middle so every side shows, a
  * mixed field of pits, and a seeded field from -100 ft to 200 ft in the
@@ -292,7 +292,7 @@ export function hexRelief(orient: "rows" | "columns" | "squares") {
     let seed = orient === "rows" ? 0x40 : orient === "columns" ? 0x41 : 0x42;
     const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
     const byFeet = new Map<number, string[]>();
-    // On squares the same rule over every square, by its middle (docs/design-v1-relief-pan.md 9).
+    // On squares the same rule over every square, by its middle (docs/design/design-v1-relief-pan.md 9).
     const cellsOf = G ? sceneHexes(G, bounds) : cells(0, 0, bounds.w, bounds.h).map((k) => ({ col: Number(k.split(",")[0]), row: Number(k.split(",")[1]) }));
     for (const h of cellsOf) {
       const c = G ? hexCenter(G, h) : { x: h.col + 0.5, y: h.row + 0.5 };
@@ -321,7 +321,7 @@ const HEX_CUBE = { shape: "cube", size: 40, origin: { x: 16, y: 26, z: 20 }, yaw
 /**
  * A 200 by 200 square scene sunk 100 ft, one pit: at 12 px a cell the
  * floors by the screen's top show ground from past the ground canvas's top
- * edge, so a pan repairs many toned cells (docs/design-v1-relief-pan.md
+ * edge, so a pan repairs many toned cells (docs/design/design-v1-relief-pan.md
  * 5.3, review HXPERF2B-OPUS-05, where 1,250 were counted). A smaller scene
  * fits the screen at 12 px and tones none.
  */
@@ -765,7 +765,7 @@ async function createRoom(page: Page, name: string): Promise<Room> {
   await page.goto(`${new URL(page.url()).origin}/`);
   await page.getByLabel("Room name").fill(name);
   await page.getByLabel("Your name").fill("Dana the DM");
-  // A player joins some rooms (docs/design-v1-relief-pan.md 9), with the password the form offers.
+  // A player joins some rooms (docs/design/design-v1-relief-pan.md 9), with the password the form offers.
   const password = await page.getByLabel("Player password").inputValue();
   await page.getByRole("button", { name: "Create room" }).click();
   await page.getByRole("heading", { name: "Save your DM link" }).waitFor();
@@ -1054,7 +1054,7 @@ export async function runBench(view: View, opts: { parity?: string; shots?: stri
       await add("local drag, whole frame, 500 tokens, 40 px", () => throttled(() => rounds(() => touchDrag(page, cdp, scene.walker, STEPS))));
     }
 
-    // Areas standing as their real shapes (docs/design-v1-iso-area-shapes.md 6).
+    // Areas standing as their real shapes (docs/design/design-v1-iso-area-shapes.md 6).
     {
       const { scene } = built.areas!;
       await open("areas", 40);

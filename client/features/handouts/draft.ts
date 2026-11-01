@@ -3,7 +3,7 @@ import type { AssetRow } from "../../lib/api.ts";
 import { scopeSlot } from "../../state/scope.ts";
 
 /**
- * Show a handout's draft (docs/design-v1-pdf-handouts.md 4.1.1): what is
+ * Show a handout's draft (docs/design/design-v1-pdf-handouts.md 4.1.1): what is
  * picked, the title, the audience and the chosen players, in the room's
  * scope, so closing the DM panel or switching panels keeps it, and the PDF
  * upload's block can pick the document it saved.

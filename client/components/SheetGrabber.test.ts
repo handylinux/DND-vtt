@@ -11,7 +11,7 @@ import { describe, test } from "node:test";
  * clear of the buttons, so a header that kept 6 px above its buttons
  * grows 4 px for it, and one that is no grab area keeps its height.
  * Each design This device offers keeps the room its own height needs
- * (docs/design-v1-sheet-swipe.md 4.8). Which surfaces show one
+ * (docs/design/design-v1-sheet-swipe.md 4.8). Which surfaces show one
  * at which sizes is e2e/swipe.e2e.ts test 14's, read against the swipe's
  * own mark on each surface.
  */

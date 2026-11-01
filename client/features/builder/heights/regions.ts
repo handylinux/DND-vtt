@@ -4,7 +4,7 @@ import { chunkHeights, facingsOf, stepper } from "#shared/rules/heights.ts";
 import { hexCenter, hexInScene, sceneHexSpan } from "#shared/rules/hex.ts";
 
 /**
- * The regions Height mode names (docs/design-v1-maps-vision.md section
+ * The regions Height mode names (docs/design/design-v1-maps-vision.md section
  * 4.2): each run of touching cells at one height other than 0, with the cell
  * its number goes on. Pure, so the grouping is tested without a canvas.
  */
@@ -29,7 +29,7 @@ const SPOTS = 24;
 /**
  * The scene's height regions, the largest first. On a hex scene the cells
  * are hexes by key, touching across their six sides, and a spot is a hex's
- * center (docs/design-v1-hex-grids.md H3).
+ * center (docs/design/design-v1-hex-grids.md H3).
  */
 export function heightRegions(chunks: readonly BuildChunk[], bounds: { w: number; h: number }, grid: Grid = SQUARES): HeightRegion[] {
   const hex = isHex(grid) ? grid : null;

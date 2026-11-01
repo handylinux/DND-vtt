@@ -23,7 +23,7 @@ const COLOR: Record<string, string> = {
 };
 
 /**
- * The design's rule (docs/design-v1-starter-art.md section 6), written out
+ * The design's rule (docs/design/design-v1-starter-art.md section 6), written out
  * again here rather than shared with the script, so the reviewed table is
  * checked against the rule and not against itself. A tag in brackets
  * does not change the color, a swarm takes its creatures' color, and a

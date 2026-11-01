@@ -5,7 +5,7 @@ import type { Point } from "../../lib/camera.ts";
 import type { LightPreset } from "../vision/presets.ts";
 
 /**
- * The rules of the builder's Light mode (docs/design-v1-maps-vision.md
+ * The rules of the builder's Light mode (docs/design/design-v1-maps-vision.md
  * sections 3.6 and 4.3.1), as plain functions for node --test: where a
  * placed or dragged light lands, the light a tap places, and the light
  * input an edit sends.

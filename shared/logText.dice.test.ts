@@ -4,7 +4,7 @@ import { critSumText, describeEvent, diceLineText, diceText, keptFrom, rollToast
 import type { DiceRoll, LogEvent } from "./model.ts";
 import { member, room, token, character } from "./testutil.ts";
 
-/** Dice wording (docs/design-v1-dice.md 5.5). */
+/** Dice wording (docs/design/design-v1-dice.md 5.5). */
 const names: LogNames = room({
   members: { bree: { ...member("bree"), name: "Bree" }, mara: { ...member("mara", "dm"), name: "Mara" } },
   tokens: { thorn: token("thorn", { kind: "pc", name: "Thorn" }), g1: token("g1", { number: 1 }) },
@@ -19,7 +19,7 @@ function line(rolls: DiceRoll[], extra: Partial<DiceEvent> = {}): DiceEvent {
 
 const LONGSWORD: DiceRoll = { formula: "2d6+3", faces: [4, 6], total: 13, label: "Longsword" };
 
-describe("dice wording (docs/design-v1-dice.md 5.5)", () => {
+describe("dice wording (docs/design/design-v1-dice.md 5.5)", () => {
   test("a roll's dice: its formula as asked, every face, a dropped one said, and the total", () => {
     assert.equal(diceText({ formula: "2d6+3", faces: [4, 6], total: 13 }), "2d6+3 (4, 6) = 13");
     assert.equal(diceText({ formula: "2d20kh1+5", faces: [14, 7], total: 19, mode: "adv" }), "1d20+5 with Advantage (14, 7 dropped) = 19");
@@ -150,7 +150,7 @@ describe("a rolled answer's line (5.5)", () => {
   });
 });
 
-describe("an initiative roll kept from players, in the DM's log (B7B-P-5, docs/design-v1-combat-flow.md 11.3)", () => {
+describe("an initiative roll kept from players, in the DM's log (B7B-P-5, docs/design/design-v1-combat-flow.md 11.3)", () => {
   const init = (total: number, extra: Partial<DiceRoll> = {}): DiceRoll => ({ formula: "1d20+2", faces: [total - 2], total, label: "Initiative", tokenId: "g1", initiative: true, ...extra });
 
   test("says hidden from players on each roll kept from them, and nothing on the others", () => {

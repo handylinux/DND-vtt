@@ -232,7 +232,7 @@ export function registerDmRoutes(app: FastifyInstance, kit: AuthKit): Promise<vo
       return redeem(kit, req, reply, invite.room_id, body);
     });
 
-    // Table displays are listed too (docs/design-v1-dm-tools.md 3.1), marked
+    // Table displays are listed too (docs/design/design-v1-dm-tools.md 3.1), marked
     // `display`, so a DM can see a TV and sign it out like any DM device.
     r.get("/api/rooms/:id/dm/devices", async (req, reply) => {
       const roomId = roomParam(req);

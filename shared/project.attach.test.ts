@@ -9,7 +9,7 @@ import { applyOp } from "./reducer.ts";
 import { DM, P1, P2, actor, env, room, token } from "./testutil.ts";
 
 /**
- * What players get of attached tokens (docs/design-v1-attach.md 8.4 and
+ * What players get of attached tokens (docs/design/design-v1-attach.md 8.4 and
  * 8.5): a link only while its holder is in their projection, the turn's
  * mounts they can see, the re-projection a holder's change needs, and
  * which moves their device predicts.

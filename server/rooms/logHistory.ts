@@ -25,7 +25,7 @@ import {
 } from "./persistence.ts";
 
 /**
- * The one reader of the log archive (docs/design-v1-dm-tools.md 3.10 and
+ * The one reader of the log archive (docs/design/design-v1-dm-tools.md 3.10 and
  * design 10.8), behind Show older pages, the session listing and the
  * Markdown export.
  *

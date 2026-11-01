@@ -13,7 +13,7 @@ import { sideWall } from "./rules/hexWalls.testkit.ts";
 import { P1, member, room, token } from "./testutil.ts";
 
 /**
- * The words of a walk stopped on hexes (docs/design-v1-map-discovery.md 6,
+ * The words of a walk stopped on hexes (docs/design/design-v1-map-discovery.md 6,
  * decision 11, LP24-A-HEXFIGHT-3): the stopping step is the one the hex
  * line takes from the stand the walk lands on, never a step of the square
  * lattice, so a straight leg of several hexes stopped at a wall on the side

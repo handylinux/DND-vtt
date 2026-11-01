@@ -2,7 +2,7 @@ import { FOG_SUBCELLS, type SightTile } from "#shared/model.ts";
 import { TILE_SUB } from "#shared/rules/fog.ts";
 
 /**
- * The party's sight as pixels (docs/design-v1-maps-vision.md sections 4.3.4
+ * The party's sight as pixels (docs/design/design-v1-maps-vision.md sections 4.3.4
  * and 4.3.7). The server sends sight as tiles of 64 x 64 sub-cells, the
  * fog's tiles, at 2 bits per sub-cell: 0 not seen, 1 grey (darkvision in
  * darkness), 2 dim, 3 bright. This keeps one pixel per sub-cell for a whole

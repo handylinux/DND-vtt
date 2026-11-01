@@ -13,7 +13,7 @@ import { teleportMove } from "./teleport.ts";
 import { thorn } from "./testing.ts";
 
 /*
- * The words a player's device gives its own stops (docs/design-v1-map-discovery.md
+ * The words a player's device gives its own stops (docs/design/design-v1-map-discovery.md
  * 6, the words, decision 11, D-261027-04): the kind only where the part of
  * the blocker the walk met is live to it, in sight with fog and vision on,
  * revealed with fog on and vision off, everywhere with fog off: a wall or

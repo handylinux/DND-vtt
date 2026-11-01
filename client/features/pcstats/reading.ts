@@ -8,7 +8,7 @@ import { signed } from "#shared/statBlock.ts";
 import type { DefenseLine } from "../tokens/statSummary.ts";
 
 /**
- * A character's stat block in words (docs/design-v1-pc-stats.md 7.3), for
+ * A character's stat block in words (docs/design/design-v1-pc-stats.md 7.3), for
  * its view, the editor's rows and the bar's defense lines. Plain strings,
  * which the view renders as React text, so a later tap to roll can turn a
  * number into a button.

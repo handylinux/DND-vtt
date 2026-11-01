@@ -10,7 +10,7 @@ import { creatureKey } from "../options.ts";
 import { areaPresetOf, byName, sameSpell, spellLevel } from "./cast.ts";
 
 /**
- * The DM's side of a player's ask for saves (docs/design-v1-player-save-spell.md
+ * The DM's side of a player's ask for saves (docs/design/design-v1-player-save-spell.md
  * 3.3), as plain functions: who the ask names, the group save it opens and
  * its fill, read from the DM's view and never from the ask, and the card's
  * words. The ask brings only what the server wrote: its spell, level, area

@@ -8,7 +8,7 @@ import { createDicePanel, panelKeyIn, secretNow, secretStartIn, type DiceState }
 import { ReceiptTracker } from "./useReceipt.ts";
 
 /**
- * Where the Dice panel's Secret starts (docs/design-v1-dice.md 8.2 and 17):
+ * Where the Dice panel's Secret starts (docs/design/design-v1-dice.md 8.2 and 17):
  * pressed only for a DM's roll for a monster. With no creature in the roll,
  * the panel's own, the DM's selection, decides, so the chip shows what its
  * next roll does.

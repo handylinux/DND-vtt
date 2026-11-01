@@ -89,7 +89,7 @@ export function endsIn(view: RoomState, world: PublicWorld, token: Token, at: Ro
   const { w, h } = footprintSize(token);
   const lo = at.elevation;
   const hi = lo + tokenHeightFt(token, world.input.rules.feetPerCell);
-  // A rider or a passenger set down on its own holder keeps its seat there (docs/design-v1-attach.md 4.2): sharing that space is riding, not ending a move in it.
+  // A rider or a passenger set down on its own holder keeps its seat there (docs/design/design-v1-attach.md 4.2): sharing that space is riding, not ending a move in it.
   const link = token.attached;
   const holder = link && onHolder(link.kind) ? (holderOf(view.tokens, token) as Token | undefined) : undefined;
   const seat = holder && linkHolds(dropGrid(view, token), view.meta.settings, link!.kind, { ...token, x: at.x, y: at.y }, holder) ? holder.id : null;
@@ -119,7 +119,7 @@ export function dismountOf(view: RoomState, token: Token, at: RoutePoint, role: 
 }
 
 /**
- * The board's picture of a lone drag's walk (docs/design-v1-movement.md
+ * The board's picture of a lone drag's walk (docs/design/design-v1-movement.md
  * 3.1): the line, its corners and the label, for where the drop would land
  * now. The walk is the one the drop lands with (`routeLanding`): a route
  * past 64 pieces is drawn and read to where it is cut, and its frames carry
@@ -129,7 +129,7 @@ export function dismountOf(view: RoomState, token: Token, at: RoutePoint, role: 
  * reads what it walks over as the drop counts it (drop.ts planWalk): by
  * `straight`, its own route to where it lands, once that is checked. A
  * holder's walk held where a creature it drags would meet a wall
- * (`walkers`, docs/design-v1-attach.md 4.2) is drawn and read to there.
+ * (`walkers`, docs/design/design-v1-attach.md 4.2) is drawn and read to there.
  */
 export function walkPreview(input: { view: DropView; token: Token; target: Point & { squeeze?: boolean }; answer: RouteAnswer; held: Pose | null; walkers?: WalkersCut | null; world: PublicWorld | null; role: Role; straight?: { to: Pose; pieces: readonly RoutePiece[] } | null }): Pick<DragRoute, "to" | "cut" | "corners" | "read" | "endsIn"> {
   const { view, token, answer, world, role } = input;
@@ -158,7 +158,7 @@ export function walkPreview(input: { view: DropView; token: Token; target: Point
         { x: to.x, y: to.y, elevation: dropLanding(view, token, to) },
       ];
   const encounter = view.encounter;
-  // A controlled mount sharing its rider's turn reads its own path and speeds (docs/design-v1-attach.md 7.2).
+  // A controlled mount sharing its rider's turn reads its own path and speeds (docs/design/design-v1-attach.md 7.2).
   const activeTokenId = turnMover(view, token, role);
   const dismount = dismountOf(view, token, points[points.length - 1]!, role);
   const end = points[points.length - 1]!;

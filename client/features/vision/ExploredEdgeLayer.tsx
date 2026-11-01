@@ -10,7 +10,7 @@ const EDGE = "rgba(226, 228, 240, 0.8)";
 
 /**
  * The dotted edge of ground only the party explored, on the DM's map
- * (docs/design-v1-maps-vision.md section 4.3.3). The DM's fog image shows
+ * (docs/design/design-v1-maps-vision.md section 4.3.3). The DM's fog image shows
  * that ground revealed (Stage.tsx draws both layers for a DM), and this
  * tells it apart from what the DM revealed. Players never get the layers
  * apart, so it draws for the DM alone, while the scene has fog.

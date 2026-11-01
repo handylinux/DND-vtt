@@ -12,7 +12,7 @@ import { sceneGrid } from "#shared/rules/grid.ts";
 
 /**
  * Each tool's main choice, which a second press of the tool's key moves
- * through (docs/design-v1-tool-cycle.md 3 and 4.2): the one choice in its
+ * through (docs/design/design-v1-tool-cycle.md 3 and 4.2): the one choice in its
  * row that sets what a tap or a drag does. Each reads the tool's state,
  * never its row, so a press works while the row loads, waits under a
  * phone's sheet or keeps the choice behind ⋯ (2.12). Each list and pick is

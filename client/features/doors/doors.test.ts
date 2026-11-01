@@ -129,7 +129,7 @@ describe("the doors a token reaches (decided 2026-10-14)", () => {
   });
 });
 
-describe("who opens a door from its pill (docs/design-v1-traps.md 5.3)", () => {
+describe("who opens a door from its pill (docs/design/design-v1-traps.md 5.3)", () => {
   const door = findDoor(hall().buildChunks, "s1", { edge: "6,5,w" })!;
   const room = () => {
     const state = hall();
@@ -175,7 +175,7 @@ describe("the note after a walk stopped at a door", () => {
   });
 });
 
-describe("a free door on a hex scene shows by the hexes beside it (docs/design-v1-hex-grids.md H2)", () => {
+describe("a free door on a hex scene shows by the hexes beside it (docs/design/design-v1-hex-grids.md H2)", () => {
   const rows: HexGrid = { shape: "hex", orient: "rows" };
   // Along the upright side between hexes 4,1 and 5,1, inside square 5,1, which holds both points beside its middle.
   const door: FreeWall = { id: "abcdefghijkl", a: [5.5, 1.25], b: [5.5, 1.75], f: { kind: "door", state: "closed", secret: false, discovered: false } };

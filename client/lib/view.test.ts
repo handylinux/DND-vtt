@@ -58,7 +58,7 @@ function screenOf(view: View, p: Point, z: number, cam: Camera = CAM): Point {
   return viewToScreen(cam, toView(view, p, z));
 }
 
-describe("the projection (docs/design-v1-isometric-view.md 4.1)", () => {
+describe("the projection (docs/design/design-v1-isometric-view.md 4.1)", () => {
   test("Top-down is the identity, every height drawn flat", () => {
     const p = { x: 12.375, y: -7.5 };
     assert.deepEqual(toView(TOP_DOWN, p, 40), { x: 12.375, y: -7.5 });

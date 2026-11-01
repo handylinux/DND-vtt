@@ -26,7 +26,7 @@ import { textDrawingBox, type MeasureEm } from "./textBox.ts";
  * being drawn moves in the drag layer, so drawing never redraws the ground,
  * each part on its own cell's drawn ground and, for a player, cut to the
  * revealed sub-cells that Top-down's fog would show it over
- * (docs/design-v1-isometric-view.md 5.2 and 5.3).
+ * (docs/design/design-v1-isometric-view.md 5.2 and 5.3).
  */
 
 const EMPTY: RoomState["drawings"] = {};

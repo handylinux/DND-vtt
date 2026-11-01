@@ -34,7 +34,7 @@ export function turnUnderWay(encounter: Pick<Encounter, "activeEntryId" | "turnS
  * The token's path when it belongs to the turn under way: tagged with the
  * turn's seq, which only the turn's own moves can write. That is the turn's
  * creature's, and a controlled mount's moves on its rider's turn
- * (docs/design-v1-attach.md 7.2), so older paths read as before.
+ * (docs/design/design-v1-attach.md 7.2), so older paths read as before.
  */
 export function pathThisTurn(encounter: Pick<Encounter, "activeEntryId" | "turnStart"> | null | undefined, token: Pick<Token, "id" | "path">): TokenPath | null {
   const turn = turnUnderWay(encounter);
@@ -43,7 +43,7 @@ export function pathThisTurn(encounter: Pick<Encounter, "activeEntryId" | "turnS
 }
 
 /**
- * Whether two stops were made at one size (docs/design-v1-token-window.md
+ * Whether two stops were made at one size (docs/design/design-v1-token-window.md
  * 8.7): a stop without a footprint was made at the size now (`now`). A leg
  * whose ends differ is a resize's, or legs joined across one. A squeeze
  * keeps the size, so a move into or out of one is a leg at one size.
@@ -58,7 +58,7 @@ export function oneSize(a: Pick<PathStop, "footprint">, b: Pick<PathStop, "footp
 
 /**
  * Whether the leg from `a` to `b` changed the creature's footprint rather
- * than moved it (docs/design-v1-token-window.md 8.7): a resize, whose ends
+ * than moved it (docs/design/design-v1-token-window.md 8.7): a resize, whose ends
  * differ in size wherever it left the creature, or a squeeze taken or left
  * where the creature stands. Neither is movement, so the reducer never
  * counts such a leg and "Doesn't count" has nothing to mark on it. A move
@@ -96,7 +96,7 @@ export function withStop(path: TokenPath, stop: PathStop, now?: { w: number; h: 
     const corner = stops[i]!;
     const { uncounted: _uncounted, ...next } = stops[i + 1]!;
     const joined: PathStop = corner.uncounted === true && stops[i + 1]!.uncounted === true ? { ...next, uncounted: true } : next;
-    // A joined leg was carried only when both its legs were (docs/design-v1-attach.md 7.2).
+    // A joined leg was carried only when both its legs were (docs/design/design-v1-attach.md 7.2).
     if (corner.carried !== true) delete joined.carried;
     if (corner.seen !== true || corner.joinedUnseen === true) joined.joinedUnseen = true;
     if (walk) joinWalked(stops, i, joined, walk);
@@ -108,7 +108,7 @@ export function withStop(path: TokenPath, stop: PathStop, now?: { w: number; h: 
 
 /**
  * What a path's joins and readers need since op version 13
- * (docs/design-v1-movement.md 6.2): the token as it stands now, whose size
+ * (docs/design/design-v1-movement.md 6.2): the token as it stands now, whose size
  * a stop without a footprint was made at, the room's distance rules, and
  * the grid of the scene it walks.
  */
@@ -196,7 +196,7 @@ export function seenWhole(stops: readonly PathStop[], i: number, stored: boolean
 /**
  * Whether a player who does not own the creature saw it at a stop: every
  * such player did (`seen`), or on a per-player scene the stop's list names
- * them (docs/design-v1-per-player-vision.md 6.5).
+ * them (docs/design/design-v1-per-player-vision.md 6.5).
  */
 function sawStop(stop: PathStop, reader: string | undefined): boolean {
   return stop.seen === true || (reader !== undefined && stop.seenBy?.includes(reader) === true);
@@ -268,7 +268,7 @@ export type Ground = { cell(x: number, y: number): boolean; sub(sx: number, sy: 
 
 /**
  * Whether every spot of the leg ending at `to` lies on ground that `ground`
- * reveals (docs/design-v1-per-player-vision.md 6.5): each cell under the
+ * reveals (docs/design/design-v1-per-player-vision.md 6.5): each cell under the
  * creature's footprint, at the size the stop was made at, at every step of
  * the route's lattice along each straight part its corners draw. On a
  * per-player scene an owner gets a private leg's corners only where this

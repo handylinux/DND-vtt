@@ -8,7 +8,7 @@ import type { CreatureBadge } from "./creatureLook.ts";
 /** The card, for the alignment sweep and the e2e suites. */
 export const DICE_CARD = "[data-dice-card]";
 
-/** Several selected show this many pictures at most (docs/design-v1-dice-pass.md 5.3). */
+/** Several selected show this many pictures at most (docs/design/design-v1-dice-pass.md 5.3). */
 export const CARD_PICTURES = 3;
 
 const ONE_PICTURE = 48;
@@ -17,7 +17,7 @@ const OVERLAP = 8;
 
 /**
  * Who the Dice panel rolls for, as a card that cannot be mistaken for a
- * roll mode (docs/design-v1-dice-pass.md 5): the page's background inside
+ * roll mode (docs/design/design-v1-dice-pass.md 5): the page's background inside
  * an outline, with the creature's picture, its name and its kind line, as
  * the token panel's header draws them (CreatureHeader.tsx). Everything
  * comes from props, so the header draws while the options load (5.4).

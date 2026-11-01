@@ -8,7 +8,7 @@ import { GONE_MS, LAND_MS, MIN_PANE_PX, type ShownThrow, type ThrowOrigin, type 
 import { useThrows, useThrowView } from "./useThrows.ts";
 
 /**
- * The tray under the header line (docs/design-v1-roll-animation.md 7 and
+ * The tray under the header line (docs/design/design-v1-roll-animation.md 7 and
  * 9): the stage's canvas hangs here, inside the pane's scroller, so the
  * pane clips it and the keyboard, a sheet's drag or a dialog move it with
  * the pane. The scrim behind the band and the rings and "+N" disc over it

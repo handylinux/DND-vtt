@@ -22,12 +22,12 @@ import {
   type FocusNode,
 } from "./splitPanes.ts";
 
-/* The side panel's two panes (docs/design-v1-split-panel.md 3.2, 3.4, 4.3 and 8). */
+/* The side panel's two panes (docs/design/design-v1-split-panel.md 3.2, 3.4, 4.3 and 8). */
 
 describe("room for two", () => {
   test("from exactly 311 own px: two pane minimums and the bar, each counting a 45 px header row", () => {
     assert.equal(PANE_MIN, 133, "a compact subpage header with its rule and the very short sheet's 88 px body");
-    assert.equal(BAR_PX, 45, "a header row, as the tab row is (docs/design-v1-side-headers.md 5)");
+    assert.equal(BAR_PX, 45, "a header row, as the tab row is (docs/design/design-v1-side-headers.md 5)");
     assert.equal(SPLIT_ROOM, 311);
     assert.equal(roomForTwo(311), true);
     assert.equal(roomForTwo(310), false);

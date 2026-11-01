@@ -94,7 +94,7 @@ describe("attaching and detaching", () => {
   });
 });
 
-describe("a companion's stat block (docs/design-v1-companion-stat-blocks.md 3.2, 6.5)", () => {
+describe("a companion's stat block (docs/design/design-v1-companion-stat-blocks.md 3.2, 6.5)", () => {
   test("a stored link reads first, then a room monster's, then the SRD's, and a deleted block says so", () => {
     const blocks = { b1: companionBlock("b1", "bree") };
     const monsters = { m1: customMonster("m1") };

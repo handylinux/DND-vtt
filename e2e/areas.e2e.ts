@@ -13,7 +13,7 @@ import { SQUARES } from "../shared/rules/grid.ts";
 
 /**
  * The area tool's From control end to end
- * (docs/design-v1-area-from-character.md section 6): a player's toggle on
+ * (docs/design/design-v1-area-from-character.md section 6): a player's toggle on
  * by default, the saved choice across tools and a fresh selection, taps
  * that aim while their creature casts, Set caster and Copy from a goblin,
  * Entangle centered on a token, the range reading, an aura that follows,

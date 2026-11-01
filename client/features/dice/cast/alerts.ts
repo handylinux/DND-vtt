@@ -7,7 +7,7 @@ import { useRoomStore, useRoomUi, useRoomView } from "../../../state/view.ts";
 import { castReceiptsSlot, castSendsSlot, closedText, readCastDraft, restoreSends, writeCastDraft, type CastEnv } from "./cast.ts";
 
 /*
- * A player's asks for saves outside the Dice panel (docs/design-v1-player-save-spell.md
+ * A player's asks for saves outside the Dice panel (docs/design/design-v1-player-save-spell.md
  * 3.2), kept apart from the panel's own code, since the alerts column that
  * mounts it loads with every room.
  */

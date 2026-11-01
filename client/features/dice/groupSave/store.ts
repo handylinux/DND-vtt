@@ -5,7 +5,7 @@ import type { Page } from "./chain.ts";
 import type { SaveReopen } from "./reopen.ts";
 
 /**
- * The one group save of this browser tab (docs/design-v1-roll-options.md
+ * The one group save of this browser tab (docs/design/design-v1-roll-options.md
  * 5.1 and 5.10): the page, whether it shows, and which panel it shows in.
  * It lives on the DM's device, never in the room's state, and the page
  * keeps its draft in session storage as it changes.

@@ -2,7 +2,7 @@ import type { CharacterExpect, CharacterPatch } from "#shared/protocol.ts";
 import type { PcFill } from "#shared/rules/pcFill.ts";
 
 /**
- * The re-sync dialog as one state machine (docs/design-v1-resync.md 1.2
+ * The re-sync dialog as one state machine (docs/design/design-v1-resync.md 1.2
  * and 3), free of React so a randomized test runs it through many orders
  * of taps and answers (resyncFlow.test.ts). The dialog works out each
  * review and each op from the live character and hands them in, and runs

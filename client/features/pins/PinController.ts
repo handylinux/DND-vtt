@@ -19,12 +19,12 @@ const POPOVER_MS = 4_000;
  * Everything map pins do besides drawing (PinLayer.tsx), as one of the
  * board's controllers (features/layers.ts CONTROLLERS), mounted once
  * outside both drawing trees, so one tap opens one page whichever view
- * shows (docs/design-v1-isometric-view.md 5.1).
+ * shows (docs/design/design-v1-isometric-view.md 5.1).
  *
  * With the Select tool a tap on a pin opens its page in the Journal, or
  * shows its label in a small popover when it links none. A table display
  * has no Journal and takes no input on the map, so there a tap does
- * nothing (docs/design-v1-dm-tools.md 3.8). The canvas sends taps to tools
+ * nothing (docs/design/design-v1-dm-tools.md 3.8). The canvas sends taps to tools
  * and tokens, so this watches the stage's own pointer events for a tap, as
  * the ping controller watches for a held press.
  */

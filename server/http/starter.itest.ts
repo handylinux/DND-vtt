@@ -19,7 +19,7 @@ import type { ExportManifest } from "../rooms/exportRoom.ts";
 import { startEngine, type Engine } from "../rooms/testing.ts";
 
 /**
- * Starter picks (docs/design-v1-starter-art.md 5 and 12.10): the route that
+ * Starter picks (docs/design/design-v1-starter-art.md 5 and 12.10): the route that
  * copies a shipped work into a room, its refusals, the quota it never
  * counts toward, and a pick's way through a room export and import. The
  * tests build a small catalog of their own over files they make, so they
@@ -808,7 +808,7 @@ function zipOf(entries: Map<string, Buffer>): Promise<Buffer> {
   });
 }
 
-describe("a starter pick in a room export and import (docs/design-v1-starter-art.md 12.10)", () => {
+describe("a starter pick in a room export and import (docs/design/design-v1-starter-art.md 12.10)", () => {
   let t: Engine;
   let files: Map<string, Buffer>;
   let manifest: ExportManifest;

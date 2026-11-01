@@ -17,7 +17,7 @@ import { focusOutlineRow } from "./focus.ts";
 import { filterRows, GROUPS, listItems, outlineRows, ROW_PX, windowRange, type ListItem, type OutlineGroup, type OutlineRow } from "./rows.ts";
 
 /**
- * The scene outliner (docs/design-v1-dm-tools.md 3.2): a searchable list of
+ * The scene outliner (docs/design/design-v1-dm-tools.md 3.2): a searchable list of
  * everything on the scene in view, for the DM, with what players get of
  * each, and a tap that frames the item and picks it.
  *
@@ -80,7 +80,7 @@ function Outliner(props: { sceneId: string; close(): void; shown: boolean }) {
    * the outliner may be in one as `/` is pressed: the side panel hidden, or
    * the bottom of two panels in a side panel too short for both. So the
    * shortcut's call only marks the request, and the search takes it in an
-   * effect once the panel shows (docs/design-v1-split-panel.md 9.2).
+   * effect once the panel shows (docs/design/design-v1-split-panel.md 9.2).
    */
   const [asked, setAsked] = useState(0);
   useEffect(() => {

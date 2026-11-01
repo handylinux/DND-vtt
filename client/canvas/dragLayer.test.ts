@@ -16,7 +16,7 @@ function relief(ids: string[]): { ground: Konva.Group; nodes: Map<string, Konva.
 
 const order = (g: Konva.Container) => g.getChildren().map((n) => n.id());
 
-describe("the drag layer (docs/design-v1-isometric-view.md 6.3)", () => {
+describe("the drag layer (docs/design/design-v1-isometric-view.md 6.3)", () => {
   test("a group of 4 goes into the drag layer in its draw order, and each comes back to its place", () => {
     const { ground, nodes } = relief(["wall1", "a", "col", "b", "c", "wall2", "d", "e"]);
     const drag = new Konva.Group();

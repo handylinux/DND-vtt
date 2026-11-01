@@ -10,7 +10,7 @@ import { hexDistance, hexKey, type Hex, type HexGrid } from "../rules/hex.ts";
 import { DM, P1, character, env, room, scene, token } from "../testutil.ts";
 
 /**
- * Riding, carrying and dragging on a hex scene (docs/design-v1-hex-grids.md
+ * Riding, carrying and dragging on a hex scene (docs/design/design-v1-hex-grids.md
  * phase H2): the server takes the attach, seats a rider on its mount's
  * hexes, carries the group along a move, drops a link that no longer holds
  * by hexes, and lets a rider off beside its mount.

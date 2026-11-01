@@ -3,7 +3,7 @@ import { decodeHeights as storedHeights, encodeHeights as storeHeights, groundAt
 import { chunkKey } from "./keys.ts";
 
 /**
- * Editing a chunk's heights and stair marks (docs/design-v1-maps-vision.md
+ * Editing a chunk's heights and stair marks (docs/design/design-v1-maps-vision.md
  * 4.2), BuildChunk.heights and BuildChunk.up, for the reducer that paints
  * them. The stored form is read and written by shared/rules/heights.ts, as
  * every rule reads it, so the reducer and the rules can never read a cell
@@ -39,7 +39,7 @@ export function encodeStairs(marks: readonly StairMark[]): string | undefined {
   return marks.every((m) => m === ".") ? undefined : marks.join("");
 }
 
-/** Each cell's difficult ground mark, true where it has one, all false when the chunk has none (docs/design-v1-movement.md 6.3). */
+/** Each cell's difficult ground mark, true where it has one, all false when the chunk has none (docs/design/design-v1-movement.md 6.3). */
 export function decodeRough(text: string | undefined): boolean[] {
   if (text === undefined || text.length !== CELLS) return Array.from({ length: CELLS }, () => false);
   return Array.from(text, (c) => c === "d");

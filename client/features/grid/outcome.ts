@@ -11,7 +11,7 @@ import { endFinding, type Fallback, type FoundNote, type GridToolState } from ".
 
 /**
  * What a search for a map's drawn grid does to the scene and the grid
- * tool (docs/design-v1-grid-detect.md sections 6 and 10.5 to 10.7). A
+ * tool (docs/design/design-v1-grid-detect.md sections 6 and 10.5 to 10.7). A
  * grid found with high confidence is applied, a doubtful one is only
  * offered by the box, and no grid is said. A sure find of another shape
  * than the scene's, found alone, switches the scene to it with the grid
@@ -352,7 +352,7 @@ export function formatFound(v: number): string {
 
 /**
  * What Line up grid's options line says of a search's note on a scene of
- * grid `g` (docs/design-v1-grid-detect.md 6.1 and 10.8). Only a note that
+ * grid `g` (docs/design/design-v1-grid-detect.md 6.1 and 10.8). Only a note that
  * stands for this scene's cells reaches it (store.ts `noteFor`).
  */
 export function foundLine(note: FoundNote, g: Grid): { tone: "status" | "hint" | "warning"; content: string } {
@@ -393,7 +393,7 @@ export function foundLine(note: FoundNote, g: Grid): { tone: "status" | "hint" |
       if (note.ownGrid) return hint(`This scene came with its own grid. The lines found make ${n} px squares: check the box, then Apply.`);
       return hint(hex ? `These lines may be the map's hexes: ${n} px. Check the box, then Apply.` : `These lines may be the map's grid: ${n} px squares. Check the box, then Apply.`);
     }
-    // A search that found nothing or came too late failed, so it takes the warning tone: green says only that something worked (docs/design-v1-design-pass.md 2.4 rule 5).
+    // A search that found nothing or came too late failed, so it takes the warning tone: green says only that something worked (docs/design/design-v1-design-pass.md 2.4 rule 5).
     case "none":
       return warning(hex ? "No grid found. Drag a box over 3 hexes across instead." : "No grid found. Drag a box over 3 by 3 squares instead.");
     case "changed":

@@ -160,7 +160,7 @@ describe("Checkbox", () => {
   /*
    * With help under its label, the box marks the label's first line: it
    * stands centered in a slot as tall as that line, where a 2 px margin
-   * set it 3.5 px under the line's middle (docs/design-v1-polish.md R1).
+   * set it 3.5 px under the line's middle (docs/design/design-v1-polish.md R1).
    */
   test("with help, the box stands centered in a slot as tall as its label's first line, with no margin of its own", () => {
     const markup = html(createElement(Checkbox, { label: "A creature steps onto it", help: "A trap on squares goes off at least one way.", checked: true, onChange() {} }));
@@ -251,7 +251,7 @@ describe("tones", () => {
   });
 });
 
-describe("three even choices that wrap (docs/design-v1-design-pass.md 4.2)", () => {
+describe("three even choices that wrap (docs/design/design-v1-design-pass.md 4.2)", () => {
   const three = [
     { value: "squares", label: "Squares" },
     { value: "hexRows", label: "Hex rows" },
@@ -291,7 +291,7 @@ describe("three even choices that wrap (docs/design-v1-design-pass.md 4.2)", () 
   });
 });
 
-describe("radio cards (docs/design-v1-design-pass.md 4.2)", () => {
+describe("radio cards (docs/design/design-v1-design-pass.md 4.2)", () => {
   const OPTIONS = [
     { value: "phone", label: "Phone size", help: "Loads faster and needs less memory." },
     { value: "full", label: "Full size", help: "Sharper on a large screen." },
@@ -355,7 +355,7 @@ describe("radio cards (docs/design-v1-design-pass.md 4.2)", () => {
     assert.doesNotMatch(status, /<div|role=/);
   });
 
-  test("both forms, with a help and without, stand the help space(1) under the name and the cards space(2) under what stands above them, with no fieldset gap (docs/design-v1-spacing-pass.md S1)", () => {
+  test("both forms, with a help and without, stand the help space(1) under the name and the cards space(2) under what stands above them, with no fieldset gap (docs/design/design-v1-spacing-pass.md S1)", () => {
     /** The style attribute of the first element that `open` finds. */
     const styleOf = (markup: string, open: RegExp) => new RegExp(`${open.source}[^>]*?style="([^"]*)"`).exec(markup)?.[1] ?? null;
     for (const radiogroup of [false, true]) {
@@ -430,7 +430,7 @@ describe("rows and chips carry their callers' states and marks", () => {
 });
 
 describe("a Segmented option with its own chosen look", () => {
-  // The HP entry draws Damage in red and Heal in green rather than the accent (docs/design-v1-visual.md 2.3).
+  // The HP entry draws Damage in red and Heal in green rather than the accent (docs/design/design-v1-visual.md 2.3).
   const red = { border: `${theme.line.border}px solid ${theme.color.danger}`, background: theme.color.dangerTint };
   const render = (value: string, disabled = false) =>
     html(

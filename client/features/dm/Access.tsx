@@ -40,7 +40,7 @@ function errorText(err: unknown): string {
 
 /**
  * Kick, remove from the roster, and remove DM for one roster row, shown
- * while the row's Manage is open (docs/design-v1-layout-hierarchy.md M7).
+ * while the row's Manage is open (docs/design/design-v1-layout-hierarchy.md M7).
  * It stays mounted while closed, so an answer that comes after Manage
  * closes still says what happened. `id` names the buttons' group for
  * Manage's `aria-controls`.
@@ -179,7 +179,7 @@ export function PlayerPassword() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [changed, setChanged] = useState<string | null>(null);
-  // Only Change sends it, so a sheet's swipe springs back once a password is typed over the suggestion. A new suggestion, or a change that went through, is the new start (docs/design-v1-sheet-swipe.md 4.5).
+  // Only Change sends it, so a sheet's swipe springs back once a password is typed over the suggestion. A new suggestion, or a change that went through, is the new start (docs/design/design-v1-sheet-swipe.md 4.5).
   const restart = useUnsavedSince(password, !busy);
   const problem = password.length > 0 ? passwordProblem(password) : "Enter a password.";
   return (
@@ -502,7 +502,7 @@ export function DeleteRoom() {
   // differ from the name in the top bar after a rename.
   const [storedName, setStoredName] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
-  // The name typed to delete the room keeps the sheet from a swipe's close (docs/design-v1-sheet-swipe.md 4.5).
+  // The name typed to delete the room keeps the sheet from a swipe's close (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(typed.trim() !== "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

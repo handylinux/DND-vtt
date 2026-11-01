@@ -12,7 +12,7 @@ import { liveGroundOf } from "./liveGround.ts";
 
 /*
  * A player's caught lists and target rings by their device's live ground
- * (docs/design-v1-map-discovery.md decision 13, 6 "Areas", section 10):
+ * (docs/design/design-v1-map-discovery.md decision 13, 6 "Areas", section 10):
  * a creature is listed only where every ray the area's inclusion reads to
  * it lies on ground live to the device. The DM's lists read every area
  * whole.

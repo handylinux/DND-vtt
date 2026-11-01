@@ -94,7 +94,7 @@ function slideAlong(point: number, w: number, corner: number, scale: number, vie
  * pointer up, each `offsetPx` off the point along its pointer. A pointed
  * pill is centered on its point, and near the edge of `view` slides along
  * it as a plain pill does, its pointer moving along the body's edge to
- * stay on the point (docs/design-v1-polish.md R4), so a trap's name at the
+ * stay on the point (docs/design/design-v1-polish.md R4), so a trap's name at the
  * screen's edge reads whole and still marks its trap. `lean` is how far
  * the pointer's tip stands from the body's middle, in screen px, and its
  * Label is drawn at the body's middle.
@@ -147,7 +147,7 @@ export function pillInkReach(props: Omit<PillProps, "color">): Box {
 export type StackPill = Omit<PillProps, "x" | "y" | "scale" | "offsetPx" | "above" | "below">;
 
 /**
- * Where a stack of readouts sits (docs/design-v1-look-pass-2.md 2.11), such
+ * Where a stack of readouts sits (docs/design/design-v1-look-pass-2.md 2.11), such
  * as a drag's label with "Ends in Goblin 2's space" and "Crosses Hidden Pit"
  * under it, each under the one before with a small gap. The stack is placed
  * as one box, as wide as its widest pill and as tall as all of them and

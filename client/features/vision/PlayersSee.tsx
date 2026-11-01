@@ -11,7 +11,7 @@ import { IMAGE_STEPS_DOWN, likeSummary, PLAYERS_SEE, PLAYERS_SEE_NAME, playersSe
 export type PlayersSeeValue = ScenePreset | "like";
 
 /**
- * Players see (docs/design-v1-map-discovery.md 8.1 and 9): the radio cards
+ * Players see (docs/design/design-v1-map-discovery.md 8.1 and 9): the radio cards
  * of Room settings, one option a row with its help inside, as a radio
  * group named Players see and described by the chosen option's help, or
  * by `none` while nothing is chosen (Custom).

@@ -9,7 +9,7 @@ import { encodeHeights } from "./heights.ts";
 import { compareProgress, planTrapMove, planTurn, setsOff, trapWalks, wireCells, zoneRanges, type Springing, type TrapRoom } from "./traps.ts";
 
 /**
- * The trap rules (docs/design-v1-traps.md section 5 and 11, "Rules"): spots
+ * The trap rules (docs/design/design-v1-traps.md section 5 and 11, "Rules"): spots
  * and steps, what sets a trap off and where, the order of events, stops,
  * and who a springing hits at its moment. P1 plays Thorn, a PC, and the DM
  * runs everything else.

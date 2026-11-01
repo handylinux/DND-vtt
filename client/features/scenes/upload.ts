@@ -12,7 +12,7 @@ export class MapTooLarge extends Error {
 
 /**
  * A pasted map over 8 MB on a computer, re-encoded as WebP at its own size
- * up to the server's full size (docs/design-v1-paste.md 5), so nothing the
+ * up to the server's full size (docs/design/design-v1-paste.md 5), so nothing the
  * server keeps is lost: the server re-encodes every map as WebP anyway. A
  * picture the browser cannot decode goes up as it is, for the server to
  * judge.

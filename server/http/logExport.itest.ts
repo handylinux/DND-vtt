@@ -10,7 +10,7 @@ import { LogScanBudget } from "../rooms/logScanBudget.ts";
 import { renderLogExport } from "./logExport.ts";
 
 /**
- * The session log listing and export (docs/design-v1-dm-tools.md 3.10):
+ * The session log listing and export (docs/design/design-v1-dm-tools.md 3.10):
  * projected for the caller before sessions, counts or lines are found, so
  * hidden rows change nothing a player gets, and every request charged the
  * same.

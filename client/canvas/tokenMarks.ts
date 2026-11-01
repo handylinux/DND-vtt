@@ -36,7 +36,7 @@ export type TokenMarks = {
   /** The chip row's and the badge's boxes, which other labels keep off. */
   boxes: Box[];
   /**
-   * The AC shield in the bottom left corner (docs/design-v1-token-panel.md
+   * The AC shield in the bottom left corner (docs/design/design-v1-token-panel.md
    * 3.9), or null where it gives way. Like the lock, it sits inside the
    * token's own body, which labels already keep off, so neither is in `boxes`.
    */
@@ -149,7 +149,7 @@ function cornerMarks(input: {
 }
 
 /**
- * The AC a token's shield shows (docs/design-v1-token-panel.md 3.9), or
+ * The AC a token's shield shows (docs/design/design-v1-token-panel.md 3.9), or
  * null: a creature whose actor this viewer's copy holds an AC of 1 to 100
  * for, alive or dying, with HP to show. The projection decides who holds
  * an AC (the DM every creature's, a player their own), so nothing here

@@ -30,7 +30,7 @@ const EMPTY_PAGES: Record<string, JournalPage> = {};
 const EMPTY_MEMBERS: Record<string, Member> = {};
 
 /**
- * A map pin's pane (docs/design-v1-dm-tools.md 3.8), for the DM: its label,
+ * A map pin's pane (docs/design/design-v1-dm-tools.md 3.8), for the DM: its label,
  * its linked page, its color, DM only, and a line that says who will see
  * it. It hangs beside the pin on a wide screen and is a bottom sheet on a
  * phone, as a label's pane is (builder/LabelPane.tsx).
@@ -94,7 +94,7 @@ export default function PinPane(props: { pin: Pin; camera: Camera; viewport: Siz
     if (anchor) requestPan(scope, { sceneId: pin.sceneId, x: pin.x, y: pin.y, anchor });
   });
 
-  // As a bottom sheet it swipes down to close, through the editor's own close as × does (docs/design-v1-sheet-swipe.md section 3).
+  // As a bottom sheet it swipes down to close, through the editor's own close as × does (docs/design/design-v1-sheet-swipe.md section 3).
   const drafts = useDraftRegistry();
   useSheetSwipe(paneRef, { enabled: sheet, onClose: () => dismissRef.current(), item: pin.id, clip: "foot", riders: dock.riders, drafts });
 
@@ -123,7 +123,7 @@ function PinEditor(props: { pin: Pin; onClose(): void; dismissRef: { current: ()
   // The draft locks while Done is pending (journal/pendingSave.ts), so nothing changed then is lost when the acknowledgment closes the pane.
   const [state, setState] = useState(() => saveState<PinDraft>(pinDraftOf(pin)));
   const { draft, pending: saving, failure } = state;
-  // Only Done sends it, so a swipe springs back once the draft changed, until Done has sent it (docs/design-v1-sheet-swipe.md 4.5).
+  // Only Done sends it, so a swipe springs back once the draft changed, until Done has sent it (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedSince(draft, !saving);
   const setDraft = (change: (d: PinDraft) => PinDraft) => setState((s) => editDraft(s, change));
   const [armedAt, setArmedAt] = useState<number | null>(null);
@@ -217,7 +217,7 @@ function PinEditor(props: { pin: Pin; onClose(): void; dismissRef: { current: ()
       {/*
         Disabled as a whole while Done is pending, as editDraft refuses their edits: the label, the page, the color and DM only.
         Each control is told as well, since a fieldset disables its controls but cannot give them the disabled look
-        (docs/design-v1-visual.md 2.3). Done stays outside it, busy, and Delete waits.
+        (docs/design/design-v1-visual.md 2.3). Done stays outside it, busy, and Delete waits.
       */}
       <fieldset disabled={saving} aria-busy={saving} style={{ margin: 0, padding: 0, border: "none", minWidth: 0 }}>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(2) }}>

@@ -1,7 +1,7 @@
 import { TokenBucket } from "./budgets.ts";
 
 /**
- * Admission for archive reads (docs/design-v1-dm-tools.md 3.10): Show
+ * Admission for archive reads (docs/design/design-v1-dm-tools.md 3.10): Show
  * older pages, session listings and Markdown exports all scan `room_log`,
  * and how long a scan runs depends on rows its reader may not see. So the
  * cost a reader pays never depends on that work: each `GET /log` takes one

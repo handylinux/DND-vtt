@@ -12,7 +12,7 @@ import { wallsRound } from "../shared/rules/hexWalls.testkit.ts";
 import { barControl, ConsoleWatch, dragCells, dragWorld, expandBar, OpSocket, pagePoint, Shots, SocketWatch, startServer, tapCell, touchSwipe, waitFor, type Server } from "./harness.ts";
 
 /**
- * Attached tokens end to end (docs/design-v1-attach.md 13), on the real
+ * Attached tokens end to end (docs/design/design-v1-attach.md 13), on the real
  * server serving the production build: the DM on a desktop, Pat on a phone
  * at 390 x 844 and Sam on a desktop. In a fight, on Thorn's turn, Pat gets
  * Thorn on the warhorse, Controlled, from the bar's Attach sheet, moves the
@@ -272,7 +272,7 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
     assert.equal(token(patSocket, run.imp), undefined, "the hidden imp reached Pat");
   });
 
-  test("lp2-3a. Pat's Attach list on a 430 px phone, an upright tablet's card and a 320 px phone at 130%: its rows span the list, and Ride asks Controlled or Independent side by side, under them a line saying what the chosen one does (docs/design-v1-look-pass-2.md 2.5 and 2.7)", async () => {
+  test("lp2-3a. Pat's Attach list on a 430 px phone, an upright tablet's card and a 320 px phone at 130%: its rows span the list, and Ride asks Controlled or Independent side by side, under them a line saying what the chosen one does (docs/design/design-v1-look-pass-2.md 2.5 and 2.7)", async () => {
     for (const view of [
       { name: "p430", viewport: { width: 430, height: 932 }, scale: 1 },
       { name: "t820", viewport: { width: 820, height: 1180 }, scale: 1 },
@@ -319,7 +319,7 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
     }
   });
 
-  test("lp2-3c-busy. in the fight, on another of Pat's phones, Ride Warhorse, Controlled, waits on the server: after 200 ms its row and its Ride show busy, and a second tap sends nothing (docs/design-v1-look-pass-2.md 2.5)", async () => {
+  test("lp2-3c-busy. in the fight, on another of Pat's phones, Ride Warhorse, Controlled, waits on the server: after 200 ms its row and its Ride show busy, and a second tap sends nothing (docs/design/design-v1-look-pass-2.md 2.5)", async () => {
     const device = await patDevice(PHONE);
     try {
       const thorn = await select(device.page, "Thorn", { x: 3, y: 5 });
@@ -566,7 +566,7 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
     await dm.keyboard.press("Escape");
   });
 
-  test("lp2-3c-keys. in the DM's pop-up for the scout, Down, Up, Home and End move through the near rows and Farther away as one list, wrapping at the ends (docs/design-v1-look-pass-2.md 3, lane 3)", async () => {
+  test("lp2-3c-keys. in the DM's pop-up for the scout, Down, Up, Home and End move through the near rows and Farther away as one list, wrapping at the ends (docs/design/design-v1-look-pass-2.md 3, lane 3)", async () => {
     const b = await select(dm, "Scout", { x: 1, y: 1 });
     await (await barControl(b, "Attach")).click();
     const popover = dm.getByRole("dialog", { name: "Attach Scout" });
@@ -597,7 +597,7 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
     await dm.keyboard.press("Escape");
   });
 
-  test("pl2-a. on the DM's phone at 390 and 360 px, and 390 at 130%, a hobgoblin carrying a lantern and dragging a prisoner: its window's line gives each kind a row, the word first and its names beside it on the word's line (docs/design-v1-polish.md R5)", async () => {
+  test("pl2-a. on the DM's phone at 390 and 360 px, and 390 at 130%, a hobgoblin carrying a lantern and dragging a prisoner: its window's line gives each kind a row, the word first and its names beside it on the word's line (docs/design/design-v1-polish.md R5)", async () => {
     const hobgoblin = randomUUID();
     const lantern = randomUUID();
     const prisoner = randomUUID();
@@ -617,7 +617,7 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
       try {
         // The hobgoblin's top-right quarter, clear of the lantern in its bottom-left one.
         const b = await select(page, "Hobgoblin", { x: 9.25, y: 0.75 });
-        // An upright phone's strip shows the holder's line once expanded (docs/design-v1-bar-compact.md 5).
+        // An upright phone's strip shows the holder's line once expanded (docs/design/design-v1-bar-compact.md 5).
         await expandBar(b);
         const line = b.getByRole("group", { name: "Attached tokens" });
         await line.scrollIntoViewIfNeeded();
@@ -659,7 +659,7 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
     }
   });
 
-  test("pl2-c. the hobgoblin's window on the DM's phone at 320 px and 390 px at 130%, and at 360 px: every row of its buttons fills each line it wraps onto, so Attach or Delete never stands alone (docs/design-v1-polish.md R6)", async () => {
+  test("pl2-c. the hobgoblin's window on the DM's phone at 320 px and 390 px at 130%, and at 360 px: every row of its buttons fills each line it wraps onto, so Attach or Delete never stands alone (docs/design/design-v1-polish.md R6)", async () => {
     for (const [viewport, scale] of [
       [{ width: 320, height: 568 }, 1.3],
       [PHONE, 1.3],
@@ -669,7 +669,7 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
       try {
         const b = await select(page, "Hobgoblin", { x: 9.25, y: 0.75 });
         const where = `at ${viewport.width} px and ${Math.round(scale * 100)}%`;
-        // An upright phone's strip shows its rows of buttons once expanded (docs/design-v1-bar-compact.md 5).
+        // An upright phone's strip shows its rows of buttons once expanded (docs/design/design-v1-bar-compact.md 5).
         await expandBar(b);
         await b.locator('[data-bar-row="less"]').scrollIntoViewIfNeeded();
         await shots.take(page, `attach-pl2-c-rows-${viewport.width}-${Math.round(scale * 100)}`);
@@ -725,7 +725,7 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
       try {
         // The ogre's top-right square, clear of the chest in its bottom-left corner.
         const b = await select(page, "Ogre", { x: 13, y: 0 });
-        // An upright phone's strip shows the holder's line once expanded (docs/design-v1-bar-compact.md 5).
+        // An upright phone's strip shows the holder's line once expanded (docs/design/design-v1-bar-compact.md 5).
         await expandBar(b);
         const line = b.getByRole("group", { name: "Attached tokens" });
         await line.scrollIntoViewIfNeeded();
@@ -826,7 +826,7 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
     }
   });
 
-  describe("s2-at: the Token panel's Position holds the bar's attach controls (docs/design-v1-token-sections.md 3.3)", () => {
+  describe("s2-at: the Token panel's Position holds the bar's attach controls (docs/design/design-v1-token-sections.md 3.3)", () => {
     /** A field of its own, where the party goes for these steps: Thorn, a goblin named Scamp and Pat's pony, nothing else near. */
     const field = { sceneId: randomUUID(), thorn: randomUUID(), scamp: randomUUID(), pony: randomUUID(), bounds: { w: 10, h: 8 } };
     const THORN_AT = { x: 2, y: 3 };

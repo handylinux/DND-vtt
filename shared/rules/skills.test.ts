@@ -16,7 +16,7 @@ const PAGE_9: Record<string, string[]> = {
   Charisma: ["Deception", "Intimidation", "Performance", "Persuasion"],
 };
 
-describe("skills (docs/design-v1-dm-tools.md 3.3)", () => {
+describe("skills (docs/design/design-v1-dm-tools.md 3.3)", () => {
   test("each of the 18 skills fills in its ability from the table on page 9", () => {
     const abilityNames = { str: "Strength", dex: "Dexterity", con: "Constitution", int: "Intelligence", wis: "Wisdom", cha: "Charisma" } as const;
     const listed = Object.values(PAGE_9).flat();

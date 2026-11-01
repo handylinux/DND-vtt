@@ -40,7 +40,7 @@ import {
 } from "./bardockRoom.ts";
 
 /**
- * The docked token action bar (docs/design-v1-bar-dock.md section 7) on the
+ * The docked token action bar (docs/design/design-v1-bar-dock.md section 7) on the
  * real server serving the production build: where it docks at computer and
  * tablet sizes, moving it by its header, its grip and the grip's keys, what this device
  * remembers, Fit, Find and the outliner keeping tokens out from under it,
@@ -199,7 +199,7 @@ function selectOptions(page: Page): Locator {
 /**
  * The default width this page draws the window at, in layout px, worked
  * out from the hidden buttons Room measures (client/canvas/BarWidthProbe.tsx)
- * by the design's rule (docs/design-v1-token-window.md 3.3).
+ * by the design's rule (docs/design/design-v1-token-window.md 3.3).
  */
 async function probeWidth(page: Page, scale: number): Promise<number> {
   const widths = await page.evaluate(() =>
@@ -357,7 +357,7 @@ describe("raccoon-vtt: the docked token action bar", { timeout: 900_000 }, () =>
     await dm.keyboard.press("Tab");
     assert.equal(await focusedName(dm), "Move window");
     const grip = frame.getByRole("button", { name: "Move window", exact: true });
-    // Its name shows beside it on keyboard focus, in place of a native title (docs/design-v1-icons.md 3.2).
+    // Its name shows beside it on keyboard focus, in place of a native title (docs/design/design-v1-icons.md 3.2).
     await dm.getByRole("tooltip").filter({ hasText: "Move window" }).waitFor();
     const described = await grip.getAttribute("aria-describedby");
     assert.ok(described, "the grip names no description of its keys");
@@ -587,7 +587,7 @@ describe("raccoon-vtt: the docked token action bar", { timeout: 900_000 }, () =>
     await selectOptions(dm).getByText("2 selected.", { exact: true }).filter({ visible: true }).waitFor();
     const actions = selectOptions(dm).getByRole("button", { name: "Actions", exact: true });
     await actions.waitFor();
-    // At 1280 x 800 with Actions shown, the whole sentence shows, uncut, and the row stays one row (docs/design-v1-tool-options.md 9.1).
+    // At 1280 x 800 with Actions shown, the whole sentence shows, uncut, and the row stays one row (docs/design/design-v1-tool-options.md 9.1).
     // The row's own words, not the hidden description that repeats them or the copy the row measures.
     const words = selectOptions(dm).getByText("Tap tokens to add or remove them, or drag a box on the map.").filter({ visible: true }).first();
     await words.waitFor();
@@ -727,7 +727,7 @@ describe("raccoon-vtt: the docked token action bar", { timeout: 900_000 }, () =>
     // A roll card at the column's head, taller than the room the bar would keep under it.
     const ask = randomUUID();
     await ops.send({ t: "roll.ask", request: { id: ask, test: { kind: "save", choices: [{ ability: "wis" }] }, dcShown: true, resultShown: true, targets: [{ characterId: run.thorn.characterId }] } });
-    // A layout this short starts with the side panel hidden (docs/design-v1-layout-hierarchy.md 4.1), and this case keeps it shown beside the alerts.
+    // A layout this short starts with the side panel hidden (docs/design/design-v1-layout-hierarchy.md 4.1), and this case keeps it shown beside the alerts.
     await sidePanelChoice(dm, "shown");
     await setUp(dm, { width: 1180, height: 390, scale: 1 });
     await dm.locator('[data-alert="rolls"] > *').first().waitFor();
@@ -877,7 +877,7 @@ describe("raccoon-vtt: the docked token action bar", { timeout: 900_000 }, () =>
       await barFrame(dm).waitFor({ state: "detached" });
     }
 
-    // On a creature a player plays, Roll takes Request a roll's place after Multi-select (docs/design-v1-roll-options.md 4.5), and the single bar has no Request a roll.
+    // On a creature a player plays, Roll takes Request a roll's place after Multi-select (docs/design/design-v1-roll-options.md 4.5), and the single bar has no Request a roll.
     await setUp(dm, { ...DESK, scale: 1 });
     await selectThorn();
     const thornForDm = dm.getByRole("dialog", { name: "Thorn actions" });
@@ -1012,7 +1012,7 @@ describe("raccoon-vtt: the docked token action bar", { timeout: 900_000 }, () =>
     const damage = await rectOf(barFrame(dm).getByText("Damage", { exact: true }));
     assert.ok(field.top < damage.top, "the short layout does not put the field first");
     await shots.take(dm, "token-window-resized-400x250-short");
-    // The Conditions drawer opens above the rows, and scrolls itself into the shrunk window's view (docs/design-v1-token-window.md 5.7).
+    // The Conditions drawer opens above the rows, and scrolls itself into the shrunk window's view (docs/design/design-v1-token-window.md 5.7).
     await barFrame(dm).getByRole("button", { name: "Conditions", exact: true }).click();
     const drawer = barFrame(dm).getByRole("group", { name: "Conditions", exact: true });
     await drawer.waitFor();
@@ -1254,7 +1254,7 @@ describe("raccoon-vtt: the docked token action bar", { timeout: 900_000 }, () =>
     for (const id of ids) await ops.send({ t: "actor.effect.remove", target: { tokenId: goblin.id }, effectId: id });
     await setUp(dm, { ...DESK, scale: 1 });
   });
-  test("pl2-b. on a phone at 390, 360 and 320 px, and 390 at 130%, a toast clears every drawn alert card and takes the cards' edges when below them, including as the screen turns (docs/design-v1-polish.md R9, PL2-ASTRA-02)", async () => {
+  test("pl2-b. on a phone at 390, 360 and 320 px, and 390 at 130%, a toast clears every drawn alert card and takes the cards' edges when below them, including as the screen turns (docs/design/design-v1-polish.md R9, PL2-ASTRA-02)", async () => {
     await ops.send({ t: "encounter.start", entries: run.goblins.map((g, i) => ({ id: randomUUID(), tokenId: g.id, value: 15 - i })) });
     for (const g of run.goblins) await ops.send({ t: "actor.effect.add", target: { tokenId: g.id }, effect: { id: randomUUID(), key: "concentrating", spell: "Hex" } });
     const checks = dm.locator('[data-alert="concentration"]');

@@ -7,7 +7,7 @@ import { cellAtPoint, cellCenter, cellPolygon, cellsMeeting, neighborsOf, polygo
 import type { FogView } from "./fogView.ts";
 
 /**
- * Standing walls (docs/design-v1-isometric-view.md 5.5). The pieces are the
+ * Standing walls (docs/design/design-v1-isometric-view.md 5.5). The pieces are the
  * derived set's walls, doors and windows (shared/rules/walls.ts
  * deriveWalls), so automatic walls stand and "no wall" marks do not, and
  * its raised edges and pillars are not walls. Free walls are split where
@@ -24,7 +24,7 @@ import type { FogView } from "./fogView.ts";
  * On hexes every wall is also cut at each canonical hex side it crosses,
  * the scene's or the lattice's past its edge, so each run lies in one hex
  * or along one side, and stands on that hex's ground
- * (docs/design-v1-iso-hex-relief.md 6.1). A run past the scene's last
+ * (docs/design/design-v1-iso-hex-relief.md 6.1). A run past the scene's last
  * whole hexes has an off-scene host whose ground is 0.
  */
 

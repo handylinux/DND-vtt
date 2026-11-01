@@ -6,7 +6,7 @@ import type { VBox } from "./pieces.ts";
 import { installPath2D, KeptRig, TestCanvas, type RigScene } from "./keptTesting.ts";
 
 /*
- * The kept relief picture's rules (docs/design-v1-relief-pan.md 5 and 10.2):
+ * The kept relief picture's rules (docs/design/design-v1-relief-pan.md 5 and 10.2):
  * what scrolls, what repaints whole, the regions a scroll paints, the
  * device grid, the path for another canvas and the self-copy probe.
  */

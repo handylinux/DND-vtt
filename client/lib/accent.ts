@@ -38,7 +38,7 @@ const LIGHT_INK = "#ffffff";
 const HEX = /^#[0-9a-f]{6}$/i;
 /**
  * The crest orange reads as the crest yellow for the accent only, since
- * orange is never an interface color (docs/design-v1-visual.md 6.3,
+ * orange is never an interface color (docs/design/design-v1-visual.md 6.3,
  * question 1). Every room made before the accent followed members stored
  * its DM in it, the old default, which nobody picked. A member may now pick
  * it in the Members color picker, which says their buttons stay yellow.

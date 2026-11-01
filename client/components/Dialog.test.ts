@@ -23,7 +23,7 @@ describe("the question an editor asks before it discards", () => {
 
 /*
  * The handout viewer fills the window on a short layout and once it grows
- * (docs/design-v1-layout-hierarchy.md 5.1), where a computer's card would
+ * (docs/design/design-v1-layout-hierarchy.md 5.1), where a computer's card would
  * leave dim room around it. `full` gives any width the phone's card.
  */
 describe("the shape of a dialog's card", () => {

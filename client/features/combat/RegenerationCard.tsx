@@ -21,7 +21,7 @@ export function regenerationText(card: PromptCard<RegenerationPrompt>, revives: 
 }
 
 /**
- * Regeneration at a turn's start (docs/design-v1-combat-controls.md 4.3),
+ * Regeneration at a turn's start (docs/design/design-v1-combat-controls.md 4.3),
  * before the death save card, since a troll "dies only if it starts its
  * turn with 0 Hit Points and doesn't regenerate". Apply heals by the
  * rules and settles it for every device, Skip settles it skipped, and

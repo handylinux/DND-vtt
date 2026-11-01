@@ -289,7 +289,7 @@ describe("Back closes what floats over the room", () => {
   });
 });
 
-describe("a popover that steps back on Back (docs/design-v1-stat-block-rolls.md 5.3)", async () => {
+describe("a popover that steps back on Back (docs/design/design-v1-stat-block-rolls.md 5.3)", async () => {
   const { backStep } = await import("../components/Popover.tsx");
 
   /**

@@ -8,7 +8,7 @@ import { chromeCameraOf, liveCameraSlot, LiveCamera, needsApply, onCameraMove, s
 import { RoomScope, RoomScopeProvider } from "./scope.ts";
 
 /*
- * The room's live camera (docs/design-v1-relief-pan.md 6.2): the one source
+ * The room's live camera (docs/design/design-v1-relief-pan.md 6.2): the one source
  * of truth for the camera on screen, the applier's answers, and the camera
  * the chrome stands by. The board's render paths are the e2e's (iso
  * HXPERF2): these are the decisions they take.
@@ -164,7 +164,7 @@ describe("the chrome's hook (useChromeCamera)", () => {
   });
 });
 
-describe("after a board render, the stages take the camera only when something changed (docs/design-v1-relief-pan.md 11)", () => {
+describe("after a board render, the stages take the camera only when something changed (docs/design/design-v1-relief-pan.md 11)", () => {
   test("the same camera, stage and pixel ratio apply nothing; a new camera, even an equal one written anew, a new stage or a new ratio apply it", () => {
     const camera = at(5);
     const stage = {};
@@ -178,7 +178,7 @@ describe("after a board render, the stages take the camera only when something c
   });
 });
 
-describe("the camera's one source of truth, in the board's code (docs/design-v1-relief-pan.md 6.2)", () => {
+describe("the camera's one source of truth, in the board's code (docs/design/design-v1-relief-pan.md 6.2)", () => {
   const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
   test("the isometric stages take no camera props: only the applier positions them, so no render writes an older camera back", () => {

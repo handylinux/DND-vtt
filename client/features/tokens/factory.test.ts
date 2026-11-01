@@ -230,7 +230,7 @@ describe("other token sources", () => {
     assert.deepEqual(state.tokens.g2!.rangeRings, [30, 120]);
   });
 
-  test("a duplicate starts with no spent uses, damage types, turn record or unshaped numbers, so the op the bar sends is one the server takes (docs/design-v1-combat-controls.md 2.4)", () => {
+  test("a duplicate starts with no spent uses, damage types, turn record or unshaped numbers, so the op the bar sends is one the server takes (docs/design/design-v1-combat-controls.md 2.4)", () => {
     const dragon = token("dragon", {
       actor: {
         inline: actor({
@@ -250,7 +250,7 @@ describe("other token sources", () => {
     assert.deepEqual(copy.actor.inline.legendary, { actionsMax: 3, actionsUsed: 0, resistMax: 3, resistUsed: 0 });
   });
 
-  test("a carried token's duplicate comes without its link, and the op the bar sends is one the server takes (docs/design-v1-attach.md 5.2)", () => {
+  test("a carried token's duplicate comes without its link, and the op the bar sends is one the server takes (docs/design/design-v1-attach.md 5.2)", () => {
     const torch = token("torch", { kind: "object", size: "tiny", attached: { to: "thorn", kind: "carry" } });
     const copy = duplicateToken(torch, { id: "torch2", at: { x: 4, y: 3 }, chunks: {} });
     assert.equal("attached" in copy, false);
@@ -262,7 +262,7 @@ describe("other token sources", () => {
     assert.deepEqual(duplicateToken(pc, { id: "pc2", at: { x: 0, y: 0 }, chunks: {} }).actor, { ref: "hero" });
   });
 
-  test("a companion's duplicate takes its link alone, its Reaction unspent and no number, and the reducer gives it the character's owners (docs/design-v1-combat-flow.md 4.3)", () => {
+  test("a companion's duplicate takes its link alone, its Reaction unspent and no number, and the reducer gives it the character's owners (docs/design/design-v1-combat-flow.md 4.3)", () => {
     const state = room({ characters: { hero: character("hero", { ownerIds: ["p1"] }) } });
     state.tokens.ws = token("ws", { kind: "npc", name: "Wildfire Spirit", ownerIds: ["p1"], companion: { of: "hero", turn: "shared", reactionUsed: true } });
     const copy = duplicateToken(state.tokens.ws, { id: "ws2", at: { x: 4, y: 3 }, chunks: {} });
@@ -274,7 +274,7 @@ describe("other token sources", () => {
     assert.equal(made.number, undefined);
   });
 
-  test("a companion's duplicate keeps its block link, and drops one to a block deleted since, which a new link may not name (docs/design-v1-companion-stat-blocks.md 3.2)", () => {
+  test("a companion's duplicate keeps its block link, and drops one to a block deleted since, which a new link may not name (docs/design/design-v1-companion-stat-blocks.md 3.2)", () => {
     const state = room({ characters: { hero: character("hero", { ownerIds: ["p1"] }) } });
     state.companionBlocks.moth = companionBlock("moth", "hero");
     const linked = (blockId: string) => token("ws", { kind: "npc", ownerIds: ["p1"], companion: { of: "hero", turn: "shared" }, actor: { inline: actor({ blockId }) } });
@@ -337,7 +337,7 @@ describe("placement", () => {
   });
 });
 
-describe("placement on a hex scene (docs/design-v1-hex-grids.md 4.2)", () => {
+describe("placement on a hex scene (docs/design/design-v1-hex-grids.md 4.2)", () => {
   for (const orient of ["rows", "columns"] as const) {
     const g: HexGrid = { shape: "hex", orient };
     const hexesOf = (p: { x: number; y: number }, side: number) => occupiedHexes(g, { size: "custom", w: side, h: side, ...p });

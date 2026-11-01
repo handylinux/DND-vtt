@@ -3,7 +3,7 @@ import { theme } from "../lib/theme.ts";
 import { Icon, type IconName } from "./Icon.tsx";
 
 /**
- * The parts every panel lays itself out with (docs/design-v1-visual.md
+ * The parts every panel lays itself out with (docs/design/design-v1-visual.md
  * 2.3): sections split by a line, each opened by a capitals label, and the
  * muted help and warning notes under a control. They replace the five
  * Groups, four Sections, five Notes, the Help, two Hints and Muted that
@@ -31,7 +31,7 @@ export function SectionLabel(props: {
   tone?: "danger";
   action?: ReactNode;
   level?: 2 | 3 | 4;
-  /** -1 for a label that takes focus when what had it went away, as a re-sync's sections do (docs/design-v1-resync.md 3.6). */
+  /** -1 for a label that takes focus when what had it went away, as a re-sync's sections do (docs/design/design-v1-resync.md 3.6). */
   tabIndex?: number;
 }) {
   const Heading = props.level === 2 ? "h2" : props.level === 4 ? "h4" : "h3";
@@ -91,21 +91,21 @@ export function Section(props: {
   /** Makes the section a region named by its label. Rare: for a part a reader would jump to from the landmark list. */
   region?: boolean;
   /**
-   * Makes the label a disclosure (docs/design-v1-token-panel.md 3.5):
+   * Makes the label a disclosure (docs/design/design-v1-token-panel.md 3.5):
    * folded, the section's content is not drawn. `summary` sits after the
    * disclosure, outside it, on the label's row, such as the owners' names.
    * `foldRef` is the disclosure button, for a caller that moves focus there.
    * With `keep`, folded content stays mounted and hidden instead, in one
    * column of its own, so work under way in it lasts through a fold: an
    * upload a fold would otherwise abort, or counts typed and not applied
-   * (the scene settings' groups, docs/design-v1-map-discovery.md 8.4).
+   * (the scene settings' groups, docs/design/design-v1-map-discovery.md 8.4).
    */
   fold?: { open: boolean; onToggle(): void; summary?: ReactNode; foldRef?: Ref<HTMLButtonElement>; keep?: boolean };
   children: ReactNode;
   style?: CSSProperties;
 }) {
   const id = useId();
-  // Inside a Group the sections part by space alone: the group's own line already heads them (docs/design-v1-dice-ui.md 3.2). The group's body
+  // Inside a Group the sections part by space alone: the group's own line already heads them (docs/design/design-v1-dice-ui.md 3.2). The group's body
   // spaces them by space(4), so none adds its own bottom padding, and their labels are a level under the group's heading.
   const inGroup = useContext(InGroup);
   const divider = props.divider ?? !inGroup;
@@ -244,7 +244,7 @@ const SUMMARY_CLIP = summaryClip();
 
 /**
  * A fold of a panel's sections that belong together by use (the Token
- * panel's Combat, Notes and Position, docs/design-v1-dice-ui.md 5): a 48 px
+ * panel's Combat, Notes and Position, docs/design/design-v1-dice-ui.md 5): a 48 px
  * row with a chevron, the group's icon where it has one, its name at 16 px
  * weight 700, and when folded a one-line summary of what it holds ("HP
  * 18/24 · 2 conditions") at the row's end. Where the row cannot hold the
@@ -258,7 +258,7 @@ const SUMMARY_CLIP = summaryClip();
  */
 export function Group(props: {
   label: string;
-  /** Its icon, after the chevron and before its name (docs/design-v1-icons-2.md 5), in the chevron's muted color. */
+  /** Its icon, after the chevron and before its name (docs/design/design-v1-icons-2.md 5), in the chevron's muted color. */
   icon?: IconName;
   /** Absent for a group that never folds, such as a stat block whose character is not in view: the same row, with no chevron. */
   open?: boolean;
@@ -269,7 +269,7 @@ export function Group(props: {
   foldRef?: Ref<HTMLButtonElement>;
   /** `sections` for a group of Sections, parted by `space(4)`. A group of fields and lines, the default, keeps a Section's own `space(2)`. */
   holds?: "sections" | "rows";
-  /** Folded content stays mounted and hidden, as a Section fold's `keep`: work under way in it lasts through a fold (the scene settings' groups, docs/design-v1-design-pass.md 4.1). */
+  /** Folded content stays mounted and hidden, as a Section fold's `keep`: work under way in it lasts through a fold (the scene settings' groups, docs/design/design-v1-design-pass.md 4.1). */
   keep?: boolean;
   children?: ReactNode;
 }) {
@@ -287,7 +287,7 @@ export function Group(props: {
    * whichever is less ("None" asks for its one word): it shares the name's
    * line wherever the name and that much fit, grows up to its words, and
    * wraps under the name where they do not, rather than cut the name or
-   * shrink to nothing (docs/design-v1-design-pass.md 4.1). Its auto margin
+   * shrink to nothing (docs/design/design-v1-design-pass.md 4.1). Its auto margin
    * sets its words at the row's end on either line. Its width asks the
    * header's row for the same least, so an action ("Attach a stat block")
    * keeps the name's line wherever the name and that least leave it room,

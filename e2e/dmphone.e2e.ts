@@ -9,10 +9,10 @@ import { ConsoleWatch, OpSocket, openSceneGroup, pagePoint, pickOption, pickTool
 
 /**
  * A DM running a session from a phone, after the whole-app design pass
- * (docs/design-v1-visual.md), as the live play review found it
+ * (docs/design/design-v1-visual.md), as the live play review found it
  * (LPD-DMPHONE): the bugs it fixed, each checked where a DM meets it.
  *
- * The docked token action bar's part (docs/design-v1-bar-dock.md section 7):
+ * The docked token action bar's part (docs/design/design-v1-bar-dock.md section 7):
  * on its side the bar and the alerts never meet (LPD-DMPHONE-3), the
  * column stays inside the window and a focused card never scrolls the room
  * (LPD-DMPHONE-4), "Viewing as Pat" covers no card and a toast never moves
@@ -443,7 +443,7 @@ describe("raccoon-vtt: a DM runs the session from a phone", { timeout: 600_000 }
       const col = await column(dm);
       if (view.width > view.height) for (const c of col.cards) assert.ok(!intersects(c, r), `${label}: a card meets the bar: ${JSON.stringify({ c, r })}`);
       if (view.width === 390) {
-        // Upright with a check at the column's head, the strip keeps off the Hag, low on the screen: it opens at the map's foot and moves the map once to clear her (BB-6, docs/design-v1-bar-compact.md 3.6).
+        // Upright with a check at the column's head, the strip keeps off the Hag, low on the screen: it opens at the map's foot and moves the map once to clear her (BB-6, docs/design/design-v1-bar-compact.md 3.6).
         const a = await pagePoint(dm, bounds, { x: 1, y: 17 });
         const b = await pagePoint(dm, bounds, { x: 2, y: 18 });
         const hag = { left: a.x, top: a.y, right: b.x, bottom: b.y };
@@ -608,7 +608,7 @@ describe("raccoon-vtt: a DM runs the session from a phone", { timeout: 600_000 }
     }
     const alerts = dm.getByRole("dialog", { name: "Alerts" });
     assert.equal(await alerts.count(), 1, `${label}: the alerts did not open over the screen`);
-    // Every sheet and dialog's header, in its one-row form: the title a heading, Close its 44 px icon, whole in reach (docs/design-v1-look-pass-2.md D7).
+    // Every sheet and dialog's header, in its one-row form: the title a heading, Close its 44 px icon, whole in reach (docs/design/design-v1-look-pass-2.md D7).
     const head = alerts.locator("header").first();
     assert.equal(await head.getByRole("heading", { name: "Alerts", exact: true }).count(), 1, `${label}: the alerts' header is not SheetHeader`);
     const close = head.getByRole("button", { name: "Close", exact: true });
@@ -736,7 +736,7 @@ describe("raccoon-vtt: a DM runs the session from a phone", { timeout: 600_000 }
     }
   });
 
-  test("lp8fix-a. on a tablet and a phone held sideways, the armed Delete grows over the trash can's spot, so a second tap there deletes (LP8-UI-4, docs/design-v1-icons.md 3.1 rule 6)", async () => {
+  test("lp8fix-a. on a tablet and a phone held sideways, the armed Delete grows over the trash can's spot, so a second tap there deletes (LP8-UI-4, docs/design/design-v1-icons.md 3.1 rule 6)", async () => {
     const bounds = dmSocket.state!.scenes[run.sceneId]!.bounds;
     const cell = { x: Math.floor(bounds.w / 2), y: Math.floor(bounds.h / 2) };
     for (const view of [
@@ -1336,7 +1336,7 @@ describe("raccoon-vtt: a DM runs the session from a phone", { timeout: 600_000 }
     await dm.waitForTimeout(400);
   }
 
-  test("lp19-bs2. at 390 x 844 a toast that comes while a low token's strip rests, or its bar stands expanded, never covers its header, so Close and Expand or Collapse stay in reach, with no alert card and under a trap's card (review LP19-BS-2, docs/design-v1-bar-compact.md 3.5)", async () => {
+  test("lp19-bs2. at 390 x 844 a toast that comes while a low token's strip rests, or its bar stands expanded, never covers its header, so Close and Expand or Collapse stay in reach, with no alert card and under a trap's card (review LP19-BS-2, docs/design/design-v1-bar-compact.md 3.5)", async () => {
     const bounds = dmSocket.state!.scenes[run.sceneId]!.bounds;
     // Low on the map, where the strip opens over the brute and moves the map once to clear it.
     const cell = { x: Math.floor(bounds.w / 2), y: bounds.h - 2 };
@@ -1383,7 +1383,7 @@ describe("raccoon-vtt: a DM runs the session from a phone", { timeout: 600_000 }
     }
   });
 
-  test("lp19-bs3. at 390 x 844 a low token's strip that opens while a trap's toast stands under the alerts' card moves the map up once to clear it, never so far that the token's top passes the toast (review LP19-BS-3, docs/design-v1-bar-compact.md 3.6)", async () => {
+  test("lp19-bs3. at 390 x 844 a low token's strip that opens while a trap's toast stands under the alerts' card moves the map up once to clear it, never so far that the token's top passes the toast (review LP19-BS-3, docs/design/design-v1-bar-compact.md 3.6)", async () => {
     const bounds = dmSocket.state!.scenes[run.sceneId]!.bounds;
     const brute = randomUUID();
     const walker = randomUUID();
@@ -1473,7 +1473,7 @@ describe("raccoon-vtt: a DM runs the session from a phone", { timeout: 600_000 }
     };
   }
 
-  test("fu24-q1. at 390 x 844 a whisper already showing at the top of the notices stays where it is, the same toast, never drawn anew, as a low token's strip opens and as it expands: an upright phone's bar never hangs over the toasts (review LP19-Q1, docs/design-v1-bar-compact.md 3.5)", async () => {
+  test("fu24-q1. at 390 x 844 a whisper already showing at the top of the notices stays where it is, the same toast, never drawn anew, as a low token's strip opens and as it expands: an upright phone's bar never hangs over the toasts (review LP19-Q1, docs/design/design-v1-bar-compact.md 3.5)", async () => {
     const brute = await lowBrute();
     try {
       const words = "Did the brute hear that?";
@@ -1502,7 +1502,7 @@ describe("raccoon-vtt: a DM runs the session from a phone", { timeout: 600_000 }
     }
   });
 
-  test("fu24-o3. at 390 x 844 a whisper over a low token's expanded bar stays clear of its header and of a check's card when the card comes and caps the bar or gives way to the summary row (review LP19-OPUS-3, docs/design-v1-bar-compact.md 5.1)", async () => {
+  test("fu24-o3. at 390 x 844 a whisper over a low token's expanded bar stays clear of its header and of a check's card when the card comes and caps the bar or gives way to the summary row (review LP19-OPUS-3, docs/design/design-v1-bar-compact.md 5.1)", async () => {
     const brute = await lowBrute();
     const check = dm.locator('[data-alert="concentration"]').first();
     // A roll in step 13 may have ended the hag's Hex.

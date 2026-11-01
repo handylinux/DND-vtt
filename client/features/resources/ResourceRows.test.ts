@@ -13,7 +13,7 @@ const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
 
 /*
  * A character's class resource rows as they draw
- * (docs/design-v1-combat-controls.md 7.2 and 9): each row's count, its
+ * (docs/design/design-v1-combat-controls.md 7.2 and 9): each row's count, its
  * rest and its buttons in the turn card and in the off-turn list, and a
  * button that is off keeping its focus and saying why.
  */
@@ -104,7 +104,7 @@ describe("a character's class resource rows", () => {
 
 /*
  * The count as pips (D-261026-2's fifth and sixth amendments,
- * docs/design-v1-monster-uses.md 3.7): only the count changes. The row's
+ * docs/design/design-v1-monster-uses.md 3.7): only the count changes. The row's
  * layout, its buttons and its "comes back" line stay as they were.
  */
 describe("a class resource's count as pips", () => {

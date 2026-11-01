@@ -185,7 +185,7 @@ export function usePreloadAndReopen(role: "dm" | "player"): void {
  * dropped rather than kept for later, so nothing from the pause shows when
  * the game resumes. The X-card stays within reach, since the Menu that
  * holds it is gone and a pause may follow what someone needs edited out
- * (docs/design-v1-dm-tools.md 3.11).
+ * (docs/design/design-v1-dm-tools.md 3.11).
  */
 export function PauseScreen() {
   const toasts = useRoomView((s) => s.toasts);
@@ -225,7 +225,7 @@ export function PauseScreen() {
 
 /**
  * The DM's Undo and Redo, one click or tap away in the top bar on every
- * layout (docs/design-v1-layout-hierarchy.md M2): Undo is used every
+ * layout (docs/design/design-v1-layout-hierarchy.md M2): Undo is used every
  * scene, and a DM with a mouse had only the DM panel's copy or Ctrl+Z.
  * They tuck into the bar's padding as its last button would. `tuck` false
  * keeps Redo whole where a button follows at a phone's tight gap, which
@@ -283,7 +283,7 @@ function IconButton(props: {
   /** What a popover's anchor adds (components/Popover.tsx anchorProps). */
   anchor?: Pick<ButtonHTMLAttributes<HTMLButtonElement>, "aria-haspopup" | "aria-expanded" | "aria-controls" | "onKeyDown"> & { ref?(el: HTMLElement | null): void };
 }) {
-  // The name on hover, keyboard focus and a long press, never the native title (docs/design-v1-icons.md 3.2).
+  // The name on hover, keyboard focus and a long press, never the native title (docs/design/design-v1-icons.md 3.2).
   const tip = withKey(props.title, props.keys ?? null);
   const tooltip = useTooltip(tip, { describes: addsWords(tip, props.label) });
   return (
@@ -324,7 +324,7 @@ function IconButton(props: {
 }
 
 /**
- * The View button (docs/design-v1-isometric-view.md 7), before Fit in the
+ * The View button (docs/design/design-v1-isometric-view.md 7), before Fit in the
  * top bar on every layout, for the DM and players, once Isometric is
  * offered (features/view/choice.ts isoOffered). Named and drawn for the
  * view the board shows: a square grid in Top-down, and in Isometric a
@@ -332,7 +332,7 @@ function IconButton(props: {
  * faces at the view's turn. It opens the View menu, a popover from 900 px
  * up and a bottom sheet on a phone. `onOpen` hears whether the popover is
  * open, so the bar can stand over the notices while it is
- * (docs/design-v1-tool-options.md 7.6). It also says each change of the
+ * (docs/design/design-v1-tool-options.md 7.6). It also says each change of the
  * view in the polite status, whatever made it. `folded`, on the narrowest
  * phones, leaves only the status, and the room's menu holds the View row
  * (D-261026-12).
@@ -517,9 +517,9 @@ export function Stacked(props: { icon: ReactNode; text: string }) {
  * A small count of unread messages beside a panel's name, or on the
  * corner of the Panels button so the toolbar keeps its width. Screen
  * readers hear "3 unread", or `label` where the count is of something
- * else, such as "1 upload waiting" (docs/design-v1-pdf-handouts.md 4.1.1).
+ * else, such as "1 upload waiting" (docs/design/design-v1-pdf-handouts.md 4.1.1).
  * A count is a status, so it never wears the accent: text-colored with
- * dark digits, the same for every member (docs/design-v1-visual.md 2.2).
+ * dark digits, the same for every member (docs/design/design-v1-visual.md 2.2).
  */
 export function Badge(props: {
   count: number;

@@ -15,7 +15,7 @@ import { parseRoomState } from "./stateSchema.ts";
 
 /**
  * A room's memory and marks through its export and back in
- * (docs/design-v1-map-discovery.md 5.4 and 5.5), along the import's state
+ * (docs/design/design-v1-map-discovery.md 5.4 and 5.5), along the import's state
  * path: the file's migration, the stored-state schema, the remap and the
  * upgrade step, which only a file from before map discovery takes. A newer
  * file's own marks stand, so a scene that lost its share mark stays

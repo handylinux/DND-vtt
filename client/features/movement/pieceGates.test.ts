@@ -22,7 +22,7 @@ import { CLOSED, thorn } from "./testing.ts";
 
 /*
  * The device's two tests of a held build's pieces where the client calls
- * them (docs/design-v1-map-discovery.md 5.2, ASTRA-34, section 10's md-9):
+ * them (docs/design/design-v1-map-discovery.md 5.2, ASTRA-34, section 10's md-9):
  * every gate on an action sent to the server takes the permissive test, so
  * a walk the exact wall allows is sent, and every preview that nothing
  * checks after takes the conservative one.

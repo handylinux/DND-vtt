@@ -9,7 +9,7 @@ import { barControl, ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, reopenR
 import { containmentLines } from "./helpers/alignment.ts";
 
 /**
- * Rolling from a stat block's ability boxes (docs/design-v1-stat-block-rolls.md
+ * Rolling from a stat block's ability boxes (docs/design/design-v1-stat-block-rolls.md
  * 11), its steps labeled `sbr-`, on the real server serving the production
  * build. Pat plays Thorn on a phone and the DM plays on a computer. A tap on
  * a box opens that ability's list, a tap on a row rolls it through the Dice

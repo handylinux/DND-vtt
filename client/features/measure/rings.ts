@@ -17,7 +17,7 @@ import type { DistanceRules } from "./ruler.ts";
  * the ground is out of reach. Cells off the scene are left out, and the
  * scene's edge is not drawn as part of a ring.
  *
- * On a hex scene (docs/design-v1-hex-grids.md 4.3) the ring runs along hex
+ * On a hex scene (docs/design/design-v1-hex-grids.md 4.3) the ring runs along hex
  * sides round the hexes in range, every hex one step from the token's
  * hexes, the room's rule counting only height.
  */

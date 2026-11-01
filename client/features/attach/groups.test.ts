@@ -10,7 +10,7 @@ import { SQUARES } from "#shared/rules/grid.ts";
 const byId = (...list: Token[]) => Object.fromEntries(list.map((t) => [t.id, t]));
 const everyone = () => true;
 
-describe("a press in a holder's middle (docs/design-v1-attach.md 4.4, review LP12-AT-3)", () => {
+describe("a press in a holder's middle (docs/design/design-v1-attach.md 4.4, review LP12-AT-3)", () => {
   /** Whether a press at a point in cells falls on the carried token's part that takes it, as its node's hit area draws. */
   const takes = (carried: Token, hole: CellBox | null, at: { x: number; y: number }) => {
     const x = at.x - carried.x;
@@ -236,7 +236,7 @@ describe("tethers and the group line", () => {
   });
 });
 
-describe("the bar's link words (docs/design-v1-look-pass-2.md 2.10)", () => {
+describe("the bar's link words (docs/design/design-v1-look-pass-2.md 2.10)", () => {
   test("equal the panel's for a ride, a perch, a carry and a drag", () => {
     const horse = token("horse", { name: "Warhorse", size: "large", x: 5, y: 5 });
     const bree = token("bree", { name: "Bree", kind: "pc", x: 5, y: 5, attached: { to: "horse", kind: "ride", steer: true } });

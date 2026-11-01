@@ -134,7 +134,7 @@ begin
       add constraint assets_kind_check check (kind in ('map', 'token', 'handout', 'thumb'));
   end if;
 end $$;
--- Wave 5 (docs/design-v1-dm-tools.md 2.3), each step idempotent as the thumb
+-- Wave 5 (docs/design/design-v1-dm-tools.md 2.3), each step idempotent as the thumb
 -- kind's was.
 --
 -- A session's purpose: 'room' for a browser's session in rooms, 'display' for
@@ -210,7 +210,7 @@ alter table asset_uploaders add column if not exists added_at timestamptz;
 alter table asset_uploaders alter column added_at set default now();
 update asset_uploaders u set added_at = a.created_at from assets a where u.asset_id = a.id and u.added_at is null;
 alter table asset_uploaders alter column added_at set not null;
--- Wave 7 (docs/design-v1-dice.md 1.2): the receipt of every admitted op
+-- Wave 7 (docs/design/design-v1-dice.md 1.2): the receipt of every admitted op
 -- that rolls or applies, by member, client tag and batch part, written in
 -- the same transaction as the batch that settles it. It holds the outcome
 -- alone (committed with the op's seq, or refused with the words), never the
@@ -232,7 +232,7 @@ create table if not exists roll_receipts (
   primary key (room_id, member_id, tag, part)
 );
 create index if not exists roll_receipts_room_at on roll_receipts (room_id, at);
--- A starter pick's work key, `<pack>/<work>` (docs/design-v1-starter-art.md
+-- A starter pick's work key, `<pack>/<work>` (docs/design/design-v1-starter-art.md
 -- 5), set by the server from its own catalog. Such a row stays out of the
 -- room's storage quota. Null for every upload.
 alter table assets add column if not exists starter text;

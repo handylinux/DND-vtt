@@ -6,7 +6,7 @@ import type { PdfBuild } from "./download.ts";
  * What a screen reader hears of a handout's PDF download: "Preparing the
  * PDF." as it starts and "The PDF is ready." once it is built, never each
  * page, as the upload's own line says only its start, its stops and its end
- * (docs/design-v1-pdf-handouts.md 4.1.4 and 6). The progress line beside it
+ * (docs/design/design-v1-pdf-handouts.md 4.1.4 and 6). The progress line beside it
  * is not live.
  */
 export const PREPARING_PDF = "Preparing the PDF.";

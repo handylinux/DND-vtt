@@ -4,7 +4,7 @@ import { applyMode, FORMULA_ERRORS, formatFormula, parseFormula, type AdvantageM
 
 /**
  * Rolling a parsed formula, and reading a stored result back
- * (docs/design-v1-dice.md 4.2 and 5.1). Only the server's resolve draws: a
+ * (docs/design/design-v1-dice.md 4.2 and 5.1). Only the server's resolve draws: a
  * result stores every face, so replay and every reader work from the faces
  * and never roll again.
  */
@@ -19,7 +19,7 @@ export type Draw = (sides: number) => number;
  */
 export const serverDraw: Draw = (sides) => randomIndex(sides) + 1;
 
-/** Why a player asks the DM to change a rolled answer (docs/design-v1-roll-request.md 1.1). */
+/** Why a player asks the DM to change a rolled answer (docs/design/design-v1-roll-request.md 1.1). */
 export type ChangeReason = RollChange["reason"];
 
 export type Rolled = { ok: true; result: DiceResult } | { ok: false; error: FormulaError };

@@ -3,7 +3,7 @@ import { MAX_NAME, type OpOf } from "#shared/protocol.ts";
 import { copyFogEnabled } from "#shared/reducer/duplicate.ts";
 
 /**
- * Duplicating a scene (docs/design-v1-maps-vision.md section 3.2). The map,
+ * Duplicating a scene (docs/design/design-v1-maps-vision.md section 3.2). The map,
  * its phases, the build, labels, stamps and lights always come along. The
  * rest is the DM's choice, with these defaults: monsters, NPCs and objects
  * yes, player characters no, since the DM brings the party over by moving

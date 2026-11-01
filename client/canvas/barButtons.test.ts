@@ -10,7 +10,7 @@ const DM: BarButtonInput = { ...NOTHING, dm: true };
 const OWNER: BarButtonInput = { ...NOTHING, owner: true };
 
 describe("the bar's rows", () => {
-  test("Uses after Roll for the DM and an owner on a creature with combat uses, held while its block loads (docs/design-v1-combat-controls.md 6)", () => {
+  test("Uses after Roll for the DM and an owner on a creature with combat uses, held while its block loads (docs/design/design-v1-combat-controls.md 6)", () => {
     assert.deepEqual(barButtons({ ...DM, uses: "yes", light: true }).play, ["conditions", "hidden", "multiSelect", "roll", "uses", "light"]);
     assert.deepEqual(barButtons({ ...OWNER, uses: "loading" }).play, ["conditions", "multiSelect", "roll", "uses"]);
     assert.deepEqual(barButtons({ ...DM, uses: "no" }).play, ["conditions", "hidden", "multiSelect", "roll"]);
@@ -47,7 +47,7 @@ describe("the bar's rows", () => {
     });
   });
 
-  test("Attach follows Light on the steady line, and Get off comes before it on a carried token (docs/design-v1-attach.md 4.1, 4.3)", () => {
+  test("Attach follows Light on the steady line, and Get off comes before it on a carried token (docs/design/design-v1-attach.md 4.1, 4.3)", () => {
     assert.deepEqual(barButtons({ ...DM, light: true, attach: ["attach"] }).play, ["conditions", "hidden", "multiSelect", "roll", "light", "attach"]);
     assert.deepEqual(barButtons({ ...OWNER, attach: ["detach"] }).play, ["conditions", "multiSelect", "roll", "detach"]);
     assert.deepEqual(barButtons({ ...OWNER, attach: ["detach", "attach"] }).play, ["conditions", "multiSelect", "roll", "detach", "attach"]);
@@ -149,7 +149,7 @@ describe("a short bar", () => {
     assert.equal(barShort(small), true);
   });
 
-  test("a resized window's height caps its capacity: 299 is short and 300 not, a cap above the room leaves the room deciding, and a touch device or the compact overlay ignores it (docs/design-v1-token-window.md 5.8)", () => {
+  test("a resized window's height caps its capacity: 299 is short and 300 not, a cap above the room leaves the room deciding, and a touch device or the compact overlay ignores it (docs/design/design-v1-token-window.md 5.8)", () => {
     const desk800 = { ...desk(800), width: 316 };
     assert.equal(barCapacity({ ...desk800, resizable: true, size: { h: 299 } }), 299);
     assert.equal(barShort({ ...desk800, resizable: true, size: { h: 299 } }), true);
@@ -175,7 +175,7 @@ describe("a short bar", () => {
     const cases = [
       { width: 390, height: 844, band: 0, short: false, label: "390 x 844" },
       { width: 390, height: 844, band: 48, short: false, label: "390 x 844 with the band" },
-      // The expanded reach, F - 128, holds the full layout there now (docs/design-v1-bar-compact.md 9.1, BC-OPUS-9): 312, 264 and 211.
+      // The expanded reach, F - 128, holds the full layout there now (docs/design/design-v1-bar-compact.md 9.1, BC-OPUS-9): 312, 264 and 211.
       { width: 300, height: 649, band: 0, short: false, label: "390 x 844 at 130%" },
       { width: 300, height: 649, band: 48, short: false, label: "390 x 844 at 130% with the band" },
       { width: 320, height: 548, band: 0, short: false, label: "320 x 548" },
@@ -210,7 +210,7 @@ describe("a short bar", () => {
 });
 
 /*
- * The strip's drawn widths in layout px at 100% (docs/design-v1-bar-compact.md
+ * The strip's drawn widths in layout px at 100% (docs/design/design-v1-bar-compact.md
  * Appendix B.2). The lead is the toggle, Apply and their two 4 px gaps, its
  * field counted apart at its 56 px least: 174 in all.
  */
@@ -221,7 +221,7 @@ const FIELD_MIN = 56;
 const INNER = { p390: 348, p375: 333, p440: 398, p320at130: 205, p390at130: 258, p320: 278 } as const;
 const pick = (...ids: (keyof typeof DRAWN)[]) => Object.fromEntries(ids.map((id) => [id, DRAWN[id]]));
 
-describe("the resting strip's quick row (docs/design-v1-bar-compact.md 3.3)", () => {
+describe("the resting strip's quick row (docs/design/design-v1-bar-compact.md 3.3)", () => {
   test("the measured fits of B.2 for the DM or an owner on a creature with HP, at the six phone sizes", () => {
     const owner = pick("mode", "conditions", "roll", "multiSelect");
     assert.deepEqual(restFit(owner, INNER.p390, GAP, FIELD_MIN), ["mode", "conditions", "roll"]);
@@ -315,7 +315,7 @@ describe("a quick row candidate that draws nothing", () => {
   });
 });
 
-describe("an upright phone's capacity follows the mode its frame draws in (docs/design-v1-bar-compact.md 2 and 9.4)", () => {
+describe("an upright phone's capacity follows the mode its frame draws in (docs/design/design-v1-bar-compact.md 2 and 9.4)", () => {
   // 320 x 568 at 130%: the free area runs 60 to 369, 309 tall, and a 170 px roll card at the foot takes it to 139.
   // The token stands low, where today's bar would get more room than the screen's least, so the capacity shows it reads the screen alone.
   const layout = { width: 246, height: 437 };
@@ -368,7 +368,7 @@ describe("an upright phone's capacity follows the mode its frame draws in (docs/
   });
 });
 
-describe("the strip's candidates by role and token (docs/design-v1-bar-compact.md 3.3 and 9.4)", () => {
+describe("the strip's candidates by role and token (docs/design/design-v1-bar-compact.md 3.3 and 9.4)", () => {
   test("the DM on a creature with HP: the lead, Conditions, Roll, Multi-select and Hidden, with the passing actions by Roll's place", () => {
     assert.deepEqual(restButtons({ ...DM, lead: true }), ["mode", "conditions", "roll", "multiSelect", "hidden"]);
     assert.deepEqual(restButtons({ ...DM, lead: true, undoMove: true, movedThisTurn: true }), ["mode", "conditions", "undoMove", "countLeg", "roll", "multiSelect", "hidden"]);
@@ -463,7 +463,7 @@ function hpTarget(name: string, over: Partial<HpTarget> = {}): HpTarget {
   return { holder: `token:${name}`, target: { tokenId: name }, name, access: "all", atZero: false, dead: false, max: 7, ...over };
 }
 
-describe("the strip's status line (docs/design-v1-bar-compact.md 3.3)", () => {
+describe("the strip's status line (docs/design/design-v1-bar-compact.md 3.3)", () => {
   test("the first that applies: an error, a dead line, the preview, a kept crit, a group's standing note, then the vitals", () => {
     const all: Partial<RestStatusInput> = { error: "Use a positive number, or start with + or -.", dead: { kind: "heal", name: "Thorn", dm: true }, preview: "7 damage", typed: true, crit: true, standing: "Damage and healing only, since some of them are not yours." };
     assert.equal(said(all), "Use a positive number, or start with + or -.");

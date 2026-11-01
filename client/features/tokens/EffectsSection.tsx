@@ -200,7 +200,7 @@ function CountSteps(props: { effect: Effect; target: ActorTarget }) {
   );
 }
 
-/** An effect's row is itself a button, so it takes the card look (docs/design-v1-visual.md 2.3, Rows). */
+/** An effect's row is itself a button, so it takes the card look (docs/design/design-v1-visual.md 2.3, Rows). */
 const rowButton = {
   display: "flex",
   alignItems: "center",
@@ -312,7 +312,7 @@ function EffectDetail(props: {
   const [durationTouched, setDurationTouched] = useState(!existing);
   const [rulesOpen, setRulesOpen] = useState(!canEdit);
   const [error, setError] = useState<string | null>(null);
-  // Only its button sends the effect, so a sheet's swipe springs back once anything in the form changed (docs/design-v1-sheet-swipe.md 4.5).
+  // Only its button sends the effect, so a sheet's swipe springs back once anything in the form changed (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedSince({ level, counter, spell, label, glyph, color, hidden, triggerShown, form, saveForm });
 
   const shownLevel = key === "exhaustion" ? level : (counter ?? undefined);
@@ -377,7 +377,7 @@ function EffectDetail(props: {
   };
 
   // A readied action that fires spends the creature's Reaction, which lives on its initiative row.
-  // Whose Reaction it spends: a companion listed under its character spends its own, never Bree's (docs/design-v1-combat-flow.md 3.6.8).
+  // Whose Reaction it spends: a companion listed under its character spends its own, never Bree's (docs/design/design-v1-combat-flow.md 3.6.8).
   const answer = key === "readied" && existing ? reactionTarget(view, props.self) : null;
   const fire = () => {
     if (existing && answer) dispatchGesture(actions, fireOps({ target, effectId: existing.id, answer }));

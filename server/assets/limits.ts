@@ -75,7 +75,7 @@ const HOURLY = { session: 30, ip: 60, room: 120 } as const;
 /**
  * Scene thumbnails have a budget of their own. A DM device draws and
  * uploads one by itself each time the DM leaves a scene it changed
- * (docs/design-v1-maps-vision.md 3.3), so a long prep session makes many,
+ * (docs/design/design-v1-maps-vision.md 3.3), so a long prep session makes many,
  * and spending the 30 uploads above on them refused the DM's own maps. A
  * thumbnail is DM only and at most 512 KiB, and every one still counts
  * against the room's storage quota, so a generous hourly count is enough.
@@ -84,7 +84,7 @@ const THUMB_HOURLY = { session: 240, room: 240 } as const;
 
 /**
  * So do handouts, each page of a PDF being one upload
- * (docs/design-v1-pdf-handouts.md 3.7): on the shared budget a 30-page PDF
+ * (docs/design/design-v1-pdf-handouts.md 3.7): on the shared budget a 30-page PDF
  * spent the DM's whole hour and refused the next map. Two documents at the
  * page cap fit in an hour. A handout is DM only, and every page still
  * counts against the room's storage quota.
@@ -92,7 +92,7 @@ const THUMB_HOURLY = { session: 240, room: 240 } as const;
 export const HANDOUT_HOURLY = { session: 250, room: 250 } as const;
 
 /**
- * Starter picks (docs/design-v1-starter-art.md 5) have a budget of their
+ * Starter picks (docs/design/design-v1-starter-art.md 5) have a budget of their
  * own too. A pick runs the image pipeline as an upload does, which is the
  * cost this guards, but it never grows the room's storage, and a DM trying
  * works while preparing picks more often than they upload. A DM's pick of

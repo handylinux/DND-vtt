@@ -8,7 +8,7 @@ import { applyOp } from "../reducer.ts";
 import { DM, P1, actor, character, effect, env, room, token } from "../testutil.ts";
 import { NO_RESISTANCE_LEFT } from "./outcome.ts";
 
-/** A group save's outcome as one op, whole or nothing (docs/design-v1-roll-options.md 5.5 and 8). */
+/** A group save's outcome as one op, whole or nothing (docs/design/design-v1-roll-options.md 5.5 and 8). */
 
 type Ran = { state: RoomState; log: LogEntry[]; inverse: RestoreEntry[] | null };
 let seq = 900;

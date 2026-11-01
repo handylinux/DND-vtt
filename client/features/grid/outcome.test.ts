@@ -1132,7 +1132,7 @@ describe("a hex find held only by the stretch margin (D-261029-210)", () => {
   });
 });
 
-describe("squares and hexes both looked for (docs/design-v1-grid-detect.md 10.7)", () => {
+describe("squares and hexes both looked for (docs/design/design-v1-grid-detect.md 10.7)", () => {
   const HEX_ROWS = gridOfShape("hexRows");
 
   test("Use default without a saved shape preserves an unseen shape change (FU40AC-OPUS-3)", () => {
@@ -1506,7 +1506,7 @@ describe("squares and hexes both looked for (docs/design-v1-grid-detect.md 10.7)
 });
 
 /*
- * The options line's tones (docs/design-v1-design-pass.md 2.4 rule 5):
+ * The options line's tones (docs/design/design-v1-design-pass.md 2.4 rule 5):
  * green only for a grid that was applied, the warning tone for a search
  * that failed or a switch or Use default that was refused, and a muted
  * hint for an offer the DM checks.

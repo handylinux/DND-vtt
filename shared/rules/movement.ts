@@ -11,7 +11,7 @@ import { isHex, sceneGrid, SQUARES } from "./grid.ts";
 import { footprintHexes, hexCenter, hexInScene, hexKey, hexLine, hexNeighbors, referenceHex, snapAnchor, type Hex, type HexGrid } from "./hex.ts";
 
 /**
- * Walls, doors and ledges stopping moves (docs/design-v1-maps-vision.md
+ * Walls, doors and ledges stopping moves (docs/design/design-v1-maps-vision.md
  * sections 4.1 and 4.2).
  *
  * A token moves its center in straight legs. Collision uses its core, a
@@ -41,7 +41,7 @@ import { footprintHexes, hexCenter, hexInScene, hexKey, hexLine, hexNeighbors, r
  * (rules/attach.ts walkerFor), or `footing` for a judgment of a walk whose
  * route is not known (`walkStates`), never on a stored token. A walk off a
  * holder is on the ground (`footing`), whatever its height, and every
- * ledge stops it, but for one exemption (docs/design-v1-attach.md 4.3, reviews AT-O-26,
+ * ledge stops it, but for one exemption (docs/design/design-v1-attach.md 4.3, reviews AT-O-26,
  * AT-ASTRA-16 and AT-ASTRA-17). Until it first stands clear of the holder,
  * no ledge whose whole length lies strictly inside the holder's footprint
  * stops it (walls.ts `withoutLedgesInside`), the squeezed footprint while
@@ -61,21 +61,21 @@ import { footprintHexes, hexCenter, hexInScene, hexKey, hexLine, hexNeighbors, r
 export type MovingToken = PlacedToken & Pick<Token, "sceneId" | "elevation"> & { footing?: Standing; offHolder?: OffHolder; groundStart?: true };
 
 /**
- * The elevation a token lands at (docs/design-v1-maps-vision.md 4.2,
+ * The elevation a token lands at (docs/design/design-v1-maps-vision.md 4.2,
  * "Landings write the ground"): a token that stood on the ground takes the
  * ground where it lands, a flier keeps its height or rises to the ground
  * there, whichever is higher, and a token inside the ground keeps its
  * elevation, since nothing raises one on its own. The ground there is under
  * the footprint it lands with, the squeezed one where it squeezes.
  *
- * One that leaves its holder (`holder`, docs/design-v1-attach.md 4.3) is
+ * One that leaves its holder (`holder`, docs/design/design-v1-attach.md 4.3) is
  * judged from the holder, not from the ground under its seat, which
  * differs where the holder straddles two heights: off a holder on the
  * ground it lands on the ground there, off a flier it keeps its height or
  * rises to the ground, and off a holder inside the ground it keeps its
  * elevation. This is every landing's height, the device's and the
  * server's, which sets it from the real build where a player's copy lacks
- * the ground (docs/design-v1-map-discovery.md 6).
+ * the ground (docs/design/design-v1-map-discovery.md 6).
  */
 export function landedElevation(
   chunks: Parameters<typeof footprintGround>[0],
@@ -287,7 +287,7 @@ export function pinches(segs: readonly (readonly [number, number, number, number
 /*
  * A player's held build carries free walls as the server cut them, each
  * end moved up to 1/10000 cell per coordinate, so no test of a piece can
- * be exact (docs/design-v1-map-discovery.md 5.2, ASTRA-30, ASTRA-34). An
+ * be exact (docs/design/design-v1-map-discovery.md 5.2, ASTRA-30, ASTRA-34). An
  * action the device sends is gated by `pieceBlocks`, which stops it only
  * where the exact wall surely does, so the device never refuses, shortens
  * or withholds what the exact pieces it holds allow, and the server's
@@ -801,7 +801,7 @@ export function legStop(state: BuildState, token: Walker, to: LegEnd): LegStop |
 
 /**
  * Whether the straight path alone is clear, never a shifted one: the test
- * every step of a route takes (docs/design-v1-movement.md 5.1), the half
+ * every step of a route takes (docs/design/design-v1-movement.md 5.1), the half
  * lattice holding the shifted spots itself. A route's piece made of such
  * steps passes `legStop` too, since its straight sweep is theirs joined.
  */
@@ -820,7 +820,7 @@ export function straightClear(state: BuildState, token: Walker, to: LegEnd): boo
 }
 
 /**
- * `straightClear` as a route search asks it (docs/design-v1-movement.md 5.1):
+ * `straightClear` as a route search asks it (docs/design/design-v1-movement.md 5.1):
  * the walls, the core and the ledges worked out once, and nothing allocated
  * per step, since a search asks up to a million steps. The ledges count as
  * for a leg from where the token stands, which a walk keeps all the way: a
@@ -1035,7 +1035,7 @@ export function coreBlocked(state: BuildState, end: WalkEnd): boolean {
 
 /*
  * A resize on a scene that blocks moves is judged by two of the move rules'
- * own tests (docs/design-v1-token-window.md 8.3), so a resize and the next
+ * own tests (docs/design/design-v1-token-window.md 8.3), so a resize and the next
  * move always agree on where a creature may stand. `token` is the creature
  * as it stands now and `to` its footprint at the new size and spot. Ledges
  * count by where it stands now, at its elevation, as for a move's start.
@@ -1300,7 +1300,7 @@ function meetsOnlyAtEnd(cx: number, cy: number, qx: number, qy: number, ax: numb
 }
 
 // ---------------------------------------------------------------------------
-// Hexes (docs/design-v1-hex-grids.md HX-D8 and HX-D17)
+// Hexes (docs/design/design-v1-hex-grids.md HX-D8 and HX-D17)
 
 /*
  * On a hex scene a creature walks from anchor to anchor, its reference hex

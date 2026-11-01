@@ -9,7 +9,7 @@ import { abilityRows, blockRoller, boxDescription, checkTest, saveTest, skillTes
 import { creatureRolls, type DiceView } from "./creature.ts";
 
 /*
- * Whose block rolls, and each ability's rows (docs/design-v1-stat-block-rolls.md
+ * Whose block rolls, and each ability's rows (docs/design/design-v1-stat-block-rolls.md
  * 2, 4 and 7), from the Dice panel's own rules.
  */
 

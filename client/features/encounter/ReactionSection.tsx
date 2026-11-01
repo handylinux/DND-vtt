@@ -12,7 +12,7 @@ type You = { role: "dm" | "player"; memberId: string } | null | undefined;
 
 /**
  * The Reaction a viewer may mark used for a creature
- * (docs/design-v1-token-sections.md 3.2): the one `reactionTarget` names,
+ * (docs/design/design-v1-token-sections.md 3.2): the one `reactionTarget` names,
  * its own row's or, for a companion sharing its character's turn, its own.
  * The DM marks any. A player marks a row they own by `ownsEntry`, as the
  * server's `encounter.update` allows, so a player lent a character's token

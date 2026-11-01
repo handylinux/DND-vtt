@@ -38,7 +38,7 @@ export function roomSetPlayerScene(tx: Tx, op: OpOf<"room.setPlayerScene">): voi
 }
 
 /**
- * The played mark (docs/design-v1-map-discovery.md 5.5), after every op's
+ * The played mark (docs/design/design-v1-map-discovery.md 5.5), after every op's
  * dispatch: an op that makes a scene the players' scene, by any route (a
  * move of the players, a deletion that moves them, an undo of either),
  * marks it, before anyone explores there and whatever its settings, so
@@ -80,7 +80,7 @@ export function sysMemberJoin(tx: Tx, op: OpOf<"sys.memberJoin">): void {
  * A member's roster label changes. A member made a DM reads every journal
  * page, so a page private to them becomes the DM's in the same op, as a
  * removed member's does (sysMemberRemove): the page's pins never go on
- * naming a DM as their reader (docs/design-v1-dm-tools.md 3.7). Rooms with
+ * naming a DM as their reader (docs/design/design-v1-dm-tools.md 3.7). Rooms with
  * no pages, every room from before wave 5, change exactly as before.
  */
 export function sysMemberSetKind(tx: Tx, op: OpOf<"sys.memberSetKind">): void {
@@ -148,7 +148,7 @@ export function sysMemberRemove(tx: Tx, op: OpOf<"sys.memberRemove">): void {
 }
 
 /**
- * Takes a member off per-player vision's lists (docs/design-v1-per-player-vision.md
+ * Takes a member off per-player vision's lists (docs/design/design-v1-per-player-vision.md
  * 6.8): every holder list's entry, every holder layer, and every list of
  * who saw a stop or a turn's start, the encounter's and each saved step's,
  * so the lists stay within the roster. Log lines hold no list once their
@@ -177,7 +177,7 @@ function scrubSight(tx: Tx, memberId: MemberId): void {
 }
 
 /**
- * A scene's vision after a patch (docs/design-v1-per-player-vision.md 6.7):
+ * A scene's vision after a patch (docs/design/design-v1-per-player-vision.md 6.7):
  * the patch's, keeping the scene's `perPlayer` when the patch names none,
  * and stored only while true. A whole-party scene's is the patch's as sent.
  */
@@ -213,13 +213,13 @@ export function sceneCreate(tx: Tx, op: OpOf<"scene.create">): void {
   if (input.blockMovement !== undefined) scene.blockMovement = input.blockMovement;
   if (input.vision !== undefined) {
     scene.vision = input.vision;
-    // Only fog remembers what the party explored (docs/design-v1-maps-vision.md 4.3.1).
+    // Only fog remembers what the party explored (docs/design/design-v1-maps-vision.md 4.3.1).
     if (input.vision.on && input.fogEnabled === undefined) scene.fogEnabled = true;
   }
   if (input.gridFromFile) scene.gridFromFile = true;
   const shape = input.gridShape === undefined ? undefined : storedShape(input.gridShape);
   if (shape !== undefined) {
-    // A Universal VTT scene's walls stand in its file's squares (docs/design-v1-hex-grids.md HX-D13).
+    // A Universal VTT scene's walls stand in its file's squares (docs/design/design-v1-hex-grids.md HX-D13).
     if (scene.gridFromFile) throw invalid(OWN_SQUARE_GRID);
     scene.gridShape = shape;
   }

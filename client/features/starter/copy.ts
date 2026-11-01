@@ -1,5 +1,5 @@
 /**
- * One copy of a starter work into the room at a time (docs/design-v1-starter-art.md
+ * One copy of a starter work into the room at a time (docs/design/design-v1-starter-art.md
  * 5), for the places that pick one outside the image picker: New scene and
  * Handouts. Use is busy from the tap until the server answers, a second
  * tap meanwhile is refused, Cancel stops the request, and an answer that

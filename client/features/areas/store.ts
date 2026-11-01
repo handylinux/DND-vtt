@@ -37,7 +37,7 @@ export type AreaToolState = {
   pickCaster: boolean;
   query: string;
   /**
-   * Who a player's next area starts from (docs/design-v1-area-from-character.md
+   * Who a player's next area starts from (docs/design/design-v1-area-from-character.md
    * 3.3): kept for the page across areas, tools and scenes, until a reload.
    * The DM has none.
    */
@@ -49,7 +49,7 @@ export type AreaToolState = {
    */
   damageId: string | null;
   /**
-   * The trap whose area the draft aims (docs/design-v1-traps.md 4.1, "Everyone
+   * The trap whose area the draft aims (docs/design/design-v1-traps.md 4.1, "Everyone
    * in an area"): Save puts its shape into the trap rather than placing an
    * area, and the tool goes back to the trap's pane.
    */
@@ -141,7 +141,7 @@ export function memberColor(env: Pick<AreaEnv, "view" | "youId">): string {
 /**
  * Whether the viewer may move, size, aim or delete the area: the DM, or its
  * owner while no ask for saves names it, so a player never changes what the
- * DM is resolving (docs/design-v1-player-save-spell.md 5.4). The server
+ * DM is resolving (docs/design/design-v1-player-save-spell.md 5.4). The server
  * refuses the same, as the backstop.
  */
 export function canEdit(env: Pick<AreaEnv, "role" | "youId"> & { view?: Pick<RoomState, "casts"> }, t: Pick<AreaTemplate, "ownerId"> & { id?: string }): boolean {
@@ -290,9 +290,9 @@ export function deleteTemplate(env: AreaEnv, id: string): void {
 }
 
 /**
- * Opens the Areas panel on a placed area's group save (DM only, docs/design-v1-roll-options.md 5.6).
+ * Opens the Areas panel on a placed area's group save (DM only, docs/design/design-v1-roll-options.md 5.6).
  * `from` is the panel the press was in, the Areas panel's own list, so
- * with two panels its page opens where the panel is (docs/design-v1-split-panel.md 5.1).
+ * with two panels its page opens where the panel is (docs/design/design-v1-split-panel.md 5.1).
  */
 export function openDamage(a: AreaScope, ui: { openPanel(id: string, how?: { from: string }): void }, templateId: string, from?: string | null): void {
   a.store.setState({ damageId: templateId });

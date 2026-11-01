@@ -34,7 +34,7 @@ const ICON_PX = 13;
 const HATCH_PX = 7;
 
 /**
- * Traps on the board layer (docs/design-v1-traps.md 4.1 and 4.5), under the
+ * Traps on the board layer (docs/design/design-v1-traps.md 4.1 and 4.5), under the
  * fog as areas are, so a player's map never shows one through it.
  *
  * The DM sees every trap on the scene: squares hatched in the danger
@@ -49,7 +49,7 @@ const HATCH_PX = 7;
  *
  * In Isometric the zones lie on the ground stage, and each badge and name
  * stands on the overlay by the stand rule, else lies flat under the fog
- * (docs/design-v1-isometric-view.md 5.2 and 5.3).
+ * (docs/design/design-v1-isometric-view.md 5.2 and 5.3).
  */
 export const TrapLayer = memo(function TrapLayer(props: LayerProps) {
   // Both trees publish a trap's name pill under one key, so a hidden tree holds its traps with the build they lie on and never sends a pill placed on an old build.
@@ -277,7 +277,7 @@ function Squares(props: { rects: readonly CellRect[]; look: Look; faint?: boolea
 }
 
 /**
- * A zone's hexes on a hex scene (docs/design-v1-hex-grids.md H2): each
+ * A zone's hexes on a hex scene (docs/design/design-v1-hex-grids.md H2): each
  * rectangle of keys filled and hatched inside its hexes' outline, and the
  * outline drawn, as squares are. A rectangle of hex keys is one joined
  * piece, so each has one outline.

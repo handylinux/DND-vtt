@@ -23,7 +23,7 @@ export type AuthKit = {
   gateway: RoomGateway;
   auth: AuthService;
   sessions: SessionStore;
-  /** Table displays' sessions, on their own cookie (docs/design-v1-dm-tools.md 3.1). */
+  /** Table displays' sessions, on their own cookie (docs/design/design-v1-dm-tools.md 3.1). */
   displaySessions: SessionStore;
   hasher: PasswordHasher;
   limits: SlowLimits;

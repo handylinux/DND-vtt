@@ -23,7 +23,7 @@ import { cachedVisibility, crossingsAt, indexPolygon, insideCrossings, markPolyg
  * little more than a point. It shades and outlines what it covers seen from
  * above instead, so the map shows where it reaches.
  *
- * On a hex scene (docs/design-v1-hex-grids.md HX-D11) shapes keep their
+ * On a hex scene (docs/design/design-v1-hex-grids.md HX-D11) shapes keep their
  * true geometry, graded per hex by the room's coverage rule over a fixed
  * pattern of samples in each hex, and a creature is caught by its hexes.
  * An emanation is the exception: it covers every hex within
@@ -90,7 +90,7 @@ export type Shape3 = {
 export type Span = readonly [number, number];
 
 /**
- * A shape that stands in the air (docs/design-v1-iso-area-shapes.md 4.1):
+ * A shape that stands in the air (docs/design/design-v1-iso-area-shapes.md 4.1):
  * every area's shape is convex, so the heights inside it over a map point
  * are one interval. Isometric reads it to stand the area at its real
  * height, so it must hold exactly the heights `inside` holds.
@@ -1297,7 +1297,7 @@ export class CoverageCache {
 }
 
 /*
- * Areas on hexes (docs/design-v1-hex-grids.md HX-D11).
+ * Areas on hexes (docs/design/design-v1-hex-grids.md HX-D11).
  */
 
 /**

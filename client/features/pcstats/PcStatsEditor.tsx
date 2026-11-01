@@ -71,7 +71,7 @@ export function PcStatsHost() {
 }
 
 /**
- * A player character's stat block editor (docs/design-v1-pc-stats.md 7.2),
+ * A player character's stat block editor (docs/design/design-v1-pc-stats.md 7.2),
  * for the DM and the character's players. The whole block and the level are
  * one draft and one `character.update` on Save, which waits for the
  * server's answer, so a refusal shows here with the draft kept. Each number
@@ -113,7 +113,7 @@ export function PcStatsEditor(props: { characterId: string; onClose(): void }) {
   const [resourcesStale, setResourcesStale] = useState(false);
   const problems = useMemo(() => draftProblems(draft), [draft]);
   const size = useMemo(() => sizeOf(draft.stats), [draft.stats]);
-  // Class resources a D&D Beyond read set are unsaved too, even with the block and its record as saved, but a preset's level alone is not (docs/design-v1-ddb-resources.md 6.2 e).
+  // Class resources a D&D Beyond read set are unsaved too, even with the block and its record as saved, but a preset's level alone is not (docs/design/design-v1-ddb-resources.md 6.2 e).
   const dirty = draftDirty(opened.draft, draft) || alsoAny(flow.also) || flow.record !== null || resourcesUnsaved(flow.resources) || pasted.trim() !== "" || ddbJson.trim() !== "";
   const held = flow.saving;
   // An answer that comes after the editor closed may only say what became of the save.
@@ -162,7 +162,7 @@ export function PcStatsEditor(props: { characterId: string; onClose(): void }) {
     const live = now.view?.characters[props.characterId];
     return live && editsPcStats(now.you, live) ? live : known.current;
   };
-  /** A D&D Beyond read reviewed as a re-sync is (docs/design-v1-resync.md 1.1), against the editor's state as it is now (flow.ts). */
+  /** A D&D Beyond read reviewed as a re-sync is (docs/design/design-v1-resync.md 1.1), against the editor's state as it is now (flow.ts). */
   const syncPlan = (fill: PcFill, state: FlowState): SyncPlan | null => {
     const who = reviewed();
     return who ? editorSyncPlan(fill, state, opened, who) : null;
@@ -188,7 +188,7 @@ export function PcStatsEditor(props: { characterId: string; onClose(): void }) {
   const sendSave = (state: FlowState) => {
     const live = store.getState().view?.characters[props.characterId];
     const held = state.resources;
-    // A D&D Beyond fill's record goes with the block it describes (docs/design-v1-resync.md 1.1), and its class resources with both, expecting the list they were planned from (docs/design-v1-ddb-resources.md 6.2 d).
+    // A D&D Beyond fill's record goes with the block it describes (docs/design/design-v1-resync.md 1.1), and its class resources with both, expecting the list they were planned from (docs/design/design-v1-ddb-resources.md 6.2 d).
     const rest: CharacterPatch = {
       ...(savePatch(opened.draft, opened.had, state.draft) ?? {}),
       ...(live ? alsoPatch(state.also, live) : {}),
@@ -290,7 +290,7 @@ export function PcStatsEditor(props: { characterId: string; onClose(): void }) {
     </>
   ) : null;
   const status = leaving ? <DiscardQuestion /> : retryAt !== null ? "You can save again in a few seconds." : null;
-  // A stale rebuild moves focus to the review's first line (docs/design-v1-resync.md 3.6).
+  // A stale rebuild moves focus to the review's first line (docs/design/design-v1-resync.md 3.6).
   const staleFirst = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     if (flow.step === "review" && flow.review?.only === "resources") staleFirst.current?.focus();
@@ -368,7 +368,7 @@ export function PcStatsEditor(props: { characterId: string; onClose(): void }) {
     const saved = reviewed();
     const plan = ticks ? syncPlan(review.fill, flow) : null;
     const result = plan && ticks ? syncResult(plan, ticks) : null;
-    // A record past its schema or 6 KiB would fail the whole Save, so Use it waits until the review leaves it within them (docs/design-v1-resync.md 3.3).
+    // A record past its schema or 6 KiB would fail the whole Save, so Use it waits until the review leaves it within them (docs/design/design-v1-resync.md 3.3).
     const recordBig = result ? !recordFits(result.record) : false;
     const use = () => {
       if (!plan || !result) {
@@ -555,7 +555,7 @@ export function DdbStep(props: {
             Open its data in D&amp;D Beyond, copy the whole page, and paste it here. It is read on this device, up to 5 MiB.
           </label>
           <TextArea id={jsonId} value={props.json} onChange={(e) => props.onJson(e.target.value)} rows={8} spellCheck={false} style={{ width: "100%", fontFamily: theme.font.mono }} />
-          {/* Secondary: the footer's Get it stays the step's one primary (docs/design-v1-look-pass-2.md 2.2). */}
+          {/* Secondary: the footer's Get it stays the step's one primary (docs/design/design-v1-look-pass-2.md 2.2). */}
           <Button size="sm" busy={props.readingJson} disabled={props.json.trim() === ""} onClick={props.onReadJson} style={{ justifySelf: "start" }}>
             {props.readingJson ? "Reading…" : "Read it"}
           </Button>
@@ -822,7 +822,7 @@ function withFlag<K extends "jack" | "alert" | "evasion">(stats: PcStats, key: K
 function OtherNumbers(props: StatsProps) {
   const { stats, level, setStats } = props;
   const d = pcDerived(stats, level);
-  // The actor holds these two within its bounds, so a total past them says what the token keeps (docs/design-v1-pc-stats.md 10).
+  // The actor holds these two within its bounds, so a total past them says what the token keeps (docs/design/design-v1-pc-stats.md 10).
   const held = pcActorNumbers(stats, level);
   const total = (key: TotalKey) => (t: number | null) => setStats((s) => withTotal(s, level, key, t));
   return (

@@ -8,7 +8,7 @@ import { linkTag } from "./tags.ts";
 
 /**
  * What a group of attached tokens looks like on the map and moves like
- * under a finger (docs/design-v1-attach.md 4.2 and 4.4), as plain
+ * under a finger (docs/design/design-v1-attach.md 4.2 and 4.4), as plain
  * functions for node --test. Every one reads the links of this viewer's
  * own copy through one children index (carriedIndex), kept per tokens
  * record, so the draw order, the drag and the group line share it.
@@ -284,7 +284,7 @@ function center(g: Grid, t: Token, p: { x: number; y: number }): { x: number; y:
  * The group line in the bar (4.4): on a carried token what carries it, in
  * the panel's words ("Riding Warhorse", "On Bree", "Dragged by Thorn",
  * tags.ts linkTag), so the bar, the panel and the tracker name a link one
- * way (docs/design-v1-look-pass-2.md 2.10). On a holder, what it carries,
+ * way (docs/design/design-v1-look-pass-2.md 2.10). On a holder, what it carries,
  * then what it drags, each a button that selects it, so a phone reaches a
  * rider that hides its mount.
  */

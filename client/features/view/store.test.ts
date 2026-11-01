@@ -27,7 +27,7 @@ const ids = (s: { turns: readonly (readonly [string, Turn])[] }) => s.turns.map(
 let reloads = 0;
 const reloaded = () => import(`./store.ts?reload=${++reloads}`) as Promise<typeof store>;
 
-describe("the view store (docs/design-v1-isometric-view.md 7)", () => {
+describe("the view store (docs/design/design-v1-isometric-view.md 7)", () => {
   test("any device after the deploy shows Top-down: it follows the scene, and no scene suggests Isometric until the DM sets one", () => {
     assert.equal(isoReady, true);
     assert.deepEqual(readView(viewKey("fresh")), FOLLOW_THE_SCENE);

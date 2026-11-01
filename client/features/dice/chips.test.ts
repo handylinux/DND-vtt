@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import type { DiceRoll, LogEntry } from "#shared/model.ts";
 import { hpChips } from "./options.ts";
 
-/** The rolled amounts an HP entry offers (docs/design-v1-roll-options.md 4.3). */
+/** The rolled amounts an HP entry offers (docs/design/design-v1-roll-options.md 4.3). */
 
 let seq = 0;
 function line(by: string, rolls: DiceRoll[]): LogEntry {

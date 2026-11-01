@@ -9,7 +9,7 @@ import { optionSlot } from "./optionState.ts";
 import { ReceiptTracker, receiptsSlot } from "./useReceipt.ts";
 
 /*
- * A stat block's result line (docs/design-v1-stat-block-rolls.md 8): the
+ * A stat block's result line (docs/design/design-v1-stat-block-rolls.md 8): the
  * roll it sent shown under the grid, its mode words only for a roll from a
  * choice and worded from the returned roll, and one announcer per roll.
  */

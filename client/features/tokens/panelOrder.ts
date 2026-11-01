@@ -3,7 +3,7 @@ import { reactionTarget } from "../encounter/ready.ts";
 import type { SelfRef } from "./durations.ts";
 
 /*
- * The token panel's order (docs/design-v1-token-panel.md 3.5), ranked by
+ * The token panel's order (docs/design/design-v1-token-panel.md 3.5), ranked by
  * use: the name, the image, the stat block, then play from HP down, and setup folded at the foot. A plain function
  * for node --test. Each section still keeps its own rule for what it
  * shows, so a section listed here may draw nothing, such as Notes with no
@@ -35,7 +35,7 @@ export type PanelOrderInput = {
   /** An owner of the token, directly or through its character, who is not the DM. */
   owner: boolean;
   kind: TokenKind;
-  /** The token is a companion (docs/design-v1-combat-flow.md 3.6). */
+  /** The token is a companion (docs/design/design-v1-combat-flow.md 3.6). */
   companion: boolean;
   /** The viewer reads this token's stat block (statBlockLink.ts statBlockShown). */
   statBlockShown: boolean;
@@ -45,7 +45,7 @@ export type PanelOrderInput = {
   ownerRenames: boolean;
   /**
    * The token is a character's and the viewer is the DM or plays it, so it
-   * holds the character's class resources (docs/design-v1-combat-controls.md 7.2),
+   * holds the character's class resources (docs/design/design-v1-combat-controls.md 7.2),
    * which its Uses lists and adds to.
    */
   classResources?: boolean;
@@ -62,7 +62,7 @@ export type PanelOrderInput = {
 };
 
 /**
- * Combat's sections in their order (docs/design-v1-token-sections.md 3):
+ * Combat's sections in their order (docs/design/design-v1-token-sections.md 3):
  * what a fight changes turn by turn first, then the rings, which are set
  * once and read on the map, then Rest. A character's page keeps the same
  * order without the rings (cardCombat).
@@ -96,7 +96,7 @@ export function panelSections(input: PanelOrderInput): PanelSectionId[] {
 
 /**
  * Whether the DM's Token settings hold "Make a companion": on any token
- * that is neither a PC nor already a companion (docs/design-v1-combat-flow.md
+ * that is neither a PC nor already a companion (docs/design/design-v1-combat-flow.md
  * 3.6.9). The button and its form are that design's.
  */
 export function offersMakeCompanion(input: Pick<PanelOrderInput, "dm" | "kind" | "companion">): boolean {
@@ -106,7 +106,7 @@ export function offersMakeCompanion(input: Pick<PanelOrderInput, "dm" | "kind" |
 /**
  * Whether a token's panel holds its character's class resources, which its
  * Uses lists, edits and adds to: on a character's token, for the DM and
- * the character's players (docs/design-v1-combat-controls.md 7.2). A
+ * the character's players (docs/design/design-v1-combat-controls.md 7.2). A
  * player lent only the token holds nothing of the character's card, its
  * resources included.
  */
@@ -114,7 +114,7 @@ export function holdsClassResources(input: { dm: boolean; character: boolean; pl
   return input.character && (input.dm || input.playsCharacter);
 }
 
-/** The panel's groups by use (docs/design-v1-token-panel-groups.md 2). Each folds as one. */
+/** The panel's groups by use (docs/design/design-v1-token-panel-groups.md 2). Each folds as one. */
 export type PanelGroupId = "combat" | "notes" | "position" | "image";
 
 /** One part of the panel, top to bottom: a section on its own, or a group of sections under one fold. */
@@ -192,7 +192,7 @@ export function combatSummary(input: { hp: string; effects: number; reactionUsed
   return [input.hp, effects > 0 ? `${effects} ${effects === 1 ? "condition" : "conditions"}` : "", input.reactionUsed ? "Reaction used" : "", rings.length > 0 ? `rings ${rings.join(", ")} ft` : ""].filter(Boolean).join(" · ");
 }
 
-/** A character's page, top to bottom (docs/design-v1-look-pass.md 3.1): the header with its actions row, then parts that are groups but Remove. */
+/** A character's page, top to bottom (docs/design/design-v1-look-pass.md 3.1): the header with its actions row, then parts that are groups but Remove. */
 export type CardPartId = "header" | "statBlock" | "combat" | "companions" | "notes" | "image" | "stats" | "owners" | "remove";
 
 export type CardGroupsInput = {
@@ -215,7 +215,7 @@ export type CardGroupsInput = {
  * stat block, Combat, Companions, Notes, then setup folded at the foot,
  * and Remove last. A
  * player opens the page for companions more often than to edit its
- * numbers (docs/design-v1-combat-flow.md 3.7.5), so Companions follows
+ * numbers (docs/design/design-v1-combat-flow.md 3.7.5), so Companions follows
  * Combat. An empty group is not drawn: Notes with nothing to read and no
  * right to write, Companions with none to see or add, and Played by for a
  * player. Only the DM and the character's players open its page, so
@@ -258,7 +258,7 @@ export function playersPlace(view: Pick<RoomState, "meta" | "scenes">): boolean 
 
 /**
  * The actions under a creature's header, one row for the token panel and
- * the character's page alike (docs/design-v1-design-pass.md 4.3): the
+ * the character's page alike (docs/design/design-v1-design-pass.md 4.3): the
  * DM's Place a token and a player's Place my token on the page, and the
  * DM's View as on a token some player owns. The header draws no row for
  * an empty list, so a goblin's panel has no empty row and no gap. A

@@ -8,7 +8,7 @@ import { remapState } from "./remap.ts";
 import { parseRoomState } from "./stateSchema.ts";
 
 /**
- * A room import on per-player vision (docs/design-v1-per-player-vision.md
+ * A room import on per-player vision (docs/design/design-v1-per-player-vision.md
  * 6.3 and 6.8, lane PV3): holder lists and each holder's layer follow
  * their scene and their player, and every list of who saw names only
  * players of the new roster (review SEC-PV1-5).

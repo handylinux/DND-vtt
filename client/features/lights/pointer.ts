@@ -11,7 +11,7 @@ function note(ctx: ToolContext, text: string | null): void {
 }
 
 /**
- * The builder's Light mode (docs/design-v1-maps-vision.md section 4.3.1).
+ * The builder's Light mode (docs/design/design-v1-maps-vision.md section 4.3.1).
  * A press on a light selects it and shows its reach. Lifted without moving,
  * it opens the light's pane. Dragged, it moves the light, which follows the
  * finger and is sent once when let go. A tap on empty map places the

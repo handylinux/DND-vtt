@@ -10,7 +10,7 @@ import { DM, P1, P2, actor, character, env, member, room, token } from "./testut
 
 /**
  * Who reads a creature's use line, and which parts of it
- * (docs/design-v1-combat-controls.md 8): the DM and the creature's owners
+ * (docs/design/design-v1-combat-controls.md 8): the DM and the creature's owners
  * the counts, other players a public use by name alone, and none of them a
  * give back or a use after a secret roll. The readers of the counts are
  * fixed when the line is written.
@@ -45,7 +45,7 @@ function read(state: RoomState, viewer: Viewer, ids: readonly string[]): LogEven
 const lend = (state: RoomState, tokenId: string, ownerIds: string[], seq: number) => run(state, { t: "token.update", tokenId, patch: { ownerIds } }, DM, seq).state;
 const fieryRays: Op = { t: "actor.use", target: { tokenId: "dragon" }, use: { kind: "legendary", cost: 2, key: "legendaryActions:fiery-rays", name: "Fiery Rays", once: true } };
 
-describe("use lines' readers (docs/design-v1-combat-controls.md 8)", () => {
+describe("use lines' readers (docs/design/design-v1-combat-controls.md 8)", () => {
   test("the DM and the owners read the whole event with its cost and counts, and other players its name", () => {
     const lent = lend(table(), "dragon", ["p1"], 2);
     const used = run(lent, fieryRays, DM, 3);
@@ -114,7 +114,7 @@ describe("use lines' readers (docs/design-v1-combat-controls.md 8)", () => {
   });
 });
 
-describe("use lines' words (docs/design-v1-combat-controls.md 8)", () => {
+describe("use lines' words (docs/design/design-v1-combat-controls.md 8)", () => {
   const line = (more: Partial<Extract<LogEvent, { type: "use" }>>): Extract<LogEvent, { type: "use" }> => ({ type: "use", what: "ability", ...more });
   test("read each kind with and without its counts, and a give back", () => {
     assert.equal(useText(line({ what: "resist", left: 2, max: 3 }), "Lich"), "Lich used Legendary Resistance (2 of 3 left).");
@@ -137,7 +137,7 @@ describe("use lines' words (docs/design-v1-combat-controls.md 8)", () => {
   });
 });
 
-describe("combat uses on the actor reach only its owners (docs/design-v1-combat-controls.md 2.2)", () => {
+describe("combat uses on the actor reach only its owners (docs/design/design-v1-combat-controls.md 2.2)", () => {
   const held = () => {
     const state = table();
     const marks = { "actions:fire-breath": { kind: "recharge" as const, name: "Fire Breath", used: 1, max: 1, min: 5 } };
@@ -163,7 +163,7 @@ describe("combat uses on the actor reach only its owners (docs/design-v1-combat-
     assert.deepEqual((p1.characters.bree!.actor as Record<string, unknown>).turnRecord, state.characters.bree!.actor.turnRecord);
   });
 
-  test("a resource a D&D Beyond sync brought, and the record's entry for it, reach the character's players and no one else (docs/design-v1-ddb-resources.md 7)", () => {
+  test("a resource a D&D Beyond sync brought, and the record's entry for it, reach the character's players and no one else (docs/design/design-v1-ddb-resources.md 7)", () => {
     const state = held();
     const synced = { id: "wild", name: "Wild Shape", max: 3, used: 1, reset: "shortOne" as const, preset: "druid-wild-shape", level: 6, atLevel: 6 };
     state.characters.bree = { ...state.characters.bree!, resources: [...(state.characters.bree!.resources ?? []), synced], ddbSync: { at: "2026-10-24T10:00:00.000Z", base: {}, rolls: {}, res: { "0123456789ab": { k: "r:00000000000c", h: "abcdef012345" } } } };
@@ -179,7 +179,7 @@ describe("combat uses on the actor reach only its owners (docs/design-v1-combat-
   });
 });
 
-describe("no log numbering reaches an owner's actor (docs/design-v1-combat-controls.md 8)", () => {
+describe("no log numbering reaches an owner's actor (docs/design/design-v1-combat-controls.md 8)", () => {
   /** Thorn's wolf, P1's, shares his turn. With `hidden`, a creature only the DM sees loses an effect at the same Next. */
   function turn(hidden: boolean): RoomState {
     const state = room({
@@ -206,7 +206,7 @@ describe("no log numbering reaches an owner's actor (docs/design-v1-combat-contr
   });
 });
 
-describe("use lines and sight (docs/design-v1-combat-controls.md 8)", () => {
+describe("use lines and sight (docs/design/design-v1-combat-controls.md 8)", () => {
   test("a use no other player could see stays with the owners after the creature comes into view", () => {
     const state = table();
     state.tokens.dragon = { ...state.tokens.dragon!, visibility: "dm" };

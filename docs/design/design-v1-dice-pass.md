@@ -18,7 +18,7 @@ This pass changes layout, grouping and look. It adds no op, no room data and no 
 ## Scope
 
 - **In**: the Dice panel (`client/features/dice/`): the sticky result line, the roller, the Adv, Dis and Secret tiles, the creature picker, a creature's options (saves and checks, skills, Initiative, Death Save, Traits, Actions, Bonus Actions, Reactions, Legendary Actions, Spells), several selected creatures, the group save's launch and its open notice, the Ask switch that requests a roll, Recent rolls, and how the panel opens from a token's Roll.
-- **Out**: the request sheet and cards (`features/rolls/`), the group save page itself, the roll animation, and the combat uses that docs/design-v1-combat-controls.md (in design) adds. Section 6.7 says why this pass builds nothing for them.
+- **Out**: the request sheet and cards (`features/rolls/`), the group save page itself, the roll animation, and the combat uses that docs/design/design-v1-combat-controls.md (in design) adds. Section 6.7 says why this pass builds nothing for them.
 - **Sizes looked at**: 1440 x 900 and 1024 x 768 with a mouse, 390 x 844 and 440 x 956 on touch, plus 390 x 844 and 320 x 568 at 130% where words wrapped.
 
 Screenshots: `screenshots/dice-pass/`, kept outside the repository. Names are `<size>-<viewer>-<creature>-<page>`: `d1440`, `d1024`, `p390`, `p440`, `p390-s130` and `p320-s130`, then `dm` or `player`, then `dragon` (an Adult Black Dragon, whose legendary Cloud of Insects rolls), `thorn` (a level 5 paladin with 22 rolls, spells and three riders), `wolf` (Thorn's companion from the SRD), `group` (two goblins and the Owlbear), `owlbear-bar` and `-bar-roll` (a token's Roll), `groupsave-*`, `none`. A long panel is shot page by page (`-01`, `-02`). The fixture is the dev room at `/dev/room?diceui=1`, with the wolf and the dragon added through ops. Measurements come from the DOM and from the alignment helper (`e2e/helpers/alignment.ts`) run on the panel in the same room.
@@ -69,7 +69,7 @@ So the creature's name, Initiative and the Death Save never fold, actions start 
 | Options | Saves, Checks, a Skills fold, Initiative, then labelled groups | Folding groups in today's order, Initiative gone to the card (6) |
 | Recent rolls | A labelled list | A folding group, rows evened (7.6) |
 
-The roller block and the options part by a 1 px line with 16 px above and below, the panel's section boundary (docs/design-v1-dice-ui.md 3.1). Inside each block, today's 8 px stays.
+The roller block and the options part by a 1 px line with 16 px above and below, the panel's section boundary (docs/design/design-v1-dice-ui.md 3.1). Inside each block, today's 8 px stays.
 
 ## 4. The roll mode group
 
@@ -210,7 +210,7 @@ Each is small (S, under 50 changed lines).
 
 ## 8. How it opens from a token's Roll
 
-A token's Roll, a selection change and a bar's Roll for a group still open the panel and scroll it (docs/design-v1-roll-options.md 4.1). The scroll now lands with the roll mode row at the scroller's top, under the sticky line when there is one, so Adv, Dis and Secret are whole and the card follows them. Where the panel already shows that row and the card whole, it does not move. Reduced motion jumps as today.
+A token's Roll, a selection change and a bar's Roll for a group still open the panel and scroll it (docs/design/design-v1-roll-options.md 4.1). The scroll now lands with the roll mode row at the scroller's top, under the sticky line when there is one, so Adv, Dis and Secret are whole and the card follows them. Where the panel already shows that row and the card whole, it does not move. Reduced motion jumps as today.
 
 On a 390 px phone that leaves the modes, the card, the folded Saves and checks and Skills, and the head of Actions in the sheet's 444 px.
 

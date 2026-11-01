@@ -5,7 +5,7 @@ import { tokenUses, type StatBlockMonster } from "../srd/monsters.ts";
 import { blockEntries, entryKeys, nameParts, type SectionKey } from "./named.ts";
 
 /**
- * A stat block's limited uses (docs/design-v1-combat-controls.md 2.1):
+ * A stat block's limited uses (docs/design/design-v1-combat-controls.md 2.1):
  * its legendary actions with their cost and once-a-turn limit, its
  * recharge abilities, its abilities that come back on a rest, its X/Day
  * abilities and its Regeneration. Read from the block's entries, not its
@@ -111,7 +111,7 @@ export function regenerationOf(view: StatBlockMonster): RegenerationUse | null {
 /**
  * A creature's legendary counts and XP, in its lair or not, as placement
  * reads them (srd/monsters.ts monsterActor), for In lair's `counts`
- * (docs/design-v1-combat-controls.md 3.1). A count past what an actor holds
+ * (docs/design/design-v1-combat-controls.md 3.1). A count past what an actor holds
  * is capped, as placement caps it.
  */
 export function lairCounts(view: StatBlockMonster, inLair: boolean): { actionsMax: number; resistMax: number; xp: number } {

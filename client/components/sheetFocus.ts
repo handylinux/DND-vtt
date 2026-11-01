@@ -4,7 +4,7 @@ import { scopeSlot, useScoped } from "../state/scope.ts";
 
 /**
  * Two small registries where the room's folding parts meet without
- * importing one another (docs/design-v1-visual.md 2.3 and 3.2.1). On a
+ * importing one another (docs/design/design-v1-visual.md 2.3 and 3.2.1). On a
  * phone in portrait an open sheet folds the token bar and the fight
  * alerts into a dock on its edge (Room, part 3's), and folds the player's
  * roll card (features/rolls, part 5's). Room needs to know where focus

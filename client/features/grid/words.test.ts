@@ -10,7 +10,7 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const { ShapeRow, shapeReasons, shapeRefusal } = await import("./ShapeRow.tsx");
 const { room, scene } = await import("#shared/testutil.ts");
 
-describe("hex grid words (docs/design-v1-hex-grids.md section 8)", () => {
+describe("hex grid words (docs/design/design-v1-hex-grids.md section 8)", () => {
   test("FU39-OPUS-5: size labels use the shared size words on squares and both hex orientations", () => {
     const original = { ...SIZE_WORDS };
     try {

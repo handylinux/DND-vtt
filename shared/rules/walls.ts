@@ -38,7 +38,7 @@ export type { WallFeature } from "../model.ts";
  * flood fill behind "reveal room" (section 13.2).
  *
  * Coordinates are cells. Edge `x,y,n` runs from (x, y) to (x + 1, y) and edge
- * `x,y,w` from (x, y) to (x, y + 1). Free walls (docs/design-v1-maps-vision.md
+ * `x,y,w` from (x, y) to (x, y + 1). Free walls (docs/design/design-v1-maps-vision.md
  * section 2.2) run between any two points of the 1/64 lattice.
  *
  * One derived set per scene feeds every rule (section 2.1): the stored
@@ -100,13 +100,13 @@ export type BuildIndex = {
   free: FreeWallRef[];
   ground?: Map<number, number>;
   marks?: Map<number, StairMark>;
-  /** A player's held build (docs/design-v1-map-discovery.md 5.2): what its chunks carry beside the build. Absent for a stored one. */
+  /** A player's held build (docs/design/design-v1-map-discovery.md 5.2): what its chunks carry beside the build. Absent for a stored one. */
   held?: HeldFacts;
 };
 
 /**
  * What a player's chunks carry beside the build on a scene with fog on
- * (docs/design-v1-map-discovery.md 5.2), which their device reads in place
+ * (docs/design/design-v1-map-discovery.md 5.2), which their device reads in place
  * of deriving it from cells it may not hold: the cells they hold
  * (`known`), the automatic walls on held edges (`auto`), by edge id, and
  * each held stair's direction (`upDir`), by cell id, 1 + its index in
@@ -161,7 +161,7 @@ export function sceneChunks(all: Readonly<Record<string, BuildChunk>>, sceneId: 
 const MAX_FREE_LENGTH_SQUARED = (MAX_FREE_WALL_CELLS * LATTICE) * (MAX_FREE_WALL_CELLS * LATTICE);
 
 /**
- * The piece path (docs/design-v1-map-discovery.md 5.2, ASTRA-10, LK-30): a
+ * The piece path (docs/design/design-v1-map-discovery.md 5.2, ASTRA-10, LK-30): a
  * free wall in a player's held chunk is a piece the server cut, whose cut
  * ends lie on its 1/10000 grid rather than the lattice. Ends finite and
  * inside the build's range, length above zero and at most 8 cells, all
@@ -660,7 +660,7 @@ function edgeGrid(build: BuildSource, rule: AutoWalls, bounds: { w: number; h: n
       if (x >= gx && y >= gy && x < gx + w && y < gy + h) known[at(cell)] = 1;
     }
   } else if (rule !== "off" && !isHex(grid)) {
-    // A hex scene has no grid-line walls, automatic ones included (docs/design-v1-hex-grids.md HX-D7).
+    // A hex scene has no grid-line walls, automatic ones included (docs/design/design-v1-hex-grids.md HX-D7).
     const table = ruleTable(rule);
     const painted = new Uint8Array(w * h);
     for (let k = 0; k < w * h; k++) painted[k] = classOfCode[terrain[k]!]!;
@@ -1822,7 +1822,7 @@ export function floodRoom(
 
 /**
  * The room under a point on a hex scene for "reveal room"
- * (docs/design-v1-hex-grids.md HX-D10, phase H3): the scene's hexes
+ * (docs/design/design-v1-hex-grids.md HX-D10, phase H3): the scene's hexes
  * reachable from the one holding the point, a step between two neighbors
  * blocked where a movement wall touches the line between their centers. So
  * walls, windows, closed and locked doors, and secret doors not yet found
@@ -1877,7 +1877,7 @@ export function floodHexRoom(
 }
 
 // ---------------------------------------------------------------------------
-// The device's two tests of a piece (docs/design-v1-map-discovery.md 5.2)
+// The device's two tests of a piece (docs/design/design-v1-map-discovery.md 5.2)
 
 /**
  * How far a piece may lie from the exact wall it was cut from: every point

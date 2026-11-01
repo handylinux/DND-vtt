@@ -93,9 +93,9 @@ export type ActorOptions = {
   now: Clock;
   /** The size guard's byte limits (design 10.5), lowered only by tests that fill a room. */
   sizeLimits: { stateLimit?: number; sceneLimit?: number };
-  /** The dice's draw (docs/design-v1-dice.md 4.2). Only tests script it. */
+  /** The dice's draw (docs/design/design-v1-dice.md 4.2). Only tests script it. */
   draw: Draw;
-  /** The receipt caps (docs/design-v1-dice.md 1.2), lowered only by tests that fill a room's day. */
+  /** The receipt caps (docs/design/design-v1-dice.md 1.2), lowered only by tests that fill a room's day. */
   receiptCaps: Partial<ReceiptCaps>;
   /** The map step (remember.ts), which only tests replace, to make its op one the schema or the reducer refuses. */
   mapStep: typeof mapStepOps;
@@ -192,7 +192,7 @@ const ASK_TURN_MS = 8;
 
 /**
  * An asset lookup that has started and whose op has not been processed yet
- * (docs/design-v1-dm-tools.md 3.19): the room's deletion generation when it
+ * (docs/design/design-v1-dm-tools.md 3.19): the room's deletion generation when it
  * started, and the asset ids it reads.
  */
 type Lookup = { gen: number; ids: ReadonlySet<string> };
@@ -219,11 +219,11 @@ type Batch = {
   rejects: Map<ClientKey, Reject[]>;
   /** What each client's undos and redos in the batch took back, for its toast. */
   restored: Map<ClientKey, Restored[]>;
-  /** Each player client's ops whose trap step refuses their Undo move, for the bar (docs/design-v1-traps.md 6.5). */
+  /** Each player client's ops whose trap step refuses their Undo move, for the bar (docs/design/design-v1-traps.md 6.5). */
   trapped: Map<ClientKey, number[]>;
-  /** Each client's ops that wrote a sync record without `at`, with the `at` written (docs/design-v1-resync.md 3.4). */
+  /** Each client's ops that wrote a sync record without `at`, with the `at` written (docs/design/design-v1-resync.md 3.4). */
   stamped: Map<ClientKey, Stamped[]>;
-  /** Each player client's walks the real build stopped short, landed at their last clear spot (docs/design-v1-map-discovery.md 6). */
+  /** Each player client's walks the real build stopped short, landed at their last clear spot (docs/design/design-v1-map-discovery.md 6). */
   blocked: Map<ClientKey, number[]>;
   /** The doors players' `door.set` touched, whose remembered states the map step drops (5.3, MD-O-6). */
   doors: DoorTouch[];
@@ -232,7 +232,7 @@ type Batch = {
   watermarks: Map<ClientKey, number>;
   hellos: Array<{ conn: Connection; key: ClientKey }>;
   sys: Array<{ resolve: () => void; reject: (err: Error) => void }>;
-  /** The receipts of the tagged ops this batch settles (docs/design-v1-dice.md 1.2), durable with it. */
+  /** The receipts of the tagged ops this batch settles (docs/design/design-v1-dice.md 1.2), durable with it. */
   receipts: Receipt[];
   timer: NodeJS.Timeout | null;
   state: RoomState;
@@ -243,7 +243,7 @@ type Reduced = { ok: true; inverse: RestoreEntry[] | null; changed: boolean; tra
 
 /**
  * The DM's ops that ask before players' remembered map is forgotten
- * (docs/design-v1-map-discovery.md 5.3): every op with a `forget` field,
+ * (docs/design/design-v1-map-discovery.md 5.3): every op with a `forget` field,
  * the builder's tools, Clear the build, a paste and a Universal VTT import.
  * The DM's device sends a label or stamp edited from its panel with the
  * yes already, so it forgets silently, as every other op does.
@@ -253,7 +253,7 @@ const ASK_OPS = new Set<Op["t"]>(["build.paint", "build.erase", "build.rect", "b
 /** The refusal of a yes to forgetting that names a step no longer heading the stack (5.3). */
 export const FORGET_STALE = "That is no longer the step you were asked about. Try again.";
 
-/** A tagged op past admission (docs/design-v1-dice.md 1.2): whatever becomes of it from here writes its receipt. */
+/** A tagged op past admission (docs/design/design-v1-dice.md 1.2): whatever becomes of it from here writes its receipt. */
 type Admitted = { memberId: string; player: boolean; tag: string; part: number };
 
 /** Ops a room at its storage quota still accepts (design 10.5): deletions, and the one move a deletion needs first. A room whose replay failed accepts none. */
@@ -276,36 +276,36 @@ const DELETIONS = new Set<Op["t"]>([
   "journal.delete",
   "pin.remove",
   "roll.close",
-  // A document's images are freed through the library's delete, which works at the quota too (docs/design-v1-pdf-handouts.md 3.3).
+  // A document's images are freed through the library's delete, which works at the quota too (docs/design/design-v1-pdf-handouts.md 3.3).
   "handoutDoc.delete",
-  // The space a room at its quota most needs back, which a block's players may free too (docs/design-v1-companion-stat-blocks.md 3.6).
+  // The space a room at its quota most needs back, which a block's players may free too (docs/design/design-v1-companion-stat-blocks.md 3.6).
   "companionBlock.delete",
-  // A player's Withdraw and the DM's Dismiss of an ask for saves free a waiting ask (docs/design-v1-player-save-spell.md 5.4).
+  // A player's Withdraw and the DM's Dismiss of an ask for saves free a waiting ask (docs/design/design-v1-player-save-spell.md 5.4).
   "cast.close",
 ]);
 
 /**
  * A companion stat block's ops, which a player's save budget counts and the size refusals word for blocks, and every op
- * that writes a character's own stat block, removing it included (docs/design-v1-pc-stats.md 4.1), so creating and
+ * that writes a character's own stat block, removing it included (docs/design/design-v1-pc-stats.md 4.1), so creating and
  * deleting characters cannot churn stored blocks either.
  */
 function isBlockOp(op: Op): boolean {
   return op.t === "companionBlock.create" || op.t === "companionBlock.update" || op.t === "companionBlock.delete" || writesPcStats(op);
 }
 
-/** A block save, which a guard's refusal answers in the block's own words (docs/design-v1-companion-stat-blocks.md 3.4). */
+/** A block save, which a guard's refusal answers in the block's own words (docs/design/design-v1-companion-stat-blocks.md 3.4). */
 function isBlockSave(op: Op): boolean {
   return op.t === "companionBlock.create" || op.t === "companionBlock.update" || savesPcStats(op);
 }
 
-/** A sync record rides with the block and is written by the same people, so a patch naming it alone counts too (docs/design-v1-resync.md 4). */
+/** A sync record rides with the block and is written by the same people, so a patch naming it alone counts too (docs/design/design-v1-resync.md 4). */
 function writesPcStats(op: Op): boolean {
   return (op.t === "character.create" && op.character.stats !== undefined) || (op.t === "character.update" && (op.patch.stats !== undefined || op.patch.ddbSync !== undefined));
 }
 
 /**
  * Removing a character's block and nothing else, which a room at its quota accepts as it accepts deleting a companion's,
- * so BLOCKS_AT_QUOTA's "Deleting a stat block still works" holds for both (docs/design-v1-companion-stat-blocks.md 3.6).
+ * so BLOCKS_AT_QUOTA's "Deleting a stat block still works" holds for both (docs/design/design-v1-companion-stat-blocks.md 3.6).
  */
 function removesPcStats(op: Op): boolean {
   return op.t === "character.update" && op.patch.stats === null && Object.keys(op.patch).length === 1;
@@ -358,7 +358,7 @@ export class RoomActor {
    * Table displays that have had a snapshot, the only ones DM sockets count.
    * A display is counted once it can receive events, not when its socket
    * opens: a DM device answers a rise in the count with its camera at once
-   * (docs/design-v1-dm-tools.md 3.1), and a `view` that reached a display
+   * (docs/design/design-v1-dm-tools.md 3.1), and a `view` that reached a display
    * still waiting for its snapshot was dropped, so a display that connected
    * or reconnected while following the DM showed Fit the map instead.
    */
@@ -367,7 +367,7 @@ export class RoomActor {
   #committedHistory = new Map<string, HistoryMessage>();
   #sentHistory = new WeakMap<Connection, number>();
   #groupScopes = new Map<ClientKey, { group: string; scope: HistoryScope; declared: boolean }>();
-  /** Each client's last Undo or Redo refused with FORGET_ASK, and the step it asked about (docs/design-v1-map-discovery.md 5.3). */
+  /** Each client's last Undo or Redo refused with FORGET_ASK, and the step it asked about (docs/design/design-v1-map-discovery.md 5.3). */
   #forgetAsks = new Map<ClientKey, { n: number; head: string }>();
   /**
    * Each client's gesture whose asks are still coming (`build.ask` with
@@ -392,18 +392,18 @@ export class RoomActor {
   #reading: AskRead | null = null;
   #sizes: SizeGuard;
   #roomRate: TokenBucket;
-  /** Each member's budget of block saves (docs/design-v1-companion-stat-blocks.md 3.5), made at their first save. */
+  /** Each member's budget of block saves (docs/design/design-v1-companion-stat-blocks.md 3.5), made at their first save. */
   #blockSaves = new Map<string, TokenBucket>();
-  /** Each member's budget of tagged ops (docs/design-v1-dice.md 4.4), by role, made at their first. */
+  /** Each member's budget of tagged ops (docs/design/design-v1-dice.md 4.4), by role, made at their first. */
   #rollBudgets = new Map<string, TokenBucket>();
-  /** Every receipt younger than 24 hours, and the staged ones (docs/design-v1-dice.md 1.2). */
+  /** Every receipt younger than 24 hours, and the staged ones (docs/design/design-v1-dice.md 1.2). */
   #receipts: ReceiptBook;
   #recheckTimer: NodeJS.Timeout | null = null;
   #reconciling: Promise<void> | null = null;
   #visibleCache = new Map<string, { seq: number; ids: Set<string> }>();
   #stagedVisibleCache = new Map<string, { seq: number; ids: Set<string> }>();
   /**
-   * The deletion barrier (docs/design-v1-dm-tools.md 3.19). An op's asset
+   * The deletion barrier (docs/design/design-v1-dm-tools.md 3.19). An op's asset
    * facts are read before it joins the queue, so a deletion can run between
    * the read and the op. Each deletion takes a new generation, a counter of
    * its own since a deletion moves no room seq. `#lookups` holds every
@@ -473,7 +473,7 @@ export class RoomActor {
       () => admitArchive(opts.archiveGuard, deps.log, roomId, opts.now),
     );
     if (!loaded) return null;
-    // The receipts younger than 24 hours, so a restart keeps the duplicate rule and the day's caps (docs/design-v1-dice.md 1.2).
+    // The receipts younger than 24 hours, so a restart keeps the duplicate rule and the day's caps (docs/design/design-v1-dice.md 1.2).
     const receipts = await loadReceipts(deps.pool, roomId, new Date(opts.now() - DAY_MS));
     const info = await recheckQuotaOnLoad(deps, opts.quotaBytes);
     const actor = new RoomActor({ ...deps, info }, loaded, receipts);
@@ -563,7 +563,7 @@ export class RoomActor {
   }
 
   /**
-   * The X-card (docs/design-v1-dm-tools.md 3.11) to every socket of the
+   * The X-card (docs/design/design-v1-dm-tools.md 3.11) to every socket of the
    * room: DMs on any scene, players behind a blackout, and table displays.
    * The message names no one, the sender's own device gets it too, and
    * nothing about it is stored.
@@ -597,7 +597,7 @@ export class RoomActor {
     const fresh = conn.helloCount === 0;
     conn.helloCount++;
     let stored = 0;
-    // A preview sends no ops, so it has no watermark to read (docs/design-v1-per-player-vision.md 7.4).
+    // A preview sends no ops, so it has no watermark to read (docs/design/design-v1-per-player-vision.md 7.4).
     if (conn.previewBy === null && !this.#watermarks.has(key)) {
       try {
         stored = await readWatermark(this.#pool, this.roomId, { sessionId: conn.sessionId, clientId: msg.clientId });
@@ -654,7 +654,7 @@ export class RoomActor {
   /**
    * The images the step an undo or a redo would take would put back, read
    * with the op's other asset facts, so a restore never brings back a
-   * reference to an image deleted since (docs/design-v1-dm-tools.md 2.6).
+   * reference to an image deleted since (docs/design/design-v1-dm-tools.md 2.6).
    * The step, or what it would add, may change before the op is processed
    * (an op ahead of it in the queue). The queue step then answers `busy`,
    * and the client's retry reads again.
@@ -672,7 +672,7 @@ export class RoomActor {
   }
 
   /**
-   * Runs a deletion step on this room's queue (docs/design-v1-dm-tools.md
+   * Runs a deletion step on this room's queue (docs/design/design-v1-dm-tools.md
    * 3.19). The batch being staged is committed first and awaited, so the
    * committed state `run` gets equals the staged one and nothing it relies
    * on can still be abandoned. If that commit is still being retried when
@@ -1093,7 +1093,7 @@ export class RoomActor {
         return;
       }
       step = next;
-      // A move a trap stopped, or that showed its player a line, is the DM's to take back (docs/design-v1-traps.md 6.5). The step is dropped, as a failed guard drops it.
+      // A move a trap stopped, or that showed its player a line, is the DM's to take back (docs/design/design-v1-traps.md 6.5). The step is dropped, as a failed guard drops it.
       if (op.t === "undo" && viewer.role === "player" && step.trapped) {
         this.#undo.consume(viewer.memberId, op.t, historyScope, historyHead);
         this.#refuse(key, wm, n, "invalid", `could not undo ${step.label}: ${TRAPPED_ON_THE_WAY}`);
@@ -1115,9 +1115,9 @@ export class RoomActor {
         quiet = moved.quiet;
       }
       // `deps` turns on the reference checks (design 7.7). It is stored with the op, so replay checks it the same way.
-      // A redo of walks around walls keeps their routes, which only permissions read (docs/design-v1-movement.md 7.4).
+      // A redo of walks around walls keeps their routes, which only permissions read (docs/design/design-v1-movement.md 7.4).
       const routes = op.t === "redo" && step.routed && step.routes ? { routes: step.routes } : {};
-      // A controlled ride the step ended or made shares its turn again when put back on that turn (docs/design-v1-attach.md 8.3).
+      // A controlled ride the step ended or made shares its turn again when put back on that turn (docs/design/design-v1-attach.md 8.3).
       const rides = step.poses && step.rides && step.rides.length > 0 ? { rides: step.rides } : {};
       let saveOutcome: SaveOutcomeTransition | undefined;
       if (step.saveOutcome) {
@@ -1141,7 +1141,7 @@ export class RoomActor {
       if (viewer.role === "dm" && !this.#forgetAnswered(key, wm, n, command as StackHistoryCommand, checked.op as OpOf<"sys.restore">, viewer, at)) return;
       op = checked.op;
     }
-    // A tag already settled is answered from its receipt, before anything else is looked at (docs/design-v1-dice.md 4.2).
+    // A tag already settled is answered from its receipt, before anything else is looked at (docs/design/design-v1-dice.md 4.2).
     const tagged = tagOf(op);
     if (tagged) {
       const settled = this.#receipts.find(viewer.memberId, tagged.tag, tagged.part);
@@ -1160,7 +1160,7 @@ export class RoomActor {
       return;
     }
     /*
-     * Admission (docs/design-v1-dice.md 1.2), before any permission check, so an op that permissions refuse later has
+     * Admission (docs/design/design-v1-dice.md 1.2), before any permission check, so an op that permissions refuse later has
      * paid for its receipt: the day's caps must have room for one more, then the member's budget is charged. A refusal
      * here leaves no receipt, draws nothing and applies nothing, so refused traffic never spends the room's day. Past
      * this point every outcome writes the op's receipt, in the batch that settles it. Refused, never `busy`, so the
@@ -1181,7 +1181,7 @@ export class RoomActor {
       admitted = { memberId: viewer.memberId, player, ...tagged };
     }
     /*
-     * A player's block saves past their budget (docs/design-v1-companion-stat-blocks.md 3.5) are refused, never answered
+     * A player's block saves past their budget (docs/design/design-v1-companion-stat-blocks.md 3.5) are refused, never answered
      * `busy`: a refusal advances the op sequence, so the device's moves and HP changes after it go on at once, while `busy`
      * would hold every later op behind the save. A delete counts, so creating and deleting cannot churn the op log.
      */
@@ -1190,11 +1190,11 @@ export class RoomActor {
       return;
     }
     op = withAssetSizes(op, facts);
-    // A player's copy may lack the ground their creatures land on (docs/design-v1-map-discovery.md 6), so the real build sets their heights.
+    // A player's copy may lack the ground their creatures land on (docs/design/design-v1-map-discovery.md 6), so the real build sets their heights.
     if (viewer.role === "player") op = landedOp(op, this.#staged.state);
     const deps = this.#permissionDeps(viewer, facts);
     let decision = canApply(op, viewer, this.#staged.state, deps);
-    // The touch rule (docs/design-v1-map-discovery.md 6, MD-R9-1): a player's walk the real build stops lands at its last
+    // The touch rule (docs/design/design-v1-map-discovery.md 6, MD-R9-1): a player's walk the real build stops lands at its last
     // clear spot, stored as the move made, whatever the build their device holds let it send. Asked only after a refusal,
     // since it runs the check itself. A redo stays refused: its step is gone, as for any refused redo.
     let blocked = false;
@@ -1217,7 +1217,7 @@ export class RoomActor {
       this.#refuse(key, wm, n, decision.code, message, admitted);
       return;
     }
-    // The server rolls, only now that the op is permitted, so no refusal depends on the dice (docs/design-v1-dice.md 4.2).
+    // The server rolls, only now that the op is permitted, so no refusal depends on the dice (docs/design/design-v1-dice.md 4.2).
     if (isDiceOp(op)) {
       const resolved = resolveDice(op, this.#staged.state, viewer, { draw: this.#opts.draw });
       if (!resolved.ok) {
@@ -1277,9 +1277,9 @@ export class RoomActor {
       const allEntries = reduced.inverse ?? [];
       const inverse = pose && trapWrote ? allEntries.filter((e) => !trapWrote.has(e.key)) : allEntries;
       const poses = pose ? posesAfter(this.#staged.state, inverse, this.#shows(viewer), plannedOn(before, op)) : undefined;
-      // A teleport's step remembers it, so its redo passes the wall again (docs/design-v1-maps-vision.md 4.1).
+      // A teleport's step remembers it, so its redo passes the wall again (docs/design/design-v1-maps-vision.md 4.1).
       const teleport = op.t === "token.move" && op.teleport !== undefined;
-      // A player's walk keeps its route for the redo (docs/design-v1-movement.md 7.4), a plain move as its one straight piece.
+      // A player's walk keeps its route for the redo (docs/design/design-v1-movement.md 7.4), a plain move as its one straight piece.
       const walk: Walk | undefined =
         poses && op.t === "token.move" && !teleport ? { tokenId: op.tokenId, route: op.route ?? [[op.x, op.y, 0, 0]], routed: op.route !== undefined } : undefined;
       const rides = poses ? ridesChanged(before, this.#staged.state) : undefined;
@@ -1317,7 +1317,7 @@ export class RoomActor {
     return bucket;
   }
 
-  /** Each member's budget of tagged ops (docs/design-v1-dice.md 4.4), by the role they act in. */
+  /** Each member's budget of tagged ops (docs/design/design-v1-dice.md 4.4), by the role they act in. */
   #rollBudget(viewer: Viewer): TokenBucket {
     const key = `${viewer.role}:${viewer.memberId}`;
     let bucket = this.#rollBudgets.get(key);
@@ -1352,7 +1352,7 @@ export class RoomActor {
   }
 
   /**
-   * A tagged op whose tag is settled (docs/design-v1-dice.md 1.2), whatever
+   * A tagged op whose tag is settled (docs/design/design-v1-dice.md 1.2), whatever
    * its `n`: a committed one is answered with its ack and no change, a
    * refused one with the same refusal. It spends no budget and draws
    * nothing, so any retry with the same tag within 24 hours is safe.
@@ -1371,7 +1371,7 @@ export class RoomActor {
   }
 
   /**
-   * The ask before an Undo or a Redo of the DM's (docs/design-v1-map-discovery.md
+   * The ask before an Undo or a Redo of the DM's (docs/design/design-v1-map-discovery.md
    * 5.3): a preflight of the step it would take, left on its stack. A step
    * that would put a layer's estimate past its cap is refused with
    * FORGET_ASK, and the yes names the refused op's `n`. A yes for a step
@@ -1432,7 +1432,7 @@ export class RoomActor {
   }
 
   /**
-   * A gesture's ask (`build.ask`, docs/design-v1-map-discovery.md 5.3): the
+   * A gesture's ask (`build.ask`, docs/design/design-v1-map-discovery.md 5.3): the
    * ops of a DM's builder gesture, read in turn on a copy of the room as
    * they would apply, each layer's estimate taking each one's growth, as
    * #reduce reads one op. Nothing is applied, logged or stored. The asks of
@@ -1530,7 +1530,7 @@ export class RoomActor {
     const result = applyOp(this.#staged.state, op, viewer, { seq, at });
     if (!result.ok) return result;
     // The limits read the op as it would apply with no trap step: what a trap writes is reserved or counted ahead, so a
-    // springing never changes whether an op passes (docs/design-v1-traps.md 6.7). The room stored is the op's real result.
+    // springing never changes whether an op passes (docs/design/design-v1-traps.md 6.7). The room stored is the op's real result.
     const measured = result.withoutTraps ? result.withoutTraps() : result;
     if (!measured.ok) return measured;
     const sceneIds = scenesOf(op, this.#staged.state, measured.state);
@@ -1542,15 +1542,15 @@ export class RoomActor {
       const more = checkLimits(measured.state, sceneId, before, viewer.role);
       if (!more.ok) return more;
     }
-    // The split's counting pass (docs/design-v1-maps-vision.md 2.1), on every scene whose walls the op may have changed. Over a
+    // The split's counting pass (docs/design/design-v1-maps-vision.md 2.1), on every scene whose walls the op may have changed. Over a
     // cap it refuses with `quota` before any piece is built. Both it and the sight cap read every pit border as raised, so a
-    // pit trap counts its walls from the start and opening one never raises a count (docs/design-v1-traps.md 6.7).
+    // pit trap counts its walls from the start and opening one never raises a count (docs/design/design-v1-traps.md 6.7).
     const moved = [...new Set([...wallsMoved(this.#staged.state, measured.state), ...pitsMoved(this.#staged.state, measured.state, trapsTouched(measured.touched))])];
     for (const sceneId of moved) {
       const split = splitCheck(withPitsCounted(measured.state, sceneId), sceneId);
       if (!split.ok) return split;
     }
-    // The cap on a vision scene's potential sight pieces (docs/design-v1-maps-vision.md 2.4), on every scene whose walls or
+    // The cap on a vision scene's potential sight pieces (docs/design/design-v1-maps-vision.md 2.4), on every scene whose walls or
     // vision the op may have changed.
     for (const sceneId of new Set([...sceneIds, ...moved])) {
       const sight = sightPiecesCheck(withPitsCounted(measured.state, sceneId), sceneId, withPitsCounted(this.#staged.state, sceneId));
@@ -1606,7 +1606,7 @@ export class RoomActor {
         return this.#stagedVisibleAssets(memberId).has(fact.id);
       },
       // A restore puts back only an image that is still a row of this room, of the kind its place takes
-      // (docs/design-v1-dm-tools.md 2.6). Its facts were read with the op, and the barrier dropped any deleted since.
+      // (docs/design/design-v1-dm-tools.md 2.6). Its facts were read with the op, and the barrier dropped any deleted since.
       restoredAssetUsable: (assetId, kind) => {
         const fact = facts.get(assetId.toLowerCase());
         return fact !== undefined && fact.roomId === this.roomId && fact.kind === kind;
@@ -1712,7 +1712,7 @@ export class RoomActor {
   }
 
   /**
-   * A DM's view as one player (docs/design-v1-per-player-vision.md 7.4):
+   * A DM's view as one player (docs/design/design-v1-per-player-vision.md 7.4):
    * its snapshot through the snapshot budget like any other, under a key of
    * its own (Connection.key), so it never becomes the current socket of its
    * DM's client, never takes that client's acknowledgments or watermark,
@@ -1871,12 +1871,12 @@ export class RoomActor {
   }
 
   /**
-   * The explore step (docs/design-v1-maps-vision.md 4.3.3): what the party
+   * The explore step (docs/design/design-v1-maps-vision.md 4.3.3): what the party
    * now sees on the player scene that its explored layer lacks goes into
    * that layer, by one server-made op at the end of the same batch, so
    * players never see sight outside the ground they have explored, and by
    * one more right after any op that wrote an area's reminder, whose line
-   * rests on the sight of that moment (docs/design-v1-map-discovery.md
+   * rests on the sight of that moment (docs/design/design-v1-map-discovery.md
    * decision 13). Replay applies the stored bits and never computes sight.
    *
    * It runs none of an op's checks. It only ever adds bits the party sees,
@@ -1898,7 +1898,7 @@ export class RoomActor {
   }
 
   /**
-   * The map step (docs/design-v1-map-discovery.md 5.3), after the explore:
+   * The map step (docs/design/design-v1-map-discovery.md 5.3), after the explore:
    * what players remember of each scene's build, by one `sys.remember` per
    * scene at the end of the same batch, so no frame ever holds an edit made
    * out of their sight. Like the explore it is never refused and runs none
@@ -2048,7 +2048,7 @@ export class RoomActor {
       (key) => this.#clients.get(key),
       (conn, delivered) => this.#sendHistory(conn, delivered),
     );
-    // A batch that re-projects everything can take away what a held drag or live ruler showed (docs/design-v1-per-player-vision.md 7.2).
+    // A batch that re-projects everything can take away what a held drag or live ruler showed (docs/design/design-v1-per-player-vision.md 7.2).
     if (batch.global) rejudgePreviews(batch.state, this.#connections);
     for (const conn of this.#connections) this.#previewStands(conn, batch.state);
     for (const s of batch.sys) s.resolve();
@@ -2083,7 +2083,7 @@ export class RoomActor {
     this.retrying = false;
     this.#log.error({ err, roomId: this.roomId, ops: batch.ops.length }, "batch abandoned at shutdown");
     this.#staged = this.#committed;
-    // The batch's receipts go with it and give back their slots (docs/design-v1-dice.md 1.2). Their clients resend the ops.
+    // The batch's receipts go with it and give back their slots (docs/design/design-v1-dice.md 1.2). Their clients resend the ops.
     this.#receipts.abandoned(batch.receipts);
     for (const s of batch.sys) s.reject(new ActorClosedError(this.roomId));
     this.#inFlight = null;
@@ -2160,8 +2160,8 @@ export class RoomActor {
 
   /**
    * Members with a socket open. A table display is no member, so it is never
-   * listed (docs/design-v1-dm-tools.md 3.1), and a DM's view as a player is
-   * no socket of that player's (docs/design-v1-per-player-vision.md 7.4).
+   * listed (docs/design/design-v1-dm-tools.md 3.1), and a DM's view as a player is
+   * no socket of that player's (docs/design/design-v1-per-player-vision.md 7.4).
    */
   #online(): string[] {
     const ids = new Set<string>();
@@ -2208,7 +2208,7 @@ export class RoomActor {
         conn.close(CLOSE.grantRevoked);
         continue;
       }
-      // A preview stands only while its DM's grant does (docs/design-v1-per-player-vision.md 7.4).
+      // A preview stands only while its DM's grant does (docs/design/design-v1-per-player-vision.md 7.4).
       if (conn.previewBy !== null) {
         if (grant.memberId !== conn.previewBy || grant.role !== "dm") conn.close(CLOSE.grantRevoked);
         continue;
@@ -2237,7 +2237,7 @@ export class RoomActor {
   }
 
   /**
-   * A table display (docs/design-v1-dm-tools.md 3.1) closes with 4001 when
+   * A table display (docs/design/design-v1-dm-tools.md 3.1) closes with 4001 when
    * its grant is gone or stale or its session was deleted or expired, and
    * otherwise renews its session, so a connected display never expires.
    */
@@ -2425,10 +2425,10 @@ async function recheckQuotaOnLoad(deps: ActorDeps, quotaBytes: number): Promise<
  * authorization refuses it.
  */
 function withAssetSizes(op: Op, facts: Map<string, AssetFact>): Op {
-  // A handout's page sizes lay out the viewer before any image loads (docs/design-v1-pdf-handouts.md 3.1).
+  // A handout's page sizes lay out the viewer before any image loads (docs/design/design-v1-pdf-handouts.md 3.1).
   if (op.t === "handout.show" && "pages" in op.handout) return { ...op, handout: { ...op.handout, pages: pagesWithSizes(op.handout.pages, facts) } };
   if (op.t === "handoutDoc.create") return { ...op, doc: { ...op.doc, pages: pagesWithSizes(op.doc.pages, facts) } };
-  // A phase's size decides its grid, so it comes from the asset row too (docs/design-v1-maps-vision.md 3.4).
+  // A phase's size decides its grid, so it comes from the asset row too (docs/design/design-v1-maps-vision.md 3.4).
   if (op.t === "scene.update" && op.patch.phases) {
     const phases = op.patch.phases.map((phase) => {
       const fact = facts.get(phase.assetId.toLowerCase());

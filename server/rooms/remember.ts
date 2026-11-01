@@ -15,7 +15,7 @@ import { sceneWalls, type WallSet } from "#shared/rules/walls.ts";
 import { chunkCharge, chunkEntries, entryCharge, envelopeCharge, type MemoryField } from "./memorySize.ts";
 
 /*
- * The map step (docs/design-v1-map-discovery.md 5.3): after every batch,
+ * The map step (docs/design/design-v1-map-discovery.md 5.3): after every batch,
  * after its `sys.explore`, what each layer of players' memory now
  * remembers of the build, as one `sys.remember` per scene, which the actor
  * appends to the batch. Replay applies the stored op and never computes

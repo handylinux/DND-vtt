@@ -71,7 +71,7 @@ export type MonsterDrop = {
  *
  * `monsterId` links a room monster's token to the stat block it came from,
  * as an SRD monster's keeps its `srdId`, so the DM reads the full block on
- * the token (docs/design-v1-dm-tools.md 3.6).
+ * the token (docs/design/design-v1-dm-tools.md 3.6).
  */
 export function monsterToken(
   m: StatBlockMonster,
@@ -216,7 +216,7 @@ export function duplicateToken(
   if (source.altImages) copy.altImages = source.altImages.map(copyImage);
   if (source.rangeRings) copy.rangeRings = [...source.rangeRings];
   // Built field by field: a spent Reaction is the source's own, and the strict schema takes no stored field
-  // (docs/design-v1-combat-flow.md 4.2). The reducer gives the copy its character's owners and no number.
+  // (docs/design/design-v1-combat-flow.md 4.2). The reducer gives the copy its character's owners and no number.
   if (source.companion) copy.companion = { of: source.companion.of, turn: source.companion.turn };
   return copy;
 }
@@ -224,7 +224,7 @@ export function duplicateToken(
 function freshActor(actor: Actor, blocks: Readonly<Record<string, CompanionBlock | undefined>> | undefined): Actor {
   /*
    * What the reducer writes alone, which no op's actor may carry (shared/protocol.ts actorSchemaForImport): a copy
-   * starts with no spent uses, damage types or turn record (docs/design-v1-combat-controls.md 2.4), and no numbers
+   * starts with no spent uses, damage types or turn record (docs/design/design-v1-combat-controls.md 2.4), and no numbers
    * kept from before a shape.
    */
   const { uses: _uses, hurt: _hurt, turnRecord: _record, unshaped: _unshaped, ...own } = actor;
@@ -237,7 +237,7 @@ function freshActor(actor: Actor, blocks: Readonly<Record<string, CompanionBlock
     deathSaves: { ok: 0, fail: 0 },
   };
   if (actor.legendary) next.legendary = { ...actor.legendary, actionsUsed: 0, resistUsed: 0 };
-  // A new link must name a block that is there (docs/design-v1-companion-stat-blocks.md 3.2), so a copy of a companion
+  // A new link must name a block that is there (docs/design/design-v1-companion-stat-blocks.md 3.2), so a copy of a companion
   // whose block was deleted starts with none rather than being refused.
   if (next.blockId !== undefined && blocks !== undefined && blocks[next.blockId] === undefined) delete next.blockId;
   return next;
@@ -276,7 +276,7 @@ function inside(p: Placed, bounds: Bounds): boolean {
  * or of tokens already there, and inside the scene. When there is no room
  * nearby, the rest stack on the tapped spot rather than fail. On a hex
  * scene the rings are of hexes and each spot stands on its anchor
- * (docs/design-v1-hex-grids.md 4.2), as a drop there snaps.
+ * (docs/design/design-v1-hex-grids.md 4.2), as a drop there snaps.
  */
 export function spreadPositions(input: {
   grid: Grid;
@@ -295,7 +295,7 @@ export function spreadPositions(input: {
 /**
  * The nearest free spot around a point that `accept` also takes, or null
  * when none does: a companion's place beside its character
- * (docs/design-v1-combat-flow.md 3.6.3), which must not stack anywhere.
+ * (docs/design/design-v1-combat-flow.md 3.6.3), which must not stack anywhere.
  */
 export function firstFreeSpot(input: { grid: Grid; center: Point; footprint: Footprint; bounds: Bounds; occupied: Placed[]; accept(p: Point): boolean }): Point | null {
   return freeSpots({ ...input, count: 1 })[0] ?? null;

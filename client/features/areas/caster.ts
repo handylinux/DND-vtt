@@ -25,7 +25,7 @@ import type { Grid } from "#shared/rules/grid.ts";
 
 /**
  * Which token a new area starts from, and what a tap picks, for the area
- * tool (features section 9, docs/design-v1-area-from-character.md). Pure,
+ * tool (features section 9, docs/design/design-v1-area-from-character.md). Pure,
  * so it runs under plain Node tests.
  *
  * Two values stay apart. The saved choice says who a player's next area

@@ -22,7 +22,7 @@ import { isHex, sceneGrid, type Grid } from "#shared/rules/grid.ts";
  * recorded reads straight from where it began, as it did before.
  *
  * Every reading takes the scene's grid: on a hex scene a leg counts the hex
- * steps between its stops' reference hexes (docs/design-v1-hex-grids.md
+ * steps between its stops' reference hexes (docs/design/design-v1-hex-grids.md
  * 4.2 and 4.3), as the reducer counts it.
  */
 
@@ -70,7 +70,7 @@ export function pathNow(encounter: TurnView | null | undefined, token: Pick<Movi
 /**
  * One leg of a trail: from one spot to the next through the corners it
  * walked, top-left as stops are, whether it counts against speed, and
- * whether its holder carried it there (docs/design-v1-attach.md 7.2), a
+ * whether its holder carried it there (docs/design/design-v1-attach.md 7.2), a
  * mark only the DM's copy holds.
  */
 export type TrailLeg = { from: Spot; to: Spot; counted: boolean; carried: boolean; via: Point[] };
@@ -85,7 +85,7 @@ export type TurnTrail = {
   /** The counted legs' feet. */
   movedFt: number;
   /**
-   * What the counted legs took off the speed (docs/design-v1-movement.md
+   * What the counted legs took off the speed (docs/design/design-v1-movement.md
    * 3.2): their stored costs for the DM and the creature's owners, whose
    * copies hold them, and their feet for everyone else.
    */
@@ -168,7 +168,7 @@ function legRead(g: Grid, token: PlacedToken, from: PathStop, to: PathStop, rule
  * corners of the route each walked, the first and last cut back to the
  * round edges of the start ring and the token so the line never crosses
  * their art. A resize that kept the middle leaves no line, and neither
- * does a leg its holder carried it (docs/design-v1-attach.md 7.2): the
+ * does a leg its holder carried it (docs/design/design-v1-attach.md 7.2): the
  * holder's own trail shows the way, so the DM, whose copy marks such legs,
  * sees one line, not two.
  */
@@ -241,7 +241,7 @@ export function speedsLeft(speeds: Speeds | undefined, elevation: number, usedFt
   return out;
 }
 
-/** Every speed halved, rounded down (docs/design-v1-movement.md 4.2): 25 ft halves to 12 ft. */
+/** Every speed halved, rounded down (docs/design/design-v1-movement.md 4.2): 25 ft halves to 12 ft. */
 export function halvedSpeeds(speeds: Speeds | undefined): Speeds | undefined {
   if (!speeds) return undefined;
   const out: Speeds = { ...speeds };
@@ -254,7 +254,7 @@ export function halvedSpeeds(speeds: Speeds | undefined): Speeds | undefined {
 
 /**
  * The marker's text: the feet moved, with what it used when the turn's
- * cost differs ("Moved 25 ft, used 35 ft", docs/design-v1-movement.md 3.2),
+ * cost differs ("Moved 25 ft, used 35 ft", docs/design/design-v1-movement.md 3.2),
  * and for a viewer who knows the creature's speeds (the DM and its owners,
  * design 7.3) what is left. "Dash" counts the extra movement a Dash gives,
  * equal to the speed.
@@ -274,7 +274,7 @@ export function leftText(left: SpeedLeft): string {
   return name + (left.band === "walk" ? `${ft} left` : left.band === "dash" ? `${ft} left with Dash` : `${ft} past Dash`);
 }
 
-/** The walk a drag's route search found for it (docs/design-v1-movement.md 3.1), and what the band reads along it. */
+/** The walk a drag's route search found for it (docs/design/design-v1-movement.md 3.1), and what the band reads along it. */
 export type DragWalk = {
   /** The route, or null for the straight leg. */
   route: { points: readonly RoutePoint[]; pieces: readonly RoutePiece[] } | null;
@@ -286,7 +286,7 @@ export type DragWalk = {
   halved(at: RoutePoint, piece: number, end: boolean): string | null;
   /** Crawling: the creature is Prone as players see it. */
   prone: boolean;
-  /** The holder's extra foot for a creature it drags or carries (docs/design-v1-attach.md 7.3), named by how it moves it. */
+  /** The holder's extra foot for a creature it drags or carries (docs/design/design-v1-attach.md 7.3), named by how it moves it. */
   towing?: "dragging" | "carrying";
 };
 
@@ -307,7 +307,7 @@ const NO_BUILD: Pick<BuildState, "buildChunks"> = { buildChunks: {} };
 
 /**
  * How a token drag reads against the creature's speed (features section 4,
- * docs/design-v1-movement.md 3.1 and 4.2): the cost of this leg, along its
+ * docs/design/design-v1-movement.md 3.1 and 4.2): the cost of this leg, along its
  * route when it has one, with what cost extra, and the speed its total
  * falls in. During a fight only the active creature is read, and its total
  * is what its counted legs used so far (turnTrail) plus this leg's cost, so
@@ -349,7 +349,7 @@ export function dragReading(input: {
   landing?: { elevation: number; squeeze?: true };
   /**
    * The mount the drop leaves and half the rider's Speed, when the leg
-   * walks the rider off its ride (docs/design-v1-attach.md 7.3): on its own
+   * walks the rider off its ride (docs/design/design-v1-attach.md 7.3): on its own
    * turn the leg then costs as the reducer stores it (rules/dismount.ts).
    */
   dismount?: { mount: PlacedToken; halfFt: number };
@@ -463,7 +463,7 @@ export type PieceWalk = "full" | "squeezed" | "both";
  * ground's difficult terrain, squeezing through a narrow space, Plant
  * Growth's overgrowth (4 ft per foot), swimming without a Swim Speed,
  * crawling, and a creature the walker drags or carries (`towing`,
- * docs/design-v1-attach.md 7.3). A piece's extra holds the ground's 1 or
+ * docs/design/design-v1-attach.md 7.3). A piece's extra holds the ground's 1 or
  * 3, 1 for swimming or crawling, never both, and 1 more on every piece
  * while it tows. A squeeze pays its foot in the ground's place, as
  * difficult terrain does, so the foot of a piece the walk squeezes along
@@ -539,7 +539,7 @@ function piecesWalked(build: BuildState, g: Grid, token: MovingToken, points: re
   };
 }
 
-/** The label's lines (docs/design-v1-movement.md 3.1): the leg's cost with the band's words, what cost extra, and the Half Speed area it would end in. */
+/** The label's lines (docs/design/design-v1-movement.md 3.1): the leg's cost with the band's words, what cost extra, and the Half Speed area it would end in. */
 export function dragLabel(read: DragRead): string {
   const first = read.left ? `${formatFeet(read.dragFt)} · ${leftText(read.left)}` : formatFeet(read.dragFt);
   return [first, read.extra?.words, read.halfSpeed ? `Half Speed in ${read.halfSpeed}` : null].filter((l): l is string => !!l).join("\n");

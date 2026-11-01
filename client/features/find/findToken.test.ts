@@ -217,7 +217,7 @@ describe("Find my token on raised ground, in a pit and in the air (ISO34-ASTRA-2
   });
 });
 
-describe("Find my token in Isometric (docs/design-v1-isometric-view.md 4.2)", () => {
+describe("Find my token in Isometric (docs/design/design-v1-isometric-view.md 4.2)", () => {
   test("the found token's middle shows in the middle of the map left clear, at every turn", () => {
     const viewport = { width: 390, height: 844 };
     const bars = { top: 56, right: 0, bottom: 64, left: 0 };

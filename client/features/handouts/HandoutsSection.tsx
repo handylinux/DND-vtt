@@ -39,7 +39,7 @@ const THUMB_PX = 44;
  * What the viewer shows, by its identity only: a showing or a document.
  * Its pages and the lines under its title are read from the room as it is
  * now, so they follow a change made elsewhere, and the viewer closes when
- * the item goes, as the Library's does (docs/design-v1-pdf-handouts.md 5.9
+ * the item goes, as the Library's does (docs/design/design-v1-pdf-handouts.md 5.9
  * and 8.4).
  */
 type Viewing = { kind: "handout"; id: string } | { kind: "doc"; id: string } | { kind: "image"; asset: AssetRow; title: string };
@@ -51,7 +51,7 @@ type Viewed = { title: string; pages: ViewerPage[]; showing: string; details: st
  * The DM's handouts (features section 16): a PDF being uploaded, what is
  * showing now, with a way to look at each as players see it and to close
  * it for everyone, and a form to show a new one from the room's library or
- * a fresh upload (docs/design-v1-pdf-handouts.md 4.1, 8.2 and 8.4).
+ * a fresh upload (docs/design/design-v1-pdf-handouts.md 4.1, 8.2 and 8.4).
  */
 export function HandoutsSection() {
   const handouts = useRoomView((s) => s.view?.handouts);
@@ -175,7 +175,7 @@ export function HandoutsSection() {
                 title={h.title}
                 detail={`To ${audienceText(h.to, members ?? {})}${pages.length > 1 ? `, ${pageCountText(pages.length)}` : ""}`}
                 trailing={
-                  // Hide, not Close: it stops showing the handout to players, and Close is the app's word for closing a pane (docs/design-v1-icons.md 2.3).
+                  // Hide, not Close: it stops showing the handout to players, and Close is the app's word for closing a pane (docs/design/design-v1-icons.md 2.3).
                   <Button variant="danger" size="sm" icon="hidden" onClick={() => actions.dispatch({ t: "handout.close", handoutId: h.id })}>
                     Hide
                   </Button>
@@ -263,15 +263,15 @@ function ShowHandout(props: {
   const uploading = jobPageIds(pdf.job);
   const inDocs = useMemo(() => new Set(docs.flatMap((d) => d.pages.map((p) => p.assetId))), [docs]);
   const loose = library?.filter((a) => !inDocs.has(a.id) && !uploading.has(a.id)) ?? null;
-  // The DM's own images first, then the starter picks apart (docs/design-v1-starter-art.md 5), as the Library panel lists them.
+  // The DM's own images first, then the starter picks apart (docs/design/design-v1-starter-art.md 5), as the Library panel lists them.
   const looseApart = apartFromStarter(loose ?? [], (a) => a);
-  // A paste takes Upload a file's path, a PDF to its page job and an image shrunk and uploaded, while the form is open with nothing picked (docs/design-v1-paste.md 1.2).
+  // A paste takes Upload a file's path, a PDF to its page job and an image shrunk and uploaded, while the form is open with nothing picked (docs/design/design-v1-paste.md 1.2).
   // Closed, the form takes nothing, and its render never reaches upload.
   const paste = usePasteTarget(form, { accepts: "image-or-pdf", takes: open && !pick ? "open" : "none", disabled: status !== null || !open, closed: !open, onFile: (f) => upload(f) });
   /*
    * The room's "Use the pasted image" opens the form and uploads its
    * picture, which replaces a pick as choosing another file does, keeping
-   * a typed title and the audience (docs/design-v1-paste.md 4). It is
+   * a typed title and the audience (docs/design/design-v1-paste.md 4). It is
    * taken only once the form is open, where upload is in reach.
    */
   const handed = useHandoff("handout", open && status === null, (file) => upload(file));
@@ -333,7 +333,7 @@ function ShowHandout(props: {
     }
   };
 
-  // A starter picture is copied in as a handout image and picked as an upload is, titled with the work's name (docs/design-v1-starter-art.md 4).
+  // A starter picture is copied in as a handout image and picked as an upload is, titled with the work's name (docs/design/design-v1-starter-art.md 4).
   const pickStarter = (row: AssetRow, name: string) => {
     setStarter(false);
     setError(null);

@@ -28,7 +28,7 @@ import type { RoomActions, RoomView } from "./types.ts";
 import { useRoomActions, useRoomRoleIfAny, useRoomStore, useRoomUi } from "./view.ts";
 
 /**
- * The room's keyboard shortcuts (features 13, docs/design-v1-dm-tools.md
+ * The room's keyboard shortcuts (features 13, docs/design/design-v1-dm-tools.md
  * 3.14): one table of key, roles, condition and action, and one window
  * listener the Room page mounts. Undo and redo are two rows of it.
  *
@@ -85,7 +85,7 @@ export function isTextField(target: unknown): boolean {
 
 /**
  * Where an arrow key's step takes a token on a hex scene
- * (docs/design-v1-hex-grids.md HX-D15): its reference hex moves one along
+ * (docs/design/design-v1-hex-grids.md HX-D15): its reference hex moves one along
  * the lattice's own numbering. On hex rows Left and Right go along the row,
  * and Up and Down take the same column's hex in the next row, which lies
  * right of straight from an even row and left of it from an odd one, so
@@ -97,7 +97,7 @@ export function hexNudge(g: HexGrid, token: PlacedToken, step: readonly [number,
   return placedOnHex(g, token, { col: ref.col + step[0], row: ref.row + step[1] });
 }
 
-/** The groups whose arrow and Page keys move their own choice, value, tab or item, and the split's bar, whose grip is a separator they move (docs/design-v1-split-panel.md 9.1). */
+/** The groups whose arrow and Page keys move their own choice, value, tab or item, and the split's bar, whose grip is a separator they move (docs/design/design-v1-split-panel.md 9.1). */
 const NAVIGATES = '[role="radiogroup"], [role="slider"], [role="tablist"], [role="listbox"], [role="menu"], [role="separator"]';
 
 /**
@@ -195,14 +195,14 @@ export const stageKeysSlot = scopeSlot(() => ({
 }));
 
 /**
- * The side panel's S (docs/design-v1-layout-hierarchy.md 4.1): the Room
+ * The side panel's S (docs/design/design-v1-layout-hierarchy.md 4.1): the Room
  * page sets `toggle` while its layout is 900 px or wider, where there is a
  * side panel, and clears it below, so S does nothing on a phone.
  */
 export const sidePanelKeysSlot = scopeSlot(() => ({ toggle: null as (() => void) | null }));
 
 /**
- * O between the side panel's two panels (docs/design-v1-split-panel.md
+ * O between the side panel's two panels (docs/design/design-v1-split-panel.md
  * 9.4): the Room page sets `other` while two show and clears it otherwise,
  * so O does nothing with one panel or on a phone.
  */
@@ -247,7 +247,7 @@ function toolShortcut(id: string, key: string, does: string, roles: Shortcut["ro
     when: (env) => {
       if (!env.tools.some((t) => t.id === id)) return false;
       if (id !== "draw" || env.role === "dm") return true;
-      // The Draw tool's own rule (docs/design-v1-dm-tools.md 3.9).
+      // The Draw tool's own rule (docs/design/design-v1-dm-tools.md 3.9).
       const s = env.getState();
       return drawsAllowed(s.view?.meta.settings ?? {}, s.you?.memberId ?? "");
     },
@@ -256,7 +256,7 @@ function toolShortcut(id: string, key: string, does: string, roles: Shortcut["ro
         env.ui.setTool(id);
         return;
       }
-      // The key of the tool in use shows its tucked options again, and never tucks them, so a held or repeated key never hides them (docs/design-v1-tool-options.md 5.5).
+      // The key of the tool in use shows its tucked options again, and never tucks them, so a held or repeated key never hides them (docs/design/design-v1-tool-options.md 5.5).
       tuckEvent(env.scope, id, { kind: "show", tool: id });
       cycleTool(env, id, e.shiftKey && hasCase(shortcutKeys()[`tool:${id}`] ?? key));
     },
@@ -267,7 +267,7 @@ function toolShortcut(id: string, key: string, does: string, roles: Shortcut["ro
  * Whether a binding is a letter with case, where Shift goes back. A digit
  * or a symbol may need Shift just to be typed on this layout (`?`, a French
  * keyboard's digits), so there every press goes forward
- * (docs/design-v1-tool-cycle.md 2.3).
+ * (docs/design/design-v1-tool-cycle.md 2.3).
  */
 function hasCase(binding: string): boolean {
   return binding.toUpperCase() !== binding;
@@ -275,7 +275,7 @@ function hasCase(binding: string): boolean {
 
 /**
  * A second press of the tool's key moves to the next option of its main
- * choice (docs/design-v1-tool-cycle.md 4.1). It moves nothing while the
+ * choice (docs/design/design-v1-tool-cycle.md 4.1). It moves nothing while the
  * tool's state shows no choice or a drag on the map is under way, and says
  * why instead where a move would lose work. A move closes any open
  * popover first, as a tool change does, and says where it landed.
@@ -335,7 +335,7 @@ function viewScene(env: ShortcutEnv) {
 
 /**
  * Q and E turn the view, on this scene only and never as a pick
- * (docs/design-v1-isometric-view.md 6.5). Where the board shows Top-down
+ * (docs/design/design-v1-isometric-view.md 6.5). Where the board shows Top-down
  * they say why they did nothing, which no change on the board would.
  */
 function turnKey(env: ShortcutEnv, by: 1 | -1): void {
@@ -347,7 +347,7 @@ function turnKey(env: ShortcutEnv, by: 1 | -1): void {
 }
 
 /**
- * I, Q and E (docs/design-v1-isometric-view.md 6.5), for everyone, in the
+ * I, Q and E (docs/design/design-v1-isometric-view.md 6.5), for everyone, in the
  * table only once Isometric is offered (features/view/choice.ts isoOffered),
  * so neither the sheet nor FEATURES.md lists a key that does nothing.
  */
@@ -787,7 +787,7 @@ const DM = ["dm"] as const;
 const PLAYER = ["player"] as const;
 
 /**
- * The isometric view's row beside its keys (docs/design-v1-isometric-view.md
+ * The isometric view's row beside its keys (docs/design/design-v1-isometric-view.md
  * 6.2: the standees' tap, in canvas/Stage.tsx and state/selection.ts), in
  * the table only once Isometric is offered, as VIEW_SHORTCUTS are.
  */
@@ -863,7 +863,7 @@ export const BEHAVIORS: readonly Behavior[] = [
     device: "mouse",
   },
 
-  // Dragging attached tokens, with a mouse or a finger alike (docs/design-v1-attach.md 4.2 and 4.6): canvas/Stage.tsx and features/attach/groups.ts dragLead, dragNamed.
+  // Dragging attached tokens, with a mouse or a finger alike (docs/design/design-v1-attach.md 4.2 and 4.6): canvas/Stage.tsx and features/attach/groups.ts dragLead, dragNamed.
   {
     id: "dragHolder",
     input: "Drag a token that carries others",
@@ -890,7 +890,7 @@ export const BEHAVIORS: readonly Behavior[] = [
   },
   ...(isoOffered ? VIEW_BEHAVIORS : []),
 
-  // A roll button's one-roll options (docs/design-v1-roll-mode-menu.md 3): features/dice/useRollModeMenu.tsx and rollPress.ts. The keys are each surface's own, below.
+  // A roll button's one-roll options (docs/design/design-v1-roll-mode-menu.md 3): features/dice/useRollModeMenu.tsx and rollPress.ts. The keys are each surface's own, below.
   {
     id: "rollOptionsRight",
     input: "Right-click a roll button",
@@ -900,7 +900,7 @@ export const BEHAVIORS: readonly Behavior[] = [
   },
   { id: "rollOptionsHold", input: "Hold a roll button", does: "Open its one-roll options after half a second, without rolling. Tap a choice to roll once that way", roles: EVERYONE, device: "pointer" },
   { id: "rollOptionsReader", input: "Double-tap and hold a roll button with a screen reader", does: "Open its one-roll options. A plain double-tap still rolls", roles: EVERYONE, device: "pointer" },
-  // A stat block's ability boxes and the rolls they open (docs/design-v1-stat-block-rolls.md 3.3 and 5.1): features/dice/useAbilityMenu.tsx. Their keys are under Token and character fields.
+  // A stat block's ability boxes and the rolls they open (docs/design/design-v1-stat-block-rolls.md 3.3 and 5.1): features/dice/useAbilityMenu.tsx. Their keys are under Token and character fields.
   {
     id: "abilityBoxOpen",
     input: "Tap, click, hold or right-click an ability box in a stat block",
@@ -1100,7 +1100,7 @@ export const BEHAVIORS: readonly Behavior[] = [
     device: "keys",
     surface: "Dice",
   },
-  // A throw of your own dice: features/dice/throw/store.ts, through DicePanel.tsx's capture-phase listeners (docs/design-v1-roll-animation.md 3.5). A tap is listed with the key, as the two do the same.
+  // A throw of your own dice: features/dice/throw/store.ts, through DicePanel.tsx's capture-phase listeners (docs/design/design-v1-roll-animation.md 3.5). A tap is listed with the key, as the two do the same.
   {
     id: "diceThrowEnd",
     input: "Any tap or key",
@@ -1110,11 +1110,11 @@ export const BEHAVIORS: readonly Behavior[] = [
     device: "keys",
     surface: "Dice",
   },
-  // The group save's damage field: features/dice/groupSave/GroupSave.tsx (docs/design-v1-roll-options.md 14).
+  // The group save's damage field: features/dice/groupSave/GroupSave.tsx (docs/design/design-v1-roll-options.md 14).
   { id: "groupDamageEnter", input: "Enter", does: "Roll the parts, or take the typed numbers", roles: DM, when: "in the group save's damage field", device: "keys", surface: "Dice" },
-  // A player's creature tabs: features/dice/RollOptions.tsx CreatureTabs, lib/a11y.ts tabKeyIndex (docs/design-v1-dice-pass.md 6.6).
+  // A player's creature tabs: features/dice/RollOptions.tsx CreatureTabs, lib/a11y.ts tabKeyIndex (docs/design/design-v1-dice-pass.md 6.6).
   { id: "diceTabs", input: "Left, Right, Home, End", does: "Pick another creature to roll for", roles: EVERYONE, when: "in the Dice panel's creature tabs", device: "keys", surface: "Dice" },
-  // A roll button's one-roll options: features/dice/useRollModeMenu.tsx, components/Menu.tsx and menuKeys.ts for its list (docs/design-v1-roll-mode-menu.md 3.3).
+  // A roll button's one-roll options: features/dice/useRollModeMenu.tsx, components/Menu.tsx and menuKeys.ts for its list (docs/design/design-v1-roll-mode-menu.md 3.3).
   {
     id: "diceRollOptions",
     input: "ContextMenu, Shift+F10",
@@ -1134,7 +1134,7 @@ export const BEHAVIORS: readonly Behavior[] = [
     surface: "Dice",
   },
 
-  // Request a roll's fields: features/rolls/RequestSheet.tsx, one form whose submit is Send (docs/design-v1-roll-request.md 8).
+  // Request a roll's fields: features/rolls/RequestSheet.tsx, one form whose submit is Send (docs/design/design-v1-roll-request.md 8).
   { id: "rollAskEnter", input: "Enter", does: "Send the request", roles: DM, when: "in Request a roll's DC or note field", device: "keys", surface: "Roll requests" },
   // The player's roll card: features/rolls/PlayerRolls.tsx. Send always took Enter in the Total field, and the sheet now lists it.
   { id: "rollCardSend", input: "Enter", does: "Send the total you typed", roles: PLAYER, when: "in a roll card's Total field", device: "keys", surface: "Roll requests" },
@@ -1242,7 +1242,7 @@ export const BEHAVIORS: readonly Behavior[] = [
     device: "pointer",
   },
 
-  // Every image entry: features/images/pasteRouter.ts, which picks the one a paste lands in (docs/design-v1-paste.md 1.3).
+  // Every image entry: features/images/pasteRouter.ts, which picks the one a paste lands in (docs/design/design-v1-paste.md 1.3).
   {
     id: "pickerPaste",
     input: "Ctrl+V (Cmd+V on a Mac)",

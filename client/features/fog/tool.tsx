@@ -99,7 +99,7 @@ const Options = retryableLazy(() => import("./Options.tsx"), { roles: ["dm"] });
 /**
  * The fog tool (design sections 13.1 and 13.2): reveal or hide with a
  * rectangle, a polygon or a brush, or reveal a builder room with one tap,
- * on a hex scene the hexes its wall lines close in (docs/design-v1-hex-grids.md HX-D10).
+ * on a hex scene the hexes its wall lines close in (docs/design/design-v1-hex-grids.md HX-D10).
  * Edits go to the draft, which only the DM sees, until "Reveal to players"
  * publishes it. Live mode sends each edit to the players at once.
  */

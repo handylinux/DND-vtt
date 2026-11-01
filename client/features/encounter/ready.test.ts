@@ -128,7 +128,7 @@ describe("Hold and Ready markers", () => {
   });
 });
 
-describe("whose Reaction a creature spends (docs/design-v1-combat-flow.md 3.6.8)", () => {
+describe("whose Reaction a creature spends (docs/design/design-v1-combat-flow.md 3.6.8)", () => {
   /** Thorn's fight with his Wildfire Spirit listed under him, his Spiritual Weapon not listed, and his owl taking its own turn. */
   function party(): RoomState {
     const state = fight();

@@ -8,7 +8,7 @@ import { chromium, type Browser, type BrowserContext, type CDPSession, type Loca
 import { barControl, ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, pickTool, reopenRoom, resultLine, resultLines, Shots, sideTabName, sleep, SocketWatch, startServer, tapCell, Touches, waitFor, type ResultLine, type Server, type TouchAt } from "./harness.ts";
 
 /**
- * The one-roll mode menu (docs/design-v1-roll-mode-menu.md), its steps
+ * The one-roll mode menu (docs/design/design-v1-roll-mode-menu.md), its steps
  * labeled `dpf1-`, on the real server serving the production build: each
  * roll the Dice panel makes for one creature, its free formula, its two
  * Again buttons, a save, an ability check, a skill, Initiative and Roll
@@ -27,7 +27,7 @@ import { barControl, ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, pickToo
  * Again) answer no hold, right-click or key with one.
  *
  * Every context runs under reduced motion, so a result shows at once and
- * no dice are in the air to take the next tap (docs/design-v1-roll-animation.md 3.5).
+ * no dice are in the air to take the next tap (docs/design/design-v1-roll-animation.md 3.5).
  *
  * It runs with `pnpm test:e2e` on E2E_PORT plus thirty-nine, one file
  * after another as the others. The other environment variables are the

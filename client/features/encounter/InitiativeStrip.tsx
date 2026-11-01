@@ -130,7 +130,7 @@ export function InitiativeStrip(props: { placement: TurnPlacement; notice: boole
 export function FightWatch() {
   const dm = useYou().role === "dm";
   const roomId = useRoomView((s) => s.roomId);
-  // Recharge marks were once one tab's guesses, kept per tab: the room holds them now, so the old ones go as the room loads (docs/design-v1-combat-controls.md 3.6).
+  // Recharge marks were once one tab's guesses, kept per tab: the room holds them now, so the old ones go as the room loads (docs/design/design-v1-combat-controls.md 3.6).
   useEffect(() => {
     if (roomId) dropOldRechargeMarks(roomId);
   }, [roomId]);
@@ -496,7 +496,7 @@ type Notice = { id: string; text: string; suffix?: string; key?: Effect["key"] }
  * show the one it names.
  *
  * It shares the right of the map with the docked token action bar
- * (docs/design-v1-bar-dock.md 1.3, canvas/barDock.ts shareLane). It
+ * (docs/design/design-v1-bar-dock.md 1.3, canvas/barDock.ts shareLane). It
  * publishes its content's height and its first card's, and reads only the
  * bar's box, so neither feeds back on the other. Stacked, it stops 8 px
  * above the bar and says "Scroll for more" while that cuts it short.
@@ -507,7 +507,7 @@ type Notice = { id: string; text: string; suffix?: string; key?: Effect["key"] }
  * span the map over it (Room.tsx).
  * A map pane drawn as a card keeps left of the lane the same way, and
  * where the lane leaves it no room the same row stands for the cards,
- * whose tap closes the pane (docs/design-v1-look-pass-2.md 2.8).
+ * whose tap closes the pane (docs/design/design-v1-look-pass-2.md 2.8).
  *
  * It stops at the active tool's options, so it never covers Select
  * several's Actions. Where that leaves it under one whole card, as with
@@ -550,7 +550,7 @@ function FightAlerts() {
    * The dock's summary has no kind of its own for a save-ends, Regeneration
    * or recharge card (pages/fold.ts ColumnAlert), so they go as notices,
    * whose words are the card's own, keyed on their ids and words. A death
-   * save and the turn card have kinds of their own (docs/design-v1-combat-controls.md 4.6).
+   * save and the turn card have kinds of their own (docs/design/design-v1-combat-controls.md 4.6).
    */
   const cardLines = [
     ...saves.map((p) => `${saveAlertId(p)}\t${saveEndsWords(entryName(view, p.target), p.effect).head}`),
@@ -601,7 +601,7 @@ function FightAlerts() {
   const roomSummary = useDockSummary("room");
   const rolls = useAlertsSummaryEntry();
   /*
-   * The turn card (docs/design-v1-combat-controls.md 4.2) folds to its 44 px
+   * The turn card (docs/design/design-v1-combat-controls.md 4.2) folds to its 44 px
    * row under 600 px wide, and wherever the card unfolded would not stack
    * above a bar that shares the lane. It is drawn last and is never the
    * column's first card to the bar (firstCard skips it), so a turn card
@@ -712,7 +712,7 @@ function FightAlerts() {
     /*
      * Beside an upright phone's strip or its expanded bar, the row keeps 8
      * px above the band's last 44 px over the bar (barDock.ts restFloor,
-     * docs/design-v1-bar-compact.md 3.5), so a token can still be panned
+     * docs/design/design-v1-bar-compact.md 3.5), so a token can still be panned
      * in under it. Where no spot is left beside the resting strip, it
      * stands in the strip's header instead, its own tap kept, and the row
      * here is hidden meanwhile. The expanded bar's header draws no summary,
@@ -1178,7 +1178,7 @@ function FightAlerts() {
  * wrapper with `display: contents` or a marked stack, as the rolls use.
  * A card's own grid stays whole. A turn card is never
  * it: it lasts the whole turn, so it never moves the bar or forces the
- * summary row (docs/design-v1-combat-controls.md 4.2). Toast clearance
+ * summary row (docs/design/design-v1-combat-controls.md 4.2). Toast clearance
  * separately reads the whole column, so it counts turn cards too.
  */
 function firstCard(cards: HTMLElement): HTMLElement | null {
@@ -1207,7 +1207,7 @@ const OVERLAY_PAD = theme.space(2);
  * A time-up or a notice in the column: its words as a status, read out as
  * it arrives, and a quiet Dismiss. As a whole card that was a button, a
  * reader met no button and a tap dismissed it with nothing to say it would
- * (docs/design-v1-look-pass-2.md D27). Focusable from script, not by Tab,
+ * (docs/design/design-v1-look-pass-2.md D27). Focusable from script, not by Tab,
  * so a summary's tap can show it (pages/fold.ts focusAlert).
  */
 function AlertLine(props: { kind: "timeUp" | "notice"; id?: string; text: string; suffix?: string; danger?: boolean; lead?: ReactNode; onDismiss(): void }) {
@@ -1220,7 +1220,7 @@ function AlertLine(props: { kind: "timeUp" | "notice"; id?: string; text: string
       data-alert-id={props.id}
       style={{ ...card, display: "flex", alignItems: "center", gap: theme.space(2), minHeight: theme.touch, ...(props.danger ? { borderColor: theme.color.danger } : null) }}
     >
-      {/* Its kind before its words: the timer for time up, the effect's own art for one that ended (docs/design-v1-icons-2.md 4). Dismiss is the close every card's header draws, which leaves the words more room than they had. */}
+      {/* Its kind before its words: the timer for time up, the effect's own art for one that ended (docs/design/design-v1-icons-2.md 4). Dismiss is the close every card's header draws, which leaves the words more room than they had. */}
       {props.lead ? <span style={{ flex: "none", display: "grid", placeItems: "center", color: props.danger ? theme.color.dangerText : theme.color.textMuted }}>{props.lead}</span> : null}
       <p role="status" style={{ flex: 1, minWidth: 0, margin: 0, fontSize: theme.font.body14 }}>
         <RollResultLine text={props.text} suffix={props.suffix} />
@@ -1405,7 +1405,7 @@ function seqOf(entry: LogEntry): number {
 }
 
 /**
- * A concentration check (design 9.5, docs/design-v1-roll-options.md 6.2):
+ * A concentration check (design 9.5, docs/design/design-v1-roll-options.md 6.2):
  * Passed dismisses it and Failed ends the creature's concentration, with
  * Roll beside them for whoever answers it, by the creature's preset and
  * the card's own Adv and Dis, so Bless, Bane and Exhaustion count and a

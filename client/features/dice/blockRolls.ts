@@ -18,7 +18,7 @@ import { marksTest } from "./proficiencyPresentation.ts";
 import type { RollModeCapability } from "./rollMode.ts";
 
 /**
- * Rolling from a stat block's ability boxes (docs/design-v1-stat-block-rolls.md),
+ * Rolling from a stat block's ability boxes (docs/design/design-v1-stat-block-rolls.md),
  * free of React: whose block rolls, and each ability's rows, built from the
  * Dice panel's own rules so a roll is one roll wherever it shows.
  */
@@ -165,7 +165,7 @@ export function abilityRows(ability: AbilityKey, input: AbilityRowsInput): Abili
       tag: [route.kind === "answer" ? "Asked" : route.kind === "ask" ? "Asks" : "", presetTag(preset)].filter(Boolean).join(" "),
       ...(level !== undefined ? { level } : {}),
       route: route.kind,
-      // An ask has no one-roll options (docs/design-v1-roll-mode-menu.md 4). An answer keeps the request's visibility, so Secret stays with its reason (D-261031-169).
+      // An ask has no one-roll options (docs/design/design-v1-roll-mode-menu.md 4). An answer keeps the request's visibility, so Secret stays with its reason (D-261031-169).
       capability: route.kind === "ask" ? null : route.kind === "answer" ? { d20: true, visibility: "request" } : { d20: true, visibility: "selectable", ...(secretTap ? { secretByDefault: true } : {}) },
       rowKey,
       source: JSON.stringify([rowKey, sourceRoute, test, bonus, preset, creature, input.ask]),

@@ -141,7 +141,7 @@ export const FEATHER_NOTICE =
 export const GAME_ICON_CHANGES = "Black background square removed, fill set to currentColor so the app can tint it.";
 
 /**
- * The token icons (docs/design-v1-dm-tools.md 3.12): all 4,180 icons of the
+ * The token icons (docs/design/design-v1-dm-tools.md 3.12): all 4,180 icons of the
  * pinned commit, credited by author rather than by file, since 4,180 rows
  * would bury every other credit. The index the build writes beside them
  * lists every file with its author, and so its license. The author table
@@ -265,7 +265,7 @@ function stampCredits(): Credit[] {
 }
 
 /**
- * The starter packs (docs/design-v1-starter-art.md 9), credited from their
+ * The starter packs (docs/design/design-v1-starter-art.md 9), credited from their
  * catalog, which scripts/starter-art.ts writes with CREDITS.md's section.
  * One credit per page a license is stated on: a pack published on one page
  * is one credit, and a pack whose works each have a page of their own (a
@@ -323,7 +323,7 @@ export const CREDITS: CreditGroup[] = [
     heading: "Interface icons",
     credits: [
       {
-        // Path data copied into the app's own icon component, never the package (docs/design-v1-icons.md 6).
+        // Path data copied into the app's own icon component, never the package (docs/design/design-v1-icons.md 6).
         files: ["client/components/Icon.tsx"],
         title: "Lucide",
         author: "Lucide Contributors, with portions by Cole Bemis as part of Feather (MIT)",
@@ -464,7 +464,7 @@ export const CREDITS: CreditGroup[] = [
     heading: "Safety tools",
     credits: [
       {
-        // The card's idea, not its text: the app's words are its own (docs/design-v1-dm-tools.md 3.11).
+        // The card's idea, not its text: the app's words are its own (docs/design/design-v1-dm-tools.md 3.11).
         files: ["client/features/xcard/"],
         title: "X-Card",
         author: "John Stavropoulos",

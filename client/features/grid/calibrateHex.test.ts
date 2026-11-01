@@ -23,7 +23,7 @@ function sameLattice(g: HexGrid, a: Calibration, b: Calibration): boolean {
   return true;
 }
 
-describe("Line up grid's box on hexes (docs/design-v1-hex-grids.md HX-D12)", () => {
+describe("Line up grid's box on hexes (docs/design/design-v1-hex-grids.md HX-D12)", () => {
   test("holds 7 hexes: 3 by 2.89 cells on hex rows, 2.89 by 3 on hex columns", () => {
     assert.ok(near(3 * HEX_BOX_DEPTH, 2 * HEX_S + 2 * HEX_R, 1e-12));
     assert.ok(near(3 * HEX_BOX_DEPTH, 2.89, 0.01));
@@ -101,7 +101,7 @@ describe("Line up grid's box on hexes (docs/design-v1-hex-grids.md HX-D12)", () 
   });
 });
 
-describe("a found hex grid's calibration (docs/design-v1-grid-detect.md 10.7)", () => {
+describe("a found hex grid's calibration (docs/design/design-v1-grid-detect.md 10.7)", () => {
   test("any found center gives the lattice drawn, its origin at or after the image's corner and never past a row, as the box's does (property)", () => {
     const random = rng(9191);
     for (const g of [ROWS, COLUMNS] as const) {

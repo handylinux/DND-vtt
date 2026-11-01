@@ -5,7 +5,7 @@ import { sortedById } from "./tokens.ts";
 import { gone, invalid, type Tx } from "./tx.ts";
 
 /**
- * Journal pages (docs/design-v1-dm-tools.md 3.7), all the DM's. A page is
+ * Journal pages (docs/design/design-v1-dm-tools.md 3.7), all the DM's. A page is
  * a list of blocks, and a secret is a block with a flag, so the projection
  * drops whole blocks and never parses text.
  *

@@ -10,7 +10,7 @@ import { EMPTY_PC_STATS } from "./rules/pcStats.ts";
 import { AT, DM, P1, P2, actor, character, effect, env, room } from "./testutil.ts";
 
 /**
- * Who edits a character's stat block (docs/design-v1-pc-stats.md 4.1): the
+ * Who edits a character's stat block (docs/design/design-v1-pc-stats.md 4.1): the
  * DM and the character's players, co-owners included, with no room
  * setting, and no one else.
  */
@@ -70,7 +70,7 @@ describe("stat block permissions", () => {
   });
 });
 
-/** A sync's record as its patch sends it (docs/design-v1-resync.md 2.1). */
+/** A sync's record as its patch sends it (docs/design/design-v1-resync.md 2.1). */
 const RECORD: DdbSyncPatch = { from: "123456789", base: { level: 6, ac: 15 }, rolls: { "0123456789ab": { k: "w:00000000000a", h: "abcdef012345" } } };
 
 /** Bree with a block, a record, a DM's note and a hidden effect, played by p1 and p2, and Cy by p2 alone. */
@@ -103,7 +103,7 @@ function dmSecretly(state: RoomState): RoomState {
   return hidden.state;
 }
 
-describe("a re-sync's permissions (docs/design-v1-resync.md 4)", () => {
+describe("a re-sync's permissions (docs/design/design-v1-resync.md 4)", () => {
   test("an owner, a co-owner and the DM write the record, alone or with the block, and remove it", () => {
     assert.equal(decide(sync({ ddbSync: RECORD }), P1, synced()), "ok");
     assert.equal(decide(sync({ ddbSync: RECORD, stats: { saves: ["wis"] }, level: 6 }), P2, synced()), "ok");
@@ -221,7 +221,7 @@ describe("a re-sync's permissions (docs/design-v1-resync.md 4)", () => {
   });
 });
 
-describe("the class resources part of expect (docs/design-v1-ddb-resources.md 5)", () => {
+describe("the class resources part of expect (docs/design/design-v1-ddb-resources.md 5)", () => {
   const withRage = (used: number): RoomState => {
     const state = synced();
     state.characters.bree = { ...state.characters.bree!, resources: [{ id: "rage", name: "Rage", max: 3, used, reset: "shortOne", preset: "barbarian-rage", level: 3, atLevel: 5 }] };

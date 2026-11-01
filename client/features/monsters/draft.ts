@@ -51,7 +51,7 @@ export function tidy(block: StatBlock): StatBlock {
  * `before` is the block as the editor opened it, never as it is now: a line
  * another DM or a co-owner changed meanwhile is then kept unless this draft
  * changed the same line, where the later save wins
- * (docs/design-v1-companion-stat-blocks.md 6.2). An edit that changed
+ * (docs/design/design-v1-companion-stat-blocks.md 6.2). An edit that changed
  * nothing sends nothing.
  */
 export function monsterPatch(before: StatBlock, after: StatBlock): MonsterPatch {
@@ -69,7 +69,7 @@ export function monsterPatch(before: StatBlock, after: StatBlock): MonsterPatch 
  * Whether the editor holds anything to lose: text in the paste box, or a
  * draft that differs from the block as the editor opened it. Never against
  * the block as it is now, so a co-owner's edit arriving meanwhile leaves
- * an untouched draft clean (docs/design-v1-companion-stat-blocks.md 6.2).
+ * an untouched draft clean (docs/design/design-v1-companion-stat-blocks.md 6.2).
  */
 export function isDirty(opened: StatBlock, draft: StatBlock, pasted: string): boolean {
   return pasted.trim() !== "" || stableStringify(tidy(draft)) !== stableStringify(tidy(opened));
@@ -178,7 +178,7 @@ export function viewOf(m: StatBlock): StatBlockMonster {
   return view;
 }
 
-/** What a companion block's answered save comes to while its editor is open (docs/design-v1-companion-stat-blocks.md 6.2). */
+/** What a companion block's answered save comes to while its editor is open (docs/design/design-v1-companion-stat-blocks.md 6.2). */
 export type BlockSaveOutcome =
   | { kind: "saved" }
   /** The draft stays, with the problem above the fields. `retryInMs` keeps Save off that long, past the saves budget. */

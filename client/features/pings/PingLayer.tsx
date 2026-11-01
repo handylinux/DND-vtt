@@ -16,16 +16,16 @@ import { markOwner } from "./who.ts";
  * pinger's color and fade within the store's 3 s, with the pinger's name
  * when it is someone else. They animate by the board's one frame clock
  * (frameClock.ts), which runs only while a ping is on screen (design
- * 14.2). In low power (docs/design-v1-dm-tools.md 3.15) a ping is one
+ * 14.2). In low power (docs/design/design-v1-dm-tools.md 3.15) a ping is one
  * still ring for its 3 s, with no loop, until the store sweeps it.
  *
  * In Isometric a ping draws in the drag layer on the ground at its drawn
- * height, its name standing over it (docs/design-v1-isometric-view.md 5.3).
+ * height, its name standing over it (docs/design/design-v1-isometric-view.md 5.3).
  *
  * This layer only draws. A ping's tone and buzz, the clock and the select
  * tool's hold-to-ping run in the board's ping controller
  * (PingController.ts), mounted once outside both drawing trees
- * (docs/design-v1-isometric-view.md 5.1).
+ * (docs/design/design-v1-isometric-view.md 5.1).
  */
 
 const PULSE_MS = 1_000;

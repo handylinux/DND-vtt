@@ -6,7 +6,7 @@ import { gridOfShape, isHex } from "./grid.ts";
 import { hexInScene, type HexGrid } from "./hex.ts";
 
 /*
- * The pit border counted ahead (docs/design-v1-traps.md 6.7). A pit's walls
+ * The pit border counted ahead (docs/design/design-v1-traps.md 6.7). A pit's walls
  * count from the moment its trap exists, as doors count whatever their
  * state: the split's counting pass and the potential sight pieces read the
  * scene with every edge a pit can raise or flatten counted as a piece of

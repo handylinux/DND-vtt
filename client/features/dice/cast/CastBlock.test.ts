@@ -20,7 +20,7 @@ registerHooks({ load(url, context, next) {
 } });
 
 /*
- * The sends that lead the Dice panel's options (docs/design-v1-player-save-spell.md
+ * The sends that lead the Dice panel's options (docs/design/design-v1-player-save-spell.md
  * 3.2): a send the open block shows in place is left to it only while that
  * block draws, and every other send is named for its caster and spell.
  */
@@ -194,7 +194,7 @@ describe("the sends leading the options", () => {
   });
 });
 
-describe("a block whose group is folded (docs/design-v1-dice-pass.md 6.6)", () => {
+describe("a block whose group is folded (docs/design/design-v1-dice-pass.md 6.6)", () => {
   const HOLD = { spell: "Hold Person", roll: "hp", sent: "h1", opened: 1 };
   /** The Spells fold row, with its folded line. */
   function spellsFold(markup: string): string {
@@ -241,7 +241,7 @@ describe("a block whose group is folded (docs/design-v1-dice-pass.md 6.6)", () =
   });
 });
 
-describe("Ask for saves in its row (docs/design-v1-dice-pass.md 7.3)", () => {
+describe("Ask for saves in its row (docs/design/design-v1-dice-pass.md 7.3)", () => {
   test("wears the option buttons' outline, as it acts beside Attack and Damage", async () => {
     const { theme } = await import("../../../lib/theme.ts");
     const markup = render({ picked: "c:thorn-c", cast: null });

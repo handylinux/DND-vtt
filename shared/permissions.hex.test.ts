@@ -8,7 +8,7 @@ import { hexCenter, type Hex, type HexGrid } from "./rules/hex.ts";
 import { DM, P1, actor, character, room, scene, token, trap } from "./testutil.ts";
 
 /**
- * Phase H1's line on a hex scene (docs/design-v1-hex-grids.md section 6,
+ * Phase H1's line on a hex scene (docs/design/design-v1-hex-grids.md section 6,
  * HX-D20): the server refuses every op whose rules are not hex yet, in the
  * words of the limit lines, and reads a companion's reach and a player's
  * placement by hexes.

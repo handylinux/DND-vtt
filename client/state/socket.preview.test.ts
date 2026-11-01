@@ -9,7 +9,7 @@ import { createRoomStore } from "./store.ts";
 import { FakeClock } from "./testing.ts";
 
 /**
- * View as a player's socket (docs/design-v1-per-player-vision.md 7.4,
+ * View as a player's socket (docs/design/design-v1-per-player-vision.md 7.4,
  * security rule 8), against a stubbed server: read only, refusing any view
  * but the player's, and ending on any close before its first snapshot so
  * the preview can say it could not load.

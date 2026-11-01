@@ -11,7 +11,7 @@ import { Connection } from "./connection.ts";
 import { buildSnapshot, publishBatch } from "./fanout.ts";
 
 /*
- * A per-player scene (docs/design-v1-per-player-vision.md 6.2): each sight
+ * A per-player scene (docs/design/design-v1-per-player-vision.md 6.2): each sight
  * holder's own sight. The fan-out's projection classes (section 6.9) share
  * a raster only between viewers with the same sources, so no player's `ev`
  * carries what another player's creatures see, and applying each socket's

@@ -84,7 +84,7 @@ let config: Promise<{ searchEnabled: boolean }> | undefined;
 
 /**
  * Whether the server can search the web, from GET /api/config. Openverse
- * needs no key, so since wave 5 a server always can (docs/design-v1-dm-tools.md
+ * needs no key, so since wave 5 a server always can (docs/design/design-v1-dm-tools.md
  * 3.13), and the tab hides only when the config cannot be read. A failed
  * read counts as no search, and is tried again next time.
  */

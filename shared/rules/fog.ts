@@ -140,7 +140,7 @@ export function isCellFullyFogged(tiles: TileMap, sceneId: string, cell: Cell): 
 
 /**
  * The section 13.4 test: every occupied cell of the token is fully fogged.
- * On hexes, every fog sub-cell inside its hexes (docs/design-v1-hex-grids.md
+ * On hexes, every fog sub-cell inside its hexes (docs/design/design-v1-hex-grids.md
  * HX-D10), so a hex half in a revealed cell shows the creature only when a
  * revealed sub-cell lies inside one of its hexes. With the scene's sight
  * walls as `clip` (vision.ts sightClipOf), only the sub-cells the wall
@@ -257,7 +257,7 @@ function rasterOf(shape: FogShape, bounds: Bounds, grid: Grid): Raster | null {
     }
     case "cells": {
       if (isHex(grid)) {
-        // On a hex scene a key names a hex (docs/design-v1-hex-grids.md HX-D10), which covers the sub-cells whose
+        // On a hex scene a key names a hex (docs/design/design-v1-hex-grids.md HX-D10), which covers the sub-cells whose
         // centers it holds, the ones a creature standing there is read on.
         const subs = new Set<number>();
         let sx0 = Number.POSITIVE_INFINITY;

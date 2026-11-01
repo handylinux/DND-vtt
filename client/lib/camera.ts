@@ -9,7 +9,7 @@ import type { ViewBox, ViewPoint } from "./view.ts";
  * stage's scale and position, so the stage takes the camera as is. In
  * Top-down the view is the world, in grid cells (design section 5), and a
  * world point reaches the camera only through `toView`, so no call site
- * mistakes one space for the other (docs/design-v1-isometric-view.md 4.1).
+ * mistakes one space for the other (docs/design/design-v1-isometric-view.md 4.1).
  */
 export type Camera = { x: number; y: number; scale: number };
 export type Point = { x: number; y: number };
@@ -39,7 +39,7 @@ export function cameraAt(screen: Point, at: ViewPoint, scale: number): Camera {
 }
 
 /**
- * The camera after a turn or a view switch (docs/design-v1-isometric-view.md
+ * The camera after a turn or a view switch (docs/design/design-v1-isometric-view.md
  * 4.2): panned so the world point that showed at `before` in the old view,
  * at `after` in the new, stays where it was on screen. The scale stays.
  */
@@ -108,7 +108,7 @@ export function rectClear(cam: Camera, rect: ViewBox, viewport: Size, insets: In
 /**
  * A starting view, Follow me or Bring everyone here: the camera that shows
  * the view point `at` at the viewport's center, at a zoom. Each device
- * centers the world point in its own view (docs/design-v1-isometric-view.md 4.2).
+ * centers the world point in its own view (docs/design/design-v1-isometric-view.md 4.2).
  */
 export function cameraForView(viewport: Size, at: ViewPoint, zoom: number): Camera {
   return cameraAt({ x: viewport.width / 2, y: viewport.height / 2 }, at, clampScale(zoom));
@@ -154,13 +154,13 @@ export function sceneMinScale(viewport: Size, bounds: { w: number; h: number }):
  * bound, as when an upright phone's token bar appeared over the map's
  * edge, that bound gives way to where its edge stood, so the camera may
  * come toward the bound or stay, and never jumps to it
- * (docs/design-v1-bar-compact.md 4, review BC-OPUS-7). The edges are
+ * (docs/design/design-v1-bar-compact.md 4, review BC-OPUS-7). The edges are
  * compared on screen, so a pinch that changes the scale keeps the rule.
  *
  * The scene's bounds stand for its box on screen, which holds in Top-down
  * only. Isometric (`ground`) keeps the ground under the clear area's
  * middle on the scene instead, since its diamond's box has empty corners
- * (docs/design-v1-isometric-view.md ISO-D14).
+ * (docs/design/design-v1-isometric-view.md ISO-D14).
  */
 export function keepInView(cam: Camera, viewport: Size, bounds: { w: number; h: number }, insets: Insets = NO_INSETS, marginPx = 64, from?: Camera, ground?: GroundMap): Camera {
   if (ground) return keepGroundInView(cam, viewport, bounds, insets, from, ground);
@@ -203,7 +203,7 @@ function keepGroundInView(cam: Camera, viewport: Size, bounds: { w: number; h: n
 
 /**
  * The camera after an upright phone's token bar moves the map to clear its
- * token (docs/design-v1-bar-compact.md 3.6, review BAR-ASTRA-07): `dy` in
+ * token (docs/design/design-v1-bar-compact.md 3.6, review BAR-ASTRA-07): `dy` in
  * the canvas's px, the move bounded as a pan from the camera as it stands
  * is, by the scene's bounds and the insets with the bar's cover. So the
  * move never takes the map further out than a pan could, and a camera

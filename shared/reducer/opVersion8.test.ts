@@ -11,7 +11,7 @@ import type { Env } from "./tx.ts";
  * step 7 to 8): a turn that started marked nothing on its row. Replay hands
  * the reducer the stored version, so a version 7 Next makes the very
  * encounter it made then, and a later stored restore's guard still matches
- * (docs/design-v1-combat-flow.md 11.4).
+ * (docs/design/design-v1-combat-flow.md 11.4).
  */
 const at = (seq: number, opVersion?: number): Env => ({ ...env(seq), ...(opVersion === undefined ? {} : { opVersion }) });
 

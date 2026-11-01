@@ -101,7 +101,7 @@ export function placedInLair(actor: Pick<Actor, "legendary" | "xp">, block: Stat
 /**
  * A creature's row as it joins a fight: In lair on where it stands placed
  * in its lair (`placedInLair`), so the switch says what its counts say
- * (docs/design-v1-combat-controls.md 13.4). Every path into a fight builds
+ * (docs/design/design-v1-combat-controls.md 13.4). Every path into a fight builds
  * its rows with this: a saved encounter's drop, and the tracker's and the
  * group bar's Start and Add (combat/state.ts useFightJoin). A saved line's
  * own choice, `inLair`, true or false, stands over the counts: a block

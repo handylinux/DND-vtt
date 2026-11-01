@@ -10,7 +10,7 @@ import { barControl, ConsoleWatch, openSideTab, OpSocket, pagePoint, pickOption,
 
 /**
  * The room, the browsers and the reach sweep of tool options in one row
- * (docs/design-v1-tool-options.md section 14), shared by options.e2e.ts
+ * (docs/design/design-v1-tool-options.md section 14), shared by options.e2e.ts
  * and the sweep files options-*.e2e.ts. Each file starts its own server
  * and browsers and builds its own room, so each sweep stands alone and the
  * CI shards (scripts/e2e-shard.ts) can run them side by side. One file
@@ -138,7 +138,7 @@ export const run = {
   sceneId: "",
   patId: "",
   thorn: { id: randomUUID(), characterId: randomUUID() },
-  /** Thorn's companion and a scene to send Thorn to, for the From control's chip and its disabled form (docs/design-v1-area-from-character.md 6). */
+  /** Thorn's companion and a scene to send Thorn to, for the From control's chip and its disabled form (docs/design/design-v1-area-from-character.md 6). */
   pip: randomUUID(),
   away: randomUUID(),
   goblins: [randomUUID(), randomUUID(), randomUUID()],
@@ -533,7 +533,7 @@ export const STATES: State[] = [
     async enter(p) {
       await selectTool(p, "v");
       await openSideTab(p, "Characters");
-      // Thorn's page, from his row unless it is open (docs/design-v1-look-pass.md 3.1).
+      // Thorn's page, from his row unless it is open (docs/design/design-v1-look-pass.md 3.1).
       const place = p.getByRole("tabpanel").getByRole("button", { name: "Place a token" });
       if (!(await place.isVisible())) await p.getByRole("tabpanel").getByRole("button", { name: /^Thorn/ }).first().click();
       await place.click();

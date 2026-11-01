@@ -40,7 +40,7 @@ function foggedRoom(): RoomState {
   return state;
 }
 
-describe("sys.dice (docs/design-v1-dice.md 5.1)", () => {
+describe("sys.dice (docs/design/design-v1-dice.md 5.1)", () => {
   test("a free roll writes one dice line with the roller, the tag, the batch and what was drawn", () => {
     const state = apply(room(), sysDice(asked(), [result("2d6+3", [4, 6], 13)]), P1, 7);
     const entry = state.log.at(-1)!;

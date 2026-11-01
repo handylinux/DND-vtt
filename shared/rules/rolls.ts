@@ -1,7 +1,7 @@
 import type { RollAnswer } from "../model.ts";
 
 /**
- * An answer's pass or fail in one order (docs/design-v1-roll-request.md
+ * An answer's pass or fail in one order (docs/design/design-v1-roll-request.md
  * 1.1), so the reducer, the cards and the results list always agree: the
  * DM's own mark, then for an answer written before wave 7 (no `tag`) its
  * stored result as it stands, then a condition that failed a rolled save,

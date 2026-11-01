@@ -7,7 +7,7 @@ import { srdTitle } from "./companionBlocks.ts";
 import { SIZE_WORDS } from "./resize.ts";
 
 /*
- * What a creature's header says it is (docs/design-v1-look-pass.md 2.11),
+ * What a creature's header says it is (docs/design/design-v1-look-pass.md 2.11),
  * the same words in the token panel and on a character's page, and what
  * its folded Stat block says it holds (3.3), as plain functions for node
  * --test.

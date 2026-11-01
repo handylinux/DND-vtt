@@ -19,7 +19,7 @@ export type MemberSummary = Pick<Member, "id" | "name" | "color">;
 /**
  * Step 1 of the player join's answer: the ticket, the players this device
  * may continue as, and the colors the room's DMs use now, one per DM, with
- * no names or ids (docs/design-v1-visual.md 4.4).
+ * no names or ids (docs/design/design-v1-visual.md 4.4).
  */
 export type JoinStep = { ticket: string; players: MemberSummary[]; dmColors: string[] };
 export type Me = {
@@ -41,15 +41,15 @@ export type AssetRow = {
   cellPx?: number;
   /** A starter map pick's answer only: where its measured grid's lines cross, when the build found it, on the image as stored. */
   originPx?: { x: number; y: number };
-  /** An Openverse image's credit, with the original's size (docs/design-v1-dm-tools.md 3.13). */
+  /** An Openverse image's credit, with the original's size (docs/design/design-v1-dm-tools.md 3.13). */
   credit?: AssetCredit;
-  /** For a DM only: whether the room's committed state names the image (docs/design-v1-dm-tools.md 3.19). */
+  /** For a DM only: whether the room's committed state names the image (docs/design/design-v1-dm-tools.md 3.19). */
   inUse?: boolean;
   /** The bytes the image's files take, when the server says. */
   bytes?: number;
-  /** A handout upload's answer only: whether this upload made the image, rather than reusing one the room had (docs/design-v1-pdf-handouts.md 3.9). */
+  /** A handout upload's answer only: whether this upload made the image, rather than reusing one the room had (docs/design/design-v1-pdf-handouts.md 3.9). */
   created?: boolean;
-  /** A starter pick's work key, `<pack>/<work>` (docs/design-v1-starter-art.md 5). Absent for the room's own uploads. */
+  /** A starter pick's work key, `<pack>/<work>` (docs/design/design-v1-starter-art.md 5). Absent for the room's own uploads. */
   starter?: string;
   /** A starter pick's SHA-256 in hex, sent with `starter`, to tell whether this page's catalog describes the file the room holds. */
   sha256?: string;
@@ -59,17 +59,17 @@ export type { SearchResult, SearchSource };
 /** Who a device with no member in the room becomes on a DM claim (design 10.2). */
 export type DmClaimChoice = { name?: string; memberId?: MemberId };
 /** `device` is a rough label from the user agent, such as "Safari on iPhone". `current` marks the calling device. */
-/** `online`: the device has a socket open in the room now. `display` marks a table display (docs/design-v1-dm-tools.md 3.1), signed out the same way. */
+/** `online`: the device has a socket open in the room now. `display` marks a table display (docs/design/design-v1-dm-tools.md 3.1), signed out the same way. */
 export type DmDevice = { sessionId: string; memberId: MemberId; device: string; lastSeenAt: string; online: boolean; current: boolean; display?: true };
 /** One of this device's own invites from the last hour, found by its expiry time. */
 export type DmInviteState = { expiresAt: string; used: boolean };
-/** A table display's pairing code (docs/design-v1-dm-tools.md 3.1): `link` is the path `/display#code=<code>`, good once within 10 minutes. */
+/** A table display's pairing code (docs/design/design-v1-dm-tools.md 3.1): `link` is the path `/display#code=<code>`, good once within 10 minutes. */
 export type DisplayCode = { code: string; link: string; expiresAt: string };
 /** Who a table display is in its room: no member, only an id no member can have. */
 export type DisplayMe = { roomId: string; roomName: string; role: "display"; memberId: string };
 /**
  * A page of the log's archive, projected for the caller
- * (docs/design-v1-log-history.md 2.2). Its cursors are its own oldest and
+ * (docs/design/design-v1-log-history.md 2.2). Its cursors are its own oldest and
  * newest lines. A full page offers the next one in both directions, which
  * may come back empty. A short page ends the direction it was read in, and
  * an empty one names no cursor at all.
@@ -83,14 +83,14 @@ export type LogPage = {
   nextAfter?: string | null;
   /**
    * The member a page asked for `as` was answered as, a DM's preview of
-   * that player (docs/design-v1-per-player-vision.md 7.4, D-261026-10).
+   * that player (docs/design/design-v1-per-player-vision.md 7.4, D-261026-10).
    * Absent from every other page.
    */
   as?: MemberId;
 };
 /**
  * What the server holds of the caller's own ops of one tag
- * (docs/design-v1-dice.md 1.2): each part committed with the lines it wrote,
+ * (docs/design/design-v1-dice.md 1.2): each part committed with the lines it wrote,
  * projected for the caller, or refused with its words. A part the answer
  * lacks is unknown.
  */
@@ -98,7 +98,7 @@ export type ReceiptLookup = {
   parts: ({ part: number; state: "committed"; seq: number; lines: LogEntry[] } | { part: number; state: "refused"; code: string; message: string })[];
 };
 /**
- * One evening of the log the caller may read (docs/design-v1-dm-tools.md
+ * One evening of the log the caller may read (docs/design/design-v1-dm-tools.md
  * 3.10): its first and last lines' ids, which select it for an export, and
  * their times, which only label it. Times can run backward when a clock
  * did, so the ids are its key.
@@ -110,7 +110,7 @@ export type LogSessionPage = { sessions: LogSession[]; lines: number; nextSessio
 export type LogRange = { fromId?: string; toId?: string };
 /**
  * The largest log file the page reads into memory before it offers the
- * browser's own download instead (docs/design-v1-log-history.md 4.2).
+ * browser's own download instead (docs/design/design-v1-log-history.md 4.2).
  */
 export const MAX_LOG_FILE_BYTES = 8 * 1024 * 1024;
 /** A file the server rendered, with the name it asked to be saved under. */
@@ -374,7 +374,7 @@ export async function retryOn503<T>(attempt: () => Promise<T>, options: RetryOpt
 }
 
 /**
- * Every upload from this device, one at a time (docs/design-v1-pdf-handouts.md
+ * Every upload from this device, one at a time (docs/design/design-v1-pdf-handouts.md
  * 4.1.4). The server gives an IP one intake slot, so a second upload would
  * only wait for this one's 503s to pass. An upload marked `background`, a
  * PDF's pages, waits behind every other: an image picked in a form goes
@@ -442,7 +442,7 @@ const room = (roomId: string) => `/api/rooms/${encodeURIComponent(roomId)}`;
 
 /**
  * A scene as every player and table display gets it, for the DM's map
- * export (docs/design-v1-map-discovery.md 4, "Map export's player view"):
+ * export (docs/design/design-v1-map-discovery.md 4, "Map export's player view"):
  * the server's shared projection of its build, memory included, and the
  * labels and stamps players get there, and the scene and fog as players'
  * copy holds them (server/http/playerView.ts). The DM's own copy holds the
@@ -538,18 +538,18 @@ export const api = {
   /** Runs the export route's checks without making the zip: resolves when an export may start now, else throws the refusal. */
   checkExport: (roomId: string) => request<void>("HEAD", exportUrl(roomId)),
 
-  /** The caller's own receipts of one tag, for an op whose answer this device lost (docs/design-v1-dice.md 1.2). */
+  /** The caller's own receipts of one tag, for an op whose answer this device lost (docs/design/design-v1-dice.md 1.2). */
   getReceipts: (roomId: string, tag: string) => request<ReceiptLookup>("GET", `${room(roomId)}/receipts/${encodeURIComponent(tag)}`),
 
-  /** A public D&D Beyond character read by the server into a stat block's fill (docs/design-v1-pc-stats.md 6.3). The caller checks the fill. */
+  /** A public D&D Beyond character read by the server into a stat block's fill (docs/design/design-v1-pc-stats.md 6.3). The caller checks the fill. */
   ddbImport: (roomId: string, link: string, signal?: AbortSignal) => request<{ fill: unknown }>("POST", `${room(roomId)}/ddb-import`, { json: { link }, signal }),
 
   /**
    * A page of the log's archive, projected for the caller: lines before an
-   * id, after one, or the newest with neither (docs/design-v1-log-history.md
+   * id, after one, or the newest with neither (docs/design/design-v1-log-history.md
    * 2.2). A DM's page names the scene it is viewing. `as`: a DM's preview of
    * that player, whose pages the server projects for them
-   * (docs/design-v1-per-player-vision.md 7.4).
+   * (docs/design/design-v1-per-player-vision.md 7.4).
    */
   getLog: (roomId: string, options: { before?: string; after?: string; sceneId?: string | null; limit?: number; as?: string } = {}, signal?: AbortSignal) => {
     const q = new URLSearchParams();
@@ -583,7 +583,7 @@ export const api = {
 
   /**
    * Deletes library images nothing uses, DM only, at most 500 a request
-   * (docs/design-v1-dm-tools.md 3.19). The server refuses with
+   * (docs/design/design-v1-dm-tools.md 3.19). The server refuses with
    * `asset_in_use` an image the room's state names when the request runs.
    */
   deleteAssets: (roomId: string, ids: readonly string[]) => request<unknown>("POST", `${room(roomId)}/assets/delete`, { json: { ids } }),
@@ -615,7 +615,7 @@ export const api = {
 
   /**
    * Copies a starter work into the room as an image of this kind
-   * (docs/design-v1-starter-art.md 5). The server reads the work from its
+   * (docs/design/design-v1-starter-art.md 5). The server reads the work from its
    * own catalog and keeps the catalog's credit, so only the key is sent.
    */
   pickStarter: (roomId: string, input: { work: string; kind: "map" | "token" | "handout" }, options: RetryOptions = {}) =>
@@ -624,7 +624,7 @@ export const api = {
       options,
     ),
 
-  // Table displays (docs/design-v1-dm-tools.md 3.1). Minting takes this
+  // Table displays (docs/design/design-v1-dm-tools.md 3.1). Minting takes this
   // device's DM grant. The other three use the display's own session, in a
   // cookie of its own, so a DM's laptop can hold both at once.
 
@@ -640,7 +640,7 @@ export const api = {
   /** Leave: signs this display out for good and clears its cookie. */
   leaveDisplay: () => request<void>("DELETE", "/api/display/session"),
 
-  // Notes and the table (docs/design-v1-dm-tools.md 3.10 and 3.11).
+  // Notes and the table (docs/design/design-v1-dm-tools.md 3.10 and 3.11).
 
   /**
    * The evenings of the log the caller may read, newest first, 25 to a page

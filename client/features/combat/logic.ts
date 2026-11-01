@@ -9,7 +9,7 @@ import { entryName, ownsEntry, playerOwnedEntry } from "../encounter/logic.ts";
 import { rechargeRange } from "../encounter/saveCards.ts";
 
 /*
- * The combat uses of a creature (docs/design-v1-combat-controls.md 4 to 6),
+ * The combat uses of a creature (docs/design/design-v1-combat-controls.md 4 to 6),
  * free of React so node --test covers them: whose turn record is current,
  * which prompts a record holds open, the rows of the one list the turn
  * card, the tracker row's Uses group and the token bar's Uses drawer share,
@@ -467,7 +467,7 @@ export function legendaryLabel(button: LegendaryButton, left: number): string {
   return `${what}${button.cost > 1 ? `, costs ${button.cost}` : ""}, ${left} left`;
 }
 
-/** The legendary rows' names on their title lines, whose pips show the counts (docs/design-v1-monster-uses.md 3.1, D-261026-6). */
+/** The legendary rows' names on their title lines, whose pips show the counts (docs/design/design-v1-monster-uses.md 3.1, D-261026-6). */
 export const LEGENDARY_ACTIONS = "Legendary Actions";
 export const LEGENDARY_RESISTANCE = "Legendary Resistance";
 

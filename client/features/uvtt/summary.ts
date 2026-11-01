@@ -12,7 +12,7 @@ export function summaryLight(read: { info: Pick<ReadInfo, "environment">; plan: 
 }
 
 /**
- * The summary sheet's sentences (docs/design-v1-maps-vision.md section
+ * The summary sheet's sentences (docs/design/design-v1-maps-vision.md section
  * 3.1, "DM behavior"), so the DM can check an import against the map
  * before anything is sent.
  */
@@ -61,7 +61,7 @@ export function sizeText(bytes: number): string {
 
 /**
  * Why the import makes squares in a room whose new scenes start on hexes
- * (docs/design-v1-hex-grids.md HX-D13): the file's walls stand in its own
+ * (docs/design/design-v1-hex-grids.md HX-D13): the file's walls stand in its own
  * square grid. Nothing in a room on squares, where there is nothing to say.
  */
 export function shapeNote(newScenes: GridShape | undefined): string | null {

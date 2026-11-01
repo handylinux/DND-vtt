@@ -2,7 +2,7 @@ import { FREE_WALL_LATTICE, MAX_FREE_WALL_CELLS } from "#shared/model.ts";
 
 /**
  * Imported walls and portals on the lattice, joined and sorted into grid
- * edges and free walls (docs/design-v1-maps-vision.md section 3.1 steps 4
+ * edges and free walls (docs/design/design-v1-maps-vision.md section 3.1 steps 4
  * to 6). Everything here works in lattice units, a 64th of a square, where
  * every stored coordinate is a whole number. So "is this end on that
  * point" is an exact comparison, and the only rounding is the one that

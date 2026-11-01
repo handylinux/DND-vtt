@@ -68,7 +68,7 @@ describe("footprint", () => {
   });
 });
 
-describe("squeezed footprints (docs/design-v1-maps-vision.md 4.1)", () => {
+describe("squeezed footprints (docs/design/design-v1-maps-vision.md 4.1)", () => {
   test("a squeeze takes one cell off every side of at least 2 cells and keeps the rest", () => {
     assert.deepEqual(squeezedSize(tok({ size: "large" })), { w: 1, h: 1 });
     assert.deepEqual(squeezedSize(tok({ size: "huge" })), { w: 2, h: 2 });

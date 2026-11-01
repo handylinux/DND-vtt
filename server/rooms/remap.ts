@@ -143,7 +143,7 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
   /*
    * A handout's or a document's pages in order, each page that came through
    * as a handout image under its new id and the rest dropped
-   * (docs/design-v1-pdf-handouts.md 3.6). One image is the list of its one page.
+   * (docs/design/design-v1-pdf-handouts.md 3.6). One image is the list of its one page.
    */
   const handoutPagesOf = (list: readonly HandoutPage[]): HandoutPage[] =>
     list.flatMap((page) => {
@@ -181,11 +181,11 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
     return { ...e, duration: { ...e.duration, anchor } };
   };
   // A link to a room monster follows its new id, and one to a monster that did not come through is dropped (wave 5). So does
-  // a link to a companion block (docs/design-v1-companion-stat-blocks.md 3.6).
+  // a link to a companion block (docs/design/design-v1-companion-stat-blocks.md 3.6).
   //
   // A turn record is named by the seq of the op that started its turn, a seq of the old room, and the new room counts from
   // its snapshot again (gateway.ts), so a later turn could take the same number. The record goes, and the damage types
-  // taken with it, which only a record's start reads (docs/design-v1-combat-controls.md 3.6).
+  // taken with it, which only a record's start reads (docs/design/design-v1-combat-controls.md 3.6).
   //
   // A block link (linkOf) as the remapped actor's own reads: a room monster or companion block by its new id, or none
   // when it did not come through, as the actor's link goes then. A link renamed keeps the marks keyed by its block, and
@@ -215,7 +215,7 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
     return relinked(next, savedLink(was) ?? was);
   };
   // An upload follows its new id where its place takes a token image, and goes when it did not come through. A shipped
-  // icon's key means the same in every room (docs/design-v1-dm-tools.md 2.5).
+  // icon's key means the same in every room (docs/design/design-v1-dm-tools.md 2.5).
   const image = (ref: ImageRef): ImageRef | undefined => {
     if ("icon" in ref) return ref;
     const mapped = asset(ref.assetId, "token");
@@ -252,7 +252,7 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
     rolls: {},
     handoutDocs: {},
     companionBlocks: {},
-    // Open asks for saves belong to a moment of play too, and the import keeps their lines (docs/design-v1-player-save-spell.md 5.7).
+    // Open asks for saves belong to a moment of play too, and the import keeps their lines (docs/design/design-v1-player-save-spell.md 5.7).
     casts: {},
     traps: {},
     trapLog: [],
@@ -331,7 +331,7 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
     const scene = out.scenes[sceneId];
     return scene?.vision?.perPlayer === true && (t.tx >= tilesAcross(scene.bounds.w) || t.ty >= tilesAcross(scene.bounds.h));
   };
-  // The party's explored layer follows its scene, as the fog does (docs/design-v1-maps-vision.md 4.3.3).
+  // The party's explored layer follows its scene, as the fog does (docs/design/design-v1-maps-vision.md 4.3.3).
   for (const t of Object.values(state.exploredTiles)) {
     if (!scenes.has(t.sceneId)) continue;
     const sceneId = scenes.of(t.sceneId);
@@ -339,7 +339,7 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
     out.exploredTiles[tileKey(sceneId, t.tx, t.ty)] = { ...t, sceneId };
   }
   // Who sees for themselves on a per-player scene, and each one's own explored layer, follow their scene and their
-  // player (docs/design-v1-per-player-vision.md 6.3). An entry for a member who did not come through goes, and so does
+  // player (docs/design/design-v1-per-player-vision.md 6.3). An entry for a member who did not come through goes, and so does
   // a layer whose entry is gone or off, which holds nothing any player reads.
   for (const list of Object.values(state.holders ?? {})) {
     if (!scenes.has(list.sceneId) || out.scenes[scenes.of(list.sceneId)]?.vision?.perPlayer !== true) continue;
@@ -366,7 +366,7 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
       if (mapped) next.defaultImage = mapped;
       else delete next.defaultImage;
     }
-    // Known forms are SRD ids, which no room renames. A hand-made file's empty list is stored as none, the one state the reducer keeps (docs/design-v1-known-forms.md 3.1).
+    // Known forms are SRD ids, which no room renames. A hand-made file's empty list is stored as none, the one state the reducer keeps (docs/design/design-v1-known-forms.md 3.1).
     if (c.knownForms?.length === 0) delete next.knownForms;
     out.characters[next.id] = next;
   }
@@ -385,7 +385,7 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
       if (characters.has(t.companion.of)) next.companion = { ...t.companion, of: characters.of(t.companion.of) };
       else delete next.companion;
     }
-    // A link follows its holder's new id, and goes when the holder did not come through (docs/design-v1-attach.md 5.2).
+    // A link follows its holder's new id, and goes when the holder did not come through (docs/design/design-v1-attach.md 5.2).
     if (t.attached) {
       if (tokens.has(t.attached.to)) next.attached = { ...t.attached, to: tokens.of(t.attached.to) };
       else delete next.attached;
@@ -441,7 +441,7 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
       // The seq that names the turn counts ops of the old room. The new room counts on from the newest seq the file's
       // lines name (lastLineSeq), which need not be this turn's, so a later turn could still get the same number and take
       // up an old path. The turn records no path until the next.
-      // Without its seq the turn shares nothing with a mount either (docs/design-v1-attach.md 7.1).
+      // Without its seq the turn shares nothing with a mount either (docs/design/design-v1-attach.md 7.1).
       const { seq: _seq, mounts: _mounts, ...spot } = turnStart;
       next.turnStart = { ...spot, entryId: entries.of(turnStart.entryId), tokenId: tokens.of(turnStart.tokenId), sceneId: scenes.of(turnStart.sceneId) };
       // Who saw the start, on a per-player scene, names players of the new roster only, so lists stay within it (review SEC-PV1-5).
@@ -544,14 +544,14 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
     }
     out.pins[next.id] = next;
   }
-  // A document gets a new id, as a handout does, and one left with no page is dropped (docs/design-v1-pdf-handouts.md 3.6).
+  // A document gets a new id, as a handout does, and one left with no page is dropped (docs/design/design-v1-pdf-handouts.md 3.6).
   for (const d of Object.values(state.handoutDocs)) {
     const pages = handoutPagesOf(d.pages);
     if (pages.length === 0) continue;
     const next: HandoutDoc = { ...d, id: newId(), pages };
     out.handoutDocs[next.id] = next;
   }
-  // A companion block follows its character's new id, and its picture follows its image or goes (docs/design-v1-companion-stat-blocks.md 3.6).
+  // A companion block follows its character's new id, and its picture follows its image or goes (docs/design/design-v1-companion-stat-blocks.md 3.6).
   for (const b of Object.values(state.companionBlocks)) {
     if (!blocks.has(b.id)) continue;
     const next: CompanionBlock = { ...b, id: blocks.of(b.id), characterId: characters.of(b.characterId) };
@@ -617,7 +617,7 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
         if (data.characterId !== undefined) next.characterId = characters.of(data.characterId);
         return next;
       }
-      // The roller and each roll's creature follow their new ids (docs/design-v1-dice.md 5.3).
+      // The roller and each roll's creature follow their new ids (docs/design/design-v1-dice.md 5.3).
       case "dice":
         return {
           ...data,
@@ -714,14 +714,14 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
   // A file's trap lines come in its own order, and the reducer finds a line by its id in each log.
   out.trapLog.sort((a, b) => compareLogIds(a.id, b.id));
   out.trapSeen.sort((a, b) => compareLogIds(a.id, b.id));
-  // A hand-made or older file is brought within the companion rules (docs/design-v1-combat-flow.md 4.7), a character's
+  // A hand-made or older file is brought within the companion rules (docs/design/design-v1-combat-flow.md 4.7), a character's
   // initiative and Passive Perception follow its stat block, and a Wild Shape mark stands only beside its creature
-  // (docs/design-v1-pc-stats.md 3.5 and 3.6).
+  // (docs/design/design-v1-pc-stats.md 3.5 and 3.6).
   return withShapeRules(withPcActors(normalizeCompanionState(out)));
 }
 
 /**
- * A scene's phases with their images remapped (docs/design-v1-maps-vision.md
+ * A scene's phases with their images remapped (docs/design/design-v1-maps-vision.md
  * 2.5). A phase whose image did not come through goes. When the active one
  * went, the scene switches to the first one left, on the reference grid and
  * with its light level as any switch (withPhaseLight), and when none is
@@ -744,7 +744,7 @@ const MEMORY_KINDS = ["cells", "edges", "walls", "heights", "up", "upDir", "roug
 
 /**
  * Players' memory follows its scene and its layer
- * (docs/design-v1-map-discovery.md 5.4): the party's on a scene that keeps
+ * (docs/design/design-v1-map-discovery.md 5.4): the party's on a scene that keeps
  * memory, and a holder's only where their entry is on after the remap, as
  * their explored layer, so it goes with that layer (ASTRA-5). A remembered
  * label or stamp takes the new id of the live one, and one only memory
@@ -880,7 +880,7 @@ function remapParts(parts: LineParts, memberList: (ids: string[]) => string[]): 
  * (shared/logRings.ts), party lines' own among them, the trap log's and the
  * occurrences that name them, each in its op, in the old room's order, all
  * counting on from DM_LINE_BASE together, as the reducer writes them
- * (docs/design-v1-traps.md 6.3). Numbered with the lines players get, each
+ * (docs/design/design-v1-traps.md 6.3). Numbered with the lines players get, each
  * would leave a gap in theirs.
  */
 function dmLineIdsOf(state: RoomState, scenes: { has(id: string): boolean }): Map<string, string> {
@@ -934,7 +934,7 @@ export function lastLineSeq(state: RoomState): number {
 }
 
 /**
- * Traps follow their scene (docs/design-v1-traps.md 6.8), each with a new
+ * Traps follow their scene (docs/design/design-v1-traps.md 6.8), each with a new
  * id, as pins do. What a trap names follows its new id: a light, a stamp
  * or a creature its actions show, and the creature its hint named, each
  * dropped when it did not come through. Doors keep their ids, as a scene's

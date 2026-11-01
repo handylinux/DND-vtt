@@ -4,7 +4,7 @@ import type { CDPSession, Page } from "playwright-core";
 import { CAP_FIRST_ROW, gate, hexRelief, largestGate, partsPast, tetherWork, timedUntil } from "./bench-iso.ts";
 
 /*
- * The isometric bench's build rows (docs/design-v1-iso-area-shapes.md 6
+ * The isometric bench's build rows (docs/design/design-v1-iso-area-shapes.md 6
  * and 11, review ISOA2-ASTRA-04): a build's frames are taken until it is
  * done, none of the idle ones after it, and each is held by the gate.
  */
@@ -45,7 +45,7 @@ describe("the isometric bench's build rows", () => {
   });
 });
 
-describe("the hex relief rooms (docs/design-v1-iso-hex-relief.md 9)", () => {
+describe("the hex relief rooms (docs/design/design-v1-iso-hex-relief.md 9)", () => {
   test("each orientation raises every one of a 40 by 40 scene's 1,778 hexes, across the whole height range, with a wall, 40 creatures and four areas", () => {
     for (const orient of ["rows", "columns"] as const) {
       const built = hexRelief(orient)("s1", "dm");
@@ -79,7 +79,7 @@ describe("the largest-move gate (D-261030-538, review HXPERF2-ASTRA-09)", () => 
   });
 });
 
-describe("the square relief room (docs/design-v1-relief-pan.md 9)", () => {
+describe("the square relief room (docs/design/design-v1-relief-pan.md 9)", () => {
   test("the hex room's generator on squares raises each of the 1,600 squares once, none at 0", () => {
     const built = hexRelief("squares")("s1", "dm");
     const heights = built.ops.filter((o) => o.t === "build.height") as { cells: string[]; height: number }[];
@@ -91,7 +91,7 @@ describe("the square relief room (docs/design-v1-relief-pan.md 9)", () => {
   });
 });
 
-describe("the parts of a pan's slow frames among building areas (docs/design-v1-relief-pan.md 8)", () => {
+describe("the parts of a pan's slow frames among building areas (docs/design/design-v1-relief-pan.md 8)", () => {
   test("only the frames past the floor are counted, each by every part it holds, and the slices of every frame apart", () => {
     const f = (ms: number, whole = false, sliced = false, rendered = false) => ({ ms, whole, sliced, rendered });
     const parts = [f(8, false, true), f(16), f(17, true, false, true), f(21, false, true), f(30, true, true, true)];

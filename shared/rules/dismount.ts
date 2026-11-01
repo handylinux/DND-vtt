@@ -8,7 +8,7 @@ import { hexRouteFeet, routeFeet, routePoints, routeWalk, routeWalkers, straight
 import type { Grid } from "./grid.ts";
 
 /**
- * Getting off a ride on the rider's own turn (docs/design-v1-attach.md
+ * Getting off a ride on the rider's own turn (docs/design/design-v1-attach.md
  * 7.3), as the reducer stores it and a drag's band reads it, from one
  * accounting: the walk from the seat to its first spot clear of the mount
  * costs half the rider's Speed whatever its length, and the rest of the

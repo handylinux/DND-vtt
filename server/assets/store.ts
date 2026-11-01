@@ -18,7 +18,7 @@ import type { ProcessedVariant } from "./process.ts";
  * file and writing the row that refers to it.
  *
  * A deleted file is never unlinked at once. It moves into the trash on the
- * same volume and waits there 48 hours (docs/design-v1-dm-tools.md 3.17):
+ * same volume and waits there 48 hours (docs/design/design-v1-dm-tools.md 3.17):
  * the nightly backup dumps the database and copies the images it names
  * minutes apart, from another container the app's locks cannot reach, so a
  * file deleted between the two must still be there to copy.
@@ -151,9 +151,9 @@ export async function addUploaders(db: pg.Pool | pg.PoolClient, assetId: string,
 /**
  * Every asset of the room, or only those in `ids`. Newest first. An
  * Openverse image or a starter pick carries its credit, which everyone who
- * may see the image may read (docs/design-v1-dm-tools.md 3.13). A starter
+ * may see the image may read (docs/design/design-v1-dm-tools.md 3.13). A starter
  * pick carries its work's key too, for players as for the DM: it names
- * only a work every server ships (docs/design-v1-starter-art.md 5).
+ * only a work every server ships (docs/design/design-v1-starter-art.md 5).
  *
  * A player's list (`ids` with `memberId`) puts what they added by when
  * they added it (asset_uploaders.added_at), so an upload or a pick the
@@ -217,9 +217,9 @@ export type NewAsset = {
   kind: AssetKind;
   uploaderIds: readonly string[];
   variants: ProcessedVariant[];
-  /** An Openverse image's or a starter pick's credit, found by the server (docs/design-v1-dm-tools.md 3.13). */
+  /** An Openverse image's or a starter pick's credit, found by the server (docs/design/design-v1-dm-tools.md 3.13). */
   credit?: AssetCredit;
-  /** A starter pick's work key, which keeps the row out of the room's quota (docs/design-v1-starter-art.md 5). */
+  /** A starter pick's work key, which keeps the row out of the room's quota (docs/design/design-v1-starter-art.md 5). */
   starter?: string;
 };
 

@@ -25,7 +25,7 @@ import { useCharacterRollNumbers } from "./useRollNumbers.ts";
 import { ShapePicker } from "./ShapePicker.tsx";
 
 /**
- * A player character's "Stat block" section (docs/design-v1-pc-stats.md
+ * A player character's "Stat block" section (docs/design/design-v1-pc-stats.md
  * 7.1 and 7.3), for the DM and the character's players, in its token's
  * panel under the image and on its card. It is always the fold "Stat block",
  * on the panel's one remembered state. Without a block or a shape the fold
@@ -35,14 +35,14 @@ import { ShapePicker } from "./ShapePicker.tsx";
  * it, the creature's block and "End the shape". Without one, the block's
  * view and Edit. Edit has "Re-sync from D&D Beyond" beside it, in a shape
  * too, for a character synced from D&D Beyond or linked to it, and when it
- * last synced under them (docs/design-v1-resync.md 1.1). A Druid's known
+ * last synced under them (docs/design/design-v1-resync.md 1.1). A Druid's known
  * forms live in the Take a shape picker, which the button opens in no shape
- * or in Wild Shape (docs/design-v1-known-forms.md 5.3, D-261024-29).
+ * or in Wild Shape (docs/design/design-v1-known-forms.md 5.3, D-261024-29).
  */
 export function PcStatBlock(props: {
   character: Character;
   fold: { open: boolean; onToggle(): void; foldRef?: Ref<HTMLButtonElement> };
-  /** Whom its boxes roll for, from the mount it stands in: its token's panel or the character's page (docs/design-v1-stat-block-rolls.md 2). The mount computes it once. */
+  /** Whom its boxes roll for, from the mount it stands in: its token's panel or the character's page (docs/design/design-v1-stat-block-rolls.md 2). The mount computes it once. */
   roll: BlockRoller | null;
 }) {
   const { character, fold } = props;
@@ -77,7 +77,7 @@ export function PcStatBlock(props: {
       </SmallButton>
     ) : null;
   const picker = picking ? <ShapePicker character={character} onClose={() => setPicking(false)} /> : null;
-  // Folded, the row says what the block holds, so it reads without opening (docs/design-v1-look-pass.md 3.3).
+  // Folded, the row says what the block holds, so it reads without opening (docs/design/design-v1-look-pass.md 3.3).
   const summary = pcBlockSummary(character);
   if (!character.stats && !shaped) {
     return (
@@ -104,7 +104,7 @@ export function PcStatBlock(props: {
         {edits ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space(2) }}>
             {character.stats ? <SmallButton onClick={() => openStats(character.id)}>Edit</SmallButton> : add()}
-            {/* Re-sync needs a block and a D&D Beyond number to fetch, the sheet link's or the last sync's (docs/design-v1-resync.md 1.1). */}
+            {/* Re-sync needs a block and a D&D Beyond number to fetch, the sheet link's or the last sync's (docs/design/design-v1-resync.md 1.1). */}
             {character.stats && resyncNumber(character, ddbCharacterId) ? (
               <SmallButton wrap onClick={() => openSync(character.id)}>
                 Re-sync from D&amp;D Beyond

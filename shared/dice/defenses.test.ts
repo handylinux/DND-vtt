@@ -8,7 +8,7 @@ import { emptyStatBlock, monsterView } from "../statBlock.ts";
 import { EFFECT_DEFENSES, blockDefenses, effectDefenses, type Defense } from "./defenses.ts";
 import { hasTrait } from "./named.ts";
 
-/** Defenses with their qualifiers, from blocks and from effects (docs/design-v1-roll-options.md 3.3). */
+/** Defenses with their qualifiers, from blocks and from effects (docs/design/design-v1-roll-options.md 3.3). */
 
 let monsters: readonly SrdMonster[] = [];
 before(async () => {

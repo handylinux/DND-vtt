@@ -73,7 +73,7 @@ function usePress(): (rows: readonly RollRow[], mode: RollMode, kept?: readonly 
 
 /**
  * The Dice panel's "Initiative for the 4 in the fight" for several selected
- * creatures (docs/design-v1-roll-options.md 4.4): their monster rows, rolled
+ * creatures (docs/design/design-v1-roll-options.md 4.4): their monster rows, rolled
  * by the tracker's mode as Auto initiative rolls them, their values
  * replaced.
  */
@@ -113,7 +113,7 @@ export function AutoInitiativeControls() {
   const { mode, setMode } = useAuto();
   const { rows, skipped } = useRollRows(useSortedEntries());
   const [reroll, setReroll] = useState(false);
-  // Only Auto initiative reads the choice, so a sheet's swipe springs back once it is on. A roll leaves it on screen, and it counts from there (docs/design-v1-sheet-swipe.md 4.5).
+  // Only Auto initiative reads the choice, so a sheet's swipe springs back once it is on. A roll leaves it on screen, and it counts from there (docs/design/design-v1-sheet-swipe.md 4.5).
   const restart = useUnsavedSince(reroll);
   const scores = useRoomView((s) => s.view?.meta.settings.monsterInitScore ?? false);
   const online = useRoomView((s) => s.connection === "open");
@@ -127,7 +127,7 @@ export function AutoInitiativeControls() {
     <>
       <Segmented label="How monsters share rolls" value={mode} options={MODES.map((m) => ({ value: m.mode, label: m.label }))} onChange={setMode} />
       <Help>{chosen.hint}</Help>
-      {/* A checkbox, not a switch: it changes nothing until Auto initiative reads it (docs/design-v1-visual.md 3.7). */}
+      {/* A checkbox, not a switch: it changes nothing until Auto initiative reads it (docs/design/design-v1-visual.md 3.7). */}
       <Checkbox
         label="Re-roll monsters that have a value"
         help="Off rolls only monsters still waiting for one, such as a monster added mid-fight."
@@ -135,7 +135,7 @@ export function AutoInitiativeControls() {
         onChange={setReroll}
       />
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: theme.space(2) }}>
-        {/* Secondary: the tracker's one primary is Next (docs/design-v1-visual.md 3.3). */}
+        {/* Secondary: the tracker's one primary is Next (docs/design/design-v1-visual.md 3.3). */}
         <InitiativeButton
           source={JSON.stringify([rows, mode, reroll])}
           d20={planPress(toRoll, mode, reroll ? [] : rows.filter((r) => r.value !== null)).groups.length > 0}
@@ -179,7 +179,7 @@ const MODE_LABEL: Record<RollMode, string> = { creature: "by creature", each: "o
  * What the last roll rolled, for the DM only: each shared roll's dice,
  * modifier and total, and who took it. It sits under the Auto initiative
  * button, where the DM just pressed, so the order starts right under the
- * round header (docs/design-v1-combat-flow.md 3.2). It stays until
+ * round header (docs/design/design-v1-combat-flow.md 3.2). It stays until
  * dismissed, and goes when it no longer describes the fight: the fight
  * ended, another began, or an undo took the roll back (useShownRoll).
  */

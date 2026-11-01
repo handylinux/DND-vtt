@@ -163,7 +163,7 @@ function Builder(props: { id: string | null; srd: SrdList; close: PanelClose; on
   const xp = encounterXp(monsterXps(draft.monsters, resolve));
   const missingRoomMonster = draft.monsters.some((m) => "monsterId" in m && !monsters?.[m.monsterId]);
   const changed = saved ? encounterPatch(saved, draft) !== null : draft.monsters.length > 0 || draft.name.trim() !== "" || draft.party !== null;
-  // A sheet's swipe springs back while the editor holds changes, and its Back still asks (docs/design-v1-sheet-swipe.md 4.5).
+  // A sheet's swipe springs back while the editor holds changes, and its Back still asks (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(changed);
   const named = draft.name.trim() !== "";
 
@@ -293,7 +293,7 @@ function PlaceSection(props: { draft: Draft; srd: SrdList; close: PanelClose }) 
   const monsters = useRoomMonsters();
   const [hidden, setHidden] = useState(false);
   const [addToFight, setAddToFight] = useState(true);
-  // Only Place sends the choices, so a sheet's swipe springs back once either changed (docs/design-v1-sheet-swipe.md 4.5).
+  // Only Place sends the choices, so a sheet's swipe springs back once either changed (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedSince({ hidden, addToFight });
   const lines = props.draft.monsters;
   const waiting = lines.some((m) => "srdId" in m) && !props.srd.list;

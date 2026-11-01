@@ -44,7 +44,7 @@ import { PDF_READY, PdfSpoken, PREPARING_PDF, useSpoken } from "./PdfSpoken.tsx"
  * DMs get no popup: the DM chose the handout, and the DM panel lists what
  * is showing.
  *
- * It is the handout viewer (HandoutViewer.tsx, docs/design-v1-layout-hierarchy.md
+ * It is the handout viewer (HandoutViewer.tsx, docs/design/design-v1-layout-hierarchy.md
  * section 5): the whole screen on a phone, a wide card on a computer that
  * grows to the window as it zooms, with the close icon in its header. It
  * keeps a deeper backdrop than other dialogs, since a dim map helps the
@@ -107,7 +107,7 @@ export function HandoutPopup() {
    */
   const [ready, setReady] = useState<{ key: string; blob: Blob } | null>(null);
   useEffect(() => {
-    // A handout of pages fetches nothing as it opens: every player would fetch every page, and most never download (docs/design-v1-pdf-handouts.md 6).
+    // A handout of pages fetches nothing as it opens: every player would fetch every page, and most never download (docs/design/design-v1-pdf-handouts.md 6).
     if (!key || !url || pageCount > 1) return;
     const controller = new AbortController();
     fetchHandoutImage(url, controller.signal).then(
@@ -263,7 +263,7 @@ export function HandoutPopup() {
   useBackClose(key, close);
 
   if (!handout || !key || !url) return null;
-  // Every page with its size, so the viewer lays the whole handout out before any page loads (docs/design-v1-pdf-handouts.md 5.9).
+  // Every page with its size, so the viewer lays the whole handout out before any page loads (docs/design/design-v1-pdf-handouts.md 5.9).
   const refs = handoutPages(handout);
   const pages = refs.map((p, i) => ({
     src: assets.url(p.assetId, "full"),

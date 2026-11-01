@@ -4,7 +4,7 @@ import { createContext, useContext } from "react";
  * "Viewing as Pat" as the previewed page sees it: its height, in window
  * pixels, and how the page tells it where to go (`place`), centered left
  * of the lane the token bar and the alerts column share, or null for its
- * own place, spanning under the top bar (docs/design-v1-bar-dock.md 1.3).
+ * own place, spanning under the top bar (docs/design/design-v1-bar-dock.md 1.3).
  * The notice stays in PlayerPreview, outside the previewed page, so a
  * blackout and the ended screen keep its Exit.
  */
@@ -13,7 +13,7 @@ export type PreviewNotice = {
   place(box: { left: number; width: number } | null): void;
   /**
    * A place inside the previewed page's very short sheet while it shows,
-   * or null (docs/design-v1-layout-hierarchy.md 4.2). That sheet is modal
+   * or null (docs/design/design-v1-layout-hierarchy.md 4.2). That sheet is modal
    * over the preview, so the notice renders first in it, above the
    * sheet's content, and its Exit stays one tap away.
    */

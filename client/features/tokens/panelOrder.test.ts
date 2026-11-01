@@ -198,7 +198,7 @@ describe("the token panel's order", () => {
     assert.deepEqual(sectionsFor(state, P1, "g"), ["name", "image", "hp", "conditions", "rangeRings", "notes"]);
   });
 
-  test("a creature companion's player gets its stat block row with no link, for Attach, and an effect's gets none (docs/design-v1-companion-stat-blocks.md 6.5)", () => {
+  test("a creature companion's player gets its stat block row with no link, for Attach, and an effect's gets none (docs/design/design-v1-companion-stat-blocks.md 6.5)", () => {
     const state = room({ characters: { bree: character("bree", { ownerIds: ["p1"] }) } });
     state.tokens.owl = token("owl", { kind: "npc", ownerIds: ["p1"], companion: { of: "bree", turn: "shared" }, actor: { inline: actor() } });
     state.tokens.blade = token("blade", { kind: "object", ownerIds: ["p1"], companion: { of: "bree", turn: "none" }, actor: { inline: actor({ hp: { cur: 0, max: 0, temp: 0 }, ac: 0, srdId: "owl" }) } });
@@ -224,7 +224,7 @@ describe("the token panel's order", () => {
   });
 });
 
-describe("the token panel grouped by use (docs/design-v1-token-panel-groups.md 2)", () => {
+describe("the token panel grouped by use (docs/design/design-v1-token-panel-groups.md 2)", () => {
   test("the DM on a monster: the name, the block, Combat, Notes, Position, Image, then setup", () => {
     const state = room();
     state.tokens.g = token("g", { actor: { inline: actor({ srdId: "goblin-warrior" }) } });
@@ -278,7 +278,7 @@ describe("the token panel grouped by use (docs/design-v1-token-panel-groups.md 2
   });
 });
 
-describe("Combat's sections (docs/design-v1-token-sections.md 3)", () => {
+describe("Combat's sections (docs/design/design-v1-token-sections.md 3)", () => {
   const state = fight();
 
   test("in a fight, Combat runs Hit points, Conditions, Uses, Reaction, Range rings, Rest, for the DM and an owner", () => {
@@ -358,7 +358,7 @@ describe("Combat's sections (docs/design-v1-token-sections.md 3)", () => {
   });
 });
 
-describe("setup and Position for each viewer (docs/design-v1-token-sections.md 3 and 3.3)", () => {
+describe("setup and Position for each viewer (docs/design/design-v1-token-sections.md 3 and 3.3)", () => {
   test("Remove for the DM, and for a companion's player, who dismisses it, never for anyone else", () => {
     const state = fight();
     assert.ok(sectionsFor(state, DM, "skitter").includes("remove"));
@@ -420,7 +420,7 @@ function pageFor(state: ReturnType<typeof room>, viewer: typeof DM, characterId:
   });
 }
 
-describe("a character's page's parts (docs/design-v1-look-pass.md 3.1)", () => {
+describe("a character's page's parts (docs/design/design-v1-look-pass.md 3.1)", () => {
   const SETUP: CardPartId[] = ["image", "stats"];
 
   test("the DM: the header, the block, Combat, Companions, Notes, setup, Played by and Remove, with Place a token in the header's actions", () => {
@@ -496,7 +496,7 @@ function pageActions(state: RoomState, viewer: typeof DM, characterId: string): 
   return headerActions({ dm: access.dm, on: "page", plays: access.owner, playersPlace: playersPlace(view) });
 }
 
-describe("a creature header's actions row (docs/design-v1-design-pass.md 4.3)", () => {
+describe("a creature header's actions row (docs/design/design-v1-design-pass.md 4.3)", () => {
   /** Thorn played by p1, his token and his companion Skitter, a mule p1 and p2 own, and a goblin no player owns. */
   function party(): RoomState {
     const state = room({ characters: { thorn: character("thorn", { name: "Thorn", ownerIds: ["p1"] }) } });

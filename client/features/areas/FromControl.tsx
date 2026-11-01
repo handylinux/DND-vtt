@@ -9,7 +9,7 @@ import { ChoiceRows, Labelled, OptButton, StableWords, useOpenInSlot, usePopover
 import type { AreaCreature, FromControl as FromState } from "./caster.ts";
 
 /**
- * The area tool's From control (docs/design-v1-area-from-character.md
+ * The area tool's From control (docs/design/design-v1-area-from-character.md
  * 3.2): who the area comes from, first in its row.
  *
  * - One creature: a pressed toggle, "From Thorn", with a fixed name.
@@ -93,7 +93,7 @@ function LiveFrom(props: { control: ShownFrom; onPick(offer: AreaCreature | null
 /**
  * The chip's rows. A pick closes the popover: a pointer's click on a row,
  * or Enter or Space on one. The arrows move the choice and leave it open,
- * as every choice popover does (docs/design-v1-tool-options.md 7.5).
+ * as every choice popover does (docs/design/design-v1-tool-options.md 7.5).
  */
 function PickRows(props: { control: Extract<ShownFrom, { form: "chip" }>; onPick(offer: AreaCreature | null): void; close?: () => void }) {
   const { control, close } = props;
@@ -166,7 +166,7 @@ function face(control: ShownFrom, form: SlotForm): ReactNode {
       <>
         <CompactPicture control={control} />
         {chip ? (
-          // As the toolbar's menu buttons carry it (docs/design-v1-tool-options.md 5.1).
+          // As the toolbar's menu buttons carry it (docs/design/design-v1-tool-options.md 5.1).
           <span aria-hidden style={{ position: "absolute", top: theme.space(0.5), right: theme.space(0.5), display: "grid" }}>
             <Icon name="caret" size={theme.icon.sm - 4} />
           </span>

@@ -22,7 +22,7 @@ export function inkOn(color: string): string {
 }
 
 /**
- * One row of colors to pick from (docs/design-v1-visual.md 2.3): draw,
+ * One row of colors to pick from (docs/design/design-v1-visual.md 2.3): draw,
  * pins, areas, the icon disk and members. 44 px options with 28 px disks,
  * the chosen one ringed in text color with a gap of the page color, so the
  * ring reads around any color, white included.

@@ -7,7 +7,7 @@ import { actor, character, room, scene, token } from "../testutil.ts";
 import { SQUARES } from "./grid.ts";
 
 /**
- * Senses and lights in cells as well as feet (docs/design-v1-maps-vision.md
+ * Senses and lights in cells as well as feet (docs/design/design-v1-maps-vision.md
  * 2.4): on a grid finer than 5 ft per cell they stop at the cells their
  * feet caps make at 5 ft, 30 for a sense and 24 for each light radius, so
  * sight costs what the server-box gate measured at every scale.

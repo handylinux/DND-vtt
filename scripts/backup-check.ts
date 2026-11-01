@@ -11,7 +11,7 @@ import { variantFileName, variantPath } from "../server/assets/store.ts";
 import type { AssetKind, Variant } from "../server/assets/kinds.ts";
 
 /**
- * The backup check (docs/design-v1-dm-tools.md 3.17): docker/backup.sh in
+ * The backup check (docs/design/design-v1-dm-tools.md 3.17): docker/backup.sh in
  * the pinned postgres image, through the backup and restore services of
  * the development compose file, against a postgres of its own.
  *

@@ -156,7 +156,7 @@ describe("the keys that add to a selection", () => {
   });
 });
 
-describe("the viewer's opening of the bar (docs/design-v1-bar-compact.md 3.6, reviews BAR-ASTRA-09 and BC-OPUS-37)", () => {
+describe("the viewer's opening of the bar (docs/design/design-v1-bar-compact.md 3.6, reviews BAR-ASTRA-09 and BC-OPUS-37)", () => {
   test("a tap, Actions and a select that asks for it each set a new opening naming the token shown", () => {
     const tapped = tapToken(INITIAL_LOCAL, "a");
     assert.deepEqual(tapped.opening, { tokenId: "a", gather: false });
@@ -249,7 +249,7 @@ describe("the viewer's opening of the bar (docs/design-v1-bar-compact.md 3.6, re
   });
 });
 
-describe("a tap again in the isometric view (docs/design-v1-isometric-view.md 6.2)", () => {
+describe("a tap again in the isometric view (docs/design/design-v1-isometric-view.md 6.2)", () => {
   test("two standees under one tap, then taps again: front, then the one behind, then front", () => {
     const stack = ["front", "behind"];
     let selected: string | null = null;

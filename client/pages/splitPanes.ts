@@ -3,7 +3,7 @@ import { TAP_SLOP_PX } from "../lib/gestures.ts";
 import { theme } from "../lib/theme.ts";
 
 /*
- * Two panels in the side panel (docs/design-v1-split-panel.md 3.2, 3.4 and
+ * Two panels in the side panel (docs/design/design-v1-split-panel.md 3.2, 3.4 and
  * 8): the panes' sizes, the bar's steps, and what this device remembers.
  * Every size is in the side panel's own px, which the interface size zooms,
  * so the rules hold at every interface size. Pure but for storage, which is
@@ -12,7 +12,7 @@ import { theme } from "../lib/theme.ts";
 
 /**
  * Every header row of the side panel: a 44 px line and the 1 px rule at
- * its foot (docs/design-v1-side-headers.md 5), the bar and a pane's
+ * its foot (docs/design/design-v1-side-headers.md 5), the bar and a pane's
  * subpage header alike.
  */
 const HEADER_ROW = theme.touch + theme.line.border;

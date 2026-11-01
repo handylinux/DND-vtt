@@ -51,7 +51,7 @@ export const snapshotMigrations: MigrationStep[] = [
     to: 5,
     apply: (state) => (state !== null && typeof state === "object" && !("savedEncounters" in state) ? { ...state, savedEncounters: {} } : state),
   },
-  // v5 had no stamps or lights (docs/design-v1-maps-vision.md section 2.3). Rooms and backups from before them start with
+  // v5 had no stamps or lights (docs/design/design-v1-maps-vision.md section 2.3). Rooms and backups from before them start with
   // none. Every other wave 3 addition is an optional field whose absence reads as before, so nothing else changes.
   {
     from: 5,
@@ -61,14 +61,14 @@ export const snapshotMigrations: MigrationStep[] = [
       return { stamps: {}, lights: {}, ...state };
     },
   },
-  // v6 had no explored layer (docs/design-v1-maps-vision.md sections 2.3 and 4.3.3). Rooms and backups from before it start
+  // v6 had no explored layer (docs/design/design-v1-maps-vision.md sections 2.3 and 4.3.3). Rooms and backups from before it start
   // with none. Every other wave 4 addition is an optional field or a new op whose absence reads as before.
   {
     from: 6,
     to: 7,
     apply: (state) => (state !== null && typeof state === "object" && !("exploredTiles" in state) ? { ...state, exploredTiles: {} } : state),
   },
-  // v7 had no journal pages, map pins or roll requests (docs/design-v1-dm-tools.md 2.3). Rooms and backups from before
+  // v7 had no journal pages, map pins or roll requests (docs/design/design-v1-dm-tools.md 2.3). Rooms and backups from before
   // them start with none. Every other wave 5 addition is an optional field, a new image variant or a new op whose absence
   // reads as before: everyone may draw, no token links a room monster, and no image is an icon.
   {
@@ -79,30 +79,30 @@ export const snapshotMigrations: MigrationStep[] = [
       return { journal: {}, pins: {}, rolls: {}, ...state };
     },
   },
-  // v8 had no PDF handouts (docs/design-v1-pdf-handouts.md 3.8). Rooms and backups from before them start with no
+  // v8 had no PDF handouts (docs/design/design-v1-pdf-handouts.md 3.8). Rooms and backups from before them start with no
   // documents. A handout without `pages` is one image, so stored handouts and ops read as before.
   {
     from: 8,
     to: 9,
     apply: (state) => (state !== null && typeof state === "object" && !("handoutDocs" in state) ? { ...state, handoutDocs: {} } : state),
   },
-  // v9 had no companion stat blocks (docs/design-v1-companion-stat-blocks.md 3.6). Rooms and backups from before them
+  // v9 had no companion stat blocks (docs/design/design-v1-companion-stat-blocks.md 3.6). Rooms and backups from before them
   // start with none, and no actor links one.
   {
     from: 9,
     to: 10,
     apply: (state) => (state !== null && typeof state === "object" && !("companionBlocks" in state) ? { ...state, companionBlocks: {} } : state),
   },
-  // Wave 7's one bump (docs/design-v1-roll-request.md 7.5): dice lines, rolled answers, their provenance and PC stat
+  // Wave 7's one bump (docs/design/design-v1-roll-request.md 7.5): dice lines, rolled answers, their provenance and PC stat
   // blocks are optional fields and new log lines whose absence reads as before, so a v10 room is a v11 room as it is.
   // The number moves so that an older build, which would drop or misread them, refuses a v11 snapshot instead.
   { from: 10, to: 11, apply: (state) => state },
-  // The order setting (docs/design-v1-combat-flow.md 11.4): the setting, `InitEntry.hadTurn` and `DiceRoll.hidden` are
+  // The order setting (docs/design/design-v1-combat-flow.md 11.4): the setting, `InitEntry.hadTurn` and `DiceRoll.hidden` are
   // optional fields whose absence reads as before, so a v11 room is a v12 room as it is. The number moves so that an
   // older build, which would ignore them and send players every row and roll the DM kept from them, refuses a v12
   // snapshot instead.
   { from: 11, to: 12, apply: (state) => state },
-  // A Universal VTT import's mark (Scene.gridFromFile, docs/design-v1-grid-detect.md section 6) is an optional field
+  // A Universal VTT import's mark (Scene.gridFromFile, docs/design/design-v1-grid-detect.md section 6) is an optional field
   // whose absence reads as before, so a v12 room is a v13 room as it is. The number moves so that an older build, whose
   // strict state schema refuses the field, refuses a v13 snapshot instead of failing on the scene.
   { from: 12, to: 13, apply: (state) => state },
@@ -111,28 +111,28 @@ export const snapshotMigrations: MigrationStep[] = [
   // of those spots takes today's id (renameSrdIdsInState). An initiative row's group key keeps its spelling, since it
   // may be a name rather than an id (SRD_ID_FIELDS).
   { from: 13, to: 14, apply: (state) => renameSrdIdsInState(state) },
-  // A Druid's known forms (Character.knownForms, docs/design-v1-known-forms.md 3.5) are an optional field whose absence
+  // A Druid's known forms (Character.knownForms, docs/design/design-v1-known-forms.md 3.5) are an optional field whose absence
   // reads as before, so a v14 room is a v15 room as it is. The number moves so that an older build, whose strict state
   // schema refuses the field, refuses a v15 snapshot instead of failing on the character.
   { from: 14, to: 15, apply: (state) => state },
-  // v15 had no players' asks for saves (docs/design-v1-player-save-spell.md 5.7). Rooms and backups from before them
+  // v15 had no players' asks for saves (docs/design/design-v1-player-save-spell.md 5.7). Rooms and backups from before them
   // start with none. The `cast` log line and an outcome's `cast` are new, and nothing stored names them.
   {
     from: 15,
     to: 16,
     apply: (state) => (state !== null && typeof state === "object" && !("casts" in state) ? { ...state, casts: {} } : state),
   },
-  // Walking routes (docs/design-v1-movement.md 6.6): a path stop's `via`, `moved`, `cost`, `diag` and `routeSeen`, a
+  // Walking routes (docs/design/design-v1-movement.md 6.6): a path stop's `via`, `moved`, `cost`, `diag` and `routeSeen`, a
   // chunk's `rough` marks, an area's `slows` and a kept ruler's `walk` are optional fields whose absence reads as
   // before, so a v16 room is a v17 room as it is. The number moves so that an older build, whose strict state schema
   // refuses the fields, refuses a v17 snapshot instead of loading it under old rules.
   { from: 16, to: 17, apply: (state) => state },
-  // Attached tokens (docs/design-v1-attach.md 8.6): a token's `attached`, a path stop's `carried`, a row's `skipRound`
+  // Attached tokens (docs/design/design-v1-attach.md 8.6): a token's `attached`, a path stop's `carried`, a row's `skipRound`
   // and `markRound` and a turn start's `mounts` are optional fields whose absence reads as before, so a v17 room is a
   // v18 room as it is. The number moves so that an older build, whose strict state schema refuses the fields and whose
   // reducer would move a holder without what it carries, refuses a v18 snapshot instead of loading it under old rules.
   { from: 17, to: 18, apply: (state) => state },
-  // v18 had no traps (docs/design-v1-traps.md 6.6). Rooms and backups from before them start with none and both trap
+  // v18 had no traps (docs/design/design-v1-traps.md 6.6). Rooms and backups from before them start with none and both trap
   // logs empty. The number moves so that an older build, whose strict state schema refuses them, refuses a v19
   // snapshot instead of loading it without its traps.
   {
@@ -143,7 +143,7 @@ export const snapshotMigrations: MigrationStep[] = [
       return { ...state, ...(!("traps" in state) ? { traps: {} } : {}), ...(!("trapLog" in state) ? { trapLog: [] } : {}), ...(!("trapSeen" in state) ? { trapSeen: [] } : {}) };
     },
   },
-  // A character's D&D Beyond sync record (Character.ddbSync, docs/design-v1-resync.md 4) is an optional field whose
+  // A character's D&D Beyond sync record (Character.ddbSync, docs/design/design-v1-resync.md 4) is an optional field whose
   // absence reads as before, so a v19 room is a v20 room as it is. The number moves so that an older build, whose
   // strict state schema refuses the field, refuses a v20 snapshot instead of failing on the character.
   { from: 19, to: 20, apply: (state) => state },
@@ -152,16 +152,16 @@ export const snapshotMigrations: MigrationStep[] = [
   // neither and is a v21 room as it is. The number moves so that an older build, which would show a copy and its `to`
   // to whoever plays its creature then, refuses a v21 snapshot instead of loading it.
   { from: 20, to: 21, apply: (state) => state },
-  // Combat uses (docs/design-v1-combat-controls.md 3.6): an actor's spent `uses`, its `hurt` and `turnRecord`, a
+  // Combat uses (docs/design/design-v1-combat-controls.md 3.6): an actor's spent `uses`, its `hurt` and `turnRecord`, a
   // character's `resources` and a saved turn's `turnUses` are optional fields whose absence reads as before, so a v21
   // room is a v22 room as it is. The number moves so that an older build, whose strict state schema refuses the fields
   // and whose reducer would drop them on the next turn, refuses a v22 snapshot instead of loading it.
   { from: 21, to: 22, apply: (state) => state },
-  // Class resources from D&D Beyond (docs/design-v1-ddb-resources.md 5): a sync record's `res` and its `r:` markers in
+  // Class resources from D&D Beyond (docs/design/design-v1-ddb-resources.md 5): a sync record's `res` and its `r:` markers in
   // `gone` are new, and absent reads as before, so a v22 room is a v23 room as it is. The number moves so that an older
   // build, whose strict state schema refuses `res` and an `r:` marker, refuses a v23 snapshot instead of loading it.
   { from: 22, to: 23, apply: (state) => state },
-  // Per-player vision (docs/design-v1-per-player-vision.md 6.7): each per-player scene's sight holder list and each
+  // Per-player vision (docs/design/design-v1-per-player-vision.md 6.7): each per-player scene's sight holder list and each
   // holder's explored layer, two collections a v23 room lacks, start empty, so every scene is a whole-party one as it
   // was. A scene's `perPlayer` and the marks' `seenBy` and `toSeenBy` are new optional fields. The number moves so that
   // an older build, which would show every player the party's sight on a per-player scene, refuses a v24 snapshot.
@@ -174,16 +174,16 @@ export const snapshotMigrations: MigrationStep[] = [
       return { ...room, holders: room.holders ?? {}, exploredBy: room.exploredBy ?? {} };
     },
   },
-  // Hex grids, phase H1 (docs/design-v1-hex-grids.md section 7): a scene's `gridShape`, the room's `newScenes`, a
+  // Hex grids, phase H1 (docs/design/design-v1-hex-grids.md section 7): a scene's `gridShape`, the room's `newScenes`, a
   // stationary emanation's `size` and the stamps of a chunk, a trap and a fog draft are optional fields whose absence
   // reads as squares, so a v24 room is a v25 room as it is. The number moves so that an older build, which would draw a
   // hex scene as squares and read its hexes as squares, refuses a v25 snapshot instead of loading it.
   { from: 24, to: 25, apply: (state) => state },
-  // The isometric view (docs/design-v1-isometric-view.md 7): a scene's `suggestedView` is a new optional field whose
+  // The isometric view (docs/design/design-v1-isometric-view.md 7): a scene's `suggestedView` is a new optional field whose
   // absence reads as Top-down, so a v25 room is a v26 room as it is. The number moves so that an older build, whose
   // strict state schema refuses the field, refuses a v26 snapshot instead of loading it.
   { from: 25, to: 26, apply: (state) => state },
-  // Map discovery (docs/design-v1-map-discovery.md 5.5): players' memory, each holder's, the played marks and the scenes
+  // Map discovery (docs/design/design-v1-map-discovery.md 5.5): players' memory, each holder's, the played marks and the scenes
   // whose memory shares the room's free space, four collections a v26 room lacks, start empty. The upgrade step
   // (mapDiscoveryUpgrade) fills the marks, but only once replay has recovered every op stored before it, so it is no
   // part of this step, which sees the snapshot alone (ASTRA-31). The number moves so that an older build, which would
@@ -198,12 +198,12 @@ export const snapshotMigrations: MigrationStep[] = [
       return { ...room, memory: room.memory ?? {}, memoryBy: room.memoryBy ?? {}, playedScenes: room.playedScenes ?? {}, memoryShared: room.memoryShared ?? {} };
     },
   },
-  // Hex grids, phase H2 (docs/design-v1-hex-grids.md section 7): a hex scene may now hold free walls, difficult ground
+  // Hex grids, phase H2 (docs/design/design-v1-hex-grids.md section 7): a hex scene may now hold free walls, difficult ground
   // under hex keys with its chunk's stamp, traps other than pits, links and squeezing creatures, all in fields a v27
   // room already has, so a v27 room is a v28 room as it is. The number moves so that an H1 build, which would read a
   // hex scene's walls, difficult ground and traps by squares, refuses a v28 snapshot instead of loading it.
   { from: 27, to: 28, apply: (state) => state },
-  // Hex grids, phase H3 (docs/design-v1-hex-grids.md section 7): a hex scene's fog draft may now hold Reveal room's
+  // Hex grids, phase H3 (docs/design/design-v1-hex-grids.md section 7): a hex scene's fog draft may now hold Reveal room's
   // shapes of hex keys with the draft's stamp, and later in the phase heights, stairs and pits under hex keys, all in
   // fields a v28 room already has, so a v28 room is a v29 room as it is. A hex stair's mark is one of six facings, "0"
   // to "5", characters no v28 room holds. The number moves so that an H2 build, which would read a hex scene's Reveal
@@ -323,7 +323,7 @@ export const opMigrations: MigrationStep[] = [
   {
     // v4 ops ran while healing did nothing to the dead, a set of HP left a
     // dead creature dead, and the DM's Revive kept whatever HP a dead
-    // creature held (docs/design-v1-combat-flow.md 3.4 and 3.5). Their shape
+    // creature held (docs/design/design-v1-combat-flow.md 3.4 and 3.5). Their shape
     // is unchanged. As in step 3 to 4, replay hands the reducer the stored
     // version (`healRevivesDead`, `reviveToOne`), so a v4 op makes the state
     // it made then, and a later restore's guard still matches.
@@ -352,12 +352,12 @@ export const opMigrations: MigrationStep[] = [
     // and one with a size alone recorded nothing. From v6 a resize is not
     // movement: the old size goes on every earlier stop (PathStop.footprint)
     // and the resize appends an uncounted stop
-    // (docs/design-v1-token-window.md 8.7).
+    // (docs/design/design-v1-token-window.md 8.7).
     //
     // A patch that set an actor's `srdId` alone kept a `monsterId` it held.
     // From v6 an actor links one stat block, and setting any of `srdId`,
     // `monsterId` and `blockId` clears the other two
-    // (docs/design-v1-companion-stat-blocks.md 3.2, rule 1).
+    // (docs/design/design-v1-companion-stat-blocks.md 3.2, rule 1).
     //
     // The shape of every op is unchanged, so as in step 4 to 5, replay hands
     // the reducer the stored version (`resizeStop`, `oneLinkPerActor`), and
@@ -374,7 +374,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Wave 7's one bump (docs/design-v1-dice.md 12, docs/design-v1-roll-request.md
+    // Wave 7's one bump (docs/design/design-v1-dice.md 12, docs/design/design-v1-roll-request.md
     // 7.5), made by the first wave 7 build that landed, the dice's. Its new ops
     // (`sys.dice`, which the server stores in place of each roll) are new
     // shapes, and every older op keeps its shape, so the step is the identity.
@@ -392,7 +392,7 @@ export const opMigrations: MigrationStep[] = [
   },
   {
     // v7 ops ran before a row recorded that its turn had come
-    // (`InitEntry.hadTurn`, docs/design-v1-combat-flow.md 11.4). Replayed
+    // (`InitEntry.hadTurn`, docs/design/design-v1-combat-flow.md 11.4). Replayed
     // under a rule that records it, a turn advanced or passed on by a
     // removal would leave the encounter and its history holding a field
     // they did not hold then, and a later restore's guard would no longer
@@ -413,7 +413,7 @@ export const opMigrations: MigrationStep[] = [
   },
   {
     // `scene.create` takes a Universal VTT import's mark (`gridFromFile`,
-    // docs/design-v1-grid-detect.md section 6). Older ops lack it and
+    // docs/design/design-v1-grid-detect.md section 6). Older ops lack it and
     // replay as they were, so the step is the identity. An older build's
     // strict schema refuses the mark in a stored create, which the version
     // makes that build refuse cleanly instead.
@@ -452,7 +452,7 @@ export const opMigrations: MigrationStep[] = [
   },
   {
     // `character.update` takes a Druid's known forms (`knownForms`,
-    // docs/design-v1-known-forms.md 3.5). Older ops lack them and replay as
+    // docs/design/design-v1-known-forms.md 3.5). Older ops lack them and replay as
     // they were, so the step is the identity, and no rule gates on it. An
     // older build's strict schema refuses the field in a stored update,
     // which the version makes that build refuse cleanly instead.
@@ -467,7 +467,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // A player's ask for saves (docs/design-v1-player-save-spell.md 5.7):
+    // A player's ask for saves (docs/design/design-v1-player-save-spell.md 5.7):
     // two new ops, `cast.ask` and `cast.close`, and an optional `cast` on
     // `actor.outcome`. No older op names a cast, and an outcome without one
     // applies as before, so the step is the identity and no rule gates on
@@ -484,7 +484,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Walking routes (docs/design-v1-movement.md 6.6): `token.move` may
+    // Walking routes (docs/design/design-v1-movement.md 6.6): `token.move` may
     // carry a `route`, `build.rough` marks difficult ground, an area may
     // carry `slows`, a kept ruler `walk`, and a restore `routes`. No older op
     // holds any of them, so the step is the identity. What the reducer
@@ -503,7 +503,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Attached tokens (docs/design-v1-attach.md 8.6): `token.attach` and
+    // Attached tokens (docs/design/design-v1-attach.md 8.6): `token.attach` and
     // `token.detach` are new, and no older op names them, so the step is the
     // identity. What the reducer writes on its own, a holder's group moving
     // with it, the link pass, a carried leg's mark, a mount's path and its
@@ -521,7 +521,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Traps (docs/design-v1-traps.md 6.6): the trap ops, `door.set`'s `by`
+    // Traps (docs/design/design-v1-traps.md 6.6): the trap ops, `door.set`'s `by`
     // and `actor.outcome`'s `trap` are new, which an older build's strict
     // schemas refuse. No op stored before can meet a trap, so replay of an
     // older op writes no trap field. The one rule traps change for every
@@ -539,7 +539,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Re-sync from D&D Beyond (docs/design-v1-resync.md 4): `character.update`
+    // Re-sync from D&D Beyond (docs/design/design-v1-resync.md 4): `character.update`
     // gains `ddbSync` in its patch and `expect` beside it, which an older
     // build's strict schemas refuse. No op stored before names either, so
     // the step is the identity. What the reducer writes on its own, a
@@ -557,7 +557,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Follow-up batch 20 (docs/design-v1-traps.md 6.6, docs/design-v1-attach.md
+    // Follow-up batch 20 (docs/design/design-v1-traps.md 6.6, docs/design/design-v1-attach.md
     // 8.6): no op changes shape, so the step is the identity. Two rules the
     // reducer replays an op by change from this version: a stopping trap
     // stops a walker at the first spot at or after it goes off where it may
@@ -581,7 +581,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Follow-up batch 21 (docs/design-v1-attach.md 7.1 and 8.6, reviews
+    // Follow-up batch 21 (docs/design/design-v1-attach.md 7.1 and 8.6, reviews
     // FU21A-OP-1 and FU21A-OP-2): no op changes shape, so the step is the
     // identity. Two rules the reducer replays an op by change from this
     // version: a rider whose initiative row some player cannot see shares
@@ -628,7 +628,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Combat uses (docs/design-v1-combat-controls.md 3.6): `actor.use`,
+    // Combat uses (docs/design/design-v1-combat-controls.md 3.6): `actor.use`,
     // `actor.prompt` and `actor.rechargeRoll` are new, and a death roll's
     // `record`, a hit's `types`, a roll's `type`, an outcome's `quiet` and
     // In lair's `counts` are new optional fields, so no stored op changes
@@ -679,7 +679,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Class resources from D&D Beyond (docs/design-v1-ddb-resources.md 5):
+    // Class resources from D&D Beyond (docs/design/design-v1-ddb-resources.md 5):
     // a `character.update`'s resources may carry `used`, its record `res`
     // and `r:` markers, and its `expect` the part `resources`, all new
     // optional fields, so no stored op changes shape and the step is the
@@ -696,7 +696,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Per-player vision (docs/design-v1-per-player-vision.md 6.7): a
+    // Per-player vision (docs/design/design-v1-per-player-vision.md 6.7): a
     // scene's vision may carry `perPlayer`, `sys.explore` its `members` and
     // `join`, and `vision.holders` is new, so no stored op changes shape and
     // the step is the identity. From this version a vision patch without
@@ -713,7 +713,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Hex grids, phase H1 (docs/design-v1-hex-grids.md section 7): a
+    // Hex grids, phase H1 (docs/design/design-v1-hex-grids.md section 7): a
     // `scene.create` and a `scene.update` may carry `gridShape`, a
     // `room.update` the setting `newScenes`, and an area's footprint its
     // `size`, all new optional fields, so no stored op changes shape and
@@ -733,7 +733,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // The isometric view (docs/design-v1-isometric-view.md 7): a
+    // The isometric view (docs/design/design-v1-isometric-view.md 7): a
     // `scene.update` may carry `suggestedView`, a new optional field, so no
     // stored op changes shape and the step is the identity. The `view`
     // event's `iso` is ephemeral and never stored.
@@ -751,7 +751,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Map discovery (docs/design-v1-map-discovery.md 5.5): `sys.remember`
+    // Map discovery (docs/design/design-v1-map-discovery.md 5.5): `sys.remember`
     // is new, a builder op may carry `forget` and an undo or redo its
     // seq, a move's `teleport` may be "unknown" and the room's settings
     // `newScenePlayers`, all new, so no stored op changes shape and the
@@ -773,7 +773,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Hex grids, phase H2 (docs/design-v1-hex-grids.md section 7): on a
+    // Hex grids, phase H2 (docs/design/design-v1-hex-grids.md section 7): on a
     // hex scene the server now takes Wall lines (`build.walls`), Erase and
     // Difficult ground by hex keys (`build.erase`, `build.rough`), routes
     // and squeezes, attach links and traps other than pits, and a trap
@@ -795,7 +795,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Hex grids, phase H3 (docs/design-v1-hex-grids.md section 7): on a
+    // Hex grids, phase H3 (docs/design/design-v1-hex-grids.md section 7): on a
     // hex scene the server now takes Reveal room's fog shapes of hex keys
     // (`fog.draft` and `fog.live` with a `cells` shape), and later in the
     // phase heights, stairs and pits under hex keys. Every one of these
@@ -817,7 +817,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Follow-up batch 35 (docs/design-v1-hex-grids.md, As built,
+    // Follow-up batch 35 (docs/design/design-v1-hex-grids.md, As built,
     // D-261029-52 on hexes, D-261029-53 on squares): no op changes shape,
     // so the step is the identity. From this version, on hexes and on
     // squares, what sits on a holder whose walk squeezes takes the seat
@@ -850,8 +850,8 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Follow-up batch 36 (docs/design-v1-attach.md and
-    // docs/design-v1-hex-grids.md, As built, D-261029-56 and D-261029-58):
+    // Follow-up batch 36 (docs/design/design-v1-attach.md and
+    // docs/design/design-v1-hex-grids.md, As built, D-261029-56 and D-261029-58):
     // no op changes shape, so the step is the identity. From this version,
     // on squares, a holder whose walk starts squeezed carries what sits on
     // it by its full footprint's box as that snaps at each point of the
@@ -902,7 +902,7 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // Follow-up batch 37 (docs/design-v1-hex-grids.md, As built,
+    // Follow-up batch 37 (docs/design/design-v1-hex-grids.md, As built,
     // D-261029-170): no op changes shape, so the step is the identity. From
     // this version a walk off a holder on hexes crosses the raised sides
     // between two of the holder's hexes until it first stands clear of
@@ -1002,7 +1002,7 @@ const OLD_SRD_IDS: ReadonlyMap<string, string> = new Map([...RENAMED_SRD_IDS].ma
  * A character's `knownForms` is a list of SRD ids (SRD_ID_LIST_FIELDS).
  */
 const SRD_ID_FIELDS: ReadonlySet<string> = new Set(["srdId", "fromSrd"]);
-/** The fields that hold a list of SRD ids, each once: a character's known forms (docs/design-v1-known-forms.md 3.4). */
+/** The fields that hold a list of SRD ids, each once: a character's known forms (docs/design/design-v1-known-forms.md 3.4). */
 const SRD_ID_LIST_FIELDS: ReadonlySet<string> = new Set(["knownForms"]);
 
 /** The parts of a room that can name an SRD monster, besides `srdImages`. A fight's rows name none but their group keys. */
@@ -1208,7 +1208,7 @@ export function resizeStop(opVersion: number | undefined): boolean {
 
 /**
  * Whether a patch that sets one of an actor's stat block links clears the
- * other two (docs/design-v1-companion-stat-blocks.md 3.2, rule 1). Ops
+ * other two (docs/design/design-v1-companion-stat-blocks.md 3.2, rule 1). Ops
  * stored before version 6 kept the others (step 5 to 6 above). Live ops
  * carry no stored version and take today's rule.
  */
@@ -1218,7 +1218,7 @@ export function oneLinkPerActor(opVersion: number | undefined): boolean {
 
 /**
  * Whether an answer records where it came from
- * (docs/design-v1-roll-request.md 7.5): the op's `tag` on the answer and
+ * (docs/design/design-v1-roll-request.md 7.5): the op's `tag` on the answer and
  * its line, and the DM's `mark` kept apart from what a DC gives. Ops
  * stored before version 7 wrote neither, and a DM's mark there overwrote
  * the result alone (step 6 to 7 above). They replay by that rule, so they
@@ -1253,7 +1253,7 @@ export function marksHadTurn(opVersion: number | undefined): boolean {
  * Whether a move records what its leg took on the turn's path (`moved`,
  * `cost`, `diag`), its corners (`via`) and whether players saw it whole
  * (`routeSeen`), and joins a full path's legs by those sums
- * (docs/design-v1-movement.md 6.2, 6.6). Ops stored before version 13 wrote
+ * (docs/design/design-v1-movement.md 6.2, 6.6). Ops stored before version 13 wrote
  * none of them and replay by that rule. Live ops carry no stored version
  * and take today's rule.
  */
@@ -1263,7 +1263,7 @@ export function walksRoutes(opVersion: number | undefined): boolean {
 
 /**
  * Whether the reducer writes what attached tokens add on its own
- * (docs/design-v1-attach.md 8.6): a holder's move carrying its group, the
+ * (docs/design/design-v1-attach.md 8.6): a holder's move carrying its group, the
  * link pass, a carried leg's mark, a mount's path, a turn's `mounts`, a
  * row's `skipRound` and `markRound`, and Next's Reaction for a mount. Ops
  * stored before version 14 wrote none of them and replay by that rule.
@@ -1346,7 +1346,7 @@ export function draggedWalkFull(opVersion: number | undefined): boolean {
 
 /**
  * Whether the reducer writes what traps add on its own
- * (docs/design-v1-traps.md 6.6): springings on walks, landings, turns and
+ * (docs/design/design-v1-traps.md 6.6): springings on walks, landings, turns and
  * doors, their stops, occurrences, lines and actions, and an area reminder
  * that sweeps a teleport only where it lands. Ops stored before version 15
  * met no trap and swept a teleport's straight leg, and replay by that rule.
@@ -1358,7 +1358,7 @@ export function trapsGoOff(opVersion: number | undefined): boolean {
 
 /**
  * Whether the reducer writes what a D&D Beyond sync record adds on its own
- * (docs/design-v1-resync.md 4): the record's `at` from the op's time, and
+ * (docs/design/design-v1-resync.md 4): the record's `at` from the op's time, and
  * the record's removal when the block goes. Ops stored before version 16
  * met no record and replay by that rule. Live ops carry no stored version
  * and take today's rule.
@@ -1371,7 +1371,7 @@ export function syncsFromDdb(opVersion: number | undefined): boolean {
  * Whether a stopping trap stops a walker at the first spot at or after it
  * goes off where the walker may stand, what it meets up to there counting,
  * and a pit that opens stops one that fits in it wholly over the opening
- * (docs/design-v1-traps.md 5.5, reviews LP13-TR-2 and FU20A-OP-2). Ops
+ * (docs/design/design-v1-traps.md 5.5, reviews LP13-TR-2 and FU20A-OP-2). Ops
  * stored before version 17 stopped at the latest such spot at or before it
  * and replay by that rule. Live ops carry no stored version and take
  * today's rule.
@@ -1383,7 +1383,7 @@ export function stopsOnTrap(opVersion: number | undefined): boolean {
 /**
  * Whether a walk that leaves a holder on the ground starts on the ground
  * under the walker's own footprint rather than at its seat
- * (docs/design-v1-attach.md 8.0, reviews LP12-AT-4 and FU20A-OP-7). Ops
+ * (docs/design/design-v1-attach.md 8.0, reviews LP12-AT-4 and FU20A-OP-7). Ops
  * stored before version 17 started at the seat and replay by that rule.
  * Live ops carry no stored version and take today's rule.
  */
@@ -1394,7 +1394,7 @@ export function walksOffFromGround(opVersion: number | undefined): boolean {
 /**
  * Whether a controlled mount shares its rider's turn, and follows its
  * rider's row, only while every player's tracker shows that row
- * (docs/design-v1-attach.md 7.1, reviews FU21A-OP-1 and FU21A-OP-2), so a
+ * (docs/design/design-v1-attach.md 7.1, reviews FU21A-OP-1 and FU21A-OP-2), so a
  * row the DM hid never reaches players through the mount's row. Ops stored
  * before version 18 read the two tokens alone and replay by that rule. Live
  * ops carry no stored version and take today's rule.
@@ -1428,7 +1428,7 @@ export function logsByAudience(opVersion: number | undefined): boolean {
 
 /**
  * Whether the reducer writes what combat uses add on its own
- * (docs/design-v1-combat-controls.md 3.3): a turn start's records and
+ * (docs/design/design-v1-combat-controls.md 3.3): a turn start's records and
  * resets for every creature of the turn, the pips of its other creatures,
  * a landing row that only marks time starting nothing, the saved turn's
  * `turnUses`, the damage types taken, the clear at a fight's end, and the
@@ -1455,13 +1455,13 @@ export function takesBackTurnOnly(opVersion: number | undefined): boolean {
   return !(opVersion !== undefined && opVersion < 21);
 }
 
-/** The first snapshot and op versions of map discovery (docs/design-v1-map-discovery.md 5.5). */
+/** The first snapshot and op versions of map discovery (docs/design/design-v1-map-discovery.md 5.5). */
 export const MAP_DISCOVERY_SNAPSHOT_VERSION = 27;
 export const MAP_DISCOVERY_OP_VERSION = 26;
 
 /**
  * Whether the reducer writes what map discovery adds on its own
- * (docs/design-v1-map-discovery.md 5.4 and 5.5): the played mark of an op
+ * (docs/design/design-v1-map-discovery.md 5.4 and 5.5): the played mark of an op
  * that makes a scene the players' scene (a `room.setPlayerScene`, a
  * deletion that moves the players, or an undo of either), and the
  * explored ground a grid shape switch forgets on a scene with fog and
@@ -1479,7 +1479,7 @@ export function needsMapDiscoveryUpgrade(snapshotVersion: number): boolean {
 }
 
 /**
- * The map discovery upgrade step (docs/design-v1-map-discovery.md 5.5,
+ * The map discovery upgrade step (docs/design/design-v1-map-discovery.md 5.5,
  * ASTRA-31), over the state recovered from everything stored before the
  * upgrade: every scene there is gets the played mark, since which of them
  * the party explored cannot be told without reading the layers (ASTRA-27),

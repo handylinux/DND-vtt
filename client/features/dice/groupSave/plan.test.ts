@@ -9,7 +9,7 @@ import { worstCase } from "./outcome.ts";
 import { applyWaits, buildPlan, damageTo, openSaveState, pageBound, rowOutcome, rowWords } from "./plan.ts";
 import { groupRows } from "./rows.ts";
 
-/** What Apply freezes from the page (docs/design-v1-roll-options.md 5.4, 5.5). */
+/** What Apply freezes from the page (docs/design/design-v1-roll-options.md 5.4, 5.5). */
 
 const DICE: DiceView = {
   you: { memberId: "dm1", role: "dm" },
@@ -101,7 +101,7 @@ describe("the DM's own amount and the outcome's size", () => {
   });
 });
 
-/** The types each creature's damage carries, and a secret page's quiet (docs/design-v1-combat-controls.md 3.4 and 8). */
+/** The types each creature's damage carries, and a secret page's quiet (docs/design/design-v1-combat-controls.md 3.4 and 8). */
 describe("the plan's damage types and its quiet", () => {
   const hp = { cur: 30, max: 30, temp: 0 };
   const tokens = {
@@ -244,7 +244,7 @@ describe("the Dice panel's row for the open group save", () => {
   });
 });
 
-describe("a player's ask for saves (docs/design-v1-player-save-spell.md 3.3)", () => {
+describe("a player's ask for saves (docs/design/design-v1-player-save-spell.md 3.3)", () => {
   test("the plan carries the ask it answers, so the outcome closes it in the same op", () => {
     const page: Page = { ...sunburst(13), cast: { ask: castAsk("k1", { area: undefined, targets: ["g1"] }), who: "Thorn" } };
     const plan = buildPlan(page, DICE, [], { plan: "plan-1", newId: () => "e1" })!;

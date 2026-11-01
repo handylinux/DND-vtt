@@ -9,7 +9,7 @@ import { drawnBase, seenFootprintGround, toView, toWorld, type DrawnHeights, typ
 import type { Grid } from "#shared/rules/grid.ts";
 
 /**
- * The isometric view's drag adapter (docs/design-v1-isometric-view.md 6.3),
+ * The isometric view's drag adapter (docs/design/design-v1-isometric-view.md 6.3),
  * as pure functions. Konva gives the pressed node's screen point each
  * move, and the grab offset turns it into where the ring's center should
  * show (`v`, in view space). A point on screen names a whole line of world

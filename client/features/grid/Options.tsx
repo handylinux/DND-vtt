@@ -12,7 +12,7 @@ import { boxCalibration, endFinding, noteFor, useGridStore, type Fallback, type 
 import { useFindGrid, useSwitchRefusal } from "./useFindGrid.ts";
 
 /**
- * Line up grid's line (docs/design-v1-design-pass.md 2.4 rule 5): a
+ * Line up grid's line (docs/design/design-v1-design-pass.md 2.4 rule 5): a
  * search's wait once it has lasted the shared delay, muted, its line kept
  * as a reading's; else what the last search said, "Grid saved" in the
  * success green, or the hint.
@@ -28,19 +28,19 @@ export function gridLine(input: { slow: boolean; note: FoundNote | null; saved: 
 const STEP = 1;
 
 /**
- * The grid tool's options (docs/design-v1-tool-options.md 9.10): Apply,
+ * The grid tool's options (docs/design/design-v1-tool-options.md 9.10): Apply,
  * Use default after an import applied a grid it found, Find the grid
- * (docs/design-v1-grid-detect.md section 6), the nudges behind a chip, and
+ * (docs/design/design-v1-grid-detect.md section 6), the nudges behind a chip, and
  * the box's square size. Applying sends one `scene.setGrid` (and, when
  * the scene should match the map, one `scene.update` for its size).
  * Resize scene and Grid lines are always in ⋯. After Apply the line says
  * the grid is saved until the box moves again, since an unavailable
  * button alone did not.
  *
- * On a hex scene (docs/design-v1-hex-grids.md HX-D12) the box holds 7
+ * On a hex scene (docs/design/design-v1-hex-grids.md HX-D12) the box holds 7
  * hexes and the words say hexes. Find the grid looks for squares and
  * hexes on any scene, and a sure find of another shape switches the
- * scene's shape with its grid (docs/design-v1-grid-detect.md 10.7), which
+ * scene's shape with its grid (docs/design/design-v1-grid-detect.md 10.7), which
  * Use default after an import puts back.
  */
 export default function GridOptions() {
@@ -136,7 +136,7 @@ export default function GridOptions() {
           control: (
             <ValueChip label="Nudge" kind="setting" plain heading="Nudge the box" value="nudge" options={[{ key: "nudge", words: "Nudge" }]} title="Move or size the box a pixel at a time">
               <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space(1) }}>
-                {/* The same arrows as a list's Move up and Move down: each moves the box one step its way. The size steps zoom, never add (docs/design-v1-icons.md 2.3). */}
+                {/* The same arrows as a list's Move up and Move down: each moves the box one step its way. The size steps zoom, never add (docs/design/design-v1-icons.md 2.3). */}
                 <OptButton icon="arrowLeft" label="Nudge the box left" onClick={() => set(nudgeBox(box, -STEP, 0, 0, grid))} />
                 <OptButton icon="arrowRight" label="Nudge the box right" onClick={() => set(nudgeBox(box, STEP, 0, 0, grid))} />
                 <OptButton icon="arrowUp" label="Nudge the box up" onClick={() => set(nudgeBox(box, 0, -STEP, 0, grid))} />
@@ -178,7 +178,7 @@ export default function GridOptions() {
 /**
  * Whether the app draws its grid. Off for art with a grid of its own. The
  * same setting as the Scenes panel's "Grid lines" switch, with the same
- * fixed name, and pressed while the lines show (docs/design-v1-visual.md 3.7).
+ * fixed name, and pressed while the lines show (docs/design/design-v1-visual.md 3.7).
  */
 function GridLinesToggle(props: { scene: Scene }) {
   const actions = useRoomActions();

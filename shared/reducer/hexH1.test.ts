@@ -14,7 +14,7 @@ import { DM, P1, room, scene, template, token } from "../testutil.ts";
 
 /**
  * Every op phase H1 accepts on a hex scene, replayed to the states it made
- * (docs/design-v1-hex-grids.md section 6). H1 refuses on hex scenes every
+ * (docs/design/design-v1-hex-grids.md section 6). H1 refuses on hex scenes every
  * op whose rules are not hex yet, so no stored op on a hex scene needs a
  * later phase's rule gated (HX-D20). H2 and H3 replay this file unchanged:
  * a later phase that reads one of these ops another way breaks it, and must
@@ -150,7 +150,7 @@ function record(): Fixture {
   return { build: "hx4", state: first, steps };
 }
 
-describe("phase H1's ops on hex scenes (docs/design-v1-hex-grids.md section 6)", () => {
+describe("phase H1's ops on hex scenes (docs/design/design-v1-hex-grids.md section 6)", () => {
   test("replay to the states, logs and player views H1 made, every step accepted", () => {
     if (process.env.HEX_H1 === "write") {
       writeFileSync(FIXTURE, `${JSON.stringify(record())}\n`);

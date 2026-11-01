@@ -95,7 +95,7 @@ export function isoNamePill(candidates: readonly PillSpec[], layout: IsoNames, s
 
 /**
  * What the token label layout (useBoardText.ts) reads in the isometric view,
- * all in view units (docs/design-v1-isometric-view.md 5.4): where each
+ * all in view units (docs/design/design-v1-isometric-view.md 5.4): where each
  * token's decor lays out, and the pills and map labels the labels keep off,
  * each where the board draws it. A pan moves none of these, so a pan lays
  * out nothing.

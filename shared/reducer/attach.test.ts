@@ -11,7 +11,7 @@ import { DM, P1, actor, effect, env, room, template, token } from "../testutil.t
 import type { Env } from "./tx.ts";
 
 /**
- * Holders carrying what they hold (docs/design-v1-attach.md 5 and 8.2): a
+ * Holders carrying what they hold (docs/design/design-v1-attach.md 5 and 8.2): a
  * holder's move takes its group, a carried token's move re-seats it or lets
  * it loose, teleports and scene changes, the link pass, ground changes,
  * attaching and detaching, duplicates, the area sweep and replay below op

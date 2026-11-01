@@ -10,7 +10,7 @@ import type { RoomState } from "#shared/model.ts";
 import { ConsoleWatch, dragCells, openSideTab, OpSocket, pagePoint, Shots, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
 
 /**
- * The v1 wave 5 run (docs/design-v1-dm-tools.md section 4, 5I): the real
+ * The v1 wave 5 run (docs/design/design-v1-dm-tools.md section 4, 5I): the real
  * server serving the production build and three browsers, a DM on a
  * desktop, a player on a phone and a table display on a TV-sized screen
  * paired with a code.
@@ -357,7 +357,7 @@ describe("raccoon-vtt DM tools run", { timeout: 300_000 }, () => {
     await dm.getByRole("button", { name: "Ask the party" }).click();
     const sheet = dm.getByRole("dialog", { name: "Request a roll" });
     await sheet.waitFor();
-    // Each choice is one whole roll, picked in one of its rows (docs/design-v1-roll-request.md 3).
+    // Each choice is one whole roll, picked in one of its rows (docs/design/design-v1-roll-request.md 3).
     await sheet.getByRole("radiogroup", { name: "Saving throw" }).getByRole("radio", { name: "Strength" }).click();
     await sheet.getByRole("button", { name: "Or a second choice" }).click();
     // With a second choice, each picker is a group named by its place in the pair (LPD-DMPHONE-6).
@@ -373,7 +373,7 @@ describe("raccoon-vtt DM tools run", { timeout: 300_000 }, () => {
 
     const card = player.getByRole("dialog", { name: "The DM asks for a roll" });
     await card.waitFor();
-    // The DC joins the question's line (docs/design-v1-roll-request.md 5.1).
+    // The DC joins the question's line (docs/design/design-v1-roll-request.md 5.1).
     await card.getByText("The DM asks for a Strength or Dexterity saving throw, DC 12.").waitFor();
     await card.getByRole("radiogroup", { name: "Which one you rolled" }).getByRole("radio", { name: "Dexterity" }).tap();
     await card.getByLabel("Total Thorn rolled").fill("15");
@@ -501,7 +501,7 @@ describe("raccoon-vtt DM tools run", { timeout: 300_000 }, () => {
     const goblin = dmSocket.state!.tokens[run.goblinId]!;
     await tapCell(dm, scene.bounds, { x: goblin.x, y: goblin.y });
     await dm.getByRole("tab", { name: "Token" }).click();
-    // The picture's buttons sit in the panel's Image group, which starts folded (docs/design-v1-token-panel-groups.md 2).
+    // The picture's buttons sit in the panel's Image group, which starts folded (docs/design/design-v1-token-panel-groups.md 2).
     const imageGroup = dm.getByRole("tabpanel", { name: "Token" }).getByRole("button", { name: "Image", exact: true });
     if ((await imageGroup.getAttribute("aria-expanded")) === "false") await imageGroup.click();
     await dm.getByRole("button", { name: "Change image" }).first().click();
@@ -527,7 +527,7 @@ describe("raccoon-vtt DM tools run", { timeout: 300_000 }, () => {
   });
 
   test("10. the log exports as Markdown, the player's without the hidden monster", async () => {
-    // The Dice tab took the Log's place in the row, so the Log may stand behind More (docs/design-v1-dice.md 8.1).
+    // The Dice tab took the Log's place in the row, so the Log may stand behind More (docs/design/design-v1-dice.md 8.1).
     await openSideTab(dm, "Log");
     await dm.getByRole("button", { name: "Export", exact: true }).click();
     const dmFile = await exportEverything(dm);

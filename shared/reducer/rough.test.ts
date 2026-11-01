@@ -7,7 +7,7 @@ import { projectState } from "../project.ts";
 import { applyOp } from "../reducer.ts";
 import { DM, P1, apply, env, refused, room, scene, template } from "../testutil.ts";
 
-/** Difficult ground marks and slowing areas as stored (docs/design-v1-movement.md 6.3, 6.4). */
+/** Difficult ground marks and slowing areas as stored (docs/design/design-v1-movement.md 6.3, 6.4). */
 
 describe("difficult ground marks (6.3)", () => {
   test("mark cells and clear them, the terrain untouched and no walls version moved", () => {

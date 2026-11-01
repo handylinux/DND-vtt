@@ -14,7 +14,7 @@ export const PANE_HEIGHT_UNMEASURED = 200;
 /**
  * How the board shows a label, for a box on screen: its view, whether the
  * label stands up there, and the drawn ground under its anchor in cells
- * (docs/design-v1-isometric-view.md 6.2). Left out, Top-down.
+ * (docs/design/design-v1-isometric-view.md 6.2). Left out, Top-down.
  */
 export type LabelLook = { view: View; upright: boolean; ground: number };
 

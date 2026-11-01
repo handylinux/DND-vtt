@@ -21,7 +21,7 @@ const { RoomProvider } = await import("../../state/view.ts");
 const { useTrapCrossing } = await import("./Crossing.tsx");
 
 /**
- * The Trap tool on a hex scene (docs/design-v1-hex-grids.md phase H2): it
+ * The Trap tool on a hex scene (docs/design/design-v1-hex-grids.md phase H2): it
  * draws rectangles of hex keys, snaps a wire's ends to hex corners, finds a
  * trap by the hex under a tap, warns of the traps a drag crosses as the
  * server sets them off, and speaks of hexes.

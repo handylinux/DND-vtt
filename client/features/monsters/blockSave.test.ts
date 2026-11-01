@@ -18,7 +18,7 @@ function send(save: BlockSave, draft: StatBlock, view: BlockLive) {
   return { save: markSent(planned, intent), intent };
 }
 
-describe("a companion stat block editor's save (docs/design-v1-companion-stat-blocks.md 6.2)", () => {
+describe("a companion stat block editor's save (docs/design/design-v1-companion-stat-blocks.md 6.2)", () => {
   test("a new block: a create, taken, closes the editor with the base on what it stored", () => {
     const draft = block();
     const sent = send(openSave(null), draft, live(undefined));

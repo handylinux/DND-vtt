@@ -9,7 +9,7 @@ import { useCastTracker } from "./alerts.ts";
 import { areaAskSpec, areaSpellName, castSendsSlot, openedBlock, pendingSend } from "./cast.ts";
 
 /**
- * A player's Ask for saves on an area of their own (docs/design-v1-player-save-spell.md
+ * A player's Ask for saves on an area of their own (docs/design/design-v1-player-save-spell.md
  * 3.1), in the picked area's row and in the Areas panel, where the DM's
  * Save and damage stands. It opens the Dice panel on the area's caster when
  * that is theirs, else on the creature the panel has picked, with the block

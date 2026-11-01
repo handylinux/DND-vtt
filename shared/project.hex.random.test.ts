@@ -15,7 +15,7 @@ import { sightTileLevels } from "./rules/vision.ts";
 import { actor, chance, DM, env, int, member, pick, rng, room, scene, token } from "./testutil.ts";
 
 /**
- * The security property of hex grids (docs/design-v1-hex-grids.md HX-D10,
+ * The security property of hex grids (docs/design/design-v1-hex-grids.md HX-D10,
  * beside the square properties in project.test.ts): over random hex
  * scenes, both orientations, whole party and per player, with and without
  * vision, a player's or table display's projection never holds a creature

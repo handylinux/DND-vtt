@@ -7,7 +7,7 @@ import { gestureCells, partySeesAny } from "./inSight.ts";
 
 /*
  * The builder's note on the players' scene while the party's sight meets a
- * cell being built (docs/design-v1-map-discovery.md 9 and decision 15).
+ * cell being built (docs/design/design-v1-map-discovery.md 9 and decision 15).
  */
 
 const NONE = { unsent: [], rect: null, run: [], poly: [], labelMove: null } as const;

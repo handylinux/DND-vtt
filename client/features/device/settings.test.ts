@@ -110,7 +110,7 @@ test("with storage blocked, moved keys last until the page closes", async () => 
 });
 
 /*
- * The Sheet handle (docs/design-v1-sheet-swipe.md 4.8), kept on this
+ * The Sheet handle (docs/design/design-v1-sheet-swipe.md 4.8), kept on this
  * device as its other choices are: the ringed tail until one is chosen, and
  * again for a stored id this version does not know.
  */

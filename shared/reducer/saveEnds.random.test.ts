@@ -9,7 +9,7 @@ import { pendingSaves } from "../rules/saveEnds.ts";
 import { DM, P1, actor, chance, character, effect, entry, env, int, pick, rng, room, token } from "../testutil.ts";
 
 /**
- * Save ends over many random sequences (docs/design-v1-roll-options.md 11,
+ * Save ends over many random sequences (docs/design/design-v1-roll-options.md 11,
  * "Randomized, save ends"): turn ends, asks from two DM devices that may
  * each hold a stale view, typed and rolled answers, an ask to change an
  * answer written into the state as doc 4's `roll.change` will write it,

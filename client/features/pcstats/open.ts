@@ -3,7 +3,7 @@ import { scopeSlot, useRoomScope, type RoomScope } from "../../state/scope.ts";
 
 /**
  * The player character stat block editors open on this page
- * (docs/design-v1-pc-stats.md 7.2), held apart from whatever opened them,
+ * (docs/design/design-v1-pc-stats.md 7.2), held apart from whatever opened them,
  * as the companion block editors are (monsters/openEditors.ts): a token
  * panel that shows another token, a card that folds, or the character
  * leaving the viewer's view never takes a draft with it. PcStatsHost
@@ -26,14 +26,14 @@ export function closePcStats(store: StoreApi<OpenPcStats>, key: number): void {
   store.setState((s) => ({ list: s.list.filter((e) => e.key !== key) }));
 }
 
-/** `openPcStats(characterId)` for a component (docs/design-v1-pc-stats.md 5), with this page's scope. */
+/** `openPcStats(characterId)` for a component (docs/design/design-v1-pc-stats.md 5), with this page's scope. */
 export function useOpenPcStats(): (characterId: string) => void {
   const scope = useRoomScope();
   return (characterId) => openPcStats(scope, characterId);
 }
 
 /**
- * The re-sync dialogs open on this page (docs/design-v1-resync.md 1.2),
+ * The re-sync dialogs open on this page (docs/design/design-v1-resync.md 1.2),
  * held apart from the Stat block group that opened them, as the editors
  * are, so a panel that shows another token never takes a review with it.
  */

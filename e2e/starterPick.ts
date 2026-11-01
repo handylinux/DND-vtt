@@ -4,7 +4,7 @@ import { packsFor, type FoundWork, type StarterUse, type StarterWork } from "#sh
 import { STARTER_PACKS } from "#shared/starterArt.ts";
 
 /**
- * Picking a starter work in the Starter tab (docs/design-v1-starter-art.md
+ * Picking a starter work in the Starter tab (docs/design/design-v1-starter-art.md
  * 4), for the e2e files of the places that offer one. The work is chosen
  * from the shipped catalog, so a step names a real pack and a real work
  * whatever the packs hold.

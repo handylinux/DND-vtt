@@ -183,7 +183,7 @@ export async function closeOverlay(page: Page): Promise<void> {
   }
 }
 
-/** The tool's controls whole in reach as drawn, in its one row, and ⋯ (docs/design-v1-tool-options.md 14): nothing scrolls there any more. */
+/** The tool's controls whole in reach as drawn, in its one row, and ⋯ (docs/design/design-v1-tool-options.md 14): nothing scrolls there any more. */
 export async function expectTool(page: Page, tool: Tool, label: string): Promise<void> {
   if (tool === "none") return;
   const options = page.getByRole("toolbar", { name: tool === "Ruler" ? "Ruler options" : "Select options" });
@@ -294,7 +294,7 @@ export async function playerWayBack(): Promise<Locator | null> {
 
 export async function expectRollCard(label: string): Promise<void> {
   const card = player.getByRole("dialog", { name: ROLL_CARD });
-  // Roll is the card's primary while the creature waits (docs/design-v1-roll-request.md 5.2), so it is in reach too (W7B-P-8).
+  // Roll is the card's primary while the creature waits (docs/design/design-v1-roll-request.md 5.2), so it is in reach too (W7B-P-8).
   const roll = card.getByRole("button", { name: /^Roll .* for / }).first();
   const parts: (readonly [string, Locator])[] = [
     ["what to roll", card.getByText(/^The DM asks for/).first()],
@@ -303,7 +303,7 @@ export async function expectRollCard(label: string): Promise<void> {
     ["the total", card.getByLabel(/^Total /).first()],
     ["Send", card.getByRole("button", { name: "Send", exact: true }).first()],
   ];
-  // The last step of the card's fit (docs/design-v1-roll-request.md 5.7): where even the screen's top cannot hold the question,
+  // The last step of the card's fit (docs/design/design-v1-roll-request.md 5.7): where even the screen's top cannot hold the question,
   // Later and the answer block with its roll row at once, the header stops sticking and the card scrolls, so each is reached in
   // turn. Everywhere else they take a tap as they stand.
   const scrolls = await card.evaluate((el) => {

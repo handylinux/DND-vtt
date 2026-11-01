@@ -6,7 +6,7 @@ import type { UvttMap } from "./schema.ts";
 import { checkFile, planScene, type ReadTarget } from "./steps.ts";
 
 /**
- * The Universal VTT import's worker (docs/design-v1-maps-vision.md section
+ * The Universal VTT import's worker (docs/design/design-v1-maps-vision.md section
  * 3.1, "Where it runs"). A file of 50 to 150 MB is read, parsed, checked
  * and decoded here, so the page never freezes while it happens. The file is
  * the DM's own and untrusted: every size is bounded before the work it

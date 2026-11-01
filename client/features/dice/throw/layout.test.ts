@@ -6,7 +6,7 @@ import type { DiceRoll } from "#shared/model.ts";
 import { int, pick, rng } from "#shared/testutil.ts";
 import { MIN_DIE_PX, planTray, seededRandom, tapDice, throwDice, trayLayout, TRAY_PX, type ThrowDie } from "./layout.ts";
 
-/** The tray's layout and the dice of a result (docs/design-v1-roll-animation.md 3.1 and 3.3). */
+/** The tray's layout and the dice of a result (docs/design/design-v1-roll-animation.md 3.1 and 3.3). */
 
 const WIDTHS = [278, 288, 293, 328, 348, 356, 363];
 

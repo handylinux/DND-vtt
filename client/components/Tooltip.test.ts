@@ -7,7 +7,7 @@ import type { TipClick, TipEvent } from "./Tooltip.tsx";
 
 const { FOCUS_MS, HOVER_MS, KEEP_MS, PRESS_MS, TipStage, TipTimer, addsWords, placeTip, placeTipZoomed, tipMaxWidth } = await import("./Tooltip.tsx");
 
-/** The tooltip's rules (docs/design-v1-icons.md 3.2), on a fake clock and with plain boxes for the DOM. */
+/** The tooltip's rules (docs/design/design-v1-icons.md 3.2), on a fake clock and with plain boxes for the DOM. */
 
 // Clicks as browsers send them: a finger's lift, Enter or Space (`detail` 0), a screen reader's (no pointer named), a mouse's, and Safari's, which names no pointer at all.
 const FINGER: TipClick = { detail: 1, pointerType: "touch" };
@@ -23,7 +23,7 @@ function timer() {
   return { clock, tip, changes };
 }
 
-describe("when a tooltip shows (docs/design-v1-icons.md 3.2)", () => {
+describe("when a tooltip shows (docs/design/design-v1-icons.md 3.2)", () => {
   test("a mouse hover waits 500 ms, and a quick pass along a row shows nothing", () => {
     const { clock, tip, changes } = timer();
     tip.send({ t: "enter", pointer: "mouse" });
@@ -389,7 +389,7 @@ describe("whether a tooltip describes its control", () => {
   });
 });
 
-describe("where a tooltip goes (docs/design-v1-icons.md 3.2)", () => {
+describe("where a tooltip goes (docs/design/design-v1-icons.md 3.2)", () => {
   test("above with a 6 px gap where there is room, centered on its control", () => {
     assert.deepEqual(placeTip({ top: 200, left: 100, width: 44, height: 44 }, { width: 80, height: 24 }, { width: 390 }), { top: 170, left: 82 });
   });

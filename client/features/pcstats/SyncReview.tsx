@@ -12,7 +12,7 @@ import { theme } from "../../lib/theme.ts";
 import { alsoLine, changeLine, checkLines, differentIntro, goneDroppedLine, groupSummary, keptRow, lossesText, NOTHING_NEW, ownRollsLine, replacesLine, spentLine, syncReadLine, type ReadingBlocks } from "./resync.ts";
 
 /**
- * A D&D Beyond read's review (docs/design-v1-resync.md 3.3), for the
+ * A D&D Beyond read's review (docs/design/design-v1-resync.md 3.3), for the
  * re-sync dialog ("Check what changes") and the editor's D&D Beyond step
  * ("Check what was read"): the read line, Check these, the changes that
  * come in, Also set, then what is kept, what differs or what a fill
@@ -25,7 +25,7 @@ import { alsoLine, changeLine, checkLines, differentIntro, goneDroppedLine, grou
  * dialog finds that label by `labelId`.
  *
  * Also set holds the class resources' spent lines, unticked, before the
- * name (docs/design-v1-ddb-resources.md 6.1). After the editor's Save was
+ * name (docs/design/design-v1-ddb-resources.md 6.1). After the editor's Save was
  * refused for them, `only` shows the Class resources group and those lines
  * alone (6.2).
  */
@@ -42,8 +42,8 @@ const LINE = { margin: 0, lineHeight: theme.leading.body, overflowWrap: "anywher
  * (components/Panel.tsx): one column no wider than the dialog, its rows
  * `space(2)` apart, and `space(4)` between sections. The review draws its
  * own, since its labels take an id, `tabIndex` and focus that the
- * re-sync's focus rule needs (docs/design-v1-resync.md 3.6), which
- * `Section` does not offer (docs/design-v1-look-pass-2.md 3, lane 3).
+ * re-sync's focus rule needs (docs/design/design-v1-resync.md 3.6), which
+ * `Section` does not offer (docs/design/design-v1-look-pass-2.md 3, lane 3).
  */
 const SECTION = { display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(2), minWidth: 0 } as const;
 

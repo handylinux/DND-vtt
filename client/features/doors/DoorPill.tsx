@@ -25,7 +25,7 @@ const EMPTY_FOG: Readonly<Record<string, FogTile>> = {};
 const PILL_HEIGHT = 48 + 44 + theme.space(1) + 2 * theme.space(2);
 
 /**
- * A door's pill (docs/design-v1-maps-vision.md 4.1), over the door a tap
+ * A door's pill (docs/design/design-v1-maps-vision.md 4.1), over the door a tap
  * reached with the Select tool: Open or Close, and for the DM Lock or
  * Unlock, and Mark found or Hide on a secret door. It reads the door from
  * this viewer's own view, so it follows the door as it changes and goes
@@ -33,7 +33,7 @@ const PILL_HEIGHT = 48 + 44 + theme.space(1) + 2 * theme.space(2);
  * or when a token is tapped, whose bar takes its place. It steps aside
  * while a token is dragged, so it never covers where the token goes. In
  * Isometric it stands over the door's standing piece (`pick`,
- * docs/design-v1-isometric-view.md 5.3).
+ * docs/design/design-v1-isometric-view.md 5.3).
  */
 export function DoorPillHost(props: { scene: Scene; tool: string; chrome: ChromeCamera; viewport: Size; insets: Insets }) {
   const slot = useScoped(doorPillSlot);
@@ -56,12 +56,12 @@ export function DoorPillHost(props: { scene: Scene; tool: string; chrome: Chrome
 
 function Pill(props: { door: DoorOnMap; selected: string | undefined; scene: Scene; role: "dm" | "player"; chrome: ChromeCamera; viewport: Size; insets: Insets }) {
   const { door, scene, role } = props;
-  // At the camera the canvas last drew, subscribed only while the pill shows (docs/design-v1-relief-pan.md 6.3).
+  // At the camera the canvas last drew, subscribed only while the pill shows (docs/design/design-v1-relief-pan.md 6.3).
   const { camera, pick } = useChromeCamera(props.chrome, true)!;
   const actions = useRoomActions();
   const ui = useRoomUi();
   const store = useRoomStore();
-  // Who opens it, whose door traps it sets off (docs/design-v1-traps.md 5.3).
+  // Who opens it, whose door traps it sets off (docs/design/design-v1-traps.md 5.3).
   const opener = (): string | undefined => {
     const s = store.getState();
     const view = s.view;

@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { pageSizePt, pdfTextString, writePdf, type PdfImagePage } from "./pdfWrite.ts";
 
 /*
- * The PDF a handout of pages downloads as (docs/design-v1-pdf-handouts.md
+ * The PDF a handout of pages downloads as (docs/design/design-v1-pdf-handouts.md
  * section 6). Its structure is read back here byte by byte, and by pdf.js
  * itself where pdfjs-dist is installed, through its legacy build, which
  * pdf.js documents for Node.

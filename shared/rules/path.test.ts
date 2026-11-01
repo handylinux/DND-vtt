@@ -11,7 +11,7 @@ import { legGeometry, oneSize, publicCounters, reshapeLeg, stopsForNonOwners, st
 
 /**
  * A path's stops each keep the size the creature had there
- * (docs/design-v1-token-window.md 8.7): projection hands every viewer each
+ * (docs/design/design-v1-token-window.md 8.7): projection hands every viewer each
  * stop's size, and compaction never joins a leg across a resize while it
  * has another corner to drop.
  */

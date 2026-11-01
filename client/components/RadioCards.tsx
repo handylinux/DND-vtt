@@ -11,12 +11,12 @@ const NAME: CSSProperties = { padding: 0, fontSize: theme.font.input, fontWeight
 
 /**
  * One choice of a few, each option a full-width card with its own
- * explanation (docs/design-v1-visual.md 2.3): Room settings' choices, This
+ * explanation (docs/design/design-v1-visual.md 2.3): Room settings' choices, This
  * device's Map images, a handout's Show to and Players see. The chosen card
  * takes the accent's outline and tint. A disabled group keeps its shape
  * with a quiet outline and dim text, never a fade. A choice of a few short
  * words with no help of their own is a `Segmented` instead
- * (docs/design-v1-design-pass.md 2.4 rule 4).
+ * (docs/design/design-v1-design-pass.md 2.4 rule 4).
  *
  * The cards stand in one block under the name and its help: their fills
  * start at the name's edge and their words sit in by a card's border and
@@ -129,7 +129,7 @@ export function RadioCards<V extends string>(props: {
    * Both forms stand one column under the name: the help `space(1)` under
    * it, and the cards `space(2)` under whatever stands above them, further
    * than the cards stand from each other, so the first card never reads as
-   * part of the name (docs/design-v1-spacing-pass.md S1). Margins, not a
+   * part of the name (docs/design/design-v1-spacing-pass.md S1). Margins, not a
    * gap: a fieldset's gap never reaches its rendered legend, which is no
    * grid item, and left the cards on it.
    */

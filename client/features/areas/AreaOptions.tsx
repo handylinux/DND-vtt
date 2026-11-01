@@ -77,11 +77,11 @@ import { useLiveTokens } from "./useLiveTokens.ts";
 import { isHex, sceneGrid } from "#shared/rules/grid.ts";
 
 /**
- * The area tool's options (docs/design-v1-tool-options.md 9.3): its line
+ * The area tool's options (docs/design/design-v1-tool-options.md 9.3): its line
  * is the hint, or what the area catches, the "In area" list (features
  * section 9), names as this viewer sees them with allies marked,
  * recomputed as tokens move. Its row holds who the area comes from (the
- * From control, docs/design-v1-area-from-character.md), the shape, Place,
+ * From control, docs/design/design-v1-area-from-character.md), the shape, Place,
  * Cancel and the rest by priority, and its less used settings are always
  * in ⋯ under "More area options". The spell search and Size wait in the
  * shape chip's popover when the row has no room for them.
@@ -381,7 +381,7 @@ const SLOWS: readonly { value: SlowsChoice; label: string }[] = [
 ];
 
 /**
- * How the area changes movement inside it (docs/design-v1-movement.md
+ * How the area changes movement inside it (docs/design/design-v1-movement.md
  * 3.5), in ⋯: Normal, difficult terrain, Spirit Guardians' halved Speed or
  * Plant Growth's 4 ft per foot, set from the spell's preset. "Only the
  * caster's enemies" shows only with a caster to leave out, and a change of
@@ -521,7 +521,7 @@ function DraftOptions(props: { env: AreaEnv; st: AreaToolState; draft: AreaDraft
           id: "shared",
           priority: 4,
           control: (
-            // A fixed name that says what pressed means (docs/design-v1-visual.md 3.7).
+            // A fixed name that says what pressed means (docs/design/design-v1-visual.md 3.7).
             <OptButton pressed={st.shared} icon="shown" disabled={!t} label="Everyone sees this preview" onClick={() => setShared(env, !st.shared)}>
               Shared
             </OptButton>
@@ -609,7 +609,7 @@ function DraftOptions(props: { env: AreaEnv; st: AreaToolState; draft: AreaDraft
 }
 
 /**
- * Aiming the area a trap hits (docs/design-v1-traps.md 4.1): the area's
+ * Aiming the area a trap hits (docs/design/design-v1-traps.md 4.1): the area's
  * shapes, size and handles, then Save puts the shape into the trap and
  * goes back to its pane, as Cancel does without saving. No caster, owner,
  * look or preview for players: a trap's area is only its shape.
@@ -696,7 +696,7 @@ function SelectedOptions(props: { env: AreaEnv; st: AreaToolState; template: Are
             id: "hidden",
             priority: 4,
             control: (
-              // A fixed name that says what pressed means (docs/design-v1-visual.md 3.7).
+              // A fixed name that says what pressed means (docs/design/design-v1-visual.md 3.7).
               <OptButton pressed={t.visibility === "dm"} icon="hidden" label="Hide it from players" onClick={() => update({ visibility: t.visibility === "dm" ? "all" : "dm" })}>
                 Hidden
               </OptButton>
@@ -711,7 +711,7 @@ function SelectedOptions(props: { env: AreaEnv; st: AreaToolState; template: Are
             </OptButton>
           ),
         },
-        // A player's own area asks the DM for its saves in the DM's slot, so the row never holds more than the DM's (docs/design-v1-player-save-spell.md 6).
+        // A player's own area asks the DM for its saves in the DM's slot, so the row never holds more than the DM's (docs/design/design-v1-player-save-spell.md 6).
         env.role === "player" &&
           template.ownerId === env.youId && {
             id: "damage",

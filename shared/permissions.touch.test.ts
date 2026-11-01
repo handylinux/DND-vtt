@@ -30,7 +30,7 @@ import { NO_ROOM_TO_GROW } from "./rules/resize.ts";
 import { DM, P1, actor, character, env, member, room, token } from "./testutil.ts";
 
 /**
- * The touch rule's permissions (docs/design-v1-map-discovery.md 6 and
+ * The touch rule's permissions (docs/design/design-v1-map-discovery.md 6 and
  * decision 11): what a player hears when the real build stops them, by
  * their live ground on the stopping step, and how the server lands a walk,
  * a squeeze, a resize or a companion placement instead of refusing it in
@@ -350,7 +350,7 @@ describe("the touch rule on hexes (MD2-ASTRA-1, MD2-LK-3)", () => {
     };
 
     test(`${gridShape}: a walk past an unseen wall lands at its last clear spot in the generic words, today's on revealed ground`, () => {
-      // From H2 the last clear spot is the hex line's last hex before the wall (docs/design-v1-hex-grids.md HX-D8).
+      // From H2 the last clear spot is the hex line's last hex before the wall (docs/design/design-v1-hex-grids.md HX-D8).
       const lastHex = (s: RoomState, op: Op | undefined) => {
         assert.ok(op && op.t === "token.move");
         const grid = sceneGrid(s.scenes.s1!) as HexGrid;

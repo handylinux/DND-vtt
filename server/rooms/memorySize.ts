@@ -8,7 +8,7 @@ import { SPLIT_CELLS, wallSpans } from "#shared/rules/held.ts";
 import { isWritable } from "#shared/writable.ts";
 
 /*
- * What players' maps cost (docs/design-v1-map-discovery.md 5.5): a free
+ * What players' maps cost (docs/design/design-v1-map-discovery.md 5.5): a free
  * wall at the largest form a player's copy can hold of it, and each entry
  * of players' memory at the larger of its stored bytes and the most it can
  * add to a player's chunks. The map step keeps each layer's charge under

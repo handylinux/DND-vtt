@@ -2,7 +2,7 @@ import type { BuildChunk, FogDraft, GridShape, RoomState, Scene, Token, Trap } f
 import { hexInScene, hexKey, parseHexKey, sceneHexSpan, type HexGrid } from "./hex.ts";
 
 /**
- * A scene's grid (docs/design-v1-hex-grids.md section 7). Rule functions
+ * A scene's grid (docs/design/design-v1-hex-grids.md section 7). Rule functions
  * take it as a required parameter, so the typecheck lists every caller.
  * Their square path is the code from before hex grids.
  */

@@ -152,7 +152,7 @@ const MAP_FOCUS_STYLE: CSSProperties = { position: "absolute", inset: 0, pointer
  * height comes rounded, as the map's insets take it, and exact, for the
  * token bar's free area: at a zoomed interface size the rounding can take
  * a third of a pixel from it, enough to open the compact overlay where
- * the strip's 148 px fit (320 x 360 at 130%, docs/design-v1-bar-compact.md 3.1).
+ * the strip's 148 px fit (320 x 360 at 130%, docs/design/design-v1-bar-compact.md 3.1).
  */
 function useHeight(scale: number): [(el: HTMLElement | null) => (() => void) | undefined, number, number] {
   const [height, setHeight] = useState({ rounded: 0, exact: 0 });
@@ -178,7 +178,7 @@ function useHeight(scale: number): [(el: HTMLElement | null) => (() => void) | u
   return [ref, height.rounded, height.exact];
 }
 
-/** What the tool's options take from the map's foot, in screen px, measured as drawn (docs/design-v1-tool-options.md 10.2). */
+/** What the tool's options take from the map's foot, in screen px, measured as drawn (docs/design/design-v1-tool-options.md 10.2). */
 type OptionsBox = {
   /** The row while it stands at the foot: stacked, its box, floating, its box and its gap. 0 in the toolbar's row, tucked or with no row. */
   row: number;
@@ -377,7 +377,7 @@ function RoomPage() {
     if (next.letGo) ui.select(null);
     // The gate is read through gateKey, which changes exactly when its kind or its scene does.
   }, [gateKey, ui]);
-  // A change of scene closes whatever popover is open (docs/design-v1-tool-options.md 13.3): a tool popover's choices and actions belong to the scene it opened on.
+  // A change of scene closes whatever popover is open (docs/design/design-v1-tool-options.md 13.3): a tool popover's choices and actions belong to the scene it opened on.
   const sceneNow = useRoomView((s) => s.sceneId);
   const sceneBefore = useRef(sceneNow);
   useLayoutEffect(() => {
@@ -396,7 +396,7 @@ function RoomPage() {
    * panel's tab panel), or a tile in the list of panels. See the effect
    * after useDockFocus below.
    */
-  // A panel's request names it when it may be the bottom of two, whose name takes focus in place of the chosen tab (docs/design-v1-split-panel.md 9.2).
+  // A panel's request names it when it may be the bottom of two, whose name takes focus in place of the chosen tab (docs/design/design-v1-split-panel.md 9.2).
   const focusNext = useRef<{ kind: "panel"; id?: string } | { kind: "tile"; panelId: string } | { kind: "panels" } | null>(null);
 
   // The action bar steps aside once the token's panel is open, and focus, which went with the bar's Details, goes to the panel.
@@ -425,7 +425,7 @@ function RoomPage() {
 
   /*
    * The side panel from 900 px up, which can be hidden
-   * (docs/design-v1-layout-hierarchy.md 4.1). Its first state on this page
+   * (docs/design/design-v1-layout-hierarchy.md 4.1). Its first state on this page
    * is worked out once, the first time the layout is wide, from a phone's
    * sheet open as it turned, this device's choice or the short screen's
    * default (pages/sidePanel.ts), in a layout effect so a panel that starts
@@ -483,12 +483,12 @@ function RoomPage() {
     };
   }, [wide, sidePanelKeys, store, setSidePanel]);
   const optionsShown = useRoomView((s) => (tool.optionsShown ? tool.optionsShown(s) : true));
-  // A phone's open panel stays mounted while its sheet is hidden (docs/design-v1-layout-hierarchy.md 4.2): `mounted` is drawn, and `sheet` is it only while it shows.
+  // A phone's open panel stays mounted while its sheet is hidden (docs/design/design-v1-layout-hierarchy.md 4.2): `mounted` is drawn, and `sheet` is it only while it shows.
   const mounted = !wide && panel ? panels.find((p) => p.id === panel) : undefined;
   const sheet = mounted && !sheetHidden ? mounted : undefined;
   const tabId = panelById(tab) && panels.some((p) => p.id === tab) ? tab : (panels[0]?.id ?? "");
   /*
-   * The side panel's second panel (docs/design-v1-split-panel.md): kept on
+   * The side panel's second panel (docs/design/design-v1-split-panel.md): kept on
    * a phone and in a side panel too short for two, and on screen only while
    * two show. Everything that reads "the open panel" counts it then (10).
    */
@@ -501,10 +501,10 @@ function RoomPage() {
   }, [wide, ui]);
   // New chat and whispers mark the Log's button while it is not on screen.
   const unread = useLogUnread(wide ? sideShows("log") : sheet?.id === "log");
-  // Others' rolls as toasts while the Dice panel is not on screen (docs/design-v1-dice.md 8.5).
+  // Others' rolls as toasts while the Dice panel is not on screen (docs/design/design-v1-dice.md 8.5).
   useRollToasts(wide ? sideShows("dice") : sheet?.id === "dice");
   const journalUnread = useJournalUnread();
-  // A PDF upload waiting on the DM badges the DM panel, and on a phone the Panels button too (docs/design-v1-pdf-handouts.md 4.1.1).
+  // A PDF upload waiting on the DM badges the DM panel, and on a phone the Panels button too (docs/design/design-v1-pdf-handouts.md 4.1.1).
   const uploadWaiting = useJobWaiting() && role === "dm" ? 1 : 0;
   const badges: Record<string, number> = { log: unread, journal: journalUnread, dm: uploadWaiting };
   const badgeLabels: Record<string, string> = { dm: UPLOAD_WAITING };
@@ -669,7 +669,7 @@ function RoomPage() {
   const sideWidth = sideSheetWidth(width);
   const sideHeader = headerStacks({ width: sideWidth - safe.right - 2 * theme.line.border, buttons: mounted ? 3 : 1, actions: false }) ? SHEET_HEADER_STACKED : SHEET_HEADER;
   const sheetModeNow: SheetMode = !landscape ? "bottom" : sheetMode({ height, safeTop: safe.top, safeBottom: safe.bottom, topBars: topInset, header: sideHeader });
-  // An upright sheet swiped up fills the screen in the very short mode's shape (docs/design-v1-sheet-swipe.md 4.7), so all that follows from that shape follows from either: the dock's buttons in the header, the fold, the notices inside.
+  // An upright sheet swiped up fills the screen in the very short mode's shape (docs/design/design-v1-sheet-swipe.md 4.7), so all that follows from that shape follows from either: the dock's buttons in the header, the fold, the notices inside.
   const filled = sheetModeNow === "bottom" && sheetExpanded;
   const full = (sheetModeNow === "full" || filled) && sheetOpen;
   // Less a 1 px border on each side, which the very short mode does not draw (Sheet.tsx).
@@ -681,7 +681,7 @@ function RoomPage() {
   }, [dockStore, full, fullMode]);
   useLayoutEffect(() => () => dockStore.setState({ sheetFull: false, sheetFullMode: false }), [dockStore]);
   /*
-   * Where the tool's options stand (docs/design-v1-tool-options.md 4): on
+   * Where the tool's options stand (docs/design/design-v1-tool-options.md 4): on
    * a phone's toolbar or floating above a computer's, decided from the
    * layout, the role's toolbar and the side panel before paint, never from
    * a measurement, so picking a tool never moves a button.
@@ -693,7 +693,7 @@ function RoomPage() {
   const optionsPlaceNow = optionsArrangement(arrangementInput);
   const optionsEdges = mergedEdges(arrangementInput, optionsPlaceNow.arrangement === "pair" ? PAIR : arrangementInput.toolbar);
   /*
-   * The pair's last tool and tuck (docs/design-v1-tool-options.md 5.2, 5.4),
+   * The pair's last tool and tuck (docs/design/design-v1-tool-options.md 5.2, 5.4),
    * this page's own, in its scope. Any way a tool becomes active makes it
    * the last tool, Select aside, and ends another tool's tuck.
    */
@@ -883,7 +883,7 @@ function RoomPage() {
    * Beside an upright phone's resting strip the toasts' room ends 8 px
    * above the band's last 44 px over it (barDock.ts restFloor), in place of
    * the tool's highest control, so a toast never stands over the band
-   * (docs/design-v1-bar-compact.md 3.5).
+   * (docs/design/design-v1-bar-compact.md 3.5).
    */
   const stripTop = useStore(barDock, (s) => (s.bar?.rests ? s.bar.box.top : null));
   const toastFloor = stripTop === null ? null : restFloor(stripTop);
@@ -932,7 +932,7 @@ function RoomPage() {
     // A panel waiting on the side panel's measure is placed in a commit of its own, before paint (state/types.ts pendingOpen): the request waits for the render that draws it.
     if (ask.kind === "panel" && store.getState().local !== localNow) return;
     focusNext.current = null;
-    // A panel's name takes focus: the chosen tab for the top one, the bar's name for the bottom one (docs/design-v1-split-panel.md 9.2).
+    // A panel's name takes focus: the chosen tab for the top one, the bar's name for the bottom one (docs/design/design-v1-split-panel.md 9.2).
     if (ask.kind === "panel") (wide ? (ask.id !== undefined && ask.id === belowId && twoShown ? belowNameRef.current : sideTabRef.current) : sheetTitleRef.current)?.focus({ preventScroll: true });
     else if (ask.kind === "panels") panelsRef.current?.focus({ preventScroll: true });
     else sheetRef.current?.querySelector<HTMLElement>(`[data-opener="${panelTile(ask.panelId)}"]`)?.focus();
@@ -1110,7 +1110,7 @@ function RoomPage() {
             />
           </Sheet>
         ) : null}
-        {/* After the sheet, so a test's or a screen reader's first "Close" in the page is still the sheet's (docs/design-v1-visual.md 5.4). */}
+        {/* After the sheet, so a test's or a screen reader's first "Close" in the page is still the sheet's (docs/design/design-v1-visual.md 5.4). */}
         {docked && !dockInHeader ? <DockRow ref={setDockEl} zoom={zoom} sheetHeight={sheetHeight} summary={summary} actions={dockActions} showRef={showRef} summaryRef={summaryRef} /> : null}
         {/* One element in every arrangement, so a rotation never remounts the tool's options. */}
         {optionsDrawn ? (
@@ -1211,7 +1211,7 @@ function RoomPage() {
 type DockShowing = { kind: "bar" } | { kind: "alerts" };
 
 /**
- * Where focus goes as the dock comes and goes (docs/design-v1-visual.md
+ * Where focus goes as the dock comes and goes (docs/design/design-v1-visual.md
  * 3.2.1):
  *
  * - Folding: if focus was in the token bar or the alerts column, which now
@@ -1376,7 +1376,7 @@ function MapArea(props: {
  * 130% had no room for Fit. Undo and Redo never leave (M2 below). Until
  * Isometric is offered the row gives way as it always has. A DM's row from 900 px up
  * checks too, since Undo and Redo sit in it on every layout
- * (docs/design-v1-layout-hierarchy.md M2): there the strip stays, the chip
+ * (docs/design/design-v1-layout-hierarchy.md M2): there the strip stays, the chip
  * gives way to its dot first, then Full screen leaves the bar, then the
  * Phase menu, and once Isometric is offered the gaps take a phone's 6 px
  * and last the View button folds into the room's menu, each until the
@@ -1412,7 +1412,7 @@ function TopBar(props: {
   const activeEntryId = useRoomView((s) => s.view?.encounter?.activeEntryId ?? null);
   const round = useRoomView((s) => s.view?.encounter?.round ?? null);
   const notice = useYourTurnNotice();
-  // While the View menu's popover is open, the bar holding it stands over the notices with it (docs/design-v1-tool-options.md 7.6).
+  // While the View menu's popover is open, the bar holding it stands over the notices with it (docs/design/design-v1-tool-options.md 7.6).
   const [viewOpen, setViewOpen] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
   const [strip, setStrip] = useState<HTMLDivElement | null>(null);
@@ -1543,7 +1543,7 @@ function TopBar(props: {
 }
 
 /**
- * A chip in the top bar (docs/design-v1-visual.md 3.2): a pill 28 px tall
+ * A chip in the top bar (docs/design/design-v1-visual.md 3.2): a pill 28 px tall
  * at 13 px weight 700 with a 1 px outline. `shrink` lets a long label give
  * way to the bar's buttons, cut short with an ellipsis, down to the chip's
  * first child.
@@ -1750,7 +1750,7 @@ function Toasts(props: {
   /*
    * Over a band too short for a toast beside a resting strip, the newest
    * shows as one row over the top bar's row, and the older ones wait, not
-   * drawn (docs/design-v1-bar-compact.md 3.5, barDock.ts toastsOverBars).
+   * drawn (docs/design/design-v1-bar-compact.md 3.5, barDock.ts toastsOverBars).
    * A tap on its words shows it whole with its time held, and Close or
    * Escape shrinks it back. One that arrives meanwhile waits, and takes
    * the row then.
@@ -2009,7 +2009,7 @@ function cardWaitMs(): number {
 const TOAST_MAX_PX = theme.layout.notice;
 
 /**
- * What a tool's key said (docs/design-v1-tool-cycle.md 4.3), "Area:
+ * What a tool's key said (docs/design/design-v1-tool-cycle.md 4.3), "Area:
  * Sphere", in a polite status beside the toolbar, mounted with it, so a
  * phone's sheet over the options never takes it away. It alone reads its
  * slot, so a press re-renders it and not the page.
@@ -2170,7 +2170,7 @@ function ToastStack(props: { stack: ReturnType<typeof useToastStack>; style: CSS
 
 /**
  * One toast. In the stack, as it always was. As the one row over the top
- * bar's row (docs/design-v1-bar-compact.md 3.5): 44 px with its outline
+ * bar's row (docs/design/design-v1-bar-compact.md 3.5): 44 px with its outline
  * drawn inside, its words on one line cut with an ellipsis and whole as
  * the text button's name, which shows it whole, and its action at the
  * right end, its words whole and the row's full height. Whole: the stack's
@@ -2247,7 +2247,7 @@ const TOAST_RING_PX = 2;
 
 /**
  * Someone else's D20 Test leads with a flat d20 showing its kept face
- * (docs/design-v1-roll-animation.md 4), in the app's neutral colors, never
+ * (docs/design/design-v1-roll-animation.md 4), in the app's neutral colors, never
  * the roller's set. A natural 20 or a critical hit rings once in the accent,
  * and a natural 1 is outlined in danger. The icon is hidden from a screen
  * reader, so the verdict follows the text as hidden words.
@@ -2323,7 +2323,7 @@ function ToolIcon(props: { tool: ToolDef }) {
 type PopoverInputs = { mapWidth: number; height: number; safe: { top: number; right: number; bottom: number; left: number }; sideShown: boolean; top: number; lasting: number | null };
 
 /**
- * The active tool's options (docs/design-v1-tool-options.md 4, 6 and
+ * The active tool's options (docs/design/design-v1-tool-options.md 4, 6 and
  * 10.1): one row of controls and the line above it, in one element,
  * `role="toolbar"` named "<tool> options", before the toolbar in the
  * page's order, so Tab meets the options before the tools, and never
@@ -2382,7 +2382,7 @@ function ToolOptions(props: {
   }, [dockStore, raised]);
   useLayoutEffect(() => () => dockStore.setState({ toolPopover: false }), [dockStore]);
   const [description, setDescription] = useState<string | null>(null);
-  // A state with no row (6.6) draws only its line, 6 px above the toolbar, in every arrangement. Stacked, the map keeps its 53 px inset, so nothing moves, but no empty band is drawn there (LP7-CHROME-4, docs/design-v1-dice-ui.md 3.1).
+  // A state with no row (6.6) draws only its line, 6 px above the toolbar, in every arrangement. Stacked, the map keeps its 53 px inset, so nothing moves, but no empty band is drawn there (LP7-CHROME-4, docs/design/design-v1-dice-ui.md 3.1).
   const [rowless, setRowless] = useState(false);
   const descriptionId = useId();
   const { arrangement, room } = props.place;
@@ -2516,7 +2516,7 @@ function ToolOptions(props: {
 
 /**
  * The phone toolbar's fill and top edge, drawn under the tool's options
- * rather than by the toolbar itself (docs/design-v1-tool-options.md 10.1),
+ * rather than by the toolbar itself (docs/design/design-v1-tool-options.md 10.1),
  * so a row standing in the toolbar's own row is never painted under it.
  * It takes the taps between the toolbar's buttons, as the toolbar did, so
  * none reaches the map.
@@ -2542,7 +2542,7 @@ function ToolbarBackdrop(props: { zoom: number }) {
   );
 }
 
-/** The descriptions a toolbar button carries for tuck and its menus (docs/design-v1-tool-options.md 11). */
+/** The descriptions a toolbar button carries for tuck and its menus (docs/design/design-v1-tool-options.md 11). */
 const TOOLBAR_LINES = {
   shown: "Press again to hide its options.",
   hidden: "Its options are hidden. Press again to show them.",
@@ -2554,7 +2554,7 @@ const TOOLBAR_LINES = {
 } as const;
 
 /**
- * The toolbar (docs/design-v1-tool-options.md 5): the role's tools, and
+ * The toolbar (docs/design/design-v1-tool-options.md 5): the role's tools, and
  * Panels at its right end on a phone.
  *
  * - On a phone, the DM's setup tools stand behind Setup, a menu of tiles,
@@ -2610,13 +2610,13 @@ function Toolbar(props: {
   panelsRef: Ref<HTMLButtonElement>;
   /** A phone's hidden sheet, which Panels shows again: its button says so. */
   hiddenSheet: string | null;
-  /** The side panel is hidden from 900 px up: Panels shows at the toolbar's right end, which brings it back (docs/design-v1-layout-hierarchy.md 4.1). */
+  /** The side panel is hidden from 900 px up: Panels shows at the toolbar's right end, which brings it back (docs/design/design-v1-layout-hierarchy.md 4.1). */
   sideHidden: boolean;
   sidePanelId: string;
   onShowSide(): void;
   /**
    * Each tool's short name under its icon: on a phone, and on any touch
-   * screen from 900 px up (docs/design-v1-layout-hierarchy.md M10), which
+   * screen from 900 px up (docs/design/design-v1-layout-hierarchy.md M10), which
    * has no hover to show a tool's name. A mouse keeps the icons alone, named
    * on hover and to screen readers.
    */
@@ -2678,7 +2678,7 @@ function Toolbar(props: {
     return (
       // The pair's second button keeps its element as its tool changes, so focus stays on it after a pick in Tools.
       <Fragment key={second ? "pair-second" : t.id}>
-        {/* The play tools, then the setup tools past a divider (docs/design-v1-layout-hierarchy.md M1): a line in a phone's strip, a 12 px gap between the floating buttons. */}
+        {/* The play tools, then the setup tools past a divider (docs/design/design-v1-layout-hierarchy.md M1): a line in a phone's strip, a 12 px gap between the floating buttons. */}
         {i === divider ? <ToolbarDivider wide={wide && !inRow} /> : null}
         <ToolButton
           label={t.label}
@@ -2915,7 +2915,7 @@ function ToolButton(props: {
   /**
    * Its icon stands alone, with no name under it (a mouse's toolbar), so
    * its name shows as the shared tooltip on hover, keyboard focus and a
-   * long press, as every icon-only control's does (docs/design-v1-icons.md
+   * long press, as every icon-only control's does (docs/design/design-v1-icons.md
    * 3.2). A tool named under its icon keeps the native title.
    */
   alone?: boolean;
@@ -2998,7 +2998,7 @@ function ToolButton(props: {
 /**
  * The side panel from 900 px up: the party bar, the tabs, and the open
  * panel, or two of them one above the other with a bar between
- * (docs/design-v1-split-panel.md). While a panel shows a subpage
+ * (docs/design/design-v1-split-panel.md). While a panel shows a subpage
  * (features/panels.ts usePanelHeader), a header at the top of its pane
  * names the subpage with "Back to" its panel, and focus follows it in and
  * out (useSubpageFocus). With no subpage there is no header, since the
@@ -3007,9 +3007,9 @@ function ToolButton(props: {
  *
  * "Hide panels" at the end of the tab row hides it (`hidden`), its content
  * kept mounted, so a half-typed message, an open journal page and each
- * panel's scroll survive (docs/design-v1-layout-hierarchy.md 4.1). The
+ * panel's scroll survive (docs/design/design-v1-layout-hierarchy.md 4.1). The
  * tabs stand in one row at every height, the rest behind More
- * (docs/design-v1-panel-tabs.md), so the open panel keeps a body to show:
+ * (docs/design/design-v1-panel-tabs.md), so the open panel keeps a body to show:
  * at 932 x 430 a DM's wrapped tabs left it 45 px.
  *
  * Under the tab row, the room holds the top pane, and with a split the
@@ -3364,7 +3364,7 @@ function SidePane(props: {
   const header = props.subpage ? (
     <SheetHeader compact title={props.subpage.title} back={subpageBack(props.subpage)} titleRef={titleRef} />
   ) : props.cutTitle ? (
-    // On a touch pointer, a name the tab row does not show, an icon-only tab's or one More cuts, is named in full above the panel (docs/design-v1-panel-tabs.md 3.8, docs/design-v1-icons-2.md 3.1). A subpage's header names it in its Back instead.
+    // On a touch pointer, a name the tab row does not show, an icon-only tab's or one More cuts, is named in full above the panel (docs/design/design-v1-panel-tabs.md 3.8, docs/design/design-v1-icons-2.md 3.1). A subpage's header names it in its Back instead.
     <SheetHeader compact title={props.cutTitle} />
   ) : null;
   return (

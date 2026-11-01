@@ -9,7 +9,7 @@ import { diceLoader, throwHooksSlot, type ThrowHooks } from "./hooks.ts";
 import { ThrowStore, type ThrowView } from "./store.ts";
 
 /**
- * The throw's store bound to the page (docs/design-v1-roll-animation.md 6):
+ * The throw's store bound to the page (docs/design/design-v1-roll-animation.md 6):
  * the dice chunk's loader (throw/hooks.ts), the page's visibility, reduced
  * motion, the device's settings, and one store per Room, so a "view as a
  * player" preview keeps its own and never throws. Only the Dice panel's

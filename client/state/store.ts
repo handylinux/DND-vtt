@@ -93,7 +93,7 @@ export const ACTION_TOAST_MS = 12_000;
  *
  * A toast not drawn yet has its whole time left, and one shown whole has
  * what it had left as it stopped (`pausedAt`). Neither `runs`, so neither
- * gets a timer, and neither runs out unseen (docs/design-v1-bar-compact.md
+ * gets a timer, and neither runs out unseen (docs/design/design-v1-bar-compact.md
  * 3.5, review BC-OPUS-35). Nor does one whose button waits on a builder
  * gesture's asks (MD4-ASTRA-14): while a hold stands (`heldSince`, the
  * store's `buildHeldSince`) its time stands at what it had left as the hold
@@ -224,7 +224,7 @@ export type RoomUi = {
    * Selects a token, leaving its action bar as it is. Null lets go. `opens`
    * marks the viewer's own opening, such as a token just placed or
    * duplicated, which may move the map once so an upright phone's strip
-   * clears the token (docs/design-v1-bar-compact.md 3.6).
+   * clears the token (docs/design/design-v1-bar-compact.md 3.6).
    */
   select(tokenId: string | null, opts?: { opens?: boolean }): void;
   /** A tap on a token, on the map or its initiative row: select it and open its action bar (selection.ts). `add` adds it to the selection. */
@@ -237,7 +237,7 @@ export type RoomUi = {
   /** Ends "Multi-select" and lets go of the group, as its Done does (selection.ts doneSelecting). */
   doneSelecting(): void;
   showActions(open: boolean): void;
-  /** Opens a panel, in the pane `how` asks for or the one its rules choose (state/types.ts withPanel, docs/design-v1-split-panel.md 5.1). */
+  /** Opens a panel, in the pane `how` asks for or the one its rules choose (state/types.ts withPanel, docs/design/design-v1-split-panel.md 5.1). */
   openPanel(id: string, how?: PanelHow): void;
   closePanel(): void;
   /**
@@ -273,7 +273,7 @@ export type RoomUi = {
   dismissToast(id: number): void;
   /** The toast layer drew these toasts: each drawn for the first time starts its time (toastsLeft). */
   toastsDrawn(ids: readonly number[]): void;
-  /** A toast shown whole stops its time, and runs on from what it had left once it shrinks back (heldToasts, docs/design-v1-bar-compact.md 3.5). */
+  /** A toast shown whole stops its time, and runs on from what it had left once it shrinks back (heldToasts, docs/design/design-v1-bar-compact.md 3.5). */
   holdToast(id: number, held: boolean): void;
   /** Hides the X-card with this id on this device (features/xcard). */
   dismissXcard(id: number): void;
@@ -936,7 +936,7 @@ export function createRoomStore(options: RoomStoreOptions): RoomStore {
     applySnapshot(msg) {
       const s = get();
       corrections.snapshot((msg.state as ProjectedState).log);
-      // A table display's projection is a player's who owns nothing (docs/design-v1-dm-tools.md 3.1), so its rules are a player's.
+      // A table display's projection is a player's who owns nothing (docs/design/design-v1-dm-tools.md 3.1), so its rules are a player's.
       const you: You = { memberId: msg.you.memberId, role: msg.you.role === "dm" ? "dm" : "player" };
       const sceneId = msg.you.sceneId;
       // Everything up to the watermark is already in the snapshot. A higher
@@ -1041,7 +1041,7 @@ export function createRoomStore(options: RoomStoreOptions): RoomStore {
           if (historyKey && op && "head" in op && op.head) historyRefusals.set(historyKey, { head: op.head, toast: null });
           if (!op || sent.quiet) continue;
           if (r.code === "forget" && (op.t === "undo" || op.t === "redo") && "head" in op && typeof op.head === "string") {
-            // The undo toast's confirm (docs/design-v1-map-discovery.md 5.3): a yes names the refused step's n, which the server checks still heads the stack.
+            // The undo toast's confirm (docs/design/design-v1-map-discovery.md 5.3): a yes names the refused step's n, which the server checks still heads the stack.
             const expected = op.head;
             const scope = "scope" in op ? op.scope as "play" | "setup" | undefined : undefined;
             // Pressed while a builder gesture waits on its asks, it does nothing and the toast stays, as the store would refuse its step (`overtakes`).

@@ -13,7 +13,7 @@ import { publicWorld } from "./walkWorld.ts";
 import { COLUMNS, hexWallRoom, onHex, ROWS, sideWall, wallsRound } from "./hexWalls.testkit.ts";
 
 /**
- * Routes on the six-neighbor anchor lattice (docs/design-v1-hex-grids.md
+ * Routes on the six-neighbor anchor lattice (docs/design/design-v1-hex-grids.md
  * phase H2): the search finds the cheapest walk round walls, through
  * corridors squeezed, over difficult ground by hex keys and through slowing
  * areas, and every route it finds passes the server's check at the cost it

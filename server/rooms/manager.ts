@@ -62,7 +62,7 @@ type Entry = {
 const DAY_MS = 24 * 60 * 60_000;
 
 /**
- * A deletion of asset rows for one room (docs/design-v1-dm-tools.md 3.19),
+ * A deletion of asset rows for one room (docs/design/design-v1-dm-tools.md 3.19),
  * in the form each state of the room needs.
  */
 export type DeletionStep<T> = {
@@ -175,7 +175,7 @@ export class RoomManager {
   }
 
   /**
-   * A deletion step for one room (docs/design-v1-dm-tools.md 3.19): on its
+   * A deletion step for one room (docs/design/design-v1-dm-tools.md 3.19): on its
    * actor's queue when it is loaded, otherwise under the room's lock. A
    * room that unloads or loads while the step waits is looked at again, so
    * the step always runs in the form the room's state needs.
@@ -210,7 +210,7 @@ export class RoomManager {
   }
 
   /**
-   * The admin page's pin (docs/design-v1-dm-tools.md 3.18): the row, and
+   * The admin page's pin (docs/design/design-v1-dm-tools.md 3.18): the row, and
    * the loaded room at once, so a pinned room is never evicted from that
    * moment. Under the room's lock, so a load that read the row before the
    * change cannot create the room with the old value. False when there is

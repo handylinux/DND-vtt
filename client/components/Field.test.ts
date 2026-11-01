@@ -69,7 +69,7 @@ describe("FieldRow", () => {
 
   /*
    * A row wraps only where its label and its controls do not fit
-   * (docs/design-v1-polish.md R2): the controls ask for their own width up
+   * (docs/design/design-v1-polish.md R2): the controls ask for their own width up
    * to 160 px, and the label for 110 px or 40% of the row, so "DC" and a
    * 96 px field share a line too narrow for 110 and 160. The caps keep what
    * a text field and its label ask where it was, and the inner box's least

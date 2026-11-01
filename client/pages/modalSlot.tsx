@@ -8,7 +8,7 @@ import { scopeSlot, useScoped } from "../state/scope.ts";
 
 /*
  * Where the room's notices go while a sheet shows in the very short mode
- * (docs/design-v1-layout-hierarchy.md 4.2). That sheet is a modal dialog,
+ * (docs/design/design-v1-layout-hierarchy.md 4.2). That sheet is a modal dialog,
  * which makes everything outside it inert, so a notice over the map would
  * show and speak where no one can reach it. Each notice stays mounted
  * where it is, keeping its own state, and while the modal shows it renders

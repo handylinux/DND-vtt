@@ -31,7 +31,7 @@ export type SendDeps = {
 
 /**
  * Sends a drop's moves as one undo step, and says what stopped any of them
- * (docs/design-v1-maps-vision.md 4.1).
+ * (docs/design/design-v1-maps-vision.md 4.1).
  *
  * A stopped walk's note, with "Teleport here", wins over the token's action
  * bar (the owner's decision in the wave 4 review, W4-O-1). On a phone a
@@ -42,7 +42,7 @@ export type SendDeps = {
  *
  * A walk stopped at its first step sends nothing (D-261027-05): the
  * device's gate stops it only where the exact wall surely does
- * (docs/design-v1-map-discovery.md 5.2), so the token never leaves its
+ * (docs/design/design-v1-map-discovery.md 5.2), so the token never leaves its
  * square and the note keeps the words the device worked out.
  *
  * The server lands a walk the real build stops short where the player's

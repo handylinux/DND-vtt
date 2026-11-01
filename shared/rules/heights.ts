@@ -5,7 +5,7 @@ import { gridOfShape, holdsGridKeys, isHex, SQUARES, type Grid } from "./grid.ts
 import { hexNeighbors, type Hex } from "./hex.ts";
 
 /**
- * Raised areas and stairs (docs/design-v1-maps-vision.md section 4.2): the
+ * Raised areas and stairs (docs/design/design-v1-maps-vision.md section 4.2): the
  * ground under a cell or a footprint, where a token stands relative to it,
  * and which way each stair points.
  *
@@ -146,7 +146,7 @@ export function rangeGround(chunks: Chunks, sceneId: SceneId, r: CellRange): num
 
 /**
  * `rangeGround` on one scene for a caller asking at many spots, as a trap
- * walk does at every spot over an armed square (docs/design-v1-traps.md
+ * walk does at every spot over an armed square (docs/design/design-v1-traps.md
  * 9): it looks each chunk up once, not once a spot.
  */
 export function sceneGround(chunks: Chunks, sceneId: SceneId): (r: CellRange) => number {
@@ -218,7 +218,7 @@ const gridCache = new WeakMap<object, Map<SceneId, Grid>>();
 
 /**
  * The grid a scene's heights and stair marks are keyed by, read from its
- * chunks' stamps (docs/design-v1-hex-grids.md HX-D14): every chunk of a
+ * chunks' stamps (docs/design/design-v1-hex-grids.md HX-D14): every chunk of a
  * hex scene holding grid-keyed content carries its shape, and a scene
  * holds no cell data of another shape (the reducer, a restore and the
  * import all keep to it). So the stamp is the grid its keys mean, which

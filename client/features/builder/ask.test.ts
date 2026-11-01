@@ -18,7 +18,7 @@ import { builderSlot } from "./store.ts";
 
 /*
  * A builder gesture of several ops asks before any applies
- * (docs/design-v1-map-discovery.md 5.3), and its ops stay on the device
+ * (docs/design/design-v1-map-discovery.md 5.3), and its ops stay on the device
  * until the answer (MD4-ASTRA-5), so the forget question comes before the
  * first band and a no leaves nothing built.
  */

@@ -11,7 +11,7 @@ import { diceFoldsSlot } from "./diceFolds.ts";
 import { recentRolls } from "./logic.ts";
 
 /*
- * Recent rolls as a fold of the Dice panel (docs/design-v1-dice-pass.md 6.1
+ * Recent rolls as a fold of the Dice panel (docs/design/design-v1-dice-pass.md 6.1
  * to 6.5 and 7.6): one fold for the device, its newest roll as the folded
  * line, rows evened to a touch target's height with their first line on
  * Again's middle, and the Log's link on the column's edge.

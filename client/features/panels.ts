@@ -58,14 +58,14 @@ export type PanelProps = {
   close: PanelClose;
   /**
    * Whether the panel is on screen. A hidden sheet or side panel keeps its
-   * panel mounted (docs/design-v1-layout-hierarchy.md 4.2), so whatever
+   * panel mounted (docs/design/design-v1-layout-hierarchy.md 4.2), so whatever
    * marks content read asks this first.
    */
   shown: boolean;
 };
 
 /**
- * Which group a panel is in (docs/design-v1-layout-hierarchy.md M3): the
+ * Which group a panel is in (docs/design/design-v1-layout-hierarchy.md M3): the
  * ones a table reaches for in play, the ones for preparing, and the room's
  * own Menu. The groups keep to the order's ranges: play 10 to 24, prepare
  * 40 to 48, and Menu last.
@@ -75,7 +75,7 @@ export type PanelGroup = "play" | "prepare" | "room";
 export type PanelDef = {
   id: string;
   title: string;
-  /** Its icon, before its name in a tab, More's list and a phone's Panels list, or alone in a tab row too narrow for both (docs/design-v1-icons-2.md 3). */
+  /** Its icon, before its name in a tab, More's list and a phone's Panels list, or alone in a tab row too narrow for both (docs/design/design-v1-icons-2.md 3). */
   icon: IconName;
   dmOnly: boolean;
   /** Only where panels are sheets, below 900 px: from there up the side panel shows it another way. */
@@ -119,7 +119,7 @@ function panel(def: {
 }
 
 /**
- * Every panel, one per line, ordered by use (docs/design-v1-layout-hierarchy.md
+ * Every panel, one per line, ordered by use (docs/design/design-v1-layout-hierarchy.md
  * M3): in play the DM and the players look for the token, Initiative, the
  * party and the Log first, so they lead, and the panels for preparing a
  * session follow. The Token panel stays first and Initiative second, the
@@ -148,7 +148,7 @@ export function panelsFor(role: "dm" | "player", wide = false): PanelDef[] {
   return PANELS.filter((p) => (!p.dmOnly || role === "dm") && !(wide && p.narrowOnly)).sort((a, b) => a.order - b.order);
 }
 
-/** The labels of a DM's groups of panels (docs/design-v1-layout-hierarchy.md M3). Menu, the room's own, follows a plain line instead. */
+/** The labels of a DM's groups of panels (docs/design/design-v1-layout-hierarchy.md M3). Menu, the room's own, follows a plain line instead. */
 const GROUP_LABELS: Partial<Record<PanelGroup, string>> = { play: "In play", prepare: "Prepare" };
 
 export type PanelSection = {
@@ -163,7 +163,7 @@ export type PanelSection = {
 
 /**
  * Panels in sections, one rule for a DM's phone list of panels and the
- * side panel's More (docs/design-v1-panel-tabs.md 4.1), so a phone and a
+ * side panel's More (docs/design/design-v1-panel-tabs.md 4.1), so a phone and a
  * computer group them one way. Grouped, for a DM, each group in the slice
  * opens a section, under its label, and Menu after a plain line. A group
  * with no panel in the slice has no section, so More's list shows a label
@@ -191,7 +191,7 @@ export function panelById(id: string | null): PanelDef | undefined {
 
 /**
  * A panel's subpage, as the sheet or side panel shows it in its header
- * (docs/design-v1-visual.md 2.3): Members inside Menu, a journal page, the
+ * (docs/design/design-v1-visual.md 2.3): Members inside Menu, a journal page, the
  * encounter editor. `title` is the subpage's name and `parent` the panel's,
  * for the back button's name, "Back to Menu". `armed` is a question the
  * back button asks first, such as "Discard changes?" (SheetHeader.tsx
@@ -254,7 +254,7 @@ export function usePanelShown(): boolean {
  * panels, such as on the map or in the token window. A link inside a
  * panel passes it as `from` when it opens another panel (state/types.ts
  * PanelHow), so with two panels it opens in the other pane and never
- * covers the one it was pressed in (docs/design-v1-split-panel.md 5.1). A
+ * covers the one it was pressed in (docs/design/design-v1-split-panel.md 5.1). A
  * panel never names itself, since the same code may draw in either pane.
  */
 export function usePanelHere(): string | null {

@@ -13,7 +13,7 @@ import { actor, chance, int, member, pick, randomOp, randomState, token } from "
 import { SQUARES } from "./rules/grid.ts";
 
 /**
- * Per-player vision's test world (docs/design-v1-per-player-vision.md
+ * Per-player vision's test world (docs/design/design-v1-per-player-vision.md
  * section 10, lane PV1): stub rules through `visionRules`, a reference
  * explore step, random rooms and ops, and an oracle that works out from
  * nothing what each viewer may be given. Not a test file itself.
@@ -183,7 +183,7 @@ function adds(next: Uint8Array, held: Uint8Array | null): boolean {
 }
 
 /**
- * The explore step as the server would make it (docs/design-v1-per-player-vision.md
+ * The explore step as the server would make it (docs/design/design-v1-per-player-vision.md
  * 6.1 and 6.3), from the stub's sight: on the player scene with vision on
  * and no blackout, the players the holder list gains, and with fog on the
  * shared sight's new bits for the party's layer and each holder's own new
@@ -416,7 +416,7 @@ export function perPlayerOp(r: () => number, state: RoomState, who: Viewer): Op 
 
 /**
  * What one viewer may be given of a room, worked out from nothing
- * (docs/design-v1-per-player-vision.md section 10): the creatures, labels,
+ * (docs/design/design-v1-per-player-vision.md section 10): the creatures, labels,
  * stamps, pins, traps, areas and drawings of the player scene, the
  * tracker's rows, and whether the active creature's turn start.
  */

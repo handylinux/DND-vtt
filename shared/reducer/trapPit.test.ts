@@ -6,7 +6,7 @@ import { applyOp } from "../reducer.ts";
 import { groundAt } from "../rules/heights.ts";
 import { DM, env, P1, room, token, trap as trapOf } from "../testutil.ts";
 
-/** Pits open the ground (docs/design-v1-traps.md 5.7, build step 11). */
+/** Pits open the ground (docs/design/design-v1-traps.md 5.7, build step 11). */
 
 const pitRig = (over: Partial<TrapRig> = {}): TrapRig => ({ ...trapOf("x").rig!, who: "any", stops: true, pit: { floor: -10 }, ...over });
 const pit = (over: Partial<Trap> = {}): Trap => trapOf("pit", { zone: { cells: [{ x: 4, y: 4, w: 2, h: 2 }] }, rig: pitRig(), ...over });

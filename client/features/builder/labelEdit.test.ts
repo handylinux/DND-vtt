@@ -229,7 +229,7 @@ describe("panePlacement", () => {
   });
 });
 
-describe("panePlacement beside the alerts lane (docs/design-v1-look-pass-2.md 2.8)", () => {
+describe("panePlacement beside the alerts lane (docs/design/design-v1-look-pass-2.md 2.8)", () => {
   // The lane as the panes read it: the chrome and the column's facts in the zoomed layout px the panes are placed in.
   const chrome = { top: 52, bottom: 60, controls: 60, toolbar: 60, safe: { top: 0, right: 0, bottom: 0, left: 0 }, sheet: 0 };
   const insets = { top: 52, right: 0, bottom: 60, left: 0 };

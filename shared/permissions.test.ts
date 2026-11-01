@@ -338,7 +338,7 @@ describe("token and character fields", () => {
     assert.equal(code({ t: "character.update", characterId: "c1", patch: { defaultImage: { assetId: "dm1-x", crop: { cx: 0, cy: 0, zoom: 1 } } } }), "gone");
   });
 
-  test("a character's known forms are the DM's and its players' to choose, and no one else's (docs/design-v1-known-forms.md 3.2)", () => {
+  test("a character's known forms are the DM's and its players' to choose, and no one else's (docs/design/design-v1-known-forms.md 3.2)", () => {
     const state = setup();
     state.characters.c1!.ownerIds = ["p1", "p2"];
     state.characters.c2 = character("c2", { ownerIds: ["p1"] });
@@ -791,7 +791,7 @@ describe("players creating their own characters", () => {
     assert.equal(code(place(), P1, state), "ok");
     assert.equal(code(place({ partyVision: true }), P1, state), "forbidden");
     assert.equal(code(place({ partyVision: false }), P1, state), "forbidden");
-    // The token's own light is the owner's (docs/design-v1-maps-vision.md 4.3.9).
+    // The token's own light is the owner's (docs/design/design-v1-maps-vision.md 4.3.9).
     assert.equal(code(place({ light: { bright: 20, dim: 20 } }), P1, state), "ok");
   });
 
@@ -957,7 +957,7 @@ describe("wave 3 map ops", () => {
   });
 });
 
-describe("pdf handouts (docs/design-v1-pdf-handouts.md 3.3)", () => {
+describe("pdf handouts (docs/design/design-v1-pdf-handouts.md 3.3)", () => {
   // The room's rows by kind. Any other id is another room's image, or none.
   const rows: Record<string, AssetKind> = { h1: "handout", h2: "handout", map: "map", tok: "token" };
   const byKind: PermissionDeps = { canUseAsset: (_member, assetId, kind) => rows[assetId] === kind };
@@ -1006,7 +1006,7 @@ describe("pdf handouts (docs/design-v1-pdf-handouts.md 3.3)", () => {
   });
 });
 
-describe("a player's resize (docs/design-v1-token-window.md 8.6)", () => {
+describe("a player's resize (docs/design/design-v1-token-window.md 8.6)", () => {
   /**
    * Scene s1, which blocks moves: P1's familiar at 4,4 with a free wall at
    * x 4.375 inside its square, a Large of theirs at 4,10, one in a walled

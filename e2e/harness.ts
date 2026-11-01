@@ -245,7 +245,7 @@ const DICE_FOLD_KEYS = [
 
 /**
  * Stores every Dice panel fold open on each page the context opens, before
- * the page's own scripts run (docs/design-v1-dice-pass.md 11.1). A suite
+ * the page's own scripts run (docs/design/design-v1-dice-pass.md 11.1). A suite
  * that taps the roll options and is not about folds calls it once, so
  * the starts on a phone, such as Saves and checks folded, never hide what
  * it taps.
@@ -343,7 +343,7 @@ export class SocketWatch {
 
   async attach(context: BrowserContext, page: Page): Promise<void> {
     page.on("websocket", (ws) => {
-      // A DM's "View as a player" opens a socket of its own (`as=`, docs/design-v1-per-player-vision.md 7.4), which holds that player's view, not this page's.
+      // A DM's "View as a player" opens a socket of its own (`as=`, docs/design/design-v1-per-player-vision.md 7.4), which holds that player's view, not this page's.
       if (!ws.url().includes("/ws?room=") || /[?&]as=(?!display)/.test(ws.url())) return;
       this.sockets++;
       ws.on("framereceived", ({ payload }) => this.receive(typeof payload === "string" ? payload : payload.toString("utf8")));
@@ -462,7 +462,7 @@ export class LoadWatch {
 
 /**
  * Picks an option of a tool's choice wherever the row put it
- * (docs/design-v1-tool-options.md 14): through its chip's popover, which a
+ * (docs/design/design-v1-tool-options.md 14): through its chip's popover, which a
  * pick closes, in the row as a choice of its own, or behind ⋯, which it
  * closes after. `group` is the choice's name ("Drawing tool", "Shape"), and
  * `option` the option's.
@@ -517,7 +517,7 @@ export async function pressOption(page: Page, tool: string, name: string): Promi
 }
 
 /**
- * Makes a tool active whatever the toolbar shows (docs/design-v1-tool-options.md
+ * Makes a tool active whatever the toolbar shows (docs/design/design-v1-tool-options.md
  * 5): its own button, else its tile behind Setup on a phone, else, in the
  * pair, the Tools menu the last tool opens. A tool already active is left
  * as it is, since picking it again would hide its options.
@@ -556,7 +556,7 @@ export async function pickTool(page: Page, label: string, within?: Locator): Pro
 /**
  * A control of the token bar, by its role and name. On a phone held
  * upright the bar rests as a strip at the map's foot, whose quick row
- * shows only what fits there (docs/design-v1-bar-compact.md 3): a control
+ * shows only what fits there (docs/design/design-v1-bar-compact.md 3): a control
  * not in it is behind Expand, which this presses first, or further down a
  * strip that scrolls, which the control's own tap scrolls to. Any other
  * bar shows every control, and this only finds it.
@@ -581,7 +581,7 @@ export async function expandBar(bar: Locator): Promise<void> {
  * Turns Multi-select on from a token's bar, by barControl, and waits for
  * an upright phone's bar to rest: Multi-select pressed in the expanded
  * bar rests it, so the map it covered takes the taps that gather
- * (docs/design-v1-bar-compact.md 5.3, D-261024-22).
+ * (docs/design/design-v1-bar-compact.md 5.3, D-261024-22).
  */
 export async function multiSelect(bar: Locator): Promise<void> {
   await (await barControl(bar, "Multi-select")).click();
@@ -684,7 +684,7 @@ export function sideTabName(title: string): RegExp {
 }
 
 /**
- * Opens a panel in the side panel from 900 px up (docs/design-v1-panel-tabs.md
+ * Opens a panel in the side panel from 900 px up (docs/design/design-v1-panel-tabs.md
  * 11.3): nothing when it is already chosen, a click on its tab where the
  * row holds it, else More (the tab with a menu) and its item in More's
  * list. Then waits for the tab panel named by it. `page` may be a part of
@@ -704,7 +704,7 @@ export async function openSideTab(page: Page | Locator, title: string): Promise<
   await page.getByRole("tabpanel", { name }).waitFor();
 }
 
-/** A group of the scene settings page, its header's fold (docs/design-v1-map-discovery.md 8.4): "What players see", "Map image and grid", "Walls and movement" or "Size and view". */
+/** A group of the scene settings page, its header's fold (docs/design/design-v1-map-discovery.md 8.4): "What players see", "Map image and grid", "Walls and movement" or "Size and view". */
 export function sceneGroupFold(panel: Locator, name: string): Locator {
   return panel.getByRole("heading", { name, exact: true }).getByRole("button", { name, exact: true });
 }

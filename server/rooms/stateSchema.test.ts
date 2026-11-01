@@ -91,7 +91,7 @@ describe("roomStateSchema", () => {
     }
   });
 
-  test("companions, their spent Reactions, the saved Reactions of a step, the companion line and healing the dead parse, all optional (docs/design-v1-combat-flow.md 4.7)", () => {
+  test("companions, their spent Reactions, the saved Reactions of a step, the companion line and healing the dead parse, all optional (docs/design/design-v1-combat-flow.md 4.7)", () => {
     const state = room({ characters: { bree: character("bree") } });
     state.meta.settings = { ...state.meta.settings, healRevives: false };
     state.tokens.ws = token("ws", { kind: "npc", ownerIds: ["p1"], companion: { of: "bree", turn: "shared", reactionUsed: true } });
@@ -184,7 +184,7 @@ describe("roomStateSchema", () => {
     assert.deepEqual(Object.values(remapped.characters).map((c) => c.ddbSync?.at).filter(Boolean), ["2026-10-22T12:00:00.000Z"]);
   });
 
-  test("a sync record with class resource entries and an r: marker imports as it is (docs/design-v1-ddb-resources.md 5)", () => {
+  test("a sync record with class resource entries and an r: marker imports as it is (docs/design/design-v1-ddb-resources.md 5)", () => {
     const s = JSON.parse(JSON.stringify(randomState(rng(3))));
     const first = Object.keys(s.characters)[0]!;
     s.characters[first].stats = { abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }, saves: [], skills: {}, adjust: {}, defenses: {}, rolls: [] };
@@ -331,7 +331,7 @@ describe("roomStateSchema", () => {
     assert.equal(withPath([]).ok, false);
     assert.equal(withPath([{ ...stop, seen: false }]).ok, false, "marks are present or absent, never false");
     assert.equal(withPath([{ ...stop, why: "x" }]).ok, false);
-    assert.equal(withPath([{ ...stop, footprint: { w: 0.5, h: 0.5 } }, { ...stop, footprint: { w: 20, h: 3 } }, stop]).ok, true, "each stop's size, from a resize (docs/design-v1-token-window.md 8.7)");
+    assert.equal(withPath([{ ...stop, footprint: { w: 0.5, h: 0.5 } }, { ...stop, footprint: { w: 20, h: 3 } }, stop]).ok, true, "each stop's size, from a resize (docs/design/design-v1-token-window.md 8.7)");
     assert.equal(withPath([{ ...stop, footprint: { w: 0, h: 1 } }]).ok, false);
     assert.equal(withPath([{ ...stop, footprint: { w: 1 } }]).ok, false);
     assert.equal(withPath([{ ...stop, footprint: { w: 1, h: 1, d: 1 } }]).ok, false);
@@ -340,7 +340,7 @@ describe("roomStateSchema", () => {
     assert.equal(parseRoomState(JSON.parse(JSON.stringify(room({ tokens: { t1: token("t1") } })))).ok, true);
   });
 
-  test("a walked leg's corners and what it took, difficult ground, slowing areas and walking rulers parse, all optional (docs/design-v1-movement.md 6)", () => {
+  test("a walked leg's corners and what it took, difficult ground, slowing areas and walking rulers parse, all optional (docs/design/design-v1-movement.md 6)", () => {
     const stop = { x: 1, y: 2, elevation: 0, seen: true };
     const withPath = (stops: object[]) => {
       const state = room({ tokens: { t1: token("t1", { path: { turn: 4, stops: stops as never } }) } });
@@ -500,7 +500,7 @@ describe("roomStateSchema, the record of a turn's reminders (shared/reducer/remi
   });
 });
 
-describe("roomStateSchema, wave 5 (docs/design-v1-dm-tools.md 2.5)", () => {
+describe("roomStateSchema, wave 5 (docs/design/design-v1-dm-tools.md 2.5)", () => {
   /** Pages, pins and rolls made by their ops, so the import takes exactly what the ops store. */
   function wave5(): ReturnType<typeof room> {
     let state = room();
@@ -569,7 +569,7 @@ describe("roomStateSchema, wave 5 (docs/design-v1-dm-tools.md 2.5)", () => {
   });
 });
 
-describe("roomStateSchema, pdf handouts (docs/design-v1-pdf-handouts.md 3.3)", () => {
+describe("roomStateSchema, pdf handouts (docs/design/design-v1-pdf-handouts.md 3.3)", () => {
   const page = (assetId: string) => ({ assetId, width: 1584, height: 2048 });
   const withHandout = (handout: Record<string, unknown>) => {
     const state = JSON.parse(JSON.stringify(room()));
@@ -626,7 +626,7 @@ describe("roomStateSchema, pdf handouts (docs/design-v1-pdf-handouts.md 3.3)", (
     assert.deepEqual(parsed.ok && parsed.state.handoutDocs, {});
   });
 
-  test("companion blocks parse as their ops stored them, with the create op's bounds, and a backup from before them still imports, with none (docs/design-v1-companion-stat-blocks.md 3.6)", () => {
+  test("companion blocks parse as their ops stored them, with the create op's bounds, and a backup from before them still imports, with none (docs/design/design-v1-companion-stat-blocks.md 3.6)", () => {
     let state = room({ characters: { c1: character("c1", { name: "Bree", ownerIds: ["p1"] }) } });
     const { rev: _rev, ...block } = companionBlock("b1", "c1", { fromSrd: "owl", defaultImage: imageRef("art") });
     state = apply(state, { t: "companionBlock.create", block }, DM, 1);
@@ -660,7 +660,7 @@ describe("roomStateSchema, pdf handouts (docs/design-v1-pdf-handouts.md 3.3)", (
   });
 });
 
-describe("roomStateSchema, a Druid's known forms (docs/design-v1-known-forms.md 3.1)", () => {
+describe("roomStateSchema, a Druid's known forms (docs/design/design-v1-known-forms.md 3.1)", () => {
   const OLD = "dragon-tur-t-le";
   const NEW = "dragon-turtle";
   const withForms = (knownForms: string[]) => room({ characters: { bree: character("bree", { knownForms }), cy: character("cy") } });
@@ -694,7 +694,7 @@ describe("roomStateSchema, a Druid's known forms (docs/design-v1-known-forms.md 
   });
 });
 
-describe("roomStateSchema, a player's asks for saves (docs/design-v1-player-save-spell.md 5.7)", () => {
+describe("roomStateSchema, a player's asks for saves (docs/design/design-v1-player-save-spell.md 5.7)", () => {
   const line = (data: Record<string, unknown>) => ({ id: "40:0", at: "2026-10-18T20:00:00.000Z", kind: "event" as const, data: { type: "cast", castId: "k1", tokenId: "thorn", spell: "Fireball", ...data } });
   const asks = () =>
     castTable({

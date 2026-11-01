@@ -12,7 +12,7 @@ import { applyPcStatsPatch, EMPTY_PC_STATS, pcDerived } from "./pcStats.ts";
 import { planResources, resourceLosses, resourcePart, resourceResult, sameButLevels, type ResourceItem, type ResourcePlan, type SpentItem } from "./resourceSync.ts";
 
 /**
- * A D&D Beyond sync merged three ways (docs/design-v1-resync.md 2): the
+ * A D&D Beyond sync merged three ways (docs/design/design-v1-resync.md 2): the
  * record's base `b`, the character now `c` and D&D Beyond now `n`, per
  * field and per roll. What only D&D Beyond changed comes in, what the
  * player changed is kept with an offer to overwrite it, and a field or
@@ -24,7 +24,7 @@ import { planResources, resourceLosses, resourcePart, resourceResult, sameButLev
  * items they name (`syncResult`), and `syncPatch` and `undoSync` turn a
  * result into the one op Apply sends and the one Undo sends. The class
  * resources are one more group, merged by ./resourceSync.ts
- * (docs/design-v1-ddb-resources.md 4).
+ * (docs/design/design-v1-ddb-resources.md 4).
  */
 
 /** The groups of Changes and Different, in their order (3.3). */
@@ -145,7 +145,7 @@ export type SyncInput = {
   /**
    * The record the class resources merge against, when it is not
    * `character.ddbSync`: the editor's saved record, since its live list
-   * lacks the ids a pending record names (docs/design-v1-ddb-resources.md
+   * lacks the ids a pending record names (docs/design/design-v1-ddb-resources.md
    * 6.2). Its `from` decides their source too, so a pending record of
    * another sheet never makes the saved one's entries the same source's
    * (DDBBUILD-ASTRA-02).
@@ -171,7 +171,7 @@ export type SyncPlan = {
   losses: SyncLosses | null;
   /** How the rolls stand, for syncResult. */
   rolls: RollPlan;
-  /** How the class resources stand (docs/design-v1-ddb-resources.md 4). */
+  /** How the class resources stand (docs/design/design-v1-ddb-resources.md 4). */
   resources: ResourcePlan;
   /** Also set's lines for counts spent, unticked, before the name (4.3). */
   spent: SpentItem[];
@@ -203,7 +203,7 @@ export type SyncResult = {
   /**
    * The class resources as Apply sends them, whole, each `used` only where
    * the sync sets it, or undefined when none were read
-   * (docs/design-v1-ddb-resources.md 4).
+   * (docs/design/design-v1-ddb-resources.md 4).
    */
   resources: ResourceSent[] | undefined;
   /** The done line's counts (3.4): `removed` and `cameBack` count rolls, the `resources` ones class resources. */
@@ -794,7 +794,7 @@ export function bulkToggle(ids: readonly string[], ticks: ReadonlySet<string>): 
   return out;
 }
 
-/** The ticks a review opens with: every Also set line but the name and the counts spent (docs/design-v1-ddb-resources.md 4.3). */
+/** The ticks a review opens with: every Also set line but the name and the counts spent (docs/design/design-v1-ddb-resources.md 4.3). */
 export function defaultTicks(plan: SyncPlan): Set<string> {
   return new Set(plan.also.filter((a) => a.on).map((a) => a.id));
 }
@@ -915,7 +915,7 @@ export function syncResult(plan: SyncPlan, ticks: ReadonlySet<string>): SyncResu
   counts.resourcesBack = res.counts.cameBack;
 
   /*
-   * The markers of both kinds share one list (docs/design-v1-ddb-resources.md
+   * The markers of both kinds share one list (docs/design/design-v1-ddb-resources.md
    * 4.1): each held one keeps its age in the list the resources were planned
    * from, the rolls' new ones join the end, then the resources'. A removed
    * roll that came back leaves them. Past 40, the oldest of either kind go.
@@ -1021,7 +1021,7 @@ function besideBonus(plan: SyncPlan, result: SyncResult, ticks: ReadonlySet<stri
 
 /**
  * HP under a new maximum, by the companion design's rule
- * (docs/design-v1-companion-stat-blocks.md 5.2): a living character at its
+ * (docs/design/design-v1-companion-stat-blocks.md 5.2): a living character at its
  * maximum stays at its new maximum, and any other keeps its HP, which the
  * server cuts to the maximum if higher. It never brings a character back
  * or puts one down, and never sets temporary HP.
@@ -1102,7 +1102,7 @@ export function syncPatch(character: SyncCharacter, result: SyncResult): { patch
   const sameRec = sameRecord(result.record, character.ddbSync);
   if (result.resources !== undefined) {
     const after = resourcesAfter(character.resources, result.resources);
-    // A preset's level and atLevel ride with any other write, and alone are not one (docs/design-v1-ddb-resources.md 4.4, OP-19).
+    // A preset's level and atLevel ride with any other write, and alone are not one (docs/design/design-v1-ddb-resources.md 4.4, OP-19).
     if (!sameButLevels(after, character.resources) || (!same(after, character.resources ?? []) && (changes || !sameRec))) patch.resources = result.resources;
   }
   if (!changes && patch.resources === undefined && sameRec) return null;
@@ -1110,7 +1110,7 @@ export function syncPatch(character: SyncCharacter, result: SyncResult): { patch
   return { patch, expect: expectOf(character, syncExpectParts(patch, character.ddbSync)) };
 }
 
-/** What a sync's op expects: each part it writes, the shape, and the class resources whenever it changes the record's resource part (docs/design-v1-ddb-resources.md 5). */
+/** What a sync's op expects: each part it writes, the shape, and the class resources whenever it changes the record's resource part (docs/design/design-v1-ddb-resources.md 5). */
 function syncExpectParts(patch: CharacterPatch, before: Pick<DdbSyncPatch, "res" | "gone"> | undefined): ExpectPart[] {
   const parts = [...writtenParts(patch), "actor.shape" as const];
   if (patch.resources === undefined && patch.ddbSync !== undefined && resourcePart(patch.ddbSync) !== resourcePart(before)) parts.push("resources");
@@ -1160,7 +1160,7 @@ export function afterSync(before: SyncCharacter, patch: CharacterPatch, at: stri
   }
   if (patch.ddbSync === null || patch.stats === null) delete out.ddbSync;
   else if (patch.ddbSync !== undefined) out.ddbSync = { ...patch.ddbSync, at: patch.ddbSync.at ?? at };
-  // The reducer's own rule for the list (docs/design-v1-ddb-resources.md 5), so Undo expects exactly what Apply left.
+  // The reducer's own rule for the list (docs/design/design-v1-ddb-resources.md 5), so Undo expects exactly what Apply left.
   if (patch.resources !== undefined) {
     if (patch.resources.length > 0) out.resources = resourcesAfter(before.resources, patch.resources);
     else delete out.resources;
@@ -1200,7 +1200,7 @@ export function undoSync(before: SyncCharacter, sent: CharacterPatch, stamped: s
   if (s?.sheetUrl !== undefined) actor.sheetUrl = before.actor.sheetUrl ?? null;
   if (s?.hp !== undefined) actor.hp = { cur: before.actor.hp.cur, max: before.actor.hp.max };
   if (Object.keys(actor).length > 0) patch.actor = actor;
-  // The list whole, each count spent as it was (docs/design-v1-ddb-resources.md 5).
+  // The list whole, each count spent as it was (docs/design/design-v1-ddb-resources.md 5).
   if (sent.resources !== undefined) patch.resources = before.resources ?? [];
   patch.ddbSync = before.ddbSync ?? null;
   const parts = [...writtenParts(patch), "actor.shape" as const];

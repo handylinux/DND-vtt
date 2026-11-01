@@ -15,7 +15,7 @@ import { sceneWalls } from "./rules/walls.ts";
 import { actor, env, int, P1, reveal, rng, room, scene, token } from "./testutil.ts";
 
 /**
- * What players get of a creature on a hex scene (docs/design-v1-hex-grids.md
+ * What players get of a creature on a hex scene (docs/design/design-v1-hex-grids.md
  * HX-D10): it is read by the fog sub-cells inside its hexes, by its sight
  * there, and a sight or explored tile holding any of them reprojects it.
  */

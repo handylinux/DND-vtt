@@ -4,7 +4,7 @@ import { deleteToken, tokenUpdate } from "./tokens.ts";
 import type { Tx } from "./tx.ts";
 
 /**
- * Several tokens edited in one step (docs/design-v1-dm-tools.md 3.5). Each
+ * Several tokens edited in one step (docs/design/design-v1-dm-tools.md 3.5). Each
  * goes through its single op's reducer, so a group edit does exactly what
  * the same edits one by one would. The op applies whole or not at all, as
  * `actor.damageMany` does, and its inverse is one undo step.

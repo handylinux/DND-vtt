@@ -44,7 +44,7 @@ import { parseStatBlockText } from "./parse.ts";
  * else changed meanwhile is kept unless this draft changed it too.
  *
  * With `block` it edits a character's stat block for its companions
- * (docs/design-v1-companion-stat-blocks.md 6.2) for the DM or the
+ * (docs/design/design-v1-companion-stat-blocks.md 6.2) for the DM or the
  * character's players, and its Save waits for the server's answer, so a
  * refusal (a cap, the saves budget, a full room) shows here with the draft
  * intact. A block or character that leaves this device's view meanwhile
@@ -96,7 +96,7 @@ export function MonsterEditor(props: {
   // While the image picker or crop dialog is open over this one, Escape is theirs to close.
   const [imageOpen, setImageOpen] = useState(false);
   const problems = useRef<HTMLDivElement>(null);
-  // Past the saves budget, Save stays off until this moment (docs/design-v1-companion-stat-blocks.md 3.5).
+  // Past the saves budget, Save stays off until this moment (docs/design/design-v1-companion-stat-blocks.md 3.5).
   const [retryAt, setRetryAt] = useState<number | null>(null);
   // A new block's id, chosen once, so a save sent again after a lost answer finds the first one rather than making two.
   const [newBlockId] = useState(() => actions.newId());

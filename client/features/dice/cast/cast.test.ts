@@ -50,7 +50,7 @@ import {
   type CastSends,
 } from "./cast.ts";
 
-/** A player's ask for saves, the block's rules and its sends (docs/design-v1-player-save-spell.md 3.1, 3.2 and 8). */
+/** A player's ask for saves, the block's rules and its sends (docs/design/design-v1-player-save-spell.md 3.1, 3.2 and 8). */
 
 const fire: PanelRoll = { formula: "9d6", label: "Fireball damage, Fire", creature: { characterId: "thorn-c" } };
 const radiant: PanelRoll = { formula: "2d8", label: "Fireball damage and Divine Smite, Radiant", creature: { characterId: "thorn-c" } };

@@ -11,7 +11,7 @@ import { DEPENDED_ON, PARENT_GONE } from "./misc.ts";
 import { FINAL, isFinal, NOT_PLAYED } from "./rolls.ts";
 
 /**
- * The wave 5 reducer (docs/design-v1-dm-tools.md): journal pages with
+ * The wave 5 reducer (docs/design/design-v1-dm-tools.md): journal pages with
  * secret blocks, map pins, roll requests and their answers, and the group
  * edits of section 3.5, with the member removal, scene deletion, duplicate
  * and restore rules each of them adds.

@@ -5,7 +5,7 @@ import { opensKeyboard, type FocusTarget } from "./keyboardField.ts";
 
 /*
  * The on-screen keyboard's place, for what stands at the screen's foot
- * (components/Sheet.tsx, docs/design.md 14.4). iOS Safari never
+ * (components/Sheet.tsx, docs/design/design.md 14.4). iOS Safari never
  * resizes the layout viewport for the keyboard: the page keeps its height
  * and only `window.visualViewport` shrinks, so a sheet fixed to the foot
  * stays under the keyboard with the field that opened it. Safari may also
@@ -308,7 +308,7 @@ export function followField(scroller: HTMLElement, margin: number): { keep(): vo
 /**
  * Whether focus is in a field inside `ref` that opens the on-screen
  * keyboard: a surface holding it freezes the choices that would hide it,
- * fold it or turn it modal while someone types there (docs/design.md 14.4).
+ * fold it or turn it modal while someone types there (docs/design/design.md 14.4).
  */
 export function useTypingWithin(ref: RefObject<HTMLElement | null>): boolean {
   const [typing, setTyping] = useState(false);

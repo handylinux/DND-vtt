@@ -39,7 +39,7 @@ function tokensOf(...list: Token[]): Record<string, Token> {
   return Object.fromEntries(list.map((t) => [t.id, t]));
 }
 
-describe("which kinds fit which pairs (docs/design-v1-attach.md 5.1)", () => {
+describe("which kinds fit which pairs (docs/design/design-v1-attach.md 5.1)", () => {
   test("a ride needs a creature that is not Tiny on a creature at least one size larger, for every pair of sizes", () => {
     for (const rider of SIZES) {
       for (const mount of SIZES) {

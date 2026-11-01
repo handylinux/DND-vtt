@@ -48,7 +48,7 @@ function replay(opVersion?: number): { hashes: string[]; states: RoomState[]; re
   return { hashes, states, refusals };
 }
 
-describe("version 19 turns, a group save's Resistance and a fight's end (docs/design-v1-combat-controls.md 3.3)", () => {
+describe("version 19 turns, a group save's Resistance and a fight's end (docs/design/design-v1-combat-controls.md 3.3)", () => {
   test("replay at version 19 to the bytes the build before version 20 made, complete state and history, the stored restore included", () => {
     assert.equal(fixture.steps.length, 16);
     assert.equal(fixture.steps[11]!.op.t, "sys.restore");

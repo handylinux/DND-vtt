@@ -16,7 +16,7 @@ export function rechargeAlertId(card: PromptCard<RechargePromptState>): string {
 type RechargeAction = "roll" | "ready" | "dismiss" | "done";
 
 /**
- * A recharge at its creature's turn start (docs/design-v1-combat-controls.md
+ * A recharge at its creature's turn start (docs/design/design-v1-combat-controls.md
  * 4.5), one card per ability its record named due: "Fire Breath can
  * recharge (5–6)." with Roll, Mark ready and Dismiss. The roll is
  * `actor.rechargeRoll`, drawn on the server once whichever device rolls

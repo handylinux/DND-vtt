@@ -10,7 +10,7 @@ import { diceChoicesSlot } from "./useDicePanel.ts";
 import { ReceiptTracker, receiptsSlot } from "./useReceipt.ts";
 
 /*
- * The roller's part of the dice pass (docs/design-v1-dice-pass.md 4, 7.4
+ * The roller's part of the dice pass (docs/design/design-v1-dice-pass.md 4, 7.4
  * and 7.7): the roll modes as "Next roll" with Adv and Dis joined and
  * Secret apart, the sticky line's row in the middle of its painted box,
  * and the quick dice standing on the field's edge.
@@ -176,7 +176,7 @@ test("offline sticky Again reaches the existing connection error handler", () =>
   assert.equal((choices.getState().last as { error: string }).error, "Rolling needs a connection.");
 });
 
-describe("one announcer per roll: the sticky line yields to the surface that sent the roll (docs/design-v1-stat-block-rolls.md 8)", () => {
+describe("one announcer per roll: the sticky line yields to the surface that sent the roll (docs/design/design-v1-stat-block-rolls.md 8)", () => {
   // Real only once the tracker holds claims. On the contract's stubs a claim changes nothing.
   const real = (() => {
     const probe = new ReceiptTracker();
@@ -225,7 +225,7 @@ describe("one announcer per roll: the sticky line yields to the surface that sen
   });
 });
 
-test("a hidden Dice pane's sticky line shows nothing of the roll and says nothing, so the toast can (docs/design-v1-stat-block-rolls.md 8)", () => {
+test("a hidden Dice pane's sticky line shows nothing of the roll and says nothing, so the toast can (docs/design/design-v1-stat-block-rolls.md 8)", () => {
   const scope = new RoomScope();
   const choices = scope.get(diceChoicesSlot);
   choices.setState({ last: { tag: "H", rolls: [{ formula: "1d20+5" }], to: "all" } });

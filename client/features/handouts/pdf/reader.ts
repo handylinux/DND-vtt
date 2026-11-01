@@ -1,6 +1,6 @@
 /**
  * The open PDF as the upload job uses it, and the ways opening or drawing
- * fails (docs/design-v1-pdf-handouts.md 4.1.3 and 4.2.1). The job imports
+ * fails (docs/design/design-v1-pdf-handouts.md 4.1.3 and 4.2.1). The job imports
  * this freely. pdf.js itself loads only with render.ts, which the job
  * imports when a DM picks a PDF.
  */

@@ -46,7 +46,7 @@ describe("remapState", () => {
     state.log.push({ id: "9:0", at: AT, kind: "event", data: { type: "hp", tokenId: hurt, change: "damage", amount: 4, left: { cur: 3, max: 7, temp: 0 }, revert: { before: vitals(7), after: vitals(3) } } });
     const assets = new Map<string, ImportedAsset>();
     const asToken = (id: string) => assets.set(id, { id: `new-${id}`, kind: "token" });
-    // A shipped icon names no asset (docs/design-v1-dm-tools.md 3.12), so only uploads go through the image pipeline.
+    // A shipped icon names no asset (docs/design/design-v1-dm-tools.md 3.12), so only uploads go through the image pipeline.
     const upload = (image: Parameters<typeof imageAssetId>[0]) => {
       const id = imageAssetId(image);
       if (id !== undefined) asToken(id);
@@ -374,7 +374,7 @@ describe("remapState", () => {
   });
 });
 
-describe("remapState, wave 5 (docs/design-v1-dm-tools.md 2.5)", () => {
+describe("remapState, wave 5 (docs/design/design-v1-dm-tools.md 2.5)", () => {
   function wave5() {
     const state = room();
     state.monsters.m1 = customMonster("m1");
@@ -448,7 +448,7 @@ describe("remapState, wave 5 (docs/design-v1-dm-tools.md 2.5)", () => {
   });
 });
 
-describe("companions in an import (docs/design-v1-combat-flow.md 4.7)", () => {
+describe("companions in an import (docs/design/design-v1-combat-flow.md 4.7)", () => {
   function party() {
     const state = room({ characters: { bree: character("bree", { name: "Bree", ownerIds: ["p1"] }), gone: character("gone") } });
     state.meta.settings = { ...state.meta.settings, healRevives: false };
@@ -480,7 +480,7 @@ describe("companions in an import (docs/design-v1-combat-flow.md 4.7)", () => {
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.message);
   });
 
-  test("companion blocks get new ids and follow their character, a block whose character did not come through goes, and a picture follows its image or goes (docs/design-v1-companion-stat-blocks.md 3.6)", () => {
+  test("companion blocks get new ids and follow their character, a block whose character did not come through goes, and a picture follows its image or goes (docs/design/design-v1-companion-stat-blocks.md 3.6)", () => {
     const state = party();
     state.companionBlocks.moth = companionBlock("moth", "bree", { defaultImage: imageRef("moth-art") });
     state.companionBlocks.owl = companionBlock("owl", "bree", { name: "Owl", fromSrd: "owl", defaultImage: imageRef("lost-art") });
@@ -504,7 +504,7 @@ describe("companions in an import (docs/design-v1-combat-flow.md 4.7)", () => {
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.message);
   });
 
-  test("a companion's block link follows its block's new id, goes with a block that did not come through, and comes within the link rules (docs/design-v1-companion-stat-blocks.md 3.6)", () => {
+  test("a companion's block link follows its block's new id, goes with a block that did not come through, and comes within the link rules (docs/design/design-v1-companion-stat-blocks.md 3.6)", () => {
     const state = party();
     state.characters.cy = character("cy", { name: "Cy" });
     state.companionBlocks.moth = companionBlock("moth", "bree");
@@ -568,7 +568,7 @@ describe("companions in an import (docs/design-v1-combat-flow.md 4.7)", () => {
 });
 
 
-describe("remapState, pdf handouts (docs/design-v1-pdf-handouts.md 3.6)", () => {
+describe("remapState, pdf handouts (docs/design/design-v1-pdf-handouts.md 3.6)", () => {
   const page = (assetId: string, width = 1584, height = 2048) => ({ assetId, width, height });
 
   test("a handout's pages follow their new ids in order, a page that did not come through or came as another kind is dropped, and its image is its first page left", () => {
@@ -612,7 +612,7 @@ describe("remapState, pdf handouts (docs/design-v1-pdf-handouts.md 3.6)", () => 
   });
 });
 
-describe("remapState, a player's asks for saves (docs/design-v1-player-save-spell.md 5.7)", () => {
+describe("remapState, a player's asks for saves (docs/design/design-v1-player-save-spell.md 5.7)", () => {
   const asks = () =>
     castTable({
       casts: { k1: castAsk("k1"), k2: castAsk("k2", { area: undefined, targets: ["g1"], spell: "Hold Person" }) },
@@ -633,7 +633,7 @@ describe("remapState, a player's asks for saves (docs/design-v1-player-save-spel
   });
 });
 
-describe("attached tokens in an import (docs/design-v1-attach.md 5.2)", () => {
+describe("attached tokens in an import (docs/design/design-v1-attach.md 5.2)", () => {
   test("a link follows its holder's new id, goes when the holder did not come through, and the turn's mounts stay behind", () => {
     let state = room();
     state.tokens.horse = token("horse", { name: "Warhorse", kind: "npc", size: "large", x: 4, y: 4 });
@@ -653,7 +653,7 @@ describe("attached tokens in an import (docs/design-v1-attach.md 5.2)", () => {
   });
 });
 
-describe("traps in an import (docs/design-v1-traps.md 6.8)", () => {
+describe("traps in an import (docs/design/design-v1-traps.md 6.8)", () => {
   test("traps get new ids and follow their scene, actions follow the lights, stamps and creatures that came through, and occurrences and lines follow their creatures", () => {
     const state = room();
     state.tokens.thorn = token("thorn", { name: "Thorn", kind: "pc" });

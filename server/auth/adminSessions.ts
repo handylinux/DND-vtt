@@ -7,7 +7,7 @@ import type { CookieSettings } from "./sessions.ts";
 import { isToken, randomToken, sha256 } from "./tokens.ts";
 
 /**
- * The admin page's sessions (docs/design-v1-dm-tools.md 3.18).
+ * The admin page's sessions (docs/design/design-v1-dm-tools.md 3.18).
  *
  * They are not room sessions and hold no grants: a cookie of their own
  * holds 32 random bytes, and the table keeps only their sha256, a fixed

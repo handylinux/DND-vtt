@@ -20,7 +20,7 @@ import type { RoomGateway } from "./gateway.ts";
 import type { Pool } from "./persistence.ts";
 
 /**
- * The re-sync's race at the room actor (docs/design-v1-resync.md 4 and 5):
+ * The re-sync's race at the room actor (docs/design/design-v1-resync.md 4 and 5):
  * an Apply or an Undo carries `expect`, a hash of each part it writes as
  * its sender saw it, and the server refuses it when the character changed
  * in between, whoever changed it. The patches are built here by hand, as
@@ -287,7 +287,7 @@ function confirmedAt(seen: Character, sent: CharacterPatch["ddbSync"]): string {
 const STALE = { code: "invalid", message: CHARACTER_CHANGED };
 const setAc = (id: string, ac: number): Op => ({ t: "character.update", characterId: id, patch: { actor: { ac } } });
 
-describe("a re-sync's race at the room actor (docs/design-v1-resync.md 5)", () => {
+describe("a re-sync's race at the room actor (docs/design/design-v1-resync.md 5)", () => {
   test("the DM's AC edit between Ana's review and her Apply refuses it and changes nothing, and the review rebuilt from the live character is taken", async () => {
     await play(table(), async ({ actor, dm, ana, id }) => {
       const review = ana.sees(id);
@@ -501,7 +501,7 @@ describe("a re-sync's race at the room actor (docs/design-v1-resync.md 5)", () =
   });
 });
 
-describe("class resources in the race (docs/design-v1-ddb-resources.md 5)", () => {
+describe("class resources in the race (docs/design/design-v1-ddb-resources.md 5)", () => {
   const rage: ClassResource = { id: "rage", name: "Rage", max: 3, used: 0, reset: "shortOne", preset: "barbarian-rage", level: 3, atLevel: 5 };
   const linked = () => table({ resources: [rage], ddbSync: { ...EARLIER, res: { [hash12("rage")]: { k: `r:${hash12("barbarian:rage")}`, h: resourceHash(rage) } } } });
   /** D&D Beyond raises Rage to 4, nothing spent there, and adds Luck Points. */

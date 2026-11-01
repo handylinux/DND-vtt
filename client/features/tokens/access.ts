@@ -17,7 +17,7 @@ import type { ActorPatch, TokenPatch } from "#shared/protocol.ts";
 export const OWNER_TOKEN_FIELDS: ReadonlySet<keyof TokenPatch> = new Set(["image", "altImages", "rotation", "elevation", "name", "publicName", "notes", "rangeRings", "light"]);
 const OWNER_PC_ONLY_FIELDS: ReadonlySet<keyof TokenPatch> = new Set(["name", "publicName"]);
 /**
- * What a companion's owners may patch beyond those (docs/design-v1-combat-flow.md
+ * What a companion's owners may patch beyond those (docs/design/design-v1-combat-flow.md
  * 3.6.4): its name, what it is, its turn and its Reaction. Its stats go
  * through `actor`, limited by OWNER_ACTOR_FIELDS, on the token itself.
  */
@@ -37,19 +37,19 @@ export const OWNER_ACTOR_FIELDS: ReadonlySet<keyof ActorPatch> = new Set([
 
 /**
  * The stat block links a companion's owners set beside those
- * (docs/design-v1-companion-stat-blocks.md 4.1): an SRD block or one of the
+ * (docs/design/design-v1-companion-stat-blocks.md 4.1): an SRD block or one of the
  * character's own, never a room monster.
  */
 const COMPANION_OWNER_ACTOR_FIELDS: ReadonlySet<keyof ActorPatch> = new Set([...OWNER_ACTOR_FIELDS, "srdId", "blockId"]);
 
 /**
  * The shape a character's players take on its own actor beside those
- * (docs/design-v1-pc-stats.md 4.1): an SRD creature and whether it is Wild
+ * (docs/design/design-v1-pc-stats.md 4.1): an SRD creature and whether it is Wild
  * Shape, through `character.update`.
  */
 const CHARACTER_OWNER_ACTOR_FIELDS: ReadonlySet<keyof ActorPatch> = new Set([...OWNER_ACTOR_FIELDS, "srdId", "wildShape"]);
 
-/** Character fields an owner may patch, the stat block, known forms, sync record and class resources among them (docs/design-v1-pc-stats.md 4.1, docs/design-v1-known-forms.md 3.2, docs/design-v1-resync.md 4, docs/design-v1-combat-controls.md 3.1). `actor` is limited further by OWNER_ACTOR_FIELDS. */
+/** Character fields an owner may patch, the stat block, known forms, sync record and class resources among them (docs/design/design-v1-pc-stats.md 4.1, docs/design/design-v1-known-forms.md 3.2, docs/design/design-v1-resync.md 4, docs/design/design-v1-combat-controls.md 3.1). `actor` is limited further by OWNER_ACTOR_FIELDS. */
 export const OWNER_CHARACTER_FIELDS: ReadonlySet<string> = new Set(["name", "defaultImage", "actor", "level", "stats", "knownForms", "ddbSync", "resources"]);
 
 type View = Pick<RoomState, "characters"> | null | undefined;
@@ -110,7 +110,7 @@ export type TokenAccess = {
   effects: boolean;
   deathSaves: boolean;
   life: boolean;
-  /** The DM or an owner of a companion: changes what it is and its turn (docs/design-v1-combat-flow.md 3.6.9). */
+  /** The DM or an owner of a companion: changes what it is and its turn (docs/design/design-v1-combat-flow.md 3.6.9). */
   companion: boolean;
   /** A companion's owner who is not the DM: Dismiss in Delete's place. */
   dismiss: boolean;
@@ -119,7 +119,7 @@ export type TokenAccess = {
 };
 
 /**
- * Who changes a creature's size on the fly (docs/design-v1-token-window.md
+ * Who changes a creature's size on the fly (docs/design/design-v1-token-window.md
  * 8.1, shared/permissions.ts resizeCheck): the DM, on any token, and the
  * token's owners, companions included, while it is unlocked and its size
  * is one of the six. A Custom size is the DM's, and the DM's lock keeps a
@@ -140,7 +140,7 @@ export function tokenAccess(input: {
   const owner = !dm && ownsToken(view, memberId, token);
   const full = dm || owner;
   const actorVia = "ref" in token.actor ? "character" : "token";
-  // A companion is to its player what their character is (docs/design-v1-combat-flow.md 3.6.4).
+  // A companion is to its player what their character is (docs/design/design-v1-combat-flow.md 3.6.4).
   const companionOwner = owner && token.companion !== undefined;
   // A character's page is its own players' to edit, as the server's character.update holds. A player who owns only a token of it, one lent to them, owns the token and none of the page.
   const character = characterOf(view, token);

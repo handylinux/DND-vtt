@@ -10,11 +10,11 @@ import { footprintHexes, hexCenter, cornerAt, hexSubcells, referenceHex, snapAnc
  * so a token dropped a little off the grid still gives clean answers: a
  * Medium creature at x = 2.4 is treated as standing in column 2.
  *
- * A squeezed token (docs/design-v1-maps-vision.md section 4.1) is the
+ * A squeezed token (docs/design/design-v1-maps-vision.md section 4.1) is the
  * exception: every rule reads its squeezed footprint, centered on its stored
  * center and never snapped, while the map draws it full size.
  *
- * On a hex scene (docs/design-v1-hex-grids.md 4.2) a creature takes its
+ * On a hex scene (docs/design/design-v1-hex-grids.md 4.2) a creature takes its
  * size's hexes, a custom size by its category, around the anchor nearest
  * the middle of its stored box: 1 hex up to Medium, 3 for Large, 7 for Huge
  * and 12 for Gargantuan. Every function here whose answer depends on the
@@ -157,7 +157,7 @@ export function occupiedRange(g: Grid, token: PlacedToken): CellRange {
 /**
  * The cells an unsqueezed footprint of `w` by `h` cells (`footprintSize`)
  * overlaps at x, y: `occupiedRange` without a token to read, for a walk
- * that asks at every spot (docs/design-v1-traps.md 9). Squares only: the
+ * that asks at every spot (docs/design/design-v1-traps.md 9). Squares only: the
  * walks that ask it (ground under a walk, traps) are square rules until
  * hex grids' phases H2 and H3.
  */
@@ -199,7 +199,7 @@ export function occupiedCells(g: Grid, token: PlacedToken): Point[] {
 }
 
 /*
- * Hex footprints (docs/design-v1-hex-grids.md 4.2). The stored x, y stay
+ * Hex footprints (docs/design/design-v1-hex-grids.md 4.2). The stored x, y stay
  * the top-left of the size's box, so drawing, hit areas and labels work
  * unchanged, and only the rules read the hexes.
  */
@@ -283,7 +283,7 @@ export type SizeCategory = Exclude<Token["size"], "custom">;
 const SIZE_ORDER: readonly SizeCategory[] = ["tiny", "small", "medium", "large", "huge", "gargantuan"];
 
 /**
- * The size the rules read for a creature (docs/design-v1-movement.md 4.5):
+ * The size the rules read for a creature (docs/design/design-v1-movement.md 4.5):
  * a standard size is itself, and a custom one is the smallest standard size
  * whose square holds its footprint's longer side. The longer side, since a
  * creature's size is the space it controls, and a 1 by 3 creature controls

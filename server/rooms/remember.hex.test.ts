@@ -16,7 +16,7 @@ import { MEMORY_CAP } from "./memorySize.ts";
 import { mapStepOps } from "./remember.ts";
 
 /**
- * The map step on hex scenes (docs/design-v1-hex-grids.md H3): a stair's
+ * The map step on hex scenes (docs/design/design-v1-hex-grids.md H3): a stair's
  * direction reads the scene's whole stair map, so an edit out of sight that
  * takes a stair away or turns it is remembered as players saw it, in the
  * party's layer and in a holder's, on hex rows and hex columns.

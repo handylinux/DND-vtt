@@ -243,7 +243,7 @@ describe("the end of a display", () => {
   });
 });
 
-describe("following an Isometric DM (docs/design-v1-isometric-view.md 4.2, ISO-D17)", () => {
+describe("following an Isometric DM (docs/design/design-v1-isometric-view.md 4.2, ISO-D17)", () => {
   const dmCam = { x: 220, y: -40, scale: 40 };
   const dmViewport = { width: 400, height: 800 };
   const heightsOf = (state: RoomState, fog: boolean) => displaySeen({ room: state, scene: state.scenes.s1!, fog });

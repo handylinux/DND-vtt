@@ -11,7 +11,7 @@ import type { Grid } from "#shared/rules/grid.ts";
  * winning.
  *
  * A hex scene's name says `hex` where a square one's has its size, as in
- * `crypt-hex-70px.png` (docs/design-v1-hex-grids.md HX-D13): other VTTs
+ * `crypt-hex-70px.png` (docs/design/design-v1-hex-grids.md HX-D13): other VTTs
  * read `30x20` as squares, and the upload's size hint passes over it.
  *
  * The DM view adds `-dm`, so the copy that shows secret doors is never

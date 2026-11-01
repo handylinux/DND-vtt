@@ -12,7 +12,7 @@ import type { Fill, OutcomeForm } from "./chain.ts";
 import type { GroupTest } from "./rows.ts";
 
 /**
- * Where a group save's fields start (docs/design-v1-roll-options.md 5.6 and
+ * Where a group save's fields start (docs/design/design-v1-roll-options.md 5.6 and
  * Appendix C's fill order): a save action, an area's spell preset and its
  * caster, each field from the first source that knows it, and the fill
  * line that says where they came from. The DM may change any of them.
@@ -177,11 +177,11 @@ export function casterActions(dice: DiceView, template: Pick<AreaTemplate, "cast
   return creatureRolls(dice, { tokenId: template.casterId })?.named.filter((r) => r.save !== undefined) ?? [];
 }
 
-/** What players call a trap (docs/design-v1-traps.md 4.4): its name once found, else only "Trap". */
+/** What players call a trap (docs/design/design-v1-traps.md 4.4): its name once found, else only "Trap". */
 export const UNFOUND_TRAP = "Trap";
 
 /**
- * A trap's fill (docs/design-v1-traps.md 4.4): its save or No save, so a
+ * A trap's fill (docs/design/design-v1-traps.md 4.4): its save or No save, so a
  * pit applies in one tap, its DC, damage, half or none, conditions on a
  * fail and how long they last, and "Against a spell" off. The page and its
  * line name the trap. What players read names it only once they found it.

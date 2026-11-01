@@ -95,7 +95,7 @@ export function hpOps(targets: readonly HpTarget[], change: HpChange, crit: bool
 /**
  * Sends one entry's ops as one gesture, so one undo takes the whole entry
  * back from every creature it reached, not from the last of them alone
- * (docs/design-v1-dm-tools.md 3.5).
+ * (docs/design/design-v1-dm-tools.md 3.5).
  */
 export function sendHpEntry(actions: Pick<RoomActions, "dispatch" | "newId">, targets: readonly HpTarget[], change: HpChange, crit: boolean): void {
   dispatchGesture(actions, hpOps(targets, change, crit));
@@ -148,7 +148,7 @@ export function entryOperation(access: "all" | "relative", mode: HpMode, preview
 
 /**
  * What an HP entry has to say about the dead among its targets
- * (docs/design-v1-combat-flow.md 3.5), for one creature or a group alike,
+ * (docs/design/design-v1-combat-flow.md 3.5), for one creature or a group alike,
  * worded in full by deadLines and briefly by the bar's resting strip. It
  * follows what will be sent, so `+5` typed under Damage counts as a heal.
  * With healing bringing back the dead (`revives`), a heal, or a set of a
@@ -206,7 +206,7 @@ export function deadLines(targets: readonly HpTarget[], operation: EntryOperatio
 
 /**
  * The line a dead creature's bar shows under its vitals to a player who may
- * heal it (docs/design-v1-combat-flow.md 3.5). The DM gets Revive's line
+ * heal it (docs/design/design-v1-combat-flow.md 3.5). The DM gets Revive's line
  * instead.
  */
 export function deadHealLine(name: string, revives: boolean): string {

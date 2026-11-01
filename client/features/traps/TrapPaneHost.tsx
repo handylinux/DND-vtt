@@ -21,7 +21,7 @@ const TrapPane = retryableLazy(() => import("./TrapPane.tsx"), { roles: ["dm"] }
 const NO_CHUNKS: Readonly<Record<string, BuildChunk>> = {};
 
 /**
- * Where the canvas mounts a trap's pane, for the DM (docs/design-v1-traps.md
+ * Where the canvas mounts a trap's pane, for the DM (docs/design/design-v1-traps.md
  * 4.1), as it mounts a pin's: a bottom sheet on a map under 600 px wide, a
  * card beside the trap from 600 px. The pane loads only for a DM, and
  * closes on its own once it no longer applies: its trap is gone or on
@@ -42,7 +42,7 @@ export function TrapPaneHost(props: { scene: Scene; tool: string; chrome: Chrome
   useEffect(() => {
     if (paneId !== null && !open) store.setState({ paneId: null, picking: null });
   }, [paneId, open, store]);
-  // At the camera the canvas last drew, subscribed only while it shows (docs/design-v1-relief-pan.md 6.3).
+  // At the camera the canvas last drew, subscribed only while it shows (docs/design/design-v1-relief-pan.md 6.3).
   const at = useChromeCamera(props.chrome, open);
   if (!open || !trap || !at) return null;
   const close = () => store.setState({ paneId: null });

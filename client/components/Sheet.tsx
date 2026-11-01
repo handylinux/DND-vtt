@@ -10,7 +10,7 @@ import { theme } from "../lib/theme.ts";
 import { headerStacks, SHEET_MAX_WIDTH, sheetFoot, sheetKeyboard, sheetMaxHeight, sheetTop } from "./sheetCap.ts";
 import { SheetHeader, type HeaderBack } from "./SheetHeader.tsx";
 
-/** Where a sheet stands (docs/design-v1-layout-hierarchy.md 4.2): at a phone's foot, on the right of one held sideways, or over the whole screen where that is too short. */
+/** Where a sheet stands (docs/design/design-v1-layout-hierarchy.md 4.2): at a phone's foot, on the right of one held sideways, or over the whole screen where that is too short. */
 export type SheetMode = "bottom" | "side" | "full";
 
 /**
@@ -33,7 +33,7 @@ export type SheetMode = "bottom" | "side" | "full";
  * title on entry, back to the opener on Back (useSubpageFocus).
  *
  * `reserveTop` keeps that many pixels free above a bottom sheet for what
- * docks on its edge (docs/design-v1-visual.md 3.2.1), in place of the
+ * docks on its edge (docs/design/design-v1-visual.md 3.2.1), in place of the
  * usual 24 px gap, and the sheet never goes below 120 px (sheetCap.ts).
  * A sheet on the right runs the screen's height, so it has no reserve.
  *
@@ -50,7 +50,7 @@ export type SheetMode = "bottom" | "side" | "full";
  * down (pages/modalSlot.tsx).
  *
  * At the foot it swipes down to close (lib/sheetSwipe.ts,
- * docs/design-v1-sheet-swipe.md): from its header at any time, from its
+ * docs/design/design-v1-sheet-swipe.md): from its header at any time, from its
  * body once that is at its top. `riders` ride its top edge and move with
  * it, the dock's row (pages/RoomDock.tsx). It provides its panel the
  * context that reports unsaved input, which makes a swipe spring back.
@@ -288,7 +288,7 @@ export function Sheet(props: {
           {under ? <BackUnder picture={subpage ? picture() : null}>{subpage ? null : props.behind}</BackUnder> : null}
           <div ref={pageRef} style={{ position: "relative", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
             {/* The 4 px on top hold the focus ring of a first full-width control (2 px out, 2 px wide), which the scrolling body would clip. */}
-            {/* data-pane-body and the padding variables let a sticky header inside meet the scroller's edges in every mode (docs/design-v1-combat-flow.md 3.1). */}
+            {/* data-pane-body and the padding variables let a sticky header inside meet the scroller's edges in every mode (docs/design/design-v1-combat-flow.md 3.1). */}
             <div ref={bodyRef} data-pane-body="" style={{ ...BODY_PADDING, flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain" }}>
               <DraftScope value={drafts}>{props.children}</DraftScope>
             </div>
@@ -335,7 +335,7 @@ function BackUnder(props: { picture: PagePicture | null; children: ReactNode }) 
  * A scrolling pane body's padding as CSS variables, for a sticky header or
  * footer inside it. A sticky box keeps inside its scroller's padding, so
  * the header takes the padding back with a negative margin and gives it
- * back as its own padding (docs/design-v1-combat-flow.md 3.1), and a footer
+ * back as its own padding (docs/design/design-v1-combat-flow.md 3.1), and a footer
  * does the same at the foot (stickyPaneFoot). Mark the body
  * `data-pane-body` too, which the header looks for to measure the room it
  * has.

@@ -39,7 +39,7 @@
 
 name: raccoon
 
-# What the backup and restore services share (docs/design-v1-dm-tools.md
+# What the backup and restore services share (docs/design/design-v1-dm-tools.md
 # 3.17): how they reach the database and the server's time zone. Never
 # ROOM_SECRET_KEY, which no backup needs: the dumps hold the sealed player
 # passwords, and only the app's key opens them.
@@ -211,7 +211,7 @@ services:
   # -------------------------------------------------------------- backup
   # A nightly pg_dump, read back whole, and a copy of the images it names,
   # onto the raccoon-backups volume, kept 7 days and 4 weeks
-  # (docs/design-v1-dm-tools.md 3.17, docker/backup.sh, README.md).
+  # (docs/design/design-v1-dm-tools.md 3.17, docker/backup.sh, README.md).
   #
   #   docker compose exec backup sh /backup/backup.sh once
   #
@@ -629,7 +629,7 @@ configs:
       #                  thumbnails), api.openverse.org (the second image search
       #                  and its access token), character-service.dndbeyond.com
       #                  (a public D&D Beyond character a member imports into a
-      #                  stat block, docs/design-v1-pc-stats.md 6.3) and, when
+      #                  stat block, docs/design/design-v1-pc-stats.md 6.3) and, when
       #                  Turnstile is configured, challenges.cloudflare.com.
       #                  Nothing else. Take character-service.dndbeyond.com out of
       #                  the list below to turn the D&D Beyond link import off:
@@ -735,7 +735,7 @@ configs:
   backup-sh:
     content: |
       #!/bin/sh
-      # Database and image backups (docs/design-v1-dm-tools.md 3.17).
+      # Database and image backups (docs/design/design-v1-dm-tools.md 3.17).
       #
       # The `backup` service in docker-compose.server.yml runs this file, mounted
       # read-only, in the postgres service's own pinned image, so pg_dump matches

@@ -13,7 +13,7 @@ import { DM, P1 } from "../testutil.ts";
 import { guardHash } from "./tx.ts";
 
 /**
- * Answers from before wave 7 keep their decision (docs/design-v1-roll-request.md
+ * Answers from before wave 7 keep their decision (docs/design/design-v1-roll-request.md
  * 7.5). The fixture is a history the build before wave 7 (7cbc2560) played:
  * the DM asks Thorn for a Dexterity save against a hidden DC 13 with pass or
  * fail hidden, Thorn's player types 3, the DM marks it a pass, then undoes

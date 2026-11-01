@@ -2,7 +2,7 @@ import { createContext, useContext, useId, type CSSProperties, type InputHTMLAtt
 import { theme } from "../lib/theme.ts";
 
 /**
- * The look of every text, number and select field (docs/design-v1-visual.md
+ * The look of every text, number and select field (docs/design/design-v1-visual.md
  * 2.3): 16 px text, because iOS zooms the whole page when an input with
  * smaller text gets focus (design section 14.4), 44 px tall, a `bg` fill
  * and a `controlBorder` outline, which shows the field's edge at 3:1 on
@@ -159,7 +159,7 @@ export function FieldRow(props: { label: string; htmlFor?: string; hint?: ReactN
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: theme.space(2), minHeight: theme.touch }}>
       {/*
        * A row wraps only where its label and its controls really do not fit
-       * (docs/design-v1-polish.md R2). Fixed-width controls ask for their
+       * (docs/design/design-v1-polish.md R2). Fixed-width controls ask for their
        * own width, up to 160 px: the inner box caps what they ask, and its
        * least width of the whole cell, which wins over the cap, still lets
        * them fill the cell once the line is laid out. A stretching control's

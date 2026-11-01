@@ -29,17 +29,17 @@ import { PickError, checkImageUrl, searchConfig, uploadTokenImage } from "./uplo
  * upload from the device (the camera roll on a phone), paste from the
  * clipboard, paste an image link, search the web, reuse an image already
  * in the room's library, or copy one in from the starter packs
- * (docs/design-v1-starter-art.md 4).
+ * (docs/design/design-v1-starter-art.md 4).
  *
  * Icons come first and always work: picking one is the caller's op alone,
- * with no upload and no quota (docs/design-v1-dm-tools.md 3.12). Every
+ * with no upload and no quota (docs/design/design-v1-dm-tools.md 3.12). Every
  * other path ends in an asset row on the server, which the caller then
  * crops. Uploads, imports and searches wait out a busy server for up to
  * 60 s ("Waiting for the server…") before they give up.
  *
  * The sources stay tabs (`tablist`, `tab`, `tabpanel`), not a choice of
  * radios, since each shows a panel of its own. The chosen tab takes the
- * pressed look (docs/design-v1-visual.md 2.3).
+ * pressed look (docs/design/design-v1-visual.md 2.3).
  */
 
 export type PickedImage = { id: string; width?: number; height?: number };
@@ -60,7 +60,7 @@ export function ImagePicker(props: {
   onClose(): void;
   /** What the image is for, a visible line above the tabs, so a phone with no hover reads it on the first tap. */
   hint?: string;
-  /** A picture pasted over the map for the selected token (docs/design-v1-paste.md 4), uploaded at once as a pasted one is. */
+  /** A picture pasted over the map for the selected token (docs/design/design-v1-paste.md 4), uploaded at once as a pasted one is. */
   initialFile?: File;
 }) {
   const roomId = useRoomView((s) => s.roomId);
@@ -156,7 +156,7 @@ export function ImagePicker(props: {
     return () => clearTimeout(timer);
   }, []);
 
-  // A paste anywhere while the picker is open, through the room's router: an image uploads, a link imports (docs/design-v1-paste.md 1.2).
+  // A paste anywhere while the picker is open, through the room's router: an image uploads, a link imports (docs/design/design-v1-paste.md 1.2).
   const body = useRef<HTMLDivElement>(null);
   const paste = usePasteTarget(body, { accepts: "image-or-link", takes: "open", disabled: busy !== null, onFile: upload, onLink: importUrl });
 
@@ -343,7 +343,7 @@ function LinkTab(props: { disabled: boolean; onUrl(url: string): void }) {
 }
 
 /**
- * Web image search (design 11.3, docs/design-v1-dm-tools.md 3.13). The
+ * Web image search (design 11.3, docs/design/design-v1-dm-tools.md 3.13). The
  * server tries Google Images through SerpApi and turns to Openverse when
  * SerpApi cannot answer, and the answer names which one did, so the tab
  * says where its results came from. Under Google's results the DM can ask

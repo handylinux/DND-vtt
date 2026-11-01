@@ -17,7 +17,7 @@ export const localMeasureSlot = scopeSlot((): StoreApi<{ drag: LocalMeasure }> =
  * id). This listens on the stage on screen, as one of the board's
  * controllers (features/layers.ts CONTROLLERS), mounted once outside both
  * drawing trees, so one listener writes one store whichever view shows
- * (docs/design-v1-isometric-view.md 5.1).
+ * (docs/design/design-v1-isometric-view.md 5.1).
  */
 export function RulerController(props: ControllerProps): null {
   const store = useScoped(localMeasureSlot);

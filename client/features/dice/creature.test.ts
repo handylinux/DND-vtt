@@ -7,7 +7,7 @@ import { loadSrdRolls } from "#shared/srd/rolls.ts";
 import { actor, character, companionBlock, customMonster, effect, room, token } from "#shared/testutil.ts";
 import { creatureLevelsKnown, creatureRolls, type DiceView } from "./creature.ts";
 
-/** One creature's rolls from each source, and only from a block the viewer reads (docs/design-v1-roll-options.md 3.4). */
+/** One creature's rolls from each source, and only from a block the viewer reads (docs/design/design-v1-roll-options.md 3.4). */
 
 /** A rogue with a Rapier, Evasion and poison resistance. */
 const THORN: PcStats = {

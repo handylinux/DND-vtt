@@ -7,7 +7,7 @@ const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { AcBadge } = await import("./AcBadge.tsx");
 
-describe("the AC badge's box (docs/design-v1-token-panel.md 3.9)", () => {
+describe("the AC badge's box (docs/design/design-v1-token-panel.md 3.9)", () => {
   test("is nothing for an AC of 0, nor for what the protocol never allows", () => {
     for (const size of ["sm", "md"] as const) {
       for (const ac of [0, -1, 101, 1.5, Number.NaN]) assert.equal(acBadgeBox(ac, size), null, `${ac} at ${size}`);

@@ -48,7 +48,7 @@ export type { CloseReason, OpenHow } from "./popoverRules.ts";
 export type { PopoverSide, Rect } from "./popoverPlace.ts";
 
 /**
- * The shared popover base (docs/design-v1-tool-options.md 7.1): one
+ * The shared popover base (docs/design/design-v1-tool-options.md 7.1): one
  * non-modal popover for the whole room, with the rules in
  * components/popoverRules.ts and the placement in popoverPlace.ts. A
  * consumer takes a handle from usePopover, spreads `anchorProps` on its
@@ -255,7 +255,7 @@ export type PopoverProps = {
    * From its anchor's edge, or worked out from the anchor's rectangle where
    * the popover opens from a line other than that edge: a tool popover
    * stands 6 px above its options row or the toolbar, whatever the chip's
-   * place inside them (docs/design-v1-tool-options.md 7.3).
+   * place inside them (docs/design/design-v1-tool-options.md 7.3).
    */
   gap?: number | ((anchor: Rect) => number);
   margin?: number;
@@ -270,7 +270,7 @@ export type PopoverProps = {
   /**
    * Asked before Escape or Back closes it: true keeps it open, as a roll's
    * options inside an ability's list step back to the list
-   * (docs/design-v1-stat-block-rolls.md 5.3). A Back it kept open
+   * (docs/design/design-v1-stat-block-rolls.md 5.3). A Back it kept open
    * registers the popover anew, since that Back used up its history
    * entry. An Escape it kept open touches no history.
    */
@@ -278,7 +278,7 @@ export type PopoverProps = {
   /**
    * Names what it shows. A change places the box again for its new
    * content, from its top, as an ability's rows in its loading line's
-   * place (docs/design-v1-stat-block-rolls.md 4.6). Content that only
+   * place (docs/design/design-v1-stat-block-rolls.md 4.6). Content that only
    * changes inside it scrolls instead, so nothing under a finger moves.
    */
   contentKey?: string;
@@ -581,7 +581,7 @@ function OpenPopover(props: PopoverProps) {
 }
 
 /**
- * What Escape or Back does to an open popover (docs/design-v1-stat-block-rolls.md
+ * What Escape or Back does to an open popover (docs/design/design-v1-stat-block-rolls.md
  * 5.3): it closes, unless its step back keeps it open. A Back kept open
  * renews its registration, since the Back used up its history entry. An
  * Escape kept open stays as it is, so no history moves for it (D-261031-170).

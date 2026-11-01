@@ -5,7 +5,7 @@ import { theme } from "../lib/theme.ts";
 /**
  * How tall a bottom sheet may grow (components/Sheet.tsx), as CSS for the
  * sheet and in numbers for whoever must know whether something fits
- * above it (docs/design-v1-visual.md 2.3 and 3.2.1).
+ * above it (docs/design/design-v1-visual.md 2.3 and 3.2.1).
  *
  * A sheet takes at most 60% of the screen, and keeps a gap free between
  * the top bars and its top edge: 24 px, so the map still shows above it,
@@ -93,7 +93,7 @@ export function sheetTop(top: number, keyboard: SheetKeyboard | null): string {
 
 /**
  * A bottom sheet's widest, in the chrome's own pixels: a medium dialog's
- * (docs/design-v1-look-pass.md 2.8). A sheet as wide as a tablet held
+ * (docs/design/design-v1-look-pass.md 2.8). A sheet as wide as a tablet held
  * upright set a field's label 600 px from its input and ran help past 90
  * characters a line, so a wider screen centers the sheet over the map at
  * this width. A phone, under 560 px across, never meets it. The sheet on
@@ -108,7 +108,7 @@ export function sheetWidth(mode: "bottom" | "side" | "full", layoutWidth: number
   return mode === "bottom" ? Math.min(layoutWidth, SHEET_MAX_WIDTH) : layoutWidth;
 }
 
-// ------------------------------------------------------------ sideways sheets (docs/design-v1-layout-hierarchy.md 4.2)
+// ------------------------------------------------------------ sideways sheets (docs/design/design-v1-layout-hierarchy.md 4.2)
 
 /** A sheet header's one row, and the stacked header of a narrow sheet: 6 px, the 44 px row, a 22 px title line, 6 px. */
 export const SHEET_HEADER = 56;

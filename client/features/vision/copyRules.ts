@@ -4,7 +4,7 @@ import { playersSeeLabel, playersSeeOf } from "./playersSeeRules.ts";
 import { lightOf } from "./settings.ts";
 
 /**
- * "Use these settings on other scenes…" (docs/design-v1-map-discovery.md
+ * "Use these settings on other scenes…" (docs/design/design-v1-map-discovery.md
  * 8.3), as plain functions for node --test: the patch it sends, what each
  * scene's line says the copy does there, and the result's words.
  */

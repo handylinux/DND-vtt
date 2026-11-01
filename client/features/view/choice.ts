@@ -5,7 +5,7 @@ import { scopeSlot, type RoomScope } from "../../state/scope.ts";
 import { FOLLOW_THE_SCENE, isoReady, type StoredView, type ViewPick } from "./store.ts";
 
 /*
- * The view choice's rules and words (docs/design-v1-isometric-view.md 7
+ * The view choice's rules and words (docs/design/design-v1-isometric-view.md 7
  * and 8): what the View button, its menu, the keys I, Q and E, a scene's
  * Suggested view and the table display's rows say and do. The pick itself
  * is stored by store.ts. The components are ViewMenu.tsx's.

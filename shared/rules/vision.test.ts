@@ -298,7 +298,7 @@ describe("members and sources", () => {
     assert.equal(overCap, 3);
   });
 
-  test("companions rank after the DM's marked creatures under the cap, and an effect companion lends no sight (docs/design-v1-combat-flow.md 3.6.5)", () => {
+  test("companions rank after the DM's marked creatures under the cap, and an effect companion lends no sight (docs/design/design-v1-combat-flow.md 3.6.5)", () => {
     const tokens: Token[] = [];
     for (let k = 0; k < 11; k++) tokens.push(pc(`p${String(k).padStart(2, "0")}`, 1 + k, 5));
     // A familiar whose ID sorts first, a creature companion a player owns, still comes after the DM's lantern bearer.
@@ -1025,7 +1025,7 @@ describe("golden bits", () => {
   }
 
   /*
-   * The dark dungeon per player (docs/design-v1-per-player-vision.md 6.1):
+   * The dark dungeon per player (docs/design/design-v1-per-player-vision.md 6.1):
    * a is the first player's, d the second's, b a character both play, and
    * c the creature the DM marked to share sight with the party.
    */
@@ -1165,7 +1165,7 @@ describe("what the vision cache keeps alive", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Sight holders (docs/design-v1-per-player-vision.md 6.1, lane PV2)
+// Sight holders (docs/design/design-v1-per-player-vision.md 6.1, lane PV2)
 
 /** The players asked about, and null for the shared sight that every other viewer has. */
 const HOLDERS = ["p1", "p2", "p3", "p4"] as const;

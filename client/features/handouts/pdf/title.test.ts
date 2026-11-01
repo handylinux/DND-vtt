@@ -6,7 +6,7 @@ import { cleanTitle, pdfTitle, titleProblem } from "./title.ts";
 const DRAGON = "\u{1F409}";
 const passes = (title: string) => assert.ok(textSchemas.name.safeParse(title).success, JSON.stringify(title));
 
-describe("a PDF handout's title (docs/design-v1-pdf-handouts.md 4.1.3)", () => {
+describe("a PDF handout's title (docs/design/design-v1-pdf-handouts.md 4.1.3)", () => {
   test("the XMP title before the Info title, then the file's name, then Handout", () => {
     assert.equal(pdfTitle({ xmp: "Strange letter", info: "Old name" }, "letter.pdf"), "Strange letter");
     assert.equal(pdfTitle({ xmp: null, info: "Old name" }, "letter.pdf"), "Old name");
@@ -53,7 +53,7 @@ describe("a PDF handout's title (docs/design-v1-pdf-handouts.md 4.1.3)", () => {
   });
 });
 
-describe("a typed title (docs/design-v1-pdf-handouts.md 4.1.5)", () => {
+describe("a typed title (docs/design/design-v1-pdf-handouts.md 4.1.5)", () => {
   test("checked against the name schema, with its reason in words", () => {
     assert.equal(titleProblem("Strange letter"), null);
     assert.equal(titleProblem("  "), "Give the handout a title.");

@@ -1,7 +1,7 @@
 import { DECODERS, PDFJS_FOLDER, imageFailure, isToReader, type FromReader } from "./options.ts";
 
 /**
- * The PDF upload job's own worker (docs/design-v1-pdf-handouts.md 4.2.1),
+ * The PDF upload job's own worker (docs/design/design-v1-pdf-handouts.md 4.2.1),
  * which pdf.js runs in as its port. The job starts it and ends it, and
  * hands it to pdf.js only after it says it is ready, so pdf.js never starts
  * a worker of its own and its main-thread fallback never runs.

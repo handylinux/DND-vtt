@@ -4,7 +4,7 @@ import { ApiError } from "../lib/api.ts";
 import { logPage, NEWER_LOG_FAILED, OLDER_LOG_FAILED, pageErrorText } from "./olderLog.ts";
 
 /**
- * The Log panel's older pages (docs/design-v1-per-player-vision.md 7.4,
+ * The Log panel's older pages (docs/design/design-v1-per-player-vision.md 7.4,
  * D-261026-10, review PV4-OP-1 and PV4-OP-2): in "view as a player" they
  * are asked for as that player, and refused unless the server says it
  * answered as that player, as the preview's socket refuses any other

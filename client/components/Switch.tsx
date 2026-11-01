@@ -4,7 +4,7 @@ import { Spinner } from "./Loading.tsx";
 
 /**
  * A setting that is on or off and takes effect at once
- * (docs/design-v1-visual.md 2.3 and 3.7): the whole row is one button with
+ * (docs/design/design-v1-visual.md 2.3 and 3.7): the whole row is one button with
  * `role="switch"`, so a tap anywhere on it flips the setting and Space or
  * Enter does from the keyboard. Its accessible name is the setting's name
  * and never changes with its state: the state is `aria-checked`, and the

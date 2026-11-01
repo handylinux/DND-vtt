@@ -4,7 +4,7 @@
  * paragraphs, `- ` lists, one pipe table, `**bold**`, `*italic*`, and a
  * backslash escaping `*`, `_`, `` ` `` or `\`.
  *
- * Journal pages (docs/design-v1-dm-tools.md 3.7) are written by hand, so
+ * Journal pages (docs/design/design-v1-dm-tools.md 3.7) are written by hand, so
  * they ask for a little more, behind the `journal` option the stat blocks
  * never set: single line breaks kept as breaks, numbered lists, quotes
  * (`> `), a `# ` heading, and links `[text](https://…)`. A link must be

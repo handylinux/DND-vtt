@@ -5,7 +5,7 @@ import type { RollModeOverride } from "./rollMode.ts";
 
 /*
  * A box with its list as the page runs it, for the ability menu's tests
- * (docs/design-v1-stat-block-rolls.md 3.3 and 5): the real control and
+ * (docs/design/design-v1-stat-block-rolls.md 3.3 and 5): the real control and
  * press registry, with fake window, document and clock, and gestures that
  * fire the browser's events in its order: the window's capture listeners
  * first, then the element's handlers, then its click.

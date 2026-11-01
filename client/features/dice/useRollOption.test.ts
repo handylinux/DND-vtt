@@ -11,7 +11,7 @@ import { diceChoicesSlot } from "./useDicePanel.ts";
 
 /*
  * What the Dice panel's rows send through useRollOption
- * (docs/design-v1-combat-controls.md 2.3 and 6): a death save and a
+ * (docs/design/design-v1-combat-controls.md 2.3 and 6): a death save and a
  * Recharge 1d6 that settle an open prompt with its record, and whether a
  * roll went secret, which the recharge it spends follows.
  */
@@ -130,7 +130,7 @@ test("free d20 and plain-roll overrides reach the panel without taking its choic
   assert.equal(choices.getState().adv, true); assert.equal(choices.getState().version, 17);
 });
 
-describe("a stat block's d20, which takes no panel choices (docs/design-v1-stat-block-rolls.md 7)", () => {
+describe("a stat block's d20, which takes no panel choices (docs/design/design-v1-stat-block-rolls.md 7)", () => {
   const request = { id: "q1", rev: 0, at: "2026-10-30T12:00:00Z", test: { kind: "save" as const, choices: [{ ability: "dex" as const }] }, dcShown: false, resultShown: false, targets: [{ tokenId: "drag" }] };
   const input = { creature: { tokenId: "drag" }, test: { kind: "save" as const, ability: "dex" as const }, bonus: 4, preset: { ...NONE, sources: [{ kind: "dis" as const, from: "restrained" }] }, label: "Dexterity save", row: "t:drag|save", played: false, ask: false, choices: "none" as const };
 

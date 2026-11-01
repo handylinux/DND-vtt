@@ -1,5 +1,5 @@
 /**
- * Finding the image in a paste (docs/design-v1-paste.md 1.2 and 2.3). A
+ * Finding the image in a paste (docs/design/design-v1-paste.md 1.2 and 2.3). A
  * paste reaches the app two ways: a `paste` event's DataTransfer, read
  * while the event runs, and `navigator.clipboard.read()`'s items, read
  * after the Paste button's press. Both come here, so every entry that

@@ -8,12 +8,12 @@ import { chromium, type Browser, type BrowserContext, type Locator, type Page } 
 import { barControl, ConsoleWatch, openSideTab, OpSocket, reopenRoom, Shots, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
 
 /**
- * Stat blocks for player characters end to end (docs/design-v1-pc-stats.md
+ * Stat blocks for player characters end to end (docs/design/design-v1-pc-stats.md
  * section 12): a player types scores and proficiencies and saves, the
  * token panel and the DM's device show the totals, another player's device
  * has none, a level change moves them, Take a shape changes the bar's
  * saves line and End the shape restores it, a Druid's known forms are
- * chosen and taken in one tap (docs/design-v1-known-forms.md 7), and a D&D
+ * chosen and taken in one tap (docs/design/design-v1-known-forms.md 7), and a D&D
  * Beyond character's JSON pasted from a fixture fills the review.
  *
  * It runs with `pnpm test:e2e` on its own port: E2E_PORT plus twenty-one.
@@ -71,7 +71,7 @@ const DDB_JSON = {
 };
 
 /**
- * Wren again with fixture C's limited uses (docs/design-v1-ddb-resources.md
+ * Wren again with fixture C's limited uses (docs/design/design-v1-ddb-resources.md
  * 9): a Breath Weapon and Luck Points by the proficiency bonus, in the
  * shape of public sample characters' actions, and a wand whose charges
  * stay out.
@@ -363,8 +363,8 @@ describe("raccoon-vtt pc stat blocks", { timeout: 600_000 }, () => {
     assert.deepEqual(await view.locator("[data-ability-grid] > [data-save-proficient]").locator("dt, [data-ability-abbr]").allTextContents(), ["DEX"]);
     assert.equal(await view.locator("p").filter({ hasText: /^(Proficiencies|Expertise)\b/ }).count(), 0, "no line lists proficiencies");
     await view.getByText("Initiative", { exact: true }).waitFor();
-    // The Dex box of the six across: its score, its modifier, and its save, which a screen reader hears as proficient (docs/design-v1-dice-ui.md 6.1).
-    // Ana plays Bree, so the grid rolls: a group of buttons, the Dex box named by its printed words (docs/design-v1-stat-block-rolls.md 3.1).
+    // The Dex box of the six across: its score, its modifier, and its save, which a screen reader hears as proficient (docs/design/design-v1-dice-ui.md 6.1).
+    // Ana plays Bree, so the grid rolls: a group of buttons, the Dex box named by its printed words (docs/design/design-v1-stat-block-rolls.md 3.1).
     assert.equal(await view.locator("[data-ability-grid]").first().getAttribute("role"), "group", "a rolling grid");
     const dexBox = await view.locator("[data-ability-grid] > [data-save-proficient]").first().getAttribute("aria-label");
     assert.match(dexBox ?? "", /^Dexterity 16, \+3, save \+6, proficient$/);
@@ -506,7 +506,7 @@ describe("raccoon-vtt pc stat blocks", { timeout: 600_000 }, () => {
     assert.deepEqual([breeActor()?.ac, breeActor()?.speeds, breeActor()?.hp.temp], [15, { walk: 30 }, 9], "Wild Shape's temporary HP stay");
   });
 
-  test("4b. knownforms-a: at 390 x 844 Ana chooses Bree's known forms, one tap takes Wild Shape as one, the panel changes the form, and only the DM and Ana see them (docs/design-v1-known-forms.md 7)", async () => {
+  test("4b. knownforms-a: at 390 x 844 Ana chooses Bree's known forms, one tap takes Wild Shape as one, the panel changes the form, and only the DM and Ana see them (docs/design/design-v1-known-forms.md 7)", async () => {
     await ana.setViewportSize({ width: 390, height: 844 });
     await reopenRoom(ana);
     await ana.getByRole("status", { name: "Connected" }).first().waitFor();
@@ -767,7 +767,7 @@ describe("raccoon-vtt pc stat blocks", { timeout: 600_000 }, () => {
     await step.getByRole("button", { name: "Read it", exact: true }).click();
     const review = ana.getByRole("dialog", { name: "Check what was read" });
     await review.getByText("Read from D&D Beyond: Wren Ashdown, level 7.").waitFor();
-    // With no record of a past sync the fill takes what it read, and lists each typed value it replaces (docs/design-v1-resync.md 3.3).
+    // With no record of a past sync the fill takes what it read, and lists each typed value it replaces (docs/design/design-v1-resync.md 3.3).
     await review.getByRole("heading", { name: /^Replaces your changes \(\d+\)$/ }).waitFor();
     assert.equal(await review.getByRole("checkbox", { name: "AC 13, now 15", exact: true }).isChecked(), true);
     await review.getByText("Worked out from the armor. Check it.", { exact: true }).waitFor();

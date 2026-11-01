@@ -207,7 +207,7 @@ describe("the shortcut table", () => {
     });
   });
 
-  test("a key picks a setup tool and a tool the pair hides, and the key of the tool in use shows its tucked options and never tucks (docs/design-v1-tool-options.md 5.5)", () => {
+  test("a key picks a setup tool and a tool the pair hides, and the key of the tool in use shows its tucked options and never tucks (docs/design/design-v1-tool-options.md 5.5)", () => {
     const dm = env({ tool: "ruler" });
     assert.equal(run(dm.env, press({ key: "b", code: "KeyB" })), "tool:build", "behind Setup on a phone");
     assert.equal(run(dm.env, press({ key: "f", code: "KeyF" })), "tool:fog", "hidden by the pair");
@@ -347,7 +347,7 @@ describe("the shortcut table", () => {
     assert.deepEqual(moves, [[0, -1], [1, 0], [0, 1], [-1, 0]]);
     assert.equal(run(env().env, press({ key: "ArrowUp", code: "ArrowUp" })), null, "nothing selected");
     assert.equal(run(e, press({ key: "ArrowUp", code: "ArrowUp", repeat: true })), null, "a held arrow moves once");
-    // The token window's grip and handle take their arrows and prevent the default (docs/design-v1-token-window.md 4.3).
+    // The token window's grip and handle take their arrows and prevent the default (docs/design/design-v1-token-window.md 4.3).
     assert.equal(run(e, press({ key: "ArrowLeft", code: "ArrowLeft", defaultPrevented: true, target: { tagName: "BUTTON" } })), null, "a key the window took moves no token");
     assert.equal(moves.length, 4);
   });
@@ -414,7 +414,7 @@ describe("the shortcut table", () => {
     }
   });
 
-  // docs/design-v1-split-panel.md 9.4.
+  // docs/design/design-v1-split-panel.md 9.4.
   test("O goes to the other of two panels, for the DM and players, only while two show", () => {
     for (const role of ["dm", "player"] as const) {
       const { env: e, scope } = env({ role });
@@ -580,9 +580,9 @@ describe("the sheet's rows beside the keys", () => {
   test("it holds keys and key-plus-pointer combinations, never a plain click or pinch, a plain tap only to pick the standee behind, and a plain drag only where it does more than move one token", () => {
     for (const b of BEHAVIORS) {
       if (b.surface !== undefined) assert.equal(b.device, "keys", `${b.id}: a surface lists only its keys`);
-      // The drags of attached tokens (docs/design-v1-attach.md 4.6), which move a group or a mount, and the tap again on a standee, which picks one no plain tap reaches (docs/design-v1-isometric-view.md 6.2).
-      // A roll button's hold, which opens its one-roll options where a tap rolls (docs/design-v1-roll-mode-menu.md 7).
-      // An ability box's tap and a roll's hold in its list, which open rolls and options a tap on a roll would not (docs/design-v1-stat-block-rolls.md 3.3 and 5.1).
+      // The drags of attached tokens (docs/design/design-v1-attach.md 4.6), which move a group or a mount, and the tap again on a standee, which picks one no plain tap reaches (docs/design/design-v1-isometric-view.md 6.2).
+      // A roll button's hold, which opens its one-roll options where a tap rolls (docs/design/design-v1-roll-mode-menu.md 7).
+      // An ability box's tap and a roll's hold in its list, which open rolls and options a tap on a roll would not (docs/design/design-v1-stat-block-rolls.md 3.3 and 5.1).
       // The swipe back in a panel, a gesture with no mark of its own on screen (lib/backSwipe.ts).
       if (b.device === "pointer") assert.match(b.input, /^(Drag .*(carries|carried|mount)|Tap a standee again$|Double click or tap on Undo or Redo$|Hold a roll button$|Double-tap and hold a roll button with a screen reader$|Tap, click, hold or right-click an ability box in a stat block$|Hold or right-click a roll in an ability's rolls$|Swipe right in a panel$)/, b.id);
       if (b.device !== "mouse") continue;
@@ -635,7 +635,7 @@ describe("the sheet's rows beside the keys", () => {
     assert.deepEqual(inputs("player", ANDROID, "Android"), ["Back button"]);
   });
 
-  test("a roll button's one-roll options: right-click with a mouse, a hold and a reader's double-tap and hold anywhere, and the keys in Dice, the same for the DM and players (docs/design-v1-roll-mode-menu.md 7)", () => {
+  test("a roll button's one-roll options: right-click with a mouse, a hold and a reader's double-tap and hold anywhere, and the keys in Dice, the same for the DM and players (docs/design/design-v1-roll-mode-menu.md 7)", () => {
     for (const role of ROLES) {
       assert.ok(inputs(role, DESKTOP, MOUSE_SECTION).includes("Right-click a roll button"), role);
       assert.ok(!inputs(role, IPHONE, MOUSE_SECTION).includes("Right-click a roll button"), `${role}: no mouse row on a phone`);
@@ -664,7 +664,7 @@ describe("the sheet's rows beside the keys", () => {
     assert.match(row("rollOptionsRight").does, /Right-click it again to close them$/);
   });
 
-  test("a stat block's ability boxes and their rolls: the pointer rows on every device, the keys under Token and character fields before HP's roll keys, the same for the DM and players (docs/design-v1-stat-block-rolls.md 13)", () => {
+  test("a stat block's ability boxes and their rolls: the pointer rows on every device, the keys under Token and character fields before HP's roll keys, the same for the DM and players (docs/design/design-v1-stat-block-rolls.md 13)", () => {
     const row = (id: string) => BEHAVIORS.find((b) => b.id === id)!;
     for (const role of ROLES) {
       for (const device of [DESKTOP, IPHONE, ANDROID]) {
@@ -734,7 +734,7 @@ describe("the sheet's rows beside the keys", () => {
     assert.ok(section("dm", DESKTOP, MOUSE_SECTION)!.rows.every((r) => !r.keys), "a mouse row is a phrase, not a key");
   });
 
-  test("the token window's section holds its keys, and the dialogs' section its own (docs/design-v1-token-window.md 11)", () => {
+  test("the token window's section holds its keys, and the dialogs' section its own (docs/design/design-v1-token-window.md 11)", () => {
     assert.ok(SURFACES.includes("Token window"));
     assert.ok(!(SURFACES as readonly string[]).includes("Token action bar"), "the sheet never says window for two things");
     for (const role of ROLES) {
@@ -754,7 +754,7 @@ describe("the sheet's rows beside the keys", () => {
     assert.equal(BEHAVIORS.find((b) => b.id === "selectMenu")!.when, "with Multi-select off");
   });
 
-  test("the side panel's tabs and More's list are keys only, the same for the DM and players (docs/design-v1-panel-tabs.md 5.4)", () => {
+  test("the side panel's tabs and More's list are keys only, the same for the DM and players (docs/design/design-v1-panel-tabs.md 5.4)", () => {
     const rows = BEHAVIORS.filter((b) => b.surface === "Side panel tabs");
     assert.deepEqual(
       rows.map((b) => b.id),
@@ -765,7 +765,7 @@ describe("the sheet's rows beside the keys", () => {
     assert.deepEqual(inputs("dm", DESKTOP, "Side panel tabs"), inputs("player", DESKTOP, "Side panel tabs"));
   });
 
-  test("two panels: its own surface after the tabs, keys only, the same for the DM and players (docs/design-v1-split-panel.md 9.4)", () => {
+  test("two panels: its own surface after the tabs, keys only, the same for the DM and players (docs/design/design-v1-split-panel.md 9.4)", () => {
     assert.equal(SURFACES.indexOf("Two panels"), SURFACES.indexOf("Side panel tabs") + 1);
     const rows = BEHAVIORS.filter((b) => b.surface === "Two panels");
     assert.deepEqual(
@@ -886,7 +886,7 @@ function shortcutTables(markdown: string): Map<string, string[][]> {
   return tables;
 }
 
-describe("a second press of the tool's key moves through its main choice (docs/design-v1-tool-cycle.md)", () => {
+describe("a second press of the tool's key moves through its main choice (docs/design/design-v1-tool-cycle.md)", () => {
   const CYCLES: Record<string, ToolCycle> = { ruler: rulerCycle, area: areaCycle, draw: drawCycle, fog: fogCycle, build: builderCycle, "add-token": placeCycle, trap: trapCycle };
   const LABELS: Record<string, string> = { select: "Select", ruler: "Ruler", area: "Area", draw: "Draw", ping: "Ping", "add-token": "Add token", pin: "Pin", trap: "Trap", fog: "Fog", build: "Map builder", grid: "Line up grid" };
 
@@ -1126,7 +1126,7 @@ describe("a second press of the tool's key moves through its main choice (docs/d
   });
 });
 
-describe("arrow keys on a hex scene (docs/design-v1-hex-grids.md HX-D15)", () => {
+describe("arrow keys on a hex scene (docs/design/design-v1-hex-grids.md HX-D15)", () => {
   const press = (g: HexGrid, token: PlacedToken, step: readonly [number, number], times: number) => {
     const seen: Hex[] = [tokenRefHex(g, token)];
     let at = token;

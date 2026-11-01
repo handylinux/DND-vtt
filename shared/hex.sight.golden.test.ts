@@ -9,7 +9,7 @@ import { actor, int, pick, reveal, rng, room, scene, token } from "./testutil.ts
 
 /**
  * A golden record of hex scenes' sight and withheld creatures
- * (docs/design-v1-hex-grids.md section 10, determinism): on a fixed hex
+ * (docs/design/design-v1-hex-grids.md section 10, determinism): on a fixed hex
  * rows and hex columns scene, whole party and per player with a holder,
  * the hash of every sight tile and the creatures each player is kept from.
  * Sight and the footprint test must agree bit for bit on every device and

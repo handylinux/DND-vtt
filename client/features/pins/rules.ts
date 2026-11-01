@@ -7,7 +7,7 @@ import type { OpAnswer, OpRefusal } from "../../state/types.ts";
 import { cleanLabelText } from "../builder/labelEdit.ts";
 
 /**
- * Map pins on this side (docs/design-v1-dm-tools.md 3.8): the marker's
+ * Map pins on this side (docs/design/design-v1-dm-tools.md 3.8): the marker's
  * shape and its tap target, what a tap with the Pin tool does, who will see
  * a pin, and the pane's draft with its one safety rule. Plain functions, so
  * they run under node --test.
@@ -45,7 +45,7 @@ export function pinOutline(steps = 20): number[] {
 
 /**
  * Where pins stand in the board's view: the view, and the drawn ground
- * under a point in cells of height (docs/design-v1-isometric-view.md 5.3,
+ * under a point in cells of height (docs/design/design-v1-isometric-view.md 5.3,
  * a pin upright at its drawn ground). Top-down's when left out.
  */
 export type PinView = { view: View; ground: (x: number, y: number) => number };

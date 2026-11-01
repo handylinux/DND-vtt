@@ -4,7 +4,7 @@ import { describe, test } from "node:test";
 
 /*
  * An ability box's presses and its list's two views
- * (docs/design-v1-stat-block-rolls.md 3.3 and 5), driven through the real
+ * (docs/design/design-v1-stat-block-rolls.md 3.3 and 5), driven through the real
  * control and press registry with the browser's event order
  * (abilityMenu.testing.ts).
  */

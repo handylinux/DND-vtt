@@ -35,7 +35,7 @@ export function runPublicWorldRow(runs = 15): RouteRow {
 }
 
 /**
- * The walking ruler's worst case (docs/design-v1-movement.md 3.3, review
+ * The walking ruler's worst case (docs/design/design-v1-movement.md 3.3, review
  * MV-O-5): a Large walker on a 200 x 200 map measuring to a stop inside a
  * closed room, so its search floods all the ground it can reach before it
  * says "No way through". Rows: the whole walk a slice a frame, its longest

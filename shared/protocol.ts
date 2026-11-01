@@ -67,7 +67,7 @@ export const MAX_RULER_STOPS = 50;
  */
 export const MAX_PATH_STOPS = 50;
 /**
- * A route a move carries (docs/design-v1-movement.md 6.1, section 10): at
+ * A route a move carries (docs/design/design-v1-movement.md 6.1, section 10): at
  * most 64 straight pieces and 300 squares of reach in all, each piece's
  * extra a whole number of feet per foot. A path keeps at most 100 corners
  * of its legs' routes, past which the oldest legs draw straight.
@@ -141,7 +141,7 @@ const memberIds = z.array(id).max(MAX_OWNERS);
 /**
  * An id as every id the app makes, such as a trap's or a class resource's:
  * so each list the reducer writes stays within its reserve
- * (docs/design-v1-traps.md 6.1).
+ * (docs/design/design-v1-traps.md 6.1).
  */
 const plainId = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/, "not a plain id");
 /** Half of a surrogate pair alone, which JSON escapes to six bytes: trap text refuses it, so it costs at most 3 bytes a unit (6.1). */
@@ -154,7 +154,7 @@ const assetImage = z.strictObject({
   crop: z.strictObject({ cx: z.number().min(-1).max(1), cy: z.number().min(-1).max(1), zoom: z.number().min(0.1).max(10) }),
 });
 /**
- * A shipped game-icons.net icon on a disk of `color` (docs/design-v1-dm-tools.md
+ * A shipped game-icons.net icon on a disk of `color` (docs/design/design-v1-dm-tools.md
  * 3.12). Only the key's shape is checked: a key the client does not know
  * draws as initials, as an unknown stamp key draws as a dashed box.
  */
@@ -240,7 +240,7 @@ const effectBase = {
 /** The refusal of an outcome past `LIMITS.outcomeOpBytes`, which the group save checks before any roll. */
 export const OUTCOME_TOO_BIG = "Too much for one step: remove a condition or split the group.";
 
-/** An effect a save at the end of each of the creature's turns ends (docs/design-v1-roll-options.md 6.1). The DC is doc 1's 1 to 50. */
+/** An effect a save at the end of each of the creature's turns ends (docs/design/design-v1-roll-options.md 6.1). The DC is doc 1's 1 to 50. */
 const effectSave = z.strictObject({
   ability: z.enum(ABILITY_KEYS),
   dc: z.number().int().min(LIMITS.rollDcMin).max(LIMITS.rollDcMax),
@@ -268,9 +268,9 @@ const actorSchema = z.strictObject({
   srdId: line(80).optional(),
   /** The room monster a token was placed from (wave 5). DM only, which permissions hold to. */
   monsterId: id.optional(),
-  /** One of its character's companion stat blocks, on a companion only (docs/design-v1-companion-stat-blocks.md 3.2). */
+  /** One of its character's companion stat blocks, on a companion only (docs/design/design-v1-companion-stat-blocks.md 3.2). */
   blockId: id.optional(),
-  /** The SRD link is a character's Wild Shape (docs/design-v1-pc-stats.md 3.6). */
+  /** The SRD link is a character's Wild Shape (docs/design/design-v1-pc-stats.md 3.6). */
   wildShape: z.literal(true).optional(),
   sheetUrl: sheetUrl.optional(),
   effects: z.array(effectStored).max(MAX_EFFECTS),
@@ -297,14 +297,14 @@ const actorPatch = z.strictObject({
   monsterId: id.nullable().optional(),
   /**
    * Attaches one of its character's companion stat blocks, or null detaches
-   * it (docs/design-v1-companion-stat-blocks.md 3.2). Setting any of the
+   * it (docs/design/design-v1-companion-stat-blocks.md 3.2). Setting any of the
    * three links to a value clears the other two.
    */
   blockId: id.nullable().optional(),
   /**
    * Goes with an `srdId` set in the same patch, on a character's own actor:
    * the shape is Wild Shape. A patch that sets `srdId` without it takes
-   * another shape, and clearing `srdId` ends either (docs/design-v1-pc-stats.md 3.6).
+   * another shape, and clearing `srdId` ends either (docs/design/design-v1-pc-stats.md 3.6).
    */
   wildShape: z.literal(true).optional(),
   sheetUrl: sheetUrl.nullable().optional(),
@@ -354,15 +354,15 @@ const settingsPatch = z.strictObject({
   turnTimerSec: z.number().int().min(0).max(MAX_TURN_TIMER_SEC).optional(),
   /** Who may draw (wave 5, section 3.9). */
   playersDraw: moveAnyToken.optional(),
-  /** Healing brings back the dead (docs/design-v1-combat-flow.md 3.4). */
+  /** Healing brings back the dead (docs/design/design-v1-combat-flow.md 3.4). */
   healRevives: z.boolean().optional(),
-  /** How a critical hit rolls its damage (docs/design-v1-dice.md, critical hit rules). */
+  /** How a critical hit rolls its damage (docs/design/design-v1-dice.md, critical hit rules). */
   critRule: z.enum(CRIT_RULES).optional(),
-  /** Which creatures players see in the initiative order before their turn (docs/design-v1-combat-flow.md 11). */
+  /** Which creatures players see in the initiative order before their turn (docs/design/design-v1-combat-flow.md 11). */
   playersSeeOrder: z.enum(ORDER_REVEALS).optional(),
-  /** The grid new scenes start with, "squares" clearing it (docs/design-v1-hex-grids.md HX-D19). Only the new scene form reads it. */
+  /** The grid new scenes start with, "squares" clearing it (docs/design/design-v1-hex-grids.md HX-D19). Only the new scene form reads it. */
   newScenes: gridShapeChoice.optional(),
-  /** What players see on new scenes (docs/design-v1-map-discovery.md 8.2). Once set it stays set. Only the new scene form reads it. */
+  /** What players see on new scenes (docs/design/design-v1-map-discovery.md 8.2). Once set it stays set. Only the new scene form reads it. */
   newScenePlayers: z.enum(SCENE_PRESETS).optional(),
 });
 
@@ -399,7 +399,7 @@ const wallFeature = z.discriminatedUnion("kind", [z.strictObject({ kind: z.liter
 /**
  * A free wall's or a light's coordinate: a multiple of 1/64 cell inside the
  * largest scene, so every test of whether something touches or lies on it
- * stays exact (docs/design-v1-maps-vision.md section 2.1). A multiple of
+ * stays exact (docs/design/design-v1-maps-vision.md section 2.1). A multiple of
  * 1/64 is a binary fraction, so the product below is exact. The reducer
  * checks the scene's own bounds.
  */
@@ -449,7 +449,7 @@ const lightFeet = z.number().min(0).max(MAX_LIGHT_FT);
 /** A creature's carried light (Token.light): each radius at most the SRD's largest, as for a free light. */
 const tokenLight = z.strictObject({ bright: lightFeet, dim: lightFeet });
 const lightLevel = z.enum(["bright", "dim", "dark"]);
-/** A scene's vision as it is stored and created: `perPlayer` only while true (docs/design-v1-per-player-vision.md 6.7). */
+/** A scene's vision as it is stored and created: `perPlayer` only while true (docs/design/design-v1-per-player-vision.md 6.7). */
 const sceneVision = z.strictObject({ on: z.boolean(), light: lightLevel, perPlayer: z.literal(true).optional() });
 /**
  * A scene's vision as a patch names it (6.7): without `perPlayer` the
@@ -505,7 +505,7 @@ const areaTriggers = z
 const actorTarget = z.union([z.strictObject({ tokenId: id }), z.strictObject({ characterId: id })]);
 
 /**
- * A token's link to its character, as an op sends it (docs/design-v1-combat-flow.md
+ * A token's link to its character, as an op sends it (docs/design/design-v1-combat-flow.md
  * 4.2): never the stored `reactionUsed`, which only `companionReaction`, Next
  * and Previous write.
  */
@@ -575,7 +575,7 @@ const tokenPatch = z.strictObject({
   light: tokenLight.nullable().optional(),
   /** DM only. False takes the creature out of the party (section 4.3.2). */
   partyVision: z.boolean().optional(),
-  /** Makes it a companion or changes how it is one. Null detaches it (docs/design-v1-combat-flow.md 3.6.9). */
+  /** Makes it a companion or changes how it is one. Null detaches it (docs/design/design-v1-combat-flow.md 3.6.9). */
   companion: companion.nullable().optional(),
   /** A `shared` companion's own Reaction spent or not, alone of everything about it (3.6.8). */
   companionReaction: z.boolean().optional(),
@@ -586,10 +586,10 @@ const tokenPatch = z.strictObject({
 const characterLevel = z.number().int().min(1).max(20);
 
 /*
- * A player character's stat block (docs/design-v1-pc-stats.md 3.2 and 3.5).
+ * A player character's stat block (docs/design/design-v1-pc-stats.md 3.2 and 3.5).
  * A formula is bounded by its length and its characters and never parsed
  * here, so a later grammar never stops a stored op from replaying
- * (docs/design-v1-dice.md 4.1). The editor refuses what parseFormula
+ * (docs/design/design-v1-dice.md 4.1). The editor refuses what parseFormula
  * refuses, and a formula that stops parsing later shows as text with no
  * roll. Every list is free of repeats, and the whole block, or a patch of
  * it, is at most LIMITS.pcStatsBytes serialized.
@@ -666,7 +666,7 @@ const pcParts = {
 const pcCritOn = z.union([z.literal(19), z.literal(18)]);
 
 /**
- * A Druid's known forms (docs/design-v1-known-forms.md 3.1), the most the
+ * A Druid's known forms (docs/design/design-v1-known-forms.md 3.1), the most the
  * SRD's Beast Shapes table gives. Only the bound is checked: whether an id
  * is a Beast, or one a level may take, is the table's call, and the server
  * reads no SRD data for it, so a stored op never depends on that data.
@@ -712,11 +712,11 @@ const countFits = (r: { max: number; pool?: true | undefined }) => r.pool === tr
 const countFitsText = { message: `a count is at most ${LIMITS.resourceMax}, a pool's ${LIMITS.resourcePoolMax}` };
 const presetId = z.string().max(40).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "not a preset");
 
-/** The most class resources a fill reads, a character's cap (docs/design-v1-ddb-resources.md 2.1). */
+/** The most class resources a fill reads, a character's cap (docs/design/design-v1-ddb-resources.md 2.1). */
 export const MAX_FILL_RESOURCES = LIMITS.resourcesPerCharacter;
 
 /**
- * A class resource a D&D Beyond fill read (docs/design-v1-ddb-resources.md
+ * A class resource a D&D Beyond fill read (docs/design/design-v1-ddb-resources.md
  * 3.1): no id, which the merge gives, `classId` the class its feature
  * resolved to, for pairing, and `used` absent when D&D Beyond's count was
  * not read.
@@ -736,7 +736,7 @@ const fillResource = z
   .refine((r) => r.used === undefined || r.used <= r.max, { message: "a resource uses at most its count" });
 
 /**
- * What a fill read (docs/design-v1-pc-stats.md 6.1, shared/rules/pcFill.ts),
+ * What a fill read (docs/design/design-v1-pc-stats.md 6.1, shared/rules/pcFill.ts),
  * as the D&D Beyond route answers it and the editor takes it: the block's
  * parts it read, each bounded as in the block, and the fields beside it. A
  * fill is checked by this before the route sends it and before the editor
@@ -768,24 +768,24 @@ const pcFill = z.strictObject({
   }),
   warnings: z.array(line(400)).max(50),
   /**
-   * Whether each kind of roll was read whole (docs/design-v1-resync.md 2.5). Absent reads as all three, as a pasted-text
-   * fill is. `resource` is whether the class resources were (docs/design-v1-ddb-resources.md 3.2), absent as false.
+   * Whether each kind of roll was read whole (docs/design/design-v1-resync.md 2.5). Absent reads as all three, as a pasted-text
+   * fill is. `resource` is whether the class resources were (docs/design/design-v1-ddb-resources.md 3.2), absent as false.
    */
   read: z.strictObject({ weapon: z.boolean(), spell: z.boolean(), other: z.boolean(), resource: z.boolean().optional() }).optional(),
-  /** The class resources read (docs/design-v1-ddb-resources.md 3.1). Absent: not read. */
+  /** The class resources read (docs/design/design-v1-ddb-resources.md 3.1). Absent: not read. */
   resources: z.array(fillResource).max(MAX_FILL_RESOURCES).optional(),
 });
 
 /*
- * A character's record of its last D&D Beyond sync (docs/design-v1-resync.md
+ * A character's record of its last D&D Beyond sync (docs/design/design-v1-resync.md
  * 2.1 and 4). The base takes the fill's part bounds. Every string beside
  * the senses is hex, digits or a time, so a record at every bound is about
- * 5.5 KB with its 12 class resources (docs/design-v1-ddb-resources.md 4.1),
+ * 5.5 KB with its 12 class resources (docs/design/design-v1-ddb-resources.md 4.1),
  * under the 6 KiB the whole may take.
  */
 const syncHash = z.string().regex(/^[0-9a-f]{12}$/);
 const syncKey = z.string().regex(/^[wso]:[0-9a-f]{12}$/);
-/** A synced class resource's key (docs/design-v1-ddb-resources.md 4.1), and a removed marker of either kind. */
+/** A synced class resource's key (docs/design/design-v1-ddb-resources.md 4.1), and a removed marker of either kind. */
 const resourceSyncKey = z.string().regex(/^r:[0-9a-f]{12}$/);
 const goneKey = z.string().regex(/^[wsor]:[0-9a-f]{12}$/);
 const withinDdbSyncBytes = { message: `a sync record is at most ${LIMITS.ddbSyncBytes / 1024} KiB` };
@@ -825,7 +825,7 @@ const ddbSync = z.strictObject(ddbSyncFields).refine((s) => serializedBytes(s) <
  * or 1 ms past the record it replaces when that is as late. A re-sync's
  * Undo expects the record Apply wrote, `at` and all, so two equal records
  * written in the same millisecond must not share one, or Undo would take
- * back the later write too (docs/design-v1-resync.md 3.4). Replay gives the
+ * back the later write too (docs/design/design-v1-resync.md 3.4). Replay gives the
  * same stamp, since the op's time and the record before are both stored.
  */
 export function syncStamp(at: string, before: string | undefined): string {
@@ -855,17 +855,17 @@ export function syncAtAhead(at: string, now: number): boolean {
   return Date.parse(at) > now + SYNC_AHEAD_MS;
 }
 
-/** A live write's refusal when its record's own `at` is from the future (docs/design-v1-resync.md 4). */
+/** A live write's refusal when its record's own `at` is from the future (docs/design/design-v1-resync.md 4). */
 export const SYNC_AT_AHEAD = "a sync record's time is at most a day past now";
 /** As a patch sends it: the server writes `at` when it is left out, which a sync always does. */
 const ddbSyncPatch = z.strictObject({ ...ddbSyncFields, at: ddbSyncFields.at.optional() }).refine((s) => serializedBytes(s) <= LIMITS.ddbSyncBytes, withinDdbSyncBytes);
 
 /**
  * The parts of a character a `character.update` may expect
- * (docs/design-v1-resync.md 4): each stats part, the level, the name, the
+ * (docs/design/design-v1-resync.md 4): each stats part, the level, the name, the
  * actor's AC, speeds, senses, sheet link, HP and shape, the sync record,
  * and the class resources with their counts spent
- * (docs/design-v1-ddb-resources.md 5). Each is a part the character's
+ * (docs/design/design-v1-ddb-resources.md 5). Each is a part the character's
  * players receive whole, so no hash covers what a player's copy lacks.
  */
 export const EXPECT_PARTS = [
@@ -894,7 +894,7 @@ export const EXPECT_PARTS = [
 export type ExpectPart = (typeof EXPECT_PARTS)[number];
 const characterExpect = z.strictObject(Object.fromEntries(EXPECT_PARTS.map((part) => [part, syncHash.optional()])) as { [P in ExpectPart]: z.ZodOptional<typeof syncHash> });
 
-// Combat uses (docs/design-v1-combat-controls.md 3.1).
+// Combat uses (docs/design/design-v1-combat-controls.md 3.1).
 
 /**
  * An ability's key in its stat block (shared/dice/named.ts entryKeys): its
@@ -926,7 +926,7 @@ const resourceFields = {
 /**
  * A class resource as an update sends it (character.update): `used` only
  * when a sync's Apply, its Undo or the editor's Save sets the count spent
- * (docs/design-v1-ddb-resources.md 5), else the reducer keeps it by id.
+ * (docs/design/design-v1-ddb-resources.md 5), else the reducer keeps it by id.
  */
 const resourceInput = z
   .strictObject({ ...resourceFields, used: z.number().int().min(0).max(LIMITS.resourcePoolMax).optional() })
@@ -989,17 +989,17 @@ const characterPatch = z.strictObject({
   defaultImage: imageRef.nullable().optional(),
   actor: actorPatch.optional(),
   level: characterLevel.nullable().optional(),
-  /** Null removes the block. The actor keeps its last initiative and Passive Perception (docs/design-v1-pc-stats.md 3.5). */
+  /** Null removes the block. The actor keeps its last initiative and Passive Perception (docs/design/design-v1-pc-stats.md 3.5). */
   stats: pcStatsPatch.nullable().optional(),
   /** Replaces the list whole. An empty one removes it, so none and absent are one state. */
   knownForms: knownForms.optional(),
-  /** The record of a D&D Beyond sync, whole (docs/design-v1-resync.md 2.1). Null removes it. */
+  /** The record of a D&D Beyond sync, whole (docs/design/design-v1-resync.md 2.1). Null removes it. */
   ddbSync: ddbSyncPatch.nullable().optional(),
   /**
-   * The class resources, whole and in order (docs/design-v1-combat-controls.md 3.1).
+   * The class resources, whole and in order (docs/design/design-v1-combat-controls.md 3.1).
    * One sent with no `used` keeps its own by id, clamped to the new count,
    * and a new id starts at 0. A sync sends `used` for a resource whose
-   * count it sets (docs/design-v1-ddb-resources.md 5). An empty list
+   * count it sets (docs/design/design-v1-ddb-resources.md 5). An empty list
    * removes them.
    */
   resources: resources.optional(),
@@ -1098,7 +1098,7 @@ const withinBlockBytes = { message: `a stat block is at most ${LIMITS.companionB
 
 /**
  * A stat block a character keeps for its companions, as its create op
- * carries it (docs/design-v1-companion-stat-blocks.md 3.3): the monsters'
+ * carries it (docs/design/design-v1-companion-stat-blocks.md 3.3): the monsters'
  * lines and bounds, with the character that keeps it and the SRD monster
  * it was copied from. The reducer sets `rev`.
  */
@@ -1131,7 +1131,7 @@ export const areaSlows = z.strictObject({ kind: z.enum(["difficult", "halfSpeed"
 /**
  * Bounded like a token's custom size, elevation and height, since it is
  * copied from one. `size` is the size it was cast from, never custom, read
- * around the origin on hexes (docs/design-v1-hex-grids.md HX-D11).
+ * around the origin on hexes (docs/design/design-v1-hex-grids.md HX-D11).
  */
 const areaFootprint = z.strictObject({
   w: z.number().min(0.5).max(20),
@@ -1245,7 +1245,7 @@ const entryPatch = z.strictObject({
 
 /**
  * A creature's legendary counts and XP, in its lair or not, from its block
- * (docs/design-v1-combat-controls.md 3.1): In lair sends them with the row's
+ * (docs/design/design-v1-combat-controls.md 3.1): In lair sends them with the row's
  * switch, since the reducer never reads a block.
  */
 const lairCounts = z.strictObject({ actionsMax: legendaryCount, resistMax: legendaryCount, xp: z.number().int().min(0).max(1_000_000).optional() });
@@ -1255,7 +1255,7 @@ const moveFields = { tokenId: id, x: coord, y: coord, elevation: feet.optional()
 /**
  * A walk's straight pieces from where the token stands, each piece's end in
  * order with its public extra feet per foot and whether one of them is the
- * swimming foot (docs/design-v1-movement.md 6.1). The lattice, the scene and
+ * swimming foot (docs/design/design-v1-movement.md 6.1). The lattice, the scene and
  * the reach are permissions' to check, since they need the token.
  */
 export const routeSchema = z
@@ -1278,7 +1278,7 @@ const tileBits = z.string().regex(/^[A-Za-z0-9+/]{683}=$/, "not a tile of bits")
 /** An explored layer's new tiles in `sys.explore`: at most every tile of the largest scene. */
 const exploredTiles = z.array(z.strictObject({ tx: chunkIndex, ty: chunkIndex, bits: tileBits })).max((Math.floor(MAX_SCENE_CELLS / CHUNK_CELLS) + 1) ** 2);
 
-// Memory (docs/design-v1-map-discovery.md 5.3): what a layer remembers, as players saw it.
+// Memory (docs/design/design-v1-map-discovery.md 5.3): what a layer remembers, as players saw it.
 
 /** A door as players see it: never locked, and a secret one only once found. A hidden one reaches them as a wall. */
 const shownDoor = z
@@ -1396,7 +1396,7 @@ const onceEach = (layers: readonly { memberId?: string | undefined }[]) => new S
 /** A page's size bound: the map cap, so a later change to the handout pipeline needs no schema change. */
 export const MAX_HANDOUT_PAGE_PX = 8_192;
 const handoutPagePx = z.number().int().min(1).max(MAX_HANDOUT_PAGE_PX);
-/** One page of a handout (docs/design-v1-pdf-handouts.md 3.3). The server puts the asset row's size over the client's. */
+/** One page of a handout (docs/design/design-v1-pdf-handouts.md 3.3). The server puts the asset row's size over the client's. */
 const handoutPage = z.strictObject({ assetId: id, width: handoutPagePx, height: handoutPagePx });
 const handoutPages = z.array(handoutPage).min(1).max(LIMITS.handoutPages);
 const handoutTo = z.union([z.literal("all"), z.array(id).min(1).max(50)]);
@@ -1425,7 +1425,7 @@ const outcomeDamage = z.strictObject({
 export type OutcomeDamage = z.infer<typeof outcomeDamage>;
 
 const hpChange = z.discriminatedUnion("kind", [
-  /** `types` are the damage types the hit dealt, for the Regeneration note (docs/design-v1-combat-controls.md 3.4). */
+  /** `types` are the damage types the hit dealt, for the Regeneration note (docs/design/design-v1-combat-controls.md 3.4). */
   z.strictObject({ kind: z.literal("damage"), amount: z.number().int().min(0).max(100_000), crit: z.boolean().optional(), types: damageTypes.optional(), parts: damageParts.optional() })
     .refine((c) => c.parts === undefined || (c.types === undefined && c.parts.reduce((sum, part) => sum + part.amount, 0) === c.amount), { message: "Damage parts must add up to the amount and cannot carry final damage types." }),
   z.strictObject({ kind: z.literal("heal"), amount: z.number().int().min(0).max(100_000) }),
@@ -1451,7 +1451,7 @@ const restoreEntry = z.strictObject({
 /** A turn of a fight, as a Next or Previous names the one it ends (`encounter.next` below). */
 const turnRef = z.strictObject({ entry: id.nullable(), round: z.number().int().min(0).max(100_000) });
 
-// Wave 5 (docs/design-v1-dm-tools.md).
+// Wave 5 (docs/design/design-v1-dm-tools.md).
 
 /** A journal block's id: 12 random characters, unique in its page. */
 const journalBlockId = z.string().regex(/^[A-Za-z0-9_-]{12}$/, "not a journal block id");
@@ -1503,7 +1503,7 @@ const rollRequestInput = z.strictObject({
   resultShown: z.boolean(),
   note: line(LIMITS.rollNoteChars).optional(),
   targets: rollTargets,
-  /** Wave 7 (docs/design-v1-roll-request.md 1.1): a save against a spell, which the test's bonuses read. */
+  /** Wave 7 (docs/design/design-v1-roll-request.md 1.1): a save against a spell, which the test's bonuses read. */
   spell: z.literal(true).optional(),
   /** Public: what the request is for, so a player's card and the roll's test know a "save ends" save. */
   cause: z.literal("saveEnds").optional(),
@@ -1519,7 +1519,7 @@ const rollRequestInput = z.strictObject({
 const rollKey = line(160).min(1);
 
 /**
- * A player's ask for saves (docs/design-v1-player-save-spell.md 5.2 and
+ * A player's ask for saves (docs/design/design-v1-player-save-spell.md 5.2 and
  * 5.3): its caster and the players' scene, the spell's name as the row or
  * the area shows it, and exactly one of an area and the targets. `damage`
  * names the caster's damage roll, sent just before on the same socket, by
@@ -1541,7 +1541,7 @@ const castInput = z
 const castEnd = z.enum(["done", "dismissed", "withdrawn"]);
 const castRolled = z.strictObject({ formula: z.string().min(1).max(LIMITS.diceFormulaChars), total: z.number().int().min(-100_000).max(100_000), type: z.enum(DAMAGE_TYPES).optional() });
 /**
- * A player's ask to change an answer (docs/design-v1-roll-request.md 1.1):
+ * A player's ask to change an answer (docs/design/design-v1-roll-request.md 1.1):
  * its own id, the `tag` of the answer it would change, the reason, and a
  * reroll's face (an index into the answer's `dice.faces`) or Bardic
  * Inspiration's die.
@@ -1554,7 +1554,7 @@ const rollChange = z.strictObject({
   die: z.union([z.literal(6), z.literal(8), z.literal(10), z.literal(12)]).optional(),
 });
 
-// Dice (wave 7, docs/design-v1-dice.md 4.1 and 5.1).
+// Dice (wave 7, docs/design/design-v1-dice.md 4.1 and 5.1).
 
 const advantageMode = z.enum(["adv", "dis"]);
 const critOn = z.union([z.literal(18), z.literal(19), z.literal(20)]);
@@ -1582,10 +1582,10 @@ const diceRollInput = z.strictObject({
   /**
    * The creature's initiative, so the line keeps it from players while the
    * order setting keeps the creature's place from them
-   * (docs/design-v1-combat-flow.md 11.3). Ignored without `creature`.
+   * (docs/design/design-v1-combat-flow.md 11.3). Ignored without `creature`.
    */
   initiative: z.literal(true).optional(),
-  /** A damage roll's damage type (docs/design-v1-combat-controls.md 3.4), kept on its line. */
+  /** A damage roll's damage type (docs/design/design-v1-combat-controls.md 3.4), kept on its line. */
   type: z.enum(DAMAGE_TYPES).optional(),
 });
 const diceRollFields = {
@@ -1624,7 +1624,7 @@ function diceFormulas(rolls: readonly { formula: string; mode?: "adv" | "dis"; c
 }
 
 /**
- * A request's answer rolled on the server (docs/design-v1-dice.md 4.1, 7):
+ * A request's answer rolled on the server (docs/design/design-v1-dice.md 4.1, 7):
  * `extra` adds dice and numbers after the d20 and the bonus, `bonus` is the
  * player's own, used only where the server knows none, `unanswered` rolls
  * only a creature still waiting, and `change` is the DM's Allow of the ask
@@ -1644,8 +1644,8 @@ const rollDiceFields = {
 };
 
 /**
- * A death save rolled on the server and counted from the state then (docs/design-v1-roll-options.md 4.3).
- * `record` names the turn record whose open death save it settles (docs/design-v1-combat-controls.md 2.3).
+ * A death save rolled on the server and counted from the state then (docs/design/design-v1-roll-options.md 4.3).
+ * `record` names the turn record whose open death save it settles (docs/design/design-v1-combat-controls.md 2.3).
  */
 const deathRollFields = {
   tag: id,
@@ -1657,7 +1657,7 @@ const deathRollFields = {
 };
 
 /**
- * An ability's recharge roll on the server (docs/design-v1-combat-controls.md 3.1):
+ * An ability's recharge roll on the server (docs/design/design-v1-combat-controls.md 3.1):
  * 1d6, and `min` or more makes it ready. `record` names the turn record
  * whose open prompt for the key it settles.
  */
@@ -1725,7 +1725,7 @@ const manyTokenIds = z
   .max(LIMITS.tokensPerManyOp)
   .refine((list) => new Set(list).size === list.length, { message: "a token is listed twice" });
 
-// Traps (docs/design-v1-traps.md 6.1 and 6.2).
+// Traps (docs/design/design-v1-traps.md 6.1 and 6.2).
 
 const trapName = name.refine(whole, wholeText);
 const trapLine = (max: number) => line(max).min(1).refine(whole, wholeText);
@@ -1746,7 +1746,7 @@ const cellRects = z
   .refine((rects) => rectCells(rects) <= LIMITS.trapCells, { message: `squares are at most ${LIMITS.trapCells} cells` });
 /**
  * A wire's end, on the free walls' 1/64 lattice, where hex corners lie
- * (docs/design-v1-hex-grids.md H2). Every end stored before is a half cell,
+ * (docs/design/design-v1-hex-grids.md H2). Every end stored before is a half cell,
  * which lies on it too, so no op changes meaning. The reducer keeps a
  * square scene's ends on cell corners and edge midpoints.
  */
@@ -1877,7 +1877,7 @@ const trapPatch = z
 const trapDue = z.string().regex(/^\d{1,18}:\d{1,6}$/);
 
 /**
- * What an `actor.use` spends (docs/design-v1-combat-controls.md 3.1). The
+ * What an `actor.use` spends (docs/design/design-v1-combat-controls.md 3.1). The
  * sending device reads the block, so the op carries its facts: a legendary
  * action's cost and once-per-turn limit, an ability's limit, X, range and
  * Short Rest, Regeneration's amount. No key is the plain "Spend one" for
@@ -1910,7 +1910,7 @@ const useKind = z.discriminatedUnion("kind", [
 
 const op = <T extends string, S extends z.ZodRawShape>(t: T, shape: S) => z.strictObject({ t: z.literal(t), ...shape });
 
-// The builder's ops a gesture of several may send, which a `build.ask` carries (docs/design-v1-map-discovery.md 5.3).
+// The builder's ops a gesture of several may send, which a `build.ask` carries (docs/design/design-v1-map-discovery.md 5.3).
 const buildPaintOp = op("build.paint", { sceneId: id, terrain, cells: z.array(cellKey).min(1).max(MAX_BUILD_CELLS), forget });
 const buildEraseOp = op("build.erase", { sceneId: id, cells: z.array(cellKey).min(1).max(MAX_BUILD_CELLS), forget });
 const buildRectOp = op("build.rect", {
@@ -1974,7 +1974,7 @@ const stateClientOps = [
       vision: sceneVision.optional(),
       /** A Universal VTT import's mark (Scene.gridFromFile). No patch takes it, so it stays with the scene. */
       gridFromFile: z.literal(true).optional(),
-      /** Absent makes squares, whatever the room's New scenes says: only the form reads that (docs/design-v1-hex-grids.md HX-D19). */
+      /** Absent makes squares, whatever the room's New scenes says: only the form reads that (docs/design/design-v1-hex-grids.md HX-D19). */
       gridShape: gridShapeChoice.optional(),
     }),
   }),
@@ -2003,7 +2003,7 @@ const stateClientOps = [
       vision: sceneVisionPatch.optional(),
       /**
        * The scene's grid shape, refused while the scene holds cell data or
-       * came with its own grid (docs/design-v1-hex-grids.md HX-D14).
+       * came with its own grid (docs/design/design-v1-hex-grids.md HX-D14).
        */
       gridShape: gridShapeChoice.optional(),
       /** The view a following device shows (Scene.suggestedView). "topDown" removes the stored field. */
@@ -2012,7 +2012,7 @@ const stateClientOps = [
   }),
   /**
    * Which players on a per-player scene's holder list see and remember for
-   * themselves (docs/design-v1-per-player-vision.md 6.1): exactly the
+   * themselves (docs/design/design-v1-per-player-vision.md 6.1): exactly the
    * players named, at most the scene's cap, each a player on the roster.
    * One with no entry gets one, at the end. Every other entry is off, and
    * the layer of one turned off goes, outside the undo step.
@@ -2038,7 +2038,7 @@ const stateClientOps = [
     gridShape: gridShapeChoice.optional(),
     bounds: sceneBounds.optional(),
   }),
-  /** Switches the map to one of the scene's phases (docs/design-v1-maps-vision.md section 3.4). */
+  /** Switches the map to one of the scene's phases (docs/design/design-v1-maps-vision.md section 3.4). */
   op("scene.setPhase", { sceneId: id, phaseId: id }),
   /**
    * Copies a scene in one step (section 3.2). The copies' ids are derived
@@ -2060,7 +2060,7 @@ const stateClientOps = [
    * the move is a "Teleport here" past a wall or a ledge: it skips the wall
    * test, its leg on the turn's path does not count, and the DM's log says so.
    * `unknown` is past something on ground the player does not hold, which
-   * names no kind (docs/design-v1-map-discovery.md 6).
+   * names no kind (docs/design/design-v1-map-discovery.md 6).
    */
   op("token.move", { ...moveFields, squeeze: z.literal(true).optional(), teleport: z.enum(["wall", "ledge", "unknown"]).optional(), route: routeSchema.optional() })
     .refine((o) => o.route === undefined || o.teleport === undefined, { message: "a teleport walks no route" })
@@ -2073,7 +2073,7 @@ const stateClientOps = [
    */
   op("token.countLeg", { tokenId: id, counts: z.boolean() }),
   /**
-   * Attaches a token to a holder (docs/design-v1-attach.md 8.1): a ride, a
+   * Attaches a token to a holder (docs/design/design-v1-attach.md 8.1): a ride, a
    * perch, a carry or a drag, `steer` on a controlled ride alone. `x`, `y`
    * and `elevation` are the seat the client picked, which the reducer
    * checks fits, and for a drag where the creature stands. An attach of a
@@ -2096,7 +2096,7 @@ const stateClientOps = [
    * all back. DM only, since the DM confirms what an area deals.
    */
   /**
-   * A group save's outcome (docs/design-v1-roll-options.md 5.5 and 8), the
+   * A group save's outcome (docs/design/design-v1-roll-options.md 5.5 and 8), the
    * DM's: for each creature, its damage by `actor.hp`'s rules, the
    * conditions to add as `actor.effects` adds them, the effects to remove,
    * and one more Legendary Resistance used. Whole or not at all, one undo
@@ -2109,12 +2109,12 @@ const stateClientOps = [
     recharge: saveRechargeSpendSchema.optional(),
     label: shortText.optional(),
     /**
-     * The player's ask for saves this outcome resolves (docs/design-v1-player-save-spell.md 5.3), closed in the
-     * same op with end "done". An outcome settles at most one thing: traps' `trap` (docs/design-v1-traps.md 6.2)
+     * The player's ask for saves this outcome resolves (docs/design/design-v1-player-save-spell.md 5.3), closed in the
+     * same op with end "done". An outcome settles at most one thing: traps' `trap` (docs/design/design-v1-traps.md 6.2)
      * joins it here under a refine that refuses both.
      */
     cast: id.optional(),
-    /** The trap occurrence this outcome settles, in the same op (docs/design-v1-traps.md 6.2). */
+    /** The trap occurrence this outcome settles, in the same op (docs/design/design-v1-traps.md 6.2). */
     trap: z.strictObject({ trapId: id, due: trapDue }).optional(),
     targets: z
       .array(
@@ -2124,7 +2124,7 @@ const stateClientOps = [
           effects: z.array(effectInput).min(1).max(LIMITS.outcomeEffectsEach).optional(),
           remove: z.array(id).min(1).max(LIMITS.outcomeEffectsEach).optional(),
           resist: z.literal(true).optional(),
-          /** The damage types of the creature's adjusted parts above 0 (docs/design-v1-combat-controls.md 3.4). */
+          /** The damage types of the creature's adjusted parts above 0 (docs/design/design-v1-combat-controls.md 3.4). */
           types: damageTypes.optional(),
           damage: outcomeDamage.optional(),
         }).refine((t) => t.damage === undefined || (t.amount === undefined && t.types === undefined), { message: "Incoming damage cannot also carry a final amount or damage types." }),
@@ -2135,7 +2135,7 @@ const stateClientOps = [
   })
     .refine((o) => serializedBytes(o) <= LIMITS.outcomeOpBytes, { message: OUTCOME_TOO_BIG })
     .refine((o) => o.cast === undefined || o.trap === undefined, { message: "an outcome settles one thing" })
-    // A trap's springing that everyone passed with nothing to take settles with no creature (docs/design-v1-traps.md 4.4).
+    // A trap's springing that everyone passed with nothing to take settles with no creature (docs/design/design-v1-traps.md 4.4).
     .refine((o) => o.targets.length > 0 || o.trap !== undefined, { message: "an outcome names at least one creature" }),
   op("actor.damageMany", {
     hits: z.array(z.strictObject({ target: actorTarget, amount: z.number().int().min(1).max(100_000), types: damageTypes.optional() })).min(1).max(MAX_ENTRIES_PER_OP),
@@ -2171,13 +2171,13 @@ const stateClientOps = [
   op("actor.effect.remove", { target: actorTarget, effectId: id }),
   /**
    * The DM settles a save-ends occurrence no request is linked to
-   * (docs/design-v1-roll-options.md 6.1): Accept failure or Dismiss on the
+   * (docs/design/design-v1-roll-options.md 6.1): Accept failure or Dismiss on the
    * card. `due` is the occurrence, so a tap on an older card changes nothing.
    */
   op("actor.saveDue", { target: actorTarget, effectId: id, due: z.string().regex(/^\d{1,18}:\d{1,6}$/), state: z.enum(["resolved", "dismissed"]) }),
   /**
    * Spends one of a creature's limited uses, or with `back` gives one back
-   * (docs/design-v1-combat-controls.md 3.1): a legendary action, Legendary
+   * (docs/design/design-v1-combat-controls.md 3.1): a legendary action, Legendary
    * Resistance, an ability of its block, Regeneration's heal, or a class
    * resource. `quiet` says the use follows a secret roll, so its line
    * reaches only the DM and the creature's owners (8).
@@ -2187,14 +2187,14 @@ const stateClientOps = [
     .refine((o) => o.back === undefined || o.use.kind !== "ability" || o.use.ifReady === undefined, { message: "a give back is never the Dice panel's mark" }),
   /**
    * Skips a turn's prompt, or reopens a skipped one while its turn runs
-   * (docs/design-v1-combat-controls.md 3.1): `what` names it in the record
+   * (docs/design/design-v1-combat-controls.md 3.1): `what` names it in the record
    * `record`, Regeneration, a death save or `recharge:` and a key.
    */
   op("actor.prompt", { target: actorTarget, record: turnRecordId, what: promptKey, state: z.enum(["skipped", "open"]) }),
   op("character.create", { character: characterInput }),
   /**
    * `expect` holds a hash of each part the sender saw before it wrote
-   * (docs/design-v1-resync.md 4): a re-sync's Apply and Undo send it, and
+   * (docs/design/design-v1-resync.md 4): a re-sync's Apply and Undo send it, and
    * the server refuses the op when any of them changed since. It is checked
    * where ops arrive, never on replay.
    */
@@ -2207,7 +2207,7 @@ const stateClientOps = [
   op("monster.setSrdImage", { srdId, image: imageRef.nullable() }),
   /**
    * A character's stat blocks for its companions
-   * (docs/design-v1-companion-stat-blocks.md 3.3), the DM's and the
+   * (docs/design/design-v1-companion-stat-blocks.md 3.3), the DM's and the
    * character's owners'. An edit sends the changed lines, as a monster's
    * does, and never names the character or the SRD source, which stay.
    */
@@ -2272,11 +2272,11 @@ const stateClientOps = [
   buildHeightOp,
   /** Marks cells as stairs pointing up by the rule or one way, or clears the marks with null (section 4.2). */
   buildStairsOp,
-  /** Marks cells as difficult ground or clears the marks (docs/design-v1-movement.md 6.3). Terrain is untouched, and no wall moves. */
+  /** Marks cells as difficult ground or clears the marks (docs/design/design-v1-movement.md 6.3). Terrain is untouched, and no wall moves. */
   buildRoughOp,
   /**
    * The DM's ask before a builder gesture of several ops applies any of
-   * them (docs/design-v1-map-discovery.md 5.3): the gesture's ops, which
+   * them (docs/design/design-v1-map-discovery.md 5.3): the gesture's ops, which
    * the server reads in turn as they would apply, without applying,
    * storing or logging any, and refuses with `forget` where together they
    * would push players' remembered map past its cap. Sent under the
@@ -2301,13 +2301,13 @@ const stateClientOps = [
    * they see and can reach (shared/permissions.ts).
    */
   /**
-   * `by` names the creature that opens the door (docs/design-v1-traps.md
+   * `by` names the creature that opens the door (docs/design/design-v1-traps.md
    * 5.3): its door traps go off for it. A player's open must name their own
    * token that reaches the door. A DM's may leave it out, and then sets no
    * trap off.
    */
   op("door.set", { sceneId: id, door: doorRef, state: z.enum(["open", "closed", "locked"]), found: z.boolean().optional(), by: id.optional() }),
-  /** Traps, the DM's alone (docs/design-v1-traps.md 6.2). */
+  /** Traps, the DM's alone (docs/design/design-v1-traps.md 6.2). */
   op("trap.create", { trap: trapInput }),
   /** Only the fields that changed, so two DM devices editing different fields never undo each other. */
   op("trap.update", { trapId: id, patch: trapPatch }),
@@ -2346,7 +2346,7 @@ const stateClientOps = [
    */
   op("encounter.next", { from: turnRef.optional() }),
   op("encounter.prev", { from: turnRef.optional() }),
-  /** `counts` goes only with `patch.inLair`: the block's lair or base counts, which the row's creature takes (docs/design-v1-combat-controls.md 3.1). */
+  /** `counts` goes only with `patch.inLair`: the block's lair or base counts, which the row's creature takes (docs/design/design-v1-combat-controls.md 3.1). */
   op("encounter.update", { entryId: id, patch: entryPatch, counts: lairCounts.optional() }).refine((o) => o.counts === undefined || o.patch.inLair !== undefined, {
     message: "lair counts go with In lair",
   }),
@@ -2357,11 +2357,11 @@ const stateClientOps = [
   /**
    * A PDF kept in the DM's library as a document of pages, under the id its
    * upload chose first, so a create sent twice cannot make two
-   * (docs/design-v1-pdf-handouts.md 3.3). Both ops are the DM's.
+   * (docs/design/design-v1-pdf-handouts.md 3.3). Both ops are the DM's.
    */
   op("handoutDoc.create", { doc: handoutDocInput }),
   op("handoutDoc.delete", { docId: id }),
-  // Wave 5 (docs/design-v1-dm-tools.md).
+  // Wave 5 (docs/design/design-v1-dm-tools.md).
   /** Several tokens changed alike in one step (section 3.5), whole or not at all. */
   op("token.updateMany", { tokenIds: manyTokenIds, patch: tokenGroupPatch }),
   /** Several tokens deleted in one step, each as `token.delete` deletes it. DM only. */
@@ -2388,9 +2388,9 @@ const stateClientOps = [
    * without rolling (`result: "fail"`, no total). The DM may also mark a
    * result, alone or with a total. The reducer works out the result from a
    * DC and a total, and keeps a replaced answer as `previous`. `tag` is the
-   * answer's client id, the key of its receipt (docs/design-v1-dice.md 1.2),
+   * answer's client id, the key of its receipt (docs/design/design-v1-dice.md 1.2),
    * so an answer sent again with it never applies twice. Optional only so
-   * stored ops replay (docs/design-v1-roll-request.md 7.5).
+   * stored ops replay (docs/design/design-v1-roll-request.md 7.5).
    */
   op("roll.answer", { rollId: id, target: actorTarget, choice: rollChoiceIndex.optional(), total: rollTotal.optional(), result: rollResult.optional(), tag: id.optional() }).refine(
     (o) => o.total !== undefined || o.result !== undefined,
@@ -2398,12 +2398,12 @@ const stateClientOps = [
   ),
   /**
    * Clears a target's answer, kept as `previous`, so its player may answer once more. With `change`, the
-   * DM's Allow of a "Fix my total" ask names it (docs/design-v1-roll-request.md 7.5), and the player may
+   * DM's Allow of a "Fix my total" ask names it (docs/design/design-v1-roll-request.md 7.5), and the player may
    * then type the answer again but not roll it.
    */
   op("roll.reopen", { rollId: id, target: actorTarget, change: id.optional() }),
   /**
-   * A player's ask to change their answer, which the DM allows or keeps (docs/design-v1-roll-request.md
+   * A player's ask to change their answer, which the DM allows or keeps (docs/design/design-v1-roll-request.md
    * 5.5 and 7.5), or the end of one: `ask` replaces any pending ask, and `clear` names the ask it ends,
    * the player's Withdraw or the DM's Keep. A face goes only with a reroll and a die only with Bardic
    * Inspiration, so the DM's card never reads a part the Allow would ignore.
@@ -2413,7 +2413,7 @@ const stateClientOps = [
     .refine((o) => o.ask?.face === undefined || o.ask.reason === "heroic-inspiration" || o.ask.reason === "halfling-luck", { message: "a face goes with a reroll" })
     .refine((o) => o.ask?.die === undefined || o.ask.reason === "bardic-inspiration", { message: "a die goes with Bardic Inspiration" }),
   /**
-   * Closes requests, settling each in the same op (docs/design-v1-roll-request.md 1.1): a pending ask is
+   * Closes requests, settling each in the same op (docs/design/design-v1-roll-request.md 1.1): a pending ask is
    * kept, and a "save ends" request's occurrence is settled as `settle`, doc 3's Accept failure or Dismiss,
    * else by whether it was answered. `ifSettled` is "Close all answered": the server skips a request that
    * waits on a target or holds an ask when the op runs, so nothing that arrived after the tap closes unseen.
@@ -2425,14 +2425,14 @@ const stateClientOps = [
     ifSettled: z.literal(true).optional(),
   }),
   /**
-   * A player's ask for saves against their creature's spell (docs/design-v1-player-save-spell.md 5.3), and its end:
+   * A player's ask for saves against their creature's spell (docs/design/design-v1-player-save-spell.md 5.3), and its end:
    * the DM's resolve with nothing to apply or dismissal, or a withdrawal by a player of its caster. The ask's id is its
    * receipt tag, so an ask sent again asks once.
    */
   op("cast.ask", { cast: castInput }),
   op("cast.close", { castId: id, end: castEnd }),
   /**
-   * Rolls on the server (docs/design-v1-dice.md 4.1): 1 to 20 formulas, 100
+   * Rolls on the server (docs/design/design-v1-dice.md 4.1): 1 to 20 formulas, 100
    * dice in all after each mode, every formula parsing and every mode
    * applying, and the whole op at most 3 KiB serialized. The actor turns it
    * into the `sys.dice` it stores, holding every die it drew.
@@ -2449,15 +2449,15 @@ const stateClientOps = [
       else if (checked.formulas.reduce((n, f) => n + diceCount(f), 0) > LIMITS.dicePerOp) ctx.addIssue({ code: "custom", message: "Roll 1 to 100 dice, as 1d20+5." });
     })
     .refine((o) => serializedBytes(o) <= LIMITS.diceOpBytes, { message: "That is too much to roll at once. Roll fewer at a time." }),
-  /** A request's answer rolled on the server (docs/design-v1-dice.md 7). The Allow of an ask carries nothing else that rolls. */
+  /** A request's answer rolled on the server (docs/design/design-v1-dice.md 7). The Allow of an ask carries nothing else that rolls. */
   op("roll.dice", rollDiceFields)
     .superRefine(extraParses)
     .refine((o) => o.change === undefined || (o.mode === undefined && o.cancelled === undefined && o.extra === undefined && o.bonus === undefined && o.choice === undefined && o.unanswered === undefined), {
       message: "an allowed change rolls only what the ask names",
     }),
-  /** A death save rolled on the server (docs/design-v1-dice.md 4.1), permitted as `actor.deathSave` is. */
+  /** A death save rolled on the server (docs/design/design-v1-dice.md 4.1), permitted as `actor.deathSave` is. */
   op("actor.deathRoll", deathRollFields).superRefine(extraParses),
-  /** An ability's recharge roll on the server (docs/design-v1-combat-controls.md 3.1), permitted as `actor.use` is. */
+  /** An ability's recharge roll on the server (docs/design/design-v1-combat-controls.md 3.1), permitted as `actor.use` is. */
   op("actor.rechargeRoll", rechargeRollFields),
 ] as const;
 
@@ -2502,19 +2502,19 @@ export const serverOnlyOps = [
     /**
      * The routes of the step's moves, by token, in the order they were
      * made, so a player's redo meets the walls along each piece as the
-     * moves did (docs/design-v1-movement.md 7.4). Only permissions read it.
+     * moves did (docs/design/design-v1-movement.md 7.4). Only permissions read it.
      */
     routes: z.record(id, z.array(routeSchema).min(1).max(MAX_KEPT_ROUTES)).optional(),
     /**
      * The controlled rides a player's step ended or made on a turn, each
-     * with that turn's seq (docs/design-v1-attach.md 8.3). The restore puts
+     * with that turn's seq (docs/design/design-v1-attach.md 8.3). The restore puts
      * the mount back on the turn's list only when the same turn is under way
      * and the restored ride is the one it names, so an undone Get off or a
      * redone mounting shares the turn again and nothing else ever does.
      */
     rides: z.array(z.strictObject({ seq: z.number().int().min(0), mount: id, rider: id })).min(1).max(LIMITS.turnMounts).optional(),
     /**
-     * The silent passengers among the entries (docs/design-v1-attach.md
+     * The silent passengers among the entries (docs/design/design-v1-attach.md
      * 8.3): tokens that rode along by a chain not every player sees when the
      * step was made, put back by their holder's move alone. A player's
      * restore checks never read them, so no hidden change answers. Only
@@ -2528,7 +2528,7 @@ export const serverOnlyOps = [
    * actor appends it to the batch on the player scene. Replay applies the
    * stored bits and never computes sight.
    *
-   * On a per-player scene (docs/design-v1-per-player-vision.md 6.3) `tiles`
+   * On a per-player scene (docs/design/design-v1-per-player-vision.md 6.3) `tiles`
    * is what the shared sight saw, `members` each holder's own layer's new
    * tiles, and `join` the players the holder list gains, in order, each on
    * or off as the step found the list (6.1). An op holds at least one of
@@ -2552,7 +2552,7 @@ export const serverOnlyOps = [
   }).refine((o) => o.tiles.length > 0 || o.members !== undefined || o.join !== undefined, { message: "nothing explored" }),
   /**
    * What the map step found players remember of a scene's build after a
-   * batch (docs/design-v1-map-discovery.md 5.3), after its `sys.explore`:
+   * batch (docs/design/design-v1-map-discovery.md 5.3), after its `sys.explore`:
    * for each layer, the party's or a sight holder's, the chunks whose
    * entries change, each with the keys it drops and then the entries it
    * sets, and the fog tiles a layer past its cap forgets, each keeping
@@ -2592,7 +2592,7 @@ export const serverOnlyOps = [
       .optional(),
   }).refine((o) => o.layers.length > 0 || o.forget !== undefined, { message: "nothing remembered" }),
   /**
-   * A dice op as the server resolved it (docs/design-v1-dice.md 4.1): the
+   * A dice op as the server resolved it (docs/design/design-v1-dice.md 4.1): the
    * client op as it arrived, its `batch` (16 characters of the SHA-256 of
    * the roller and the tag), and one result per roll, in order, holding
    * every die drawn. The reducer only copies them, so replay never rolls.
@@ -2625,7 +2625,7 @@ export type OpOf<T extends OpType> = Extract<Op, { t: T }>;
  * change after a drag never reads as someone else moving the token.
  */
 export function isPoseOp(op: Op): op is OpOf<"token.move" | "token.moveMany" | "token.update" | "token.countLeg" | "token.attach" | "token.detach"> {
-  // A mistaken Ride should not cost a Get off at half Speed, so attaching and detaching undo as moves (docs/design-v1-attach.md 8.3).
+  // A mistaken Ride should not cost a Get off at half Speed, so attaching and detaching undo as moves (docs/design/design-v1-attach.md 8.3).
   if (op.t === "token.move" || op.t === "token.moveMany" || op.t === "token.countLeg" || op.t === "token.attach" || op.t === "token.detach") return true;
   if (op.t !== "token.update") return false;
   const fields = Object.keys(op.patch);
@@ -2636,7 +2636,7 @@ export function isPoseOp(op: Op): op is OpOf<"token.move" | "token.moveMany" | "
 const RESIZE_FIELDS = new Set(["size", "x", "y", "w", "h"]);
 
 /**
- * Whether an op is a resize patch (docs/design-v1-token-window.md 8.6): a
+ * Whether an op is a resize patch (docs/design/design-v1-token-window.md 8.6): a
  * token update of its size and nothing but the place it takes there, and
  * for Custom its width and height. A player's undo takes it back as it
  * takes back a move, the size with the place, keeping later edits
@@ -2711,12 +2711,12 @@ export const durationRemainingSchema = durationRemaining;
  */
 export const actorSchemaForImport = actorSchema.extend({
   unshaped: z.strictObject({ ac: z.number().int().min(0).max(100), speeds, shapeTemp: z.literal(true).optional() }).optional(),
-  /** The reducer writes these alone, so no op's actor carries them either (docs/design-v1-combat-controls.md 3.6). */
+  /** The reducer writes these alone, so no op's actor carries them either (docs/design/design-v1-combat-controls.md 3.6). */
   uses: uses.optional(),
   hurt: damageTypes.optional(),
   turnRecord: turnRecord.optional(),
 });
-/** The stored shapes of combat uses, so the stored-state schema checks imports by the same bounds (docs/design-v1-combat-controls.md 3.6). */
+/** The stored shapes of combat uses, so the stored-state schema checks imports by the same bounds (docs/design/design-v1-combat-controls.md 3.6). */
 export const combatUseSchemas = { useKey, useName, useMark, uses, turnRecord, damageTypes, resourceName, resourceStored, turnRecordId };
 /** The stat block's fields, so the stored-state schema checks imported monsters by the same bounds. */
 export const statBlockFieldsForImport = statBlockFields;
@@ -2738,9 +2738,9 @@ export const pcStatsForImport = pcStats;
 export const knownFormsSchema = knownForms;
 /** A stat block's patch, for the editor to check what it sends. */
 export const pcStatsPatchSchema = pcStatsPatch;
-/** A fill as the D&D Beyond route answers it (docs/design-v1-pc-stats.md 6.3). */
+/** A fill as the D&D Beyond route answers it (docs/design/design-v1-pc-stats.md 6.3). */
 export const pcFillSchema = pcFill;
-/** One class resource of a fill, so the reader leaves out one that fails instead of the whole fill failing (docs/design-v1-ddb-resources.md 3.1). */
+/** One class resource of a fill, so the reader leaves out one that fails instead of the whole fill failing (docs/design/design-v1-ddb-resources.md 3.1). */
 export const fillResourceSchema = fillResource;
 /** A character's sync record as stored, so the stored-state schema checks imported ones by the same bounds. */
 export const ddbSyncForImport = ddbSync;
@@ -2775,11 +2775,11 @@ export const mapSchemas = {
   sceneVision,
   tileBits,
 };
-/** Map discovery's shapes, so the stored-state schema checks a room's memory by the same bounds the step's ops are held to (docs/design-v1-map-discovery.md 5.3). */
+/** Map discovery's shapes, so the stored-state schema checks a room's memory by the same bounds the step's ops are held to (docs/design/design-v1-map-discovery.md 5.3). */
 export const memorySchemas = { memoryEntries, chunkIndex: memoryChunkIndex, scenePreset: z.enum(SCENE_PRESETS) };
 export type MemoryEntriesInput = z.infer<typeof memoryEntries>;
 export type MemoryKeysInput = z.infer<typeof memoryKeys>;
-/** Wave 5's shapes, so the stored-state schema checks imports by the same bounds (docs/design-v1-dm-tools.md 2.5). */
+/** Wave 5's shapes, so the stored-state schema checks imports by the same bounds (docs/design/design-v1-dm-tools.md 2.5). */
 export const dmToolSchemas = {
   imageRef,
   iconKey,
@@ -2793,15 +2793,15 @@ export const dmToolSchemas = {
   rollChoiceIndex,
   whichPlayers: moveAnyToken,
 };
-/** Wave 7's shapes, so the stored-state schema checks imported dice lines by the same bounds (docs/design-v1-dice.md 5.3). */
+/** Wave 7's shapes, so the stored-state schema checks imported dice lines by the same bounds (docs/design/design-v1-dice.md 5.3). */
 export const diceSchemas = { diceResult, critOn, advantageMode };
 /** Wave 7's answer fields, so the stored-state schema checks imported requests and lines by the same bounds. */
 export const rollAnswerSchemas = { rollChange };
-/** A player's ask for saves, so the stored-state schema checks imported asks by the same bounds (docs/design-v1-player-save-spell.md 5.7). */
+/** A player's ask for saves, so the stored-state schema checks imported asks by the same bounds (docs/design/design-v1-player-save-spell.md 5.7). */
 export const castSchemas = { castInput, castEnd, castRolled };
-/** A trap's fields, so the stored-state schema checks imported traps by the same bounds (docs/design-v1-traps.md 6.2). */
+/** A trap's fields, so the stored-state schema checks imported traps by the same bounds (docs/design/design-v1-traps.md 6.2). */
 export const trapSchemas = { plainId, trapName, trapZone, trapRigInput, trapDue, cellRects, trapMessage: trapLine(LIMITS.trapMessageChars) };
-/** A handout's pages and audience, so the stored-state schema checks imports by the same bounds (docs/design-v1-pdf-handouts.md 3.3). */
+/** A handout's pages and audience, so the stored-state schema checks imports by the same bounds (docs/design/design-v1-pdf-handouts.md 3.3). */
 export const handoutSchemas = { handoutPage, handoutPages, handoutTo };
 /** A document as its create op carries it, for the upload job to check its save before it sends it. */
 export const handoutDocInputSchema = handoutDocInput;
@@ -2821,7 +2821,7 @@ const rulerPoint = z
 export const ephEventSchema = z.discriminatedUnion("k", [
   z.strictObject({ k: z.literal("dragStart"), tokenId: id, x: coord, y: coord }),
   // `squeeze` is the dragging client's own preview, for drawing only: the server judges a frame's footprint itself (section 4.1).
-  // `path` is the live route's corners and `ft` its cost (docs/design-v1-movement.md 6.5). The server sends `ft` only to the DM and the token's owners.
+  // `path` is the live route's corners and `ft` its cost (docs/design/design-v1-movement.md 6.5). The server sends `ft` only to the DM and the token's owners.
   z.strictObject({
     k: z.literal("dragMove"),
     tokenId: id,
@@ -2852,11 +2852,11 @@ export const ephEventSchema = z.discriminatedUnion("k", [
   z.strictObject({ k: z.literal("laser"), x: coord, y: coord, on: z.boolean() }),
   z.strictObject({ k: z.literal("focus"), x: coord, y: coord, zoom: z.number().min(0.01).max(100) }),
   /**
-   * A DM device's camera for table displays (wave 5, docs/design-v1-dm-tools.md
+   * A DM device's camera for table displays (wave 5, docs/design/design-v1-dm-tools.md
    * 3.1): the center, width and height of its visible map area, in cells.
    * Only a DM sends it, and only display sockets on its scene receive it.
    *
-   * An Isometric DM adds `iso` (docs/design-v1-isometric-view.md ISO-D17):
+   * An Isometric DM adds `iso` (docs/design/design-v1-isometric-view.md ISO-D17):
    * its turn, and its canvas's size in view units centered on its middle.
    * It holds the DM's camera alone, nothing about the map. A page loaded
    * before it checks events against its old strict schema and drops this
@@ -2906,7 +2906,7 @@ export type ClientMessage = z.infer<typeof clientMessageSchema>;
 // Server to client messages.
 
 /**
- * `forget` is the DM's alone (docs/design-v1-map-discovery.md 5.3): a
+ * `forget` is the DM's alone (docs/design/design-v1-map-discovery.md 5.3): a
  * builder op, or an Undo or Redo of one, that would push players'
  * remembered map past its cap. The DM's device asks FORGET_ASK and sends
  * it again with `forget` on a yes. No player's op is ever refused for
@@ -2915,7 +2915,7 @@ export type ClientMessage = z.infer<typeof clientMessageSchema>;
 export const refusalCodes = ["invalid", "forbidden", "gone", "quota", "forget"] as const;
 export type RefusalCode = (typeof refusalCodes)[number];
 
-/** The question a `forget` refusal asks the DM (docs/design-v1-map-discovery.md 5.3). */
+/** The question a `forget` refusal asks the DM (docs/design/design-v1-map-discovery.md 5.3). */
 export const FORGET_ASK = "Players' remembered map here will be forgotten. Go ahead?";
 
 export const changeSchema = z.union([
@@ -2949,13 +2949,13 @@ export const serverMessageSchema = z.discriminatedUnion("t", [
       .optional(),
     /** This client's undos and redos in the batch, each with what it took back, for the toast (design 7.7). */
     restored: z.array(z.strictObject({ n: z.number().int().min(1), what: z.string().max(200) })).optional(),
-    /** A player's ops in the batch whose trap step refuses their Undo move, so the bar stops offering it (docs/design-v1-traps.md 6.5). */
+    /** A player's ops in the batch whose trap step refuses their Undo move, so the bar stops offering it (docs/design/design-v1-traps.md 6.5). */
     trapped: z.array(z.number().int().min(1)).optional(),
-    /** This client's ops in the batch that wrote a sync record without `at`, each with the `at` the server wrote, so a re-sync's Undo expects that very record (docs/design-v1-resync.md 3.4). */
+    /** This client's ops in the batch that wrote a sync record without `at`, each with the `at` the server wrote, so a re-sync's Undo expects that very record (docs/design/design-v1-resync.md 3.4). */
     stamped: z.array(z.strictObject({ n: z.number().int().min(1), at: z.iso.datetime({ precision: 3 }) })).optional(),
     /**
      * This client's walks in the batch that the real build stopped short of
-     * where its held build let them go (docs/design-v1-map-discovery.md 6):
+     * where its held build let them go (docs/design/design-v1-map-discovery.md 6):
      * each landed at its last clear spot. It names no kind of blocker.
      */
     blocked: z.array(z.number().int().min(1)).optional(),
@@ -2965,7 +2965,7 @@ export const serverMessageSchema = z.discriminatedUnion("t", [
   /** `online` never lists a table display. DM sockets also get `displays`, how many display sockets are open (wave 5). */
   z.strictObject({ t: z.literal("presence"), online: z.array(id).max(1_000), displays: z.number().int().min(0).max(1_000).optional() }),
   /**
-   * Someone tapped the X-card (wave 5, docs/design-v1-dm-tools.md 3.11). Sent
+   * Someone tapped the X-card (wave 5, docs/design/design-v1-dm-tools.md 3.11). Sent
    * to every socket of the room, the sender's too. It names no one, and
    * nothing about it is stored.
    */
@@ -2992,7 +2992,7 @@ export const serverMessageSchema = z.discriminatedUnion("t", [
 ]);
 export type ServerMessage = z.infer<typeof serverMessageSchema>;
 
-// Image search results and credits (wave 5, docs/design-v1-dm-tools.md 3.13).
+// Image search results and credits (wave 5, docs/design/design-v1-dm-tools.md 3.13).
 
 /**
  * An openly licensed image's credit, as an Openverse result carries it.
@@ -3025,7 +3025,7 @@ export const assetCreditSchema = z.strictObject({
   originalHeight: z.number().int().min(1).max(100_000),
   /**
    * A starter pick's own account of what was changed before it shipped
-   * (docs/design-v1-starter-art.md 9), shown in place of the app's guess.
+   * (docs/design/design-v1-starter-art.md 9), shown in place of the app's guess.
    * An Openverse import has none.
    */
   changes: line(300).optional(),

@@ -143,7 +143,7 @@ const BUTTON_ROW = { display: "flex", flexWrap: "wrap", gap: theme.space(1) } as
 
 /**
  * A button in one of the bar's rows grows to share its line
- * (docs/design-v1-polish.md R6), as the HP entry's Damage, Heal, Set and
+ * (docs/design/design-v1-polish.md R6), as the HP entry's Damage, Heal, Set and
  * Temp fill theirs, so the last of a row that wraps, such as Attach or
  * Delete, never stands alone at its own width. The buttons the bar takes
  * from other features (Attach, Get off, a door's, Light) stand only in
@@ -179,7 +179,7 @@ const DUPLICATE_FOCUS_IN_BAR: DuplicateFocus = { scope: "body", to: [BAR_FRAME] 
 
 /**
  * The bar that opens under a tapped token (design section 14.3), in the
- * order docs/design-v1-token-panel.md 3.3 ranks by use: the header, the
+ * order docs/design/design-v1-token-panel.md 3.3 ranks by use: the header, the
  * stat summary's vitals (AC, HP, speed, Passive Perception), the HP entry
  * right after them, death saves, the effects, a linked block's saves and
  * defenses, then "Stat block" and Details beside the
@@ -268,19 +268,19 @@ function TokenBarBody(props: { token: ViewToken; fullAccess: boolean; onDetails(
   const effects = actor?.effects ?? [];
   const badge = elevationBadge(token.elevation);
   const target = { tokenId: token.id };
-  // What an HP-less token stores underneath shows nowhere and takes no life control (docs/design-v1-combat-flow.md 3.6.6).
+  // What an HP-less token stores underneath shows nowhere and takes no life control (docs/design/design-v1-combat-flow.md 3.6.6).
   const life = shownLife(actor, token) ?? "alive";
   const atZero = actor?.hp?.cur === 0 && (life === "dying" || life === "stable");
   const short = frame.short;
   const items = vitals({ actor, token, fullAccess: props.fullAccess || access.full, place: "bar" });
   const split = shortSplit(items);
   const block = useLinkedBlock(token, actor, access, character);
-  // A creature companion's players read its block here too, as the DM does a monster's (docs/design-v1-companion-stat-blocks.md 6.6),
-  // and a player character's DM and players its own stat block (docs/design-v1-pc-stats.md 7.4).
+  // A creature companion's players read its block here too, as the DM does a monster's (docs/design/design-v1-companion-stat-blocks.md 6.6),
+  // and a player character's DM and players its own stat block (docs/design/design-v1-pc-stats.md 7.4).
   const shown = statBlockShown({ dm: access.dm, owner: access.owner, kind: token.kind, actor, companion: token.companion !== undefined, character: character !== undefined });
   const statBlock = (shown && character?.stats !== undefined) || opensStatBlock(shown, tokenStatBlock(actor, monsters, blocks));
-  // A dead creature's bar offers the DM Revive after the Dead tag, and tells a player who may heal it what healing will do (docs/design-v1-combat-flow.md 3.5).
-  // An HP-less token shows no life tag, so it has neither (docs/design-v1-token-panel.md 3.2).
+  // A dead creature's bar offers the DM Revive after the Dead tag, and tells a player who may heal it what healing will do (docs/design/design-v1-combat-flow.md 3.5).
+  // An HP-less token shows no life tag, so it has neither (docs/design/design-v1-token-panel.md 3.2).
   const noHp = hpLess(actor, token);
   const revives = useRoomView((s) => healRevivesDead(s.view?.meta.settings ?? {}));
   const deadLineId = useId();
@@ -297,7 +297,7 @@ function TokenBarBody(props: { token: ViewToken; fullAccess: boolean; onDetails(
 
   const path = pathNow(encounter, token, you?.role ?? "player");
   const undoIds = barTokenIds(tokens, token);
-  // Its combat uses (docs/design-v1-combat-controls.md 6), for the DM on any creature with one and for owners on theirs.
+  // Its combat uses (docs/design/design-v1-combat-controls.md 6), for the DM on any creature with one and for owners on theirs.
   const usesPresence = useUsesPresence(access.dm || access.owner ? target : null);
   const buttonInput = {
     dm: access.dm,
@@ -313,7 +313,7 @@ function TokenBarBody(props: { token: ViewToken; fullAccess: boolean; onDetails(
   };
   const rows = barButtons(buttonInput);
   const lead = access.hp !== "none" && !noHp;
-  // The strip's quick row: the HP entry's lead and its own candidates, then these (docs/design-v1-bar-compact.md 3.3).
+  // The strip's quick row: the HP entry's lead and its own candidates, then these (docs/design/design-v1-bar-compact.md 3.3).
   const restIds = rest ? restButtons({ ...buttonInput, lead }).filter((id) => id !== "mode") : [];
   const button = (id: BarButtonId): ReactNode => {
     switch (id) {
@@ -338,7 +338,7 @@ function TokenBarBody(props: { token: ViewToken; fullAccess: boolean; onDetails(
       // Held while its block loads, then dropped if the block lists no use, so the buttons after it do not jump.
       case "uses":
         return (
-          // Found among the play row's words by its icon (docs/design-v1-icons-2.md 8). The strip's own Uses keeps its words alone, since an icon there would push a control off it, and Conditions keeps its words in both, since its icon took the row a line on a 320 px phone at 130%.
+          // Found among the play row's words by its icon (docs/design/design-v1-icons-2.md 8). The strip's own Uses keeps its words alone, since an icon there would push a control off it, and Conditions keeps its words in both, since its icon took the row a line on a 320 px phone at 130%.
           <BarButton key={id} ref={drawers.ref("play", id)} icon="uses" disabled={usesPresence === "loading"} pressed={drawer === "uses"} onClick={() => drawers.toggle("uses")}>
             Uses
           </BarButton>
@@ -396,7 +396,7 @@ function TokenBarBody(props: { token: ViewToken; fullAccess: boolean; onDetails(
             }}
           />
         );
-      // A companion's owners who are not the DM dismiss it in Delete's place (docs/design-v1-combat-flow.md 3.6.9).
+      // A companion's owners who are not the DM dismiss it in Delete's place (docs/design/design-v1-combat-flow.md 3.6.9).
       case "dismiss":
         return <DismissButton key={id} tokenId={token.id} name={displayName(token)} />;
     }
@@ -435,7 +435,7 @@ function TokenBarBody(props: { token: ViewToken; fullAccess: boolean; onDetails(
   );
 
   const badgeText = badge ? <span style={{ flex: "none", color: theme.color.accentSoft, fontWeight: theme.weight.bold, fontVariantNumeric: "tabular-nums" }}>{badge} ft</span> : null;
-  // A window too narrow for the badge in its header's one row shows it under the name instead (docs/design-v1-token-window.md 7.1).
+  // A window too narrow for the badge in its header's one row shows it under the name instead (docs/design/design-v1-token-window.md 7.1).
   const badgeInHeader = frame.header.badgeInHeader;
   const reviveButton = revive ? <ReviveButton target={target} describedBy={deadLineId} focusTo={REVIVE_FOCUS_IN_BAR} /> : undefined;
   const deadNote = deadLine ? (
@@ -514,7 +514,7 @@ function TokenBarBody(props: { token: ViewToken; fullAccess: boolean; onDetails(
 
           {savesAndDefenses}
 
-          {/* What it rides or carries, each a tap away, so a phone reaches a rider that hides its mount (docs/design-v1-attach.md 4.4). */}
+          {/* What it rides or carries, each a tap away, so a phone reaches a rider that hides its mount (docs/design/design-v1-attach.md 4.4). */}
           <GroupLine token={token} />
 
           {/*
@@ -558,7 +558,7 @@ function TokenBarBody(props: { token: ViewToken; fullAccess: boolean; onDetails(
           ) : null}
           <ButtonRow row="play">{rows.play.filter((id) => !inStrip(id)).map(button)}</ButtonRow>
           {rows.play.includes("detach") ? <DetachNote detach={detach} id={detachNoteId} /> : null}
-          {/* Used a few times a campaign, so after the steady line, which it would push out of view on an upright phone, and before the less-used buttons (docs/design-v1-token-window.md 8.9). */}
+          {/* Used a few times a campaign, so after the steady line, which it would push out of view on an upright phone, and before the less-used buttons (docs/design/design-v1-token-window.md 8.9). */}
           {access.dm || (access.owner && !token.locked) ? <SizeRow token={token} owner={access.owner} canResize={access.resize} /> : null}
           {rows.less.length > 0 ? (
             <ButtonRow row="less">{rows.less.map(button)}</ButtonRow>
@@ -571,7 +571,7 @@ function TokenBarBody(props: { token: ViewToken; fullAccess: boolean; onDetails(
 
 /**
  * The bar for several selected tokens (features sections 5 and 10, and
- * docs/design-v1-dm-tools.md 3.5): who is in the group, one HP entry for
+ * docs/design/design-v1-dm-tools.md 3.5): who is in the group, one HP entry for
  * all of them, dragging any of them moves the group (lib/group.ts), and the
  * edits that make sense for a group: conditions and elevation, and for the
  * DM Hidden, Roll, Locked, Add to the fight, Delete and More. An action shows only
@@ -649,7 +649,7 @@ function GroupBarBody(props: { tokens: readonly ViewToken[]; movable: number; on
   // The ids the quick row drew (RestRow's fit), null until it first fits.
   const [drawn, setDrawn] = useState<readonly string[] | null>(null);
   const lead = useGroupHp(tokens).access !== "none";
-  // The group's strip (docs/design-v1-bar-compact.md 9.4): its entry as the lead, then these.
+  // The group's strip (docs/design/design-v1-bar-compact.md 9.4): its entry as the lead, then these.
   const restIds = rest ? groupRestButtons({ dm: offers.dm, lead, conditions: offers.conditions, undoMove: offersUndo(undoOffer, ids) }).filter((id) => id !== "mode") : [];
   const inStrip = (id: string) => scrolls && (drawn ?? restIds).includes(id);
   const names = tokens.map((t) => displayName(t)).join(", ");
@@ -732,7 +732,7 @@ function GroupBarBody(props: { tokens: readonly ViewToken[]; movable: number; on
           {drawer === "conditions" && offers.conditions ? (
             <QuickConditions lit={(key) => conditionLit(creatures, key)} onToggle={(key) => send(conditionOps(creatures, key, actions.newId))} />
           ) : null}
-          {/* Undo move on a line of its own while it shows, so the steady line below never moves (docs/design-v1-token-window.md 3.2). */}
+          {/* Undo move on a line of its own while it shows, so the steady line below never moves (docs/design/design-v1-token-window.md 3.2). */}
           <ButtonRow row="passing">{inStrip("undoMove") ? null : <UndoMoveButton tokenIds={ids} />}</ButtonRow>
           <ButtonRow row="play">
             {offers.conditions && !inStrip("conditions") ? (
@@ -781,7 +781,7 @@ function GroupBarBody(props: { tokens: readonly ViewToken[]; movable: number; on
 }
 
 /**
- * A bar's Roll (docs/design-v1-roll-options.md 4.1): the Dice panel, asked
+ * A bar's Roll (docs/design/design-v1-roll-options.md 4.1): the Dice panel, asked
  * to scroll to the roll options. A bar shows only for a selection, so the
  * options already name its tokens. A player's earlier pick of another of
  * their creatures gives way, so the options are this token's.
@@ -828,7 +828,7 @@ function UndoMoveButton(props: { tokenIds: readonly string[]; arrow?: boolean })
     actions.undo({ ...undoOf(offer), control: "token-undo", detail: event?.detail });
     handFocusOn(pressed?.closest<HTMLElement>(BAR_FRAME), [":scope"]);
   };
-  // The strip's is the undo arrow alone, named and tipped "Undo move" as the top bar's Undo is, so it fits Roll's place (docs/design-v1-bar-compact.md R13).
+  // The strip's is the undo arrow alone, named and tipped "Undo move" as the top bar's Undo is, so it fits Roll's place (docs/design/design-v1-bar-compact.md R13).
   return props.arrow ? (
     <BarButton icon="undo" iconOnly always disabled={blocked} onClick={undo}>
       Undo move
@@ -859,7 +859,7 @@ function CountLegButton(props: { token: ViewToken }) {
   const path = pathNow(encounter, props.token, role);
   const last = path && path.stops.length >= 2 ? path.stops[path.stops.length - 1] : undefined;
   const before = path && path.stops.length >= 2 ? path.stops[path.stops.length - 2] : undefined;
-  // A resize's leg, or a squeeze's in place, is no move, so it has nothing to stop counting (docs/design-v1-token-window.md 8.7).
+  // A resize's leg, or a squeeze's in place, is no move, so it has nothing to stop counting (docs/design/design-v1-token-window.md 8.7).
   if (!last || !before || reshapeLeg(before, last, stopFootprint(props.token))) return null;
   const off = last.uncounted === true;
   const press = (event?: { detail: number }) => {
@@ -878,8 +878,8 @@ function CountLegButton(props: { token: ViewToken }) {
 /**
  * What a bar's frame hands its header and its rows: the header's handle,
  * with its grip, and stickiness, Reset while the window docks away from
- * its default (docs/design-v1-token-window.md 4.4), an upright phone's
- * resting strip and its Expand and Collapse (docs/design-v1-bar-compact.md
+ * its default (docs/design/design-v1-token-window.md 4.4), an upright phone's
+ * resting strip and its Expand and Collapse (docs/design/design-v1-bar-compact.md
  * 9.2), the narrow header's grip and badge (7.1), and whether the bar is
  * short.
  */
@@ -900,7 +900,7 @@ type FrameControls = {
   header: { grip: "button" | "dots"; badgeInHeader: boolean };
   /** The bar has under 300 px where it stands (barButtons.ts barShort), whatever its content. */
   short: boolean;
-  /** Stands the bar over the notices while a popover of its own is open (docs/design-v1-tool-options.md 7.6). */
+  /** Stands the bar over the notices while a popover of its own is open (docs/design/design-v1-tool-options.md 7.6). */
   raiseAttach(on: boolean): void;
   raiseViewAs(on: boolean): void;
   /** The strip's own controls for its header, while the bar spans an upright phone. */
@@ -908,7 +908,7 @@ type FrameControls = {
 };
 
 /**
- * What the strip's header needs of its frame (docs/design-v1-bar-compact.md
+ * What the strip's header needs of its frame (docs/design/design-v1-bar-compact.md
  * 3.5 and 5.4): Scroll for more and the way back to the top in the
  * scrolling strip, and the alerts' summary row while it stands in the
  * header for want of a spot over the band.
@@ -924,7 +924,7 @@ const FrameContext = createContext<FrameControls>({ handle: null, sticky: false,
 
 /**
  * The strip's width, in layout px, from which Expand and Collapse show
- * their words beside the chevron (docs/design-v1-icons-2.md 8): 374, the
+ * their words beside the chevron (docs/design/design-v1-icons-2.md 8): 374, the
  * strip of a 390 x 844 phone at 100%, and the 57 the words add to the
  * button. From there the title keeps the 252 px it has on that phone with
  * the chevron alone, the room the bar design fits the HP entry's sentences
@@ -939,7 +939,7 @@ const RESET_LABEL = "Reset window position and size";
 
 /**
  * A sentence of the HP entry's that the strip shows over its title or in
- * its note (docs/design-v1-bar-compact.md 3.3): the content measures it,
+ * its note (docs/design/design-v1-bar-compact.md 3.3): the content measures it,
  * decides where it goes, and cuts it for the note.
  */
 type RestSentence = { text: string; error: boolean; place: "title" | "note" };
@@ -950,7 +950,7 @@ type RestSentence = { text: string; error: boolean; place: "title" | "note" };
  * default, Expand or Collapse while it spans an upright phone, and Close.
  * Sticky while it docks or is expanded.
  *
- * While the strip rests (docs/design-v1-bar-compact.md 3.3) the name takes
+ * While the strip rests (docs/design/design-v1-bar-compact.md 3.3) the name takes
  * one line and `status`, which the content passes, the line under it. A
  * `sentence` placed "title" takes both lines in their place, and one
  * placed "note" stands on the strip's top edge, its words the field's
@@ -1148,15 +1148,15 @@ const KEYS_REST_MS = 500;
 type Drag = { kind: "move" | ResizePart; pointerId: number; el: HTMLElement; x: number; y: number; start: Box; box: Box | null; limits: ResizeLimits };
 
 /**
- * Where a bar sits (docs/design-v1-bar-dock.md). From 600 layout px up, and
+ * Where a bar sits (docs/design/design-v1-bar-dock.md). From 600 layout px up, and
  * on a phone on its side, it docks in the map's free area as the token
  * window, at the bottom right unless the viewer moved it there by its
  * header, its grip or the grip's arrow keys, and this device remembers
  * the spot (`rvtt.tokenBarSpot`, barDock.ts). Reset in its header brings
- * it home (docs/design-v1-token-window.md 4). A
+ * it home (docs/design/design-v1-token-window.md 4). A
  * phone held upright rests it as a strip at the foot of the map's free
  * area, 114 px tall, which never follows its token, and Expand grows it up
- * from the same foot (docs/design-v1-bar-compact.md). Where Expand would
+ * from the same foot (docs/design/design-v1-bar-compact.md). Where Expand would
  * add less than a header, the strip scrolls to the rest of the bar instead.
  * A screen too short for either opens it compact: a taller overlay over
  * the Multi-select bar, and over the toolbar when even that is short,
@@ -1177,7 +1177,7 @@ type Drag = { kind: "move" | ResizePart; pointerId: number; el: HTMLElement; x: 
  * drop: it consumes the dock store's `clearRequest`, which Stage sets for
  * those alone (3.6). Expand clears the expanded bar's token the same way.
  *
- * Under a portrait sheet it folds (pages/fold.ts, docs/design-v1-visual.md
+ * Under a portrait sheet it folds (pages/fold.ts, docs/design/design-v1-visual.md
  * 3.2.1): the frame takes the `hidden` attribute, which the global
  * `[hidden]` rule keeps over the body's inline `display: grid`, so its
  * controls leave the focus order and the accessibility tree while the body
@@ -1211,7 +1211,7 @@ function BarFrame(props: {
   const chrome = useMemo(() => barChrome({ chrome: measured, lasting }), [measured, lasting]);
   // While someone types with the on-screen keyboard up, the bar is placed over it (barDock.ts Typing).
   const typing = useStore(dockStore, (s) => s.typing);
-  // Beside a sideways sheet that leaves it too little room for its header, the window folds into the sheet's header (docs/design-v1-token-window.md 7.1).
+  // Beside a sideways sheet that leaves it too little room for its header, the window folds into the sheet's header (docs/design/design-v1-token-window.md 7.1).
   const folded = foldsUnderSheet({ ...layout, sheetOpen: anySheet, full, sideRoom: sideSheetRoom(props.viewport, chrome) });
   const spot = useStore(dockStore, (s) => s.spot);
   const size = useStore(dockStore, (s) => s.size);
@@ -1226,7 +1226,7 @@ function BarFrame(props: {
   const clearRequest = useStore(dockStore, (s) => s.clearRequest);
   const headerSummary = useStore(dockStore, (s) => s.headerSummary);
   /*
-   * An upright phone's strip (docs/design-v1-bar-compact.md 2 and 3): its
+   * An upright phone's strip (docs/design/design-v1-bar-compact.md 2 and 3): its
    * mode as held or as the opening rule gives it, the foot it stands on (a
    * roll card that would take the free area under 148 folds into the
    * alerts instead, stripSqueezed), whether Expand is offered there, and
@@ -1252,7 +1252,7 @@ function BarFrame(props: {
   const [status, setStatus] = useState("");
   const statusSeq = useRef(0);
   const handleDescription = useId();
-  // The handle is an icon alone on a computer, so it names itself in the shared tooltip, on hover and on keyboard focus (docs/design-v1-icons.md 3.2).
+  // The handle is an icon alone on a computer, so it names itself in the shared tooltip, on hover and on keyboard focus (docs/design/design-v1-icons.md 3.2).
   const handleTip = useTooltip("Resize window");
   /*
    * What the window's status says after its keys or Reset. It is cleared,
@@ -1323,7 +1323,7 @@ function BarFrame(props: {
     observer.observe(content);
     return () => observer.disconnect();
   }, []);
-  // Every mode places a bar, so a placement always comes back. While someone types in it, it keeps its mode: a page a browser shrinks for its keyboard would turn it compact under the field (docs/design.md 14.4).
+  // Every mode places a bar, so a placement always comes back. While someone types in it, it keeps its mode: a page a browser shrinks for its keyboard would turn it compact under the field (docs/design/design.md 14.4).
   const typingHere = useTypingWithin(barRef);
   const lastMode = useRef<BarMode | null>(null);
   /*
@@ -1607,7 +1607,7 @@ function BarFrame(props: {
         }
       : null;
   /*
-   * The grip's arrow keys (docs/design-v1-token-window.md 4.3): each step
+   * The grip's arrow keys (docs/design/design-v1-token-window.md 4.3): each step
    * starts from the box as drawn, so a step the lane took back starts from
    * where the lane put the window, is clamped into its room, and is stored
    * at once as the nearest corner's spot, unsnapped. The handled key's
@@ -1928,7 +1928,7 @@ export function ScrollForMore(props: { inset?: number; edge?: "top" | "foot" }) 
  * with the map for everyone, carries no SRD text.
  */
 function QuickConditions(props: { lit(key: Effect["key"]): Lit; onToggle(key: Effect["key"]): void }) {
-  // In a window shrunk short the drawer opens above the rows, out of sight without this (docs/design-v1-token-window.md 5.7).
+  // In a window shrunk short the drawer opens above the rows, out of sight without this (docs/design/design-v1-token-window.md 5.7).
   const ref = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     ref.current?.scrollIntoView({ block: "nearest" });
@@ -1985,7 +1985,7 @@ function QuickConditions(props: { lit(key: Effect["key"]): Lit; onToggle(key: Ef
 
 /**
  * Dismiss, for a companion's owners who are not the DM, in Delete's place
- * (docs/design-v1-combat-flow.md 3.6.9): armed as Delete is, and busy until
+ * (docs/design/design-v1-combat-flow.md 3.6.9): armed as Delete is, and busy until
  * the server answers, since it can take a row out of the fight and pass a
  * turn on. The token, and with it this bar, goes when it does.
  *
@@ -2030,7 +2030,7 @@ export function DismissButton(props: { tokenId: string; name: string; handOff?(b
  * Delete, armed by its first tap. `holdsRoom` gives it a slot as wide as
  * its armed form, the trash can at the slot's start, so arming grows it
  * over the slot and never wraps it to another line, where the second tap,
- * aimed at the trash can, would land on nothing (docs/design-v1-icons.md
+ * aimed at the trash can, would land on nothing (docs/design/design-v1-icons.md
  * 3.1 rule 6). The single token's bar takes it: on a tablet or a phone
  * held sideways, Locked and Duplicate with their words leave room for the
  * trash can alone. The group bar's Clear follows its Delete, so a slot
@@ -2052,7 +2052,7 @@ function DeleteButton(props: { onDelete(): void; armedText?: string; holdsRoom?:
       danger
       armed={armed}
       icon="delete"
-      // A trash can is read at once on any screen (docs/design-v1-icons.md 2), so Delete is its icon alone until armed, when "Sure?" shows beside it.
+      // A trash can is read at once on any screen (docs/design/design-v1-icons.md 2), so Delete is its icon alone until armed, when "Sure?" shows beside it.
       iconOnly={!armed}
       always={!armed}
       label={words.label}
@@ -2078,7 +2078,7 @@ function DeleteButton(props: { onDelete(): void; armedText?: string; holdsRoom?:
 }
 
 /**
- * The creature's size on the map (docs/design-v1-token-window.md 8.9): a
+ * The creature's size on the map (docs/design/design-v1-token-window.md 8.9): a
  * stepper as Elevation is, one size a press, Reduce and Enlarge being one
  * size, with the size between the buttons in a slot as wide as
  * "Gargantuan", with hex counts on a second line, so the buttons never move under the thumb. A Custom size
@@ -2125,7 +2125,7 @@ export function SizeRow(props: { token: ViewToken; owner: boolean; canResize: bo
  * A label and its stepper, such as Elevation's −5 and +5, on one line, or
  * the stepper under the label, right-aligned, where the window is too
  * narrow for both, as beside a phone's sideways sheet or on the narrowest
- * phone's spanning bar (docs/design-v1-token-window.md 8.9). One rule keeps
+ * phone's spanning bar (docs/design/design-v1-token-window.md 8.9). One rule keeps
  * every stepper row inside the window at any width and font.
  */
 function StepperRow(props: { label: string; children: ReactNode; group?: boolean }) {
@@ -2157,7 +2157,7 @@ function BarButton(props: {
   disabled?: boolean;
   /** Waiting: it shows so and ignores taps (components/Button.tsx). */
   busy?: boolean;
-  /** Drawn before the words (docs/design-v1-icons.md 4). */
+  /** Drawn before the words (docs/design/design-v1-icons.md 4). */
   icon?: IconName;
   /** The icon alone, its words its name and tooltip, where a mouse can hover. A touch screen keeps the words. */
   iconOnly?: boolean;
@@ -2197,7 +2197,7 @@ function BarButton(props: {
   );
 }
 
-// ------------------------------------------------------------ an upright phone's resting strip (docs/design-v1-bar-compact.md 3.3)
+// ------------------------------------------------------------ an upright phone's resting strip (docs/design/design-v1-bar-compact.md 3.3)
 
 /** The entry with nothing to say: the status line shows the vitals. */
 const QUIET_ENTRY: EntryStatus = { error: null, dead: null, preview: null, typed: false, crit: false, reach: 1, left: [], standing: null };
@@ -2364,7 +2364,7 @@ function measuredFit(probe: HTMLElement, box: StatusBox): RestFit {
 /**
  * Multi-select's press. Turning it on in an upright phone's expanded bar
  * also rests the bar, moving nothing (R3), so the map is free for the
- * taps that gather (docs/design-v1-bar-compact.md 5.3, D-261024-22).
+ * taps that gather (docs/design/design-v1-bar-compact.md 5.3, D-261024-22).
  * Turning it off leaves the bar as it is. It reads the dock store's
  * `expanded`, not the state drawn, so a press in the scrolling strip a
  * roll card made of the expanded bar ends the state too, and the bar

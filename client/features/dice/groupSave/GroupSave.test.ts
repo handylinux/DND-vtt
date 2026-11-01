@@ -16,7 +16,7 @@ import { groupSaveSlot } from "./store.ts";
 import { captureChoices, OUTCOME_UNDONE, OUTCOME_RESTORED, OUTCOME_UNAVAILABLE, SAVE_MEMORY_ONLY, type SaveReopen } from "./reopen.ts";
 
 /*
- * The open group save in the Dice panel (docs/design-v1-dice-pass.md 7.8):
+ * The open group save in the Dice panel (docs/design/design-v1-dice-pass.md 7.8):
  * an info notice with Open, so a DM reads an unfinished group save as a
  * status rather than a sentence among the rolls.
  */

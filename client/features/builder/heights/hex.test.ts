@@ -17,7 +17,7 @@ import { heightRegions } from "./regions.ts";
 import { reliefPaths, stairCells, stairPaths } from "./relief.ts";
 
 /**
- * Height mode on a hex scene (docs/design-v1-hex-grids.md H3): six facings
+ * Height mode on a hex scene (docs/design/design-v1-hex-grids.md H3): six facings
  * in words and arrows, painting by hex keys, the relief drawn along hex
  * sides, a stair's symbol turned to its facing, the regions' numbers on hex
  * centers, and the readout's words.

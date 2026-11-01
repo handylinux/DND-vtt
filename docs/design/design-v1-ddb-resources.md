@@ -1,6 +1,6 @@
 # raccoon-vtt v1: class resources from D&D Beyond
 
-Status: built, with the differences under As built (12). Draft 3, 2026-10-24, revised for design review round 1 (findings DDBRES-OP-1 to 16 and DDBRES-ASTRA-1 to 6, cited here as OP-1, ASTRA-1 and so on) and D-261024-30. Code is cited from main at `3579f37d8`, FU26's tip (op version 21, snapshot version 22), which changed the class resource rows. It builds on docs/design-v1-combat-controls.md ("the combat note", section 7 and Appendix A), docs/design-v1-pc-stats.md ("the stat block note", 6.3 and Appendix B) and docs/design-v1-resync.md ("the re-sync note", 2 to 4). It stacks after follow-up batch 28, which renames Give one back to Restore.
+Status: built, with the differences under As built (12). Draft 3, 2026-10-24, revised for design review round 1 (findings DDBRES-OP-1 to 16 and DDBRES-ASTRA-1 to 6, cited here as OP-1, ASTRA-1 and so on) and D-261024-30. Code is cited from main at `3579f37d8`, FU26's tip (op version 21, snapshot version 22), which changed the class resource rows. It builds on docs/design/design-v1-combat-controls.md ("the combat note", section 7 and Appendix A), docs/design/design-v1-pc-stats.md ("the stat block note", 6.3 and Appendix B) and docs/design/design-v1-resync.md ("the re-sync note", 2 to 4). It stacks after follow-up batch 28, which renames Give one back to Restore.
 
 The project owner, 2026-10-24: "Is there any way for the class resources and their uses to be imported from beyond?"
 
@@ -373,7 +373,7 @@ One builder, after FU28 lands (it renames Restore in client/features/resources),
 3. `feat(rules): a re-sync merges class resources`: shared/rules/resourceSync.ts and its test (new), pcSync.ts (the group, the plan, result, patch, after and undo hooks), pcSync.test.ts and pcSync.random.test.ts, server/rooms/resync.test.ts.
 4. `feat(ui): the d&d beyond review lists class resources`: client/features/pcstats/resync.ts, SyncReview.tsx, Resync.tsx, PcStatsEditor.tsx, flow.ts and draft.ts (6.2), client/features/resources/ClassResourcesSection.tsx (the help), and their tests.
 5. `test(e2e): class resources from d&d beyond`: the ddbres steps, once the e2e lane lands, and the review's root in alignment.e2e.ts.
-6. `docs: class resources from d&d beyond in the feature list, the dm guide and the designs`: FEATURES.md, docs/dm-guide.md, docs/design.md (6's character, 8.1's `expect` parts gaining `resources`, 16.2's Versioning), "Changed by" lines in the combat note's 13.9, the re-sync note's 2.1 and the stat block note's 6.3 and Appendix B (the new paths), and this note's As built. The read.ts header comment names the new file in step 2.
+6. `docs: class resources from d&d beyond in the feature list, the dm guide and the designs`: FEATURES.md, docs/dm-guide.md, docs/design/design.md (6's character, 8.1's `expect` parts gaining `resources`, 16.2's Versioning), "Changed by" lines in the combat note's 13.9, the re-sync note's 2.1 and the stat block note's 6.3 and Appendix B (the new paths), and this note's As built. The read.ts header comment names the new file in step 2.
 
 Step 1 touches shared/model.ts, protocol.ts and migrate.ts, so no other lane may take a version pair in between. Nothing here touches client/canvas, the tracker or the bar.
 

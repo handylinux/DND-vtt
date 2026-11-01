@@ -9,8 +9,8 @@ import { cutForWalkers, dropMode, dropView, planGroup, planOne, planPress, rebas
 
 /**
  * The public world for a walk by this token as this device sees the room
- * (docs/design-v1-movement.md 5.5), with its path this turn and what it
- * drags or carries (docs/design-v1-attach.md 7.3). Off a holder every
+ * (docs/design/design-v1-movement.md 5.5), with its path this turn and what it
+ * drags or carries (docs/design/design-v1-attach.md 7.3). Off a holder every
  * player sees on the ground, the walker is searched on the ground, as the
  * drop lands it and the server judges it (rules/attach.ts walkerFor,
  * review AT-ASTRA-13).
@@ -40,6 +40,6 @@ export function pressPlan(copy: RoomState, drawn: DropToken, asked: Point, drawn
   if (!full) return planOne(view, token, at, mode);
   const world = routeWorld(worldFor(view, full, role).input);
   budget.charge(routeWorldUnits(world));
-  // A holder's press stops where a creature it drags beside it would meet a wall (docs/design-v1-attach.md 4.2).
+  // A holder's press stops where a creature it drags beside it would meet a wall (docs/design/design-v1-attach.md 4.2).
   return cutForWalkers(view, token, planPress(view, world, token, at, mode, view.meta.settings.feetPerCell, (units) => budget.charge(units)), walkersFor(view, token.id, role), mode);
 }

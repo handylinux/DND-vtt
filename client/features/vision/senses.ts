@@ -2,7 +2,7 @@ import type { Senses } from "#shared/rules/vision.ts";
 import { senseFeetText } from "./reach.ts";
 
 /*
- * The senses that see (docs/design-v1-maps-vision.md section 4.3.2) are read
+ * The senses that see (docs/design/design-v1-maps-vision.md section 4.3.2) are read
  * by the server's own rule in shared/rules/vision.ts, so the token panel and
  * a scene's What players see settings word exactly the ranges the party's sight uses.
  */

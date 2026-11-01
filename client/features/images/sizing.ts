@@ -43,7 +43,7 @@ export function smaller<T extends { size: number }>(original: T, encoded: T | nu
 
 /**
  * A pasted map over this is re-encoded on a computer before it uploads
- * (docs/design-v1-paste.md 5). A paste hands over PNG: a painted 4096 px
+ * (docs/design/design-v1-paste.md 5). A paste hands over PNG: a painted 4096 px
  * map comes to about 15 MB that way, against a few MB as the file it was.
  */
 export const PASTED_MAP_REENCODE_BYTES = 8 * 1024 * 1024;

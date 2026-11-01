@@ -5,7 +5,7 @@ import { openAsk } from "../rolls/open.ts";
 import { fallReminders } from "./falling.ts";
 
 /**
- * The falling off reminder on the DM's device (docs/design-v1-attach.md
+ * The falling off reminder on the DM's device (docs/design/design-v1-attach.md
  * 4.5): a toast when Prone or Unconscious lands on a rider or its mount,
  * with "Ask for the save", which opens Request a roll filled in, when a
  * player plays the rider. Which changes remind is falling.ts fallReminders.

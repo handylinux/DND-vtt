@@ -11,7 +11,7 @@ const FREE_WALL_REACH_PX = 22;
 
 /**
  * A tap in the Walls/doors mode, as free walls see it
- * (docs/design-v1-maps-vision.md section 2.2). With Door it steps a free
+ * (docs/design/design-v1-maps-vision.md section 2.2). With Door it steps a free
  * door through closed, open and locked, and with Remove it takes a free
  * wall, door or window off. Returns whether the tap was a free wall's, so
  * the tool does nothing more with it.
@@ -22,7 +22,7 @@ const FREE_WALL_REACH_PX = 22;
  * when it is at least as close as the nearest grid edge the tap would
  * change, so building beside an imported wall keeps working. A hex scene
  * has no grid edges, and its walls are all free walls (Wall lines,
- * docs/design-v1-hex-grids.md HX-D7), so there the free wall takes the tap.
+ * docs/design/design-v1-hex-grids.md HX-D7), so there the free wall takes the tap.
  */
 export function tapFreeWall(p: ToolPointer, ctx: ToolContext): boolean {
   const builderState = ctx.scope.get(builderSlot).store;

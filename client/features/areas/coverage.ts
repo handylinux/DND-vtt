@@ -39,7 +39,7 @@ import { displayName } from "../../lib/scene.ts";
  * version number the next build reuses.
  *
  * On a hex scene the context carries the scene's grid, so coverage is
- * graded per hex and an emanation counts steps (docs/design-v1-hex-grids.md
+ * graded per hex and an emanation counts steps (docs/design/design-v1-hex-grids.md
  * HX-D11), and the board shades the result's `hexes`: one source of
  * truth, the very hexes the server reads for who an area catches.
  *
@@ -51,7 +51,7 @@ import { displayName } from "../../lib/scene.ts";
  *
  * On a player's device a creature is in an area's caught list, and gets a
  * target ring, only when every ray the area's inclusion reads to it lies
- * on that device's live ground (`live`, docs/design-v1-map-discovery.md
+ * on that device's live ground (`live`, docs/design/design-v1-map-discovery.md
  * decision 13), the server's rule for the reminders and caught lines a
  * player gets. The device's live ground is its sight with fog and party
  * vision on, and its revealed fog with vision off (rules/held.ts
@@ -206,7 +206,7 @@ export function caughtTokens(t: AreaTemplateInput, ctx: DeviceAreaContext, scene
 
 /**
  * Whether every ray an area's inclusion reads to a creature lies on a
- * player's live ground (docs/design-v1-map-discovery.md decision 13), by
+ * player's live ground (docs/design/design-v1-map-discovery.md decision 13), by
  * the hull the server reads for the reminders that player gets
  * (shared/reducer/areaTriggers.ts `rayHull`): every cell of the scene's
  * grid it touches live. So a player's list never says an area reaches a

@@ -7,7 +7,7 @@ import { applyOp } from "./reducer.ts";
 import { DM, P1, P2, actor, character, effect, env, imageRef, room, token } from "./testutil.ts";
 
 /**
- * Wave 5's permissions (docs/design-v1-dm-tools.md): the drawing
+ * Wave 5's permissions (docs/design/design-v1-dm-tools.md): the drawing
  * permission on new drawings and on a player's undo and redo, roll
  * answers, group edits by owners, DM-only ops, icons that need no asset
  * check, and restores that would bring back a deleted image.

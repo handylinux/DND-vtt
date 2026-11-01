@@ -14,7 +14,7 @@ import { PartySightToggle } from "../vision/PartySightToggle.tsx";
 
 /**
  * The DM's view tools (features section 13), in two groups by what they do
- * (docs/design-v1-layout-hierarchy.md M4). "Players' screens" acts on the
+ * (docs/design/design-v1-layout-hierarchy.md M4). "Players' screens" acts on the
  * table: follow me, bring everyone here, black out. "Check their view"
  * only looks: view as a player and party sight. Undo and Redo sit in the
  * top bar on every layout (M2), so the panel has no copy of its own.
@@ -80,7 +80,7 @@ export function ViewControls() {
 }
 
 /**
- * View as a player (docs/design-v1-per-player-vision.md 7.4): the server's preview of that player, from whichever scene the DM is on, which stays the DM's.
+ * View as a player (docs/design/design-v1-per-player-vision.md 7.4): the server's preview of that player, from whichever scene the DM is on, which stays the DM's.
  * The general entry, for a player with no token on the scene. A token's bar and panel open the same one preview (viewAs.tsx).
  */
 function ViewAsPlayer(props: { members: Record<string, Member | undefined> | undefined }) {

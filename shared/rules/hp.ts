@@ -41,7 +41,7 @@ export function hpLabel(actor: Pick<Actor, "hp" | "life">): HpLabel {
 }
 
 /**
- * A creature with no HP to show (docs/design-v1-combat-flow.md 3.6.6): a
+ * A creature with no HP to show (docs/design/design-v1-combat-flow.md 3.6.6): a
  * companion that is an effect, such as Spiritual Weapon, or any token whose
  * maximum is 0. Every view that draws HP, life marks or AC asks this one
  * predicate, so the token panel, its bar, the tracker, the map and the
@@ -64,7 +64,7 @@ export function hpLess(
 /**
  * The life state a view draws: the stored one, or alive while `hpLess`
  * holds. A creature made an effect keeps its stored life and death saves
- * underneath (docs/design-v1-combat-flow.md 3.6.6), and every life control
+ * underneath (docs/design/design-v1-combat-flow.md 3.6.6), and every life control
  * and decoration (death save pips, Revive, a dead row's dim and strike, the
  * map's marks) reads this, so none of them shows or changes it until the
  * companion is a creature again.
@@ -227,7 +227,7 @@ function revive(actor: Actor): Actor {
 /**
  * Whether HP rising to `cur` brings the creature back: from 0 while dying
  * or stable, as the rules say, and from death when the room lets healing
- * bring back the dead (`revivesDead`, docs/design-v1-combat-flow.md 3.4).
+ * bring back the dead (`revivesDead`, docs/design/design-v1-combat-flow.md 3.4).
  * A dead creature may hold HP, set while that was off, so death is judged
  * on its life alone.
  */
@@ -325,7 +325,7 @@ export function applyDeathSaves(actor: Actor, ok: number, fail: number): HpResul
 
 /**
  * The DM's direct life change. Revive gives a creature that is not alive
- * exactly 1 HP, as Revivify does (docs/design-v1-combat-flow.md 3.5), even a
+ * exactly 1 HP, as Revivify does (docs/design/design-v1-combat-flow.md 3.5), even a
  * dead one holding HP set while healing could not bring it back. Ops stored
  * before op version 5 kept that HP, at least 1 (`toOne` false). A creature
  * already alive keeps its HP, at least 1, either way. Killing sets HP to 0.

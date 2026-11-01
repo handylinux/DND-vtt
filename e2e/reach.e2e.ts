@@ -50,7 +50,7 @@ import {
  *   wherever the bar docks as the token window;
  * - beside a phone's sideways sheet, the token window's header at each
  *   width it narrows to, or its Show in the sheet's header where it folds
- *   (docs/design-v1-token-window.md 7.1).
+ *   (docs/design/design-v1-token-window.md 7.1).
  *
  * One page per side, resized and changed between steps rather than set up
  * again, so the whole matrix runs in minutes. Every miss is collected, so
@@ -92,7 +92,7 @@ describe("raccoon-vtt short-screen reach", { timeout: 1_800_000 }, () => {
           if (notice === "Starting view" && (await dm.getByRole("group", { name: "Starting view" }).count()) === 0) {
             await dm.locator('nav[aria-label="Tools"] button[title="Panels"]').click();
             await dm.getByRole("region", { name: "Panels" }).getByRole("button", { name: "Scenes", exact: true }).click();
-            // A phone starts the Size and view group folded (docs/design-v1-map-discovery.md 8.4).
+            // A phone starts the Size and view group folded (docs/design/design-v1-map-discovery.md 8.4).
             await (await openSceneGroup(dm.locator('section[aria-label="Scenes"]'), "Size and view")).getByRole("button", { name: "Save current view" }).tap();
             await dm.getByRole("group", { name: "Starting view" }).waitFor();
           }

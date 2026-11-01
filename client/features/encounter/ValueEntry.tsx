@@ -26,7 +26,7 @@ export function ValueEntry(props: { entries: InitEntry[]; onDone(): void }) {
   const [split, setSplit] = useState<ReadonlySet<string>>(new Set());
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // Only Save sends the values typed, so a sheet's swipe springs back while any is typed (docs/design-v1-sheet-swipe.md 4.5).
+  // Only Save sends the values typed, so a sheet's swipe springs back while any is typed (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedSince(texts);
   const byId = useMemo(() => new Map(entries.map((e) => [e.id, e])), [entries]);
 
@@ -125,7 +125,7 @@ export function ValueEntry(props: { entries: InitEntry[]; onDone(): void }) {
         <Button size="sm" onClick={props.onDone}>
           Cancel
         </Button>
-        {/* Secondary: the tracker's one primary is Next, which stays in view above this form (docs/design-v1-visual.md 3.3). */}
+        {/* Secondary: the tracker's one primary is Next, which stays in view above this form (docs/design/design-v1-visual.md 3.3). */}
         <Button size="sm" type="submit">
           Save values
         </Button>

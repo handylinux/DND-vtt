@@ -12,7 +12,7 @@ import { trapFill, UNFOUND_TRAP } from "./fills.ts";
 import { buildPlan } from "./plan.ts";
 import { groupRows, type RowBase } from "./rows.ts";
 
-/** The group save from a trap (docs/design-v1-traps.md 4.4). */
+/** The group save from a trap (docs/design/design-v1-traps.md 4.4). */
 
 function presetTrap(id: string, over: Partial<Trap> = {}): Trap {
   const p = trapPreset(id, "1-4")!;

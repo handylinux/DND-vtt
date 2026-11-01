@@ -24,7 +24,7 @@ const RING_ROOM = 4;
 const SKIPPED: CSSProperties = { position: "absolute", right: 0, top: 0, visibility: "hidden", pointerEvents: "none" };
 
 /**
- * The resting strip's quick row (docs/design-v1-bar-compact.md 3.3): one
+ * The resting strip's quick row (docs/design/design-v1-bar-compact.md 3.3): one
  * 44 px line that never wraps, in the strip's order on screen. Which
  * candidates show is the fit rule's (barButtons.ts restFit), read from
  * each one's drawn width, so the font, the interface size and the

@@ -1,5 +1,5 @@
 /**
- * Finding a hex grid drawn on a map image (docs/design-v1-grid-detect.md,
+ * Finding a hex grid drawn on a map image (docs/design/design-v1-grid-detect.md,
  * Hex grids). The square finder's method, turned to hexes: a drawn hex
  * grid is thin lines in three directions, each family of sides on lines
  * half a cell apart, each line drawn for one third of its length.
@@ -918,7 +918,7 @@ export type ShapeFind = {
 
 /**
  * Which shape a map's drawn grid is, from the square finder and the hex
- * finder run both ways on the same pixels (docs/design-v1-grid-detect.md
+ * finder run both ways on the same pixels (docs/design/design-v1-grid-detect.md
  * section 10.7), so the DM never picks it. The most confident find wins.
  * Neither finder has the last word: each reads the other's tiles as a
  * grid. Null when nothing was found.

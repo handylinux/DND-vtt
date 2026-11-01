@@ -3,7 +3,7 @@ import { MEMBER_COLOR_NAMES, MEMBER_COLORS, theme } from "./theme.ts";
 
 /**
  * Who uses which member color, for the swatches on the join page and in the
- * Members color picker (docs/design-v1-visual.md 4.4). Both read real
+ * Members color picker (docs/design/design-v1-visual.md 4.4). Both read real
  * colors: the picker reads the whole roster, and the join page the players
  * it lists plus the DMs' current colors from the join step, which names no
  * DM. Neither assumes the DM is yellow, since a DM can change color.
@@ -94,7 +94,7 @@ export function memberSwatches(users: { players: readonly Named[]; dmColors?: re
 export function buttonNote(color: string): string | null {
   const accent = accentFor(color).accent;
   if (accent === color.toLowerCase()) return null;
-  // The crest orange (question 1 of the design, docs/design-v1-visual.md 6.3), or a color the accent cannot use.
+  // The crest orange (question 1 of the design, docs/design/design-v1-visual.md 6.3), or a color the accent cannot use.
   if (accent === theme.color.crest) return "Buttons stay yellow.";
   return luminance(accent) > luminance(color) ? "Buttons use a lighter shade so they stay readable." : "Buttons use a darker shade so they stay readable.";
 }

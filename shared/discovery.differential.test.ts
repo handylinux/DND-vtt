@@ -15,7 +15,7 @@ import { DM, P1, actor, apply, deepClone, env, member, reveal, room, token } fro
 
 /**
  * Map discovery's pairs for the shared differential test
- * (docs/design-v1-map-discovery.md section 10): rooms that differ only in
+ * (docs/design/design-v1-map-discovery.md section 10): rooms that differ only in
  * what one player remembers of the map or sees for themselves, the same
  * drags made in both, and every other player's copy compared after. The
  * room is movement's: a wall along x = 6 leaves a gap below y = 12. Thorn

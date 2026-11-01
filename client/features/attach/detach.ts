@@ -10,7 +10,7 @@ import { detachAllowed, offersAttach, type AttachViewer, type RightsView } from 
 import { walkersFor } from "./walk.ts";
 
 /**
- * Getting off and letting go (docs/design-v1-attach.md 4.3), as plain
+ * Getting off and letting go (docs/design/design-v1-attach.md 4.3), as plain
  * functions for node --test. A creature on anything gets off beside its
  * holder, an object is put down where it is, and a dragged creature is let
  * go where it stands.
@@ -26,7 +26,7 @@ export function detachChoice(tokens: RoomState["tokens"], token: Token): DetachC
 }
 
 /**
- * What the bar's attach slots hold for this token (docs/design-v1-attach.md
+ * What the bar's attach slots hold for this token (docs/design/design-v1-attach.md
  * 4.1 and 4.3): Get off, Put down or Let go on a carried token whose link
  * the viewer may undo, and Attach for whoever may attach it, beside the
  * first on a carried creature, so a rider can still take up a torch or
@@ -42,7 +42,7 @@ export function barSlots(view: RightsView, viewer: AttachViewer, token: Token): 
 
 /**
  * Whether the bar offers this viewer any attach control for the token
- * (docs/design-v1-token-sections.md 3.3), so its panel's Position holds
+ * (docs/design/design-v1-token-sections.md 3.3), so its panel's Position holds
  * the same: one of its own slots (barSlots), or the group line's Let go or
  * Put down beside a token it holds, which the bar's group line offers
  * whoever may undo that link. So the player whose creature a goblin drags

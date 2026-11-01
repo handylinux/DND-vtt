@@ -13,7 +13,7 @@ import type { VolumesNow } from "./volumes.ts";
  * with the test flag (features/view/choice.ts ISO_TEST_FLAG) set before
  * the page loads (Playwright's addInitScript), `__rvttIsoHook` picks and
  * turns as the menu does. Nothing a user can do sets it, and it offers
- * nothing the menu does not (docs/design-v1-isometric-view.md 13).
+ * nothing the menu does not (docs/design/design-v1-isometric-view.md 13).
  */
 const HOOK = "__rvttIsoHook";
 
@@ -22,7 +22,7 @@ export type Hook = {
   turn(turn: Turn): void;
   layout?(): BoardLayout | null;
   volumes?(): BoardVolumesNow | null;
-  /** The board's kept picture's counts (docs/design-v1-relief-pan.md 9 and 10.3). */
+  /** The board's kept picture's counts (docs/design/design-v1-relief-pan.md 9 and 10.3). */
   kept?(): KeptCounts | null;
   /** Repaints the relief whole at the camera on screen, on the next frame, as any content change does. */
   repaint?(): void;
@@ -60,7 +60,7 @@ export function useKeptReport(report: () => KeptReport): void {
 /**
  * Counts a commit of the board, the map stage or the pills' board view, with
  * the test flag only: a pan inside a cull step commits neither of the first
- * two (docs/design-v1-relief-pan.md 6), and a Top-down pan never the third.
+ * two (docs/design/design-v1-relief-pan.md 6), and a Top-down pan never the third.
  */
 export function useCommitCount(which: "board" | "map" | "pills"): void {
   const on = flagged();
@@ -74,7 +74,7 @@ export type BoardVolumesNow = { standing: number; waiting: boolean };
 
 /**
  * The isometric board's depth list as the tests read it
- * (docs/design-v1-iso-area-shapes.md 8): its entries in drawing order, a
+ * (docs/design/design-v1-iso-area-shapes.md 8): its entries in drawing order, a
  * standee by its token's id and an area's band by the area and the band,
  * with the relief's own pieces left out, which areas stand now and
  * whether one waits to, and the colors of the rings at each standee's base.

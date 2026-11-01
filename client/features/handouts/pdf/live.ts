@@ -11,7 +11,7 @@ import { clearLedger, ledgerKey, localLedgerStorage, readLedger, recoveryOf } fr
 import { JobRunner, roomReadOf, type JobDeps } from "./run.ts";
 
 /**
- * The PDF upload job in the page (docs/design-v1-pdf-handouts.md 4.1): its
+ * The PDF upload job in the page (docs/design/design-v1-pdf-handouts.md 4.1): its
  * runner wired to the room, the browser and the server, and the room
  * page's part in it, the badge, the warning before the page goes, and the
  * recovery of an upload that did not finish.

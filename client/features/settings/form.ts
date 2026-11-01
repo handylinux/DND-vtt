@@ -36,8 +36,8 @@ export type SettingField =
   /** What players see on new scenes, with "As before" offered only while a room has never set it, since no op takes the setting away. */
   | { kind: "newScenes"; key: "newScenePlayers"; label: string; help: string; options: Choice<ScenePreset>[]; before: Choice<"before"> }
   /**
-   * The grid shape new battle mats and map images start with (docs/design-v1-hex-grids.md HX-D19). Squares, absent, store nothing.
-   * No options of its own: it draws a scene's own Grid shape choice, with that choice's words (docs/design-v1-design-pass.md 4.2).
+   * The grid shape new battle mats and map images start with (docs/design/design-v1-hex-grids.md HX-D19). Squares, absent, store nothing.
+   * No options of its own: it draws a scene's own Grid shape choice, with that choice's words (docs/design/design-v1-design-pass.md 4.2).
    */
   | { kind: "gridShape"; key: "newScenes"; label: string; help: string };
 
@@ -246,7 +246,7 @@ export const SETTING_GROUPS: SettingGroup[] = [
 
 /**
  * The words that name the grid's cell in Room settings, as a room with hex
- * scenes reads them (docs/design-v1-hex-grids.md section 6, the Room
+ * scenes reads them (docs/design/design-v1-hex-grids.md section 6, the Room
  * settings row): while the room holds a hex scene or starts new ones on
  * hexes, "square" becomes "square or hex", and Diagonal moves says what its
  * rule counts on hexes. A square room reads SETTING_GROUPS as it is.
@@ -294,7 +294,7 @@ export function newScenesShape(settings: Pick<RoomSettings, "newScenes">): Shape
   return shapeChoice(settings.newScenes);
 }
 
-/** Players see on new scenes as the form shows it: the room's pick, or "As before" in a room from before the setting (docs/design-v1-map-discovery.md 8.2). */
+/** Players see on new scenes as the form shows it: the room's pick, or "As before" in a room from before the setting (docs/design/design-v1-map-discovery.md 8.2). */
 export function newScenesChoice(settings: Pick<RoomSettings, "newScenePlayers">): ScenePreset | "before" {
   return settings.newScenePlayers ?? "before";
 }
@@ -311,7 +311,7 @@ export function newScenesOptions(field: Extract<SettingField, { kind: "newScenes
  */
 export type MoveAnyMode = "none" | "all" | "some";
 
-/** Who can draw, as the room reads it: absent, in rooms from before the setting, is every player (docs/design-v1-dm-tools.md 3.9). */
+/** Who can draw, as the room reads it: absent, in rooms from before the setting, is every player (docs/design/design-v1-dm-tools.md 3.9). */
 export function drawersOf(settings: Pick<RoomSettings, "playersDraw">): WhichPlayers {
   return settings.playersDraw ?? "all";
 }

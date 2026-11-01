@@ -10,7 +10,7 @@ import { DM, P1, P2, actor, apply, character, companionBlock, comparable, effect
 import { BLOCK_OF_ITS_CHARACTER, ONE_LINK, normalizeCompanionState } from "./companions.ts";
 
 /**
- * Companions (docs/design-v1-combat-flow.md 3.6): a token that belongs to a
+ * Companions (docs/design/design-v1-combat-flow.md 3.6): a token that belongs to a
  * character, owned as its character is, never numbered, and taking one of
  * three turns. These run the reducer as the server does, the DM included,
  * so the rules hold for everyone.
@@ -447,7 +447,7 @@ describe("permissions read the same rules (P2 as a stranger)", () => {
   });
 });
 
-describe("a companion's stat block link (docs/design-v1-companion-stat-blocks.md 3.2)", () => {
+describe("a companion's stat block link (docs/design/design-v1-companion-stat-blocks.md 3.2)", () => {
   /** Bree's spirit, with a block Bree keeps, one Cy keeps, and Cy herself. */
   function linked(over: Partial<Token> = {}): RoomState {
     const state = withSpirit("shared", over);

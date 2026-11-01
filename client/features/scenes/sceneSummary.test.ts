@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { scene } from "#shared/testutil.ts";
 import { fogFoldSummary, sceneGroupSummary, sceneRowDetail } from "./sceneSummary.ts";
 
-/** What each folded group of the scene settings page says (docs/design-v1-design-pass.md 4.1). */
+/** What each folded group of the scene settings page says (docs/design/design-v1-design-pass.md 4.1). */
 describe("sceneGroupSummary", () => {
   test("What players see: the preset's name and the light, with Per player when Sight is", () => {
     assert.equal(sceneGroupSummary(scene("s", { fogEnabled: true, vision: { on: true, light: "dark" } }), "players"), "Explore · Dark");

@@ -5,7 +5,7 @@ import { blockRollNumbers, creatureBonus, creatureNumbers, pcRollNumbers, type R
 import { actor, character, customMonster, token } from "../testutil.ts";
 import { EMPTY_PC_STATS, pcDefenses, pcNamedRolls, shapedInitiative, shapedNumbers, withShapeRules } from "./pcStats.ts";
 
-/** Wild Shape and other shapes on a character's own token (docs/design-v1-pc-stats.md 3.6, Appendix C). */
+/** Wild Shape and other shapes on a character's own token (docs/design/design-v1-pc-stats.md 3.6, Appendix C). */
 
 /** Bree, a level 5 druid: Str 10, Dex 14, Con 14, Wis 16, proficient in Int and Wis saves and Perception. */
 const BREE: PcStats = {

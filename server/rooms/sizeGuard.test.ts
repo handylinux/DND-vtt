@@ -77,7 +77,7 @@ describe("SizeGuard", () => {
     roomGuard.stateMeasured(roomBytes);
     assert.equal(roomGuard.check(reset.state, ["s1"], reset.growth).ok, false);
 
-    // Players' copies of a scene with fog on may hold more than the DM's (docs/design-v1-map-discovery.md 5.5), which the fog reset leaves as it is.
+    // Players' copies of a scene with fog on may hold more than the DM's (docs/design/design-v1-map-discovery.md 5.5), which the fog reset leaves as it is.
     const sceneBytes = projectionBytes(projectState(before, DM, { sceneId: "s1" })) + discoveryReserve(before, before.scenes.s1!, MEMORY_CAP);
     const sceneGuard = new SizeGuard({ sceneLimit: sceneBytes + 70_000 });
     assert.equal(sceneGuard.check(before, ["s1"], 0).ok, true);
@@ -116,7 +116,7 @@ describe("SizeGuard", () => {
   });
 });
 
-describe("SizeGuard's wave 4 reserves (docs/design-v1-maps-vision.md 2.4)", () => {
+describe("SizeGuard's wave 4 reserves (docs/design/design-v1-maps-vision.md 2.4)", () => {
   const P1: Viewer = { memberId: "p1", role: "player" };
 
   /** A 200 x 200 vision scene in bright light with a party member, so its sight covers it all. */
@@ -167,7 +167,7 @@ describe("SizeGuard's wave 4 reserves (docs/design-v1-maps-vision.md 2.4)", () =
     const state = bright("s9");
     state.scenes.s8 = scene("s8", { bounds: { w: 200, h: 200 }, fogEnabled: true, vision: { on: true, light: "dark" } });
     const moved = { ...state, meta: { ...state.meta, playerSceneId: "s8" } };
-    // Players' memory of the scene they move to is reserved at its cap (docs/design-v1-map-discovery.md 5.5).
+    // Players' memory of the scene they move to is reserved at its cap (docs/design/design-v1-map-discovery.md 5.5).
     const bytes = serializedBytes(moved) + memoryStateReserve(moved);
     const fits = new SizeGuard({ stateLimit: bytes + exploredReserve(moved) });
     assert.equal(fits.check(moved, [], 0, state).ok, true);
@@ -194,7 +194,7 @@ describe("SizeGuard's wave 4 reserves (docs/design-v1-maps-vision.md 2.4)", () =
   });
 });
 
-describe("growthBound's keys (docs/design-v1-maps-vision.md 2.4)", () => {
+describe("growthBound's keys (docs/design/design-v1-maps-vision.md 2.4)", () => {
   test("a new entry counts its collection key as JSON writes it, so an explore's growth is what it takes off the reserve, escaped scene IDs included", () => {
     for (const sceneId of ["0f8fad5b-d9cb-469f-a165-70867728950e", "\u0001".repeat(64), "梟".repeat(64), `"${"\\".repeat(30)}`]) {
       const state = room();
@@ -213,7 +213,7 @@ describe("growthBound's keys (docs/design-v1-maps-vision.md 2.4)", () => {
   });
 });
 
-describe("SizeGuard's room-level part (docs/design-v1-dm-tools.md 2.4)", () => {
+describe("SizeGuard's room-level part (docs/design/design-v1-dm-tools.md 2.4)", () => {
   /** s1 is small, and s2, which nobody views, holds a big token. */
   function twoScenes(): RoomState {
     const state = room();
@@ -270,7 +270,7 @@ describe("SizeGuard's room-level part (docs/design-v1-dm-tools.md 2.4)", () => {
     }
   });
 
-  test("documents of handout pages count, since they ride in every DM snapshot (docs/design-v1-pdf-handouts.md 3.4)", () => {
+  test("documents of handout pages count, since they ride in every DM snapshot (docs/design/design-v1-pdf-handouts.md 3.4)", () => {
     const pages = Array.from({ length: 100 }, (_, i) => ({ assetId: `0192f0aa-0000-7000-8000-${String(i).padStart(12, "0")}`, width: 1584, height: 2048 }));
     const next = applied(twoScenes(), { t: "handoutDoc.create", doc: { id: "d1", title: "Strange letter", pages } }).state;
     for (const sceneId of ["s1", "s2"]) {
@@ -280,7 +280,7 @@ describe("SizeGuard's room-level part (docs/design-v1-dm-tools.md 2.4)", () => {
     }
   });
 
-  test("asks for saves count, since they ride in every DM snapshot (docs/design-v1-player-save-spell.md 5.6)", () => {
+  test("asks for saves count, since they ride in every DM snapshot (docs/design/design-v1-player-save-spell.md 5.6)", () => {
     const state = twoScenes();
     state.tokens.thorn = token("thorn", { kind: "pc", ownerIds: ["p1"] });
     const ask: Op = { t: "cast.ask", cast: { id: "k1", caster: "thorn", sceneId: "s1", spell: "A".repeat(60), targets: Array.from({ length: 50 }, (_, i) => `target-${i}`), damage: { tag: "dmg", parts: 1 } } };
@@ -347,7 +347,7 @@ describe("SizeGuard's room-level part (docs/design-v1-dm-tools.md 2.4)", () => {
     assert.equal(guard.check(shorterStill.state, ["s2"], shorterStill.growth, shorter.state).ok, true);
   });
 
-  test("companion blocks ride outside the measure, so with 3 MiB of them a map edit that fits without them passes, and one that does not is refused as before (docs/design-v1-companion-stat-blocks.md 3.4)", () => {
+  test("companion blocks ride outside the measure, so with 3 MiB of them a map edit that fits without them passes, and one that does not is refused as before (docs/design/design-v1-companion-stat-blocks.md 3.4)", () => {
     const state = twoScenes();
     state.characters.c1 = character("c1", { name: "Bree" });
     // The measure counts the blocks' field as empty: it is a DM's projection without them, to the byte.

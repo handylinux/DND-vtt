@@ -50,7 +50,7 @@ function tokenDefaults(kind: Token["kind"]): Pick<Token, "disposition" | "layer"
 function autoNumber(tx: Tx, token: Token): number | undefined {
   if (token.kind !== "npc" && token.kind !== "monster") return undefined;
   // A companion is never numbered, nor counted among the siblings: a player's new "Owl 2" would tell them a hidden Owl
-  // stands there (docs/design-v1-combat-flow.md 3.6.3).
+  // stands there (docs/design/design-v1-combat-flow.md 3.6.3).
   if (token.companion) return undefined;
   const siblings = Object.values(tx.state.tokens)
     .filter((t) => t.id !== token.id && t.sceneId === token.sceneId && t.name === token.name && t.kind !== "pc" && !t.companion)
@@ -72,7 +72,7 @@ export function tokenCreate(tx: Tx, op: OpOf<"token.create">): void {
   if (tx.state.tokens[input.id]) throw invalid("token already exists");
   tx.scene(input.sceneId);
   if ("ref" in input.actor) tx.character(input.actor.ref);
-  // An actor links one stat block, and one of its character's only on a companion (docs/design-v1-companion-stat-blocks.md 3.2).
+  // An actor links one stat block, and one of its character's only on a companion (docs/design/design-v1-companion-stat-blocks.md 3.2).
   if ("inline" in input.actor && input.actor.inline.blockId !== undefined && linksSet(input.actor.inline) > 1) throw invalid(ONE_LINK);
   if ("inline" in input.actor && input.actor.inline.wildShape !== undefined) throw invalid(WILD_SHAPE_ALONE);
   const defaults = tokenDefaults(input.kind);
@@ -109,7 +109,7 @@ export function tokenCreate(tx: Tx, op: OpOf<"token.create">): void {
   if (input.light !== undefined) token.light = input.light;
   if (input.partyVision === true) token.partyVision = true;
   if (input.companion) {
-    // A companion is played by whoever plays its character, and carries no number (docs/design-v1-combat-flow.md 3.6.3).
+    // A companion is played by whoever plays its character, and carries no number (docs/design/design-v1-combat-flow.md 3.6.3).
     if (input.number !== undefined) throw invalid(NO_NUMBER);
     const character = tx.character(input.companion.of);
     if (input.ownerIds !== undefined && !sameMembers(input.ownerIds, character.ownerIds)) throw invalid(COMPANION_OWNERS);
@@ -135,7 +135,7 @@ function sameMembers(a: readonly string[], b: readonly string[]): boolean {
 /**
  * Applies the shared actor patch. HP edits go through the rules so life
  * states follow. A patch that sets one stat block link clears the other two
- * (docs/design-v1-companion-stat-blocks.md 3.2, rule 1), so a player can
+ * (docs/design/design-v1-companion-stat-blocks.md 3.2, rule 1), so a player can
  * replace a link they cannot see, such as the DM's `monsterId`. Ops stored
  * before op version 6 kept the others (`oneLinkPerActor`). A character's
  * actor never holds a companion's block, whichever op writes it.
@@ -146,7 +146,7 @@ export function applyActorPatch(tx: Tx, resolved: ResolvedActor, patch: ActorPat
   if (oneLink && linking > 1) throw invalid(ONE_LINK);
   if (resolved.holder === "character" && patch.blockId !== undefined && patch.blockId !== null) throw invalid(BLOCK_OF_ITS_CHARACTER);
   if (patch.wildShape !== undefined && (resolved.holder !== "character" || patch.srdId === undefined || patch.srdId === null)) throw invalid(WILD_SHAPE_ALONE);
-  // A block gives these two, and its next edit would write over a typed one anyway (docs/design-v1-pc-stats.md 3.5). The DM too.
+  // A block gives these two, and its next edit would write over a typed one anyway (docs/design/design-v1-pc-stats.md 3.5). The DM too.
   if (resolved.character?.stats && (patch.initBonus !== undefined || patch.passivePerception !== undefined)) throw invalid(pcNumbersFromBlock(resolved.character.name));
   let actor: Actor = { ...resolved.actor };
   const events: ActorEvent[] = [];
@@ -179,7 +179,7 @@ export function applyActorPatch(tx: Tx, resolved: ResolvedActor, patch: ActorPat
   setOrDelete(actor, "sheetUrl", patch.sheetUrl);
   setOrDelete(actor, "legendary", patch.legendary);
   if (resolved.holder === "character" && shapeKeepsOwnNumbers(tx.env.opVersion)) actor = withUnshaped(resolved.actor, actor, patch);
-  // Marks are keyed by the block's entries, so a new block, or a shape taken or ended, takes them (docs/design-v1-combat-controls.md 2.4).
+  // Marks are keyed by the block's entries, so a new block, or a shape taken or ended, takes them (docs/design/design-v1-combat-controls.md 2.4).
   actor = relinked(actor, linkOf(resolved.actor));
   return { actor, events };
 }
@@ -193,7 +193,7 @@ function setOrDelete<T extends object, K extends keyof T>(target: T, field: K, v
 
 export function tokenUpdate(tx: Tx, op: OpOf<"token.update">): void {
   const token = tx.token(op.tokenId);
-  // Planned before anything is written: what its group does follows where it stood (docs/design-v1-attach.md 8.2).
+  // Planned before anything is written: what its group does follows where it stood (docs/design/design-v1-attach.md 8.2).
   const along = carriedAlong(tx, op);
   const p = op.patch;
   const next: Token = { ...token };
@@ -239,7 +239,7 @@ export function tokenUpdate(tx: Tx, op: OpOf<"token.update">): void {
   const judged = judgedIn(tx, [next, ...along.map((c) => c.next)]);
   tx.write(keys.token(token.id), walkedOwn(tx, token, next, judged));
   placeCarried(tx, along, judged);
-  // Coming to act on its character's turn takes its rows out of the fight and its history (docs/design-v1-combat-flow.md 3.6.7).
+  // Coming to act on its character's turn takes its rows out of the fight and its history (docs/design/design-v1-combat-flow.md 3.6.7).
   if (p.companion && actsOnCharacterTurn(next)) dropRows(tx, tx.token(token.id), true);
   if (next.sceneId !== token.sceneId) areasFollow(tx, token.id, next.sceneId);
   if (p.actor) {
@@ -253,7 +253,7 @@ export function tokenUpdate(tx: Tx, op: OpOf<"token.update">): void {
 }
 
 /**
- * The companion rules on a token.update (docs/design-v1-combat-flow.md
+ * The companion rules on a token.update (docs/design/design-v1-combat-flow.md
  * 3.6.3, 3.6.4 and 3.6.8), applied to `next`, the token as the rest of the
  * patch leaves it. Attaching clears an inherited number first, then the
  * result is checked, so a numbered Owl attaches, while a number the op
@@ -269,7 +269,7 @@ function updateCompanion(tx: Tx, token: Token, next: Token, p: TokenPatch): void
     delete next.number;
   }
   // A companion block is its character's, so a companion given to another character, or no longer one, lets it go
-  // (docs/design-v1-companion-stat-blocks.md 3.2, rule 3). An SRD link holds nothing of the character's and stays.
+  // (docs/design/design-v1-companion-stat-blocks.md 3.2, rule 3). An SRD link holds nothing of the character's and stays.
   if (next.companion?.of !== token.companion?.of && "inline" in next.actor && next.actor.inline.blockId !== undefined) {
     const { blockId: _theirs, ...actor } = next.actor.inline;
     next.actor = { inline: relinked(actor, linkOf(next.actor.inline)) };
@@ -297,7 +297,7 @@ function areasFollow(tx: Tx, tokenId: string, sceneId: string): void {
 export type Carried = { token: Token; next: Token; plan: MovedToken };
 
 /**
- * What an op's named moves take along (docs/design-v1-attach.md 8.2):
+ * What an op's named moves take along (docs/design/design-v1-attach.md 8.2):
  * every token of their groups the plan moves, each where it puts it, from
  * op version 14. Asked before the op writes anything, since every member
  * follows the walk its holder took from where it stood. A move of a carried
@@ -328,7 +328,7 @@ export function placeCarried(tx: Tx, carried: readonly Carried[], judged: Judged
 /** Removes a token with what hangs off it: attached templates, caster references and its initiative rows. */
 export function deleteToken(tx: Tx, tokenId: string): void {
   const token = tx.token(tokenId);
-  // A companion's rows leave the fight's history too, so Previous never brings one back (docs/design-v1-combat-flow.md 3.6.8).
+  // A companion's rows leave the fight's history too, so Previous never brings one back (docs/design/design-v1-combat-flow.md 3.6.8).
   if (token.companion) dropRows(tx, token, false);
   for (const template of sortedById(Object.values(tx.state.templates))) {
     if (template.attachedTo === tokenId) tx.remove(keys.template(template.id));
@@ -402,7 +402,7 @@ function placeMoved(tx: Tx, { move, token, next }: { move: Move; token: Token; n
 
 /**
  * A token after a move of its own (withPath), or, when the turn's creature
- * walks off its own ride, after a Get off (docs/design-v1-attach.md 7.3),
+ * walks off its own ride, after a Get off (docs/design/design-v1-attach.md 7.3),
  * since leaving a mount costs the same whether the rider is dragged off it
  * or taps Get off. A teleport uses no movement and pays nothing.
  */
@@ -423,7 +423,7 @@ function leftMount(tx: Tx, rider: Token, next: Token, judged: Judged): Token | u
 }
 
 /**
- * Half the rider's walking Speed, rounded down (docs/design-v1-attach.md
+ * Half the rider's walking Speed, rounded down (docs/design/design-v1-attach.md
  * 7.3): what getting on or off a mount costs on the rider's own turn,
  * whatever the leg's length. Null when it costs nothing: not the rider's
  * turn, a mount some player cannot see, or an op from before walked legs or
@@ -452,7 +452,7 @@ function seenNow(tx: Tx): (t: { id: string }) => boolean {
 }
 
 /**
- * Getting off a ride on the rider's turn (docs/design-v1-attach.md 7.3):
+ * Getting off a ride on the rider's turn (docs/design/design-v1-attach.md 7.3):
  * from the seat to the first spot of the walk clear of the mount costs half
  * its Speed, and the rest of the leg what any leg costs, along the rest of
  * its route when it has one, two stops when the two differ.
@@ -479,7 +479,7 @@ export function dismounted(tx: Tx, rider: Token, next: Token, mount: Token, judg
  * anyway. A change of facing alone is not movement and leaves it be.
  *
  * A change of the footprint is not movement either
- * (docs/design-v1-token-window.md 8.7) where it is not a move: a resize,
+ * (docs/design/design-v1-token-window.md 8.7) where it is not a move: a resize,
  * wherever it leaves the creature, and a squeeze taken or left in place,
  * as a same-size update or a group's resize to the size a member already
  * has does when it clears a squeeze. Each appends an uncounted stop where
@@ -512,7 +512,7 @@ export function withPath(tx: Tx, before: Token, after: Token, judged: Judged, un
     if (!hidden) return withoutPath(after);
     turn = hidden;
   }
-  // A controlled mount sharing its rider's turn moves on its own path then (docs/design-v1-attach.md 7.2), from op version 14.
+  // A controlled mount sharing its rider's turn moves on its own path then (docs/design/design-v1-attach.md 7.2), from op version 14.
   const mount = turn.tokenId !== after.id && attaches(tx.env.opVersion) && sharesTurn(tx.state, after.id, turn);
   // A mount's path this turn outlives a move that shares no turn, which records nothing, so a remount the same turn goes on with it (7.2).
   if (turn.tokenId !== after.id && !mount) return attaches(tx.env.opVersion) && before.path?.turn === turn.seq ? after : withoutPath(after);
@@ -537,7 +537,7 @@ export function withPath(tx: Tx, before: Token, after: Token, judged: Judged, un
     path = { turn: path.turn, stops: path.stops.map((s): PathStop => (s.footprint ? s : { ...s, footprint: old })) };
   }
   if (walked) stop = walkedStop(tx, path, stop, before, after, judged, route, carried);
-  // Getting on or off a mount costs what the rules say whatever the leg (docs/design-v1-attach.md 7.3), set before the stop joins the path.
+  // Getting on or off a mount costs what the rules say whatever the leg (docs/design/design-v1-attach.md 7.3), set before the stop joins the path.
   if (cost !== undefined) stop = { ...stop, cost };
   // A leg a holder's move took the creature along never counts, and only the DM learns how it was made (7.2).
   if (carried) stop = { ...stop, uncounted: true, carried: true };
@@ -563,7 +563,7 @@ export function hiddenTurnOf(encounter: RoomState["encounter"], before: Token): 
   return { entryId: "", tokenId: before.id, sceneId: before.sceneId, x: before.x, y: before.y, elevation: before.elevation, seq: before.path.turn };
 }
 
-/** Whether the row marks time this round: its mount shared a rider's turn in it (docs/design-v1-attach.md 7.1). */
+/** Whether the row marks time this round: its mount shared a rider's turn in it (docs/design/design-v1-attach.md 7.1). */
 function marksTime(encounter: RoomState["encounter"], entryId: string): boolean {
   const row = encounter?.entries.find((e) => e.id === entryId);
   return row?.markRound !== undefined && row.markRound === encounter!.round;
@@ -571,7 +571,7 @@ function marksTime(encounter: RoomState["encounter"], entryId: string): boolean 
 
 /**
  * Whether a token is a controlled mount sharing the turn under way
- * (docs/design-v1-attach.md 7.1): it joined the turn's list, and the turn's
+ * (docs/design/design-v1-attach.md 7.1): it joined the turn's list, and the turn's
  * creature still rides it, by controlled rides all the way up its chain.
  */
 export function sharesTurn(state: RoomState, mountId: string, turn: TurnStart): boolean {
@@ -591,7 +591,7 @@ export function sharesTurn(state: RoomState, mountId: string, turn: TurnStart): 
 }
 
 /**
- * The new stop with what its leg took (docs/design-v1-movement.md 6.2):
+ * The new stop with what its leg took (docs/design/design-v1-movement.md 6.2):
  * `moved`, `cost` and `diag` by one pure rule from the op's route, or from
  * the plain straight leg's geometry, with the 5-10-5 count running on from
  * the turn's counted legs. A Swim Speed, which only the DM and the owners
@@ -600,7 +600,7 @@ export function sharesTurn(state: RoomState, mountId: string, turn: TurnStart): 
  * saw at every spot, before and after the move (7.2). On a hex scene a
  * plain leg's feet are the hex steps between its ends' reference hexes, and
  * its spots stand on the hex line between them
- * (docs/design-v1-hex-grids.md 4.2 and 4.4).
+ * (docs/design/design-v1-hex-grids.md 4.2 and 4.4).
  */
 function walkedStop(tx: Tx, path: TokenPath, stop: PathStop, before: Token, after: Token, judged: Judged, route: readonly RoutePiece[] | undefined, carried?: Pick<MovedToken, "route" | "trace">): PathStop {
   const rules = tx.state.meta.settings;
@@ -621,7 +621,7 @@ function walkedStop(tx: Tx, path: TokenPath, stop: PathStop, before: Token, afte
     trace = routeWalkers(tx.state.buildChunks, walker, route, after.elevation);
     const swimSpeed = (speedsOf(tx.state, before)?.swim ?? 0) > 0;
     const extras = route.map(([, , extra, swim]) => ({ extra, swim }));
-    // On hexes a piece's feet are its hex steps (docs/design-v1-hex-grids.md 4.3), its stops read as the walk stands there.
+    // On hexes a piece's feet are its hex steps (docs/design/design-v1-hex-grids.md 4.3), its stops read as the walk stands there.
     taken = grid.shape === "hex" ? hexRouteFeet(grid, walker, pointsOf(trace), isSqueezed(after), extras, rules, counter, { swimSpeed }) : routeFeet(pointsOf(trace), extras, rules, counter, { swimSpeed, step: snapStep(before) });
   } else {
     trace = routeWalkers(tx.state.buildChunks, walker, [[after.x, after.y, 0, 0]], after.elevation);
@@ -650,7 +650,7 @@ export function speedsOf(state: RoomState, token: Token): Actor["speeds"] | unde
   return "inline" in token.actor ? token.actor.inline.speeds : state.characters[token.actor.ref]?.actor.speeds;
 }
 
-/** A path's first stop, where its turn began, with the turn start's marks of who saw it, its list included (docs/design-v1-per-player-vision.md 6.5). */
+/** A path's first stop, where its turn began, with the turn start's marks of who saw it, its list included (docs/design/design-v1-per-player-vision.md 6.5). */
 export function startStop(turn: TurnStart): PathStop {
   return { x: turn.x, y: turn.y, elevation: turn.elevation, ...(turn.seen ? { seen: true as const } : {}), ...(turn.seenBy ? { seenBy: turn.seenBy } : {}) };
 }
@@ -666,7 +666,7 @@ function withoutPath(token: Token): Token {
   return rest;
 }
 
-/** A holder's move takes its group along (docs/design-v1-attach.md 8.2), every stop judged with all of them where they end. */
+/** A holder's move takes its group along (docs/design/design-v1-attach.md 8.2), every stop judged with all of them where they end. */
 export function tokenMove(tx: Tx, op: OpOf<"token.move">): void {
   const along = carriedAlong(tx, op);
   const moved = movedToken(tx, op);
@@ -704,7 +704,7 @@ export function tokenCountLeg(tx: Tx, op: OpOf<"token.countLeg">): void {
   const path = pathThisTurn(tx.state.encounter, token);
   const last = path?.stops[path.stops.length - 1];
   if (!path || !last || path.stops.length < 2) throw invalid("it has not moved this turn");
-  // A resize's leg, or a squeeze's in place, never counts (docs/design-v1-token-window.md 8.7). Only paths from version 6 on hold one, so replay is unchanged.
+  // A resize's leg, or a squeeze's in place, never counts (docs/design/design-v1-token-window.md 8.7). Only paths from version 6 on hold one, so replay is unchanged.
   if (reshapeLeg(path.stops[path.stops.length - 2]!, last, stopFootprint(token))) throw invalid(RESHAPE_NOT_A_MOVE);
   if ((last.uncounted !== true) === op.counts) return;
   // A carried leg counted is the table's choice, and loses its mark, so no refusal says how the leg was made (7.2).
@@ -741,7 +741,7 @@ export function characterUpdate(tx: Tx, op: OpOf<"character.update">): void {
   if (p.ownerIds !== undefined) next.ownerIds = p.ownerIds;
   setOrDelete(next, "defaultImage", p.defaultImage);
   setOrDelete(next, "level", p.level);
-  // The list replaces the old one whole, and an empty one is stored as none. No SRD data is read, so replay never depends on it (docs/design-v1-known-forms.md 3.2).
+  // The list replaces the old one whole, and an empty one is stored as none. No SRD data is read, so replay never depends on it (docs/design/design-v1-known-forms.md 3.2).
   if (p.knownForms !== undefined) setOrDelete(next, "knownForms", p.knownForms.length > 0 ? p.knownForms : null);
   if (p.stats === null) delete next.stats;
   else if (p.stats !== undefined) {
@@ -753,7 +753,7 @@ export function characterUpdate(tx: Tx, op: OpOf<"character.update">): void {
   if (p.resources !== undefined) setOrDelete(next, "resources", p.resources.length > 0 ? keptResources(character.resources, p.resources) : null);
   // Written before the actor patch, which reads whether the character ends the op with a block.
   tx.write(keys.character(character.id), next);
-  // Whoever plays the character plays its companions, on every scene (docs/design-v1-combat-flow.md 3.6.4).
+  // Whoever plays the character plays its companions, on every scene (docs/design/design-v1-combat-flow.md 3.6.4).
   if (p.ownerIds !== undefined) syncOwners(tx, [character.id]);
   if (p.actor) {
     const resolved = tx.resolveActor({ characterId: character.id });
@@ -761,7 +761,7 @@ export function characterUpdate(tx: Tx, op: OpOf<"character.update">): void {
     tx.putActor(resolved, r.actor);
     tx.addActorEvents(resolved, r.events);
   }
-  // Initiative and Passive Perception follow the block after every edit, a level's included (docs/design-v1-pc-stats.md 3.5).
+  // Initiative and Passive Perception follow the block after every edit, a level's included (docs/design/design-v1-pc-stats.md 3.5).
   const after = tx.character(character.id);
   const derived = withPcActorNumbers(after);
   if (derived !== after) tx.write(keys.character(character.id), derived);
@@ -769,10 +769,10 @@ export function characterUpdate(tx: Tx, op: OpOf<"character.update">): void {
 
 /**
  * A character's class resources as an update sends them, whole and in order
- * (docs/design-v1-combat-controls.md 3.1): one sent with no count spent
+ * (docs/design/design-v1-combat-controls.md 3.1): one sent with no count spent
  * keeps its own by id, at most its new count, and a new one starts with
  * none spent. A sync's Apply, its Undo and the editor's Save send the count
- * of a resource whose count they set (docs/design-v1-ddb-resources.md 5),
+ * of a resource whose count they set (docs/design/design-v1-ddb-resources.md 5),
  * which it takes. Older ops never send one, so they replay as before.
  */
 function keptResources(before: readonly ClassResource[] | undefined, sent: NonNullable<CharacterPatch["resources"]>): ClassResource[] {
@@ -781,7 +781,7 @@ function keptResources(before: readonly ClassResource[] | undefined, sent: NonNu
 
 /**
  * A character's D&D Beyond sync record as a patch leaves it
- * (docs/design-v1-resync.md 4): stored as sent, with a stamp as `at` when
+ * (docs/design/design-v1-resync.md 4): stored as sent, with a stamp as `at` when
  * the patch has none, which a sync's never has. Removing the block removes
  * the record too, since its base then describes no block. The record may
  * still name rolls the block no longer holds.
@@ -808,7 +808,7 @@ function syncRecord(next: Character, record: DdbSyncPatch | null | undefined, bl
  * the state the op left, for the op's answer. A re-sync's Undo expects
  * exactly that record, so its sender learns the `at` from the answer, never
  * from a view that may already hold another device's later sync
- * (docs/design-v1-resync.md 3.4).
+ * (docs/design/design-v1-resync.md 3.4).
  */
 export function stampedAt(op: Op, after: RoomState): string | undefined {
   if (op.t !== "character.update" || !op.patch.ddbSync || op.patch.ddbSync.at !== undefined) return undefined;
@@ -818,7 +818,7 @@ export function stampedAt(op: Op, after: RoomState): string | undefined {
 /**
  * Removes a character with every token that points at it, so no token is
  * left with a dangling actor, its companions, and the stat blocks it kept
- * for them (docs/design-v1-companion-stat-blocks.md 3.3).
+ * for them (docs/design/design-v1-companion-stat-blocks.md 3.3).
  */
 export function characterDelete(tx: Tx, op: OpOf<"character.delete">): void {
   const character = tx.character(op.characterId);

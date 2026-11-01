@@ -33,7 +33,7 @@ describe("RowList", () => {
   });
 });
 
-describe("a row whose detail is told in full (docs/design-v1-resync.md 3.3)", () => {
+describe("a row whose detail is told in full (docs/design/design-v1-resync.md 3.3)", () => {
   const summary = "3: Wisdom 16, D&D Beyond says 18, and 2 more";
   const html = (fullDetail: boolean) => renderToStaticMarkup(createElement(Row, { title: "Ability scores", detail: summary, expanded: false, fullDetail, onClick() {} }));
 
@@ -56,7 +56,7 @@ describe("a row whose detail is told in full (docs/design-v1-resync.md 3.3)", ()
   });
 });
 
-describe("a row's options for lists of actions (docs/design-v1-look-pass-2.md 2.5)", () => {
+describe("a row's options for lists of actions (docs/design/design-v1-look-pass-2.md 2.5)", () => {
   const title = "Get on Treasure chest";
   const titleStyle = (out: string) => /<span[^>]*style="([^"]*)"[^>]*>Get on Treasure chest<\/span>/.exec(out)?.[1] ?? "";
 

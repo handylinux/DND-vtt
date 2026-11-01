@@ -67,7 +67,7 @@ function SceneMenu(props: { scene: Scene; viewing: boolean; scenes: readonly Sce
         }
       >
         <div style={{ display: "grid", gap: theme.space(1) }}>
-          {/* Only Duplicate sends the choices, so a swipe springs back once any changed, inside the sheet whose swipe it holds (docs/design-v1-sheet-swipe.md 4.5). */}
+          {/* Only Duplicate sends the choices, so a swipe springs back once any changed, inside the sheet whose swipe it holds (docs/design/design-v1-sheet-swipe.md 4.5). */}
           <UnsavedInput unsaved={!duplicate.busy && duplicate.changed} />
           <Help style={{ marginBottom: theme.space(2) }}>
             The copy, {`"${name} (copy)"`}, always gets the map and its phases, the build, labels, stamps and lights. Also copy:
@@ -167,7 +167,7 @@ function FolderPicker(props: { scene: Scene; folders: readonly string[]; onDone(
   const actions = useRoomActions();
   const [draft, setDraft] = useState("");
   const [invalid, setInvalid] = useState(false);
-  // A new folder's name typed and not yet created keeps the menu from a swipe's close (docs/design-v1-sheet-swipe.md 4.5).
+  // A new folder's name typed and not yet created keeps the menu from a swipe's close (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedInput(draft.trim() !== "");
   const fieldId = useId();
   const move = (folder: string | null) => {
@@ -221,7 +221,7 @@ function FolderPicker(props: { scene: Scene; folders: readonly string[]; onDone(
 
 /**
  * "Update thumbnail": a wait the DM asked for, so it says "Updating…" until
- * done and says so if it fails (docs/design-v1-maps-vision.md section 3.3).
+ * done and says so if it fails (docs/design/design-v1-maps-vision.md section 3.3).
  * Only the scene on screen can be drawn, since the DM's view holds no other
  * scene's build.
  */

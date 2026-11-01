@@ -14,7 +14,7 @@ import { ownsCharacter, ownsToken } from "../tokens/access.ts";
 
 /**
  * One creature's rolls for the Dice panel and every card that rolls for it
- * (docs/design-v1-roll-options.md 3.4): its numbers, its named rolls, its
+ * (docs/design/design-v1-roll-options.md 3.4): its numbers, its named rolls, its
  * defenses and the traits the presets and the group save read, from what
  * the viewer's view already holds.
  */
@@ -23,7 +23,7 @@ export type CreatureRolls = {
   /**
    * Its initiative bonus, or null where this viewer holds none of its
    * numbers: a character rolled for through a token lent to them, whose
-   * numbers go only to the DM and its own players (docs/design-v1-pc-stats.md
+   * numbers go only to the DM and its own players (docs/design/design-v1-pc-stats.md
    * 4.2). Such a creature rolls a d20 with the bonus its player types, never
    * a "+0" this device does not know.
    */
@@ -101,7 +101,7 @@ function shownLink(dice: Pick<DiceView, "you" | "view">, token: Token, actor: Ac
  * SRD creature or a character in an SRD shape. The hook that loads them
  * (useDiceView.ts) asks this, so a page with no SRD creature loads neither.
  */
-/** Whether this viewer reads a character's own block, and so a shaped character's creature block: the DM and its players (docs/design-v1-pc-stats.md 7.3). */
+/** Whether this viewer reads a character's own block, and so a shaped character's creature block: the DM and its players (docs/design/design-v1-pc-stats.md 7.3). */
 function readsCharacter(dice: Pick<DiceView, "you" | "view">, character: Character): boolean {
   return dice.you.role === "dm" || ownsCharacter(dice.you.memberId, character);
 }
@@ -127,7 +127,7 @@ export function srdNeeds(dice: Pick<DiceView, "you" | "view">, creature: ActorTa
 function blockFound(dice: DiceView, found: Found): StatBlockMonster | null {
   const { token, character, actor } = found;
   if (character) {
-    // A character in a shape lists its creature's actions and defenses (docs/design-v1-pc-stats.md 3.6).
+    // A character in a shape lists its creature's actions and defenses (docs/design/design-v1-pc-stats.md 3.6).
     return actor.srdId !== undefined && readsCharacter(dice, character) ? (dice.srd.monsters?.find((m) => m.srdId === actor.srdId) ?? null) : null;
   }
   if (!token) return null;
@@ -138,7 +138,7 @@ function blockFound(dice: DiceView, found: Found): StatBlockMonster | null {
   return null;
 }
 
-/** blockFound for a creature by its target (docs/design-v1-combat-controls.md 2.1), for the combat uses its block prints. */
+/** blockFound for a creature by its target (docs/design/design-v1-combat-controls.md 2.1), for the combat uses its block prints. */
 export function creatureBlock(dice: DiceView, creature: ActorTarget): StatBlockMonster | null {
   const found = find(dice.view, creature);
   return found ? blockFound(dice, found) : null;
@@ -177,7 +177,7 @@ export function creatureLevelsKnown(dice: DiceView, creature: ActorTarget): bool
  * never reads a block the token panel would not show them.
  *
  * A character's own rolls and defenses are doc 2's (pcNamedRolls and
- * pcDefenses, docs/design-v1-pc-stats.md 5), with a shaped character's
+ * pcDefenses, docs/design/design-v1-pc-stats.md 5), with a shaped character's
  * creature block before them.
  */
 export function creatureRolls(dice: DiceView, creature: ActorTarget): CreatureRolls | null {

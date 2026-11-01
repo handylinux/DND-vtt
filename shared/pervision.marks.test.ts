@@ -11,7 +11,7 @@ import { visionRules } from "./ruleHooks.ts";
 import { DM, apply, entry, env, member, room, scene, template, token } from "./testutil.ts";
 
 /**
- * Per-player vision's marks (docs/design-v1-per-player-vision.md 6.5, lane
+ * Per-player vision's marks (docs/design/design-v1-per-player-vision.md 6.5, lane
  * PV1), by the stub sight of perPlayerTestutil.ts: each source sees 3
  * cells out. Thorn is p1's, at the west, Bree p2's, at the south west, a
  * friendly scout every player shares sight with stands east, and p3 owns

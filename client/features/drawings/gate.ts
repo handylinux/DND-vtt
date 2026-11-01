@@ -2,7 +2,7 @@ import type { Drawing, RoomSettings } from "#shared/model.ts";
 import { drawsAllowed } from "#shared/permissions.ts";
 
 /**
- * What the Draw tool offers this viewer (docs/design-v1-dm-tools.md 3.9),
+ * What the Draw tool offers this viewer (docs/design/design-v1-dm-tools.md 3.9),
  * by the rule the server applies (shared/permissions.ts drawsAllowed):
  *
  * - `draw`: everything, for the DM and for players the room lets draw.

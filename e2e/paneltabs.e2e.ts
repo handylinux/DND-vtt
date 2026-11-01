@@ -9,12 +9,12 @@ import { ConsoleWatch, openSideTab, OpSocket, pagePoint, reopenRoom, Shots, side
 
 /**
  * The side panel's tabs in one row with a grouped More menu
- * (docs/design-v1-panel-tabs.md 11.2), on the real server serving the
+ * (docs/design/design-v1-panel-tabs.md 11.2), on the real server serving the
  * production build: the row at every size a computer or a tablet lays out,
  * nothing moving as panels open from More or from anywhere else, More's
  * keys and its menu's, badges on More, the side panel hidden and shown,
  * a reach sweep, a wider font that cuts a name, and the shared popover
- * base's rules for More's menu (docs/design-v1-tool-options.md 7.1).
+ * base's rules for More's menu (docs/design/design-v1-tool-options.md 7.1).
  *
  * It runs with `pnpm test:e2e` on E2E_PORT plus thirteen, one file after
  * another. The other environment variables are the smoke run's
@@ -58,11 +58,11 @@ const run = {
 
 const DM_PANELS = ["Token", "Initiative", "Dice", "Log", "Journal", "Areas", "DM", "Scenes", "Monsters", "Encounters", "Characters", "Outliner", "Library", "Menu"];
 const PLAYER_PANELS = ["Token", "Initiative", "Dice", "Log", "Journal", "Areas", "Characters", "Library", "Menu"];
-// "Two panels" heads each menu, a checkbox this shape does not list, then the line under it (docs/design-v1-split-panel.md 6).
-// The Log is in the row since the tabs draw their icons alone (docs/design-v1-icons-2.md 6).
+// "Two panels" heads each menu, a checkbox this shape does not list, then the line under it (docs/design/design-v1-split-panel.md 6).
+// The Log is in the row since the tabs draw their icons alone (docs/design/design-v1-icons-2.md 6).
 const DM_MENU = ["---", "#In play", "Journal", "Areas", "DM", "Scenes", "#Prepare", "Monsters", "Encounters", "Characters", "Outliner", "Library", "---", "Menu"];
 const PLAYER_MENU = ["---", "Journal", "Areas", "Characters", "Library", "Menu"];
-/** The row's tabs in today's side panel, its icons alone (docs/design-v1-icons-2.md 6). */
+/** The row's tabs in today's side panel, its icons alone (docs/design/design-v1-icons-2.md 6). */
 const ROW = ["Token", "Initiative", "Dice", "Log"];
 
 type Box = { x: number; y: number; width: number; height: number };
@@ -138,7 +138,7 @@ function isFocused(target: Locator): Promise<boolean> {
 /**
  * The titles of the tabs in the row, More left out: each tab's first
  * words after its icon, before its corner badge. A tab that draws its
- * icon alone keeps its title in a hidden span (docs/design-v1-icons-2.md 3.1).
+ * icon alone keeps its title in a hidden span (docs/design/design-v1-icons-2.md 3.1).
  */
 function rowTitles(page: Page): Promise<string[]> {
   return tablist(page)
@@ -154,7 +154,7 @@ function rowTitles(page: Page): Promise<string[]> {
     );
 }
 
-/** The header the side panel draws above a tab's panel, its words and height in the chrome's px, or null with none (docs/design-v1-panel-tabs.md 3.8). */
+/** The header the side panel draws above a tab's panel, its words and height in the chrome's px, or null with none (docs/design/design-v1-panel-tabs.md 3.8). */
 function headerOver(page: Page, tab: Locator): Promise<{ words: string; height: number } | null> {
   return tab.evaluate((el) => {
     const e = el as unknown as DomEl;
@@ -195,7 +195,7 @@ function moreTitleDrawn(page: Page): Promise<boolean> {
     .evaluate((el) => (el as unknown as DomEl).getBoundingClientRect().width > 2);
 }
 
-/** The tooltip on show with these words, in the browser's top layer (docs/design-v1-icons.md 3.2). */
+/** The tooltip on show with these words, in the browser's top layer (docs/design/design-v1-icons.md 3.2). */
 const tipOn = (page: Page, words: string) => page.locator('[role="tooltip"]:popover-open', { hasText: new RegExp(`^${words}$`) });
 
 /** More's menu as it reads: "#" and a group's label, "---" for the line, an item's title. */
@@ -382,7 +382,7 @@ describe("raccoon-vtt: the side panel's tabs in one row with a grouped More menu
     await tablist(dm).getByRole("tab", { name: "Initiative", exact: true }).click();
     assert.ok(await tablist(dm).getByRole("tab", { name: "More panels" }).isVisible(), "More is More panels again");
 
-    // The Log is in the row since the tabs draw their icons alone, so its badge sits on its tab's corner and its count stays in the tab's name (docs/design-v1-icons-2.md 3.1).
+    // The Log is in the row since the tabs draw their icons alone, so its badge sits on its tab's corner and its count stays in the tab's name (docs/design/design-v1-icons-2.md 3.1).
     const rowBefore = await rowBoxes(dm);
     const patCookie = (await patContext.cookies(server.origin)).map((c) => `${c.name}=${c.value}`).join("; ");
     const patOps = await OpSocket.open({ origin: server.origin, roomId: run.roomId, cookie: patCookie });
@@ -581,7 +581,7 @@ describe("raccoon-vtt: the side panel's tabs in one row with a grouped More menu
     assert.ok(await isFocused(tablist(dm).getByRole("tab", { name: "Initiative", exact: true })), "Panels gives focus to the Initiative tab");
     assert.deepEqual(await rowTitles(dm), ["Token", "Initiative", "Dice"]);
     await openSideTab(dm, "Encounters");
-    // More would cut the name, so it draws the panel's icon alone, and a computer names it on hover and focus, not above the panel (docs/design-v1-icons-2.md 3.1, D-261024-36).
+    // More would cut the name, so it draws the panel's icon alone, and a computer names it on hover and focus, not above the panel (docs/design/design-v1-icons-2.md 3.1, D-261024-36).
     assert.equal(await moreTitleDrawn(dm), false, "More draws Encounters' icon alone");
     assert.ok(await tablist(dm).getByRole("tab", { name: "Encounters", exact: true, selected: true }).isVisible(), "More's name is the whole title");
     assert.equal(await headerOver(dm, more(dm)), null, "a computer draws no header over the panel");

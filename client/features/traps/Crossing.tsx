@@ -11,7 +11,7 @@ import { crossedTraps, crossesText, warnsOf } from "./rules.ts";
 const NO_TRAPS: Readonly<Record<string, Trap>> = {};
 
 /**
- * "Crosses Hidden Pit" under a drag's label (docs/design-v1-traps.md 4.5):
+ * "Crosses Hidden Pit" under a drag's label (docs/design/design-v1-traps.md 4.5):
  * for a player the found traps not disarmed that the walk crosses, and for
  * the DM every armed one. Client only, from the traps this viewer holds.
  * `path` is the token's top-left corner along the walk, the start first.

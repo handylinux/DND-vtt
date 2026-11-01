@@ -10,7 +10,7 @@ import { layoutSize } from "../device/layout.ts";
 import { uiScale } from "../device/settings.ts";
 
 /*
- * The Dice panel's folds (docs/design-v1-dice-pass.md 6.2 to 6.4): which of
+ * The Dice panel's folds (docs/design/design-v1-dice-pass.md 6.2 to 6.4): which of
  * its groups show open, as this device last left them, kept apart from the
  * token panel's (features/tokens/panelFolds.ts), since a group here and a
  * section there hold different things. Plain functions and a slot, for

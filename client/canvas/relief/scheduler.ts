@@ -2,7 +2,7 @@ import { KeptRelief, type KeptAt, type KeptCanvas } from "./kept.ts";
 import type { VBox } from "./pieces.ts";
 
 /**
- * One draw a frame for the isometric board (docs/design-v1-isometric-view.md
+ * One draw a frame for the isometric board (docs/design/design-v1-isometric-view.md
  * 5.1). The tops of raised ground copy the ground stage's pixels, so the
  * relief must draw after the ground in the same frame, and again whenever
  * the ground draws. The scheduler takes over `batchDraw` on the ground and
@@ -11,7 +11,7 @@ import type { VBox } from "./pieces.ts";
  * marked, then the relief if marked or if the ground drew. The drag and
  * overlay layers keep Konva's own batchDraw.
  *
- * It also keeps the relief's picture across a pan (docs/design-v1-relief-pan.md
+ * It also keeps the relief's picture across a pan (docs/design/design-v1-relief-pan.md
  * 5): a mark made inside `moveCamera` is the camera's, any other is
  * content, and the relief scrolls when everything since its last draw was
  * the camera's. And it owns the frame loop for background work, so a build
@@ -35,7 +35,7 @@ const BROWSER_FRAMES: Frames = {
  */
 export type BackgroundJob = (until: number) => boolean;
 
-/** The most a frame gives background work, in ms (docs/design-v1-iso-area-shapes.md 6). */
+/** The most a frame gives background work, in ms (docs/design/design-v1-iso-area-shapes.md 6). */
 export const BACKGROUND_MS = 6;
 /** Background work ends this long after the frame began, so a heavy draw leaves it less. */
 export const FRAME_END_MS = 12;

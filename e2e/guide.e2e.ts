@@ -13,7 +13,7 @@ import { ConsoleWatch, Shots, startServer, type Server } from "./harness.ts";
  * shows is here: the server answers the path with the app, and a reload
  * of a link to a section lands on that section, although the page draws
  * after the browser looked for it. The guide's look
- * (docs/design-v1-guide-look.md) too: the outline beside the text on a
+ * (docs/design/design-v1-guide-look.md) too: the outline beside the text on a
  * computer, which marks the section being read, the Contents sheet on a
  * phone, and the numbers, steps, keys and callouts the page draws.
  *

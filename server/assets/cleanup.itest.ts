@@ -13,7 +13,7 @@ import { trashDay, variantPath } from "./store.ts";
 import { solid } from "./testImages.ts";
 
 /**
- * Image cleanup (docs/design-v1-dm-tools.md 3.19) against the real server
+ * Image cleanup (docs/design/design-v1-dm-tools.md 3.19) against the real server
  * and Postgres: the trash, scene thumbnails on loaded and unloaded rooms,
  * files no row names, the DM's library marks and delete, the quota
  * re-check, and an undo that would bring back a deleted image.
@@ -341,7 +341,7 @@ describe("image cleanup", () => {
     assert.ok(await exists(filePath(inA, "token")), "room B still names the file");
   });
 
-  test("a document's pages are in use until it is deleted, and a page another document names stays in use (docs/design-v1-pdf-handouts.md 3.5)", async () => {
+  test("a document's pages are in use until it is deleted, and a page another document names stays in use (docs/design/design-v1-pdf-handouts.md 3.5)", async () => {
     const { roomId, socket, dm } = await room();
     const first = await upload(dm, roomId, "handout", randomColor());
     const second = await upload(dm, roomId, "handout", randomColor());
@@ -379,7 +379,7 @@ describe("image cleanup", () => {
     assert.match(undo.rejects?.[0]?.message ?? "", /its image was deleted since/);
   });
 
-  test("a handout showing pages keeps every page in use until it closes, as when a show wins its race with a delete on another device (docs/design-v1-pdf-handouts.md 3.5)", async () => {
+  test("a handout showing pages keeps every page in use until it closes, as when a show wins its race with a delete on another device (docs/design/design-v1-pdf-handouts.md 3.5)", async () => {
     const { roomId, socket, dm } = await room();
     const first = await upload(dm, roomId, "handout", randomColor());
     const second = await upload(dm, roomId, "handout", randomColor());
@@ -448,7 +448,7 @@ describe("the quota re-check after a deletion", () => {
     assert.equal(await readOnly(roomId), false);
   });
 
-  test("a room at its quota deletes a document and then frees its pages through the library delete, but saves none (docs/design-v1-pdf-handouts.md 3.3)", async () => {
+  test("a room at its quota deletes a document and then frees its pages through the library delete, but saves none (docs/design/design-v1-pdf-handouts.md 3.3)", async () => {
     const { roomId, dm, socket, big } = await fill();
     // fill() sets the flag at once, so it is lifted for a moment to save the document a room reaches its quota with.
     await t.pool.query("update rooms set read_only = false where id = $1", [roomId]);

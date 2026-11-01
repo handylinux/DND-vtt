@@ -19,7 +19,7 @@ import { isCoarsePointer } from "../lib/device.ts";
  *
  * - Pixel ratio capped at 2: a 3x phone would otherwise allocate 2.25 times
  *   the canvas memory for every layer, for detail nobody sees on a map. Low
- *   power (docs/design-v1-dm-tools.md 3.15) draws at 1, a quarter of the
+ *   power (docs/design/design-v1-dm-tools.md 3.15) draws at 1, a quarter of the
  *   pixels on most phones. Konva reads the ratio when a layer's canvas is
  *   made, so the map canvas (Stage.tsx) sets it as it draws and remounts its
  *   stage when the setting changes.

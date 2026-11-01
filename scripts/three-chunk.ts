@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { brotliCompressSync, gzipSync } from "node:zlib";
 
 /**
- * The dice chunk's check, after `pnpm build` (docs/design-v1-roll-animation.md 6).
+ * The dice chunk's check, after `pnpm build` (docs/design/design-v1-roll-animation.md 6).
  * three.js hardly tree-shakes, so one stray import would put all of it in
  * a chunk every member loads. The source scan
  * (client/features/dice/throw/lazyThree.test.ts) holds the imports, and

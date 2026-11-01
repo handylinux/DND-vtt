@@ -28,12 +28,12 @@ import { DEFAULT_PX_PER_CELL, exportSize, exportWords, mapVariantFor, PX_PER_CEL
  *
  * The image is made with the current build when "Make image" is tapped, and
  * a second tap saves it (save.ts says why). The player view of a scene
- * with fog on is the server's to give (docs/design-v1-map-discovery.md 4):
+ * with fog on is the server's to give (docs/design/design-v1-map-discovery.md 4):
  * players hold the build only where they have seen it, as they last saw
  * it, and this device holds the whole build and no memory, so "Make image"
  * asks for it, busy until it comes. The grid is a checkbox, since
  * "Make image" reads it rather than it taking effect at once
- * (docs/design-v1-visual.md 3.7).
+ * (docs/design/design-v1-visual.md 3.7).
  */
 
 type Made = { file: File; url: string; width: number; height: number; pxPerCell: number; share: boolean; notes: string[] };
@@ -116,7 +116,7 @@ export function MapExport(props: { scene: Scene }) {
           setStatus({ kind: "error", message: PLAYERS_HOLD_NOTHING });
           return;
         }
-        // Drawn by the automatic walls rule of players' copy, "off" with fog on: their chunks carry the automatic walls they hold (docs/design-v1-map-discovery.md 5.2).
+        // Drawn by the automatic walls rule of players' copy, "off" with fog on: their chunks carry the automatic walls they hold (docs/design/design-v1-map-discovery.md 5.2).
         drawn = { ...scene, autoWalls: players.scene.autoWalls ?? "off" };
       } catch {
         if (run !== runRef.current) return;

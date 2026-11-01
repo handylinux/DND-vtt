@@ -30,7 +30,7 @@ export type PageOptions = { signal?: AbortSignal; sleep?: (ms: number, signal?: 
  * `after`, or the newest with neither. A DM's pages name the scene on
  * screen (`sceneId`), as the route asks, though the server reads every
  * line whole to a DM, on any scene. In "view as a player" (`previewOf`,
- * docs/design-v1-per-player-vision.md 7.4, D-261026-10) the page is asked
+ * docs/design/design-v1-per-player-vision.md 7.4, D-261026-10) the page is asked
  * for as that player and taken only when the server says it answered as
  * that player, as the preview's socket takes only that player's snapshot:
  * a page without the answer, or answered as anyone else, is refused, so a
@@ -40,7 +40,7 @@ export type PageOptions = { signal?: AbortSignal; sleep?: (ms: number, signal?: 
  * The server reads one page per room at a time from its raw archive, so a
  * second member's page can find it busy for a moment (429 busy). That page
  * waits out the Retry-After once and asks again before it fails
- * (docs/design-v1-log-history.md 2.3, LOG-OPUS-19).
+ * (docs/design/design-v1-log-history.md 2.3, LOG-OPUS-19).
  */
 export async function logPage(roomId: string, ask: PageAsk, viewer: { sceneId: string | null; previewOf: string | null }, options: PageOptions = {}): Promise<LogPage> {
   const once = () => api.getLog(roomId, { ...ask, sceneId: viewer.sceneId, ...(viewer.previewOf !== null ? { as: viewer.previewOf } : {}) }, options.signal);

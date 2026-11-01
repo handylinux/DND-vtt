@@ -1,5 +1,5 @@
 /**
- * Part 4A's rows for the wave 4 gate (docs/design-v1-maps-vision.md 4.3.6):
+ * Part 4A's rows for the wave 4 gate (docs/design/design-v1-maps-vision.md 4.3.6):
  * what the core adds around sight on the largest vision scene, at the
  * scene caps. The party's explored layer written by one explore of the whole
  * scene, the fan-out candidates that explore makes, the explored layer's

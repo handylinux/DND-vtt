@@ -4,7 +4,7 @@ import type { CharacterPatch, DdbSyncPatch } from "#shared/protocol.ts";
 import { AT, character, room } from "#shared/testutil.ts";
 import { describeOp } from "./undoLabels.ts";
 
-/** A DM's stat block edits go on the DM's stack in the block's words (docs/design-v1-pc-stats.md 3.5). */
+/** A DM's stat block edits go on the DM's stack in the block's words (docs/design/design-v1-pc-stats.md 3.5). */
 describe("stat block undo labels", () => {
   test("changing and removing a character's stat block, and the character's other edits as before", () => {
     const s = room({ characters: { bree: character("bree", { name: "Bree" }) } });
@@ -15,7 +15,7 @@ describe("stat block undo labels", () => {
   });
 });
 
-/** A re-sync and its Undo read in the dialog's words on the DM's stack (docs/design-v1-resync.md 4). */
+/** A re-sync and its Undo read in the dialog's words on the DM's stack (docs/design/design-v1-resync.md 4). */
 describe("re-sync undo labels", () => {
   const s = room({ characters: { bree: character("bree", { name: "Bree" }) } });
   const record: DdbSyncPatch = { from: "123456789", base: { level: 6 }, rolls: {} };

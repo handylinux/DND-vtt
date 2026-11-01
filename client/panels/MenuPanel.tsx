@@ -48,7 +48,7 @@ export default function MenuPanel(props: PanelProps) {
   const ui = useRoomUi();
   const [page, setPage] = useState<Page | null>(null);
   const [copied, setCopied] = useState(false);
-  // Leave room asks once while a PDF upload is under way on this device (docs/design-v1-pdf-handouts.md 4.1.6).
+  // Leave room asks once while a PDF upload is under way on this device (docs/design/design-v1-pdf-handouts.md 4.1.6).
   const uploading = useJobActive();
   const [asking, setAsking] = useState(false);
   const question = useRef<HTMLParagraphElement>(null);
@@ -241,7 +241,7 @@ function ViewRow() {
 }
 
 /**
- * A menu item as a card row (docs/design-v1-visual.md 2.3). Its detail
+ * A menu item as a card row (docs/design/design-v1-visual.md 2.3). Its detail
  * wraps rather than ending in an ellipsis, since it is the only place that
  * says what the page holds. One that opens a page of the menu ends in a
  * chevron and carries the page's key for Back to find it by
@@ -251,7 +251,7 @@ function ViewRow() {
 function MenuItem(props: { icon: IconName; title: string; detail: ReactNode; page?: Page; opener?: string; disabled?: boolean; keys?: { title: string; aria: string }; onClick(): void }) {
   return (
     <Row
-      // Before the words, so a list read by scanning is found by its icons (docs/design-v1-icons.md 10.2).
+      // Before the words, so a list read by scanning is found by its icons (docs/design/design-v1-icons.md 10.2).
       leading={<Icon name={props.icon} style={{ color: props.disabled ? theme.color.textDisabled : theme.color.textMuted }} />}
       title={props.title}
       detail={<span style={{ whiteSpace: "normal" }}>{props.detail}</span>}

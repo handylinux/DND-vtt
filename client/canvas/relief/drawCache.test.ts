@@ -7,7 +7,7 @@ import { blended, drawRun, type DrawContext, type GroundCopy } from "./drawRelie
 import { cellPieces, type CellPiece, type PieceSource } from "./pieces.ts";
 
 /*
- * What the relief keeps between draws (docs/design-v1-iso-hex-relief.md 9),
+ * What the relief keeps between draws (docs/design/design-v1-iso-hex-relief.md 9),
  * and what makes each keeping go: a piece's drawing turn by turn (made anew
  * for a new piece, which the index builds whenever grid, bounds, heights,
  * fog or looks change, and read at every zoom in view units), the ground's

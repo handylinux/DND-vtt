@@ -6,7 +6,7 @@ import { cameraOfStage, screenToView, type Camera, type Insets, type Point, type
 import { cellAtPoint, cellId, cellPolygon, groundSurface, lineInterval, neighborsOf, polygonSide, sameCell, sceneExtent, type GroundCell, type GroundSurface } from "./groundCells.ts";
 
 /**
- * The board's two views (docs/design-v1-isometric-view.md section 4).
+ * The board's two views (docs/design/design-v1-isometric-view.md section 4).
  *
  * World units are cells, x right and y down the map, and a height z is in
  * cells too: feet over the room's feet per cell. View space is the stage's
@@ -214,7 +214,7 @@ export function drawnFootprintGround(src: DrawnSource, cells: Iterable<GroundCel
  * threshold that is its elevation, below it the lift alone. Hidden terrain
  * never enters, so a token over fogged ground draws the same whatever lies
  * under the fog. `cells` are the cells it stands on, its actual hexes on
- * hexes (docs/design-v1-iso-hex-relief.md D-261030-462).
+ * hexes (docs/design/design-v1-iso-hex-relief.md D-261030-462).
  */
 export function drawnBase(src: DrawnSource, cells: readonly GroundCell[], elevation: number): number {
   return drawnFootprintGround(src, cells) + elevation - seenFootprintGround(src, cells);
@@ -368,7 +368,7 @@ export function pickWalk(src: PickSource, screen: Point): PickHit {
 }
 
 /**
- * The hex walk (docs/design-v1-iso-hex-relief.md section 7): the trace's
+ * The hex walk (docs/design/design-v1-iso-hex-relief.md section 7): the trace's
  * stretch inside the box that holds the scene's hexes, polygon by
  * canonical polygon, each a positive-length interval of z. The next cell
  * is the neighbor whose interval carries on below the exit, so a trace

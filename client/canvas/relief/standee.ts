@@ -2,7 +2,7 @@ import { isometric, K, toView, turnAxes, type Turn } from "../../lib/view.ts";
 import type { VBox } from "./pieces.ts";
 
 /**
- * Where a standee draws (docs/design-v1-isometric-view.md 5.4), in view
+ * Where a standee draws (docs/design/design-v1-isometric-view.md 5.4), in view
  * units. The art box is the footprint's w by h, its bottom middle on the
  * footprint's center at the base, so every decor layout keeps its numbers.
  * The ring is the footprint's ellipse at the base, and a base above the

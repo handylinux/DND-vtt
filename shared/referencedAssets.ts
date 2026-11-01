@@ -5,12 +5,12 @@ import type { AssetKind } from "./permissions.ts";
 import type { RestoreEntry } from "./protocol.ts";
 
 /**
- * Every place the room's state names an image row (docs/design-v1-dm-tools.md
+ * Every place the room's state names an image row (docs/design/design-v1-dm-tools.md
  * 2.6 and 3.19), with the kind of asset that place takes: scene maps, map
  * phases and thumbnails, token images and other images, character
  * portraits, monsters', SRD monsters' and companion blocks' default
  * images, stamps from the library, the stamps players remember
- * (docs/design-v1-map-discovery.md 5.4), and every page of a handout and
+ * (docs/design/design-v1-map-discovery.md 5.4), and every page of a handout and
  * of a document in the DM's library. Shipped icons name no row.
  *
  * Cleanup asks it which images a room still uses, and the permissions ask
@@ -30,7 +30,7 @@ export function entityAssetRefs(key: EntityKey, value: unknown): AssetRef[] {
     const assetId = imageAssetId(ref);
     if (assetId !== undefined) out.push({ assetId, kind: "token" });
   };
-  // Every page of a handout or a document, each image once (docs/design-v1-pdf-handouts.md 3.5).
+  // Every page of a handout or a document, each image once (docs/design/design-v1-pdf-handouts.md 3.5).
   const pages = (list: unknown, ...seen: unknown[]) => {
     if (!Array.isArray(list)) return;
     const named = new Set(seen);

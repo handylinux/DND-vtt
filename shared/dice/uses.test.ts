@@ -9,7 +9,7 @@ import { blockActions, blockEntries, entryKeys } from "./named.ts";
 import { hasLair, lairCounts, limitedUses, regenerationOf, type LimitedUse } from "./uses.ts";
 
 /**
- * A stat block's limited uses (docs/design-v1-combat-controls.md 2.1 and
+ * A stat block's limited uses (docs/design/design-v1-combat-controls.md 2.1 and
  * 11) over every SRD 5.2.1 block, each count checked against the blocks'
  * own words with patterns of the test's own, and over custom blocks with
  * the wording older and pasted blocks keep.

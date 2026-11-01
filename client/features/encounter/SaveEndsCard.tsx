@@ -36,7 +36,7 @@ import {
 } from "./saveCards.ts";
 
 /**
- * The DM's pending save-ends occurrences (docs/design-v1-roll-options.md
+ * The DM's pending save-ends occurrences (docs/design/design-v1-roll-options.md
  * 6.1), oldest first, one card each in the fight alerts. Read from the
  * effects in the DM's view, which alone holds `due` and the DC, so a
  * reload brings back exactly the unsettled ones. Players get none.
@@ -187,7 +187,7 @@ export function SaveEndsCard(props: { pending: PendingSave; onResult(text: strin
           {trouble ? <span style={{ color: error || card.receipt?.state === "refused" ? theme.color.dangerText : theme.color.textMuted }}>{trouble}</span> : null}
         </div>
       ) : null}
-      {/* A player's ask on the linked request's answer, with the live card's Allow and Keep, so it is settled here too (docs/design-v1-roll-request.md 1.1). */}
+      {/* A player's ask on the linked request's answer, with the live card's Allow and Keep, so it is settled here too (docs/design/design-v1-roll-request.md 1.1). */}
       {pending.request && pending.request.targets[0]?.change ? (
         <AskRow request={pending.request} target={pending.request.targets[0]} change={pending.request.targets[0].change} name={facts.name} words={false} />
       ) : null}

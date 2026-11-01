@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { clientOpSchema } from "./protocol.ts";
 
-/** The ops' grid shape fields (docs/design-v1-hex-grids.md section 7). */
+/** The ops' grid shape fields (docs/design/design-v1-hex-grids.md section 7). */
 const ok = (value: unknown) => assert.ok(clientOpSchema.safeParse(value).success, JSON.stringify(value));
 const no = (value: unknown) => assert.ok(!clientOpSchema.safeParse(value).success, JSON.stringify(value));
 

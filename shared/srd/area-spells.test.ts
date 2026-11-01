@@ -118,7 +118,7 @@ describe("area spells", () => {
     assert.ok(AREA_SPELLS.every((s) => !s.oncePerTurn || s.triggers !== undefined));
   });
 
-  test("the presets that slow movement are these (docs/design-v1-movement.md 3.5), and no others", () => {
+  test("the presets that slow movement are these (docs/design/design-v1-movement.md 3.5), and no others", () => {
     const slowing = Object.fromEntries(AREA_SPELLS.filter((s) => s.slows).map((s) => [s.name, s.slows]));
     const difficult = { kind: "difficult" };
     assert.deepEqual(slowing, {
@@ -145,7 +145,7 @@ describe("area spells", () => {
     }
   });
 
-  test("every preset's save and damage reads (docs/design-v1-roll-options.md 5.6): each part parses, with its type and its dice per slot", () => {
+  test("every preset's save and damage reads (docs/design/design-v1-roll-options.md 5.6): each part parses, with its type and its dice per slot", () => {
     for (const s of AREA_SPELLS) {
       for (const part of s.damage ?? []) {
         assert.ok(parseFormula(part.formula).ok, `${s.name}: ${part.formula}`);

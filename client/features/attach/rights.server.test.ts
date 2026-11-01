@@ -75,7 +75,7 @@ function attachOp(carried: Token, holder: Token, kind: AttachKind): Op {
   return { t: "token.attach", tokenId: carried.id, to: holder.id, kind, ...(kind === "ride" ? { steer: true as const } : {}), x: seat.x, y: seat.y, elevation: kind === "drag" ? carried.elevation : holder.elevation };
 }
 
-describe("the client's attach rights agree with the server's (docs/design-v1-attach.md 6)", () => {
+describe("the client's attach rights agree with the server's (docs/design/design-v1-attach.md 6)", () => {
   test("for every pair, kind, detach and drag a player's copy holds, on random rooms", () => {
     let compared = 0;
     let offered = 0;

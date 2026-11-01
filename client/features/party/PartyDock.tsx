@@ -6,7 +6,7 @@ import { useRoomView } from "../../state/view.ts";
 const Bar = quietLazy(() => import("./PartyBar.tsx").then((m) => m.PartyBar), ["dm"], "The party bar");
 
 /**
- * The party bar's place from 900 px up (docs/design-v1-dm-tools.md 3.4): the
+ * The party bar's place from 900 px up (docs/design/design-v1-dm-tools.md 3.4): the
  * top of the side panel, above the tabs, for the DM only. Players do not
  * receive other characters' AC and Passive Perception (features 15), so they
  * have none. The bar loads after the room opens and never for a player.

@@ -1,5 +1,5 @@
 /**
- * The dice sets (docs/design-v1-roll-animation.md 9.1): a body color, an
+ * The dice sets (docs/design/design-v1-roll-animation.md 9.1): a body color, an
  * ink for the result, a faint ink for the other faces, an edge color and
  * a finish, drawn in code into the dice's textures. No image or texture
  * file of any kind. A set is chosen on the device and kept there, never in

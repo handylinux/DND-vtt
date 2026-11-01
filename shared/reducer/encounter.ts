@@ -54,7 +54,7 @@ export function writeEncounter(tx: Tx, encounter: Encounter): void {
  * stands on as where its turn began (features section 10). A row without a
  * token, or whose token is gone, has no spot. The row is marked as having
  * had its turn, so its place in the order stays in players' view for the
- * rest of the fight (docs/design-v1-combat-flow.md 11.2). The turn's areas
+ * rest of the fight (docs/design/design-v1-combat-flow.md 11.2). The turn's areas
  * remind anew (Tx.startTurn).
  */
 function withTurn(tx: Tx, encounter: Encounter, activeEntryId: string | null): Encounter {
@@ -79,7 +79,7 @@ function withTurn(tx: Tx, encounter: Encounter, activeEntryId: string | null): E
 /**
  * A token's initiative row: its own, else its character's row that names
  * no token, so a mount on a character's row is found the same way wherever
- * its row is read (docs/design-v1-attach.md 7.1).
+ * its row is read (docs/design/design-v1-attach.md 7.1).
  */
 export function tokenRow(entries: readonly InitEntry[], state: RoomState, tokenId: string): InitEntry | undefined {
   const own = entries.find((e) => e.tokenId === tokenId);
@@ -95,7 +95,7 @@ export function mountSeenByAll(tx: Tx, token: Token): boolean {
 }
 
 /**
- * The mounts a creature's turn shares (docs/design-v1-attach.md 7.1): up
+ * The mounts a creature's turn shares (docs/design/design-v1-attach.md 7.1): up
  * its chain of controlled rides, each mount whose rider and itself every
  * player sees now, so the link is seen too, at most a turn's limit. Every
  * caller first asks whether the turn's row leads mounts at all
@@ -117,7 +117,7 @@ export function sharedMounts(tx: Tx, creatureId: string): string[] {
 }
 
 /**
- * Whether a rider's row may lead its controlled mount (docs/design-v1-attach.md
+ * Whether a rider's row may lead its controlled mount (docs/design/design-v1-attach.md
  * 7.1): share its turn with the mount, or give the mount's row its value and
  * place. From op version 18 only a row every player's tracker shows does,
  * by the encounter projection's own rule (project.ts rowSeenByNonOwners),
@@ -134,7 +134,7 @@ export function rowLeadsMounts(tx: Tx, encounter: Encounter, row: InitEntry | un
 
 /**
  * The turn that starts with the controlled mounts its creature rides
- * (docs/design-v1-attach.md 7.1): up the creature's chain of controlled
+ * (docs/design/design-v1-attach.md 7.1): up the creature's chain of controlled
  * rides, each mount whose rider and itself every player sees now, so the
  * link is seen too, on a row every player sees (rowLeadsMounts). Each joins
  * `TurnStart.mounts`, and its row, if it has one, marks time this round
@@ -155,7 +155,7 @@ function buildEntry(tx: Tx, input: EntryInput, existing: InitEntry[]): InitEntry
   if (existing.some((e) => e.id === input.id)) throw invalid("entry already exists");
   let token: Token | undefined;
   if (input.tokenId !== undefined) token = tx.token(input.tokenId);
-  // A companion that acts on its character's turn has no row of its own, for anyone (docs/design-v1-combat-flow.md 3.6.7).
+  // A companion that acts on its character's turn has no row of its own, for anyone (docs/design/design-v1-combat-flow.md 3.6.7).
   if (token?.companion && token.companion.turn !== "own") throw invalid("it acts on its character's turn");
   if (input.characterId !== undefined) tx.character(input.characterId);
   const entry: InitEntry = {
@@ -225,7 +225,7 @@ export function encounterEnd(tx: Tx): void {
   for (const token of Object.values(tx.state.tokens).sort((a, b) => (a.id < b.id ? -1 : 1))) {
     clearAutoExempt(tx, token.id);
   }
-  // A fight's end is no rest (docs/design-v1-combat-controls.md 2.4): counted uses, recharges and pips stay. What lasts a
+  // A fight's end is no rest (docs/design/design-v1-combat-controls.md 2.4): counted uses, recharges and pips stay. What lasts a
   // turn goes from every actor, a creature removed from the fight earlier included, since the next fight starts anew.
   if (combatUses(tx.env.opVersion)) {
     for (const resolved of tx.actors()) {
@@ -276,7 +276,7 @@ export function removeEntries(tx: Tx, entryIds: string[]): void {
     }
   }
   const kept = { ...encounter, entries: sorted.filter((e) => !removing.has(e.id)) };
-  // A turn passed on by the removal starts where its creature stands now, with the mounts it rides (docs/design-v1-attach.md 7.1).
+  // A turn passed on by the removal starts where its creature stands now, with the mounts it rides (docs/design/design-v1-attach.md 7.1).
   const passed = activeEntryId === encounter.activeEntryId ? kept : withTurn(tx, kept, activeEntryId);
   writeEncounter(tx, passed !== kept && attaches(tx.env.opVersion) ? withMounts(tx, passed, false) : passed);
   for (const entry of sorted) {
@@ -291,7 +291,7 @@ export function removeEntries(tx: Tx, entryIds: string[]): void {
 }
 
 /**
- * Starts a turn for every creature of it (docs/design-v1-combat-controls.md
+ * Starts a turn for every creature of it (docs/design/design-v1-combat-controls.md
  * 3.3), Next's and a removal's alike: its records and resets (uses.ts
  * startTurnUses). A row that only marks time this round starts nothing: its
  * mount's turn began with its rider's, which gave it its record.
@@ -367,7 +367,7 @@ export function encounterUpdate(tx: Tx, op: OpOf<"encounter.update">): void {
 }
 
 /**
- * In lair's counts (docs/design-v1-combat-controls.md 2.4): the row's
+ * In lair's counts (docs/design/design-v1-combat-controls.md 2.4): the row's
  * creature takes the block's lair or base legendary counts and XP, which
  * the op carries since the reducer never reads a block. What it spent stays,
  * cut to the new counts.
@@ -433,7 +433,7 @@ export function encounterNext(tx: Tx, op: OpOf<"encounter.next">): void {
   const snapshot: EncounterSnapshot = { encounter, effects: {}, revealed: [], at: tx.env.at };
   const round = encounter.round + (step.wrapped ? 1 : 0);
 
-  // A row that marks time this round keeps its spent Reaction: it came back on its rider's turn (docs/design-v1-attach.md 7.1).
+  // A row that marks time this round keeps its spent Reaction: it came back on its rider's turn (docs/design/design-v1-attach.md 7.1).
   const keepsReaction = (e: InitEntry) => mounted && e.markRound === round;
   let entries = encounter.entries.map((e) => (e.id === step.landing && !keepsReaction(e) ? { ...e, reactionUsed: false } : e));
   const reveals = settings.revealHiddenOnTurn && entries.find((e) => e.id === step.landing)!.hidden;
@@ -494,7 +494,7 @@ export function encounterNext(tx: Tx, op: OpOf<"encounter.next">): void {
   if (mounted) turned = withMounts(tx, turned, true);
   entries = turned.entries;
   writeEncounter(tx, turned);
-  // After the mounts join, which are the turn's creatures too (docs/design-v1-combat-controls.md 2.3).
+  // After the mounts join, which are the turn's creatures too (docs/design/design-v1-combat-controls.md 2.3).
   if (combat) startTurn(tx, turned, landing, snapshot);
   if (takesBackTurnOnly(tx.env.opVersion)) snapshot.turnFlags = flagsChanged(encounter.entries, turned.entries);
   tx.write(keys.encounterHistory, [...tx.state.encounterHistory, snapshot].slice(-MAX_HISTORY));
@@ -548,7 +548,7 @@ function flagsChanged(before: readonly InitEntry[], after: readonly InitEntry[])
 }
 
 /**
- * The saves that end effects at the end of a turn (docs/design-v1-roll-options.md
+ * The saves that end effects at the end of a turn (docs/design/design-v1-roll-options.md
  * 6.1): on each creature the ended row stands for (a companion acting on
  * its character's turn among them), each effect with `save` that is still
  * there after the tick gets one `saveEnds` line, and that line's id becomes
@@ -578,7 +578,7 @@ function askSavesAtTurnEnd(tx: Tx, ended: InitEntry, snapshot: EncounterSnapshot
 
 /**
  * A `shared` companion keeps a Reaction of its own on its token
- * (docs/design-v1-combat-flow.md 3.6.8), which its character's turn
+ * (docs/design/design-v1-combat-flow.md 3.6.8), which its character's turn
  * starting clears, as the row's own. The landing row's character is
  * `rowCharacter`'s, the one nesting reads, and only its companions on the
  * row token's scene, or the players' scene for a row with no token, are
@@ -658,7 +658,7 @@ export function encounterPrev(tx: Tx, op: OpOf<"encounter.prev">): void {
   }
 }
 
-/** A row's mark as a take-back's resumed row carries it: `toSeen`, or on a per-player scene `toSeenBy` (6.5 of docs/design-v1-per-player-vision.md). */
+/** A row's mark as a take-back's resumed row carries it: `toSeen`, or on a per-player scene `toSeenBy` (6.5 of docs/design/design-v1-per-player-vision.md). */
 function toMark(mark: { seen?: true; seenBy?: string[] }): { toSeen?: true; toSeenBy?: string[] } {
   return mark.seen ? { toSeen: true } : mark.seenBy ? { toSeenBy: mark.seenBy } : {};
 }
@@ -857,7 +857,7 @@ function undoStep(tx: Tx, snapshot: EncounterSnapshot): void {
 /**
  * Puts back the legendary actions a creature had used, if it still has legendary actions to count. From op version 20
  * a Next saves the landing creature's turn with its block link (uses.ts startTurnUses), so a creature relinked or
- * converted since gets no pips back, as its marks do not (docs/design-v1-combat-controls.md 3.3). A step saved before
+ * converted since gets no pips back, as its marks do not (docs/design/design-v1-combat-controls.md 3.3). A step saved before
  * holds no turns, and its pips go back as they always did.
  */
 function restoreLegendary(tx: Tx, saved: NonNullable<EncounterSnapshot["legendary"]>, turns: readonly TurnUses[] | undefined): void {
@@ -869,7 +869,7 @@ function restoreLegendary(tx: Tx, saved: NonNullable<EncounterSnapshot["legendar
       : tx.tryResolveActor({ tokenId: saved.holderId });
   const legendary = resolved?.actor.legendary;
   if (!resolved || !legendary) return;
-  // In lair may have lowered the count since (docs/design-v1-combat-controls.md 2.4). Older ops put the pips back as they were.
+  // In lair may have lowered the count since (docs/design/design-v1-combat-controls.md 2.4). Older ops put the pips back as they were.
   const actionsUsed = combatUses(tx.env.opVersion) ? Math.min(saved.actionsUsed, legendary.actionsMax) : saved.actionsUsed;
   if (legendary.actionsUsed === actionsUsed) return;
   tx.putActor(resolved, { ...resolved.actor, legendary: { ...legendary, actionsUsed } });

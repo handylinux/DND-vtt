@@ -83,7 +83,7 @@ describe("new scenes", () => {
   });
 
   test("every new scene stops players' moves at its walls and ledges", () => {
-    // Absent reads as off, which older scenes keep (docs/design-v1-maps-vision.md 4.1).
+    // Absent reads as off, which older scenes keep (docs/design/design-v1-maps-vision.md 4.1).
     assert.equal(matScene({ id: "m", name: "Mat", w: 10, h: 10 }).blockMovement, true);
     assert.equal(builderScene({ id: "b", name: "Crypt", w: 10, h: 10 }).blockMovement, true);
     assert.equal(mapScene({ id: "s", name: "Cave", asset: { id: "a", width: 900, height: 600 } }).scene.blockMovement, true);
@@ -156,7 +156,7 @@ describe("a scene's first map", () => {
   });
 });
 
-describe("what players see on a new scene (docs/design-v1-map-discovery.md 8.2)", () => {
+describe("what players see on a new scene (docs/design/design-v1-map-discovery.md 8.2)", () => {
   const kinds = ["builder", "uvtt", "map", "mat"] as const;
 
   test("each kind starts on the room's default, a map image steps down from Explore, and a room that never set one starts as before", () => {
@@ -259,7 +259,7 @@ describe("a Universal VTT import's Players see", () => {
   });
 });
 
-describe("the grid a new scene starts on (docs/design-v1-hex-grids.md HX-D19)", () => {
+describe("the grid a new scene starts on (docs/design/design-v1-hex-grids.md HX-D19)", () => {
   test("a battle mat and a map image take the room's shape, a builder scene, a starter map and an import stay squares", () => {
     assert.equal(newSceneShape("hexRows", "mat"), "hexRows");
     assert.equal(newSceneShape("hexColumns", "map"), "hexColumns");

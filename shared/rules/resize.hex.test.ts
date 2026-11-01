@@ -9,7 +9,7 @@ import { NO_ROOM_TO_GROW, RESIZE_KEEPS_PLACE, resizeCandidates, resizeRefusal, r
 
 /**
  * A resize on hexes keeps the reference hex where it was
- * (docs/design-v1-hex-grids.md 4.2): a Medium growing Large keeps its hex
+ * (docs/design/design-v1-hex-grids.md 4.2): a Medium growing Large keeps its hex
  * as the top one, and a Large shrinking Medium keeps its top hex.
  */
 

@@ -61,7 +61,7 @@ function onCancel(ctx: ToolContext): void {
   if (g?.laser) ctx.actions.sendEph({ k: "laser", x: g.last.x, y: g.last.y, on: false });
 }
 
-/** The ping tool's options (docs/design-v1-tool-options.md 9.5): Look here for the DM, and Ping sound. */
+/** The ping tool's options (docs/design/design-v1-tool-options.md 9.5): Look here for the DM, and Ping sound. */
 function PingOptions(props: { role: "dm" | "player" }) {
   const pingStore = useScoped(pingSlot).store;
   const lookHere = useStore(pingStore, (s) => s.lookHere);
@@ -84,7 +84,7 @@ function PingOptions(props: { role: "dm" | "player" }) {
           id: "sound",
           priority: 1,
           control: (
-            // The same setting, and the same fixed name, as This device's "Ping sound" (docs/design-v1-visual.md 3.7).
+            // The same setting, and the same fixed name, as This device's "Ping sound" (docs/design/design-v1-visual.md 3.7).
             <OptButton pressed={sound} label="Play a sound for pings on this device" onClick={() => setSoundEnabled(!sound)}>
               Ping sound
             </OptButton>
@@ -98,7 +98,7 @@ function PingOptions(props: { role: "dm" | "player" }) {
 export const pingTool: ToolDef = {
   id: "ping",
   label: "Ping",
-  // Not a pin: the Pin tool draws one, and the two read as one tool (docs/design-v1-icons.md 2.3).
+  // Not a pin: the Pin tool draws one, and the two read as one tool (docs/design/design-v1-icons.md 2.3).
   icon: { icon: "ping" },
   roles: ["dm", "player"],
   order: TOOL_ORDER.ping,

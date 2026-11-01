@@ -3,7 +3,7 @@ import { theme } from "../../client/lib/theme.ts";
 import { LIMIT_PX } from "./alignment.ts";
 
 /**
- * The spacing check (docs/design-v1-spacing-pass.md 6), beside the
+ * The spacing check (docs/design/design-v1-spacing-pass.md 6), beside the
  * alignment check: the gaps the spacing pass measured, kept as a test, so
  * a name that sits on its cards or a section label that stands nearer its
  * content than its neighbors fails a run rather than waiting for someone

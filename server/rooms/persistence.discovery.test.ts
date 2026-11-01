@@ -9,7 +9,7 @@ import { room, scene } from "#shared/testutil.ts";
 import { loadRoom, type Pool } from "./persistence.ts";
 
 /**
- * The map discovery upgrade step on load (docs/design-v1-map-discovery.md
+ * The map discovery upgrade step on load (docs/design/design-v1-map-discovery.md
  * 5.5, ASTRA-31, section 10's S3 row), against a pool that answers the two
  * reads a load makes: over a snapshot from before it, the step runs once,
  * over everything stored before it, so a scene older ops made and moved

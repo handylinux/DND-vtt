@@ -5,7 +5,7 @@ import { typingNow } from "../../lib/keyboardField.ts";
 import { subscribeUiScale, uiScale } from "./settings.ts";
 
 /**
- * The interface size (docs/design-v1-dm-tools.md 3.16) without rewriting
+ * The interface size (docs/design/design-v1-dm-tools.md 3.16) without rewriting
  * every inline pixel: each piece of chrome (the bars, the toolbar, panels,
  * sheets, dialogs, toasts, the token action bar and the label pane) takes
  * the CSS `zoom` property, and the map canvas never does, so its pointer

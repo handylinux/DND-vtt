@@ -2,7 +2,7 @@ import { SKILL_KEYS, type AbilityKey, type RollChoice, type RollTest, type Skill
 
 /**
  * Abilities and skills as the SRD 5.2.1 names them, and the words of a
- * requested roll (docs/design-v1-dm-tools.md 3.3). A D20 Test is named for
+ * requested roll (docs/design/design-v1-dm-tools.md 3.3). A D20 Test is named for
  * an ability, and a check may name a skill: "a Strength (Acrobatics or
  * Athletics) check" (page 6). The Skills table on page 9 gives each skill
  * its usual ability, which a request starts from when the DM picks a skill.

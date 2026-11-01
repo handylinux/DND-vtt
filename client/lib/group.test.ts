@@ -22,7 +22,7 @@ describe("moving a group", () => {
     assert.deepEqual(groupFollowers(["b", "mouse"], "a", onScene, canMove), [], "dragging a token outside the selection moves it alone");
   });
 
-  test("a token whose holder, or one above it, moves too is left out, so a rider and its mount move once (docs/design-v1-attach.md 4.2)", () => {
+  test("a token whose holder, or one above it, moves too is left out, so a rider and its mount move once (docs/design/design-v1-attach.md 4.2)", () => {
     const linked = [
       { id: "horse", holder: undefined },
       { id: "rider", holder: "horse" },
@@ -88,7 +88,7 @@ describe("moving a group", () => {
   });
 });
 
-describe("a box in the isometric view (docs/design-v1-isometric-view.md 6.2)", () => {
+describe("a box in the isometric view (docs/design/design-v1-isometric-view.md 6.2)", () => {
   test("takes the tokens whose ring's center shows inside it on screen, whatever their footprints overlap", () => {
     const tokens = [
       { id: "in", c: { x: 50, y: 50 } },

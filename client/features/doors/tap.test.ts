@@ -22,7 +22,7 @@ function hall(door: EdgeFeature = CLOSED) {
   return world({ edges: { ...line("w", 6, 0, 12), "6,5,w": door }, heights: raised(6, 0, 12, 12, 10) });
 }
 
-describe("a door tapped in Isometric (docs/design-v1-isometric-view.md 6.2)", () => {
+describe("a door tapped in Isometric (docs/design/design-v1-isometric-view.md 6.2)", () => {
   test("a press on a closed door's standing piece reaches it at every turn, from the higher ground beside it", () => {
     const state = hall();
     for (const turn of [0, 1, 2, 3] as Turn[]) {

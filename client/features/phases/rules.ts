@@ -4,7 +4,7 @@ import { MAX_NAME } from "#shared/protocol.ts";
 import { NOT_SAME_SHAPE, phaseProblem, TOO_SMALL } from "#shared/reducer/phases.ts";
 
 /**
- * The phase list the Scenes panel edits (docs/design-v1-maps-vision.md
+ * The phase list the Scenes panel edits (docs/design/design-v1-maps-vision.md
  * section 3.4). Phases are sent as the whole list with `scene.update`, so
  * every edit here is a pure function from the scene to the next list. Which
  * image fits is the reducer's own `phaseProblem` (shared/reducer/phases.ts),

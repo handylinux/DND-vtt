@@ -14,7 +14,7 @@ import { flashSlot, type Flash } from "./flash.ts";
  * The outliner's flash on the map (flash.ts): a door's line, or a dashed box
  * round a drawing, in the viewer's accent, for 1.5 s. It draws once
  * and goes, with no animation loop. In Isometric it draws in the drag layer
- * (docs/design-v1-isometric-view.md 5.3), bounding what it flashes as the
+ * (docs/design/design-v1-isometric-view.md 5.3), bounding what it flashes as the
  * ground stage draws it, each cell at its own drawn height (`flashShape`).
  */
 export function FlashLayer(props: LayerProps) {

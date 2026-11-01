@@ -107,7 +107,7 @@ function costly(clock: { t: number }, cost: number) {
   return { draw: () => void (clock.t += cost), batchDraw: () => {} };
 }
 
-describe("the scheduler's background budget (docs/design-v1-relief-pan.md 8, D-261030-547)", () => {
+describe("the scheduler's background budget (docs/design/design-v1-relief-pan.md 8, D-261030-547)", () => {
   test("a frame that began with a repaint waiting runs no job, whether its mark came before the scheduler's callback or in an earlier frame's commit", () => {
     const c = clocked();
     const s = new FrameScheduler(costly(c.clock, 1), costly(c.clock, 3), c.frames, c.now);

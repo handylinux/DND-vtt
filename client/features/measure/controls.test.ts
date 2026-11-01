@@ -12,7 +12,7 @@ const { ChoiceTiles, ConfirmButton, OptButton, OptionsStrip, shortName, StableWo
 const { theme } = await import("../../lib/theme.ts");
 
 /*
- * The options kit's controls (docs/design-v1-tool-options.md 6.2 and 11),
+ * The options kit's controls (docs/design/design-v1-tool-options.md 6.2 and 11),
  * drawn to static markup. The strip's fit is pages/optionsLayout.ts's,
  * tested there.
  */
@@ -119,7 +119,7 @@ describe("a value chip (11)", () => {
   });
 });
 
-describe("a kept ruler's remove (docs/design-v1-look-pass-2.md D17)", () => {
+describe("a kept ruler's remove (docs/design/design-v1-look-pass-2.md D17)", () => {
   const remove = (row: boolean) =>
     inRoom(createElement(OptButton, { tone: "danger", icon: "eraser", row, label: "Remove the kept ruler: Pat · 30 ft", onClick: () => undefined, children: "Pat · 30 ft" }));
 
@@ -140,7 +140,7 @@ describe("a kept ruler's remove (docs/design-v1-look-pass-2.md D17)", () => {
  * The line keeps a 14 px reading's height, so the map's reserve never
  * changes as a hint turns into a reading. A 13 px hint laid at the top of
  * that height stood above its middle, 2 px at 130%. The line is a column
- * that centers its words in its height (docs/design-v1-polish.md R8).
+ * that centers its words in its height (docs/design/design-v1-polish.md R8).
  */
 describe("the options line (8)", () => {
   const line = (tone: "hint" | "reading", content: string) => {

@@ -116,7 +116,7 @@ describe("placing a saved encounter", () => {
     }
     assert.deepEqual(rows.filter((r) => r.groupKey === "goblin-warrior").length, 3);
     assert.equal(rows.find((r) => after.tokens[r.tokenId!]!.name === "Cave Lurker")?.groupKey, "Cave Lurker");
-    // The dragon placed in its lair joins with In lair on, so the switch says what its counts say (docs/design-v1-combat-controls.md 13.4).
+    // The dragon placed in its lair joins with In lair on, so the switch says what its counts say (docs/design/design-v1-combat-controls.md 13.4).
     assert.deepEqual(
       rows.filter((r) => r.inLair).map((r) => after.tokens[r.tokenId!]!.name),
       ["Adult Red Dragon"],
@@ -172,7 +172,7 @@ describe("placing a saved encounter", () => {
   });
 });
 
-describe("a creature placed in its lair (docs/design-v1-combat-controls.md 13.4)", () => {
+describe("a creature placed in its lair (docs/design/design-v1-combat-controls.md 13.4)", () => {
   test("its counts against its block: the lair's and not the base's, or the lair's XP where the counts say nothing", async () => {
     const monsters = await loadMonsters();
     const dragon = monsters.find((m) => m.srdId === "adult-red-dragon")!;

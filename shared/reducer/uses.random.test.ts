@@ -12,7 +12,7 @@ import { DM, P1, actor, chance, character, combatUseOp, env, int, pick, rng, roo
 import { hpUndoRestore } from "./hpUndo.ts";
 
 /**
- * Random sequences of what combat uses juggle (docs/design-v1-combat-controls.md
+ * Random sequences of what combat uses juggle (docs/design/design-v1-combat-controls.md
  * 11): spends and give backs of every kind, prompts settled from every
  * surface, Skip and Reopen, rolls, take backs, turn starts by Next and by
  * removal with a mount and a companion, Previous, rests, In lair, rows
@@ -297,7 +297,7 @@ function run(seed: number, steps: number): { applied: number; settled: number; r
   return { applied, settled, refused };
 }
 
-describe("combat uses over random sequences (docs/design-v1-combat-controls.md 11)", () => {
+describe("combat uses over random sequences (docs/design/design-v1-combat-controls.md 11)", () => {
   for (const seed of [1, 2, 3]) {
     // 1000 steps, since a Previous that keeps the rows added spreads the turns over more of them and settles fewer prompts in 900.
     test(`seed ${seed}: 1000 steps keep every invariant`, () => {

@@ -13,7 +13,7 @@ import { RING_PRESETS, ringsText } from "./rings.ts";
  * on and off, any other distance typed in, at most four. The DM and the
  * token's owners set them, and everyone who sees the token sees them.
  *
- * The presets are circle Chips (docs/design-v1-visual.md 2.3), quick picks
+ * The presets are circle Chips (docs/design/design-v1-visual.md 2.3), quick picks
  * that show pressed while their ring is on. Each is named by its distance,
  * a name that stays the same on and off (3.7), in a group named "Range
  * rings in feet". The field for another distance ends the same row, its
@@ -63,7 +63,7 @@ export function RangeRingsSection(props: { token: Pick<Token, "rangeRings">; can
         {/*
          * Wide enough for its placeholder at the 16 px fields keep, which the number fields' 88 px cuts, and growing
          * to fill its line, so where the presets leave it no room beside them it is a line of its own rather than a
-         * field alone under them (docs/design-v1-token-sections.md 7). Its box takes the field's font, so the two
+         * field alone under them (docs/design/design-v1-token-sections.md 7). Its box takes the field's font, so the two
          * measure ch alike.
          */}
         <span style={{ display: "flex", flex: "1 0 calc(9.5ch + 26px)", fontSize: theme.font.input }}>

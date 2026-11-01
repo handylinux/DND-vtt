@@ -3,7 +3,7 @@ import { DISPLAY_SESSION_DAYS } from "./sessions.ts";
 import type { Queryable } from "./tx.ts";
 
 /**
- * Table displays (docs/design-v1-dm-tools.md 3.1): the one-time codes that
+ * Table displays (docs/design/design-v1-dm-tools.md 3.1): the one-time codes that
  * pair a TV with a room, the display's member id, and the two renewals that
  * keep a connected display signed in.
  */

@@ -5,7 +5,7 @@ import { bonusFor, type SrdRolls } from "../dice/bonus.ts";
 import { loadMonsters, type SrdMonster } from "./monsters.ts";
 import { loadSrdRolls, srdRollsOf } from "./rolls.ts";
 
-/** rolls.json, the SRD creatures' numbers by id (docs/design-v1-dice.md 6.1, docs/design-v1-roll-options.md Appendix A). */
+/** rolls.json, the SRD creatures' numbers by id (docs/design/design-v1-dice.md 6.1, docs/design/design-v1-roll-options.md Appendix A). */
 
 let monsters: readonly SrdMonster[] = [];
 let rolls: SrdRolls = {};

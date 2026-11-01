@@ -117,7 +117,7 @@ export type ProjectedToken = Omit<Token, "actor" | DmOnlyTokenField> &
     aboveFog?: boolean;
     /**
      * Player projections only, derived and never stored: a member of kind
-     * player owns the token or its character (docs/design-v1-dm-tools.md
+     * player owns the token or its character (docs/design/design-v1-dm-tools.md
      * 3.1), as `playerPlays` reads owners. A table display, whose
      * projection carries no owners, fits the party's tokens by it.
      */
@@ -132,7 +132,7 @@ export type ProjectedEntry = Omit<InitEntry, "groupKey"> & Partial<Pick<InitEntr
 export type ProjectedEncounter = Omit<Encounter, "entries"> & { entries: ProjectedEntry[] };
 
 /**
- * A trap as a player gets it (docs/design-v1-traps.md 6.4): its name and
+ * A trap as a player gets it (docs/design/design-v1-traps.md 6.4): its name and
  * zone, and `disarmed` once the DM disarms it, with rev 0. Never whether it
  * is armed or sprung, its rig or its occurrences: the party saw it go off
  * or it did not.
@@ -151,14 +151,14 @@ export type ProjectedState = Omit<RoomState, "meta" | "tokens" | "characters" | 
   encounter: ProjectedEncounter | null;
   /**
    * The viewer's sight on their scene when its vision is on, keyed
-   * `"<sceneId>:<tx>,<ty>"` (docs/design-v1-maps-vision.md 4.3.4): the
+   * `"<sceneId>:<tx>,<ty>"` (docs/design/design-v1-maps-vision.md 4.3.4): the
    * party's, or on a per-player scene the viewer's own, the DM's the union
-   * (docs/design-v1-per-player-vision.md 6.2). Derived on the server and
+   * (docs/design/design-v1-per-player-vision.md 6.2). Derived on the server and
    * never stored, so only a projection holds it.
    */
   sight: SightMap;
   /**
-   * Only on a per-player scene (docs/design-v1-per-player-vision.md 6.2):
+   * Only on a per-player scene (docs/design/design-v1-per-player-vision.md 6.2):
    * the shared sight with vision on, the same for every viewer, the shared
    * fog as players get it, every player's, and every holder's layer
    * joined, the DM's.
@@ -221,7 +221,7 @@ export function playerOwned(state: RoomState, token: Token): boolean {
 }
 
 /**
- * A party member (docs/design-v1-maps-vision.md 4.3.2): a token a player
+ * A party member (docs/design/design-v1-maps-vision.md 4.3.2): a token a player
  * owns, or one the DM marked to lend the party its sight. Membership alone
  * decides "always shown": a member reaches players like a player-owned
  * token, above the fog and whether or not the party sees it, so an allied
@@ -234,11 +234,11 @@ export function isPartyMember(state: RoomState, token: Token): boolean {
 
 /**
  * What every viewer sees on a scene, "seen by all"
- * (docs/design-v1-per-player-vision.md decision 10): the party's sight on a
+ * (docs/design/design-v1-per-player-vision.md decision 10): the party's sight on a
  * whole-party scene, and on a per-player scene the shared sight alone,
  * which every public rule reads. Computed on the server, and read from the
  * tiles the server sent where a projected state holds them, so a client
- * never computes sight (docs/design-v1-maps-vision.md 4.3.4). A projection
+ * never computes sight (docs/design/design-v1-maps-vision.md 4.3.4). A projection
  * of a per-player scene holds the shared sight as `sightAll`, and one that
  * lacks a tile there sees nothing on it.
  */
@@ -251,7 +251,7 @@ export function partySightOf(state: RoomState, sceneId: string): PartySight {
 
 /**
  * The union of every source's sight on a scene, which the DM's tools read
- * (docs/design-v1-per-player-vision.md decision 14): the party's sight, on
+ * (docs/design/design-v1-per-player-vision.md decision 14): the party's sight, on
  * a per-player scene too. A DM's device holds it as its `sight`.
  */
 export function unionSightOf(state: RoomState, sceneId: string): PartySight {
@@ -288,13 +288,13 @@ function visionOn(scene: Pick<Scene, "vision"> | undefined): boolean {
   return scene?.vision?.on === true;
 }
 
-/** Whether a scene is a per-player one (docs/design-v1-per-player-vision.md 6.1), whatever its vision's `on` says. */
+/** Whether a scene is a per-player one (docs/design/design-v1-per-player-vision.md 6.1), whatever its vision's `on` says. */
 export function perPlayerScene(scene: Pick<Scene, "vision"> | undefined): boolean {
   return scene?.vision?.perPlayer === true;
 }
 
 /**
- * The sight holders of a per-player scene (docs/design-v1-per-player-vision.md
+ * The sight holders of a per-player scene (docs/design/design-v1-per-player-vision.md
  * 6.1): the players whose entry on its list is on, in the list's order. A
  * member who is no player holds no sight. A projected state holds no list,
  * so on a device this is always empty.
@@ -315,16 +315,16 @@ function holdsSight(state: RoomState, sceneId: string, memberId: string): boolea
  *
  * It reads the fog players get: the DM's layer and the party's explored
  * layer merged, a sub-cell revealed where either reveals it
- * (docs/design-v1-maps-vision.md 4.3.3), on every scene, one whose vision
+ * (docs/design/design-v1-maps-vision.md 4.3.3), on every scene, one whose vision
  * was turned off since it was explored included. With a `memberId` it
  * reads that player's own fog: on a per-player scene where they hold
  * sight, their own explored layer is merged in too
- * (docs/design-v1-per-player-vision.md 6.3). On a projected state it reads
+ * (docs/design/design-v1-per-player-vision.md 6.3). On a projected state it reads
  * the fog the projection holds, its viewer's own.
  *
  * It answers whether a whole cell is fogged, and through `sub` whether one
  * sub-cell is, by its scene-wide raster index, which a creature on hexes is
- * read by (docs/design-v1-hex-grids.md HX-D10).
+ * read by (docs/design/design-v1-hex-grids.md HX-D10).
  */
 type FogReader = ((sceneId: string, cx: number, cy: number) => boolean) & { sub(sceneId: string, sx: number, sy: number): boolean };
 
@@ -344,7 +344,7 @@ function fogReader(state: RoomState, memberId: string | null = null): FogReader 
 }
 
 /**
- * The fog every player shares (docs/design-v1-per-player-vision.md 6.3):
+ * The fog every player shares (docs/design/design-v1-per-player-vision.md 6.3):
  * the DM's layer and the party's merged. A projection of a per-player
  * scene, a DM's too, holds it as `fogAll`, where a missing tile, or a
  * missing map, is fully fogged. Elsewhere it is the fog the state holds,
@@ -399,15 +399,15 @@ function cellReader(cache: Map<string, Uint8Array | null>, bitsAt: (sceneId: str
 
 /**
  * Whether players see any part of a cell's ground on a scene: not fully
- * under the fog they get (docs/design-v1-heights-readout.md 1), the DM's
+ * under the fog they get (docs/design/design-v1-heights-readout.md 1), the DM's
  * layer and the party's explored one joined. It reads the DM's whole state
  * and a player's copy alike, since that copy holds the joined fog already,
  * so a route searched on either device keeps to the same ground
- * (docs/design-v1-movement.md 5.5). On a per-player scene a player's copy
+ * (docs/design/design-v1-movement.md 5.5). On a per-player scene a player's copy
  * holds their own fog, so it is the ground that player remembers
- * (docs/design-v1-per-player-vision.md 6.3).
+ * (docs/design/design-v1-per-player-vision.md 6.3).
  */
-/** Ground by cells, and by fog sub-cells (`sub`), which a hex scene reads its hexes by (docs/design-v1-hex-grids.md HX-D10). */
+/** Ground by cells, and by fog sub-cells (`sub`), which a hex scene reads its hexes by (docs/design/design-v1-hex-grids.md HX-D10). */
 export type GroundReader = ((x: number, y: number) => boolean) & { sub(sx: number, sy: number): boolean };
 
 export function playersSeeGround(state: RoomState, sceneId: string): GroundReader {
@@ -417,7 +417,7 @@ export function playersSeeGround(state: RoomState, sceneId: string): GroundReade
 
 /**
  * The ground any player remembers on a scene, which the DM's tools read
- * (docs/design-v1-per-player-vision.md decision 14): `playersSeeGround`,
+ * (docs/design/design-v1-per-player-vision.md decision 14): `playersSeeGround`,
  * and on a per-player scene each sight holder's own layer joined to it, as
  * `exploredAny` shows the DM. A DM's device reads that `exploredAny`, so it
  * predicts the trap hint from the ground the server reads (review PV1-O14).
@@ -440,7 +440,7 @@ export function groundAnyPlayerSees(state: RoomState, sceneId: string): (x: numb
 }
 
 /**
- * The ground every player shares on a scene (docs/design-v1-per-player-vision.md
+ * The ground every player shares on a scene (docs/design/design-v1-per-player-vision.md
  * 6.3): `playersSeeGround` on a whole-party scene, and on a per-player one
  * the DM's and party's layers alone, on every device, for shared and kept
  * walking rulers and anything else every device must read alike.
@@ -497,7 +497,7 @@ function mergedOf(dm: FogTile, explored: FogTile): { bits: Uint8Array; text?: st
 
 /*
  * Tiles of any number of layers merged, kept per sequence of tile objects
- * (docs/design-v1-per-player-vision.md 6.9): a holder's fog tile, three
+ * (docs/design/design-v1-per-player-vision.md 6.9): a holder's fog tile, three
  * layers, and the DM's view of every holder's layer joined. An unchanged
  * sequence returns the same entry, and so the same projected tile.
  */
@@ -606,7 +606,7 @@ function holderLayer(state: RoomState, sceneId: string, memberId: string): Recor
  * is not. `sight`, `fogged` and `presence` are the viewer's own: on a
  * per-player scene a sight holder's sight and fog, the shared ones for
  * every other player and a display, and the union for a DM
- * (docs/design-v1-per-player-vision.md 6.2). Sight is worked out once per
+ * (docs/design/design-v1-per-player-vision.md 6.2). Sight is worked out once per
  * projection.
  */
 type Ctx = {
@@ -669,16 +669,16 @@ function tokenVisibleTo(ctx: Ctx, token: Token, revealedSeen = false): boolean {
  * Whether where a token stands keeps it from players who do not own it. A
  * party member or a token the DM exempted never is (design 13.4). On a
  * scene with party vision, any other creature reaches players only while it
- * is in the party's sight (docs/design-v1-maps-vision.md 4.3.3): with fog
+ * is in the party's sight (docs/design/design-v1-maps-vision.md 4.3.3): with fog
  * on, sight is always inside the revealed ground, since explore runs in the
  * same batch, so the fog rule is implied. Elsewhere it is withheld only when
  * every cell it stands on is fully fogged, the two fog layers merged. The
  * sight and fog are whichever viewer's the caller passes: one player's own
  * on a per-player scene, or what every viewer shares
- * (docs/design-v1-per-player-vision.md 6.2). On a hex scene both read the
+ * (docs/design/design-v1-per-player-vision.md 6.2). On a hex scene both read the
  * fog sub-cells inside the creature's hexes (`footprintFogged`), those its
  * stored center sees past every sight wall when the scene has any
- * (docs/design-v1-hex-grids.md HX-D10, vision.ts clipFootprint).
+ * (docs/design/design-v1-hex-grids.md HX-D10, vision.ts clipFootprint).
  *
  * A creature revealed on its turn follows that rule too (rules/fog.ts
  * isAboveFog). `revealedSeen` brings back the rule that ops stored before
@@ -703,7 +703,7 @@ function withheldFromPlayers(state: RoomState, fogged: FogReader, sight: (sceneI
 /**
  * Whether every part of a creature's footprint is fogged by `fogged`: each
  * cell it stands on on squares, and on hexes each fog sub-cell inside its
- * hexes (docs/design-v1-hex-grids.md HX-D10), so a hex half in a revealed
+ * hexes (docs/design/design-v1-hex-grids.md HX-D10), so a hex half in a revealed
  * cell shows it only where a revealed sub-cell lies inside the hex. Only
  * the sub-cells the wall clip keeps count, and a creature that keeps none
  * is under the fog.
@@ -759,7 +759,7 @@ function everyHexOpen(grid: HexGrid, token: Token, clip: SegmentIndex | null, op
  * fully under the merged fog elsewhere, unless it is a party member or
  * exempt. Its visibility and a blackout are the caller's to check. On a
  * per-player scene it is the rule of what every viewer shares, the shared
- * sight and fog (docs/design-v1-per-player-vision.md decision 10).
+ * sight and fog (docs/design/design-v1-per-player-vision.md decision 10).
  */
 export function withheldWhereItStands(state: RoomState, token: Token): boolean {
   const shared = sharedOf(state);
@@ -768,12 +768,12 @@ export function withheldWhereItStands(state: RoomState, token: Token): boolean {
 
 /**
  * Whether where a token stands keeps it from one viewer, by their own
- * sight and fog (docs/design-v1-per-player-vision.md 6.2): the rule their
+ * sight and fog (docs/design/design-v1-per-player-vision.md 6.2): the rule their
  * projection judges creatures by, which on a device is the copy's own, and
  * for a DM the union. Its visibility and a blackout are the caller's. The
  * ephemeral channel asks it of a drag preview's spot for each receiver,
  * with the footprint its own preview rule decides
- * (docs/design-v1-maps-vision.md 4.1 and 4.3.5, and 7.5 of the per-player
+ * (docs/design/design-v1-maps-vision.md 4.1 and 4.3.5, and 7.5 of the per-player
  * design).
  */
 export function withheldFromViewer(state: RoomState, viewer: Viewer, token: Token): boolean {
@@ -795,7 +795,7 @@ function behindBlackout(state: RoomState): boolean {
  * Whether a player who does not own the token can see it now: the same rule
  * for every non-owner, so one answer covers them all. The reducer records it
  * on log events about the token (`seen` in the model). On a per-player scene
- * it is "seen by all", the shared sight and fog (docs/design-v1-per-player-vision.md
+ * it is "seen by all", the shared sight and fog (docs/design/design-v1-per-player-vision.md
  * decision 10), and `seenMark` records which sight holders saw it besides.
  *
  * The marks are stored, so each of these questions takes the op's envelope:
@@ -824,10 +824,10 @@ export function inSightOfNonOwners(state: RoomState, token: Token, env: Pick<Env
 /**
  * Whether players who do not own the token would see it at every one of
  * these spots, each asked of the token placed there against the state as it
- * is (docs/design-v1-movement.md 7.2): the stops' rule, `inSightOfNonOwners`,
+ * is (docs/design/design-v1-movement.md 7.2): the stops' rule, `inSightOfNonOwners`,
  * with the fog and sight read once for the whole walk. On a per-player
  * scene every spot must also lie on the ground every player shares
- * (docs/design-v1-per-player-vision.md 6.5), so a route's corners never
+ * (docs/design/design-v1-per-player-vision.md 6.5), so a route's corners never
  * draw ground only some players remember for anyone else.
  */
 export function seenAtEvery(state: RoomState, token: Token, spots: readonly { x: number; y: number; elevation: number; squeezed?: boolean }[], env: Pick<Env, "opVersion">): boolean {
@@ -860,7 +860,7 @@ export function rowSeenByNonOwners(state: RoomState, entry: InitEntry, env: Pick
 }
 
 /**
- * What a mark records of who saw a token (docs/design-v1-per-player-vision.md
+ * What a mark records of who saw a token (docs/design/design-v1-per-player-vision.md
  * 6.5): `seen` when every viewer did, by `seenByNonOwners` (scope "here",
  * for log lines) or `inSightOfNonOwners` ("anywhere", for stops and a
  * turn's start). On a per-player scene otherwise, `seenBy`: the sight
@@ -891,7 +891,7 @@ function holdersWho(state: RoomState, sceneId: string, test: (memberId: string) 
 }
 
 /**
- * A turn line's mark for its row (docs/design-v1-per-player-vision.md 6.5):
+ * A turn line's mark for its row (docs/design/design-v1-per-player-vision.md 6.5):
  * `seen` when every viewer's tracker shows it (rowSeenByNonOwners), and on
  * a per-player player scene otherwise the sight holders who do not own the
  * row's creature and whose tracker shows it.
@@ -907,7 +907,7 @@ export function rowSeenMark(state: RoomState, entry: InitEntry, env: Pick<Env, "
 }
 
 /**
- * An area's reminder's mark on a per-player scene (docs/design-v1-per-player-vision.md
+ * An area's reminder's mark on a per-player scene (docs/design/design-v1-per-player-vision.md
  * 6.5), judged in the room as it stood then (`at`): the players who saw
  * both the creature and the area, its owners among them. `seen` when every
  * viewer did, else `seenBy`, perhaps empty. `hidden` only for an area the
@@ -944,7 +944,7 @@ function tokenVisibleById(ctx: Ctx, tokenId: string, revealedSeen = false): bool
  * show (hpLess: an effect companion, or a maximum of 0) shows other players
  * none, so 0 of 0 never reaches them as Bloodied. A creature companion a
  * player plays is the party's, so its HP follows the party's rule rather
- * than its own `hpVisibility` (docs/design-v1-combat-flow.md 3.6.5).
+ * than its own `hpVisibility` (docs/design/design-v1-combat-flow.md 3.6.5).
  */
 export function hpAccess(state: RoomState, viewer: Viewer, holder: { token?: Token; character?: Character }): HpAccess {
   if (viewer.role === "dm") return "exact";
@@ -963,7 +963,7 @@ export function hpAccess(state: RoomState, viewer: Viewer, holder: { token?: Tok
 }
 
 /**
- * An effect companion (docs/design-v1-combat-flow.md 3.6.6), which reaches
+ * An effect companion (docs/design/design-v1-combat-flow.md 3.6.6), which reaches
  * every viewer who does not own it alive, whatever its stored life: a
  * creature made an effect keeps its life underneath, and no device without
  * its `companion` field may be told it is dead.
@@ -993,7 +993,7 @@ function publicEffects(effects: Effect[], triggers: () => boolean): Effect[] {
 
 /**
  * A "save ends" effect as every player gets it, its owners included
- * (docs/design-v1-roll-options.md 6.1): which save ends it and whether it is
+ * (docs/design/design-v1-roll-options.md 6.1): which save ends it and whether it is
  * against a spell, never its DC, which stays the DM's to show on a request,
  * and never its occurrence, which is the DM's in every projection.
  */
@@ -1030,7 +1030,7 @@ export function playerPlays(state: Pick<RoomState, "members" | "tokens">, holder
 }
 
 /**
- * The derived `party` flag (docs/design-v1-dm-tools.md 3.1): a member of
+ * The derived `party` flag (docs/design/design-v1-dm-tools.md 3.1): a member of
  * kind player owns the token or its character. Not `playerOwned`, which
  * counts a DM owner too, and not `partyVision`, which lends sight without a
  * player. Who plays which character is no secret at the table.
@@ -1052,7 +1052,7 @@ function projectActorPublic(actor: Actor, access: HpAccess, triggers: () => bool
 /**
  * Owners get the whole actor except the DM's notes and the room monster it
  * was placed from, whose block may be text from a book the group owns
- * (docs/design-v1-dm-tools.md 3.6). A condition hidden from players stays
+ * (docs/design/design-v1-dm-tools.md 3.6). A condition hidden from players stays
  * hidden from its owner too.
  */
 function projectActorOwner(actor: Actor): ProjectedActor {
@@ -1078,7 +1078,7 @@ function projectTokenCtx(ctx: Ctx, token: Token): ProjectedToken | null {
   const aboveFog = isAboveFog(token, isPartyMember(ctx.state, token));
   if (ownsToken(ctx.state, ctx.viewer, token)) {
     const actor = "inline" in token.actor ? { inline: projectActorOwner(token.actor.inline) } : token.actor;
-    // Owners get their token's light to change it. Party membership is the DM's mark (docs/design-v1-maps-vision.md 4.3.5).
+    // Owners get their token's light to change it. Party membership is the DM's mark (docs/design/design-v1-maps-vision.md 4.3.5).
     const { partyVision: _partyVision, attached: _attached, ...own } = token;
     const out: ProjectedToken = { ...own, rev: 0, actor, aboveFog };
     const link = linkShown(ctx, token);
@@ -1120,12 +1120,12 @@ function projectTokenCtx(ctx: Ctx, token: Token): ProjectedToken | null {
   // Rings around a creature in sight say no more than the creature itself (features section 4).
   if (token.rangeRings !== undefined) out.rangeRings = token.rangeRings;
   // A squeeze changes the footprint every rule reads, so everyone who sees the creature gets it. Its light does not
-  // reach them: they see only its effect (docs/design-v1-maps-vision.md 4.3.5).
+  // reach them: they see only its effect (docs/design/design-v1-maps-vision.md 4.3.5).
   if (token.squeeze) out.squeeze = true;
   if (playersToken(ctx.state, token)) {
     out.party = true;
     // A party member's companion is no secret at the table. One of a character no player plays reaches players as a
-    // plain token, so no link between a DM creature and a character leaks (docs/design-v1-combat-flow.md 3.6.5).
+    // plain token, so no link between a DM creature and a character leaks (docs/design/design-v1-combat-flow.md 3.6.5).
     if (token.companion) out.companion = token.companion;
   }
   const link = linkShown(ctx, token);
@@ -1136,7 +1136,7 @@ function projectTokenCtx(ctx: Ctx, token: Token): ProjectedToken | null {
 }
 
 /**
- * A token's link as a player gets it (docs/design-v1-attach.md 8.5): only
+ * A token's link as a player gets it (docs/design/design-v1-attach.md 8.5): only
  * while its holder is in their projection, with its kind and `steer`, as an
  * area attached to a token they cannot see is withheld whole. So a torch a
  * hidden creature holds reaches them as a loose torch, which follows its
@@ -1173,10 +1173,10 @@ function projectPathCtx(ctx: Ctx, token: Token, owner: boolean): TokenPath | nul
  * An owner's stops (rules/path.ts stopsForOwners). On a per-player scene
  * with fog, a leg not every player saw whole keeps its corners for an owner
  * only where every spot of it lies on ground that owner's own fog reveals
- * now (docs/design-v1-per-player-vision.md 6.5), so a co-owner's private
+ * now (docs/design/design-v1-per-player-vision.md 6.5), so a co-owner's private
  * route never draws ground this one never saw. On a scene that keeps
  * memory that ground is the owner's live ground alone, their sight and the
- * DM's reveals (docs/design-v1-map-discovery.md decision 12): corners on
+ * DM's reveals (docs/design/design-v1-map-discovery.md decision 12): corners on
  * ground they only explored would draw the build as the mover's memory or
  * private sight held it, which may differ from theirs. A leg every player
  * saw whole keeps them, so a later hide never takes corners every device
@@ -1300,7 +1300,7 @@ function byCoordinates(a: FreeWall, b: FreeWall): number {
  * - A hidden secret door on an edge where the scene's automatic walls rule
  *   puts a wall goes away, since automatic walls are never sent. Anywhere
  *   else it becomes a plain wall, the same as one the DM drew, so players
- *   never see a gap where a hidden door is (docs/design-v1-maps-vision.md
+ *   never see a gap where a hidden door is (docs/design/design-v1-maps-vision.md
  *   2.1). `autoWalls` is the scene's rule, absent read as "all".
  * - A free wall is never automatic, so a hidden secret free door always
  *   arrives as a plain wall. Free walls arrive sorted by their coordinates.
@@ -1346,12 +1346,12 @@ export const CHUNK_FOR_PLAYERS = {
   cells: "copied",
   edges: "changed: a hidden secret door reads as a wall or goes, and a lock reads closed",
   walls: "changed: a hidden secret free door reads as a wall, a lock reads closed, sorted by their ends",
-  // Heights and stair marks are map data, like the floor, and not secret (docs/design-v1-maps-vision.md 4.2).
+  // Heights and stair marks are map data, like the floor, and not secret (docs/design/design-v1-maps-vision.md 4.2).
   heights: "copied",
   up: "copied",
-  // Difficult ground marks are map data too: players see them where they see the map (docs/design-v1-movement.md 3.4).
+  // Difficult ground marks are map data too: players see them where they see the map (docs/design/design-v1-movement.md 3.4).
   rough: "copied",
-  // The shape its cell keys were written for, as public as the scene's shape (docs/design-v1-hex-grids.md HX-D14).
+  // The shape its cell keys were written for, as public as the scene's shape (docs/design/design-v1-hex-grids.md HX-D14).
   grid: "copied",
 } as const satisfies Record<keyof BuildChunk, PlayerField>;
 
@@ -1388,7 +1388,7 @@ function playerChunkOf(all: Readonly<Record<string, BuildChunk>>, chunk: BuildCh
 }
 
 // ---------------------------------------------------------------------------
-// The map as players discover it (docs/design-v1-map-discovery.md 5.1 and 5.2)
+// The map as players discover it (docs/design/design-v1-map-discovery.md 5.1 and 5.2)
 
 /**
  * A fog class (5.6): a sight holder's member id on a per-player scene, or
@@ -1535,7 +1535,7 @@ function chosen<T>(live: boolean, own: boolean, mine: Record<string, T> | undefi
 
 /**
  * A player's chunk at a position of a scene with fog on
- * (docs/design-v1-map-discovery.md 5.2), for a fog class: only what the
+ * (docs/design/design-v1-map-discovery.md 5.2), for a fog class: only what the
  * class holds, each element live or remembered, with the fields only a
  * player's chunk carries. Null where it holds no cell, wall or piece, and
  * on a scene with fog off, whose chunks go as projectChunkForPlayer says.
@@ -2192,13 +2192,13 @@ function sceneChunkList(all: Readonly<Record<string, BuildChunk>>, sceneId: stri
 /**
  * One fog tile of the viewer's scene. The DM gets the DM's own layer, and
  * the explored layer beside it (projectExploredCtx). A player gets one fog,
- * each tile the two layers merged (docs/design-v1-maps-vision.md 4.3.3), so
+ * each tile the two layers merged (docs/design/design-v1-maps-vision.md 4.3.3), so
  * every rule players' devices apply to fog works on it unchanged. A
  * player's tile has rev 0, as a player's chunk does: neither layer's count
  * of edits reaches players, so a DM reveal of ground the party already
  * explored, or an explore of ground the DM revealed, sends them nothing.
  * On a per-player scene a sight holder's tile merges their own layer too
- * (docs/design-v1-per-player-vision.md 6.3).
+ * (docs/design/design-v1-per-player-vision.md 6.3).
  */
 function projectFogCtx(ctx: Ctx, sceneId: string, tx: number, ty: number): FogTile | null {
   if (sceneId !== ctx.sceneId) return null;
@@ -2246,7 +2246,7 @@ function projectExploredCtx(ctx: Ctx, tile: FogTile): FogTile | null {
 }
 
 /**
- * Per-player vision's derived tiles (docs/design-v1-per-player-vision.md
+ * Per-player vision's derived tiles (docs/design/design-v1-per-player-vision.md
  * 6.2), only on the viewer's per-player scene. The shared sight, with
  * vision on, the same for every viewer, the DM's too. The shared fog, the
  * same for every player, which their devices read every public rule by.
@@ -2293,7 +2293,7 @@ function holderTiles(state: RoomState, sceneId: string, tx: number, ty: number):
 
 /**
  * A scene's sight holder list is the DM's, on the per-player scene the DM
- * views (docs/design-v1-per-player-vision.md 6.1), as the snapshot gives it
+ * views (docs/design/design-v1-per-player-vision.md 6.1), as the snapshot gives it
  * (perPlayerMapsCtx). The reducer never leaves one on a whole-party scene,
  * but a restored room might hold one (review PV1-O9).
  */
@@ -2303,7 +2303,7 @@ function projectHoldersCtx(ctx: Ctx, list: SightHolders): SightHolders | null {
 
 /**
  * One tile of the party's sight on the viewer's scene, while its vision is
- * on (docs/design-v1-maps-vision.md 4.3.4). Players and the DM alike get it.
+ * on (docs/design/design-v1-maps-vision.md 4.3.4). Players and the DM alike get it.
  * Sight is derived, never stored, and the same for every player.
  */
 function projectSightCtx(ctx: Ctx, sceneId: string, tx: number, ty: number): unknown {
@@ -2346,7 +2346,7 @@ function boxOf(field: "labels" | "stamps", value: Label | Stamp): CellRange {
 
 /**
  * A label or stamp as a player of the viewer's class sees it on a scene
- * with fog on (docs/design-v1-map-discovery.md 5.3, decision 5): live where
+ * with fog on (docs/design/design-v1-map-discovery.md 5.3, decision 5): live where
  * its box touches their live ground, else as the memory it reads
  * remembers it (decision 6), where their own layer holds a cell of a box
  * their own and the party's elsewhere. A remembered absence hides it. A
@@ -2493,7 +2493,7 @@ export function stampCells(stamp: Pick<Stamp, "x" | "y" | "w" | "h" | "rotation"
 }
 
 /**
- * Stamps on the viewer's scene (docs/design-v1-maps-vision.md 3.5). A
+ * Stamps on the viewer's scene (docs/design/design-v1-maps-vision.md 3.5). A
  * player gets none the DM hid, and none whose box is fully under enabled
  * fog, as labels go, so a chest in an unexplored room is not in their data.
  */
@@ -2507,7 +2507,7 @@ function projectStampCtx(ctx: Ctx, stamp: Stamp): Stamp | null {
 }
 
 /**
- * Traps (docs/design-v1-traps.md 6.4). The DM gets every trap on its scene.
+ * Traps (docs/design/design-v1-traps.md 6.4). The DM gets every trap on its scene.
  * A player gets one only once it is found, on the player scene outside a
  * blackout, not under full fog over its cells by the labels' rule (a wire's
  * cells, a door's two cells), and for a door zone only while its door is
@@ -2530,7 +2530,7 @@ function projectTrapCtx(ctx: Ctx, trap: Trap): ProjectedTrap | null {
   if (scene?.fogEnabled) {
     const fogs = ctx.presence(trap.sceneId);
     const fogged = (r: CellRange) => isRangeFullyFogged(fogs, trap.sceneId, r, (x, y) => ctx.fogged(trap.sceneId, x, y));
-    // On hexes by the sub-cells inside its hexes, so ground revealed beside them never shows it (docs/design-v1-hex-grids.md H2).
+    // On hexes by the sub-cells inside its hexes, so ground revealed beside them never shows it (docs/design/design-v1-hex-grids.md H2).
     if (zoneFogged(ctx.state, trap.sceneId, zone, fogged, (sx, sy) => ctx.fogged.sub(trap.sceneId, sx, sy))) return null;
   }
   let out = playerTraps.get(trap);
@@ -2544,7 +2544,7 @@ function projectTrapCtx(ctx: Ctx, trap: Trap): ProjectedTrap | null {
 /* A player's trap, kept per trap object, which is replaced and never changed, so a re-projection that changes nothing sends nothing. */
 const playerTraps = new WeakMap<Trap, ProjectedTrap>();
 
-/** A found trap's fields for players (docs/design-v1-traps.md 6.2), held to every key of Trap as SCENE_FOR_PLAYERS is. */
+/** A found trap's fields for players (docs/design/design-v1-traps.md 6.2), held to every key of Trap as SCENE_FOR_PLAYERS is. */
 export const TRAP_FOR_PLAYERS = {
   id: "copied",
   rev: "zeroed",
@@ -2554,12 +2554,12 @@ export const TRAP_FOR_PLAYERS = {
   state: "changed: players read only that it is disarmed, as `disarmed`",
   found: "dm: a player's copy exists only while the trap is found",
   rig: "dm: what it does and who it catches",
-  // The shape its zone was written for, as public as the scene's shape (docs/design-v1-hex-grids.md HX-D14).
+  // The shape its zone was written for, as public as the scene's shape (docs/design/design-v1-hex-grids.md HX-D14).
   grid: "copied",
 } as const satisfies Record<keyof Trap, PlayerField>;
 
 /**
- * A players' trap line (docs/design-v1-traps.md 6.3): every player and
+ * A players' trap line (docs/design/design-v1-traps.md 6.3): every player and
  * table display gets it, with `by` cut to the creatures this viewer sees
  * now, and none behind a pause, as roll and turn lines. The DM's trap log
  * is the DM's alone.
@@ -2588,7 +2588,7 @@ function projectLightCtx(ctx: Ctx, light: Light): Light | null {
 export type PlayerField = "copied" | "zeroed" | `changed: ${string}` | `dm: ${string}`;
 
 /**
- * A scene's fields for players (docs/design-v1-maps-vision.md 3.3). Its
+ * A scene's fields for players (docs/design/design-v1-maps-vision.md 3.3). Its
  * rev, order and walls version are 0, as a chunk's rev is, so a DM's edit
  * of those fields, a thumbnail landing in the background included,
  * changes nothing players receive. The walls version moves with every
@@ -2614,13 +2614,13 @@ export const SCENE_FOR_PLAYERS = {
   phases: "dm: the map's other images and their names (On fire)",
   phaseId: "dm: which of the DM's images is showing, with the phases",
   phaseGrid: "dm: the phases' reference grid",
-  // Players' devices draw sight and stop drags at walls by these (docs/design-v1-maps-vision.md 4.3.5).
+  // Players' devices draw sight and stop drags at walls by these (docs/design/design-v1-maps-vision.md 4.3.5).
   blockMovement: "copied",
   vision: "copied",
   gridFromFile: "dm: the import's mark, which only Find the grid reads",
-  // Players' devices snap, draw and measure by it (docs/design-v1-hex-grids.md section 7).
+  // Players' devices snap, draw and measure by it (docs/design/design-v1-hex-grids.md section 7).
   gridShape: "copied",
-  // A following player's device shows it (docs/design-v1-isometric-view.md 7). It names a view, nothing of the map.
+  // A following player's device shows it (docs/design/design-v1-isometric-view.md 7). It names a view, nothing of the map.
   suggestedView: "copied",
 } as const satisfies Record<keyof Scene, PlayerField>;
 
@@ -2641,13 +2641,13 @@ function projectSceneCtx(ctx: Ctx, scene: Scene): Scene | null {
   };
   if (scene.map !== undefined) out.map = scene.map;
   if (scene.defaultView !== undefined) out.defaultView = scene.defaultView;
-  // With fog on a player's chunks carry the automatic walls they hold (`auto`), so their device derives none (docs/design-v1-map-discovery.md 5.2).
+  // With fog on a player's chunks carry the automatic walls they hold (`auto`), so their device derives none (docs/design/design-v1-map-discovery.md 5.2).
   if (scene.fogEnabled) out.autoWalls = "off";
   else if (scene.autoWalls !== undefined) out.autoWalls = scene.autoWalls;
   if (scene.blockMovement !== undefined) out.blockMovement = scene.blockMovement;
   if (scene.vision !== undefined) out.vision = scene.vision;
   if (scene.gridShape !== undefined) out.gridShape = scene.gridShape;
-  // A following player's device shows it (docs/design-v1-isometric-view.md 7). It names a view, nothing of the map.
+  // A following player's device shows it (docs/design/design-v1-isometric-view.md 7). It names a view, nothing of the map.
   if (scene.suggestedView !== undefined) out.suggestedView = scene.suggestedView;
   return out;
 }
@@ -2678,13 +2678,13 @@ function projectSavedEncounterCtx(ctx: Ctx, encounter: SavedEncounter): SavedEnc
   return ctx.viewer.role === "dm" ? encounter : null;
 }
 
-/** A document in the DM's library reaches players only as a handout it is shown as (docs/design-v1-pdf-handouts.md 3.4). */
+/** A document in the DM's library reaches players only as a handout it is shown as (docs/design/design-v1-pdf-handouts.md 3.4). */
 function projectHandoutDocCtx(ctx: Ctx, doc: HandoutDoc): HandoutDoc | null {
   return ctx.viewer.role === "dm" ? doc : null;
 }
 
 /**
- * A player's ask for saves (docs/design-v1-player-save-spell.md 5.5): the
+ * A player's ask for saves (docs/design/design-v1-player-save-spell.md 5.5): the
  * DM gets it whole. A player gets it only while they own its caster now,
  * and never behind a pause, so another player, a table display and the
  * caster's former owners never learn of it. Its targets are cut to the
@@ -2713,7 +2713,7 @@ function projectCastCtx(ctx: Ctx, ask: CastAsk): CastAsk | null {
 /**
  * A character's stat blocks for its companions reach the DM and whoever
  * owns the character, who are exactly the owners of its companions
- * (docs/design-v1-companion-stat-blocks.md 4.2). The character's ownership
+ * (docs/design/design-v1-companion-stat-blocks.md 4.2). The character's ownership
  * is the only input, so who reads a block never drifts from who plays the
  * companions. They are not scene data, so a blackout keeps them, as it
  * keeps the player's characters.
@@ -2725,7 +2725,7 @@ function projectCompanionBlockCtx(ctx: Ctx, block: CompanionBlock): CompanionBlo
   return character !== undefined && ownsCharacter(ctx.viewer, character) ? { ...block, rev: 0 } : null;
 }
 
-/** Whether a player may read a journal page: one shared with every player, or with them alone (docs/design-v1-dm-tools.md 3.7). */
+/** Whether a player may read a journal page: one shared with every player, or with them alone (docs/design/design-v1-dm-tools.md 3.7). */
 export function pageReadableBy(page: Pick<JournalPage, "access">, memberId: string): boolean {
   return page.access === "all" || (typeof page.access === "object" && page.access.member === memberId);
 }
@@ -2768,7 +2768,7 @@ export function pinCells(pin: Pick<Pin, "x" | "y">): CellRange {
 }
 
 /**
- * Map pins (docs/design-v1-dm-tools.md 3.8), by the labels' rule and two
+ * Map pins (docs/design/design-v1-dm-tools.md 3.8), by the labels' rule and two
  * more: a player gets a pin on their scene that is not DM only, not on a
  * fully fogged cell (the two fog layers merged), and whose page, if it has
  * one, they may read. A pin linked to a DM-only page is the DM's, so players
@@ -2802,7 +2802,7 @@ function ownsRollCreature(ctx: Ctx, ref: { tokenId?: string; characterId?: strin
 }
 
 /**
- * A roll request (docs/design-v1-dm-tools.md 3.3) as a player gets it:
+ * A roll request (docs/design/design-v1-dm-tools.md 3.3) as a player gets it:
  * only when it names a creature they own now, with only those targets, the
  * DC only when players see it (else `dcHidden`, never the number), each
  * result only when players see pass or fail, no `by` or `previous`, and rev
@@ -2822,7 +2822,7 @@ function projectRollCtx(ctx: Ctx, request: RollRequest): RollRequest | null {
   if (targets.length === 0) return null;
   const out: RollRequest = { id: request.id, rev: 0, test: request.test, dcShown: request.dcShown, resultShown: request.resultShown, at: request.at, targets };
   if (request.note !== undefined) out.note = request.note;
-  // What the roll is for goes with it, and `ends`, which names the effect and its occurrence, stays the DM's (docs/design-v1-roll-request.md 7.5).
+  // What the roll is for goes with it, and `ends`, which names the effect and its occurrence, stays the DM's (docs/design/design-v1-roll-request.md 7.5).
   if (request.spell) out.spell = true;
   if (request.cause !== undefined) out.cause = request.cause;
   if (request.dc !== undefined) {
@@ -2835,7 +2835,7 @@ function projectRollCtx(ctx: Ctx, request: RollRequest): RollRequest | null {
 /**
  * A target as its creature's players read it: the answer they gave or the
  * server rolled for them, its dice and provenance and a pending ask
- * (docs/design-v1-dice.md 5.2, docs/design-v1-roll-request.md 7.5), and the
+ * (docs/design/design-v1-dice.md 5.2, docs/design/design-v1-roll-request.md 7.5), and the
  * result and the DM's mark only while pass or fail is shown. `by` and
  * `previous`, with the old dice, stay the DM's.
  */
@@ -2851,14 +2851,14 @@ function playerRollTarget(target: RollTarget, resultShown: boolean): RollTarget 
   if (target.typedBonus) out.typedBonus = true;
   if (target.change !== undefined) out.change = target.change;
   if (target.changed !== undefined) out.changed = target.changed;
-  // The card offers the Total field without a roll row while it is set (docs/design-v1-roll-request.md 5.5).
+  // The card offers the Total field without a roll row while it is set (docs/design/design-v1-roll-request.md 5.5).
   if (target.retype) out.retype = true;
   return out;
 }
 
 /**
  * Whether the room's order setting lets players see the row now
- * (docs/design-v1-combat-flow.md 11.2): the whole order, the party's own
+ * (docs/design/design-v1-combat-flow.md 11.2): the whole order, the party's own
  * creature, an ally where allies show, or a row whose turn has come. The
  * acting row always passes, so the Hidden rules alone decide what players
  * see of it on its turn. With a `viewer`, a monster or NPC lent to that
@@ -2977,7 +2977,7 @@ function projectTurnStart(ctx: Ctx, start: TurnStart | undefined, activeEntryId:
   if (!start.seen && !start.seenBy?.includes(ctx.viewer.memberId) && !ownsToken(ctx.state, ctx.viewer, token)) return null;
   const out: TurnStart = { entryId: start.entryId, tokenId: start.tokenId, sceneId: start.sceneId, x: start.x, y: start.y, elevation: start.elevation };
   if (start.seq !== undefined) out.seq = start.seq;
-  // The mounts sharing the turn that the player's copy holds (docs/design-v1-attach.md 8.5).
+  // The mounts sharing the turn that the player's copy holds (docs/design/design-v1-attach.md 8.5).
   const mounts = start.mounts?.filter((id) => tokenVisibleById(ctx, id));
   if (mounts && mounts.length > 0) out.mounts = mounts;
   return out;
@@ -3103,7 +3103,7 @@ function creaturePlayers(state: RoomState, ref: { tokenId?: string; characterId?
  * Who may have an event about a creature: everyone when it names only a
  * character, or a token that players who do not own it could see when it
  * happened, else the token's players and, on a per-player scene, the sight
- * holders its list names (docs/design-v1-per-player-vision.md 6.5). An
+ * holders its list names (docs/design/design-v1-per-player-vision.md 6.5). An
  * effect companion's life (`lifeOnly`) reaches only its players however it
  * was seen.
  */
@@ -3118,10 +3118,10 @@ function creatureReach(state: RoomState, data: { tokenId?: string; characterId?:
 }
 
 /**
- * Who may have one roll of a `dice` line (docs/design-v1-dice.md 5.2): as an
+ * Who may have one roll of a `dice` line (docs/design/design-v1-dice.md 5.2): as an
  * event about its token when it names one, and when marked `hidden`, an
  * initiative roll for a creature whose place in the order players did not
- * know then, only the creature's players (docs/design-v1-combat-flow.md
+ * know then, only the creature's players (docs/design/design-v1-combat-flow.md
  * 11.3).
  */
 function diceRollReach(state: RoomState, roll: DiceRoll): Reach {
@@ -3166,7 +3166,7 @@ export function lineReach(state: RoomState, entry: Pick<LogEntry, "kind" | "data
  */
 export function lineReader(state: RoomState): (entry: Pick<LogEntry, "kind" | "data">) => LineReach {
   // Each reader with their own sight and fog, which on a per-player scene are theirs alone, and any player the shared
-  // ones (docs/design-v1-per-player-vision.md 6.5). Any player stands for a member who owns nothing, so it reads a dice
+  // ones (docs/design/design-v1-per-player-vision.md 6.5). Any player stands for a member who owns nothing, so it reads a dice
   // line as members do.
   const ctxOfReader = (viewer: Viewer): Ctx => ({ ...ctxOf(state, viewer, { sceneId: null }), member: true });
   const players = Object.values(state.members)
@@ -3412,7 +3412,7 @@ function projectEventCtx(ctx: Ctx, data: LogEvent, copy = false): LogEvent | nul
         out.resultShown = true;
         if (data.result !== undefined) out.result = data.result;
       }
-      // A rolled answer's dice reach the creature's players with its total (docs/design-v1-dice.md 5.2).
+      // A rolled answer's dice reach the creature's players with its total (docs/design/design-v1-dice.md 5.2).
       if (data.dice !== undefined) out.dice = data.dice;
       if (data.typedBonus) out.typedBonus = true;
       if (data.tag !== undefined) out.tag = data.tag;
@@ -3422,7 +3422,7 @@ function projectEventCtx(ctx: Ctx, data: LogEvent, copy = false): LogEvent | nul
     case "dice":
       return projectDiceCtx(ctx, data);
     case "use": {
-      // The DM's and its owners' read the counts (docs/design-v1-combat-controls.md 8). Others read only a public use, by name.
+      // The DM's and its owners' read the counts (docs/design/design-v1-combat-controls.md 8). Others read only a public use, by name.
       const holder = holderInSight(ctx, data);
       if (!holder) return null;
       const owns = (holder.token !== undefined && ownsToken(ctx.state, ctx.viewer, holder.token)) || (holder.character !== undefined && ownsCharacter(ctx.viewer, holder.character));
@@ -3448,7 +3448,7 @@ function projectEventCtx(ctx: Ctx, data: LogEvent, copy = false): LogEvent | nul
 }
 
 /**
- * An event without the lists of who saw it (docs/design-v1-per-player-vision.md
+ * An event without the lists of who saw it (docs/design/design-v1-per-player-vision.md
  * 6.5), which are the DM's: a reader they name reads it as seen, so their
  * read follows the rules of a line every player saw. A dice line's rolls
  * lose theirs in projectDiceCtx. An event that holds none is the same object.
@@ -3485,7 +3485,7 @@ function ownsRow(ctx: Ctx, row: ProjectedEntry): boolean {
 }
 
 /**
- * A `dice` line for a player (docs/design-v1-dice.md 5.2). Each roll is
+ * A `dice` line for a player (docs/design/design-v1-dice.md 5.2). Each roll is
  * kept when it reaches them (diceRollReach) and names no token or one in
  * their sight now, so a token's roll follows that token's events and none
  * passes a blackout. With none kept there is no line.
@@ -3591,7 +3591,7 @@ export function projectLogEntry(state: RoomState, line: LogEntry, viewer: Viewer
  * parts they were not among the readers of when it was written (LineParts),
  * and never the DM's own fields, `parts` and a copy's `copyOf`. A viewer
  * who is no member, a table display, reads no line: it shows no log
- * (docs/design-v1-dm-tools.md 3.1), so no line one gets and another does
+ * (docs/design/design-v1-dm-tools.md 3.1), so no line one gets and another does
  * not can tell anyone at the table anything there.
  */
 function projectLogEntryCtx(ctx: Ctx, entry: LogEntry): LogEntry | null {
@@ -3669,7 +3669,7 @@ function projectEntityCtx(ctx: Ctx, key: EntityKey): unknown {
     case "exploredBy":
       return null;
     // What players remember and the scenes' marks reach no viewer's projection, the DM's included: only the room export
-    // carries them (docs/design-v1-map-discovery.md 11, rule 3).
+    // carries them (docs/design/design-v1-map-discovery.md 11, rule 3).
     case "memory":
     case "memoryBy":
     case "played":
@@ -3779,7 +3779,7 @@ export function projectState(state: RoomState, viewer: Viewer, opts: ProjectOpts
 
 /**
  * The maps only a projection of a per-player scene holds
- * (docs/design-v1-per-player-vision.md 6.2), each only while it holds
+ * (docs/design/design-v1-per-player-vision.md 6.2), each only while it holds
  * anything, so a whole-party scene projects as it always did and a change
  * that empties one takes it away (keys.ts writeEntity): `sightAll` with
  * vision on, `fogAll`, and the DM's `exploredAny` and holder list. Every
@@ -3839,7 +3839,7 @@ export function allKeys(state: RoomState): EntityKey[] {
   for (const id of Object.keys(state.members)) out.push(keys.member(id));
   for (const id of Object.keys(state.scenes)) out.push(keys.scene(id));
   for (const c of Object.values(state.buildChunks)) out.push(keys.chunk(c.sceneId, c.cx, c.cy));
-  // On a scene with fog on every position may hold a stub (docs/design-v1-map-discovery.md 5.6), and memory can name labels and stamps the build no longer has.
+  // On a scene with fog on every position may hold a stub (docs/design/design-v1-map-discovery.md 5.6), and memory can name labels and stamps the build no longer has.
   const chunkKeys = new Set(Object.values(state.buildChunks).map((c) => keys.chunk(c.sceneId, c.cx, c.cy)));
   for (const scene of Object.values(state.scenes)) {
     if (!scene.fogEnabled) continue;
@@ -3906,7 +3906,7 @@ function sightKeys(state: RoomState): EntityKey[] {
 
 /**
  * The keys per-player vision adds a projection may hold
- * (docs/design-v1-per-player-vision.md 7.5): each holder list, a fog tile
+ * (docs/design/design-v1-per-player-vision.md 7.5): each holder list, a fog tile
  * only a holder's layer holds, and on each per-player scene the shared
  * sight's tiles (every tile inside its bounds on the server's state, as for
  * sight), the shared fog's and the holders' layers joined. A projection
@@ -4008,7 +4008,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
    * On a scene with fog on a player's chunk at a position reads the stored
    * and remembered chunks of its 8 neighbors, since a piece filed by its
    * own midpoint lies up to 4 cells from the chunk its wall is stored in,
-   * and an edge reads the cells beside it (docs/design-v1-map-discovery.md
+   * and an edge reads the cells beside it (docs/design/design-v1-map-discovery.md
    * 5.6). Stubs count, so every position of the scene is a key.
    */
   const fogScene = (sceneId: string) => state.scenes[sceneId]?.fogEnabled === true;
@@ -4061,7 +4061,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
       onTile(parsed.sceneId, parsed.tx, parsed.ty);
       if (fogScene(parsed.sceneId)) aroundTile(parsed.sceneId, parsed.tx, parsed.ty);
       // Every player's fog reads the party's layer, and on a per-player scene so do the shared fog and every owner's
-      // route corners (docs/design-v1-per-player-vision.md 7.5).
+      // route corners (docs/design/design-v1-per-player-vision.md 7.5).
       if (perPlayerScene(state.scenes[parsed.sceneId])) add(keys.fogAll(parsed.sceneId, parsed.tx, parsed.ty));
       if (perPlayerScene(state.scenes[parsed.sceneId]) || visionScene(parsed.sceneId)) cornersOn(parsed.sceneId, null);
     } else if (parsed.kind === "exploredBy") {
@@ -4119,7 +4119,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
   }
   // A carried token's link reaches a player while they see its holder (linkShown), so the holder's change re-projects it.
   // Hidden links count here too, but only to choose what to project again: each copy is still projected by its own rule,
-  // and only what changed in it is sent (docs/design-v1-attach.md 8.0).
+  // and only what changed in it is sent (docs/design/design-v1-attach.md 8.0).
   for (const token of Object.values(state.tokens)) if (token.attached && tokenIds.has(token.attached.to)) add(keys.token(token.id));
   // So does a mount sharing the turn, in the turn's start.
   if (state.encounter?.turnStart?.mounts?.some((id) => tokenIds.has(id))) {
@@ -4127,7 +4127,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
     encounterTouched = true;
   }
   // A path of the turn reaches a player while they see the turn's row, which follows the turn's own creature (projectPathCtx).
-  // A mount sharing the turn moves on a path of its own (docs/design-v1-attach.md 7.2), so the creature's change, into
+  // A mount sharing the turn moves on a path of its own (docs/design/design-v1-attach.md 7.2), so the creature's change, into
   // sight or out of it, re-projects every path of the turn, the mount's with no change to the mount.
   const turn = state.encounter?.turnStart;
   if (turn && tokenIds.has(turn.tokenId)) {
@@ -4147,7 +4147,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
     const named = request.targets.some((t) => (t.tokenId !== undefined && tokenIds.has(t.tokenId)) || (t.characterId !== undefined && characterIds.has(t.characterId)));
     if (named) add(keys.roll(request.id));
   }
-  // An ask reaches a player through its caster, and its targets and area follow what they see (docs/design-v1-player-save-spell.md 5.5).
+  // An ask reaches a player through its caster, and its targets and area follow what they see (docs/design/design-v1-player-save-spell.md 5.5).
   for (const ask of Object.values(state.casts)) {
     const named = tokenIds.has(ask.caster) || (ask.targets?.some((id) => tokenIds.has(id)) ?? false) || (ask.area !== undefined && templateIds.has(ask.area));
     if (named) add(keys.cast(ask.id));
@@ -4170,7 +4170,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
     const refsEncounter = data.type === "turn" && encounterTouched;
     // An area's reminder follows the area's own projection too.
     const refsTemplate = data.type === "area" && templateIds.has(data.templateId);
-    // A dice line names a creature in each roll (docs/design-v1-dice.md 5.2).
+    // A dice line names a creature in each roll (docs/design/design-v1-dice.md 5.2).
     const refsRoll = data.type === "dice" && data.rolls.some((r) => (r.tokenId !== undefined && tokenIds.has(r.tokenId)) || (r.characterId !== undefined && characterIds.has(r.characterId)));
     if (refsToken || refsCharacter || refsHandout || refsEncounter || refsTemplate || refsRoll) add(keys.log(entry.id));
   }
@@ -4183,7 +4183,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
 
 /**
  * What can change for players where the party's explored layer was written
- * or its sight changed (docs/design-v1-maps-vision.md 4.3.3 and 4.3.5): the
+ * or its sight changed (docs/design/design-v1-maps-vision.md 4.3.3 and 4.3.5): the
  * tokens, labels and stamps on those tiles. A player's fog tile is the two
  * fog layers merged, which withholds labels and stamps, and on a vision
  * scene a creature reaches players only while sight covers its own
@@ -4196,7 +4196,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
  * rectangle sight judges it by, which can reach a cell further where the
  * DM dropped it off the grid. On a hex scene both read the sub-cells inside
  * its hexes, so it counts by the cells those lie in, which reach past its
- * box where it was dropped off its anchor (docs/design-v1-hex-grids.md
+ * box where it was dropped off its anchor (docs/design/design-v1-hex-grids.md
  * HX-D10).
  */
 function tileDependents(state: RoomState, tiles: ReadonlyMap<string, ReadonlySet<string>>, add: (key: EntityKey) => void, tokenIds: Set<string>): void {
@@ -4220,7 +4220,7 @@ function tileDependents(state: RoomState, tiles: ReadonlyMap<string, ReadonlySet
   }
   for (const label of Object.values(state.labels)) if (on(label.sceneId, labelCells(label))) add(keys.label(label.id));
   for (const stamp of Object.values(state.stamps)) if (on(stamp.sceneId, stampCells(stamp))) add(keys.stamp(stamp.id));
-  // A remembered label or stamp is judged by its remembered box too, wherever the live one stands (docs/design-v1-map-discovery.md 5.3).
+  // A remembered label or stamp is judged by its remembered box too, wherever the live one stands (docs/design/design-v1-map-discovery.md 5.3).
   for (const all of [state.memory, state.memoryBy]) {
     for (const chunk of Object.values(all ?? {})) {
       if (!tiles.has(chunk.sceneId)) continue;
@@ -4234,7 +4234,7 @@ function tileDependents(state: RoomState, tiles: ReadonlyMap<string, ReadonlySet
 
 /**
  * The tokens a wall change on a hex scene can show or withhold without
- * moving them (docs/design-v1-hex-grids.md HX-D22). The wall clip
+ * moving them (docs/design/design-v1-hex-grids.md HX-D22). The wall clip
  * (HX-D10) reads the sight walls through a creature's hexes, so this adds
  * every token whose footprint box meets a written chunk or one of its 8
  * neighbors, whatever vision and fog do. Every op that changes walls writes the chunks they are
@@ -4290,7 +4290,7 @@ function stairChunkKeys(state: RoomState, sceneId: string): EntityKey[] {
 
 /**
  * The sight tile keys whose value differs between two states, on each of
- * the given scenes (docs/design-v1-maps-vision.md 4.3.5): the narrow half
+ * the given scenes (docs/design/design-v1-maps-vision.md 4.3.5): the narrow half
  * of the fan-out on vision scenes. With them as touched keys, `dependents`
  * adds the tokens, labels and stamps on those tiles. A tile the vision
  * cache kept is the same object in both, and one it computed again is
@@ -4302,7 +4302,7 @@ export function changedSightKeys(before: RoomState, after: RoomState, sceneIds: 
     if (!visionOn(before.scenes[sceneId]) && !visionOn(after.scenes[sceneId])) continue;
     const sight = new Set<string>();
     diffSight(unionSightOf(before, sceneId).tiles, unionSightOf(after, sceneId).tiles, sight);
-    // On a per-player scene each viewer's `sight` is one raster of several (docs/design-v1-per-player-vision.md 7.5): a
+    // On a per-player scene each viewer's `sight` is one raster of several (docs/design/design-v1-per-player-vision.md 7.5): a
     // tile any of them changed on is a candidate for every viewer, and the shared sight's are `sightAll` too. A switch
     // of mode or of the holder list re-projects everything anyway (Tx global).
     if (perPlayerScene(before.scenes[sceneId]) && perPlayerScene(after.scenes[sceneId])) {
@@ -4345,7 +4345,7 @@ function sameSightTile(a: SightTile, b: SightTile): boolean {
 /**
  * The assets a viewer's projection refers to (design 11.2). The server adds
  * the viewer's own uploads. Shipped icons name no asset and add nothing
- * (docs/design-v1-dm-tools.md 3.12).
+ * (docs/design/design-v1-dm-tools.md 3.12).
  */
 export function visibleAssetIds(state: RoomState, viewer: Viewer, opts: ProjectOpts): Set<string> {
   const ids = new Set<string>();
@@ -4361,7 +4361,7 @@ export function visibleAssetIds(state: RoomState, viewer: Viewer, opts: ProjectO
     for (const image of token.altImages ?? []) addImage(image);
   }
   for (const character of Object.values(projected.characters)) addImage(character.defaultImage);
-  // Every page of each handout the viewer gets, and no page of one they do not (docs/design-v1-pdf-handouts.md 3.4).
+  // Every page of each handout the viewer gets, and no page of one they do not (docs/design/design-v1-pdf-handouts.md 3.4).
   for (const handout of Object.values(projected.handouts)) for (const page of handoutPages(handout)) ids.add(page.assetId);
   // Only a DM's projection holds documents. A document's pages reach a player only by being shown.
   for (const doc of Object.values(projected.handoutDocs)) for (const page of doc.pages) ids.add(page.assetId);
@@ -4536,7 +4536,7 @@ export type ProjectionDiff<E extends HeldEntry = HeldEntry> = { changes: Change[
  * now null. Returns the held map as it should be after the send. The input
  * map is not changed. `hash` lets the server hash a value that several
  * connections receive once per batch, such as a sight tile every player
- * gets (docs/design-v1-maps-vision.md 4.3.5).
+ * gets (docs/design/design-v1-maps-vision.md 4.3.5).
  */
 export function diffProjection<E extends HeldEntry>(held: ReadonlyMap<EntityKey, E>, next: ReadonlyMap<EntityKey, unknown>, hash: (projected: unknown) => string = hashValue): ProjectionDiff<E> {
   const out = new Map<EntityKey, E | string>(held);

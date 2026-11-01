@@ -10,7 +10,7 @@ import { ConsoleWatch, openSideTab, OpSocket, Shots, sideTabName, SocketWatch, s
 import { A5, BANDS, LETTER, LETTER_WIDE, bandProblem, fontBoxDistance, pdfOf, shapeProblem, type PdfPage } from "./pdfFixture.ts";
 
 /**
- * PDF handouts end to end (docs/design-v1-pdf-handouts.md 11.3): a handout
+ * PDF handouts end to end (docs/design/design-v1-pdf-handouts.md 11.3): a handout
  * of pages read like a PDF in the players' popup, paged with buttons, keys,
  * the wheel and a fling, loaded near the screen, remembered per showing,
  * downloaded as a PDF, and kept in the DM's Library as one item.
@@ -715,7 +715,7 @@ describe("raccoon-vtt pdf handouts run", { timeout: 900_000 }, () => {
     const showing = dm.getByRole("list", { name: "Handouts showing" }).getByRole("listitem").filter({ hasText: "Long book" });
     await showing.waitFor();
     await shots.take(dm, "pdf-job-beside-a-showing");
-    // Hide stops showing it to players (docs/design-v1-icons.md 2.3).
+    // Hide stops showing it to players (docs/design/design-v1-icons.md 2.3).
     await showing.getByRole("button", { name: "Hide", exact: true }).click();
     await showing.waitFor({ state: "detached" });
 
@@ -911,7 +911,7 @@ describe("raccoon-vtt pdf handouts run", { timeout: 900_000 }, () => {
         const icon = (await reset.boundingBox())!;
         assert.ok(icon.x + icon.width <= magnified[0]!.x + 1 && Math.abs(icon.y - magnified[0]!.y) < 1, `Reset zoom is not to the left of the zoom buttons at ${what}: ${JSON.stringify(icon)}`);
         assert.ok(icon.width >= 44 && icon.height >= 44, `Reset zoom is too small at ${what}`);
-        // Its name shows in a tooltip on hover, focus or a long press, never as a native title (docs/design-v1-icons.md 3.2).
+        // Its name shows in a tooltip on hover, focus or a long press, never as a native title (docs/design/design-v1-icons.md 3.2).
         assert.equal(await reset.getAttribute("aria-label"), "Reset zoom");
         assert.equal(await reset.getAttribute("title"), null);
         if (size.width === 320) {
@@ -1652,7 +1652,7 @@ describe("raccoon-vtt pdf handouts run", { timeout: 900_000 }, () => {
     await ops.send({ t: "handout.close", handoutId: id });
   });
 
-  test("lp4-library-retry. the Library's list fails: its handouts and the images on the map still open, and Try again shows the loading line, keeps focus in the panel, then lists the room (docs/design-v1-look-pass.md 2.9)", async () => {
+  test("lp4-library-retry. the Library's list fails: its handouts and the images on the map still open, and Try again shows the loading line, keeps focus in the panel, then lists the room (docs/design/design-v1-look-pass.md 2.9)", async () => {
     // A document and a token's image of this step's own, so it needs no earlier step's.
     const doc = await documentOf("Retry letter", [await paper(1584, 2048, 2)]);
     const upload = await dmContext.request.put(`${server.origin}/api/rooms/${run.roomId}/assets?kind=token`, { headers: { Origin: server.origin, "content-type": "image/png" }, data: await paper(256, 256, 3) });

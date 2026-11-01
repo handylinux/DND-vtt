@@ -417,9 +417,9 @@ type AreaReview =
       target?: string;
       /** That target is not one of the creatures the spell hits, so the area leaves it out. */
       catchesTarget?: false;
-      /** What it does to the creatures it catches, for the group save (docs/design-v1-roll-options.md 5.6), each checked against the text (outcomeProblems). */
+      /** What it does to the creatures it catches, for the group save (docs/design/design-v1-roll-options.md 5.6), each checked against the text (outcomeProblems). */
       outcome?: AreaOutcome;
-      /** How it changes movement inside it (docs/design-v1-movement.md 3.5), checked against the text both ways (slowsProblems). */
+      /** How it changes movement inside it (docs/design/design-v1-movement.md 3.5), checked against the text both ways (slowsProblems). */
       slows?: AreaSlows;
       /** Why a spell whose text slows movement has no `slows`. */
       notSlowing?: string;

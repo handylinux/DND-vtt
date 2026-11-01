@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { ALLOWLIST, clientFiles, declarationSpans, findings } from "../../scripts/style-drift.ts";
 
 /**
- * The drift test (docs/design-v1-visual.md 5.5): the whole client, read
+ * The drift test (docs/design/design-v1-visual.md 5.5): the whole client, read
  * as scripts/style-drift.ts reads it, holds no color literal outside the
  * allowlist, no raw font size or radius number, no shadow that is not a
  * `theme.shadow` value, no z-index above 2 outside `theme.z`, and no

@@ -16,7 +16,7 @@ import { Badge } from "./RoomChrome.tsx";
 import { fitTabs, GROUP_GAP, nameCut, TAB_GAP, headerNamesOpen, tabLook as pickLook, widthsFor, type TabFit, type TabLook, type TabWidths } from "./tabFit.ts";
 
 /**
- * The side panel's tabs in one row (docs/design-v1-panel-tabs.md): the
+ * The side panel's tabs in one row (docs/design/design-v1-panel-tabs.md): the
  * registry's order, as many as fit (pages/tabFit.ts), then More, a tab
  * whose menu lists the rest under the phone list's groups. Nothing moves
  * a tab: the row depends only on the widths this device draws and the
@@ -51,9 +51,9 @@ const TAB_BOX: CSSProperties = {
 /**
  * A side panel tab at rest. The chosen one draws the pressed look on its
  * pill (components/HeaderRow.tsx), as every other chosen option does
- * (docs/design-v1-visual.md 3.2), so choosing never changes a width, and
+ * (docs/design/design-v1-visual.md 3.2), so choosing never changes a width, and
  * the bar's name wears the same pill for the panel below
- * (docs/design-v1-side-headers.md).
+ * (docs/design/design-v1-side-headers.md).
  */
 const TAB_REST: CSSProperties = { background: "transparent", border: `${theme.line.border}px solid transparent`, color: theme.color.textMuted };
 
@@ -72,7 +72,7 @@ const MORE = "\u0000more";
 const SPLIT_ITEM = "\u0000split";
 
 /**
- * The bottom panel's mark on its tab (docs/design-v1-split-panel.md 6): a
+ * The bottom panel's mark on its tab (docs/design/design-v1-split-panel.md 6): a
  * 2 px accent line along its pill's foot, over the pill's 1 px border,
  * inside the tab's fixed box, so the fit reads nothing new. A border,
  * unlike a shadow, stays in forced colors.
@@ -128,7 +128,7 @@ export function SideTabs(props: {
   onTab(id: string): void;
   onHide(): void;
   /**
-   * Two panels (docs/design-v1-split-panel.md 6): whether the split is on,
+   * Two panels (docs/design/design-v1-split-panel.md 6): whether the split is on,
    * whether the side panel holds two, and the bottom panel while it shows,
    * whose tab or More item carries its mark and swaps the two when pressed.
    */
@@ -136,7 +136,7 @@ export function SideTabs(props: {
   /**
    * The chosen panel's full name while the row does not show it on a touch
    * pointer, its tab an icon alone or More's name cut (3.8,
-   * docs/design-v1-icons-2.md 3.1), else null, for the side panel to name above the top panel, where it takes
+   * docs/design/design-v1-icons-2.md 3.1), else null, for the side panel to name above the top panel, where it takes
    * room from that panel alone and never from the split.
    */
   onCutTitle(title: string | null): void;
@@ -187,7 +187,7 @@ export function SideTabs(props: {
       const moreRest = width(row.querySelector("[data-more-rest]"));
       const room = width(list);
       const tabsOf = (at: number[]) => panels.map((p, i) => ({ rest: at[i] ?? 0, more: more[i] ?? 0, group: p.group }));
-      // Each panel's icon before its name where the row then holds as many tabs as the names alone, else the icons alone (docs/design-v1-icons-2.md 3.1).
+      // Each panel's icon before its name where the row then holds as many tabs as the names alone, else the icons alone (docs/design/design-v1-icons-2.md 3.1).
       const withNames: TabWidths = { tabs: tabsOf(named), moreRest, room };
       const look = pickLook({ tabs: tabsOf(rest), moreRest, room }, withNames);
       const widths = look ? widthsFor(look, withNames) : withNames;
@@ -290,7 +290,7 @@ export function SideTabs(props: {
     return label && (props.badges[p.id] ?? 0) > 0 ? [label] : [];
   });
   const description = [chosenHeld ? "More panels" : null, heldUnread > 0 ? `${heldUnread} unread` : null, ...heldLabels].filter((s) => s !== null).join(", ");
-  // "Two panels" heads the menu, then a line, then the panels (docs/design-v1-split-panel.md 4.1, 6).
+  // "Two panels" heads the menu, then a line, then the panels (docs/design/design-v1-split-panel.md 4.1, 6).
   const split = props.split;
   const tooShort = split.fits === false;
   const splitItem: MenuItem = {
@@ -330,11 +330,11 @@ export function SideTabs(props: {
   const chosenIndex = tabs.findIndex((p) => p.id === tab);
   // More draws a held panel's icon alone where its name would be cut.
   const moreCut = layout !== null && chosenHeld !== undefined && nameCut(layout.fit, layout.widths, chosenIndex);
-  // On a touch pointer, wherever the row does not show the open panel's name, the side panel names it above the panel (docs/design-v1-panel-tabs.md 3.8 as docs/design-v1-icons-2.md 3.1 amends it): an icon-only tab, or More's icon alone. A computer shows the name on hover and focus instead and keeps the panel's height.
+  // On a touch pointer, wherever the row does not show the open panel's name, the side panel names it above the panel (docs/design/design-v1-panel-tabs.md 3.8 as docs/design/design-v1-icons-2.md 3.1 amends it): an icon-only tab, or More's icon alone. A computer shows the name on hover and focus instead and keeps the panel's height.
   const chosenPanel = tabs[chosenIndex];
   const named = layout !== null && chosenPanel !== undefined && headerNamesOpen(layout.look, chosenHeld !== undefined, moreCut, isCoarsePointer());
   const cutTitle = named ? chosenPanel.title : null;
-  // More with its icon alone shows the held panel's name as every icon-only tab does, on hover, keyboard focus and a long press (docs/design-v1-icons-2.md 6).
+  // More with its icon alone shows the held panel's name as every icon-only tab does, on hover, keyboard focus and a long press (docs/design/design-v1-icons-2.md 6).
   const moreTip = useTooltip(chosenHeld?.title ?? "More panels");
   // Where the icon tabs' tooltips stand: after the tab list, which may own only tabs (review ICONS2B-OPUS-05). A tip is a popover, so where it stands in the page moves nothing on screen.
   const [tipHost, setTipHost] = useState<HTMLDivElement | null>(null);
@@ -472,11 +472,11 @@ export function SideTabs(props: {
 
 /**
  * One panel's tab: its icon before its name, or its icon alone where the
- * row is too narrow for both (docs/design-v1-icons-2.md 3.1). Alone, its
+ * row is too narrow for both (docs/design/design-v1-icons-2.md 3.1). Alone, its
  * name is a visually hidden title, never an `aria-label`, so the badge's
- * hidden words stay in it ("Log 2 unread", docs/design-v1-panel-tabs.md
+ * hidden words stay in it ("Log 2 unread", docs/design/design-v1-panel-tabs.md
  * 3.5), and shows on hover, keyboard focus and a long press, as every
- * icon-only control's does (docs/design-v1-icons.md 3.2).
+ * icon-only control's does (docs/design/design-v1-icons.md 3.2).
  * Either way the box is the measured one, so the fit holds what it drew.
  */
 export function PanelTab(props: {

@@ -15,18 +15,18 @@ export const DOOR_SLOP_PX = 22;
 
 /**
  * A tap on the map with the Select tool, as doors see it
- * (docs/design-v1-maps-vision.md 4.1): a tap on a door shows its pill, and
+ * (docs/design/design-v1-maps-vision.md 4.1): a tap on a door shows its pill, and
  * a tap anywhere else puts an open pill away. The canvas calls this only
  * for a tap that no token caught, so a token under the finger wins. Doors
  * are part of the map, not shapes that catch a tap of their own, as labels
  * are. Returns whether the tap was the door's: it landed on a door, or it
  * put an open pill away, as a tap closing the label pane is the pane's. So
  * the tap that closes a pill shows no height readout in its place
- * (docs/design-v1-heights-readout.md section 2), and one thing floats over
+ * (docs/design/design-v1-heights-readout.md section 2), and one thing floats over
  * the map at a time.
  *
  * In Isometric a door is reached by its standing piece or its line on the
- * ground, within the slop on screen (docs/design-v1-isometric-view.md 6.2),
+ * ground, within the slop on screen (docs/design/design-v1-isometric-view.md 6.2),
  * from the press itself (`screen`).
  */
 export function tapDoor(ctx: Pick<ToolContext, "getState" | "scene" | "camera" | "role" | "scope">, tool: string, world: Point, selected: string | null = null, screen?: Point): boolean {
@@ -42,7 +42,7 @@ export function tapDoor(ctx: Pick<ToolContext, "getState" | "scene" | "camera" |
         ? isoDoorUnder({ chunks: view.buildChunks, sceneId: ctx.scene.id, fog, pick, world, screen, grid: sceneGrid(ctx.scene) })
         : doorUnder({ chunks: view.buildChunks, sceneId: ctx.scene.id, at: world, slop: DOOR_SLOP_PX / ctx.camera().scale, fog, grid: sceneGrid(ctx.scene) });
   if (hit) {
-    // The token selected when the door was tapped is who opens it (docs/design-v1-traps.md 5.3), though the tap let it go.
+    // The token selected when the door was tapped is who opens it (docs/design/design-v1-traps.md 5.3), though the tap let it go.
     pill.setState({ pill: { sceneId: ctx.scene.id, ref: hit.ref, ...(selected !== null ? { selected } : {}) } });
     return true;
   }

@@ -8,7 +8,7 @@ import { formatFormula, parseFormula } from "./formula.ts";
 import { blockActions, blockEntries, hasTrait, multiattackNote, type BlockEntry } from "./named.ts";
 
 /**
- * The stat block reader (docs/design-v1-roll-options.md 3.1) over every
+ * The stat block reader (docs/design/design-v1-roll-options.md 3.1) over every
  * SRD 5.2.1 block, each rule checked against the block's own words with
  * patterns of the test's own, and over hand-written 2014 text as room
  * monsters and pasted blocks keep it.

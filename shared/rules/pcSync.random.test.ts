@@ -38,13 +38,13 @@ import {
 import { EMPTY_PC_STATS } from "./pcStats.ts";
 
 /**
- * The re-sync merge under many random sequences (docs/design-v1-resync.md
+ * The re-sync merge under many random sequences (docs/design/design-v1-resync.md
  * 5): syncs, edits by the player and by D&D Beyond, deletions, a kind
  * read in part, parts left out, shapes, relinks, the editor's mode, the
  * 40-roll cap and the 40 markers, each sync applied and then undone
  * through the real reducer. Section 5's eight invariants are checked at
  * every step, each with its exceptions, and the class resources' seven
- * more (docs/design-v1-ddb-resources.md 9, 9 to 15), with resources spent,
+ * more (docs/design/design-v1-ddb-resources.md 9, 9 to 15), with resources spent,
  * edited, removed and added on both sides, reads that are not whole or
  * lose a class, and ticks at random.
  */
@@ -683,7 +683,7 @@ function life(seed: number, full = false): void {
   }
 }
 
-test("a re-sync's eight invariants hold over many random lives (docs/design-v1-resync.md 5)", () => {
+test("a re-sync's eight invariants hold over many random lives (docs/design/design-v1-resync.md 5)", () => {
   const runs = Number(process.env.SYNC_RUNS ?? 600);
   for (let seed = 1; seed <= runs; seed++) {
     try {
@@ -692,7 +692,7 @@ test("a re-sync's eight invariants hold over many random lives (docs/design-v1-r
       throw new Error(`seed ${seed}: ${(err as Error).message}`, { cause: err });
     }
   }
-  // The lives reached every case of a class resource, a spent line, and a link that followed its class (docs/design-v1-ddb-resources.md 4.2).
+  // The lives reached every case of a class resource, a spent line, and a link that followed its class (docs/design/design-v1-ddb-resources.md 4.2).
   assert.deepEqual([...reached.resourceCases].sort(), ["add", "conflict", "deleted", "edited", "goneThere", "remove", "sameName", "update"]);
   assert.ok(reached.spent > 0 && reached.moved > 0, JSON.stringify(reached));
 });

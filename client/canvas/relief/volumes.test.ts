@@ -17,7 +17,7 @@ import { BoardVolumes, groundChanges, standOf, viewBoxOf, viewKeys, type VolumeE
 
 /*
  * The board's areas standing as their real shapes
- * (docs/design-v1-iso-area-shapes.md 4.4 and 6): built in slices nearest
+ * (docs/design/design-v1-iso-area-shapes.md 4.4 and 6): built in slices nearest
  * the middle first, standing only once every bucket in view is drawn, kept
  * standing while a new volume builds only while the stand rule still
  * holds for it, and fine meshes at rest.
@@ -679,7 +679,7 @@ describe("an area that stood, over ground that changed (design 8, review HXR1-AS
   });
 });
 
-describe("the ground comparison after a fog change reads only the tiles that changed (docs/design-v1-relief-pan.md 8, D-261030-548)", () => {
+describe("the ground comparison after a fog change reads only the tiles that changed (docs/design/design-v1-relief-pan.md 8, D-261030-548)", () => {
   const SIZE = { w: 40, h: 40 };
   /** Random heights over the scene's chunks, feet in steps of 5. */
   function chunksOf(rand: () => number, sceneId: string): Record<string, BuildChunk> {

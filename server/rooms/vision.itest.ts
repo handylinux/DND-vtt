@@ -6,7 +6,7 @@ import type { Change, Op, ServerMessage } from "#shared/protocol.ts";
 import { startEngine, type Engine, type Socket } from "./testing.ts";
 
 /**
- * Party vision over real sockets (docs/design-v1-maps-vision.md 4.3 and
+ * Party vision over real sockets (docs/design/design-v1-maps-vision.md 4.3 and
  * section 6, "Sockets" and "Sizes"): what the party cannot see never
  * reaches a player socket, drags included, the explore step runs only where
  * players are and only while they can see, it replays as stored, and two

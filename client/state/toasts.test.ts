@@ -83,7 +83,7 @@ describe("withToast: past three toasts, only whispers and rolls give way (review
   });
 });
 
-describe("a toast's time starts as it first draws, and stops while it shows whole (docs/design-v1-bar-compact.md 3.5, review BC-OPUS-35)", () => {
+describe("a toast's time starts as it first draws, and stops while it shows whole (docs/design/design-v1-bar-compact.md 3.5, review BC-OPUS-35)", () => {
   const waiting = (id: number): Toast => ({ id, text: `A group save with rolls is already open. ${id}`, tone: "error" });
   const left = (list: readonly Toast[], now: number) => toastsLeft(list, now).map((t) => [t.id, t.ms, t.runs]);
 

@@ -7,7 +7,7 @@ import { boxStands, lineStands, strokeSubcells } from "./relief/stand.ts";
 import { cellPolygon, cellsMeeting } from "../lib/groundCells.ts";
 
 /**
- * The stand rule (docs/design-v1-isometric-view.md 5.2, D-261026-5) for the
+ * The stand rule (docs/design/design-v1-isometric-view.md 5.2, D-261026-5) for the
  * board's marks that Top-down draws under the fog: an area's or a trap's
  * pill and badge, a text drawing, and a moving tether or aura. A player
  * never sees more in Isometric than Top-down shows, so each stands only
@@ -128,7 +128,7 @@ export function groundPieces(iso: Pick<IsoGround, "fog" | "turn" | "ground" | "s
 }
 
 /**
- * `groundPieces` on hexes (docs/design-v1-iso-hex-relief.md 7): the box cut
+ * `groundPieces` on hexes (docs/design/design-v1-iso-hex-relief.md 7): the box cut
  * by the canonical hex polygons it meets, each part then cut to the
  * revealed sub-cells (for a viewer who sees it all, the box), and the parts
  * grouped by their hex's drawn ground and lifted by it. A square cell's

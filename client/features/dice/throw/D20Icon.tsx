@@ -1,7 +1,7 @@
 import { theme } from "../../../lib/theme.ts";
 
 /**
- * A flat d20 drawn in SVG (docs/design-v1-roll-animation.md 9 and 9.2): a
+ * A flat d20 drawn in SVG (docs/design/design-v1-roll-animation.md 9 and 9.2): a
  * hexagon with its triangle face, the face's number in the middle. Others'
  * toasts show it in the app's neutral colors with the kept face, and the
  * dice set picker in a set's colors wherever the dice cannot be drawn. No

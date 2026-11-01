@@ -100,7 +100,7 @@ describe("choices and icon buttons", () => {
     assert.doesNotMatch(markup, /opacity/);
   });
 
-  test("an icon alone is named by its words and shows them on hover and focus, never in a native title (docs/design-v1-icons.md 3)", () => {
+  test("an icon alone is named by its words and shows them on hover and focus, never in a native title (docs/design/design-v1-icons.md 3)", () => {
     const icon = html(createElement(IconButton, { icon: "close", label: "Close Journal" }));
     assert.doesNotMatch(icon, / title=/);
     assert.match(icon, /<div[^>]*role="tooltip"[^>]*>Close Journal<\/div>/);

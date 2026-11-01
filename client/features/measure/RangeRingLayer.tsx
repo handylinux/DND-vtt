@@ -26,7 +26,7 @@ import type { DistanceRules } from "./ruler.ts";
  * the overlay at the drawn height under them, since Top-down draws both
  * above the fog. A token being dragged takes its rings into the drag's
  * moving marks until the drop (canvas/DragMarks.tsx), so a drag never
- * redraws the ground (docs/design-v1-isometric-view.md 5.1).
+ * redraws the ground (docs/design/design-v1-isometric-view.md 5.1).
  */
 
 const LINE_PX = 2;

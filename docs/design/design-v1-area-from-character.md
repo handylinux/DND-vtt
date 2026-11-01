@@ -1,6 +1,6 @@
 # raccoon-vtt v1: an area from your character
 
-Status: draft 2, after design review round 1 and the project owner's answers of 2026-10-17 (section 9, all decided). Code is cited from the wave 5 tip (`bbaf7cec`). This design builds on docs/design-v1-tool-options.md (the options row, its slots, priorities, value chips and popovers) and adds to its Area row (section 9.3) in one place, section 4 here. Widths and worked rows are in Appendix A, which verify rounds need not re-read.
+Status: draft 2, after design review round 1 and the project owner's answers of 2026-10-17 (section 9, all decided). Code is cited from the wave 5 tip (`bbaf7cec`). This design builds on docs/design/design-v1-tool-options.md (the options row, its slots, priorities, value chips and popovers) and adds to its Area row (section 9.3) in one place, section 4 here. Widths and worked rows are in Appendix A, which verify rounds need not re-read.
 
 The project owner's request (2026-10-17): "Also, for players the area feature should always have a 'from character/not from character toggle' present instead of having to tap on the character and then press area".
 
@@ -24,7 +24,7 @@ Every size is in layout px, as in the tool options design. "Your creatures" is d
 - **More area options** (`AreaOptions.tsx:488-500`): "Caster: Thorn" or "Set caster", a pressed toggle after which the next tap on a token picks the caster (`pickCaster`, `AreaTool.tsx:145-149`), and "No caster", which drops it and leaves the area where it stands (`:497`).
 - **Copy** of a picked area starts a draft with the original's caster (`AreaOptions.tsx:523-525`, `draftFromTemplate`, `placement.ts:453-498`).
 - **Drafts rebuilt.** A shape change (`withShape`, `placement.ts:162-178`) and a spell (`presetDraft`, `presets.ts:64-95`) build a new draft from the old, copying the fields they name. A spell's caster is the draft's, else `defaultCaster` (`applySpell`, `AreaOptions.tsx:196-202`).
-- **What a caster changes.** The draft's `casterId` and `fromId` (`placement.ts:43-97`). Cones, lines and emanations start from a token (`usesFrom`, `placement.ts:115-117`), and so do cubes unless a cube spell is placed at a point (`presets.ts:66`). The template records `casterId`, which leaves the caster out unless Includes caster is on (docs/design.md 9.3), lets a cone cast from a creature turn around it (`caster.ts:53-68`), and gives a sphere its "30 ft from Thorn of 150 ft" reading (`AreaOptions.tsx:375-386`). An emanation around its caster moves with it by default (`attached`, `placement.ts:151`).
+- **What a caster changes.** The draft's `casterId` and `fromId` (`placement.ts:43-97`). Cones, lines and emanations start from a token (`usesFrom`, `placement.ts:115-117`), and so do cubes unless a cube spell is placed at a point (`presets.ts:66`). The template records `casterId`, which leaves the caster out unless Includes caster is on (docs/design/design.md 9.3), lets a cone cast from a creature turn around it (`caster.ts:53-68`), and gives a sphere its "30 ft from Thorn of 150 ft" reading (`AreaOptions.tsx:375-386`). An emanation around its caster moves with it by default (`attached`, `placement.ts:151`).
 - **Who learns of it.** A shared preview sends geometry only (`aoeFrame`, `placement.ts:403-421`). A placed template's `casterId` reaches a player only while they can see the caster (`shared/project.ts:626-628`).
 
 ## 3. The From control
@@ -42,7 +42,7 @@ Where two offers would read the same (two tokens of one character), the later on
 
 ### 3.2 Its form
 
-- **One offer: a toggle.** A pressed toggle, "From Thorn", pressed while the area starts from Thorn. One tap turns it off or on. Its name is fixed and `aria-pressed` says on or off (docs/design-v1-visual.md 3.7). Its tooltip is "Cast areas from Thorn".
+- **One offer: a toggle.** A pressed toggle, "From Thorn", pressed while the area starts from Thorn. One tap turns it off or on. Its name is fixed and `aria-pressed` says on or off (docs/design/design-v1-visual.md 3.7). Its tooltip is "Cast areas from Thorn".
 - **Two or more: a chip.** A choice chip in the kit's chip look, whose words are the value: "From Thorn", "From Pip" or "No caster", drawn at the widest of them. Its popover, titled "Cast from", holds one row per offer, the picture before the name, a companion's name followed by "companion" in muted words, and No caster last. A pick closes it (tool options 7.2). Its name is its visible words, as the Kept rulers chip's is (tool options 9.2), since they already say what it sets.
 - **None: disabled, with the reason** (a player with no creature on the scene, decided 9.2). It keeps its place and its slot, so the row never changes shape when a creature comes or goes. Its words are "From" and your first character by name, wherever that character is, or "From you" with no character at all. It is `aria-disabled` with the disabled look, and stays a Tab stop described by its reason, "None of your creatures is on this scene.", as the range ring presets do (`features/measure/RangeRingsSection.tsx:23-26`). Its tooltip says the reason, a press does nothing, and the idle line starts with the same sentence.
 - **Compact form.** A 44 px square holding the picture: the creature's `Portrait` (`features/encounter/parts.tsx:27`) at `theme.layout.options.disk` (24 px), the token's image, else its character's, else initials. No caster and "From you" show a plain circle crossed by a slash, drawn in code in the toolbar's glyph style (tool options 17.2). The chip's square carries the small caret in its top right corner that the toolbar's menu buttons carry (tool options 5.1), in place of the caret beside its words.
@@ -162,7 +162,7 @@ The control follows the taps by the table in 3.3. A press on the map moves nothi
 
 ## 4. Shared contracts
 
-Additions to docs/design-v1-tool-options.md, stated here once. The strip, the fit, the value chip and the popover base stay that design's, and this design adds no rule to them.
+Additions to docs/design/design-v1-tool-options.md, stated here once. The strip, the fit, the value chip and the popover base stay that design's, and this design adds no rule to them.
 
 - **9.3, idle.** The slot "Not from Thorn" is replaced by `from` (3.6): first, priority 1, compact: the 44 px picture square, always drawn for a player. The line as 3.5.
 - **9.3, placing.** `from` first, priority 1, compact: the same square. "No caster" leaves More area options. Set caster ("Caster: Thorn") stays there, and is how a player casts from someone else's token while their own is the caster (3.5).
@@ -293,7 +293,7 @@ One part in one workspace, after wave 5 deploys. Each commit typechecks, passes 
 1. `feat(areas): which creature an area is cast from, as pure rules`: `client/features/areas/caster.ts` (`areaCreatures`, `savedChoice`, `fromShows`, `fromOffers`, `castFrom`, `tokenTap`, `withoutCreature`, with `defaultCaster` folded into `savedChoice`) and its test, `lastCaster` on `AreaDraft` and carried by `withShape` (`placement.ts`) and `presetDraft` (`presets.ts`), with their tests.
 2. `feat(areas): a from toggle always in the area tool's row`: a new `areas/FromControl.tsx` (3.2), `areas/AreaOptions.tsx` (the `from` slot while idle and placing, the lines, Not from Thorn and No caster removed, `applySpell` without the saved choice while placing), `areas/store.ts` (the saved choice and the selection count in `AreaScope`), `areas/AreaTool.tsx` (`activate` reads a fresh selection, a new draft starts from the choice, taps by `tokenTap`, a tap or Set caster on your creature sets the choice, a departed creature through `withoutCreature`), `features/measure/controls.tsx` (a row's picture), `components/Icon.tsx` (the no-caster glyph), `lib/theme.ts` (`theme.layout.options.name`), the fit tests, FEATURES.md and docs/features.md (section 8).
 3. `test(e2e): the area's from control`: `e2e/areas.e2e.ts`, the three states in `e2e/options.e2e.ts`, the check in `e2e/smoke.e2e.ts`.
-4. `docs: point the tool options design's area row at the from control`: one line under docs/design-v1-tool-options.md 9.3, "Amended by docs/design-v1-area-from-character.md section 4."
+4. `docs: point the tool options design's area row at the from control`: one line under docs/design/design-v1-tool-options.md 9.3, "Amended by docs/design/design-v1-area-from-character.md section 4."
 
 ## 8. FEATURES.md
 

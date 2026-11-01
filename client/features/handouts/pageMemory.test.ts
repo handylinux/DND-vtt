@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { pageMemorySlot, rememberedPage, rememberPage } from "./pageMemory.ts";
 
-describe("the page remembered per showing (docs/design-v1-pdf-handouts.md 5.1)", () => {
+describe("the page remembered per showing (docs/design/design-v1-pdf-handouts.md 5.1)", () => {
   test("a showing never seen starts at page 1, and each showing keeps its own page", () => {
     const memory = pageMemorySlot.create();
     assert.equal(rememberedPage(memory, "h1@2026-10-16T19:00:00.000Z"), 0);

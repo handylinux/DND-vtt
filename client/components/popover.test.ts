@@ -28,9 +28,9 @@ import {
 } from "./popoverRules.ts";
 
 /*
- * The shared popover base (docs/design-v1-tool-options.md 7.1), for every
+ * The shared popover base (docs/design/design-v1-tool-options.md 7.1), for every
  * consumer: the tool options' popovers, Setup and Tools, and the side
- * panel's More (docs/design-v1-panel-tabs.md 4.2 and 4.3).
+ * panel's More (docs/design/design-v1-panel-tabs.md 4.2 and 4.3).
  */
 
 const rect = (left: number, top: number, right: number, bottom: number): Rect => ({ left, top, right, bottom });
@@ -106,7 +106,7 @@ describe("where a popover stands", () => {
     assert.deepEqual([fits.rose, fits.height, fits.top], [false, 30, 76]);
   });
 
-  /* docs/design-v1-panel-tabs.md 4.2: More's menu in the side panel's inner box, below More, with no region to rise into. */
+  /* docs/design/design-v1-panel-tabs.md 4.2: More's menu in the side panel's inner box, below More, with no region to rise into. */
   test("a bound like the side panel's: below the anchor, moved left inside it, never rising", () => {
     const panel = rect(920, 0, 1280, 800);
     const more = rect(1160, 160, 1240, 204);
@@ -740,7 +740,7 @@ describe("focus stays inside the popover's scroll boundary", () => {
   });
 });
 
-describe("a popover that steps back before it closes (docs/design-v1-stat-block-rolls.md 5.3)", async () => {
+describe("a popover that steps back before it closes (docs/design/design-v1-stat-block-rolls.md 5.3)", async () => {
   await import("./testing/register.ts");
   const { backStep } = await import("./Popover.tsx");
 

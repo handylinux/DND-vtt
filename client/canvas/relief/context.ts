@@ -9,7 +9,7 @@ import type { FogView } from "./fogView.ts";
 
 /**
  * What a renderer drawing in the isometric view needs to know
- * (docs/design-v1-isometric-view.md 5.1): the turn, this viewer's fog for
+ * (docs/design/design-v1-isometric-view.md 5.1): the turn, this viewer's fog for
  * the stand rule, whether heights stand at this zoom (ISO-D12), the drawn
  * ground, and which of the board's places it draws in. Absent (null) in
  * Top-down, so a renderer that reads it draws exactly as it always has

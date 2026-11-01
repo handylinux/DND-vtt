@@ -30,7 +30,7 @@ export const pinSlot = scopeSlot(() => ({
 /**
  * Puts a label-only pin's popover away. A tap anywhere on the map but the
  * pin does, so the popover never floats beside a door's pill or a height
- * reading (canvas/emptyTap.ts, docs/design-v1-heights-readout.md section 2).
+ * reading (canvas/emptyTap.ts, docs/design/design-v1-heights-readout.md section 2).
  */
 export function closePinPopover(scope: RoomScope): void {
   const store = scope.get(pinSlot).store;

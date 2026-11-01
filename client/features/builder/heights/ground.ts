@@ -9,7 +9,7 @@ import { cardPlace } from "../../movement/anchor.ts";
 import { regionText } from "./regions.ts";
 
 /**
- * The ground a viewer may read (docs/design-v1-heights-readout.md section
+ * The ground a viewer may read (docs/design/design-v1-heights-readout.md section
  * 1). Every viewer of a scene holds the same heights in its chunks, under
  * the fog or not, since they are map data. What differs is the screen: the
  * fog hides the ground, and the app never says what the fog hides, even
@@ -26,7 +26,7 @@ export type GroundSource = {
   chunks: Readonly<Record<string, BuildChunk>>;
   sceneId: string;
   bounds: { w: number; h: number };
-  /** The scene's grid: on hexes a cell is a hex, named by its key (docs/design-v1-hex-grids.md H3). */
+  /** The scene's grid: on hexes a cell is a hex, named by its key (docs/design/design-v1-hex-grids.md H3). */
   grid?: Grid;
   /** The merged fog a player's view holds on a scene with fog on, or null where the viewer sees all the ground: the DM, or a scene without fog. */
   fog: RoomState["fogTiles"] | null;
@@ -71,7 +71,7 @@ const COMPASS_NAME: Readonly<Record<Compass, string>> = { n: "north", e: "east",
 
 /**
  * The readout for ground at `ground` feet with a stair or not
- * (docs/design-v1-heights-readout.md section 2, the table): "↑10 ft" and
+ * (docs/design/design-v1-heights-readout.md section 2, the table): "↑10 ft" and
  * "Ground 10 ft up.", "Stairs · ↑5 ft" and "Stairs, 5 ft up, up to the
  * east.", or null for plain ground at 0, so the common tap to deselect
  * stays quiet on an ordinary map. The pill's height is Height mode's own

@@ -11,7 +11,7 @@ import { frameFields, walkPreview } from "./preview.ts";
 import { line, raised, seenRoom, thorn, world } from "./testing.ts";
 import { ownWalk } from "#shared/rules/movement.ts";
 
-/** A lone drag's picture and frames (docs/design-v1-movement.md 3.1, review MV-O-6 and MV-O-9). */
+/** A lone drag's picture and frames (docs/design/design-v1-movement.md 3.1, review MV-O-6 and MV-O-9). */
 
 describe("the picture of a drag's walk", () => {
   test("a route past 64 pieces is drawn and read to where it is cut, so its frames stay within the cap", () => {
@@ -79,7 +79,7 @@ describe("the picture of a drag's walk", () => {
   });
 });
 
-describe("a drag off a ride reads what the reducer stores (docs/design-v1-attach.md 7.3)", () => {
+describe("a drag off a ride reads what the reducer stores (docs/design/design-v1-attach.md 7.3)", () => {
   /** Bree (P1's, walking 30 ft) on her own turn, riding an independent warhorse at 4,4. */
   function riding(diagonal: "five" | "fiveTen" = "five", hidden: "horse" | "bree" | undefined = undefined, step = false): RoomState {
     const unseen = (id: string) => (hidden === id ? { visibility: "dm" as const } : {});

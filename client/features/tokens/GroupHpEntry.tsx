@@ -30,10 +30,10 @@ export function useGroupHp(tokens: readonly Token[]): { targets: HpTarget[]; acc
  * action bar and the initiative tracker. It names whoever this viewer may
  * not change, so a player sees why their friend's HP stayed put. A short
  * group window puts the field and Apply first, as the single token's does
- * (`fieldFirst`, docs/design-v1-token-window.md 5.8). On an upright
+ * (`fieldFirst`, docs/design/design-v1-token-window.md 5.8). On an upright
  * phone's resting strip its notes go to the strip's status line, the
  * first of them while the field is empty, and stay the field's
- * description (docs/design-v1-bar-compact.md 3.3).
+ * description (docs/design/design-v1-bar-compact.md 3.3).
  */
 export function GroupHpEntry(props: { tokens: readonly Token[]; place: HpPlace; fieldFirst?: boolean; rest?: HpRest }) {
   const { targets, access } = useGroupHp(props.tokens);

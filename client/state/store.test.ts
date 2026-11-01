@@ -331,7 +331,7 @@ describe("which ops are optimistic", () => {
   });
 });
 
-describe("which companion ops are optimistic (docs/design-v1-combat-flow.md 4.6)", () => {
+describe("which companion ops are optimistic (docs/design/design-v1-combat-flow.md 4.6)", () => {
   /** Bree (Ana, p1) on the players' scene with a spirit whose Reaction is spent, Cy (p2), and a goblin. */
   const party = () => {
     const state = room({ characters: { bree: character("bree", { name: "Bree", ownerIds: ["p1"] }) } });
@@ -410,7 +410,7 @@ describe("which companion ops are optimistic (docs/design-v1-combat-flow.md 4.6)
   });
 });
 
-describe("which companion stat block ops are optimistic (docs/design-v1-companion-stat-blocks.md 4.4)", () => {
+describe("which companion stat block ops are optimistic (docs/design/design-v1-companion-stat-blocks.md 4.4)", () => {
   /** Bree (Ana, p1) with her token and her owl Hoot on the players' scene, and one block she keeps. */
   const bree = () => {
     const state = room({ characters: { bree: character("bree", { name: "Bree", ownerIds: ["p1"] }) } });
@@ -716,7 +716,7 @@ describe("reconnect", () => {
     assert.equal(taken, undefined, "a taken op has no reason");
   });
 
-  test("a taken op that wrote a sync record without at hears the at the server wrote, and no other op does (docs/design-v1-resync.md 3.4)", () => {
+  test("a taken op that wrote a sync record without at hears the at the server wrote, and no other op does (docs/design/design-v1-resync.md 3.4)", () => {
     const s = setup(room({ characters: { bree: character("bree", { name: "Bree" }) }, tokens: { g1: token("g1") } }));
     s.connect();
     const heard: { answer: OpAnswer; stamped: string | undefined }[] = [];
@@ -733,7 +733,7 @@ describe("reconnect", () => {
     ]);
   });
 
-  test("a walk the server landed short hears it was blocked, and no other op does (docs/design-v1-map-discovery.md 6)", () => {
+  test("a walk the server landed short hears it was blocked, and no other op does (docs/design/design-v1-map-discovery.md 6)", () => {
     const s = setup(room({ tokens: { g1: token("g1"), g2: token("g2") } }));
     s.connect();
     const heard: { answer: OpAnswer; blocked: true | undefined }[] = [];
@@ -758,7 +758,7 @@ describe("reconnect", () => {
     assert.equal(answer, "unknown");
   });
 
-  test("an unknown answer says how it came about: expired while the hello was prepared, before any new snapshot, or settled by a snapshot already in the view (docs/design-v1-pdf-handouts.md 4.1.5)", () => {
+  test("an unknown answer says how it came about: expired while the hello was prepared, before any new snapshot, or settled by a snapshot already in the view (docs/design/design-v1-pdf-handouts.md 4.1.5)", () => {
     const s = setup(room({ tokens: { g1: token("g1") } }));
     s.connect();
     const heard: { answer: OpAnswer; cause: UnknownCause | undefined; snapshots: number | undefined }[] = [];
@@ -925,7 +925,7 @@ describe("phone sheets", () => {
   });
 });
 
-describe("a sheet that fills the screen (docs/design-v1-sheet-swipe.md 4.7)", () => {
+describe("a sheet that fills the screen (docs/design/design-v1-sheet-swipe.md 4.7)", () => {
   test("every open starts at the normal height, and only the sheet's closing or its replacement ends it", () => {
     const t = setup(room());
     const expanded = () => t.state().local.sheetExpanded;
@@ -1106,7 +1106,7 @@ describe("refusal toasts", () => {
   });
 });
 
-describe("the forget question (docs/design-v1-map-discovery.md 5.3)", () => {
+describe("the forget question (docs/design/design-v1-map-discovery.md 5.3)", () => {
   test("canceling a partial setup gesture never sends a Play origin undo", () => {
     const s = setup(room());
     s.connect();

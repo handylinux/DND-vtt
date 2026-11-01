@@ -14,7 +14,7 @@ import { env } from "./testutil.ts";
 
 /**
  * The shared differential test of public determinism
- * (contract section 5, as docs/design-v1-movement.md 5.5 cites it, and 12):
+ * (contract section 5, as docs/design/design-v1-movement.md 5.5 cites it, and 12):
  * pairs of rooms that differ only in state players cannot see, the same
  * drags made in both, and everything a player can observe compared. Each
  * feature adds its generators (movement's are in differential.test.ts).
@@ -39,20 +39,20 @@ export type Pair = {
   /**
    * Parts of a player's copy left out of the comparison: data the copy
    * holds but the client never shows, such as the map's terrain under the
-   * fog (docs/design-v1-heights-readout.md 1), which projections carry.
+   * fog (docs/design/design-v1-heights-readout.md 1), which projections carry.
    */
   unshown?: readonly (keyof RoomState)[];
   /**
    * The acting player's copies may differ in what their own creatures see
    * on a per-player scene, while their fog is the same in both rooms
-   * (docs/design-v1-per-player-vision.md section 10). Their drag searches
+   * (docs/design/design-v1-per-player-vision.md section 10). Their drag searches
    * the public world alone, so it must still send the same op, and every
    * other viewer must observe the same of it.
    */
   ownSightDiffers?: true;
 };
 
-/** A table display, which holds what every viewer shares (docs/design-v1-per-player-vision.md 6.2). */
+/** A table display, which holds what every viewer shares (docs/design/design-v1-per-player-vision.md 6.2). */
 const DISPLAY: Viewer = { memberId: "display:abcdefghijkl", role: "player" };
 
 /** The viewers a pair is judged for: every player member and a table display. */
@@ -159,14 +159,14 @@ export function checkPair(pair: Pair, seq = 3): void {
  */
 export type Step = { who: Viewer; op: Op | ((view: RoomState, state: RoomState) => Op | null); note?: string };
 
-/** A pair of rooms differing only in what players cannot see, and the steps both go through (attached tokens, docs/design-v1-attach.md 8.0). */
+/** A pair of rooms differing only in what players cannot see, and the steps both go through (attached tokens, docs/design/design-v1-attach.md 8.0). */
 export type OpPair = Omit<Pair, "drags"> & { steps: readonly Step[] };
 
 /**
  * How a step is checked and applied: by default as the server does, the
  * touch rule's landing, permissions, then the reducer. `mark` is what the
  * server keeps or tells beside the room, such as whether a player's undo
- * step is trapped (docs/design-v1-traps.md 6.5) or their walk was blocked,
+ * step is trapped (docs/design/design-v1-traps.md 6.5) or their walk was blocked,
  * which must be the same in both rooms too.
  */
 export type Applier = (state: RoomState, op: Op, who: Viewer, seq: number) => { ok: true; state: RoomState; mark?: string } | { ok: false; code: string; message: string };
@@ -174,7 +174,7 @@ export type Applier = (state: RoomState, op: Op, who: Viewer, seq: number) => { 
 const deps = { canUseAsset: () => true };
 
 export const serverApply: Applier = (state, op, who, seq) => {
-  // A player's walk the real build stops lands at its last clear spot, stored as made, and the sender hears it was blocked (docs/design-v1-map-discovery.md 6).
+  // A player's walk the real build stops lands at its last clear spot, stored as made, and the sender hears it was blocked (docs/design/design-v1-map-discovery.md 6).
   const landed = touchLanding(op, who, state, deps);
   const sent = landed?.op ?? op;
   const decision = canApply(sent, who, state, deps);

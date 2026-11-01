@@ -5,7 +5,7 @@ import { LIMITS } from "#shared/limits.ts";
 import { scopeSlot, useScoped } from "../../state/scope.ts";
 
 /**
- * Pasting with nothing open that takes it (docs/design-v1-paste.md 4): on
+ * Pasting with nothing open that takes it (docs/design/design-v1-paste.md 4): on
  * a computer, the DM's Ctrl+V over the map offers the picture as a new
  * scene, the selected token's picture, a stamp or a handout.
  *

@@ -132,7 +132,7 @@ describe("FL-3 rolled damage through the HP entry", () => {
   });
 });
 
-describe("the HP entry's lines on the dead (docs/design-v1-combat-flow.md 3.5)", () => {
+describe("the HP entry's lines on the dead (docs/design/design-v1-combat-flow.md 3.5)", () => {
   const thorn = target("thorn", { name: "Thorn", dead: true });
   const on = { revives: true, dm: true };
   const off = { revives: false, dm: true };

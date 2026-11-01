@@ -83,7 +83,7 @@ export function movingAuraBox(a: AreaTemplate, ctx: AreaContext, scene: Pick<Sce
 }
 
 /**
- * The moving marks of tokens being dragged (docs/design-v1-isometric-view.md
+ * The moving marks of tokens being dragged (docs/design/design-v1-isometric-view.md
  * 5.1): each one's range rings, attached areas (auras) and tethers, which
  * leave the ground stage while it is dragged and come back at the drop.
  * Each stands at the drawn ground under its token's footprint where the
@@ -98,7 +98,7 @@ export function movingAuraBox(a: AreaTemplate, ctx: AreaContext, scene: Pick<Sce
  * this device's own, under the standees the drag moves there
  * (canvas/dragLayer.ts), so its frames redraw that layer alone.
  *
- * An aura whose volume stands (docs/design-v1-iso-area-shapes.md 4.5)
+ * An aura whose volume stands (docs/design/design-v1-iso-area-shapes.md 4.5)
  * stands with it, coarse, built again at each cell the drop crosses. Dragged
  * here it draws in two passes around the dragged standee: `side` "behind",
  * mounted under the standees, draws every flat mark and the bands behind

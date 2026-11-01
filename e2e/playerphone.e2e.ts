@@ -29,7 +29,7 @@ import { barControl, ConsoleWatch, expandBar, OpSocket, pagePoint, readCamera, r
  * - A DM's blackout keeps the player's selection and the HP typed into the
  *   token bar, which hides behind the pause and comes back after it
  *   (LPD-PLAYER-7).
- * - The docked token action bar (docs/design-v1-bar-dock.md section 7): on
+ * - The docked token action bar (docs/design/design-v1-bar-dock.md section 7): on
  *   its side the phone docks the bar at the bottom right, left of a sheet,
  *   and a roll card never meets it (LPD-PLAYER-2). Pans, pinches and a
  *   held press leave it open and a quick tap off closes it. Select
@@ -54,7 +54,7 @@ const PORTRAIT = { width: 390, height: 844 };
 const BAND_NAME_MIN_PX = 36;
 const LANDSCAPE = { width: 844, height: 390 };
 const CARD = "The DM asks for a roll";
-/** A plain stat block for Thorn, so a card knows its bonus and draws no bonus field (docs/design-v1-roll-request.md 5.2). */
+/** A plain stat block for Thorn, so a card knows its bonus and draws no bonus field (docs/design/design-v1-roll-request.md 5.2). */
 const THORN_STATS = { abilities: { str: 10, dex: 14, con: 12, int: 10, wis: 12, cha: 10 }, saves: [], skills: {}, adjust: {}, defenses: {}, rolls: [] };
 
 let server: Server;
@@ -239,7 +239,7 @@ async function cardInReach(label: string, shot: string): Promise<void> {
   const height = player.viewportSize()!.height;
   assert.ok(box.top >= -0.5 && box.bottom <= height + 0.5, `${label}: the roll card runs off the screen: ${JSON.stringify(box)}`);
   const title = card(player).getByText(/^The DM asks for/);
-  // Roll is the card's primary while the creature waits (docs/design-v1-roll-request.md 5.2), so it is in reach too (W7B-P-8).
+  // Roll is the card's primary while the creature waits (docs/design/design-v1-roll-request.md 5.2), so it is in reach too (W7B-P-8).
   const roll = card(player).getByRole("button", { name: /^Roll .* for / }).first();
   const parts: (readonly [string, Locator])[] = [
     ["what to roll", title],
@@ -252,7 +252,7 @@ async function cardInReach(label: string, shot: string): Promise<void> {
   if (t.top >= box.top - 0.5 && t.bottom <= box.bottom + 0.5) {
     for (const [name, part] of parts) assert.ok(await wholeInReach(part), `${label}: ${name} is cut off or takes no tap`);
   } else {
-    // The last step (docs/design-v1-roll-request.md 5.7): where even the screen's top cannot hold the question, Later and the
+    // The last step (docs/design/design-v1-roll-request.md 5.7): where even the screen's top cannot hold the question, Later and the
     // answer block with its roll row at once, the header stops sticking and the whole card scrolls, so each is read and tapped in turn.
     const scrolls = await card(player).evaluate((el) => {
       // Only the card at the screen's foot, portaled to the body, has that step.
@@ -657,7 +657,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
       });
       if (!portaled && !(await card(player).isVisible())) {
         // With its roll row the card no longer fits the column on its side, so it folds behind the Roll asked row, mounted with
-        // what was typed (docs/design-v1-roll-request.md 5.7). The row's tap brings it up, and the field takes focus again.
+        // what was typed (docs/design/design-v1-roll-request.md 5.7). The row's tap brings it up, and the field takes focus again.
         assert.equal(await markup.locator('input[aria-label="Total Thorn rolled"]').inputValue(), "16", `${label}: the folded card lost the total`);
         await player.getByRole("button", { name: /^Roll asked/ }).tap();
         await card(player).waitFor();
@@ -712,7 +712,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
     await tapCell(player, bounds, { x: 8, y: 6 });
     const bar = player.getByRole("dialog", { name: "Thorn actions" });
     await bar.waitFor();
-    // The mode's radios are the expanded bar's (docs/design-v1-bar-compact.md 3.3).
+    // The mode's radios are the expanded bar's (docs/design/design-v1-bar-compact.md 3.3).
     await expandBar(bar);
     await bar.getByRole("radiogroup", { name: "What the number does" }).locator("label").filter({ hasText: "Heal" }).tap();
     await bar.getByRole("textbox", { name: "HP change" }).fill("5");
@@ -772,7 +772,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
     await ops.send({ t: "view.blackout", blackout: false });
     await player.locator(".konvajs-content").first().waitFor();
     await player.waitForTimeout(400);
-    // The pause screen drops every toast, so nothing from before the pause shows after it (docs/design-v1-dm-tools.md 3.11).
+    // The pause screen drops every toast, so nothing from before the pause shows after it (docs/design/design-v1-dm-tools.md 3.11).
     assert.equal(await toasts.count(), 0, "a whisper from before the pause came back");
     assert.equal(await said(), "", "the toasts' status region said something again after the blackout");
     await ops.send({ t: "log.whisper", to: [run.patId], text: "After the pause." });
@@ -804,7 +804,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
 
     const id = randomUUID();
     // A check for a Thorn with a stat block: a card with its roll row, a typed bonus or Fail without rolling no longer fits the
-    // column on its side and folds behind the Roll asked row (docs/design-v1-roll-request.md 5.7), and this step is about the
+    // column on its side and folds behind the Roll asked row (docs/design/design-v1-roll-request.md 5.7), and this step is about the
     // card beside the bar. Step 8 takes the block away again.
     await ops.send({ t: "character.update", characterId: run.thorn.characterId, patch: { level: 1, stats: THORN_STATS } });
     await waitFor("Thorn's stat block on the player's phone", () => playerSocket.state?.characters[run.thorn.characterId]?.stats);
@@ -823,7 +823,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
     await card(player).waitFor();
     await player.waitForTimeout(200);
     assert.ok(!intersects(await rectOf(card(player)), await rectOf(bar)), "upright after Show, the roll card meets the bar");
-    // The resting strip, its 114 px over the card (docs/design-v1-bar-compact.md 3.2).
+    // The resting strip, its 114 px over the card (docs/design/design-v1-bar-compact.md 3.2).
     assert.equal(await bar.getAttribute("data-bar-state"), "rest", "upright after Show, the bar is not the resting strip");
     assert.ok(Math.abs((await rectOf(bar)).bottom - (await rectOf(bar)).top - 114) <= 0.5, "upright after Show, the strip is not 114 px");
     await shots.take(player, "playerphone-card-and-bar-portrait");
@@ -929,7 +929,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
       await barFrame(player).waitFor({ state: "detached" });
       const options = player.getByRole("toolbar", { name: "Select options" });
       await options.getByRole("button", { name: "Actions", exact: true }).waitFor();
-      // Actions and Done stay in the row at every size, and its controls stand on one line (docs/design-v1-tool-options.md 9.1).
+      // Actions and Done stay in the row at every size, and its controls stand on one line (docs/design/design-v1-tool-options.md 9.1).
       const row = options.locator("[data-options-row]");
       for (const name of ["Actions", "Done"]) assert.equal(await row.getByRole("button", { name, exact: true }).count(), 1, `${label}: ${name} left the row`);
       const middles = await row.locator(":scope > [data-rvtt-slot]").evaluateAll((slots) =>
@@ -953,7 +953,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
         { id: randomUUID(), tokenId: run.thorn.id, value: 15 },
       ],
     });
-    // At 844 x 390 at 130% Multi-select's row stands in the toolbar's own row, so the bar has its 151 px and docks (docs/design-v1-tool-options.md 10.3).
+    // At 844 x 390 at 130% Multi-select's row stands in the toolbar's own row, so the bar has its 151 px and docks (docs/design/design-v1-tool-options.md 10.3).
     {
       await insets({ side: 47, bottom: 21 });
       await setUp({ width: 844, height: 390, scale: 1.3 });
@@ -1104,7 +1104,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
         const send = answer.getByRole("button", { name: "Send", exact: true });
         await answer.getByRole("radiogroup", { name: "Which one you rolled" }).locator("label").filter({ hasText: "Strength" }).tap();
         await total.fill("13");
-        // With its roll row the card may scroll here (docs/design-v1-roll-request.md 5.7), so Send is scrolled to first.
+        // With its roll row the card may scroll here (docs/design/design-v1-roll-request.md 5.7), so Send is scrolled to first.
         await send.scrollIntoViewIfNeeded();
         assert.ok(await wholeInReach(send), `${label}: Send is cut off or takes no tap once the total is in`);
         await send.tap();
@@ -1401,7 +1401,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
     { width: 440, height: 956 },
   ]) {
     const label = `${view.width} x ${view.height}`;
-    test(`bs-1. at ${label} Expand, just left of Close, grows Thorn's bar up from the strip's foot to show more of it with Thorn still on the map, Collapse brings the strip back, and a reload opens it resting (docs/design-v1-bar-compact.md 5)`, async () => {
+    test(`bs-1. at ${label} Expand, just left of Close, grows Thorn's bar up from the strip's foot to show more of it with Thorn still on the map, Collapse brings the strip back, and a reload opens it resting (docs/design/design-v1-bar-compact.md 5)`, async () => {
       const KEY = "rvtt.tokenBarLarger";
       const target = { characterId: run.thorn.characterId };
       const effects = MANY.map((key) => ({ id: randomUUID(), key }));
@@ -1453,7 +1453,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
     });
   }
 
-  test("bs-2. at 390 x 844 with the bar expanded, a drag of Thorn two cells down, under the bar's cover, hides his bar and shows it again expanded where it stood, at the height it had, and the map moves once to clear him (review BS-O2, D-261024-22, docs/design-v1-bar-compact.md 5.3)", async () => {
+  test("bs-2. at 390 x 844 with the bar expanded, a drag of Thorn two cells down, under the bar's cover, hides his bar and shows it again expanded where it stood, at the height it had, and the map moves once to clear him (review BS-O2, D-261024-22, docs/design/design-v1-bar-compact.md 5.3)", async () => {
     const view = { width: 390, height: 844 };
     const target = { characterId: run.thorn.characterId };
     const effects = MANY.map((key) => ({ id: randomUUID(), key }));
@@ -1489,7 +1489,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
     }
   });
 
-  test("bs-3. at 390 x 844 with Thorn's bar expanded, a tap on another token opens its bar expanded, Collapse rests it with the map where it stood, Multi-select pressed in the expanded bar rests it, and expanded again, the group's bar as Multi-select gathers the other token stays expanded, as does Thorn's as it lets go (reviews LP19-BS-1 and LP19-OPUS-4, D-261024-22, docs/design-v1-bar-compact.md 5.3)", async () => {
+  test("bs-3. at 390 x 844 with Thorn's bar expanded, a tap on another token opens its bar expanded, Collapse rests it with the map where it stood, Multi-select pressed in the expanded bar rests it, and expanded again, the group's bar as Multi-select gathers the other token stays expanded, as does Thorn's as it lets go (reviews LP19-BS-1 and LP19-OPUS-4, D-261024-22, docs/design/design-v1-bar-compact.md 5.3)", async () => {
     const view = { width: 390, height: 844 };
     const target = { characterId: run.thorn.characterId };
     const effects = MANY.map((key) => ({ id: randomUUID(), key }));
@@ -1534,7 +1534,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
       await bar.waitFor();
       await player.waitForTimeout(500);
       await expand(bar);
-      // Multi-select's options row lifts the bar by its height and leaves the map where it stands (docs/design-v1-bar-compact.md 3.2), and a drag on the map selects in Multi-select, so the map is panned up first, as a player would, Echo clear of the lifted bar.
+      // Multi-select's options row lifts the bar by its height and leaves the map where it stands (docs/design/design-v1-bar-compact.md 3.2), and a drag on the map selects in Multi-select, so the map is panned up first, as a player would, Echo clear of the lifted bar.
       const echoAt = await pagePoint(player, playerSocket.state!.scenes[run.sceneId]!.bounds, { x: 9.5, y: 6.5 });
       const top = (await barFacts(bar)).top;
       if (echoAt.y > top - 120) await panBy(Math.min(echoAt.y, top - 8), top - 120 - echoAt.y);
@@ -1578,7 +1578,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
     return toast;
   }
 
-  test("fu24r1-own. at 390 x 844 a whisper keeps above Thorn's expanded bar and stays where it is when another token's bar opens, expanded or after Close as the strip: an upright phone's bar never hangs over the toasts (review FU24-OPUS-1, docs/design-v1-bar-compact.md 3.5)", async () => {
+  test("fu24r1-own. at 390 x 844 a whisper keeps above Thorn's expanded bar and stays where it is when another token's bar opens, expanded or after Close as the strip: an upright phone's bar never hangs over the toasts (review FU24-OPUS-1, docs/design/design-v1-bar-compact.md 3.5)", async () => {
     const view = { width: 390, height: 844 };
     const target = { characterId: run.thorn.characterId };
     const effects = MANY.map((key) => ({ id: randomUUID(), key }));
@@ -1624,7 +1624,7 @@ describe("raccoon-vtt player on a phone after the design pass", { timeout: 240_0
     }
   });
 
-  test("fu24r1-pan. at 390 x 844 a one-finger pan long after the bar opened and a whisper came leaves the strip, the expanded bar's header and the whisper where they stand (review FU24-OPUS-3, docs/design-v1-bar-compact.md 3.1)", async () => {
+  test("fu24r1-pan. at 390 x 844 a one-finger pan long after the bar opened and a whisper came leaves the strip, the expanded bar's header and the whisper where they stand (review FU24-OPUS-3, docs/design/design-v1-bar-compact.md 3.1)", async () => {
     const view = { width: 390, height: 844 };
     await setUp({ ...view, scale: 1 });
     const bar = player.getByRole("dialog", { name: "Thorn actions" });

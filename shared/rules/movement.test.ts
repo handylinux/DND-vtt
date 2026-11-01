@@ -583,7 +583,7 @@ describe("the wall set across moves", () => {
   });
 });
 
-describe("after a resize (docs/design-v1-token-window.md 8.3 and 8.5)", () => {
+describe("after a resize (docs/design/design-v1-token-window.md 8.3 and 8.5)", () => {
   test("the next leg is judged at the new size", () => {
     // A wall along x = 10 with a 10 ft opening at y 5 to 7.
     const s = world({ edges: { ...line("w", 10, 0, 5), ...line("w", 10, 7, 20) } });

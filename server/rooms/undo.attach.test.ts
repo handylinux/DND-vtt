@@ -11,7 +11,7 @@ import { MOVED_SINCE } from "./undo.ts";
 import { UndoTable } from "./undoTesting.ts";
 
 /**
- * Undo and redo of attached tokens (docs/design-v1-attach.md 8.3), through
+ * Undo and redo of attached tokens (docs/design/design-v1-attach.md 8.3), through
  * the room actor's own steps: a player's op goes on their stack with the
  * poses their copy shows and the rides it ended or made, and an undo or a
  * redo is built by `poseRestore`, passes `canApply` as the player

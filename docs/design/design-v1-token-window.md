@@ -1,8 +1,8 @@
 # raccoon-vtt v1: the token window, resizable, with fewer buttons, and a creature's size on the fly
 
-Status: draft 3, with the project owner's answers of 2026-10-16 to design review round 1 and the fixes of rounds 1 and 2 (section 20 lists them). Code is cited from public main at `e4ec8696`. This design changes the docked token action bar of docs/design-v1-bar-dock.md, the bar's rows of docs/design-v1-token-panel.md 3.3, and how a token's size changes. Section 9 says, rule by rule, what of docs/design-v1-bar-dock.md and docs/design-v1-layout-hierarchy.md changes and what holds. Two designs built beside this one meet it: docs/design-v1-tool-options.md (tool options in one row) and docs/design-v1-companion-stat-blocks.md (companions' stat blocks). Section 12 lists where.
+Status: draft 3, with the project owner's answers of 2026-10-16 to design review round 1 and the fixes of rounds 1 and 2 (section 20 lists them). Code is cited from public main at `e4ec8696`. This design changes the docked token action bar of docs/design/design-v1-bar-dock.md, the bar's rows of docs/design/design-v1-token-panel.md 3.3, and how a token's size changes. Section 9 says, rule by rule, what of docs/design/design-v1-bar-dock.md and docs/design/design-v1-layout-hierarchy.md changes and what holds. Two designs built beside this one meet it: docs/design/design-v1-tool-options.md (tool options in one row) and docs/design/design-v1-companion-stat-blocks.md (companions' stat blocks). Section 12 lists where.
 
-2026-10-17: wave 7 puts Roll in the single bar's play row after Multi-select, for the DM and the token's owners, in place of Request a roll (docs/design-v1-roll-options.md section 8, on the dice of docs/design-v1-dice.md). Where sections 1, 3.2, 15 and 17 say "then Request a roll and Light", the row now reads "then Roll and Light". The fit rules are unchanged.
+2026-10-17: wave 7 puts Roll in the single bar's play row after Multi-select, for the DM and the token's owners, in place of Request a roll (docs/design/design-v1-roll-options.md section 8, on the dice of docs/design/design-v1-dice.md). Where sections 1, 3.2, 15 and 17 say "then Request a roll and Light", the row now reads "then Roll and Light". The fit rules are unchanged.
 
 The project owner's requests, 2026-10-16:
 
@@ -14,7 +14,7 @@ The project owner's requests, 2026-10-16:
 
 The project owner's decisions the same day: "Grow away from walls" (a player's resize is checked like a move, the DM's never), and after round 1: the grip only drags and the resize handle only resizes, a tap on either does nothing, keys still move and resize, and Reset is the way back. A shrink puts a creature back on the square it grew from while it has not moved since. Undo move, Doesn't count and the door get a line of their own, so Conditions, Hidden and Multi-select are always one stable line.
 
-**Terms.** "The token window" is the token action bar where it docks: a layout 600 px or wider, or one wider than tall, whose free area is at least 148 px tall (docs/design-v1-bar-dock.md 1.1). It is drawn by `BarFrame` (`client/canvas/TokenActionBar.tsx:647-885`) for the single token's bar and the group's bar alike, and placed by `client/canvas/barDock.ts`. "A computer" is a Room page whose device's main pointer is fine (`(pointer: fine)`), read once when the page mounts, as `touchFirst` is (`pages/Room.tsx:230`). "Resizable" means the window docks on a computer. "Blocks moves" means the scene's walls stop players' moves (`scene.blockMovement`). Every size is in layout px, the chrome's own (`features/device/layout.ts`), as in the designs above. FEATURES.md keeps calling the thing "the action bar". Its three window controls say "window", the project owner's word for it docked, and the shortcut sheet names dialogs "Dialogs" and this window's section "Token window" (section 11).
+**Terms.** "The token window" is the token action bar where it docks: a layout 600 px or wider, or one wider than tall, whose free area is at least 148 px tall (docs/design/design-v1-bar-dock.md 1.1). It is drawn by `BarFrame` (`client/canvas/TokenActionBar.tsx:647-885`) for the single token's bar and the group's bar alike, and placed by `client/canvas/barDock.ts`. "A computer" is a Room page whose device's main pointer is fine (`(pointer: fine)`), read once when the page mounts, as `touchFirst` is (`pages/Room.tsx:230`). "Resizable" means the window docks on a computer. "Blocks moves" means the scene's walls stop players' moves (`scene.blockMovement`). Every size is in layout px, the chrome's own (`features/device/layout.ts`), as in the designs above. FEATURES.md keeps calling the thing "the action bar". Its three window controls say "window", the project owner's word for it docked, and the shortcut sheet names dialogs "Dialogs" and this window's section "Token window" (section 11).
 
 ## 1. Summary
 
@@ -113,7 +113,7 @@ The grip and Reset show only where the window docks. A spanning bar and the comp
 
 ### 4.2 Moving by pointer
 
-Today's rules stand (docs/design-v1-bar-dock.md section 2): the header row outside its other buttons is the handle, with pointer capture, `touch-action: none`, the grab cursors, the 8 px slop, the clamp into the free area while dragging, the lane rule on release, snapping within 24 px of an edge, Escape or `pointercancel` putting the window back, and the spot stored per device in `rvtt.tokenBarSpot`. One change: a press on the grip starts the same drag, which the header's pointer handler today skips for buttons. A press on the grip or the header that never passes the slop does nothing, by the project owner's answer, so a grab that wobbles a few pixels never moves the window.
+Today's rules stand (docs/design/design-v1-bar-dock.md section 2): the header row outside its other buttons is the handle, with pointer capture, `touch-action: none`, the grab cursors, the 8 px slop, the clamp into the free area while dragging, the lane rule on release, snapping within 24 px of an edge, Escape or `pointercancel` putting the window back, and the spot stored per device in `rvtt.tokenBarSpot`. One change: a press on the grip starts the same drag, which the header's pointer handler today skips for buttons. A press on the grip or the header that never passes the slop does nothing, by the project owner's answer, so a grab that wobbles a few pixels never moves the window.
 
 ### 4.3 The grip's arrow keys
 
@@ -182,7 +182,7 @@ The window resizes only while it docks on a computer. The compact overlay, a spa
 
 ### 5.5 The handle as a control
 
-The handle is a `<button>`, "Resize window", described (a visually hidden `aria-describedby`) by "Drag to resize the window. With this focused, the arrow keys resize it, and Shift resizes it faster. Reset, beside Close, puts it back." It is an icon alone, so its name shows in the shared tooltip on hover and keyboard focus (docs/design-v1-icons.md 3.2), never in a native title. The grip's description is the same with "move". Enter and Space do nothing on either, as a tap does nothing, by the project owner's answer.
+The handle is a `<button>`, "Resize window", described (a visually hidden `aria-describedby`) by "Drag to resize the window. With this focused, the arrow keys resize it, and Shift resizes it faster. Reset, beside Close, puts it back." It is an icon alone, so its name shows in the shared tooltip on hover and keyboard focus (docs/design/design-v1-icons.md 3.2), never in a native title. The grip's description is the same with "move". Enter and Space do nothing on either, as a tap does nothing, by the project owner's answer.
 
 - **Arrow keys** move the handle's corner 8 px, or 64 with Shift, so the window grows or shrinks with the same sense as a drag of the handle: for the top-left handle, Left widens and Up heightens. Each press is stored at once by the release rules, with no snapping: a width exactly at the default stores none, and a height at the most it may take stores none. A press against a limit changes nothing. The handler calls `preventDefault`, as the grip's does.
 - **The status** speaks after the keys rest: "Window 316 by 400 pixels", with ", narrowest", ", widest", ", shortest" or ", tallest it can be here" when a press meets that limit.
@@ -224,7 +224,7 @@ One rule: **the window is clamped for this opening, and the stored size stays**.
 
 - **Width**: the stored width, or the default, never under the default where the room allows it, at most its room (5.3), and narrower only beside a phone's sheet (7.1). Beside the lane, at most the room left of the lane.
 - **Height**: `min(content, cap, room)`, the room from the spot and the lane.
-- **The side panel** shown or hidden (S, Hide panels, Panels, docs/design-v1-layout-hierarchy.md 4.1) narrows or widens the free area by 360 px. The window shrinks and grows back with it.
+- **The side panel** shown or hidden (S, Hide panels, Panels, docs/design/design-v1-layout-hierarchy.md 4.1) narrows or widens the free area by 360 px. The window shrinks and grows back with it.
 - **A sheet on the right** (a landscape layout under 900 px, a computer at 130% included) narrows the free area by the sheet. A free area narrower than the default width draws the window narrower (7.1). The very short sheet folds the window (`hidden`), size untouched.
 - **An interface size change** changes the free area in layout px. The stored size is in layout px, so the window keeps its size against its own content and clamps where the room is less.
 - **A short screen**: the room clamps the height. Under 148 px of free height the bar opens compact, which ignores the stored size (5.1).
@@ -239,7 +239,7 @@ A window narrower than the default width happens only beside a phone's open side
 - **265 px and wider: the whole row**, as 4.1: the grip, the name's 40 px floor, a badge up to "↑120 ft" (about 51 px), Reset and Close, with four 4 px gaps and the frame's 26 px. The steady line wraps where the window is under the default width (3.4).
 - **210 to 264 px: the badge moves under the name**, to the end of the vitals line after AC and HP, in its own color. The Elevation row still says it. 210 is the row without it: the grip, the name's floor, Reset and Close, three gaps and the frame.
 - **182 to 209 px: the grip becomes its dots.** On a touch device the grip draws its six dots in 16 px, with no button. The header drags from them as from anywhere else on it, the arrow keys the button took need a keyboard a phone seldom has, and Reset still brings the window home. 182 is the row with the dots. A computer's window is never this narrow (5.6). Should one be, its grip stays a button, the keys' control, and the name gives up its floor instead.
-- **Under 182 px: the window folds** as under a very short sheet (docs/design-v1-layout-hierarchy.md 4.2): it takes `hidden` with its state kept, and its "Show Thorn actions" joins the sheet's header with the dock's other buttons (`DockHeaderActions`). `foldsUnderSheet` (`pages/fold.ts:33-35`) gains this case. Show closes the sheet, as it does under an upright sheet, and the window opens at its full width again. Only 480 x 320 at 100% with a side sheet is this narrow, and there the window was a 129 px column with 103 px of room for its controls.
+- **Under 182 px: the window folds** as under a very short sheet (docs/design/design-v1-layout-hierarchy.md 4.2): it takes `hidden` with its state kept, and its "Show Thorn actions" joins the sheet's header with the dock's other buttons (`DockHeaderActions`). `foldsUnderSheet` (`pages/fold.ts:33-35`) gains this case. Show closes the sheet, as it does under an upright sheet, and the window opens at its full width again. Only 480 x 320 at 100% with a side sheet is this narrow, and there the window was a 129 px column with 103 px of room for its controls.
 
 The compact overlay has no grip and no Reset, so its header is the name, the badge and Close at any width it takes.
 
@@ -248,7 +248,7 @@ The compact overlay has no grip and no Reset, so its header is the name, the bad
 ### 8.1 Who
 
 - **The DM**, on any token, never checked against walls (8.4). The six sizes and Custom, with its width and height.
-- **The token's owners**, on a token they own (`ownsToken`), companions included, through one permission (8.6). The six sizes, never Custom. A token the DM made Custom shows its size read-only to its owners, "Custom, 2 by 3 squares, set by the DM", and only the DM changes it. Enlarge or Reduce, Wild Shape and polymorph are the player's to play, and the project owner chose the same for companions, which docs/design-v1-companion-stat-blocks.md points here for.
+- **The token's owners**, on a token they own (`ownsToken`), companions included, through one permission (8.6). The six sizes, never Custom. A token the DM made Custom shows its size read-only to its owners, "Custom, 2 by 3 squares, set by the DM", and only the DM changes it. Enlarge or Reduce, Wild Shape and polymorph are the player's to play, and the project owner chose the same for companions, which docs/design/design-v1-companion-stat-blocks.md points here for.
 - **A locked token** takes no owner's resize, as it takes no owner's move (`moveCheck`, `permissions.ts:711-717`): the change can shift the token. The DM's lock is the DM's way to keep a token where it is.
 - **Nobody else.** A player who may move any token (`playersMoveAny`) does not own it and may not resize it.
 - It is the token's size on the map. The character's size on its card, and a stat block's size, stay as they are.
@@ -277,7 +277,7 @@ The token's middle is its stored center (`storedCenter`, `shared/rules/footprint
 
 The project owner's decision: an owner's resize is checked like a move. It applies to every resize by someone who is not the DM, on a scene that blocks moves: growing, shrinking or keeping its size. Elsewhere nothing is checked.
 
-**Clearance is the move rules' standing test**, the one a move ends on: the token's core at a spot touches no movement blocker (`coreBlocked`, `shared/rules/movement.ts:443-448`). The core is the footprint less about a cell on each axis (`coreSize`, `:39-45`), so the drawn footprint may reach under half a square past a wall where a move could stop the same way, and a creature standing on the grid needs its full width of open floor: a Large creature needs 10 ft between walls, a Huge 15 ft. One definition serves docs/design-v1-companion-stat-blocks.md too.
+**Clearance is the move rules' standing test**, the one a move ends on: the token's core at a spot touches no movement blocker (`coreBlocked`, `shared/rules/movement.ts:443-448`). The core is the footprint less about a cell on each axis (`coreSize`, `:39-45`), so the drawn footprint may reach under half a square past a wall where a move could stop the same way, and a creature standing on the grid needs its full width of open floor: a Large creature needs 10 ft between walls, a Huge 15 ft. One definition serves docs/design/design-v1-companion-stat-blocks.md too.
 
 **Two tests**, each the move rules' own, so a resize and the next move always agree:
 
@@ -365,13 +365,13 @@ The base spot, or the remembered square on a shrink, with no wall search and no 
 - **Compaction.** At `MAX_PATH_STOPS` (50) `withStop` (`path.ts:47-57`) joins two legs by dropping a corner. It now drops the oldest eligible corner: one whose legs on both sides lie at one size, so never a resize stop nor the stop before one. A joined leg then never spans a resize, and the joined stop keeps the later stop's fields, `footprint` with them, as it keeps its marks today. When no eligible corner remains, as in a turn that alternates a move and a resize until the path is full, it drops the oldest corner, and the joined leg, whose ends differ in size, is measured between the two footprints' middles and counts if either leg counted, as joined legs do today.
 - The field joins the path's schema in `server/rooms/stateSchema.ts:200-207`.
 
-**The op version.** Today a stored `token.update` with a size and a place records a counted stop. From op version 6 it records the resize stop. So `OP_VERSION` goes to 6 (`shared/migrate.ts:14`) with a step from 5 to 6 that returns the op unchanged, as the steps from 3 and 4 do, and `resizeStop(opVersion)` in `shared/migrate.ts` (false before 6, true at 6 and for a live op), read in `withPath` through `tx.env.opVersion`, as `healRevivesDead` is. A version 5 op replays by the old rule and makes the state it made then. Fixtures at version 5: a combined size and place update on the acting creature records a counted stop on replay, and the same op at version 6 records the resize stop. docs/design-v1-companion-stat-blocks.md changes a link patch's result at the same boundary: if the two builds deploy together they share version 6, and if this one deploys first, that one takes 7.
+**The op version.** Today a stored `token.update` with a size and a place records a counted stop. From op version 6 it records the resize stop. So `OP_VERSION` goes to 6 (`shared/migrate.ts:14`) with a step from 5 to 6 that returns the op unchanged, as the steps from 3 and 4 do, and `resizeStop(opVersion)` in `shared/migrate.ts` (false before 6, true at 6 and for a live op), read in `withPath` through `tx.env.opVersion`, as `healRevivesDead` is. A version 5 op replays by the old rule and makes the state it made then. Fixtures at version 5: a combined size and place update on the acting creature records a counted stop on replay, and the same op at version 6 records the resize stop. docs/design/design-v1-companion-stat-blocks.md changes a link patch's result at the same boundary: if the two builds deploy together they share version 6, and if this one deploys first, that one takes 7.
 
 **Rolling back.** An older build refuses to migrate a version 6 op down (`runMigrations`), and its state schema refuses a path stop with `footprint`. So a room that has stored either loads only on this build or later. Rolling back past it needs the backup taken before the update, as for version 5.
 
 ### 8.8 The base size and "Back to"
 
-- **The base** is the creature's own size where the viewer's copy knows it: a PC's character's size, a token linked to a room monster or an SRD monster's block (`tokenStatBlock`, `features/monsters/statBlockLink.ts:24-31`, the SRD's once its block has loaded), and a companion's linked block (docs/design-v1-companion-stat-blocks.md). For "Medium or Small" both count, and "Back to" names the first. An unlinked NPC, a monster without a block, an object and a companion with no block have none.
+- **The base** is the creature's own size where the viewer's copy knows it: a PC's character's size, a token linked to a room monster or an SRD monster's block (`tokenStatBlock`, `features/monsters/statBlockLink.ts:24-31`, the SRD's once its block has loaded), and a companion's linked block (docs/design/design-v1-companion-stat-blocks.md). For "Medium or Small" both count, and "Back to" names the first. An unlinked NPC, a monster without a block, an object and a companion with no block have none.
 - **"Back to Medium"** is in the panel's Stats only (8.10), where the base is known and the token's size is neither base size. In the window the stepper gets back in one press from one size off, and a second row there would push the steady line down. It is a resize like any other: back down by the shrink rule, back up checked by 8.3 for an owner.
 
 ### 8.9 In the token window
@@ -408,7 +408,7 @@ The project owner asked for it "in stats". The token panel's Stats section (`Tok
 
 ## 9. What changes in the earlier designs, and what holds
 
-### 9.1 docs/design-v1-bar-dock.md
+### 9.1 docs/design/design-v1-bar-dock.md
 
 | Rule | Change |
 |---|---|
@@ -424,16 +424,16 @@ The project owner asked for it "in stats". The token panel's Stats section (`Tok
 | 5 What stays | Holds, with "Multi-select" for "Select several", and Move bar's focus target becoming the grip |
 | 7 Its tests | Test 4's Move bar and Reset bar position cases change (section 15) |
 
-### 9.2 docs/design-v1-token-panel.md 3.3
+### 9.2 docs/design/design-v1-token-panel.md 3.3
 
 - The play row splits into the passing line and the steady line, and Request a roll follows Multi-select (3.2). The less-often row loses Move bar and Reset bar position.
 - The short layout's rule holds, with capacity counting the cap (5.8). Its 300 px threshold and the spanning bar's 210 hold.
 - The body gains Size after the steady line and before the less-often row (8.9).
 - Its mockups' widths are 278 px inside, which the default width makes about 290. Nothing there depended on 278.
 
-### 9.3 docs/design-v1-layout-hierarchy.md
+### 9.3 docs/design/design-v1-layout-hierarchy.md
 
-- **3.5 and 8.2** (the free area with a rail, "Move bar" and the stored spot following the rail): hold for the stored size too, which clamps into the narrower free area. The rail itself goes with docs/design-v1-tool-options.md (section 12), and nothing here reads it.
+- **3.5 and 8.2** (the free area with a rail, "Move bar" and the stored spot following the rail): hold for the stored size too, which clamps into the narrower free area. The rail itself goes with docs/design/design-v1-tool-options.md (section 12), and nothing here reads it.
 - **4.1 and 4.3** (the side panel hidden, the right safe area): change the free area, so the window clamps and grows back (section 7).
 - **4.2** (the sideways sheet and the very short mode): the window folds as the bar does, its size untouched, and also folds beside a side sheet that leaves it under 182 px (7.1).
 - **8.1's table**: every docked row docks as before, a little wider by default (3.3). "480 x 320, 100%" with a side sheet folds the window into the sheet's header (7.1).
@@ -474,15 +474,15 @@ New and changed rows, all for everyone (`roles: ["dm", "player"]`), all `device:
 
 ## 12. Where this meets the designs built beside it
 
-- **docs/design-v1-tool-options.md** (one options row). It names the mode and its bar Multi-select, leaves the rename to this design, and builds after this build's first commit, the rename. Nothing in either depends on the other: the window reads the free area, whatever the options publish into `Chrome.bottom` and `Chrome.controls`. It removes `Chrome.rail`, `noticeSpan`, `hintRoom`, `shortHint` and `LONG_HINT_MIN` from `barDock.ts` and `ScrollForMore`'s `fill`, and this design adds the window's size there and moves `ScrollForMore` into the scroller. Both edit `barDock.ts` and its test, `TokenActionBar.tsx`, `client/state/shortcuts.ts`, `e2e/bardock.e2e.ts`, `reach.e2e.ts`, `layout.e2e.ts`, `playerphone.e2e.ts` and FEATURES.md. Whichever lands second keeps the other's change. Merged into the toolbar at 844 x 390 at 130%, the Multi-select row gives the window a free height of 151 and it docks there instead of opening compact. Section 13's phone rows say which.
-- **docs/design-v1-companion-stat-blocks.md** (companions' stat blocks). It makes a placed companion's `size` its owners' through this design's rule, which it cites for every size change. The contract:
+- **docs/design/design-v1-tool-options.md** (one options row). It names the mode and its bar Multi-select, leaves the rename to this design, and builds after this build's first commit, the rename. Nothing in either depends on the other: the window reads the free area, whatever the options publish into `Chrome.bottom` and `Chrome.controls`. It removes `Chrome.rail`, `noticeSpan`, `hintRoom`, `shortHint` and `LONG_HINT_MIN` from `barDock.ts` and `ScrollForMore`'s `fill`, and this design adds the window's size there and moves `ScrollForMore` into the scroller. Both edit `barDock.ts` and its test, `TokenActionBar.tsx`, `client/state/shortcuts.ts`, `e2e/bardock.e2e.ts`, `reach.e2e.ts`, `layout.e2e.ts`, `playerphone.e2e.ts` and FEATURES.md. Whichever lands second keeps the other's change. Merged into the toolbar at 844 x 390 at 130%, the Multi-select row gives the window a free height of 151 and it docks there instead of opening compact. Section 13's phone rows say which.
+- **docs/design/design-v1-companion-stat-blocks.md** (companions' stat blocks). It makes a placed companion's `size` its owners' through this design's rule, which it cites for every size change. The contract:
   - **Two ops.** The attach sends the link and numbers in one `token.update`, waits for its answer, then sends the size as a resize patch built by `resizePatch`, its own op. A resize patch never carries other fields (8.6, rule 3).
   - **Its preview** is `resizePatch`'s answer: `{ shifted }` for "It moves a little to clear the wall.", `{ refused }` for "No room to grow here.", sent as nothing.
   - **Its reads** are a resize patch's (8.6).
   - **Undo.** The resize goes on the player's undo stack and the attach does not, so Ctrl+Z right after attaching takes back the size alone, as its 5.1 says, and keeps the attached numbers.
   - **Clearance** is one definition, the move rules' standing test (8.3).
   - **The op version**: version 6 shared if both deploy together, else that build takes 7 (8.7).
-- **docs/design-v1-token-panel.md**: Stats gains Size, and Token settings loses it (8.10).
+- **docs/design/design-v1-token-panel.md**: Stats gains Size, and Token settings loses it (8.10).
 - **The shortcut sheet's build** (`openvtt-sheet`): its registry and sections are what section 11 writes into. If this build lands first, it adds the two section renames and its rows to that registry when the sheet build has landed, or that build adds them from section 11.
 
 ## 13. Edge cases
@@ -681,7 +681,7 @@ Unit tests, `node:test`:
 - `client/features/tokens/resize.test.ts`, new: `resizePatch` for the DM (the base spot, Custom's `w` and `h`), for an owner on a scene that blocks moves (the search, `shifted`) and does not (the base), the refusals' words, and the remembered square. `baseSize` for a PC, a linked room monster, an SRD monster before and after its block loads, "Medium or Small", a companion's block, and none. `canResize` by role, lock and Custom.
 - `client/state/shortcuts.test.ts`: an arrow key whose default is prevented runs no nudge. The registry holds section 11's rows in the "Token window" and "Dialogs" sections, every "Multi-select", and the new Keys intro, and FEATURES.md's tables agree.
 
-e2e, one file after another as docs/design-v1-visual.md 5.3 says:
+e2e, one file after another as docs/design/design-v1-visual.md 5.3 says:
 
 - `e2e/bardock.e2e.ts` (E2E_PORT plus seven):
   - Test 3: a press of the grip that moves under 8 px, and one on the name, each move nothing and store nothing. Its last step presses "Reset window position and size".
@@ -713,7 +713,7 @@ One part in one workspace, from main at `e4ec8696` or later. Each commit typeche
 5. `feat(rules): where a resized creature stands, checked like a move`: `shared/rules/resize.ts` and its test, `resizeCheck` and `restorePoseCheck` in `shared/permissions.ts` (`companionUpdateCheck` handing size patches over), `isResizeOp` and `onPlayerUndoStack` in `shared/protocol.ts`, `Pose` with a size and `poseRestore` in `server/rooms/undo.ts`, the resize's poses in `server/rooms/actor.ts`, the resize stop in `shared/reducer/tokens.ts`, `PathStop.footprint` in `shared/model.ts` and `server/rooms/stateSchema.ts`, `plainStop` and `withStop` in `shared/rules/path.ts`, `OP_VERSION` 6 and `resizeStop` in `shared/migrate.ts`, `server/rooms/undoLabels.ts`, `movedFeet` and `turnTrail` in `client/features/measure/movement.ts`, and their tests and the version 5 fixture.
 6. `feat(tokens): change a creature's size from its token window and its stats`: `client/features/tokens/resize.ts` (`resizePatch`, `baseSize`) and the growth memory in the Room scope with their tests, `access.ts` (`canResize`), the Size row and the stepper-row wrap in `TokenActionBar.tsx`, Size in Stats and out of Token settings in `client/panels/TokenPanel.tsx`, the group's More per token in `GroupMoreSheet.tsx`, FEATURES.md, the tokenpanel e2e sizes step.
 7. `test(e2e): the token window's reach on a computer at every size it opens at`: bardock's sweep.
-8. `docs: point the bar dock, token panel, layout and visual designs at the token window`: status lines in docs/design-v1-bar-dock.md (sections 1.2, 1.4, 2, 4), docs/design-v1-token-panel.md 3.3, docs/design-v1-layout-hierarchy.md 3.5 and 4.2, docs/design-v1-visual.md 3.2's token bar row, and docs/design-v1-heights-readout.md's "Select several".
+8. `docs: point the bar dock, token panel, layout and visual designs at the token window`: status lines in docs/design/design-v1-bar-dock.md (sections 1.2, 1.4, 2, 4), docs/design/design-v1-token-panel.md 3.3, docs/design/design-v1-layout-hierarchy.md 3.5 and 4.2, docs/design/design-v1-visual.md 3.2's token bar row, and docs/design/design-v1-heights-readout.md's "Select several".
 
 Files the builds beside it also edit are listed in section 12. Whichever lands second keeps the other's change.
 

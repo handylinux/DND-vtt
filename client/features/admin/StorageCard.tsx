@@ -6,7 +6,7 @@ import type { AdminStorage } from "./api.ts";
 import { backupLines, formatBytes, plural } from "./format.ts";
 
 /**
- * What the server holds (docs/design-v1-dm-tools.md 3.18): the image
+ * What the server holds (docs/design/design-v1-dm-tools.md 3.18): the image
  * volume, the database, the images on disk counted once each, what waits
  * for cleanup, and the backups.
  */

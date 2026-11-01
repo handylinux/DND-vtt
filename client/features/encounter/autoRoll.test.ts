@@ -406,7 +406,7 @@ describe("the rolls sent to the server", () => {
     const op = sent[0] as OpOf<"dice.roll">;
     assert.equal(op.to, "dm");
     assert.equal(op.tag, tag);
-    assert.ok(op.rolls.every((r) => r.initiative === true), "marked as initiative, for the order setting (docs/design-v1-combat-flow.md 11.3)");
+    assert.ok(op.rolls.every((r) => r.initiative === true), "marked as initiative, for the order setting (docs/design/design-v1-combat-flow.md 11.3)");
     assert.deepEqual(
       op.rolls.map((r) => [r.formula, r.mode, r.cancelled]),
       [

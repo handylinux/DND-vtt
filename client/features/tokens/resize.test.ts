@@ -37,7 +37,7 @@ const sent = (answer: ResizeAnswer) => {
 /** The token as the patch leaves it. */
 const after = (t: Token, answer: ResizeAnswer): Token => ({ ...t, ...(sent(answer).patch as Partial<Token>) });
 
-describe("resizePatch (docs/design-v1-token-window.md 8.6)", () => {
+describe("resizePatch (docs/design/design-v1-token-window.md 8.6)", () => {
   test("the DM: the base spot, unchecked over walls, and Custom's width and height set or cleared", () => {
     const state = walled(CORNER);
     const thorn = state.tokens.thorn!;
@@ -157,7 +157,7 @@ describe("the creature's own size, and the steps", () => {
     assert.equal(baseSize({ token: { kind: "object", actor: { inline: {} as never } }, actor: { monsterId: "m1" }, ...view, srd: null }), null, "an object");
   });
 
-  test("a companion's own stat block gives its base, and one deleted since gives none (docs/design-v1-companion-stat-blocks.md 3.2)", () => {
+  test("a companion's own stat block gives its base, and one deleted since gives none (docs/design/design-v1-companion-stat-blocks.md 3.2)", () => {
     const blocks = { b1: { size: "tiny" as const }, b2: { size: "medium" as const, sizeAlt: "small" as const } };
     assert.deepEqual(baseSize({ token: npc, actor: { blockId: "b1" }, ...view, blocks, srd: null }), ["tiny"]);
     assert.deepEqual(baseSize({ token: npc, actor: { blockId: "b2" }, ...view, blocks, srd: null }), ["medium", "small"]);
@@ -199,7 +199,7 @@ describe("the creature's own size, and the steps", () => {
   });
 });
 
-describe("resizePatch on a hex scene (docs/design-v1-hex-grids.md 4.2)", () => {
+describe("resizePatch on a hex scene (docs/design/design-v1-hex-grids.md 4.2)", () => {
   for (const orient of ["rows", "columns"] as const) {
     const g: HexGrid = { shape: "hex", orient };
     test(`${orient}: a Medium grows Large with its hex as the Large's top hex, which the server takes, and shrinks back onto it`, () => {

@@ -29,7 +29,7 @@ import { diceSet, type DiceSet } from "./sets.ts";
 import type { PreviewTarget, Stage, StagedThrow, StageEvents } from "./store.ts";
 
 /**
- * The dice drawn (docs/design-v1-roll-animation.md 5 to 9): the renderer
+ * The dice drawn (docs/design/design-v1-roll-animation.md 5 to 9): the renderer
  * on its own canvas and context, each kind's texture and the result's
  * decal drawn in code with Inter, a pool of meshes per kind, and the loop
  * that runs only while dice move. This is the lazy chunk's entry: the

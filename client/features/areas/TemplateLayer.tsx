@@ -38,18 +38,18 @@ import { useLiveTokens } from "./useLiveTokens.ts";
  *
  * In Isometric an area lies on the ground stage, and its name stands on the
  * overlay by the stand rule, else lies flat under the fog with the area
- * (docs/design-v1-isometric-view.md 5.2 and 5.3). An area attached to a
+ * (docs/design/design-v1-isometric-view.md 5.2 and 5.3). An area attached to a
  * token being dragged leaves the ground for the drag's moving marks until
  * the drop (canvas/DragMarks.tsx), so a drag never redraws the ground.
  * Where the board stands an area as its real shape, the rings of the
  * creatures it catches that stand by the stand rule leave the ground for
- * their standees' bases (docs/design-v1-iso-area-shapes.md 4.4,
+ * their standees' bases (docs/design/design-v1-iso-area-shapes.md 4.4,
  * relief/IsoBoard.tsx), and the rest stay here.
  *
  * It only draws. The reminders that an area hits a creature again, and
  * the count of selection changes for the area tool, run in the board's
  * area controller (AreaController.ts), mounted once outside both drawing
- * trees (docs/design-v1-isometric-view.md 5.1).
+ * trees (docs/design/design-v1-isometric-view.md 5.1).
  */
 
 const EMPTY_TEMPLATES: RoomState["templates"] = {};
@@ -57,7 +57,7 @@ const EMPTY_TOKENS: RoomState["tokens"] = {};
 
 /**
  * What the isometric board read for the areas it stands as their real
- * shapes (docs/design-v1-iso-area-shapes.md 4.4, relief/IsoBoard.tsx): the
+ * shapes (docs/design/design-v1-iso-area-shapes.md 4.4, relief/IsoBoard.tsx): the
  * context its still areas read, which the ground stage's areas read too,
  * so both find the same creatures caught, each area and creature pair
  * whose ring draws at the creature's standee instead of on the ground, as

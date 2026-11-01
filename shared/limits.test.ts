@@ -88,7 +88,7 @@ describe("checkLimits", () => {
     assert.ok(!many.ok && /100 saved encounters/.test(many.message));
   });
 
-  test("handout pages: every page of every document and of every handout showing, one image as one page, a document shown counted again (docs/design-v1-pdf-handouts.md 3.7)", () => {
+  test("handout pages: every page of every document and of every handout showing, one image as one page, a document shown counted again (docs/design/design-v1-pdf-handouts.md 3.7)", () => {
     const pages = (n: number, prefix: string) => Array.from({ length: n }, (_, i) => ({ assetId: `${prefix}${i}`, width: 1584, height: 2048 }));
     const state = room();
     // 19 documents of 100 pages and one of 99: 1,999 pages.
@@ -190,7 +190,7 @@ describe("checkLimits", () => {
   });
 });
 
-describe("companion stat blocks (docs/design-v1-companion-stat-blocks.md 3.4)", () => {
+describe("companion stat blocks (docs/design/design-v1-companion-stat-blocks.md 3.4)", () => {
   /** A block of exactly `bytes` serialized, its padding split into traits of the protocol's 4,000 characters. */
   function blockOfBytes(id: string, characterId: string, bytes: number): CompanionBlock {
     const plain = companionBlock(id, characterId, { traits: [] });

@@ -41,7 +41,7 @@ describe("monster list rows as subpage openers", () => {
 });
 
 /*
- * A known form's mark in Take a shape (docs/design-v1-known-forms.md 5.1)
+ * A known form's mark in Take a shape (docs/design/design-v1-known-forms.md 5.1)
  * reads whole. Cut at a character name's 88 px, "Over CR 1/4" showed as
  * "Over CR …" on a phone (LP9-PLAY-1). A companion block's character name
  * still cuts.

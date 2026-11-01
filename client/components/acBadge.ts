@@ -1,5 +1,5 @@
 /**
- * The Armor Class shield (docs/design-v1-token-panel.md 3.9), as plain
+ * The Armor Class shield (docs/design/design-v1-token-panel.md 3.9), as plain
  * functions for node --test: the shield's outline and the box a badge
  * takes for a number. The map, the token bar, the token panel, the tracker
  * and the party bar all draw this one shape, so AC reads the same
@@ -35,7 +35,7 @@ export type AcBadgeBox = { width: number; height: number; textPx: number };
 /**
  * The badge's box for an AC: a fixed height, and wide enough for its
  * digits, so 9, 99 and 100 each fit inside the shield. Nothing for an AC
- * of 0, which a companion with none has (docs/design-v1-combat-flow.md
+ * of 0, which a companion with none has (docs/design/design-v1-combat-flow.md
  * 3.6.6), or for anything outside the 1 to 100 the protocol allows.
  */
 export function acBadgeBox(ac: number, size: AcBadgeSize): AcBadgeBox | null {

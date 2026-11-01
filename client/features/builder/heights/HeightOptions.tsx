@@ -51,10 +51,10 @@ function stairChoices(g: Grid): readonly { value: StairChoice; label: ReactNode;
 
 /**
  * Height mode's slots in the builder's row (Options.tsx,
- * docs/design-v1-tool-options.md 9.9): what to paint, the brush, and the
+ * docs/design/design-v1-tool-options.md 9.9): what to paint, the brush, and the
  * height or the stairs' direction. The stepper's − and + repeat while held,
  * so 100 ft is one hold away from the default 10 ft rather than eighteen
- * taps (docs/design-v1-heights-readout.md section 5), and its value is
+ * taps (docs/design/design-v1-heights-readout.md section 5), and its value is
  * spoken once a hold ends. A typed number would open the keyboard over the
  * map being painted.
  */
@@ -68,7 +68,7 @@ export function useHeightSlots(rough = false, grid: Grid = SQUARES): Slot[] {
   // What a press the browser cancels puts back (OptButton `repeatValue`).
   const height = useMemo(() => ({ read: () => store.getState().height, write: (v: number) => store.setState({ height: v }) }), [store]);
   const shapes = isHex(grid) ? HEX_SHAPES : SHAPES;
-  // Difficult ground mode (docs/design-v1-movement.md 3.4): the same brush and area, marking or clearing.
+  // Difficult ground mode (docs/design/design-v1-movement.md 3.4): the same brush and area, marking or clearing.
   if (rough) {
     return [
       {

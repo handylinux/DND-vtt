@@ -16,7 +16,7 @@ const FRAME_CELLS = 10_000;
  * a few dozen, but a snapshot, a light level or vision turned on can change
  * every one of a 200 x 200 scene's 169. Writing those at once measured
  * about 4 ms with Chrome's CPU slowed four times, the phone budget of
- * docs/design-v1-maps-vision.md 4.3.6, so the rest wait for the next
+ * docs/design/design-v1-maps-vision.md 4.3.6, so the rest wait for the next
  * frames, a few dozen at a time. Those tiles show their old levels for a
  * frame or two, which only shades the map: the server has already decided
  * which creatures players get.

@@ -5,7 +5,7 @@ import { decodeTile, encodeTile } from "#shared/rules/fog.ts";
 
 /**
  * What any player sees, as the DM's tools read it
- * (docs/design-v1-per-player-vision.md decision 14): the Outliner and the
+ * (docs/design/design-v1-per-player-vision.md decision 14): the Outliner and the
  * tracker's "visible" add say what reaches some player, by the union of
  * every source and every map. The DM's view holds the union's sight as
  * its own `sight`, and the fog of each layer apart: the DM's (`fogTiles`),

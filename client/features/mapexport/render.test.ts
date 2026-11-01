@@ -4,7 +4,7 @@ import { cornerAt, hexCorners, sceneHexes, type HexGrid } from "#shared/rules/he
 
 /**
  * The export's grid (render.ts traceGrid) on a hex scene draws the board's
- * hex sides over the whole scene (docs/design-v1-hex-grids.md HX-D13), and a
+ * hex sides over the whole scene (docs/design/design-v1-hex-grids.md HX-D13), and a
  * square scene's lines stay as they were.
  */
 describe("the exported grid", () => {

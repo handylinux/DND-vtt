@@ -30,7 +30,7 @@ function recentKinds(log: readonly LogEntry[]) {
 }
 
 /**
- * The panel's part in a throw (docs/design-v1-roll-animation.md 3.5): it
+ * The panel's part in a throw (docs/design/design-v1-roll-animation.md 3.5): it
  * is mounted, and any tap or key in it, or a change of its pane's size,
  * ends the throw. The listeners are on the capture phase and never stop
  * or prevent the event, so the tap or key still does its own job.
@@ -75,7 +75,7 @@ function useThrowPanel(throws: ThrowStore) {
  * sticky line: a row above the view, or taller than the room under the
  * line, starts right under it, and one below shows its foot. The line's
  * height is measured, since at 130% it is a fraction of a pixel more than
- * any fixed margin (docs/design-v1-dice.md 8.3, LP7-DICE-5).
+ * any fixed margin (docs/design/design-v1-dice.md 8.3, LP7-DICE-5).
  */
 function revealUnderLine(row: HTMLElement, line: HTMLElement | null): void {
   const node = row as unknown as Parameters<typeof scrollBox>[0];
@@ -93,7 +93,7 @@ function revealUnderLine(row: HTMLElement, line: HTMLElement | null): void {
 }
 
 /**
- * The Dice panel (docs/design-v1-dice.md 8), for everyone: the newest
+ * The Dice panel (docs/design/design-v1-dice.md 8), for everyone: the newest
  * panel roll stuck at the top, the formula field with its quick dice and
  * one-roll choices, a creature's roll options, then Recent rolls. Every
  * roll happens on the server, so the panel only sends and shows.
@@ -120,7 +120,7 @@ export default function DicePanel(props: PanelProps) {
   const folds = useDiceFolds();
   /*
    * A tap on the sticky line opens a folded Recent rolls for the page,
-   * writing nothing (docs/design-v1-dice-pass.md 6.4), and its row comes
+   * writing nothing (docs/design/design-v1-dice-pass.md 6.4), and its row comes
    * into view once it has rendered. The opening reaches the folds a render
    * later, so the scroll waits for the commit that has Recent rolls open.
    * Each tap counts anew, so a second tap after the viewer folds the list
@@ -160,13 +160,13 @@ export default function DicePanel(props: PanelProps) {
     <div {...throwPanel} data-dice-panel="" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(2) }}>
       <LastResult onOpen={show} />
       <Roller />
-      {/* The roller and what it rolls for part by the panel's section line, 16 px each side, the grid's gap and this margin making the 16 above (docs/design-v1-dice-pass.md 7.1). */}
+      {/* The roller and what it rolls for part by the panel's section line, 16 px each side, the grid's gap and this margin making the 16 above (docs/design/design-v1-dice-pass.md 7.1). */}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(2), marginTop: theme.space(2), paddingTop: theme.space(4), borderTop: `${theme.line.border}px solid ${theme.color.border}` }}>
         {group && role === "dm" ? (
           <OpenGroupSave
             page={group}
             onOpen={() => {
-              // An area's page reads its creatures from the area, which the Areas panel holds. With two panels it opens beside this one (docs/design-v1-split-panel.md 5.1).
+              // An area's page reads its creatures from the area, which the Areas panel holds. With two panels it opens beside this one (docs/design/design-v1-split-panel.md 5.1).
               const panel = group.source.kind === "area" ? "areas" : "dice";
               groupStore.setState({ shownIn: panel });
               if (panel === "areas") ui.openPanel("areas", here ? { from: here } : undefined);

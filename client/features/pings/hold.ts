@@ -7,7 +7,7 @@ import { scopeSlot, type RoomScope } from "../../state/scope.ts";
  * readout, Stage.tsx through lib/gestures.ts `hold`) and a pin's tap
  * (PinLayer.tsx). Held means the ping fired rather than that 500 ms passed,
  * so a press the ping's timer was late for, on a busy phone, still acts as
- * the tap it was (docs/design-v1-heights-readout.md section 2).
+ * the tap it was (docs/design/design-v1-heights-readout.md section 2).
  */
 
 type Listener = (pointerId: number) => void;

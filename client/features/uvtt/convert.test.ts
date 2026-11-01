@@ -97,7 +97,7 @@ describe("where the file lands in the scene", () => {
 });
 
 describe("walls on the grid become edges", () => {
-  test("a room whose new scenes start on hexes still imports a square scene, walls and all (docs/design-v1-hex-grids.md HX-D13)", () => {
+  test("a room whose new scenes start on hexes still imports a square scene, walls and all (docs/design/design-v1-hex-grids.md HX-D13)", () => {
     const border = plan({ size: p(20, 20), walls: [[p(0, 0), p(20, 0), p(20, 20), p(0, 20), p(0, 0)]] });
     const hexRoom = room();
     hexRoom.meta.settings = { ...hexRoom.meta.settings, newScenes: "hexRows" };
@@ -122,7 +122,7 @@ describe("walls on the grid become edges", () => {
     const stored = Object.values(state.buildChunks).filter((c) => c.sceneId === "imp");
     assert.equal(stored.reduce((n, c) => n + Object.keys(c.edges).length, 0), 80);
     assert.equal(state.scenes.imp!.autoWalls, "off");
-    // A new scene, so its walls stop players' moves (docs/design-v1-maps-vision.md 4.1).
+    // A new scene, so its walls stop players' moves (docs/design/design-v1-maps-vision.md 4.1).
     assert.equal(state.scenes.imp!.blockMovement, true);
   });
 

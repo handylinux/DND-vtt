@@ -5,7 +5,7 @@ import { gone, invalid, type Tx } from "./tx.ts";
 
 /**
  * The stat blocks a character keeps for its companions
- * (docs/design-v1-companion-stat-blocks.md 3.3), kept as the room's own
+ * (docs/design/design-v1-companion-stat-blocks.md 3.3), kept as the room's own
  * monsters are. A companion links one through its actor's `blockId`, and
  * deleting a block writes no token: a link to a block that is gone reads as
  * deleted until someone attaches another or detaches (section 3.2 rule 4).

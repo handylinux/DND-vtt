@@ -15,7 +15,7 @@ import { buildSnapshot, publishBatch } from "./fanout.ts";
 
 /**
  * The design 7.3 invariant through the server's own fan-out
- * (docs/design-v1-maps-vision.md 4.3.5 and section 6): batches of random
+ * (docs/design/design-v1-maps-vision.md 4.3.5 and section 6): batches of random
  * ops, each followed by the explore step the actor appends, published by
  * `publishBatch` with its narrow sight diff to DMs on both scenes and two
  * players. Applying each socket's `ev`s to its snapshot must give exactly a
@@ -307,7 +307,7 @@ describe("the server's held maps", () => {
   });
 });
 
-describe("a mount's path in its rider's turn (docs/design-v1-attach.md 7.2)", () => {
+describe("a mount's path in its rider's turn (docs/design/design-v1-attach.md 7.2)", () => {
   test("reaches a player's socket and leaves it as the rider's row comes into sight and goes out of it, with no change to the mount", () => {
     // The DM's goblin rides P1's horse under control on its own turn, both in the lifted fog. Then the goblin gets off into
     // the fog and back out: its row is hidden and shown again, and with it the horse's path of the turn.
@@ -346,7 +346,7 @@ describe("a mount's path in its rider's turn (docs/design-v1-attach.md 7.2)", ()
   });
 });
 
-describe("a per-player scene in the fan-out (docs/design-v1-per-player-vision.md 6.9, review SEC-PV1-1)", () => {
+describe("a per-player scene in the fan-out (docs/design/design-v1-per-player-vision.md 6.9, review SEC-PV1-1)", () => {
   test("two holders' sight never shares one projection: each gets their own tile, and each copy stays its fresh projection", () => {
     withCellVision(() => {
       // Thorn, p1's, in the north west and Bree, p2's, in the south east, each seeing three cells out by the stub.

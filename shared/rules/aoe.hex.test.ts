@@ -8,7 +8,7 @@ import { gridOfShape } from "./grid.ts";
 import { cornerAt, HEX_R, hexAt, hexCenter, hexCorners, hexDistance, hexInScene, hexKey, hexNeighbors, sceneHexes, type Hex, type HexGrid } from "./hex.ts";
 
 /**
- * Areas on hexes (docs/design-v1-hex-grids.md HX-D11 and section 9):
+ * Areas on hexes (docs/design/design-v1-hex-grids.md HX-D11 and section 9):
  * true shapes graded per hex, emanations counted in steps from their
  * creature's hexes, and creatures caught by their hexes.
  */

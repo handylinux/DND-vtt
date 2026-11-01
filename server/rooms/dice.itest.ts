@@ -10,7 +10,7 @@ import { pruneReceipts } from "./persistence.ts";
 import { failCommits, startEngine, type Engine, type Socket, type TestClient } from "./testing.ts";
 
 /**
- * Dice on the real server and Postgres (docs/design-v1-dice.md 4.2 and
+ * Dice on the real server and Postgres (docs/design/design-v1-dice.md 4.2 and
  * 1.2): the pipeline's order, the budget, a resend rolling once, stored ops
  * replaying, and receipts, written with their batch, kept across a restart,
  * answered by the lookup to their own member only, pruned without ever
@@ -316,7 +316,7 @@ describe("a request's answer and a death save rolled on the server", () => {
     assert.ok(after.deathSaves.ok + after.deathSaves.fail > 0 || after.life === "alive");
   });
 
-  test("a group save's outcome applies once by its plan, from a new tab or after a restart (docs/design-v1-roll-options.md 5.5)", async () => {
+  test("a group save's outcome applies once by its plan, from a new tab or after a restart (docs/design/design-v1-roll-options.md 5.5)", async () => {
     const room = await setup(t, "Outcome once");
     const goblin = uuidv7();
     await room.dm.apply({ t: "token.create", token: { id: goblin, sceneId: room.sceneId, kind: "monster", name: "Goblin", size: "small", x: 2, y: 2, actor: { inline } } } as Op);
@@ -345,7 +345,7 @@ describe("a request's answer and a death save rolled on the server", () => {
   });
 });
 
-describe("the day's caps and floods (docs/design-v1-dice.md 1.2 and 4.4)", () => {
+describe("the day's caps and floods (docs/design/design-v1-dice.md 1.2 and 4.4)", () => {
   let t: Engine;
   before(async () => {
     t = await startEngine();

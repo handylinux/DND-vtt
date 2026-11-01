@@ -1,5 +1,5 @@
 /**
- * The handout viewer's zoom (docs/design-v1-layout-hierarchy.md section 5).
+ * The handout viewer's zoom (docs/design/design-v1-layout-hierarchy.md section 5).
  * The room stops the page itself from zooming (a pinch on a phone would
  * otherwise strand the player in a zoomed page), so a handout's small print
  * needs a zoom of its own: pinch, double tap, the wheel, the zoom buttons
@@ -20,7 +20,7 @@
  * fit). viewerStep is every step between them, so the component only
  * measures, draws and passes on what the hands and keys do.
  *
- * A handout of several pages reads like a PDF (docs/design-v1-pdf-handouts.md
+ * A handout of several pages reads like a PDF (docs/design/design-v1-pdf-handouts.md
  * section 5). Its fit is the width fit, and it zooms out below that to the
  * page fit, where the tallest page shows whole, so `scale` runs from the
  * frame's `min` up. It pages by the view's position (pageStep), loads only

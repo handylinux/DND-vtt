@@ -35,7 +35,7 @@ function roll(id: string, overrides: Partial<PcRoll> = {}): PcRoll {
   return { id, name: id, kind: "weapon", dice: [], ...overrides };
 }
 
-describe("the derived numbers (docs/design-v1-pc-stats.md 3.3)", () => {
+describe("the derived numbers (docs/design/design-v1-pc-stats.md 3.3)", () => {
   test("the proficiency bonus follows the level, and an unset level reads as 1", () => {
     const table: [number | undefined, number][] = [
       [undefined, 2],
@@ -203,7 +203,7 @@ describe("the derived numbers (docs/design-v1-pc-stats.md 3.3)", () => {
   });
 });
 
-describe("named rolls (docs/design-v1-pc-stats.md 3.4)", () => {
+describe("named rolls (docs/design/design-v1-pc-stats.md 3.4)", () => {
   const caster = stats({ abilities: { str: 10, dex: 18, con: 10, int: 18, wis: 16, cha: 10 }, spellAbility: "int" });
 
   test("Appendix C: Fire Bolt at level 11 rolls 3d10 at +8", () => {
@@ -440,7 +440,7 @@ describe("named rolls (docs/design-v1-pc-stats.md 3.4)", () => {
   });
 });
 
-describe("defenses (docs/design-v1-pc-stats.md 3.6)", () => {
+describe("defenses (docs/design/design-v1-pc-stats.md 3.6)", () => {
   test("in doc 3's Defense shape, unqualified, in the damage types' order, with Evasion beside them", () => {
     const bree = pc(5, stats({ defenses: { poison: "immune", fire: "resistant", cold: "vulnerable" }, evasion: true }));
     assert.deepEqual(pcDefenses(bree), {
@@ -460,7 +460,7 @@ describe("defenses (docs/design-v1-pc-stats.md 3.6)", () => {
   });
 });
 
-describe("the largest a roll grows (docs/design-v1-pc-stats.md 7.2)", () => {
+describe("the largest a roll grows (docs/design/design-v1-pc-stats.md 7.2)", () => {
   test("a cantrip at level 20 and a spell at a 9th-level slot stay within one roll's 100 dice, the modifier included", () => {
     const block = stats({ spellAbility: "int" });
     assert.equal(pcRollFits(block, roll("c", { kind: "spell", level: 0, dice: [{ formula: "25d10", type: "fire", grows: true }] })), true, "100 dice");

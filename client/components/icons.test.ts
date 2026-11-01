@@ -9,7 +9,7 @@ const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { ICON_NAMES, Icon, LUCIDE } = await import("./Icon.tsx");
 
-/** One icon, one meaning, and every copied icon credited (docs/design-v1-icons.md 2 and 6). */
+/** One icon, one meaning, and every copied icon credited (docs/design/design-v1-icons.md 2 and 6). */
 
 // Meanings that share a drawing on purpose: the DM desk's Pass and Fail beside their words, as the check and the close they are.
 const SHARED = new Set(["check|pass", "close|fail"]);

@@ -2,7 +2,7 @@ import type { Scene, ScenePreset } from "./model.ts";
 
 /**
  * "Players see", one choice of what players get of a scene
- * (docs/design-v1-map-discovery.md 8.1), as the client's settings and the
+ * (docs/design/design-v1-map-discovery.md 8.1), as the client's settings and the
  * server's undo names both read it, so the two never word it apart. Each
  * preset is a pair of the scene's switches, so any scene reads as one, or as
  * Custom for the one pair no preset names: fog off with party vision on.

@@ -143,10 +143,10 @@ function onCancel(ctx: ToolContext): void {
 }
 
 /**
- * The Ruler's row (docs/design-v1-tool-options.md 9.2): Shared for the DM,
+ * The Ruler's row (docs/design/design-v1-tool-options.md 9.2): Shared for the DM,
  * Measure, Keep and Clear, and the kept rulers behind a chip. Its line is
  * the hint, or the reading with the diagonal rule: a walking ruler's walk
- * and what terrain added (docs/design-v1-movement.md 3.3). While a walk is
+ * and what terrain added (docs/design/design-v1-movement.md 3.3). While a walk is
  * searching the line keeps the last walk, and past the shared loading
  * delay it says "Finding the way…" in the small loading line (StripWait,
  * walkRuler.ts walkShown).
@@ -213,7 +213,7 @@ function RulerOptions(props: { role: "dm" | "player" }) {
           // Its eye alone where the row cannot hold its word, so a DM's row with Measure and kept rulers still fits a 375 px phone.
           compact: true,
           control: (
-            // A fixed name that says what pressed means (docs/design-v1-visual.md 3.7).
+            // A fixed name that says what pressed means (docs/design/design-v1-visual.md 3.7).
             <OptButton
               pressed={share}
               icon="shown"

@@ -7,7 +7,7 @@ import { SQUARES } from "./grid.ts";
 import { hexAt, hexDistance, hexKey, hexNeighbors, type Hex, type HexGrid } from "./hex.ts";
 
 /**
- * Distance on hexes (docs/design-v1-hex-grids.md 4.3): the fewest hex steps
+ * Distance on hexes (docs/design/design-v1-hex-grids.md 4.3): the fewest hex steps
  * between any hex of one creature and any hex of the other, and with height
  * the room's rule between those steps and the vertical ones.
  */

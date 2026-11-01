@@ -1,5 +1,5 @@
 /**
- * Universal VTT files written for the tests (docs/design-v1-maps-vision.md
+ * Universal VTT files written for the tests (docs/design/design-v1-maps-vision.md
  * section 6). Never a third-party map: those are not openly licensed test
  * data. Only the tests import this.
  */

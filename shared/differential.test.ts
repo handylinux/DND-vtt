@@ -12,7 +12,7 @@ import { SQUARES } from "./rules/grid.ts";
 
 /**
  * Movement's generators for the shared differential test
- * (docs/design-v1-movement.md 12, "Public determinism"): each a pair of
+ * (docs/design/design-v1-movement.md 12, "Public determinism"): each a pair of
  * rooms that differ only in what players cannot see, with the same drags
  * by the DM and by a player, through a room cut by a wall along x = 6 that
  * leaves a gap below y = 12. The hero is P1's, the goblin the DM's.
@@ -107,7 +107,7 @@ const PAIRS: Pair[] = [
     s.buildChunks[chunkKey("s1", 0, 0)] = chunk(Object.fromEntries(PATCH.map((k) => [k, "pit" as TerrainId])));
   }, partyOnly, ["buildChunks"]),
   pair(
-    "fogged rubble under a monster the hero rides, whose drag keeps to ground players have seen (docs/design-v1-attach.md 9)",
+    "fogged rubble under a monster the hero rides, whose drag keeps to ground players have seen (docs/design/design-v1-attach.md 9)",
     (s) => {
       fogged(s);
       s.tokens.gob = { ...s.tokens.gob!, size: "large" };
@@ -280,7 +280,7 @@ describe("public determinism: the log's rings (shared/logRings.ts)", () => {
 });
 
 /*
- * Attached tokens' generators (docs/design-v1-attach.md 8.0): pairs of rooms
+ * Attached tokens' generators (docs/design/design-v1-attach.md 8.0): pairs of rooms
  * that differ only in hidden state, and never only in a link that carries a
  * visible token, which the carried-object reveal shows by design. Each pair
  * goes through the same steps in both rooms, made on the acting device's
@@ -547,11 +547,11 @@ const ATTACH_PAIRS: OpPair[] = [
   ),
 ];
 
-describe("public determinism: attached tokens' generators (docs/design-v1-attach.md 8.0)", () => {
+describe("public determinism: attached tokens' generators (docs/design/design-v1-attach.md 8.0)", () => {
   for (const p of ATTACH_PAIRS) test(p.name, () => void checkOps(p));
 });
 
-describe("the carried-object reveal (docs/design-v1-attach.md 8.0)", () => {
+describe("the carried-object reveal (docs/design/design-v1-attach.md 8.0)", () => {
   /** A torch every player sees, on a hidden stalker in one room and loose where it stands in the other. */
   function rooms(): { a: RoomState; b: RoomState } {
     const a = attachBase();
@@ -598,7 +598,7 @@ describe("the carried-object reveal (docs/design-v1-attach.md 8.0)", () => {
 });
 
 /*
- * Traps' generators (docs/design-v1-traps.md 7): pairs of rooms that differ
+ * Traps' generators (docs/design/design-v1-traps.md 7): pairs of rooms that differ
  * only in hidden state, on attach's table, with unfound traps players never
  * receive. What a trap does that players observe (stops, found marks,
  * players' lines, refusals) must read only creatures and links seen by all,
@@ -781,7 +781,7 @@ const UNSEEN_ACTION_PAIRS: OpPair[] = [
   ),
 ];
 
-describe("public determinism: traps' generators (docs/design-v1-traps.md 7)", () => {
+describe("public determinism: traps' generators (docs/design/design-v1-traps.md 7)", () => {
   for (const p of UNSEEN_ACTION_PAIRS) test(p.name, () => void checkOps(p));
   for (const p of TRAP_PAIRS) test(p.name, () => void checkOps(p));
 });

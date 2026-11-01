@@ -41,7 +41,7 @@ describe("the folded party bar", () => {
   });
 
   /*
-   * The folded line scrolls sideways (docs/design-v1-side-headers.md 3.2),
+   * The folded line scrolls sideways (docs/design/design-v1-side-headers.md 3.2),
    * so Tab must reach every chip for the strip to bring it into view. A
    * chip off the scene was `disabled`, which Tab skips, so a keyboard could
    * never read it.

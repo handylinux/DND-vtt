@@ -3,7 +3,7 @@ import type { Effect, RollRequest, RoomState } from "../model.ts";
 import type { ActorTarget } from "../protocol.ts";
 
 /**
- * The save-ends occurrences still waiting (docs/design-v1-roll-options.md
+ * The save-ends occurrences still waiting (docs/design/design-v1-roll-options.md
  * 6.1), one card each in the DM's fight alerts. They are read from the
  * effects alone, so a reload brings back exactly the unsettled ones, and a
  * request linked to one is named beside it.

@@ -5,12 +5,12 @@ import type { Point, StopBlocker } from "./drop.ts";
 import type { StopNote } from "./teleport.ts";
 
 /**
- * A lone token's drag held at a wall or a ledge (docs/design-v1-maps-vision.md
+ * A lone token's drag held at a wall or a ledge (docs/design/design-v1-maps-vision.md
  * 4.1): the spot the preview stays on and what is in the way. The canvas
  * writes it only when it changes, never on every pointer frame, and the
  * movement layer draws the red outline and the label from it. `noWay`
  * marks a drag that found no way a creature it drags beside it can follow
- * (drop.ts holdLabel, docs/design-v1-attach.md 4.2).
+ * (drop.ts holdLabel, docs/design/design-v1-attach.md 4.2).
  */
 export type Hold = { tokenId: string; at: Point; blocker: StopBlocker; noWay?: true };
 
@@ -31,7 +31,7 @@ export type NoteState = { note: StopNote | null; busy: boolean };
 export const stopNoteSlot = scopeSlot(() => createStore<NoteState>(() => ({ note: null, busy: false })));
 
 /**
- * A lone token drag's walk as the board draws it (docs/design-v1-movement.md
+ * A lone token drag's walk as the board draws it (docs/design/design-v1-movement.md
  * 3.1): where the drop would land, the route's corners between, top-left as
  * the token's position is, and how it reads. The drag writes it when the
  * spot or the search's answer changes, never on every pointer frame.

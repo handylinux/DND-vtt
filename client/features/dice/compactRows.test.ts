@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { presetTag, riderToggleName, riderText, rowSummary } from "./options.ts";
 
-describe("the compact rows' words (docs/design-v1-dice-ui.md 4)", () => {
+describe("the compact rows' words (docs/design/design-v1-dice-ui.md 4)", () => {
   test("a preset's tag is its few characters, the effects' names left to the group's label", () => {
     assert.equal(presetTag({ sources: [], extra: [], notes: [] }), "");
     assert.equal(presetTag({ sources: [{ kind: "dis", from: "poisoned" }], extra: [], notes: [] }), "Dis");

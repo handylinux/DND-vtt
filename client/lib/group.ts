@@ -20,7 +20,7 @@ export type Move = { tokenId: string; x: number; y: number };
  * selection that is on this scene and that this member may move. The lead
  * moves the group only when it is part of the selection itself.
  *
- * With `holderOf`, the links of this viewer's copy (docs/design-v1-attach.md
+ * With `holderOf`, the links of this viewer's copy (docs/design/design-v1-attach.md
  * 4.2): a token whose holder, or any holder above it, moves too is left
  * out, since it goes with that holder, so a rider and its mount both
  * selected move once, as the mount's group. `alsoMoving` names what moves
@@ -93,7 +93,7 @@ export function tokensInBox<T extends Placed>(tokens: Iterable<T>, a: { x: numbe
 
 /**
  * The tokens whose ring's center shows inside a box dragged on the screen
- * (docs/design-v1-isometric-view.md 6.2): in the isometric view a
+ * (docs/design/design-v1-isometric-view.md 6.2): in the isometric view a
  * footprint is a diamond and its art stands up, so a box takes a token by
  * the one point it stands on. `centerOf` gives that point on screen.
  */

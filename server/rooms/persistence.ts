@@ -85,7 +85,7 @@ type OpRow = { seq: string; at: Date; actor_member_id: string; actor_role: Viewe
  *
  * A snapshot from before map discovery takes its upgrade step once, over
  * the state recovered from everything stored before it
- * (docs/design-v1-map-discovery.md 5.5, ASTRA-31): just before the first
+ * (docs/design/design-v1-map-discovery.md 5.5, ASTRA-31): just before the first
  * op of op version 26, or after the last op when none is that new. Older
  * ops replay by their own rules first, so the scenes they made or moved
  * the players to are marked by the step alone (MD-R6-1).
@@ -182,7 +182,7 @@ export type OpRecord = { seq: number; at: string; actor: Viewer; op: Op; log: Lo
 
 export type WatermarkKey = { sessionId: string; clientId: string };
 
-/** One receipt as the table holds it (docs/design-v1-dice.md 1.2). */
+/** One receipt as the table holds it (docs/design/design-v1-dice.md 1.2). */
 export type ReceiptRow = {
   memberId: string;
   tag: string;
@@ -352,7 +352,7 @@ export async function writeSnapshot(pool: Pool, roomId: string, seq: number, sta
   return Buffer.byteLength(json);
 }
 
-/** The room's receipts written since `since`: those younger than 24 hours, which the actor holds in memory (docs/design-v1-dice.md 1.2). */
+/** The room's receipts written since `since`: those younger than 24 hours, which the actor holds in memory (docs/design/design-v1-dice.md 1.2). */
 export async function loadReceipts(pool: Pool, roomId: string, since: Date): Promise<ReceiptRow[]> {
   const { rows } = await pool.query<{ member_id: string; tag: string; part: number; state: ReceiptRow["state"]; seq: string | null; code: string | null; message: string | null; at: Date }>(
     `select member_id, tag, part, state, seq::text, code, message, at from roll_receipts
@@ -601,7 +601,7 @@ export async function readLogLines(q: Queryable, roomId: string, seq: number): P
 }
 
 /**
- * Receipt retention (docs/design-v1-dice.md 1.2): rows older than 7 days
+ * Receipt retention (docs/design/design-v1-dice.md 1.2): rows older than 7 days
  * go, and of those older than 24 hours each room keeps its newest 10,000. A
  * receipt younger than 24 hours is never deleted, by count or anything
  * else, so the duplicate rule holds for its whole day. Run daily.

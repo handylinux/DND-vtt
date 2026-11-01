@@ -29,21 +29,21 @@ export function useRollBlocked(): string | null {
   return preview ? IN_PREVIEW : connected ? null : NEEDS_CONNECTION;
 }
 
-/** A save or check as the request sheet's test (docs/design-v1-roll-request.md 4.8 fill). */
+/** A save or check as the request sheet's test (docs/design/design-v1-roll-request.md 4.8 fill). */
 function rollTestOf(test: Extract<D20Test, { kind: "save" | "check" }>): RollTest {
   if (test.kind === "save") return { kind: "save", choices: [{ ability: test.ability }] };
   return { kind: "check", choices: [test.skill ? { ability: test.ability, skill: test.skill } : { ability: test.ability }] };
 }
 
 /**
- * How every roll option sends (docs/design-v1-roll-options.md 4.2 and
+ * How every roll option sends (docs/design/design-v1-roll-options.md 4.2 and
  * 4.3), the Dice panel's and any surface that rolls the same way, such as
  * the tracker's value box: a d20 tap goes by its route, any other roll is a
  * panel roll, and each remembers its tag on its row so the row shows its
  * result in place.
  *
  * `surface` is "dice" for the Dice panel's own options, whose rolls may
- * throw dice (docs/design-v1-roll-animation.md 3.1). Left out, as the
+ * throw dice (docs/design/design-v1-roll-animation.md 3.1). Left out, as the
  * tracker's Roll leaves it, they never throw, even with Dice open beside.
  */
 export function useRollOption(surface?: "dice") {
@@ -138,7 +138,7 @@ export function useRollOption(surface?: "dice") {
       /**
        * A death save, counted by the server from the state then (4.3).
        * `record` names the turn record whose open death save it settles
-       * (docs/design-v1-combat-controls.md 2.3, combat/logic.ts openRecord).
+       * (docs/design/design-v1-combat-controls.md 2.3, combat/logic.ts openRecord).
        */
       deathSave(creature: ActorTarget, preset: RollPreset, row: string, record?: number, override?: RollModeOverride): string | null {
         if (override === "secret") return null;
@@ -165,7 +165,7 @@ export function useRollOption(surface?: "dice") {
         return remember(row, tag);
       },
       /**
-       * An ability's Recharge 1d6, rolled on the server (docs/design-v1-combat-controls.md
+       * An ability's Recharge 1d6, rolled on the server (docs/design/design-v1-combat-controls.md
        * 3.1): `min` or more there makes it ready, and with `record` it
        * settles the turn's open prompt for it. Who reads it is the server's
        * rule for the creature, so the panel's choices are neither applied
@@ -202,7 +202,7 @@ export function useRollOption(surface?: "dice") {
  */
 export function useRowResult(row: string, after?: number): { tag: string | null; receipt: ReceiptState | null; rolls: DiceRoll[]; waiting: boolean } {
   const rowOf = useOption((s) => rowTag(s, row, after));
-  // A row in a hidden pane keeps its place but watches nothing, or its watch would hide the roll's toast from a player who sees no row (docs/design-v1-stat-block-rolls.md 8).
+  // A row in a hidden pane keeps its place but watches nothing, or its watch would hide the roll's toast from a player who sees no row (docs/design/design-v1-stat-block-rolls.md 8).
   const tag = usePanelShown() ? rowOf : null;
   const receipt = useReceipt(tag);
   const rolls = useMemo(() => (receipt?.state === "committed" ? rollsOf(receipt.lines) : []), [receipt]);

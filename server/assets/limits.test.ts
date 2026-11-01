@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { HANDOUT_HOURLY, STARTER_HOURLY, WindowLimiter, hourlyChecks, starterHourlyChecks } from "./limits.ts";
 
-describe("hourlyChecks (design 10.3, docs/design-v1-pdf-handouts.md 3.7)", () => {
+describe("hourlyChecks (design 10.3, docs/design/design-v1-pdf-handouts.md 3.7)", () => {
   test("a token, a map and a URL import spend the shared budget, per session, IP and room", () => {
     const shared = [
       { key: "s:sess", limit: 30 },

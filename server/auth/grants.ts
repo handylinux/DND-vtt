@@ -14,7 +14,7 @@ import { withTx, type Queryable } from "./tx.ts";
 export type Role = "dm" | "player";
 
 /**
- * Every role a grant row can hold. A table display's grant (docs/design-v1-dm-tools.md
+ * Every role a grant row can hold. A table display's grant (docs/design/design-v1-dm-tools.md
  * 3.1) is valid at `player_epoch`, as a player's is, and is never a member's:
  * its member id is `display:<12 random characters>`, which no member has.
  */
@@ -63,7 +63,7 @@ export async function checkGrant(
 }
 
 /**
- * A table display's grant in a room, or null (docs/design-v1-dm-tools.md
+ * A table display's grant in a room, or null (docs/design/design-v1-dm-tools.md
  * 3.1). The session must be a live display session: the socket recheck asks
  * this every 60 s, and a display whose session expired or was deleted
  * closes with 4001 then, as one whose grant is gone does. A grant from an

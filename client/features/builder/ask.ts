@@ -37,7 +37,7 @@ export function buildContext(ctx: Pick<ToolContext, "actions" | "ui" | "scene" |
 
 /**
  * Sends a builder gesture of several ops, asked about first where players
- * remember the scene (docs/design-v1-map-discovery.md 5.3). Its ops stay
+ * remember the scene (docs/design/design-v1-map-discovery.md 5.3). Its ops stay
  * on the device until the server answers its asks (MD4-ASTRA-5), so none
  * of it applies before the answer and a no leaves nothing to take back.
  * Fits: the ops go under one undo group. Past a cap: the store asks the

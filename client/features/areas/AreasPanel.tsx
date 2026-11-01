@@ -26,7 +26,7 @@ import { useViewerFog } from "../../canvas/viewerFog.ts";
  * watched while the party walks with the select tool, which is when the
  * area tool's own bar is closed. The DM also rolls an area's save and
  * applies its damage here, through the group save that takes the panel's
- * place (docs/design-v1-roll-options.md 5.6).
+ * place (docs/design/design-v1-roll-options.md 5.6).
  */
 
 const EMPTY: RoomState["templates"] = {};
@@ -139,7 +139,7 @@ export default function AreasPanel(props: PanelProps) {
   );
 }
 
-/** A player's Ask for saves on their own area (docs/design-v1-player-save-spell.md 3.1). */
+/** A player's Ask for saves on their own area (docs/design/design-v1-player-save-spell.md 3.1). */
 function AreaAskButton(props: { template: AreaTemplate }) {
   const ask = useAreaAsk(props.template);
   return (

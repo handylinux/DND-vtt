@@ -16,7 +16,7 @@ import { effectEvent, hpLabel, withNewPool, type ActorEvent, type HpResult } fro
  *   at 0. "X/Day" uses come back after a Long Rest, so Legendary Resistance
  *   resets, and legendary actions with it.
  *
- * - Spent abilities and class resources (docs/design-v1-combat-controls.md
+ * - Spent abilities and class resources (docs/design/design-v1-combat-controls.md
  *   2.4): a Short Rest brings back recharges, the uses that come back on a
  *   rest, X a day uses that say a Short Rest does, a short resource whole
  *   and one of a "short, one" resource. A Long Rest brings back every mark
@@ -60,7 +60,7 @@ export function applyRest(actor: Actor, kind: RestKind, heal = 0): RestResult {
 }
 
 /**
- * The actor's spent abilities after a rest (docs/design-v1-combat-controls.md
+ * The actor's spent abilities after a rest (docs/design/design-v1-combat-controls.md
  * 2.4): a Short Rest takes the recharge and rest marks and the X a day ones
  * a Short Rest brings back, a Long Rest every mark, `hurt` and its record's
  * `took`. The very same actor when nothing comes back.

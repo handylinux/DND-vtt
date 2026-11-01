@@ -5,7 +5,7 @@ import { isHex, type Grid } from "#shared/rules/grid.ts";
 type StairChoice = StairDirection | "remove";
 
 /**
- * A hex stair's six facings in words and arrows (docs/design-v1-hex-grids.md
+ * A hex stair's six facings in words and arrows (docs/design/design-v1-hex-grids.md
  * H3), in hexNeighbors' order: clockwise from east on hex rows, and on hex
  * columns the same order mirrored, counterclockwise from south. The arrows
  * point up each stair, so they stay text.

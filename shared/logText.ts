@@ -10,7 +10,7 @@ import { STATUSES } from "./srd/statuses.ts";
 
 /**
  * How log entries read, on a device and in the session log export
- * (docs/design-v1-dm-tools.md 3.10), so the Log panel and the exported file
+ * (docs/design/design-v1-dm-tools.md 3.10), so the Log panel and the exported file
  * use one wording. It moved here from client/features/log/format.ts, which
  * re-exports it.
  *
@@ -89,7 +89,7 @@ export function areaReminderText(data: AreaEvent, who: string): string {
 type RollEvent = Extract<LogEvent, { type: "roll" }>;
 
 /**
- * An answer to a roll request (docs/design-v1-dm-tools.md 3.3): "Thorn
+ * An answer to a roll request (docs/design/design-v1-dm-tools.md 3.3): "Thorn
  * rolled 17 on a Dexterity saving throw against DC 15: pass." With two
  * choices it names the one rolled. Without a total it is a save failed
  * without rolling, "Thorn failed a Dexterity saving throw without
@@ -106,7 +106,7 @@ export function rollText(data: RollEvent, who: string, dm = false): string {
     if (data.result === undefined) return `${who} answered ${test}${dc}.`;
     return `${who} ${data.result === "pass" ? "passed" : "failed"} ${test}${dc}.`;
   }
-  // A save its condition failed says which, with its result (docs/design-v1-dice.md 5.5).
+  // A save its condition failed says which, with its result (docs/design/design-v1-dice.md 5.5).
   const failed = data.result === "fail" && data.dice?.fails ? `: fails (${effectName(data.dice.fails)})` : undefined;
   const result = failed ?? (data.result !== undefined ? `: ${data.result}` : "");
   if (!data.dice) return `${who} rolled ${data.total} on ${test}${dc}${result}.`;
@@ -155,7 +155,7 @@ function plus(n: number, always = false): string {
 
 /**
  * A critical hit's damage as its rule rolled it (the critical hit rules
- * addendum of docs/design-v1-dice.md): "12 max + 2d6+3", "2d6 × 2 + 3",
+ * addendum of docs/design/design-v1-dice.md): "12 max + 2d6+3", "2d6 × 2 + 3",
  * "(2d6+3) × 2". Rolled twice it is its doubled formula, whose dice say it.
  */
 function critFormula(parts: CritParts): string {
@@ -204,7 +204,7 @@ export function rolledFormula(result: Pick<DiceResult, "formula" | "faces" | "mo
 }
 
 /**
- * One roll's dice (docs/design-v1-dice.md 5.5): "2d6+3 (4, 6) = 13", and
+ * One roll's dice (docs/design/design-v1-dice.md 5.5): "2d6+3 (4, 6) = 13", and
  * with a mode "1d20+5 with Advantage (14, 7 dropped) = 19". A critical hit
  * by a table's rule reads its arithmetic: "12 max + 2d6+3 (4, 6) = 25". A
  * formula a later grammar refuses reads as its text and total.
@@ -283,7 +283,7 @@ export function diceLineText(data: DiceEvent, names: LogNames): string {
   if (data.rolls.length === 0) return `${who} rolled in secret.`;
   const secret = data.to === "dm" ? " (secret)" : "";
   const one = (roll: DiceRoll) => `${rollSubject(roll, names)}${diceText(roll)}${rollVerdict(roll, data)}`;
-  // Only the DM's copy keeps the mark of an initiative roll kept from players (docs/design-v1-combat-flow.md 11.3).
+  // Only the DM's copy keeps the mark of an initiative roll kept from players (docs/design/design-v1-combat-flow.md 11.3).
   const kept = (roll: DiceRoll) => (roll.hidden ? ` (hidden from ${keptFrom(roll, names)})` : "");
   const only = data.rolls.length === 1 ? data.rolls[0]! : null;
   if (only) return `${who} rolled ${one(only)}${only.hidden ? ` (${data.to === "dm" ? "secret, " : ""}hidden from ${keptFrom(only, names)})` : secret}.`;
@@ -537,17 +537,17 @@ function eventText(data: LogEvent, names: LogNames, dm: boolean): string {
       return `${who} changed.`;
     }
     case "saveEnds":
-      // Only the DM's log holds it (docs/design-v1-roll-options.md 6.1).
+      // Only the DM's log holds it (docs/design/design-v1-roll-options.md 6.1).
       return `${creatureName(names, data)} ended its turn ${effectName(data.key)}: a DC ${data.dc} ${ABILITY_NAMES[data.ability]} save ends it.`;
     case "teleport":
-      // Only the DM's log holds it (docs/design-v1-maps-vision.md 4.1). A stop the player could not see names no kind
-      // (docs/design-v1-map-discovery.md 6).
+      // Only the DM's log holds it (docs/design/design-v1-maps-vision.md 4.1). A stop the player could not see names no kind
+      // (docs/design/design-v1-map-discovery.md 6).
       if (data.past === "unknown") return `${creatureName(names, data)} teleported past something they could not see.`;
       return `${creatureName(names, data)} teleported past a ${data.past}.`;
     case "roll":
       return rollText(data, creatureName(names, data), dm);
     case "companion": {
-      // Only the DM's log holds it (docs/design-v1-combat-flow.md 3.6.3). The name is the companion's when it came.
+      // Only the DM's log holds it (docs/design/design-v1-combat-flow.md 3.6.3). The name is the companion's when it came.
       const character = names.characters[data.characterId]?.name ?? "their character";
       return `${memberName(names, data.memberId)} added ${data.name} beside ${character}.`;
     }
@@ -561,7 +561,7 @@ function eventText(data: LogEvent, names: LogNames, dm: boolean): string {
     case "use":
       return useText(data, creatureName(names, data));
     case "trap": {
-      // The DM's trap log (docs/design-v1-traps.md 6.3): the name the trap had when it went off.
+      // The DM's trap log (docs/design/design-v1-traps.md 6.3): the name the trap had when it went off.
       const who = creatureList(names, data.by, data.more);
       const went = data.how === "hand" ? `The DM set off ${data.name}` : `${data.name} went off`;
       return who ? `${went}: ${who}.` : `${went}.`;
@@ -582,7 +582,7 @@ function eventText(data: LogEvent, names: LogNames, dm: boolean): string {
 
 /**
  * A creature's use of a limited ability, or one it regains
- * (docs/design-v1-combat-controls.md 8), with the counts the reader's line
+ * (docs/design/design-v1-combat-controls.md 8), with the counts the reader's line
  * kept: "Adult Red Dragon used Fiery Rays (Legendary Action, 2 of 3 left)."
  * for the DM and its owners, "Adult Red Dragon used Fiery Rays, a Legendary
  * Action." for other players, and "Young Red Dragon: Fire Breath is ready
@@ -632,7 +632,7 @@ function possessive(name: string): string {
   return name.endsWith("s") ? `${name}'` : `${name}'s`;
 }
 
-/** A player's ask for saves and its end (docs/design-v1-player-save-spell.md 5.2): "Thorn asks for saves: Fireball, level 4." */
+/** A player's ask for saves and its end (docs/design/design-v1-player-save-spell.md 5.2): "Thorn asks for saves: Fireball, level 4." */
 export function castText(data: { spell: string; slot?: number; end?: "done" | "dismissed" | "withdrawn" }, who: string): string {
   const inside = who === A_CREATURE ? "a creature" : who;
   switch (data.end) {

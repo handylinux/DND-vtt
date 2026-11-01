@@ -144,7 +144,7 @@ export function dialogCard(layoutPx: number, props: Pick<DialogProps, "phone" | 
 }
 
 /**
- * The one dialog shell (docs/design-v1-visual.md 2.3): a modal `<dialog>`
+ * The one dialog shell (docs/design/design-v1-visual.md 2.3): a modal `<dialog>`
  * opened with showModal (lib/modalDialog.ts), so the room behind it is
  * inert, Escape and the close button close it, and focus goes back to
  * what opened it. It renders into document.body, clear of the sheets and

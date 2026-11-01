@@ -4,7 +4,7 @@ import { SIGHT_POTENTIAL } from "./rules/segments.ts";
 import { sceneWalls } from "./rules/walls.ts";
 
 /**
- * The cap on a vision scene's potential sight pieces (docs/design-v1-maps-vision.md
+ * The cap on a vision scene's potential sight pieces (docs/design/design-v1-maps-vision.md
  * 2.1 and 2.4): every piece of the split wall set that would block sight
  * if every door were closed and every secret door hidden, and every raised
  * edge whatever its height. Counted whatever the doors' states, so only a

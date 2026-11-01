@@ -9,7 +9,7 @@ import { drawMap, rng, toRgba, type SynthHexGrid, type SynthMap } from "./synthe
 
 // Every map here is drawn by code (synthetic.ts). The wider evaluation,
 // with JPEG copies and openly licensed real maps, is in
-// docs/design-v1-grid-detect.md, Hex grids.
+// docs/design/design-v1-grid-detect.md, Hex grids.
 const W = 760;
 const H = 600;
 const ART = [{ kind: "noise" as const, scale: 40, amp: 60 }];

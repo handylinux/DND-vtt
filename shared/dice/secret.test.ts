@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { character, room, token } from "../testutil.ts";
 import { startsSecret } from "./secret.ts";
 
-/** docs/design-v1-dice.md 17: only a DM's roll for a monster starts hidden from players. */
+/** docs/design/design-v1-dice.md 17: only a DM's roll for a monster starts hidden from players. */
 describe("which rolls start secret", () => {
   const state = room({
     characters: { thorn: character("thorn", { ownerIds: ["p1"] }), npc: character("npc", { ownerIds: ["dm1"] }), guard: character("guard", { ownerIds: ["dm1"] }) },

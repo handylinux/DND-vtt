@@ -11,7 +11,7 @@ import { chromium, type Browser, type BrowserContext, type Locator, type Page } 
 import { ConsoleWatch, OpSocket, pickTool, reopenRoom, Shots, sleep, SocketWatch, startServer, tapCell, waitFor, wholeInReach, type Server } from "./harness.ts";
 
 /**
- * Roll requests on phones (docs/design-v1-visual.md 3.3.1): the real
+ * Roll requests on phones (docs/design/design-v1-visual.md 3.3.1): the real
  * server serving the production build, a DM on a phone who also asks
  * through a second socket of the same session, and a player on a phone.
  *
@@ -373,7 +373,7 @@ describe("raccoon-vtt roll requests on phones", { timeout: 300_000 }, () => {
     await player.getByRole("status", { name: "Connected" }).first().waitFor();
     await ask("save", "wis");
     // With its roll row the card's answer block no longer fits under the top bars here, so the card starts folded behind
-    // Roll asked, whose tap brings it up over the toolbar (docs/design-v1-roll-request.md 5.7).
+    // Roll asked, whose tap brings it up over the toolbar (docs/design/design-v1-roll-request.md 5.7).
     await rollAsked(player).or(card(player)).first().waitFor();
     if (await cardElement(player).isHidden()) await rollAsked(player).tap();
     await card(player).waitFor();
@@ -447,7 +447,7 @@ describe("raccoon-vtt roll requests on phones", { timeout: 300_000 }, () => {
   });
 
   test("10. the DM's sheet picks one whole roll: nothing at open, Perception then Strength sends a Strength check, and either of two choices can go", async () => {
-    // The reported bug (docs/design-v1-roll-request.md 2): a skill stayed picked under the ability tapped after it.
+    // The reported bug (docs/design/design-v1-roll-request.md 2): a skill stayed picked under the ability tapped after it.
     await openPanel(dm, "Party");
     await dm.getByRole("button", { name: "Ask the party" }).first().tap();
     const sheet = dm.getByRole("dialog", { name: "Request a roll" });
@@ -638,7 +638,7 @@ describe("raccoon-vtt roll requests on phones", { timeout: 300_000 }, () => {
     await pickTool(player, "Area");
     const shapeChip = player.getByRole("toolbar", { name: "Area options" }).getByRole("button", { name: /^Shape:/ });
     const shape = player.getByRole("dialog", { name: "Shape" });
-    // The popover rises from the row the card stands on, and the card stands over popovers (docs/design-v1-tool-options.md 7.6).
+    // The popover rises from the row the card stands on, and the card stands over popovers (docs/design/design-v1-tool-options.md 7.6).
     await shapeChip.tap();
     await shape.waitFor();
     await rollAsked(player).waitFor();

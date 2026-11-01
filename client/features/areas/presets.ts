@@ -119,7 +119,7 @@ export function presetDraft(spell: AreaSpell, prev: AreaDraft, casterId: string 
  * What the tool says while a draft has nowhere to be yet. `yours` says the
  * caster is one of the viewer's creatures, so a tap on a creature centers a
  * cube placed at a point there rather than casting from it
- * (docs/design-v1-area-from-character.md 3.5).
+ * (docs/design/design-v1-area-from-character.md 3.5).
  */
 export function placementHint(d: AreaDraft, yours = false): string {
   if (d.targetsOther) return `Tap the ${d.targetName ?? "target"}.`;

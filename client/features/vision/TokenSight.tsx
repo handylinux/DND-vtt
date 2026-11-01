@@ -15,7 +15,7 @@ import { usePartyReport } from "./usePartyReport.ts";
 import { playerOwned } from "#shared/project.ts";
 
 /**
- * What a creature sees, in its token panel (docs/design-v1-maps-vision.md
+ * What a creature sees, in its token panel (docs/design/design-v1-maps-vision.md
  * section 4.3.1): its senses line in words ("Sees in the dark to 60 ft")
  * and the light it carries, for the DM and its owners, who set both. The
  * DM also sees whether it lends the party sight and why not, and can mark a
@@ -23,7 +23,7 @@ import { playerOwned } from "#shared/project.ts";
  *
  * It shows on a scene with party vision, and anywhere while the token
  * carries a light or shares sight, so either can be taken off. Sharing
- * sight takes effect at once, so it is a Switch (docs/design-v1-visual.md
+ * sight takes effect at once, so it is a Switch (docs/design/design-v1-visual.md
  * 3.7).
  */
 export function TokenSight(props: { token: Token; actor: Partial<Actor> | undefined; access: TokenAccess; update(patch: TokenPatch): void }) {

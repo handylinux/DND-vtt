@@ -45,8 +45,8 @@ import {
 } from "./logic.ts";
 
 /**
- * The DM's "Request a roll" (docs/design-v1-dm-tools.md 3.3,
- * docs/design-v1-roll-request.md 4): what to roll, picked whole in one of
+ * The DM's "Request a roll" (docs/design/design-v1-dm-tools.md 3.3,
+ * docs/design/design-v1-roll-request.md 4): what to roll, picked whole in one of
  * three rows (a save, a check, or a skill), "Or a second choice" for one
  * the creature picks from, the DC or none, the two options for what
  * players see, a note, and who is asked. Send asks every ticked
@@ -75,7 +75,7 @@ export function RequestSheet(props: { from: AskFrom; onClose(): void }) {
     return { draft: props.from.fill ? fillDraft(draft, props.from.fill) : draft, sending: false, error: null };
   });
   const { draft, sending, error } = sheet;
-  // What the DM set up, as it was when the sheet opened: a swipe springs back once that has changed, until Send has it (docs/design-v1-sheet-swipe.md 4.5).
+  // What the DM set up, as it was when the sheet opened: a swipe springs back once that has changed, until Send has it (docs/design/design-v1-sheet-swipe.md 4.5).
   const [opened] = useState(() => JSON.stringify(sheet.draft));
   const unsaved = !sending && JSON.stringify(draft) !== opened;
   const connected = useRoomView((s) => s.connection === "open");
@@ -169,7 +169,7 @@ export function RequestSheet(props: { from: AskFrom; onClose(): void }) {
       }
       footer={
         <>
-          {/* Both grow to share the line they stand on (docs/design-v1-polish.md R6): Send wrapped under Cancel fills its line rather than standing short at its end, and the status takes a line of its own only where no button fits beside it. */}
+          {/* Both grow to share the line they stand on (docs/design/design-v1-polish.md R6): Send wrapped under Cancel fills its line rather than standing short at its end, and the status takes a line of its own only where no button fits beside it. */}
           <Button onClick={close} style={{ flex: "1 1 auto" }}>
             {sending ? "Close" : "Cancel"}
           </Button>
@@ -281,7 +281,7 @@ export function RequestSheet(props: { from: AskFrom; onClose(): void }) {
               </ChipRow>
             </Section>
             <Section label="What players see" divider={false} fold={{ open: seenOpen, onToggle: () => setSeenOpen((v) => !v), summary: <span style={{ color: theme.color.textMuted }}>{seen}</span> }}>
-              {/* Options that Send reads, so checkboxes rather than switches (docs/design-v1-visual.md 3.7). Each shows only while it applies (4.6). */}
+              {/* Options that Send reads, so checkboxes rather than switches (docs/design/design-v1-visual.md 3.7). Each shows only while it applies (4.6). */}
               <div style={{ display: "grid" }}>
                 {hasDc ? <Checkbox label="Players see the DC" checked={draft.dcShown} disabled={sending} onChange={(dcShown) => set({ dcShown })} /> : null}
                 <Checkbox label="Players see pass or fail" checked={draft.resultShown} disabled={sending} onChange={(resultShown) => set({ resultShown })} />
@@ -312,7 +312,7 @@ export function RequestSheet(props: { from: AskFrom; onClose(): void }) {
 const SKILLS_BY_NAME: readonly SkillKey[] = [...SKILL_KEYS].sort((a, b) => SKILLS[a].name.localeCompare(SKILLS[b].name));
 
 /**
- * One choice's picker (docs/design-v1-roll-request.md 4.2): Save, Check and
+ * One choice's picker (docs/design/design-v1-roll-request.md 4.2): Save, Check and
  * Skill, each a view of the choice's one pick (`pickerView`), so a tap in
  * any row replaces the whole pick. With two choices each is a named group
  * with Remove.

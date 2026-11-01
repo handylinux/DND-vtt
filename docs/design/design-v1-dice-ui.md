@@ -2,7 +2,7 @@
 
 Status: decided by the project owner on 2026-10-17 (section 12) and built. The prototype's commits on top of this one became the build.
 
-The project owner asked for it on 2026-10-17: "please do a ui pass on the stat block and dice pages it's really good but spacing is inconsistent. There's also many elements that are on the next line that don't need to be, like critical and damage rolls. Also for spells that are saves in place of damage they should display the save dc in place of damage. We also don't need to display the damage roll under the button it should just be in the header. A roll animation would also be cool but can be done after these changes. TBH just do a ui ux review to see how space can be saved and the new features can be made more intuitive". Two more passes were folded in the same day: icons across the whole app (docs/design-v1-icons.md) and the Token panel (docs/design-v1-token-panel-groups.md).
+The project owner asked for it on 2026-10-17: "please do a ui pass on the stat block and dice pages it's really good but spacing is inconsistent. There's also many elements that are on the next line that don't need to be, like critical and damage rolls. Also for spells that are saves in place of damage they should display the save dc in place of damage. We also don't need to display the damage roll under the button it should just be in the header. A roll animation would also be cool but can be done after these changes. TBH just do a ui ux review to see how space can be saved and the new features can be made more intuitive". Two more passes were folded in the same day: icons across the whole app (docs/design/design-v1-icons.md) and the Token panel (docs/design/design-v1-token-panel-groups.md).
 
 ## Scope
 
@@ -62,12 +62,12 @@ The scale is `theme.space`: 4, 8, 12 and 16 px. Each step has one job, by how cl
 3. **One boundary, one mark.** A list row is parted by a 1 px line and 8 px each side. A section by a line and 16 px. Never a line and a large gap, never two lines.
 4. **Results never move layout.** A roll landing adds no line anywhere (4.1). A button's busy words ("Attack…") replace its words in place.
 5. **No negative margin past the content box.** The one exception is the header line's top, which takes back the pane's top padding so nothing scrolls past above it. Sideways it keeps to the column: it reached 16 px past each side (21 at 130%), and now 0.
-6. **Reserve, never paint.** Space held so nothing moves stays empty: no border, no fill. A stacked phone with no options row keeps the map's 53 px inset and draws nothing in it, the line 6 px above the toolbar (LP7-CHROME-4, docs/design-v1-tool-options.md 6.6, whose last sentence this reads as the inset).
+6. **Reserve, never paint.** Space held so nothing moves stays empty: no border, no fill. A stacked phone with no options row keeps the map's 53 px inset and draws nothing in it, the line 6 px above the toolbar (LP7-CHROME-4, docs/design/design-v1-tool-options.md 6.6, whose last sentence this reads as the inset).
 
 ### 3.2 Labels and rows
 
 - **One look per level.** A group label is the panel's section label (13 px, weight 700, capitals, muted, `SectionLabel`'s look), with its note after it on the same line (13 px muted), wrapping under it when the line is full: "SAVES  +1d4: Blessed. Dis: Restrained".
-- **A named roll's name** is a row title: 16 px weight 600, as `Row` titles are (docs/design-v1-visual.md 2.3), with its uses and recharge after it at 13 px muted.
+- **A named roll's name** is a row title: 16 px weight 600, as `Row` titles are (docs/design/design-v1-visual.md 2.3), with its uses and recharge after it at 13 px muted.
 - **The creature's heading** "Rolls for Thorn" stays at 16 px weight 600.
 - A Token panel group is 16 px weight 700 with a chevron (the token panel doc 4), above its sections' capitals labels.
 
@@ -82,9 +82,9 @@ The scale is `theme.space`: 4, 8, 12 and 16 px. Each step has one job, by how cl
 
 ### 4.1 The header line
 
-The sticky line at the top of the panel (`LastResult`, docs/design-v1-dice.md 8.2) is the one place a panel roll's result shows. It already shows the total, the label, the faces, the verdict and Again, 40 px tall, and stays in view while the options scroll.
+The sticky line at the top of the panel (`LastResult`, docs/design/design-v1-dice.md 8.2) is the one place a panel roll's result shows. It already shows the total, the label, the faces, the verdict and Again, 40 px tall, and stays in view while the options scroll.
 
-- **Every panel roll lands here**, options included: a cell's tap shows busy on the cell, then the result here. Rule 2 of docs/design-v1-dice.md 8.7 ("its result shows beside that control") becomes, for the Dice panel only: "its result shows in the panel's header line, which stays in view, and the control returns to rest". Cards (requests, concentration, recharge, the group save's rows) keep their results in place, since they have no header.
+- **Every panel roll lands here**, options included: a cell's tap shows busy on the cell, then the result here. Rule 2 of docs/design/design-v1-dice.md 8.7 ("its result shows beside that control") becomes, for the Dice panel only: "its result shows in the panel's header line, which stays in view, and the control returns to rest". Cards (requests, concentration, recharge, the group save's rows) keep their results in place, since they have no header.
 - **A refusal** shows here as today, in `dangerText`, and the cell's words come back.
 - **The screen reader** hears "Rolled 17: Longsword." from the line's polite live region, as today, whichever control rolled.
 - **Answers and death saves** (LP7-DICE-10): `LastRoll` gains a form `{ tag, once: true, label }`, set when the panel sends a request's answer (`roll.dice`) or a death save (`actor.deathRoll`). The line reads the roll from its own log line (`rollsOf` already reads an answer's `roll` line). It shows the total, the label ("Dexterity save", "Death save"), the faces and the verdict, and no Again, since neither can be sent again as it went. Its place stays empty, the label taking the room (`p-answer-sticky-01`).
@@ -146,7 +146,7 @@ At 390 x 844 a weapon with no rider is 84 px, from 118, and one with a short rid
 
 Not designed here. What this pass keeps ready for it:
 
-- **Since built**: docs/design-v1-roll-animation.md, which throws 3D dice into a tray under the header line instead of the sketch below.
+- **Since built**: docs/design/design-v1-roll-animation.md, which throws 3D dice into a tray under the header line instead of the sketch below.
 
 - **Where**: the header line. Every panel roll lands there, so one animation serves every control. A card animates its own result in place.
 - **How it could work**: while the roll is in flight the total slot shows a die face turning (which die is for the animation's own design, 12.2), and on the answer the faces chips land one by one and the total counts up, within 400 ms after the answer and never delaying it more. A natural 20's face rings once in the accent. CSS transforms and opacity only, no animation loop at rest.
@@ -156,7 +156,7 @@ Not designed here. What this pass keeps ready for it:
 
 ## 5. The Token panel
 
-Its own document: docs/design-v1-token-panel-groups.md. In short: AC, speed, Passive Perception, initiative and elevation under the name, the picture beside it, then the groups Stat block, Combat (Hit points, Conditions, Range rings, Rest), Notes, Position (with Sight) and Image, then setup. Combat starts open for everyone.
+Its own document: docs/design/design-v1-token-panel-groups.md. In short: AC, speed, Passive Perception, initiative and elevation under the name, the picture beside it, then the groups Stat block, Combat (Hit points, Conditions, Range rings, Rest), Notes, Position (with Sight) and Image, then setup. Combat starts open for everyone.
 
 ## 6. Stat blocks
 
@@ -240,7 +240,7 @@ The project owner saw the before and after screenshots and took every recommenda
 3. **One card for a save-ends request.** While a save-ends card holds a request, its live card folds to its one-line summary, so Allow and Keep show once (7.2).
 4. **The monster block's ability table goes three across**, as 6.1, read from the Markdown's table into the same grid in the block view. The stored text does not change.
 
-The icon pass's two answers are in docs/design-v1-icons.md 10.
+The icon pass's two answers are in docs/design/design-v1-icons.md 10.
 
 ## Appendix A. Measurements
 

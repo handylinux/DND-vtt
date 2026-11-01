@@ -9,7 +9,7 @@ import { amountsOf } from "../groupSave/plan.ts";
 import { holdsRolls, sentAny } from "../groupSave/start.ts";
 import { castCardText, castFill, castStart, castWho, deskAsks, foldedWithAsks, readingWords } from "./castStart.ts";
 
-/** The group save a player's ask opens (docs/design-v1-player-save-spell.md 3.3 and 8). */
+/** The group save a player's ask opens (docs/design/design-v1-player-save-spell.md 3.3 and 8). */
 
 const LONG = "Searing Breath of the Ancient Brass Dragon Matriarch Unbound";
 
@@ -170,7 +170,7 @@ describe("the page and its ask", () => {
     assert.deepEqual(
       step.send.map((c) => (c.kind === "op" ? c.op : null)),
       [
-        // The page's own close records no Undo step (docs/design-v1-undo-scope.md 5.3).
+        // The page's own close records no Undo step (docs/design/design-v1-undo-scope.md 5.3).
         { t: "roll.close", rollIds: ["q1"], reason: "savePage" },
         { t: "cast.close", castId: "c1", end: "done" },
       ],

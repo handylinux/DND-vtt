@@ -8,7 +8,7 @@ import { HEX_ORIGIN, OWN_SQUARE_GRID } from "../rules/grid.ts";
 import { env, room, template, token, trap } from "../testutil.ts";
 
 /*
- * A scene's grid shape in the reducer (docs/design-v1-hex-grids.md HX-D14
+ * A scene's grid shape in the reducer (docs/design/design-v1-hex-grids.md HX-D14
  * and HX-D19): a new scene's shape, the room's default and the switch.
  */
 
