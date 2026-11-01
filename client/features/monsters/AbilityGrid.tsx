@@ -53,7 +53,8 @@ function boxStyle(a: Pick<AbilityBox, "proficient">): CSSProperties {
 const ABBR_STYLE: CSSProperties = { fontSize: theme.font.tiny, fontWeight: theme.weight.bold, letterSpacing: theme.caps, textTransform: "uppercase", color: theme.color.textMuted };
 
 export function AbilityGrid(props: { abilities: readonly AbilityBox[]; roll?: BlockRoller | null | undefined }) {
-  if (props.roll) return <RollingGrid abilities={props.abilities} roller={props.roll} />;
+  // Keyed by the creature, so a result, its receipt and its voice claim never carry over to another creature's boxes when a panel switches between two.
+  if (props.roll) return <RollingGrid key={JSON.stringify(props.roll.creature)} abilities={props.abilities} roller={props.roll} />;
   return (
     <dl data-ability-grid="" style={GRID}>
       {props.abilities.map((a) => (

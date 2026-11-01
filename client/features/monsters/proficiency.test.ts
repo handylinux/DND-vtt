@@ -302,3 +302,10 @@ test("sbr: the views pass the roller to their grid, and without one stay text", 
   assert.equal(buttonsOf(monster()).length, 0);
   assert.equal(outlined(monster()).length, outlined(monster()).length);
 });
+
+test("sbr: the rolling grid is keyed by its creature, so one creature's result never shows under another's boxes (SBR-SOL-003)", () => {
+  const keyOf = (creature: object) => (AbilityGrid({ abilities: BOXES as never, roll: { ...ROLLER, creature } as never }) as unknown as { key: string | null }).key;
+  assert.notEqual(keyOf({ characterId: "a" }), keyOf({ characterId: "b" }), "another character's block starts with no result");
+  assert.notEqual(keyOf({ characterId: "a" }), keyOf({ tokenId: "a" }));
+  assert.equal(keyOf({ characterId: "a" }), keyOf({ characterId: "a" }), "the same creature keeps its result across renders");
+});
