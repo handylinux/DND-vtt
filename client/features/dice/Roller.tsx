@@ -290,38 +290,36 @@ export function ResultRest(props: { sum: string | null; label: string | undefine
   }, [props.dice]);
   const dice = useRef<HTMLSpanElement>(null);
   const [dropped, setDropped] = useState(0);
-  useLayoutEffect(() => {
-    const el = dice.current;
-    if (!el) {
-      setDropped(0);
-      return;
-    }
-    const count = () => setDropped([...el.querySelectorAll<HTMLElement>("[data-face]")].filter((chip) => chip.offsetTop > 0).length);
-    count();
-    const observer = new ResizeObserver(count);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [chips]);
   const row = useRef<HTMLSpanElement>(null);
   const modeBox = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     const line = row.current;
-    const words = modeBox.current;
-    if (!line || !words) return;
-    // Set on the node, not through state, so the trial and its answer land in one layout and no frame shows the words cutting the rest.
+    if (!line) return;
+    // Set on the nodes, not through state, so each trial and its answer land in one layout and no frame shows a part cutting the rest.
     const fit = () => {
-      words.style.display = "";
-      if (partCut(line, words)) words.style.display = "none";
+      const words = modeBox.current;
+      const box = dice.current;
+      if (words) words.style.display = "";
+      if (box) box.style.display = "flex";
+      if (words && partCut(line, words)) words.style.display = "none";
+      if (!box) {
+        setDropped(0);
+        return;
+      }
+      setDropped([...box.querySelectorAll<HTMLElement>("[data-face]")].filter((chip) => chip.offsetTop > 0).length);
+      // With every part wrapped out of sight the box would still keep the room its shrink left it and its gap, which the label needs more (LP28-A-LINE-1).
+      const parts = [...box.children].slice(1) as HTMLElement[];
+      if (parts.length > 0 && parts.every((part) => part.offsetTop > 0)) box.style.display = "none";
     };
     fit();
-    // A web font that loads after the first fit changes the words' widths, and no resize says so.
+    // A web font that loads after the first fit changes the parts' widths, and no resize says so.
     void document.fonts?.ready.then(fit);
     if (typeof ResizeObserver === "undefined") return;
-    // The row's own width is set from outside it, so showing or hiding the words never resizes it and calls this again.
+    // The row's own width is set from outside it, so showing or hiding a part never resizes it and calls this again.
     const observer = new ResizeObserver(fit);
     observer.observe(line);
     return () => observer.disconnect();
-  }, [props.mode, props.label, props.level, props.verdict, props.sum, props.more, chips]);
+  }, [props.mode, props.label, props.level, props.verdict, props.sum, props.more, chips, dropped]);
   const muted = { fontSize: theme.font.small, color: theme.color.textMuted } as const;
   return (
     <span ref={row} style={dropsWhole()}>

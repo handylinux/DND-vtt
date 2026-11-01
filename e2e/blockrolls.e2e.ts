@@ -424,6 +424,37 @@ async function lineParts(line: Locator): Promise<{ label: LinePart; verdict: Lin
   });
 }
 
+/**
+ * The blank room after a result line's label, in layout px: from its box's
+ * end to the next part still on the row, a chip, a "+N" or a verdict. Null
+ * where the label shows whole or nothing follows it.
+ */
+async function blankAfterCutLabel(line: Locator): Promise<number | null> {
+  return line.evaluate((node) => {
+    type R = { left: number; right: number; top: number; bottom: number; width: number };
+    type E = { childElementCount: number; textContent: string | null; currentCSSZoom?: number; getBoundingClientRect(): R; closest(s: string): E | null; querySelector(s: string): E | null; querySelectorAll(s: string): Iterable<E> };
+    type Doc = { createRange(): { selectNodeContents(n: E): void; getBoundingClientRect(): R } };
+    const root = node as unknown as E & { ownerDocument: Doc };
+    const label = root.querySelector("[data-result-label]");
+    if (!label) return null;
+    const box = label.getBoundingClientRect();
+    // Its words' own width, since a cut of a fraction of a pixel already ends them in "…" and the whole-pixel scroll widths can miss it.
+    const words = root.ownerDocument.createRange();
+    words.selectNodeContents(label);
+    if (words.getBoundingClientRect().width <= box.width + 0.5) return null;
+    const zoom = label.currentCSSZoom ?? 1;
+    let next = Infinity;
+    for (const el of root.querySelectorAll("span")) {
+      const r = el.getBoundingClientRect();
+      // A part on the row: drawn, with words, not wrapped onto the row it never shows, after the label, and not a screen reader's words.
+      if (r.width === 0 || el.childElementCount > 0 || !(el.textContent ?? "").trim() || r.top >= box.bottom - 0.5 || r.left < box.right - 0.5) continue;
+      if (el.closest('[aria-live], [role="status"], [role="alert"]')) continue;
+      next = Math.min(next, r.left);
+    }
+    return next === Infinity ? null : (next - box.right) / zoom;
+  });
+}
+
 /** A grid near the top of its scroller, under the roll header stuck there, so a shot holds both. Only up and down: a sideways scroll would hide a block wider than its sheet. */
 async function showUnder(grid: Locator): Promise<void> {
   await grid.evaluate((node) => {
@@ -1793,6 +1824,33 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       assert.deepEqual({ ...parts, verdict: parts.verdict === "absent" ? "shown" : parts.verdict }, { label: "shown", verdict: "shown", mode: "shown" }, "at 390 x 844 the whole line shows");
     } finally {
       await ops.send({ t: "roll.close", rollIds: [requestId] }).catch(() => undefined);
+      await closeSheets(pat);
+      await patAt(PHONE, "1");
+    }
+  });
+
+  test("fu44a-2. at 320 x 568 at 130% a label cut to its \"…\" keeps no blank room after it, in the block's line and the Dice panel's: a dice box whose chips all wrapped leaves the row (LP28-A-LINE-1)", async () => {
+    try {
+      await patAt({ width: 320, height: 568 }, "1.3");
+      const sheet = await patSheet();
+      const view = sheet.locator("[data-pc-stats]");
+      const line = resultOf(view).first();
+      // Picked with Advantage, so two chips make the line long whatever the dice show.
+      await rollPicked(view, "Dexterity", /^Sleight of Hand/, "Roll with Advantage");
+      await line.locator("[data-result-label]").waitFor();
+      await showUnder(gridOf(view));
+      await shots.take(pat, "fu44a-2-block-line-320-130");
+      const block = await blankAfterCutLabel(line);
+      assert.ok(block === null || block <= 8.5, `the block's line keeps ${block} px blank after its cut label`);
+      await closeSheets(pat);
+      const dice = await openDiceSheet(pat);
+      const last = dice.locator("[data-dice-last]");
+      await last.getByText(/Sleight of Hand/).first().waitFor();
+      await shots.take(pat, "fu44a-2-dice-line-320-130");
+      const panel = await blankAfterCutLabel(last);
+      assert.ok(panel === null || panel <= 8.5, `the Dice panel's line keeps ${panel} px blank after its cut label`);
+      assert.ok(block !== null || panel !== null, "at least one line cut its label, so the step measured something");
+    } finally {
       await closeSheets(pat);
       await patAt(PHONE, "1");
     }
