@@ -335,7 +335,7 @@ function MapGrid(props: { scene: Scene; map: NonNullable<Scene["map"]>; close: P
   const applyCounts = () => {
     const cal = { cellPx: counts.cellPx, originPx: counts.originPx };
     if (!sameCalibration(cal, map)) actions.dispatch({ t: "scene.setGrid", sceneId: scene.id, ...cal });
-    const bounds = fitBounds({ ...map, ...cal });
+    const bounds = fitBounds({ ...map, ...cal }, sceneGrid(scene));
     if (bounds.w !== scene.bounds.w || bounds.h !== scene.bounds.h) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { bounds } });
   };
 
@@ -538,8 +538,8 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
       const fallback = { cellPx: next.cellPx, originPx: next.originPx };
       // Bounds as the room holds them now: another DM may have resized the scene during the upload, and that edit must not be refit away.
       const bounds0 = room.getState().view?.scenes[scene.id]?.bounds ?? scene.bounds;
-      if (!found && !wait.later && refitsToNamedMap(oldMap, next, named, bounds0)) {
-        const bounds = fitBounds(next);
+      if (!found && !wait.later && refitsToNamedMap(oldMap, next, named, bounds0, scene.gridShape)) {
+        const bounds = fitBounds(next, sceneGrid(scene));
         if (bounds.w !== bounds0.w || bounds.h !== bounds0.h) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { bounds } });
       } else if (!map || found || wait.later) {
         // The shape the room holds now, not as the upload began: Grid shape may have changed meanwhile, here or on another device.

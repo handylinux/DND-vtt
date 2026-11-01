@@ -31,7 +31,7 @@ type Gesture = Pick<RoomActions, "dispatch" | "newId">;
 export function gridOps(scene: GridScene, cal: Calibration, fit: boolean): ClientOp[] {
   const ops: ClientOp[] = [];
   if (!sameCalibration(cal, scene.map)) ops.push({ t: "scene.setGrid", sceneId: scene.id, cellPx: cal.cellPx, originPx: cal.originPx });
-  const bounds = fitBounds({ ...scene.map, ...cal });
+  const bounds = fitBounds({ ...scene.map, ...cal }, sceneGrid(scene));
   if (fit && (bounds.w !== scene.bounds.w || bounds.h !== scene.bounds.h)) ops.push({ t: "scene.update", sceneId: scene.id, patch: { bounds } });
   return ops;
 }
@@ -194,7 +194,7 @@ function otherShape(input: Parameters<typeof showOutcome>[0] & { found: FoundGri
   if ((high || found.shapeSure === true) && !found.contested && refusal === null) {
     // The server may refuse the shape after this device's check, so its calibration and fitted size must travel with it.
     const switched: ClientOp = high
-      ? { t: "scene.setGrid", sceneId: scene.id, ...found.cal, gridShape: mapShape(to), ...(input.fit ? { bounds: fitBounds({ ...scene.map, ...found.cal }) } : {}) }
+      ? { t: "scene.setGrid", sceneId: scene.id, ...found.cal, gridShape: mapShape(to), ...(input.fit ? { bounds: fitBounds({ ...scene.map, ...found.cal }, to) } : {}) }
       : { t: "scene.update", sceneId: scene.id, patch: { gridShape: mapShape(to) } };
     dispatchGesture(input.actions, [switched], { groupScope: "setup" });
     const note: FoundNote = {

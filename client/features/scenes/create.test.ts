@@ -26,6 +26,8 @@ import {
   viewFromCamera,
   withPlayersSee,
 } from "./create.ts";
+import { gridOfShape } from "#shared/rules/grid.ts";
+import { sceneHexes } from "#shared/rules/hex.ts";
 import { fitBounds } from "../grid/calibrate.ts";
 import { TOP_DOWN } from "../../lib/view.ts";
 
@@ -61,6 +63,22 @@ describe("new scenes", () => {
       assert.equal(replacement(previous, squares, "hexRows").search, true);
       assert.equal(replacement(previous, squares, "hexRows").map.cellPx, guessCellPx(squares.width, squares.height));
     }
+  });
+
+  test("a hex scene from an NxM name holds all the art's rows and hexes (LP28-B-HEX-1)", () => {
+    // fen_12x8.png: 875 x 505 at 70 px is 12.5 hexes wide and 8 rows tall on hex rows, and the mirror on hex columns.
+    const rows = mapScene({ id: "s", name: "fen 12x8", asset: { id: "a", width: 875, height: 505, hexCellPx: { rows: 70 } }, gridShape: "hexRows" }).scene;
+    valid(rows);
+    assert.deepEqual(rows.bounds, { w: 13, h: 8 });
+    const held = apply(room(), { t: "scene.create", scene: rows }).scenes.s!;
+    const perRow = new Map<number, number>();
+    for (const hex of sceneHexes({ shape: "hex", orient: "rows" }, held.bounds)) perRow.set(hex.row, (perRow.get(hex.row) ?? 0) + 1);
+    assert.equal(perRow.size, 8);
+    for (const row of perRow.keys()) assert.ok((perRow.get(row) ?? 0) >= 12, `row ${row} holds 12 hexes`);
+    const columns = mapScene({ id: "t", name: "fen 12x8", asset: { id: "a", width: 505, height: 875, hexCellPx: { columns: 70 } }, gridShape: "hexColumns" }).scene;
+    assert.deepEqual(columns.bounds, { w: 8, h: 13 });
+    // Squares keep their count.
+    assert.deepEqual(mapScene({ id: "u", name: "fen 12x8", asset: { id: "a", width: 840, height: 560, cellPx: 70 } }).scene.bounds, { w: 12, h: 8 });
   });
 
   test("a battle mat has fog off and a builder scene has fog on", () => {
@@ -179,6 +197,10 @@ describe("new scenes", () => {
     assert.deepEqual(fitBounds(scaled), fitted);
     assert.equal(refitsToNamedMap(old, scaled, nameCellPx(bigger), { w: 12, h: 9 }), false, "and bounds set by hand stay there too");
     assert.equal(refitsToNamedMap(undefined, restarted, 70, { w: 30, h: 20 }), true, "a first image always fits");
+    // A hex scene's bounds follow its old map by the hexes' count, or by the squares' count that scenes made before the hex fit hold.
+    assert.equal(refitsToNamedMap(old, restarted, nameCellPx(rows, "hexRows"), fitBounds(old, gridOfShape("hexRows")), "hexRows"), true);
+    assert.equal(refitsToNamedMap(old, restarted, nameCellPx(rows, "hexRows"), fitted, "hexRows"), true, "a stored hex scene keeps following its map");
+    assert.equal(refitsToNamedMap(old, restarted, nameCellPx(rows, "hexRows"), { w: 12, h: 9 }, "hexRows"), false);
     assert.equal(refitsToNamedMap(old, replacement(old, { id: "d", width: 1435, height: 869 }).map, undefined, fitted), false, "no name, no refit");
   });
 });

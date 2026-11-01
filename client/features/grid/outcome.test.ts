@@ -41,6 +41,14 @@ describe("what a search does to the scene", () => {
     assert.deepEqual(gridOps({ ...SCENE, map: { ...MAP, ...FOUND }, bounds: { w: 19, h: 13 } }, FOUND, true), [], "nothing to send when it is already so");
   });
 
+  test("on a hex scene the size a found grid sends holds the hexes of the art, not its squares (LP28-B-HEX-1)", () => {
+    // 19.7 hexes wide and 13.8 tall at 70 px: 14 rows, and odd rows need the 20th column's room.
+    assert.deepEqual(gridOps({ ...SCENE, gridShape: "hexRows" }, FOUND, true)[1], { t: "scene.update", sceneId: "s1", patch: { bounds: { w: 20, h: 14 } } });
+    // Turned: 14 hexes wide and 19.5 tall, which hex columns hold in a scene 14 across and 20 down.
+    const tall = { ...SCENE, gridShape: "hexColumns" as const, map: { ...MAP, widthPx: 1000, heightPx: 1400 } };
+    assert.deepEqual(gridOps(tall, FOUND, true)[1], { t: "scene.update", sceneId: "s1", patch: { bounds: { w: 14, h: 20 } } });
+  });
+
   test("high confidence applies the grid as one undo step, keeps the guess for Use default, and puts the box on the found squares", () => {
     const { sent, actions, store } = room();
     showOutcome({ actions, store, scene: SCENE, found: { tier: "high", cal: FOUND }, fit: true, at: { x: 700, y: 500 }, fallback: { cellPx: 47, originPx: { x: 0, y: 0 } } });
@@ -1196,7 +1204,7 @@ describe("squares and hexes both looked for (docs/design/design-v1-grid-detect.m
         assert.equal(refusals.length, 1);
         assert.match(refusals[0]!, /difficult ground/);
         assert.deepEqual(server.scenes.s1, scene, "a refused shape change cannot apply its grid or fitted size");
-        assert.deepEqual(sent, [{ t: "scene.setGrid", sceneId: "s1", ...FOUND, gridShape: to ?? "squares", ...(fit ? { bounds: fitBounds({ ...MAP, ...FOUND }) } : {}) }]);
+        assert.deepEqual(sent, [{ t: "scene.setGrid", sceneId: "s1", ...FOUND, gridShape: to ?? "squares", ...(fit ? { bounds: fitBounds({ ...MAP, ...FOUND }, gridOfShape(to)) } : {}) }]);
       }
     }
   });
@@ -1240,7 +1248,7 @@ describe("squares and hexes both looked for (docs/design/design-v1-grid-detect.m
     assert.deepEqual(
       live.sent.map((s) => s.op),
       [
-        { t: "scene.setGrid", sceneId: "s1", cellPx: HEX_CAL.cellPx, originPx: HEX_CAL.originPx, gridShape: "hexRows", bounds: fitBounds({ ...MAP, ...HEX_CAL }) },
+        { t: "scene.setGrid", sceneId: "s1", cellPx: HEX_CAL.cellPx, originPx: HEX_CAL.originPx, gridShape: "hexRows", bounds: fitBounds({ ...MAP, ...HEX_CAL }, HEX_ROWS) },
       ],
     );
     assert.ok(live.sent.every((s) => s.group === live.sent[0]!.group), "one undo step");

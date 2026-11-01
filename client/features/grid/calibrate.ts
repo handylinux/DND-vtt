@@ -280,15 +280,39 @@ export function imageSquares(map: MapSize & Calibration): { across: number; down
   return { across: w, down: h };
 }
 
+/** Float error this short of a whole cell, or of a hex's far edge, still counts it. */
+const FIT_SLACK = 0.02;
+
 /**
- * The scene size that covers the whole squares of the map, from cell (0, 0)
- * to the last square that fits. A sliver of float error does not cost a
- * square.
+ * The scene size that covers the whole cells of the map, from cell (0, 0)
+ * to the last one that fits. A sliver of float error does not cost a cell.
+ *
+ * On hexes the scene must hold every hex wholly inside the art, and a hex
+ * scene's size counts differently (docs/design/design-v1-hex-grids.md 4.1):
+ * a height holds a row only when the row's whole hex fits, and a width
+ * holds one hex fewer in odd rows, which stand out half a hex. So art 12.5
+ * hexes wide and 7.2 tall needs a scene 13 wide and 8 tall, where the
+ * square count (12 by 7) would leave out the last row and the last hex of
+ * every odd row. A single row has no odd row, so it takes its hexes' count
+ * as the width and no half hex, as a file name's counts read it
+ * (server/assets/kinds.ts `nameGrid`).
  */
-export function fitBounds(map: MapSize & Calibration): { w: number; h: number } {
-  const side = (px: number, origin: number) =>
-    Math.min(MAX_SCENE_CELLS, Math.max(1, Math.floor((px - origin) / map.cellPx + 0.02)));
-  return { w: side(map.widthPx, map.originPx.x), h: side(map.heightPx, map.originPx.y) };
+export function fitBounds(map: MapSize & Calibration, grid: Grid = SQUARES): { w: number; h: number } {
+  const clamp = (n: number) => Math.min(MAX_SCENE_CELLS, Math.max(1, n));
+  const across = (map.widthPx - map.originPx.x) / map.cellPx;
+  const down = (map.heightPx - map.originPx.y) / map.cellPx;
+  if (!isHex(grid)) return { w: clamp(Math.floor(across + FIT_SLACK)), h: clamp(Math.floor(down + FIT_SLACK)) };
+  // The rows lattice's terms: columns mirror it with x and y swapped (shared/rules/hex.ts).
+  const rows = grid.orient === "rows";
+  const along = rows ? across : down;
+  const deep = rows ? down : across;
+  const lines = Math.max(0, Math.floor((deep + FIT_SLACK - 2 * HEX_R) / HEX_S) + 1);
+  const even = Math.floor(along + FIT_SLACK);
+  // Odd rows stand out half a hex, so art under a hex and a half wide has none, and a last odd row holds nothing to cover.
+  const odd = Math.floor(along - 0.5 + FIT_SLACK);
+  const covered = odd > 0 || lines % 2 === 1 ? lines : lines - 1;
+  const reach = { w: clamp(Math.max(even, odd > 0 && lines > 1 ? odd + 1 : 0)), h: clamp(Math.ceil(covered <= 0 ? 0 : (covered - 1) * HEX_S + 2 * HEX_R)) };
+  return rows ? reach : { w: reach.h, h: reach.w };
 }
 
 /** Whether two calibrations draw the same grid, to the precision the app stores. */

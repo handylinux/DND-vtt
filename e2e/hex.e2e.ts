@@ -2283,6 +2283,24 @@ describe("raccoon-vtt hex grids: the board", { timeout: 600_000 }, () => {
     await ops.send({ t: "room.setPlayerScene", sceneId: run.sceneId });
   });
 
+  test("fu44c-1: a hex scene from an NxM name holds all the art", async () => {
+    // 12 x 8 hexes of 70 px on hex rows is 12.5 hexes wide and 7.2 rows tall. The squares' count (12 by 7) left out the last row and the last hex of every odd row.
+    const first = path.join(work, "fen_12x8.png");
+    await sharp({ create: { width: 875, height: 505, channels: 3, background: "#435468" } }).png().toFile(first);
+    await pickTool(dm, "Select");
+    const panel = await openScenes(dm);
+    await panel.getByRole("radio", { name: "Map image", exact: true }).click();
+    await panel.getByRole("radiogroup", { name: "Grid", exact: true }).getByRole("radio", { name: "Hex rows", exact: true }).check();
+    const known = new Set(Object.keys(dmSocket.state?.scenes ?? {}));
+    await panel.getByRole("button", { name: "Choose a map image" }).setInputFiles(first);
+    await panel.getByRole("button", { name: "Upload and create" }).click();
+    const scene = await waitFor("fu44c-1 hex map", () => Object.values(dmSocket.state?.scenes ?? {}).find((s) => s?.map && !known.has(s.id)), 30_000);
+    await waitFor("the DM on the named map", () => dmSocket.you?.sceneId === scene.id || null);
+    assert.equal(scene.gridShape, "hexRows");
+    assert.equal(scene.map?.cellPx, 70);
+    await waitFor("the hex scene holds 8 rows of 12 hexes", () => { const b = dmSocket.state?.scenes[scene.id]?.bounds; return b?.w === 13 && b.h === 8 ? b : null; });
+  });
+
   test("HX-12. no page logged an error", () => {
     for (const c of Object.values(consoles)) assert.deepEqual(c.errors, [], `${c.label}'s console`);
   });

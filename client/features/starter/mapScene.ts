@@ -1,4 +1,5 @@
 import type { GridShape } from "#shared/model.ts";
+import { gridOfShape } from "#shared/rules/grid.ts";
 import type { StarterWork } from "#shared/starter.ts";
 import { calibrationFromFind, fitBounds, MAX_CELL_PX, MIN_CELL_PX } from "../grid/calibrate.ts";
 import { DEFAULT_GRID, mapScene, type MapAsset, type SceneInput } from "../scenes/create.ts";
@@ -87,7 +88,7 @@ export function starterMapScene(input: {
   return {
     scene: {
       ...scene,
-      ...(map ? { map, bounds: fitBounds(map) } : null),
+      ...(map ? { map, bounds: fitBounds(map, gridOfShape(input.gridShape)) } : null),
       grid: color ? { ...DEFAULT_GRID, color } : DEFAULT_GRID,
     },
     aligned,

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import type { SceneMap } from "#shared/model.ts";
+import { HEX_R, HEX_S, hexInScene, sceneHexes, type HexGrid } from "#shared/rules/hex.ts";
 import { mapWorldRect } from "../../lib/scene.ts";
 import {
   boxAtCell,
@@ -173,5 +174,96 @@ describe("grid calibration", () => {
     const tiny: Calibration = calibrationFromBox({ x: -5, y: -5, size: 0.5 });
     assert.equal(tiny.cellPx, 1);
     assert.ok(tiny.originPx.x >= 0 && tiny.originPx.x < 1);
+  });
+
+  describe("the scene size on hexes (LP28-B-HEX-1)", () => {
+    const ROWS: HexGrid = { shape: "hex", orient: "rows" };
+    const COLUMNS: HexGrid = { shape: "hex", orient: "columns" };
+    const at = (widthPx: number, heightPx: number, cellPx = 70) => ({ widthPx, heightPx, cellPx, originPx: { x: 0, y: 0 } });
+    /** How many hexes of each row, in order, a scene of these bounds holds on hex rows. */
+    const rowLengths = (bounds: { w: number; h: number }) => {
+      const lengths: number[] = [];
+      for (const hex of sceneHexes(ROWS, bounds)) lengths[hex.row] = (lengths[hex.row] ?? 0) + 1;
+      return lengths;
+    };
+
+    test("art named 12 x 8 on hex rows holds all 8 rows and 12 hexes in every row", () => {
+      // fen_12x8.png: 12.5 hexes of 70 px wide, 2R + 7S = 7.217 tall (505 px reads 7.214).
+      const fit = fitBounds(at(875, 505), ROWS);
+      assert.deepEqual(fit, { w: 13, h: 8 });
+      assert.deepEqual(rowLengths(fit).slice(0, 8), [13, 12, 13, 12, 13, 12, 13, 12]);
+      // The squares' count leaves out the last row and the last hex of every odd row.
+      assert.deepEqual(fitBounds(at(875, 505)), { w: 12, h: 7 });
+      assert.equal(rowLengths({ w: 12, h: 7 }).length, 7);
+    });
+
+    test("art named 30 x 20 holds all 20 rows", () => {
+      const fit = fitBounds(at(30.5 * 70, (2 * HEX_R + 19 * HEX_S) * 70), ROWS);
+      assert.deepEqual(fit, { w: 31, h: 18 });
+      assert.equal(rowLengths(fit).length, 20);
+      assert.equal(rowLengths(fit)[19], 30);
+    });
+
+    test("hex columns count the other way", () => {
+      // The mirror of 12 x 8 rows: 12.5 hexes tall, 7.217 wide.
+      const fit = fitBounds(at(505, 875), COLUMNS);
+      assert.deepEqual(fit, { w: 8, h: 13 });
+      const cells = sceneHexes(COLUMNS, fit);
+      assert.equal(cells.filter((c) => c.col === 7).length, 12);
+      assert.equal(Math.max(...cells.map((c) => c.col)), 7);
+      assert.deepEqual(fitBounds(at(505, 875)), { w: 7, h: 12 });
+    });
+
+    test("a single row or column has no half hex", () => {
+      // 12 x 1 on rows: 12 hexes wide, one row tall, and a row needs 2R of height to hold a hex at all.
+      assert.deepEqual(fitBounds(at(840, 81), ROWS), { w: 12, h: 2 });
+      assert.equal(sceneHexes(ROWS, { w: 12, h: 2 }).length, 12);
+      assert.deepEqual(fitBounds(at(81, 840), COLUMNS), { w: 2, h: 12 });
+      assert.equal(sceneHexes(COLUMNS, { w: 2, h: 12 }).length, 12);
+    });
+
+    test("art smaller than a hex still gets a scene of one cell, and the largest is the schema's", () => {
+      assert.deepEqual(fitBounds(at(30, 30), ROWS), { w: 1, h: 1 });
+      assert.deepEqual(fitBounds(at(40_000, 40_000), ROWS), { w: 200, h: 200 });
+    });
+
+    test("the origin starts the count, as for squares", () => {
+      assert.deepEqual(fitBounds({ widthPx: 875 + 35, heightPx: 505 + 70, cellPx: 70, originPx: { x: 35, y: 70 } }, ROWS), { w: 13, h: 8 });
+    });
+
+    test("any art: the scene holds every hex wholly inside it, and drops one when a cell shrinks", () => {
+      // The oracle is the hex geometry itself: a hex is inside the art when its box is, within the same float slack.
+      const slack = 0.02;
+      let seed = 7;
+      const next = () => (seed = (seed * 48271) % 2147483647) / 2147483647;
+      for (let i = 0; i < 400; i++) {
+        const cellPx = 20 + Math.floor(next() * 100);
+        const across = 1 + next() * 40;
+        const down = 1 + next() * 40;
+        for (const grid of [ROWS, COLUMNS]) {
+          const rows = grid.orient === "rows";
+          const [along, deep] = rows ? [across, down] : [down, across];
+          const art = [];
+          for (let r = 0; r < 300; r++) {
+            for (let c = 0; c < 300; c++) {
+              const right = c + 1 + 0.5 * (r % 2);
+              const bottom = HEX_R + r * HEX_S + HEX_R;
+              if (right <= along + slack && bottom <= deep + slack) art.push({ c, r });
+            }
+          }
+          const hexes = art.map(({ c, r }) => (rows ? { col: c, row: r } : { col: r, row: c }));
+          const fit = fitBounds(at(Math.round(across * cellPx * 1000) / 1000, Math.round(down * cellPx * 1000) / 1000, cellPx), grid);
+          const say = `${grid.orient} ${across.toFixed(3)} x ${down.toFixed(3)}`;
+          if (fit.w >= 200 || fit.h >= 200) continue;
+          for (const hex of hexes) assert.ok(hexInScene(grid, fit, hex), `${say}: ${JSON.stringify(hex)} is outside ${JSON.stringify(fit)}`);
+          if (hexes.length === 0) continue;
+          // Smallest: one cell less on either side loses a hex of the art (or the scene is one cell already).
+          for (const less of [{ w: fit.w - 1, h: fit.h }, { w: fit.w, h: fit.h - 1 }]) {
+            if (less.w < 1 || less.h < 1) continue;
+            assert.ok(hexes.some((hex) => !hexInScene(grid, less, hex)), `${say}: ${JSON.stringify(less)} would hold it too`);
+          }
+        }
+      }
+    });
   });
 });

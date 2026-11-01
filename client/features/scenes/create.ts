@@ -1,6 +1,7 @@
 import type { GridShape, LightLevel, RoomState, Scene, SceneMap, ScenePreset } from "#shared/model.ts";
 import { PLAYERS_SEE_WORDS } from "#shared/playersSee.ts";
 import { MAX_NAME, MAX_SCENE_CELLS, type OpOf } from "#shared/protocol.ts";
+import { gridOfShape } from "#shared/rules/grid.ts";
 import { fitBounds, MAX_CELL_PX, MIN_CELL_PX, type KeptGrid } from "../grid/calibrate.ts";
 import { groundAtMiddle, type Live } from "../../lib/view.ts";
 import { lightOf } from "../vision/settings.ts";
@@ -142,7 +143,7 @@ export function mapScene(input: { id: string; name: string; asset: MapAsset; gri
       id: input.id,
       ...shaped(input.gridShape),
       name: cleanName(input.name, "Map"),
-      bounds: fitBounds(map),
+      bounds: fitBounds(map, gridOfShape(input.gridShape)),
       background: MAP_BACKGROUND,
       grid: DEFAULT_GRID,
       map,
@@ -304,13 +305,15 @@ export function replacement(old: SceneMap | undefined, asset: MapAsset, gridShap
  * name's scale (other art, or a kept grid that disagreed) leaves bounds
  * fitted to the old cells, but bounds the DM set by hand are left alone.
  * A kept grid that agrees with the name refits to the same cells, so
- * nothing changes there either.
+ * nothing changes there either. On hexes the bounds follow the old map by
+ * either count, the hexes' or the squares' that scenes made before the
+ * hex fit hold.
  */
-export function refitsToNamedMap(old: SceneMap | undefined, next: SceneMap, named: number | undefined, bounds: { w: number; h: number }): boolean {
+export function refitsToNamedMap(old: SceneMap | undefined, next: SceneMap, named: number | undefined, bounds: { w: number; h: number }, gridShape?: GridShape): boolean {
   if (named === undefined || next.cellPx !== named) return false;
   if (!old) return true;
-  const fit = fitBounds(old);
-  return fit.w === bounds.w && fit.h === bounds.h;
+  // A hex scene made before the fit counted hexes holds the square count, and its bounds still follow its map.
+  return [fitBounds(old, gridOfShape(gridShape)), fitBounds(old)].some((fit) => fit.w === bounds.w && fit.h === bounds.h);
 }
 
 /** A kept grid within 1% of a name's scale is that grid, lined up by hand, so it keeps its origin. */

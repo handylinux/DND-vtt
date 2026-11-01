@@ -69,7 +69,7 @@ export default function GridOptions() {
   if (!box) return <OptionsStrip tool="Line up grid" line={{ tone: "hint", content: hex ? HEX_HINT : "Drag a box over three by three squares of the map." }} slots={[]} />;
 
   const cal = boxCalibration(box, found, sceneId, grid);
-  const bounds = fitBounds({ ...map, ...cal });
+  const bounds = fitBounds({ ...map, ...cal }, grid);
   const changed = !sameCalibration(cal, map);
   const resize = fitScene && (bounds.w !== scene.bounds.w || bounds.h !== scene.bounds.h);
   // A nudge is a move by hand, so it ends a search as a drag does.
