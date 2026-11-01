@@ -7,9 +7,11 @@ import { canApply } from "../permissions.ts";
 import { projectState, stableStringify } from "../project.ts";
 import type { OpOf } from "../protocol.ts";
 import { applyOp } from "../reducer.ts";
+import { footprintSize } from "../rules/footprint.ts";
 import { findRouteOn } from "../rules/hexWalk.ts";
 import { planMove } from "../rules/moveLeg.ts";
 import { offGridWallThrough, ownWalk, walkEnd } from "../rules/movement.ts";
+import { fileRoutes } from "../rules/route.ts";
 import { compareProgress, trapWalks } from "../rules/traps.ts";
 import { groupWalkWorld } from "../rules/walkWorld.ts";
 import { env, member, P1, P2, room, scene, token, trap } from "../testutil.ts";
@@ -195,5 +197,22 @@ describe("squares: what a holder drags follows it in single file where its move 
     assert.deepEqual([imp.x, imp.y, imp.attached], [2, 5, undefined], "the imp stops at the wall");
     assert.equal(rat.attached?.to, "imp", `the rat still in the imp's tow, at ${rat.x}, ${rat.y}`);
     assert.ok(rat.x <= imp.x, `no further along than the imp: ${rat.x}, ${rat.y}`);
+  });
+
+  test("the file spaces them alike whichever way the walk goes, a step that falls halfway taken toward the holder (review FU45BR-OPUS-7)", () => {
+    // A Tiny creature first in line leaves the Medium one behind it halfway between two of its steps.
+    for (const [size, gaps] of [["large", [-0.75, -1]], ["huge", [-1.25, -1.5]]] as const) {
+      const behind = (dir: 1 | -1) => {
+        // Its squeezed box on whole squares where the walk ends, as a squeeze must stand.
+        const lead = { size, x: 19.5 - dir * 6, y: 19.5 };
+        const members = [{ id: "tiny", size: "tiny" as const, x: lead.x - dir * 4, y: 19.5 }, { id: "gob", size: "medium" as const, x: lead.x - dir * 8, y: 19.5 }];
+        const file = fileRoutes(lead, [{ x: lead.x, y: lead.y }, { x: 19.5, y: 19.5 }], [members]);
+        const middle = 19.5 + footprintSize(lead).w / 2;
+        // How far behind the holder's middle each one's middle ends, along the walk.
+        return members.map((m) => (file.get(m.id)!.at(-1)!.x + footprintSize(m).w / 2 - middle) * dir);
+      };
+      assert.deepEqual(behind(1), gaps, `${size} east`);
+      assert.deepEqual(behind(-1), gaps, `${size} west`);
+    }
   });
 });

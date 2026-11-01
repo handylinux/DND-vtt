@@ -268,8 +268,10 @@ export function fileRoutes(lead: PlacedToken, points: readonly Point[], classes:
       // How far back along the last piece its middle goes for its squeezed box to touch the one ahead, along whichever axis meets first.
       const t = Math.min(Math.abs(ux) > 1e-9 ? (small.w + ahead.w) / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-9 ? (small.h + ahead.h) / 2 / Math.abs(uy) : Infinity);
       const step = routeLattice(member);
-      const snap = (v: number) => Math.round(v / step) * step + 0;
-      const last = { x: snap(ahead.x + ahead.w / 2 - ux * t - w / 2), y: snap(ahead.y + ahead.h / 2 - uy * t - h / 2) };
+      // A spot halfway between two lattice steps goes to the one toward the holder, so a walk and its mirror space them alike
+      // (review FU45BR-OPUS-7: a Tiny creature first in line leaves the next half a step from it).
+      const snap = (v: number, toward: number) => (toward < 0 ? -Math.round(-v / step) : Math.round(v / step)) * step + 0;
+      const last = { x: snap(ahead.x + ahead.w / 2 - ux * t - w / 2, ux), y: snap(ahead.y + ahead.h / 2 - uy * t - h / 2, uy) };
       const walk: Point[] = [{ x: member.x, y: member.y }];
       for (let i = 1; i < n; i++) walk.push({ x: points[i]!.x + (full.w - w) / 2, y: points[i]!.y + (full.h - h) / 2 });
       walk.push(last);
