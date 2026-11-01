@@ -2394,15 +2394,19 @@ export function warnArchiveSkipped(log: Logger, roomId: string, now: number): vo
     last.since++;
     return;
   }
-  log.warn({ roomId, refused: (last?.since ?? 0) + 1 }, "free disk is under the floor or could not be read, so log lines were not archived");
+  log.warn({ roomId, refused: (last?.since ?? 0) + 1 }, ARCHIVE_SKIPPED);
   archiveSkips.delete(roomId);
   archiveSkips.set(roomId, { at: now, since: 0 });
   // Rooms warned about long ago are forgotten, oldest first, so the map stays as small as the rooms short of disk now.
+  // A count still waiting for its room's next warning is told as it goes, or those refusals would never be.
   for (const [room, seen] of archiveSkips) {
     if (now - seen.at < ARCHIVE_WARN_MS) break;
     archiveSkips.delete(room);
+    if (seen.since > 0) log.warn({ roomId: room, refused: seen.since }, ARCHIVE_SKIPPED);
   }
 }
+
+const ARCHIVE_SKIPPED = "free disk is under the floor or could not be read, so log lines were not archived";
 
 /**
  * A room that went read-only at its quota is measured again as it loads,
