@@ -2104,7 +2104,7 @@ function sameTile(a: SightTile, b: SightTile): boolean {
  * run split where a free wall far away crossed it changes pieces the chunk
  * rule would not look at.
  */
-function compute(inp: Inputs, prev: SceneEntry | null, sceneId: string = inp.scene.id): SceneEntry {
+function compute(inp: Inputs, prev: SceneEntry | null): SceneEntry {
   const { W, H, w, h } = inp;
   const base = prev !== null && prev.w === w && prev.h === h && prev.level === inp.level && prev.fpc === inp.fpc ? prev : null;
   const diffs = new Map<Float64Array, Map<Float64Array, ChangedCells>>();
@@ -2153,7 +2153,7 @@ function compute(inp: Inputs, prev: SceneEntry | null, sceneId: string = inp.sce
   }
 
   // The light rows and tiles wait until read (SceneEntry), drawn from the newest drawn computation this one's entries came from.
-  return new SceneEntry(sceneId, inp, sources, lights, base ? base.anchorForNext() : null);
+  return new SceneEntry(inp.scene.id, inp, sources, lights, base ? base.anchorForNext() : null);
 }
 
 let serials = 0;
@@ -2264,7 +2264,10 @@ function lightRowsBytes(rows: readonly LightRow[]): number {
  * Each scene keeps at most two computations, the committed state's and the
  * staged one's (section 2.1), and every computation starts from the newest:
  * the reuse rule above makes any starting point give the cold answer, so
- * which one it is only changes the work. Sight holders' rasters are kept
+ * which one it is only changes the work. One not yet drawn also holds the
+ * drawn computation it will draw from (its anchor), which may have left
+ * the record: its bytes count that anchor, twice over while the record
+ * still holds it too, which only trims sooner. Sight holders' rasters are kept
  * beside them (below). Scenes are dropped least recently used past 64 MB in
  * all (section 4.3.6), rasters included. Scene IDs are chosen by clients,
  * so two rooms may share one, which costs work and never a wrong answer.
