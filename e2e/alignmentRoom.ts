@@ -4713,6 +4713,8 @@ async function blockRollScreens(sweep: Sweep, page: Page, screen: string, root: 
   const before = await grid.boundingBox();
   await box.click();
   await menu.waitFor();
+  // A list that slid over its box ignores a press for 350 ms after it opens (Menu.tsx, D-261101-313).
+  await page.waitForTimeout(400);
   await menu.getByRole("menuitem", { name: at.roll }).first().click();
   await menu.waitFor({ state: "detached" });
   const result = blockHeaderOf(root);
