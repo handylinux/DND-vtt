@@ -49,6 +49,7 @@ describe("a player's chunk across build edits beside it", () => {
     for (const [k, cell] of ["20,20", "5,20", "20,5"].entries()) {
       state = apply(state, { t: "build.paint", sceneId: "s1", terrain: "stone", cells: [cell] }, 10 + k);
       assert.equal(one(state, 0, 0), before, `after a paint at ${cell}`);
+      assert.equal(stableStringify(before), cold(state, 0, 0), `after a paint at ${cell}, against a fresh room`);
     }
   });
 
