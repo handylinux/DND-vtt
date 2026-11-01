@@ -6,6 +6,7 @@ import { Button } from "../../components/Button.tsx";
 import { Checkbox } from "../../components/Checkbox.tsx";
 import { Dialog, DiscardQuestion } from "../../components/Dialog.tsx";
 import { Field, Select, TextArea } from "../../components/Field.tsx";
+import { Held } from "../../components/Held.tsx";
 import { Loading } from "../../components/Loading.tsx";
 import { Notice } from "../../components/Notice.tsx";
 import { Help, Note } from "../../components/Panel.tsx";
@@ -30,7 +31,7 @@ type AccessMode = "dm" | "all" | "member";
  * step. Leaving with unsaved changes asks once. Whether a secret is revealed
  * is not the editor's: Reveal and Hide on the page itself are their own op.
  *
- * While a save is pending, the fields sit in a disabled fieldset and take
+ * While a save is pending, the fields sit in a held group and take
  * the disabled look, and Save, outside it in the footer, shows busy.
  */
 export function JournalEditor(props: { page: JournalPage | null; folders: readonly string[]; onClose(): void; onSaved(pageId: string): void }) {
@@ -157,7 +158,7 @@ export function JournalEditor(props: { page: JournalPage | null; folders: readon
   return (
     <Dialog title={props.page ? `Edit ${props.page.title}` : "New page"} width="md" phone="fill" onClose={close} footer={footer} status={status}>
       {/* Disabled as a whole while a save is pending: every field, picker and block button at once, as editDraft refuses their edits. */}
-      <fieldset disabled={saving} aria-busy={saving} style={{ margin: 0, padding: 0, border: "none", minWidth: 0 }}>
+      <Held held={saving} aria-busy={saving}>
         <div style={{ display: "grid", gap: theme.space(4), fontSize: theme.font.body14 }}>
           {failure !== null ? (
             <div ref={problemsRef}>
@@ -269,7 +270,7 @@ export function JournalEditor(props: { page: JournalPage | null; folders: readon
             ) : null}
           </div>
         </div>
-      </fieldset>
+      </Held>
     </Dialog>
   );
 }
