@@ -168,7 +168,7 @@ const rollToastsSetting = setting("rvtt.rollToasts", parseRollToasts, (on) => (o
 export const setRollToasts = rollToastsSetting.set;
 export const useRollToastsOn = rollToastsSetting.use;
 
-/** "Roll animation" (docs/design/design-v1-roll-animation.md 9.2): this device's own rolls in the Dice panel throw dice. On by default. */
+/** "Roll animation" (docs/design/design-v1-roll-animation.md 9.2): this device's own rolls in the Dice panel and from stat blocks throw dice. On by default. */
 export function parseRollAnimation(raw: string | null): boolean {
   return raw !== "off";
 }
