@@ -120,16 +120,27 @@ export function Menu(props: {
   });
 
   /*
-   * A wrapping row of tiles cannot balance itself in CSS: its last row may
-   * hold one tile alone, and the box keeps the width of the full row
-   * above. So as the popover places its box, each section's tiles are
-   * measured at their own widths against the room the box gives them (the
-   * menu's own width, which the box caps), and take the width cap
-   * tileRows picks. The box then measures the rows they settle into. The
-   * cap is a custom property React never writes, so a render while the
-   * menu is open keeps it. The caps refresh only when the popover places
-   * the box, so a tile whose width changes while the menu is open keeps
-   * the cap it had.
+   * The popover calls this as it places its box (Popover.tsx
+   * setFitContent), with `room`: the widest content the box may hold, its
+   * widest box less its padding and border.
+   *
+   * Rows: a row's label has a zero flex basis, so left to itself the box
+   * would hug the shortest words. So the menu and each row are measured at
+   * their own max-content widths, with ROWS_WIDTH cleared first, and the
+   * menu takes the widest of them, capped at `room` (menuWidth), in
+   * ROWS_WIDTH.
+   *
+   * Tiles: a wrapping row of tiles cannot balance itself in CSS: its last
+   * row may hold one tile alone, and the box keeps the width of the full
+   * row above. So each section's tiles are measured at their own widths
+   * against the room the box gives them (the menu's own width, which the
+   * box caps), and take the width cap tileRows picks, in TILES_WIDTH. The
+   * box then measures the rows they settle into.
+   *
+   * Either width is a custom property React never writes, so a render
+   * while the menu is open keeps it. It refreshes only when the popover
+   * places the box, so an item whose width changes while the menu is open
+   * keeps the width it had.
    */
   useLayoutEffect(() => {
     setFitContent((room) => {

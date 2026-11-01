@@ -556,6 +556,7 @@ function OpenPopover(props: PopoverProps) {
           zIndex: theme.z.popover,
           boxSizing: "border-box",
           overflowY: "auto",
+          // No scrollbar: "Scroll for more" is the cue. While tight that line is not drawn either, so a box that scrolls there shows no cue at all. Accepted: the line would cover the one row the box has room for, and a phone's overlay scrollbar shows only while it scrolls anyway (FL5-1).
           scrollbarWidth: "none",
           overscrollBehavior: "contain",
           padding: POPOVER_PAD,
