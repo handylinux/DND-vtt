@@ -47,6 +47,7 @@ through a private DM link. There are no accounts.
   <img src="docs/images/readme-stat-block.webp" width="400" alt="A player's character stat block, with a Perception check just rolled from its Wisdom box">
   <img src="docs/images/readme-dice.webp" width="400" alt="The DM's Dice panel, with a goblin's attack and damage rolled in secret and the players' recent rolls under them">
 </p>
+<p align="center"><sub>Art in these screenshots is credited, with its licenses, in <a href="CREDITS.md#readme-screenshots">CREDITS.md</a>.</sub></p>
 
 Dice roll on the server, so everyone sees the same result. Anyone can still
 roll real dice and type the total.

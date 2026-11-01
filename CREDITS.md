@@ -1000,12 +1000,12 @@ The whale in the README's Docker Hub button (`docs/images/docker-hub-button.html
 
 ## README screenshots
 
-The screenshots in `docs/images/readme-map.webp`, `readme-stat-block.webp`, `readme-dice.webp` and `readme-phone.webp` were taken from the app itself, running locally, and show only art that ships with it, with the rules text of the SRD 5.2.1. The art in them, each under its own license as listed above:
+The screenshots in `docs/images/readme-map.webp`, `readme-stat-block.webp`, `readme-dice.webp` and `readme-phone.webp` were taken from the app itself, running locally, and show only art that ships with it, with the rules text of the SRD 5.2.1. In them the art is scaled, cropped to round tokens and composed into screenshots of the app's interface, which are changes to the original works. The art in them, each under its own license as listed above:
 
 - The map is "Cavern Battlemap", by Ferrin, under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (Starter packs, Cavern Battlemap).
 - Thorn's and Bree's tokens are "Human_007" and "Wizard_001", from Joseph Hewitt's Fantasy RPG Portrait Set 1, by Joseph Hewitt, under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (Starter packs, Fantasy RPG Portraits).
 - The goblins' token is the goblin tile from Dungeon Crawl Stone Soup, by the Dungeon Crawl Stone Soup developers and artists, under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (Starter packs, Dungeon Crawl Stone Soup monsters).
-- The bugbear's token is "Bugbear", from Illustrated Bestiary, by Oozejar (Gourdin Konbo Club), under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (Starter packs, Illustrated Bestiary). The screenshots that show it, `readme-map.webp` and `readme-dice.webp`, are shared under CC BY-SA 4.0 too.
+- The bugbear's token is "Bugbear", from Illustrated Bestiary, by Oozejar (Gourdin Konbo Club), under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (Starter packs, Illustrated Bestiary). The screenshots that show it, `readme-map.webp` and `readme-dice.webp`, are shared under CC BY-SA 4.0 too. `readme-stat-block.webp` and `readme-phone.webp` do not show it.
 - The interface icons and font are those listed under Interface icons and Interface font.
 
 ## 3D dice
