@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useLayoutEffect, useMemo, type CSSProperties } from "react";
 import type { RoomState } from "#shared/model.ts";
 import { ABILITY_ABBR, ABILITY_NAMES } from "#shared/rules/skills.ts";
 import { Icon } from "../../components/Icon.tsx";
@@ -7,7 +7,7 @@ import { VISUALLY_HIDDEN } from "../../lib/a11y.ts";
 import { theme } from "../../lib/theme.ts";
 import type { You } from "../../state/types.ts";
 import { useRoomView } from "../../state/view.ts";
-import { BlockResult, type BlockOutcome } from "../dice/BlockResult.tsx";
+import { useBlockHeader, type BlockHeaderApi } from "../dice/BlockHeader.tsx";
 import { blockRoller, type BlockFrom, type BlockRoller } from "../dice/blockRolls.ts";
 import { useAbilityMenu } from "../dice/useAbilityMenu.tsx";
 import type { AbilityBox } from "./abilityTable.ts";
@@ -26,8 +26,9 @@ import type { AbilityBox } from "./abilityTable.ts";
  *
  * With `roll`, where the viewer may roll for the block's creature, the six
  * boxes open that ability's rolls (docs/design/design-v1-stat-block-rolls.md): a
- * group of six buttons that look as the text boxes do, with the newest
- * result under them. Without it the grid is the read only list it always was.
+ * group of six buttons that look as the text boxes do, whose newest result
+ * shows in the panel's header line (docs/design/design-v1-token-roll-header.md).
+ * Without it the grid is the read only list it always was.
  */
 /**
  * Whom a block's boxes roll for, as the viewer reads the room (section 2 of
@@ -56,7 +57,7 @@ function boxStyle(a: Pick<AbilityBox, "proficient">): CSSProperties {
 const ABBR_STYLE: CSSProperties = { fontSize: theme.font.tiny, fontWeight: theme.weight.bold, letterSpacing: theme.caps, textTransform: "uppercase", color: theme.color.textMuted };
 
 export function AbilityGrid(props: { abilities: readonly AbilityBox[]; roll?: BlockRoller | null | undefined }) {
-  // Keyed by the creature, so a result, its receipt and its voice claim never carry over to another creature's boxes when a panel switches between two.
+  // Keyed by the creature, so an open list never carries over to another creature's boxes when a panel switches between two.
   if (props.roll) return <RollingGrid key={JSON.stringify(props.roll.creature)} abilities={props.abilities} roller={props.roll} />;
   return (
     <dl data-ability-grid="" style={GRID}>
@@ -91,27 +92,36 @@ export function AbilityGrid(props: { abilities: readonly AbilityBox[]; roll?: Bl
  * inside a `<dl>`'s grouping div. Each button is the whole box, its three
  * lines marked spans in the text box's words, and its name is the printed
  * words so a reader hears each box once. Of the six boxes' last outcomes
- * the newest shows under the grid.
+ * the newest shows in the panel's header line (BlockHeader.tsx), which
+ * stays when the grid folds away. Outside a header host a roll still goes,
+ * said by the Dice panel's line or the toast, and nothing throws.
  */
 function RollingGrid(props: { abilities: readonly AbilityBox[]; roller: BlockRoller }) {
-  const [outcome, setOutcome] = useState<BlockOutcome | null>(null);
-  // One box around both, so a parent that spaces its children (the PC sheet's grid) does not add its gap to the result's own margin.
-  // As a grid item (the PC sheet's grid) it would take its content's width as its floor, and the result line's one row would widen the grid past the sheet (LP27-A-BLOCK-1).
+  const header = useBlockHeader();
+  const rolls = header?.rolls;
+  // While it rolls, the panel is a rolling surface of the throw's store.
+  useLayoutEffect(() => rolls?.(), [rolls]);
   return (
-    <div style={{ minWidth: 0 }}>
-      <div data-ability-grid="" role="group" aria-label="Abilities" style={GRID}>
-        {props.abilities.map((a) => (
-          <RollingBox key={a.key} box={a} roller={props.roller} onSent={(sent) => setOutcome({ kind: "sent", sent })} onUnsent={(words) => setOutcome({ kind: "unsent", words })} />
-        ))}
-      </div>
-      {outcome ? <BlockResult outcome={outcome} /> : null}
+    <div data-ability-grid="" role="group" aria-label="Abilities" style={GRID}>
+      {props.abilities.map((a) => (
+        <RollingBox key={a.key} box={a} roller={props.roller} header={header} />
+      ))}
     </div>
   );
 }
 
-function RollingBox(props: { box: AbilityBox; roller: BlockRoller; onSent: Parameters<typeof useAbilityMenu>[0]["onSent"]; onUnsent(words: string): void }) {
+function RollingBox(props: { box: AbilityBox; roller: BlockRoller; header: BlockHeaderApi | null }) {
   const a = props.box;
-  const menu = useAbilityMenu({ ability: a.key, roller: props.roller, onSent: props.onSent, onUnsent: props.onUnsent });
+  const { header } = props;
+  const menu = useAbilityMenu({
+    ability: a.key,
+    roller: props.roller,
+    throwHost: header?.throwHost ?? null,
+    onHold: () => header?.hold(),
+    onSent: (sent, pick) => header?.sent(sent, pick),
+    onUnsent: (words, pick) => header?.unsent(words, pick),
+    onPicked: () => header?.picked(),
+  });
   const line: CSSProperties = { display: "block" };
   return (
     <>

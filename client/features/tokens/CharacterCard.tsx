@@ -18,6 +18,7 @@ import { useAnyPending } from "../encounter/hooks.ts";
 import { ReactionSection, reactionFor } from "../encounter/ReactionSection.tsx";
 import { ImageField, type ImageRef } from "../images/ImageField.tsx";
 import { placeOnGround } from "../movement/ground.ts";
+import { BlockHeaderHost } from "../dice/BlockHeader.tsx";
 import { useBlockRoller } from "../monsters/AbilityGrid.tsx";
 import { PcStatBlock } from "../pcstats/PcStatBlock.tsx";
 import { currentStageCamera } from "../scenes/stageCamera.ts";
@@ -245,7 +246,12 @@ export function CharacterPage(props: { character: Character; close: PanelClose; 
     }
   };
 
-  return <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", fontSize: theme.font.body14 }}>{parts.map(part)}</div>;
+  // The stat block's roll header heads the page. Keyed by the character, since the panel keeps this page mounted as it switches to another's, which must not show this one's roll (D-261101-095).
+  return (
+    <BlockHeaderHost key={character.id}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", fontSize: theme.font.body14 }}>{parts.map(part)}</div>
+    </BlockHeaderHost>
+  );
 }
 
 /** A note's audience above it, since a text box needs the panel's full width, as the token panel's Notes reads (TokenNotes.tsx). */

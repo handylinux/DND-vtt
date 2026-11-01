@@ -42,6 +42,7 @@ import { combatSummary, headerActions, holdsClassResources, offersMakeCompanion,
 import { backTo, baseSize, customWords, SIZE_WORDS } from "../features/tokens/resize.ts";
 import { RestSection } from "../features/tokens/RestSection.tsx";
 import { StatBlockSection } from "../features/tokens/StatBlockSection.tsx";
+import { BlockHeaderHost } from "../features/dice/BlockHeader.tsx";
 import { CardNotesField, SheetUrlField, StatsFields } from "../features/tokens/StatsSection.tsx";
 import { useSrdList } from "../features/tokens/StatSummary.tsx";
 import { useDuplicate, type DuplicateFocus } from "../features/tokens/useDuplicate.ts";
@@ -303,18 +304,21 @@ function TokenDetails(props: PanelProps) {
     position: { label: "Position", icon: "position", key: "position", summary: [height ? `Elevation ${height} ft` : "On the ground", token.rotation ? `facing ${token.rotation}°` : ""].filter(Boolean).join(", ") },
     image: { label: "Image", icon: "image", key: "image" },
   };
+  // The stat block's roll header heads the whole panel, and goes with this token's details (docs/design/design-v1-token-roll-header.md 1.3).
   return (
-    <div style={{ fontSize: theme.font.body14 }}>
-      {parts.map((part) => {
-        if (part.group === null) return section(part.id);
-        const g = groups[part.group];
-        return (
-          <Group key={part.group} label={g.label} icon={g.icon} {...groupFold(g.key)} summary={g.summary} holds="sections">
-            {part.sections.map(section)}
-          </Group>
-        );
-      })}
-    </div>
+    <BlockHeaderHost>
+      <div style={{ fontSize: theme.font.body14 }}>
+        {parts.map((part) => {
+          if (part.group === null) return section(part.id);
+          const g = groups[part.group];
+          return (
+            <Group key={part.group} label={g.label} icon={g.icon} {...groupFold(g.key)} summary={g.summary} holds="sections">
+              {part.sections.map(section)}
+            </Group>
+          );
+        })}
+      </div>
+    </BlockHeaderHost>
   );
 }
 

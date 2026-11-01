@@ -110,7 +110,7 @@ export function spokenResult(head: HeaderRoll, verdict: string | null, level?: P
 /**
  * What a settled receipt holds for a result line: its first roll, the
  * header roll, the proficiency mark of its label and the words a live region
- * says. The sticky line and a stat block's result line (BlockResult.tsx)
+ * says. The sticky line and a stat block's header line (BlockHeader.tsx)
  * both read their roll through it, so the two show one roll alike. An
  * answer's roll has no label of its own, so `label` names it where the
  * surface knows what it rolled (LP27-A-BLOCK-3).
@@ -361,7 +361,7 @@ export function ResultRest(props: { sum: string | null; label: string | undefine
           ) : null}
         </span>
       </span>
-      {/* A stat block's mode words (BlockResult.tsx) follow everything as one part. Where they would cut any other part they are hidden first, whole (the effect above). A description keeps them for a reader. */}
+      {/* A stat block's mode words (BlockHeader.tsx) follow everything as one part. Where they would cut any other part they are hidden first, whole (the effect above). A description keeps them for a reader. */}
       {props.mode ? (
         <span ref={modeBox} aria-hidden="true" data-result-mode="" style={{ flex: "none", ...muted }}>
           {props.mode}

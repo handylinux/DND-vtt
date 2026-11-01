@@ -1,24 +1,28 @@
 import "../../components/testing/register.ts";
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import type { ReactNode } from "react";
 import { createStore } from "zustand/vanilla";
 import type { DiceRoll, LogEntry, RoomState, Viewer } from "#shared/model.ts";
 import { projectState } from "#shared/project.ts";
 import { DM, room } from "#shared/testutil.ts";
 import { optionSlot } from "./optionState.ts";
+import { throwsSlot } from "./throw/useThrows.ts";
 import { ReceiptTracker, receiptsSlot } from "./useReceipt.ts";
 
 /*
- * A stat block's result line (docs/design/design-v1-stat-block-rolls.md 8): the
- * roll it sent shown under the grid, its mode words only for a roll from a
- * choice and worded from the returned roll, and one announcer per roll.
+ * A stat block's roll header (docs/design/design-v1-token-roll-header.md 3
+ * and 5, carrying over docs/design/design-v1-stat-block-rolls.md 8): the roll
+ * it sent shown at the top of the panel in the Dice panel's look, its row a
+ * fixed 44 px, its mode words only for a roll from a choice and worded from
+ * the returned roll, and one announcer per roll.
  */
 
 const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { RoomProvider } = await import("../../state/view.ts");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
-const { BlockResult, modeWords } = await import("./BlockResult.tsx");
+const { BlockHeader, BlockHeaderHost, modeWords } = await import("./BlockHeader.tsx");
 const { PanelHere } = await import("../panels.ts");
 
 const die = (extra: Partial<DiceRoll> = {}): DiceRoll => ({ formula: "1d20+5", faces: [10], total: 15, label: "Dexterity save", ...extra });
@@ -35,7 +39,7 @@ function scopeWith(lines: LogEntry[]) {
   return { scope, tracker };
 }
 
-function render(scope: InstanceType<typeof RoomScope>, outcome: Parameters<typeof BlockResult>[0]["outcome"], viewer: Viewer = DM, shown = true): string {
+function render(scope: InstanceType<typeof RoomScope>, outcome: Parameters<typeof BlockHeader>[0]["outcome"], viewer: Viewer = DM, shown = true, child?: ReactNode): string {
   const view = projectState(room(), viewer, { sceneId: "s1" }) as unknown as RoomState;
   const store = createStore(() => ({ view, roomId: "r1", connection: "open", you: viewer, sceneId: "s1", local: { selectedIds: [], multi: false } }));
   return renderToStaticMarkup(
@@ -44,7 +48,7 @@ function render(scope: InstanceType<typeof RoomScope>, outcome: Parameters<typeo
       actions: { dispatch: () => 1 } as never,
       ui: {} as never,
       assets: { url: () => "" } as never,
-      children: createElement(RoomScopeProvider, { scope, children: createElement(PanelHere, { id: "token", shown, children: createElement(BlockResult, { outcome }) }) as never }),
+      children: createElement(RoomScopeProvider, { scope, children: createElement(PanelHere, { id: "token", shown, children: child ?? createElement(BlockHeader, { outcome, host: null }) }) as never }),
     }),
   );
 }
@@ -81,20 +85,58 @@ describe("the mode words (D-261031-134)", () => {
   });
 });
 
+/** The line's row, which holds every state. */
+function rowOf(markup: string): string {
+  const row = /<div data-block-header-row="" style="([^"]*)"/.exec(markup);
+  assert.ok(row, "the line has its row");
+  return row[1]!;
+}
+
 describe("the line", () => {
   test("a tap that did not go shows its words as an alert", () => {
     const { scope } = scopeWith([]);
     const markup = render(scope, { kind: "unsent", words: "Rolling needs a connection." });
-    assert.match(markup, /data-block-result=""/);
+    assert.match(markup, /data-block-header=""/);
     assert.match(markup, /<span role="alert"[^>]*>Rolling needs a connection\.<\/span>/);
+  });
+
+  test("it sticks to the pane's top in the Dice panel's look, over the pane's side padding too, and its row is exactly 44 px tall", () => {
+    const { scope, tracker } = scopeWith([line("T", die())]);
+    tracker.answer("T", 0, "taken");
+    const markup = render(scope, sent("T"));
+    const outer = /<div data-block-header="" style="([^"]*)"/.exec(markup)![1]!;
+    assert.match(outer, /position:sticky;top:calc\(-1 \* var\(--pane-pad-top, 0px\)\)/);
+    assert.match(outer, /box-shadow:calc\(-1 \* var\(--pane-pad-x, 0px\)\) 0 0/);
+    assert.match(outer, /border-bottom:1px solid/);
+    const row = rowOf(markup);
+    assert.match(row, /(^|;)height:44px/);
+    assert.doesNotMatch(row, /min-height/, "height, not minHeight, so no state grows it");
+  });
+
+  test("before any roll the host draws its content alone, with the foot spacer after it and no line", () => {
+    const { scope } = scopeWith([]);
+    const markup = render(scope, sent("x"), DM, true, createElement(BlockHeaderHost, { children: createElement("p", null, "Thorn") }));
+    assert.equal(markup, '<div data-block-header-host=""><p>Thorn</p><div aria-hidden="true" data-block-header-spacer=""></div></div>');
   });
 
   test("a waiting roll holds the line with no result in it yet", () => {
     const { scope, tracker } = scopeWith([]);
     tracker.sending("W", 0);
     const markup = render(scope, sent("W"));
-    assert.match(markup, /data-block-result=""/);
+    assert.match(markup, /data-block-header=""/);
     assert.doesNotMatch(markup, /Rolled/);
+  });
+
+  test("while the dice fly the line keeps what it showed at the answer: \"Rolling…\" only with the store's rolling, else an empty band", () => {
+    for (const rolling of [true, false]) {
+      const { scope, tracker } = scopeWith([line("F", die())]);
+      tracker.answer("F", 0, "taken");
+      scope.get(throwsSlot).store.view = () => ({ held: "F", rolling, shown: null });
+      const markup = render(scope, sent("F"));
+      assert.doesNotMatch(markup, />15</, "no total until the landing");
+      assert.equal(/Rolling…/.test(markup), rolling, `rolling ${rolling}`);
+      assert.match(markup, /aria-live="polite"[^>]*>Rolled 15/, "said at the answer, before the dice land");
+    }
   });
 
   test("a tap's result shows the total and its label, no mode words, and is said once with the total", () => {
@@ -154,6 +196,21 @@ describe("the line", () => {
     assert.doesNotMatch(markup, /Again|<button/);
   });
 
+  test("plain words clip at two lines of small type and stay whole in the DOM and the title (3.2)", () => {
+    const long = "The server refused this roll for a reason long enough to need three lines at 320 by 568 at 130%, so it ends in an ellipsis.";
+    const { scope, tracker } = scopeWith([]);
+    tracker.answer("L", 0, "refused", { code: "forbidden", message: long, text: long });
+    const markup = render(scope, sent("L"));
+    const words = new RegExp(`<span role="alert" title="${long.replace(/[.%]/g, "\\$&")}" style="([^"]*)">${long.replace(/[.%]/g, "\\$&")}</span>`).exec(markup);
+    assert.ok(words, "whole in the DOM and the title");
+    assert.match(words[1]!, /display:-webkit-box/);
+    assert.match(words[1]!, /-webkit-line-clamp:2/);
+    assert.match(words[1]!, /-webkit-box-orient:vertical/);
+    assert.match(words[1]!, /overflow:hidden/);
+    assert.match(words[1]!, /font-size:13px/);
+    assert.match(rowOf(markup), /(^|;)height:44px/);
+  });
+
   test("unknown and no-longer-in-the-log read as the Dice panel's line words them", async () => {
     const unknown = scopeWith([]);
     unknown.tracker.sending("U", 0);
@@ -164,14 +221,18 @@ describe("the line", () => {
     assert.match(render(gone.scope, sent("G")), /Rolled\. Its result is no longer in the log\./);
   });
 
-  test("Initiative written too late adds a second muted line", () => {
+  test("Initiative written too late adds a second small row under the label and chips, inside the same 44 px row", () => {
     const { scope, tracker } = scopeWith([line("I", die())]);
     tracker.answer("I", 0, "taken");
     const options = scope.get(optionSlot);
     options.setState({ acted: { "I:changed": true } });
     // A server render reads the initial state, as Roller.test.ts does for the panel's store.
     options.getInitialState = options.getState;
-    assert.match(render(scope, sent("I")), /Not set: the row changed meanwhile\./);
+    const markup = render(scope, sent("I"));
+    assert.match(markup, /<span data-block-header-note="" style="[^"]*font-size:13px[^"]*">Not set: the row changed meanwhile\.<\/span>/);
+    assert.match(rowOf(markup), /(^|;)height:44px/);
+    const row = markup.slice(markup.indexOf("data-block-header-row"), markup.indexOf('role="status"'));
+    assert.ok(row.indexOf(">15<") < row.indexOf("data-result-label") && row.indexOf("data-result-label") < row.indexOf("data-block-header-note"), "the total, then the label, then the note under it, all in the row");
   });
 });
 
@@ -206,6 +267,7 @@ describe("a hidden sheet or pane (SBR-SOL-002)", () => {
     const { scope, tracker } = scopeWith([line("H", die())]);
     tracker.answer("H", 0, "taken");
     const hidden = render(scope, sent("H"), DM, false);
+    assert.match(hidden, /data-block-header=""/, "the line stays for the return");
     assert.doesNotMatch(hidden, />15</);
     assert.match(hidden, /aria-live="polite"[^>]*><\/span>/);
     assert.match(render(scope, sent("H"), DM, true), />15</);
