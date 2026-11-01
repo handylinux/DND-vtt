@@ -2,6 +2,7 @@ import { CHUNK_CELLS, FOG_SUBCELLS } from "#shared/model.ts";
 import { coverageCacheKey, eachHexPrism, MAX_SCENE_CELLS, resolveArea, type AreaContext, type AreaSolid, type AreaTemplateInput, type HexPrism, type ResolvedArea, type SolidBox } from "#shared/rules/aoe.ts";
 import type { Point3 } from "#shared/rules/geom.ts";
 import { cornerAt, hexAt, hexCenter, hexCorners } from "#shared/rules/hex.ts";
+import { indexPolygonSteps } from "#shared/rules/segments.ts";
 import { crossingsAt, insideCrossings, type Polygon, type PolygonIndex } from "#shared/rules/walls.ts";
 import { isHex } from "#shared/rules/grid.ts";
 import type { HexGrid } from "#shared/rules/hex.ts";
@@ -986,34 +987,14 @@ class ClipTest {
     this.#walled = walled;
   }
 
-  /** Indexes one polygon over rows `row0` to `row0 + rows - 1`, as `indexPolygon` does, a few edges at a time. */
+  /** Indexes one polygon over rows `row0` to `row0 + rows - 1` by `indexPolygon`'s own steps, charging each to the budget. */
   *add(poly: Polygon, row0: number, rows: number, budget: Budget): Job {
-    const n = poly.length >> 1;
-    const offsets = new Int32Array(rows + 1);
-    const rowSpan = (i: number): [number, number] => {
-      const yi = poly[2 * i + 1]!;
-      const yj = poly[2 * (i === 0 ? n - 1 : i - 1) + 1]!;
-      // A horizontal edge never crosses a horizontal line, so it needs no bucket.
-      if (yi === yj) return [1, 0];
-      return [Math.max(row0, Math.floor(Math.min(yi, yj))), Math.min(row0 + rows - 1, Math.floor(Math.max(yi, yj)))];
-    };
-    for (let i = 0; i < n; i++) {
-      const [lo, hi] = rowSpan(i);
-      for (let r = lo; r <= hi; r++) offsets[r - row0 + 1]!++;
-      if (budget.spend(1 + Math.max(0, hi - lo + 1))) yield;
+    const steps = indexPolygonSteps(poly, row0, rows, true);
+    for (;;) {
+      const step = steps.next();
+      if (step.done) return void this.#polys.push(step.value);
+      if (budget.spend(step.value)) yield;
     }
-    for (let r = 0; r < rows; r++) {
-      offsets[r + 1]! += offsets[r]!;
-      if (budget.spend(1)) yield;
-    }
-    const edges = new Int32Array(offsets[rows]!);
-    const fill = offsets.slice(0, rows);
-    for (let i = 0; i < n; i++) {
-      const [lo, hi] = rowSpan(i);
-      for (let r = lo; r <= hi; r++) edges[fill[r - row0]!++] = i;
-      if (budget.spend(1 + Math.max(0, hi - lo + 1))) yield;
-    }
-    this.#polys.push({ poly, row0, rows, offsets, edges });
   }
 
   inside(x: number, y: number): boolean {

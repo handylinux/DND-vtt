@@ -12,6 +12,8 @@ import {
   contact,
   countSplit,
   CROSS,
+  indexPolygon,
+  indexPolygonSteps,
   MOVEMENT,
   nearSegment,
   onSegment,
@@ -24,6 +26,7 @@ import {
   TOUCH,
   WALL_MARGIN,
 } from "./segments.ts";
+import { rng } from "../testutil.ts";
 
 /** Candidates from `[ax, ay, bx, by, tags, free]` rows. */
 function cands(rows: readonly (readonly [number, number, number, number, number, 0 | 1])[]): Candidates {
@@ -612,6 +615,33 @@ describe("determinism", () => {
       const source = readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
       const hit = source.match(banned);
       assert.equal(hit, null, `${file} uses ${hit?.[0]}`);
+    }
+  });
+});
+
+describe("indexPolygonSteps (ISOA1-F-8)", () => {
+  test("paced, it builds indexPolygon's index and yields every step's work, and not paced it never yields", () => {
+    const rand = rng(43);
+    for (let k = 0; k < 200; k++) {
+      const n = 3 + Math.floor(rand() * 12);
+      const poly = new Float64Array(2 * n);
+      // Whole rows now and then, so horizontal edges and edges ending on a row line come up.
+      for (let i = 0; i < 2 * n; i++) poly[i] = rand() < 0.3 ? Math.floor(rand() * 12) - 1 : rand() * 12 - 1;
+      const row0 = Math.floor(rand() * 4) - 2;
+      const rows = 1 + Math.floor(rand() * 12);
+      const steps = indexPolygonSteps(poly, row0, rows, true);
+      let work = 0;
+      let yields = 0;
+      let step = steps.next();
+      for (; !step.done; step = steps.next()) {
+        work += step.value;
+        yields++;
+      }
+      const index = step.value;
+      assert.deepEqual(index, indexPolygon(poly, row0, rows));
+      assert.equal(yields, 2 * n + rows, "a step per edge in both passes and per row");
+      assert.equal(work, 2 * n + rows + 2 * index.edges.length, "each edge's step charges the row entries it fills");
+      assert.equal(indexPolygonSteps(poly, row0, rows, false).next().done, true);
     }
   });
 });

@@ -1144,6 +1144,21 @@ export type PolygonIndex = {
 };
 
 export function indexPolygon(poly: Polygon, row0: number, rows: number): PolygonIndex {
+  const steps = indexPolygonSteps(poly, row0, rows, false);
+  for (;;) {
+    const step = steps.next();
+    if (step.done) return step.value;
+  }
+}
+
+/**
+ * `indexPolygon` for a build that must stop on a deadline (the client's
+ * areas/volume.ts ClipTest): `paced`, it yields each step's work, one per
+ * edge or row plus one per row entry the edge fills, so the caller can
+ * pause between steps. Not paced, it runs straight through without a
+ * yield. Both callers share this one row layout, so their indexes agree.
+ */
+export function* indexPolygonSteps(poly: Polygon, row0: number, rows: number, paced: boolean): Generator<number, PolygonIndex, void> {
   const n = poly.length >> 1;
   const offsets = new Int32Array(rows + 1);
   const rowSpan = (i: number): [number, number] => {
@@ -1156,13 +1171,18 @@ export function indexPolygon(poly: Polygon, row0: number, rows: number): Polygon
   for (let i = 0; i < n; i++) {
     const [lo, hi] = rowSpan(i);
     for (let r = lo; r <= hi; r++) offsets[r - row0 + 1]!++;
+    if (paced) yield 1 + Math.max(0, hi - lo + 1);
   }
-  for (let r = 0; r < rows; r++) offsets[r + 1]! += offsets[r]!;
+  for (let r = 0; r < rows; r++) {
+    offsets[r + 1]! += offsets[r]!;
+    if (paced) yield 1;
+  }
   const edges = new Int32Array(offsets[rows]!);
   const fill = offsets.slice(0, rows);
   for (let i = 0; i < n; i++) {
     const [lo, hi] = rowSpan(i);
     for (let r = lo; r <= hi; r++) edges[fill[r - row0]!++] = i;
+    if (paced) yield 1 + Math.max(0, hi - lo + 1);
   }
   return { poly, row0, rows, offsets, edges };
 }
