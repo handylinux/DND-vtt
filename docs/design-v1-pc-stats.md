@@ -444,6 +444,8 @@ The reader starts from these paths of `data`, each confirmed against a live publ
 
 Changed by docs/design-v1-ddb-resources.md (1.1): the class resources read `actions.{class,race,feat}[]` again for `limitedUse` (`maxUses`, `statModifierUsesId`, `operator`, `useProficiencyBonus`, `proficiencyBonusOperator`, `resetType`, `numberUsed`, `minNumberConsumed`, `maxNumberConsumed`), `componentTypeId` and `componentId`, and `classes[].classFeatures[].definition.id`, `requiredLevel` and `name`. Their table and fixtures are in `shared/ddb/resources.ts` and its test, checked against public sample characters rather than a live one.
 
+Changed by FL-19: Jack of All Trades is a `half-proficiency` modifier with `subType` "ability-checks", read from the `modifiers.class[]` entry of a reached class feature named "Jack of All Trades" with any `restriction`, or from any source with an empty one. A class modifier whose `componentId` and `componentTypeId` (both 12168134) match a `classes[].classFeatures[].definition` `id` and `entityTypeId` with a `requiredLevel` above the class's `level` is ignored for every output. The flag is left out, so a re-sync keeps the stored one, when the classes are not read whole.
+
 ## Appendix C. Worked examples
 
 - Bree, level 5, Dex 16, proficient in Dex saves, Stealth with expertise, a Cloak of Protection: `pb` +3, Dex save 3 + 3 + 1 = +7 (the cloak as `allSaves` 1), Stealth 3 + 6 + 0 = +9, initiative +3. At level 9: save +8, Stealth +11, the cloak still +1.
