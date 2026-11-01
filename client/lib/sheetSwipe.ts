@@ -48,7 +48,7 @@ export const SWIPES_ATTR = "data-sheet-swipes";
 export const SLIDE_TO_ATTR = "data-sheet-swipe-to";
 /** Sent on the surface once a swipe is over and it stands at rest again, for whatever held its measure. */
 export const SWIPE_REST_EVENT = "rvtt-sheet-swipe-rest";
-/** On the surface while a finger holds it (SheetSwipe.holding), for the forced colors rule. */
+/** On the surface while a finger holds it (SheetSwipe.fingerHolds), for the forced colors rule. */
 export const HELD_ATTR = "data-sheet-held";
 /** The member's color while held, mixed with controlBorder by the grabber (4.8). */
 export const HELD_COLOR_VAR = "--rvtt-grabber-held";
@@ -189,7 +189,7 @@ export class SheetSwipe {
    * Back or Close holds nothing, and neither does a touch on content that
    * has not claimed, such as a tap on a checkbox.
    */
-  get holding(): boolean {
+  get fingerHolds(): boolean {
     const s = this.begun;
     if (!s) return false;
     if (this.phase === "claimed") return true;
@@ -395,7 +395,7 @@ export type SwipeHost = {
   /** Whether the surface holds unsaved input now (4.5). */
   unsaved(): boolean;
   /** Marks the surface held by a finger, or no longer (4.8). Called on each change only. */
-  held(on: boolean): void;
+  heldByFinger(on: boolean): void;
 };
 
 /** A touch's start, with where a close slides the surface to: until it shows none of itself or its riders (4.5). */
@@ -536,10 +536,10 @@ export class SwipeSession {
 
   /** Tells the host when the touch's hold changes, so the grabber follows the swipe's own state. */
   private showHold(): void {
-    const on = this.touch.holding;
+    const on = this.touch.fingerHolds;
     if (on === this.holdShown) return;
     this.holdShown = on;
-    this.host.held(on);
+    this.host.heldByFinger(on);
   }
 
   /** Slides to the end's place, then does what the end means. `back` is a spring back, which changes no stand. */
@@ -936,9 +936,16 @@ export function useSheetSwipe(surface: RefObject<HTMLElement | null>, options: S
       geometry.off = header ? Math.max(0, header.top - box.top) : 0;
     };
 
+    /*
+     * The grabber a finger's hold writes to, found as the hold starts and
+     * dropped as it ends, so a move reads no selector. Only finger moves
+     * write it, and they come only while a finger holds the surface (a
+     * claim is a hold). A surface draws one grabber, in its own grab area,
+     * so the first one is the surface's own.
+     */
+    let grabber: SVGSVGElement | null = null;
     const host: SwipeHost = {
       place(look, ease, pull) {
-        const grabber = el.querySelector<SVGSVGElement>("[data-sheet-grabber]");
         if (grabber && pull !== undefined) {
           // Keep changing properties on the drawing, so the sheet's content does not inherit a new value on every move.
           grabber.style.setProperty(PULL_VAR, String(pull));
@@ -1042,9 +1049,9 @@ export function useSheetSwipe(surface: RefObject<HTMLElement | null>, options: S
         const active = document.activeElement;
         return active !== null && el.contains(active) && values.changed(active as unknown as FieldNode);
       },
-      held(on) {
+      heldByFinger(on) {
         el.toggleAttribute(HELD_ATTR, on);
-        const grabber = el.querySelector<SVGSVGElement>("[data-sheet-grabber]");
+        if (on) grabber = el.querySelector<SVGSVGElement>("[data-sheet-grabber]");
         if (!grabber) return;
         // The member's own color, which every other control in view wears, without a render.
         if (on) {
@@ -1052,6 +1059,7 @@ export function useSheetSwipe(surface: RefObject<HTMLElement | null>, options: S
           grabber.style.setProperty(GRABBER_TRANSITION_VAR, `color ${HOLD_MS}ms ease`);
         } else {
           for (const name of [HELD_COLOR_VAR, PULL_VAR, STRETCH_VAR, GRABBER_TRANSITION_VAR]) grabber.style.removeProperty(name);
+          grabber = null;
         }
       },
     };

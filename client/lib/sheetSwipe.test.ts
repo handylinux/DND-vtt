@@ -858,6 +858,8 @@ class FakePage {
     this.host = {
       place: (look, ease, pull) => {
         if (pull !== undefined) this.pulls.push(pull);
+        // The DOM host writes the pull to the grabber it found as the hold began (FL8-7), so a pull comes only while held.
+        if (pull !== undefined) assert.equal(this.heldOn, true, "a pull placed while no finger holds the surface");
         this.placed = look !== null;
         this.last = { look, ease };
         if (look) this.looks.push(look);
@@ -890,7 +892,7 @@ class FakePage {
       shows: () => this.shown,
       reducedMotion: () => opts.reduced ?? false,
       unsaved: () => this.unsavedNow,
-      held: (on) => {
+      heldByFinger: (on) => {
         assert.notEqual(this.heldOn, on, "the hold told twice");
         this.heldOn = on;
         this.helds.push(on);
@@ -1053,7 +1055,7 @@ describe("12. randomized touches, from both stands", () => {
           for (const look of page.looks) assert.ok(look.position >= -up - 1e-9, `${where}: shown above full at ${look.position}`);
           page.looks = [];
           // The glow follows the machine's own hold: on from a claim until the touch stops, never for a control's tap or a touch that may not swipe.
-          assert.equal(page.heldOn, session.touch.holding, `${where}: the host's glow differs from the hold`);
+          assert.equal(page.heldOn, session.touch.fingerHolds, `${where}: the host's glow differs from the hold`);
           const pull = session.touch.pull;
           const closing = s.stand === "normal" && session.touch.position > 0;
           assert.ok(pull >= 0 && pull <= (unsavedAtClaim && closing ? 0.5 : 1), `${where}: pull escaped its bounds`);
@@ -1234,7 +1236,7 @@ describe("FL-8. pull toward the next stand", () => {
     const touch = new SheetSwipe();
     assert.equal(touch.pull, 0);
     touch.start(start());
-    assert.equal(touch.holding, true);
+    assert.equal(touch.fingerHolds, true);
     assert.equal(touch.pull, 0);
     touch.move({ dx: 0, dy: 108, at: 30, cancelable: true });
     near(touch.pull, 0.5);
@@ -1243,7 +1245,7 @@ describe("FL-8. pull toward the next stand", () => {
     touch.move({ dx: 0, dy: 208, at: 90, cancelable: true });
     near(touch.pull, 1);
     touch.cancel();
-    assert.equal(touch.holding, false);
+    assert.equal(touch.fingerHolds, false);
     assert.equal(touch.pull, 0);
     touch.start(start({ stand: "full", up: 300 }));
     assert.equal(touch.pull, 0);
