@@ -236,6 +236,8 @@ for (const entityful of [false, true]) test(`evicted ${entityful ? "entityful st
   assert.equal(ledger(h.actor.committed.state)[first.plan], undefined);
   const event = await dm.send({ t: "undo", head: dm.head().id });
   assert.equal(Boolean(event.rejects?.length), !entityful);
+  // The refusal names the step and why it cannot reopen (UNDOB-INT-1).
+  if (!entityful) assert.equal(event.rejects?.[0]?.message, "could not undo applying Fireball to Goblin 2: this save can no longer reopen");
   assert.equal(dm.history().play.undo.depth, 0);
   assert.equal(dm.history().play.redo.depth, entityful ? 1 : 0);
   assert.equal(ledger(h.actor.committed.state)[first.plan], undefined);
