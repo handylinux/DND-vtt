@@ -32,6 +32,7 @@ import {
   visionCacheReport,
   visionReport,
   visionWork,
+  VISION_CACHE_BYTES,
   type VisionWorld,
 } from "./vision.ts";
 import { RAISED, sceneWalls, type WallSet } from "./walls.ts";
@@ -1730,6 +1731,45 @@ describe("computations drawn when read", () => {
     sameTiles(partySight(s, "s1", world).tiles, coldPartySight(s, "s1", world).tiles, "the batch's state");
     // Its own drawing and the cold one's: none for the moments.
     assert.equal(visionWork().draws, draws + 2);
+  });
+
+  /** A dark 200 x 200 scene under a dozen small lights, named `id`, whose union draws about a third of a megabyte. */
+  const darkScene = (id: string): RoomState => {
+    const s = visionRoom({ w: 200, h: 200, light: "dark", tokens: [pc("a", 100, 100, { senses: "darkvision 150 ft" })], lights: Array.from({ length: 12 }, (_, i) => light(`l${i}`, 10 + 15 * i, 20 + 13 * i, 10, 20, { walls: false })) });
+    return JSON.parse(JSON.stringify(s).replace(/"s1"/g, `"${id}"`).replace(/"s1:/g, `"${id}:`)) as RoomState;
+  };
+
+  test("the rows the point query works out before a drawing are counted as they are made", () => {
+    clearVisionCache();
+    const s = darkScene("s1");
+    const sight = partySight(s, "s1", world);
+    const before = visionCacheReport();
+    const rows = visionWork().lightRows;
+    for (let y = 0; y < 200; y++) sight.seesToken({ size: "medium", x: 100, y }, SQUARES);
+    const asked = visionCacheReport();
+    assert.ok(visionWork().lightRows - rows > 100, "the queries worked out rows");
+    // Each row kept counts 8 bytes at least, a row with no light on it.
+    assert.ok(asked.bytes - before.bytes >= (visionWork().lightRows - rows) * 8, `${before.bytes} to ${asked.bytes} bytes`);
+    assert.equal(asked.bytes, asked.recount);
+    void sight.tiles;
+    const drawn = visionCacheReport();
+    assert.equal(drawn.bytes, drawn.recount);
+  });
+
+  test("scenes drawn long after they were computed keep the cache under its cap", () => {
+    clearVisionCache();
+    const sights: PartySight[] = [];
+    for (let i = 0; i < 260; i++) sights.push(partySight(darkScene(`z${i}`), `z${i}`, world));
+    assert.ok(visionCacheReport().bytes < VISION_CACHE_BYTES / 4, "nothing drawn yet");
+    let most = 0;
+    for (const sight of sights) {
+      void sight.tiles;
+      const report = visionCacheReport();
+      assert.ok(report.bytes <= VISION_CACHE_BYTES, `${report.bytes} bytes after a drawing`);
+      assert.equal(report.bytes, report.recount);
+      most = Math.max(most, report.bytes);
+    }
+    assert.ok(most > VISION_CACHE_BYTES / 2, `the drawings reached ${most} bytes`);
   });
 
   test("a light that moves works out only the rows it lights, before and after", () => {

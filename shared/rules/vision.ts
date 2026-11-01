@@ -1259,6 +1259,8 @@ class SceneEntry implements Drawn {
   /** Before drawing: the rows whose light can differ from the anchor's (null for every row), and those worked out for the point query. */
   #lightDirty: Uint8Array | null | undefined = undefined;
   #rows = new Map<number, LightRow>();
+  /** The bytes of those two, counted as they are made, so the cache's cap holds while point queries run (grew). */
+  #asked = 0;
 
   constructor(sceneId: string, inp: Inputs, sources: Map<string, SourceEntry>, lights: Map<string, LightEntry>, anchor: SceneEntry | null) {
     this.walls = new WeakRef(inp.walls);
@@ -1306,10 +1308,10 @@ class SceneEntry implements Drawn {
     return this.#draw().sole;
   }
 
-  /** What the cache counts for it: once drawn, its tiles and light rows too, and before, the anchor it holds. */
+  /** What the cache counts for it: once drawn, its tiles and light rows too, and before, the anchor it holds and what the point query worked out. */
   get bytes(): number {
     if (this.#drawing) return this.#drawing.bytes;
-    return this.#entryBytes() + (this.#anchor ? this.#anchor.bytes : 0);
+    return this.#entryBytes() + this.#asked + (this.#anchor ? this.#anchor.bytes : 0);
   }
 
   /** The light rows if drawn, without drawing them. */
@@ -1337,8 +1339,14 @@ class SceneEntry implements Drawn {
     if (row === undefined) {
       work.lightRows++;
       this.#rows.set(j, (row = lightRow(j, this.w * SUB, baseLevel(this.level), [...this.lights.values()], rowScratch(this.w * SUB))));
+      this.#grow(lightRowsBytes([row]));
     }
     return row;
+  }
+
+  #grow(bytes: number): void {
+    this.#asked += bytes;
+    grew(this.#sceneId, this, bytes);
   }
 
   #entryBytes(): number {
@@ -1370,7 +1378,9 @@ class SceneEntry implements Drawn {
       mark(old?.runs.box ?? null);
     }
     for (const [key, old] of anchor.lights) if (!this.lights.has(key)) mark(old.runs.box);
-    return (this.#lightDirty = dirty);
+    this.#lightDirty = dirty;
+    this.#grow(dirty.byteLength + ARRAY_BYTES);
+    return dirty;
   }
 
   /*
@@ -1436,6 +1446,7 @@ class SceneEntry implements Drawn {
     this.#anchor = null;
     this.#lightDirty = undefined;
     this.#rows = new Map();
+    this.#asked = 0;
     recount(this.#sceneId);
     return this.#drawing;
   }
@@ -2283,13 +2294,29 @@ function remember(sceneId: string, entry: SceneEntry, others: readonly SceneEntr
   keep(sceneId, { entries, rasters: was?.rasters ?? new Map(), bytes: 0 }, was);
 }
 
-/** Counts a scene's record again after one of its computations drew its tiles (SceneEntry), which changes what it holds. The next keep trims the cache. */
+/*
+ * A scene's record counted again after one of its computations drew its
+ * tiles (SceneEntry), which changes what it holds. Reading a state the
+ * cache already answered keeps nothing new, so the drawing itself puts
+ * the record back as the most recently used and trims the cache, and the
+ * cap holds however long no new computation comes.
+ */
 function recount(sceneId: string): void {
   const rec = cache.get(sceneId);
   if (!rec) return;
   cacheBytes -= rec.bytes;
   rec.bytes = sceneBytes(rec).bytes;
   cacheBytes += rec.bytes;
+  used(sceneId, rec);
+}
+
+/* A computation not drawn grew by what the point query worked out for it: counted at once, without counting the whole record again, where the record holds it. */
+function grew(sceneId: string, entry: SceneEntry, bytes: number): void {
+  const rec = cache.get(sceneId);
+  if (!rec?.entries.includes(entry)) return;
+  rec.bytes += bytes;
+  cacheBytes += bytes;
+  used(sceneId, rec);
 }
 
 /** Puts a scene's record back as the most recently used, and drops the least recently used scenes past the cap. */
@@ -2300,7 +2327,12 @@ function keep(sceneId: string, next: SceneCache, was: SceneCache | undefined): v
   }
   next.bytes = sceneBytes(next).bytes;
   cacheBytes += next.bytes;
-  cache.set(sceneId, next);
+  used(sceneId, next);
+}
+
+function used(sceneId: string, rec: SceneCache): void {
+  cache.delete(sceneId);
+  cache.set(sceneId, rec);
   while (cacheBytes > VISION_CACHE_BYTES && cache.size > 1) {
     const oldest = cache.keys().next().value!;
     cacheBytes -= cache.get(oldest)!.bytes;
