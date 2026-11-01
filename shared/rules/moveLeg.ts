@@ -219,9 +219,10 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
  * on its mount's square or hex through a corridor one wide, its light and
  * sight with it, and is on its own seat again past it, and the walk's
  * route, sweeps and ruler read it there. On squares, from op version 36,
- * the holder stands squeezed only at the walk's ends, full size between as
- * its trace has it, never squeezed there by the walls (route.ts
- * walkSqueezes, D-261101-180), so the area and trap sweeps find a rider
+ * the holder stands squeezed only at the walk's ends and full size between,
+ * even along the first piece of a walk that starts squeezed, where its
+ * trace keeps the squeeze, so never squeezed there by the walls (route.ts
+ * walkSqueezes, D-261101-180), and the area and trap sweeps find a rider
  * between the ends where no wall decides. A device's route search and cut
  * read what the rider drags by the same seat (route.ts seatShift). On
  * hexes its own seat is the anchor nearest its place, so every walk there

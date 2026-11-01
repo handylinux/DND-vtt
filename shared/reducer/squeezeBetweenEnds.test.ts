@@ -108,6 +108,30 @@ describe("a rider on a squeezing mount, between the walk's ends (D-261101-180)",
       assert.deepEqual(lines(played(open, THROUGH, P1, 35)), seat[1] === 9 ? ["brom enter"] : [], "op 35 replays the open room as it was");
     });
   }
+
+  test("a goblin Brom drags beside him follows his own seat between the ends, so the walls decide nothing Pat reads of it either (review FU43P-OPUS-5)", () => {
+    const open = riding([4, 10]);
+    open.tokens.gob = token("gob", { size: "medium", x: 5, y: 10, name: "Goblin", kind: "npc", disposition: "hostile", attached: { to: "brom", kind: "drag" } });
+    const closed = walled(open);
+    assert.deepEqual(copies(closed, [P1]), copies(open, [P1]), "Pat's copies start the same");
+    for (const opVersion of LIVE) assert.deepEqual(copies(played(closed, THROUGH, P1, opVersion), [P1]), copies(played(open, THROUGH, P1, opVersion), [P1]), `op ${opVersion ?? "live"}`);
+    const lines = (s: RoomState) => projectState(s, P1, { sceneId: "s1" }).log.flatMap((e) => (e.data?.type === "area" ? [`${e.data.tokenId} ${e.data.trigger}`] : []));
+    assert.ok(lines(played(closed, THROUGH, P1, 35)).includes("gob enter"), "at op 35 the squeezed seat took the goblin into the cloud on the revealed row");
+    assert.ok(!lines(played(open, THROUGH, P1, 35)).includes("gob enter"));
+  });
+
+  test("a walk that starts squeezed keeps its rider's seats between the ends off the walls too (review FU43P-OPUS-5)", () => {
+    // The warhorse stands squeezed at the narrow space's mouth in both rooms, Brom on its one square, and walks on through and out.
+    const open = riding([8, 10]);
+    open.tokens.horse = { ...open.tokens.horse!, x: 7.5, y: 9.5, squeeze: true };
+    const closed = walled(open);
+    assert.deepEqual(copies(closed, [P1]), copies(open, [P1]), "Pat's copies start the same");
+    const on: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 18, y: 9, route: [[11.5, 9.5, 0, 0], [15.5, 9.5, 0, 0], [18, 9, 0, 0]] };
+    for (const opVersion of LIVE) assert.deepEqual(copies(played(closed, on, P1, opVersion), [P1]), copies(played(open, on, P1, opVersion), [P1]), `op ${opVersion ?? "live"}`);
+    // At op 35 the walled room's trace kept the warhorse squeezed at 11.5,9.5 and the open one did not, but in this layout Brom's
+    // seat crossed the cloud alike either way, so nothing Pat read told them apart.
+    assert.deepEqual(copies(played(closed, on, P1, 35), [P1]), copies(played(open, on, P1, 35), [P1]));
+  });
 });
 
 describe("a trap's stop between the walk's ends (D-261101-181)", () => {
@@ -139,6 +163,51 @@ describe("a trap's stop between the walk's ends (D-261101-181)", () => {
     const open = netted();
     assert.deepEqual(where(played(walled(open), route, P1, 35)), [7.5, 9.5, true]);
     assert.deepEqual(where(played(open, route, P1, 35)), [17, 9, false]);
+  });
+
+  test("a walk that starts squeezed stops only where it stands full size, though its trace has it squeezed along its first piece (review FU43P-OPUS-5)", () => {
+    const open = netted();
+    open.tokens.horse = { ...open.tokens.horse!, x: 6.5, y: 9.5, squeeze: true };
+    open.traps.net = { ...open.traps.net!, zone: { cells: [{ x: 10, y: 10, w: 1, h: 1 }] } };
+    const closed = walled(open);
+    assert.deepEqual(copies(closed, [P1]), copies(open, [P1]));
+    const on: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 18, y: 9, route: [[15.5, 9.5, 0, 0], [18, 9, 0, 0]] };
+    for (const opVersion of LIVE) {
+      const a = played(open, on, DM, opVersion);
+      const b = played(closed, on, DM, opVersion);
+      assert.deepEqual(where(b), where(a), `op ${opVersion ?? "live"}`);
+      assert.equal(a.tokens.horse!.squeeze, undefined);
+      assert.deepEqual(copies(b, [P1]), copies(a, [P1]));
+    }
+    // It stops at 9.5,9.5, a spot on its own grid (it started half a square off), full size from 36 in both rooms.
+    assert.deepEqual(where(played(open, on, DM, undefined)), [9.5, 9.5, false]);
+    assert.deepEqual(where(played(closed, on, DM, 35)), [9.5, 9.5, true], "at op 35 the walls squeezed it there");
+    assert.deepEqual(where(played(open, on, DM, 35)), [9.5, 9.5, false]);
+  });
+});
+
+describe("a pit in a corridor narrower than the walker (review FU43P-OPUS-1, D-261101-186)", () => {
+  /** A corridor one square wide along row 5 from x 3 to 11, a 1 by 1 pit at 6,5, a Large ogre west of it. */
+  function corridor(): RoomState {
+    const s = room({ scenes: { s1: scene("s1", { bounds: { w: 30, h: 20 }, blockMovement: true, autoWalls: "off" }) } });
+    s.buildChunks = {};
+    wall(s, "fu43ppit0001", [3, 5], [11, 5]);
+    wall(s, "fu43ppit0002", [3, 6], [11, 6]);
+    s.tokens.ogre = token("ogre", { name: "Ogre", size: "large", x: 0, y: 5 });
+    s.traps = { pit: trap("pit", { zone: { cells: [{ x: 6, y: 5, w: 1, h: 1 }] }, rig: { ...trap("x").rig!, who: "any", stops: true, pit: { floor: -10 } } }) };
+    return s;
+  }
+  const op: OpOf<"token.move"> = { t: "token.move", tokenId: "ogre", x: 9.5, y: 4.5, squeeze: true, route: [[1.5, 4.5, 0, 0], [9.5, 4.5, 0, 0]] };
+
+  test("an op stored at 35 drops it in squeezed, and from 36 it squeezes on across the open pit to its walk's end", () => {
+    const old = played(corridor(), op, DM, 35).tokens.ogre!;
+    assert.deepEqual([old.x, old.y, old.squeeze, old.elevation], [5.5, 4.5, true, -10]);
+    for (const opVersion of LIVE) {
+      const after = played(corridor(), op, DM, opVersion);
+      const ogre = after.tokens.ogre!;
+      assert.deepEqual([ogre.x, ogre.y, ogre.squeeze, ogre.elevation], [9.5, 4.5, true, 0], `op ${opVersion ?? "live"}`);
+      assert.equal(after.traps.pit?.state, "sprung");
+    }
   });
 });
 

@@ -1323,11 +1323,12 @@ function picker(events: ReadonlyMap<number, readonly TrapEvent[]>, spent: Readon
  * at, a Large creature's half step onto a stopping trap, goes on to the
  * next it may stop at (review LP13-TR-2). With no such spot before the
  * walk's end, the group walks to its end, which is no stop. From op
- * version 36 a walker stands there only full size, as its trace has it
- * between its walk's ends, never on a squeeze, since walls under the fog
- * decide where a narrow space lets it squeeze (D-261101-181, migrate.ts
- * stopsStandFullSize). So a Large creature on a stopping trap in a
- * corridor narrower than it walks on to where it stands full size.
+ * version 36 a walker stands there between its walk's ends only full
+ * size, never on a squeeze, even along the first piece of a walk that
+ * starts squeezed, where its trace keeps the squeeze, since walls under
+ * the fog decide where a narrow space lets it squeeze (D-261101-181,
+ * migrate.ts stopsStandFullSize). So a Large creature on a stopping trap
+ * in a corridor narrower than it walks on to where it stands full size.
  *
  * A pit that opens (`pit`) first asks for the first such progress where
  * the walker that set it off lies wholly over the opening, so a creature

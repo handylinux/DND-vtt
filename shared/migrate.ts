@@ -1310,9 +1310,10 @@ export function seatsOnSqueeze(opVersion: number | undefined): boolean {
 
 /**
  * Whether, on squares, what sits on a holder sits on its own seat at every
- * point of the holder's walk between its ends, where the walk's trace has
- * the holder full size, and moves onto the squares a squeeze stands on only
- * where the walk ends squeezed (D-261101-180, route.ts
+ * point of the holder's walk between its ends, the holder full size there
+ * even along the first piece of a walk that starts squeezed, where the
+ * walk's trace keeps the squeeze, and moves onto the squares a squeeze
+ * stands on only where the walk ends squeezed (D-261101-180, route.ts
  * walkSqueezes). Whether a narrow space pinches the holder between its ends
  * is the walls' to say, walls under the fog among them, so a seat moved
  * there let walls no player had seen decide where the area and trap sweeps
@@ -1327,10 +1328,11 @@ export function seatsFullBetweenEnds(opVersion: number | undefined): boolean {
 
 /**
  * Whether a trap stops a walker between its walk's ends only at a spot
- * where it stands full size, on squares and hexes, as its trace and its own
- * area line judge it there (D-261101-181, route.ts routeStands). A squeezed
- * stand needs a real narrow space, which walls under the fog decide, so a
- * stop there let them decide where every player saw the walker stop. Ops
+ * where it stands full size, on squares and hexes (D-261101-181, route.ts
+ * routeStands), even along the first piece of a walk that starts squeezed,
+ * where its trace and its area line keep the squeeze. A squeezed stand
+ * needs a real narrow space, which walls under the fog decide, so a stop
+ * there let them decide where every player saw the walker stop. Ops
  * stored before version 36 stopped it squeezed wherever a narrow space let
  * it stand, and replay so. The walk's own end keeps the op's squeeze. Live
  * ops carry no stored version and take today's rule.

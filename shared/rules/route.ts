@@ -198,15 +198,16 @@ export function seatedOn(lead: { id?: string | undefined }, memberOf: (id: strin
  * `points`, its trace `trace`: as it stands where the walk starts, as the
  * move leaves it where the walk ends (`end`, else as below), and between
  * by where it stands as it walks past: on hexes by its lattice, and on
- * squares full size, as its trace has it there (`walkOn`). So a seat that
+ * squares full size, even along the first piece of a walk that starts
+ * squeezed, where its trace keeps the squeeze (`walkFrom`). So a seat that
  * moves with the squeeze moves where the search finds it does (walk.ts
  * WalkWorld, review DP34-ASTRA-01), and on squares never by the walls
  * between the walk's ends, which may be walls under the fog (D-261101-180,
  * migrate.ts seatsFullBetweenEnds). `opVersion` is the op's stored
  * version, none for a live move or a device's walk: an op stored before 36
  * reads a point on squares squeezed where a narrow space pinches the
- * walker there, on the grid or off it, as a drag preview's squeeze is
- * judged (movement.ts previewSqueezed).
+ * walker there, on the grid or off it, as movement.ts previewSqueezed
+ * judges a squeeze.
  */
 export function walkSqueezes(build: BuildState, token: PlacedToken & Pick<Walker, "sceneId">, points: readonly Point[], trace: WalkTrace, end?: boolean, opVersion?: number): boolean[] {
   const scene = build.scenes[token.sceneId];
@@ -698,9 +699,10 @@ function walkSpots(route: readonly RoutePoint[], token: Walker, build: Pick<Buil
  * part of it clear. On a scene that stops no moves, nothing cuts a walk.
  * The start is a stand by definition. `squeeze` says whether the last spot
  * squeezes, as the op does. `fullBetween` judges every spot between the
- * walk's ends full size, as the walk's trace and its own area line do, so a
- * spot only a squeeze stands on is no stand: whether a narrow space pinches
- * the walker there is the walls' to say, walls under the fog among them
+ * walk's ends full size, even on the first piece of a walk that starts
+ * squeezed, where its trace and its area line keep the squeeze, so a spot
+ * only a squeeze stands on is no stand: whether a narrow space pinches the
+ * walker there is the walls' to say, walls under the fog among them
  * (D-261101-181, migrate.ts stopsStandFullSize).
  */
 export function routeSpots(build: BuildState, route: readonly RoutePoint[], token: Walker, step?: number, opts: StandRule = {}): RouteSpot[] {
@@ -764,14 +766,13 @@ export function routeStands(build: BuildState, route: readonly RoutePoint[], tok
 
 /**
  * `routeStands` on hexes: a spot is a stand where the creature's hexes
- * there fit (movement.ts HX-D8), squeezed only where that is a real
- * narrow space and, by `fullBetween`, only at the walk's end, and the walk
- * cut there is allowed. A cut route ends with
- * the leg from its piece's start to the spot, whose hex line is not always
- * the piece's line so far: a line to a hex partway along another may step
- * beside it (hex.ts hexLine), and behind a wall the piece never met. So
- * the cut leg is judged itself, with the squeeze the cut stores there
- * (review H2-ASTRA-04).
+ * there fit (movement.ts HX-D8), squeezed only where that is a real narrow
+ * space and, by `fullBetween`, only at the walk's end, and the walk cut
+ * there is allowed. A cut route ends with the leg from its piece's start
+ * to the spot, whose hex line is not always the piece's line so far: a
+ * line to a hex partway along another may step beside it (hex.ts hexLine),
+ * and behind a wall the piece never met. So the cut leg is judged itself,
+ * with the squeeze the cut stores there (review H2-ASTRA-04).
  */
 function hexStands(
   build: BuildState,
