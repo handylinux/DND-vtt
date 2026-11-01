@@ -347,13 +347,21 @@ test("the page's Roll offers Normal for the panel's Adv or Dis only, since its r
   assert.equal(offersNormal(main({ adv: true })), true, "Adv pressed, which the page's roll takes");
 });
 
-test("offline damage retains its enabled base tap and guards only menu picks", () => {
+/*
+ * Offline, the page's held group stops its damage Roll, as the browser's
+ * disabled fieldset always did, and the Roll now looks stopped too
+ * (D-261101-311). FEATURES.md promises no offline tap: while the room is
+ * offline a roll waits and says "Rolling needs a connection." The menu's own
+ * binding is not disabled, so its picks stay guarded by `valid`.
+ */
+test("offline, the damage Roll is held with the page, and its menu picks stay guarded", () => {
   menuBindings = [];
   const html = drawPage(damagePage("1d6 fire"), [], "closed");
   const menu = menuBindings.find((b) => b.name === "Group damage")!;
   assert.ok(menu); assert.equal(!!menu.disabled, false); assert.equal(menu.valid?.(), false);
   const roll = /<button[^>]*aria-keyshortcuts="ContextMenu Shift\+F10"[^>]*>/.exec(html)?.[0];
-  assert.ok(roll); assert.doesNotMatch(roll, /disabled=/);
+  assert.ok(roll); assert.match(roll, /disabled=""/);
+  assert.match(roll, new RegExp(`color:${theme.color.textDisabled}`, "i"), "the Roll draws the disabled color");
 });
 
 test("a group row source ignores its sibling request answer and request bookkeeping", () => {
