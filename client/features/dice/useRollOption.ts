@@ -19,6 +19,7 @@ import { diceChoicesSlot, useDicePanel, type PanelChoices, type PanelRoll } from
 import { resolveRollMode, type RollModeOverride } from "./rollMode.ts";
 import { rechargeRollOp } from "../combat/logic.ts";
 import { throwHooksSlot } from "./throw/hooks.ts";
+import type { ThrowOrigin } from "./throw/store.ts";
 
 /** The words on every option while a roll cannot go: no connection, or a preview, whose actions are refused. */
 export const IN_PREVIEW = "Rolls are not sent from a preview.";
@@ -45,6 +46,8 @@ function rollTestOf(test: Extract<D20Test, { kind: "save" | "check" }>): RollTes
  * `surface` is "dice" for the Dice panel's own options, whose rolls may
  * throw dice (docs/design/design-v1-roll-animation.md 3.1). Left out, as the
  * tracker's Roll leaves it, they never throw, even with Dice open beside.
+ * A stat block's `d20` hands its own origin instead, its host and its box
+ * (docs/design/design-v1-token-roll-header.md 4.1).
  */
 export function useRollOption(surface?: "dice") {
   const panel = useDicePanel();
@@ -93,7 +96,10 @@ export function useRollOption(surface?: "dice") {
         choices?: PanelChoices;
         /** The words of a roll or answer that did not go, such as "Rolling needs a connection.". */
         onFail?(words: string): void;
+        /** Where its dice are thrown from, in place of the surface's: a stat block's host and box. */
+        origin?: ThrowOrigin;
       }): string | "asked" | null {
+        const from = () => input.origin ?? origin();
         const state = room.getState().view;
         if (!state || ("tokenId" in input.creature ? !state.tokens[input.creature.tokenId] : !state.characters[input.creature.characterId])) return null;
         const route = routeOf({ state, creature: input.creature, test: input.test, dm, played: input.played, ask: input.ask });
@@ -130,10 +136,10 @@ export function useRollOption(surface?: "dice") {
             input.onFail?.(NEEDS_CONNECTION);
             return null;
           }
-          panel.noted(tag, input.label, origin());
+          panel.noted(tag, input.label, from());
           return remember(input.row, tag);
         }
-        return remember(input.row, panel.roll([asInitiative(asSave(d20Roll(input.creature, input.bonus, input.preset, input.label, input.critOn), input.test), input.test)], { origin: origin(), override: input.override, ...(input.choices ? { choices: input.choices } : {}), ...(input.onFail ? { onFail: input.onFail } : {}) }));
+        return remember(input.row, panel.roll([asInitiative(asSave(d20Roll(input.creature, input.bonus, input.preset, input.label, input.critOn), input.test), input.test)], { origin: from(), override: input.override, ...(input.choices ? { choices: input.choices } : {}), ...(input.onFail ? { onFail: input.onFail } : {}) }));
       },
       /**
        * A death save, counted by the server from the state then (4.3).

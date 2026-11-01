@@ -8,9 +8,10 @@ import type { StageModule, ThrowOrigin } from "./store.ts";
  * What code every member loads needs of the roll animation, and no more
  * (docs/design/design-v1-roll-animation.md 6). The panel's rolls go through
  * useDicePanel, which the fight's cards load with the room, so the throw's
- * store would ride along with them. Instead the store stays with the Dice
- * panel's chunk, and binds itself here when the panel first renders, which
- * is before any tap in it.
+ * store would ride along with them. Instead the store stays with the
+ * chunks of the rolling surfaces (the Dice panel, and a stat block's panel
+ * through its tray), and binds itself here when the first of them renders,
+ * which is before any tap in it.
  */
 
 /** Whether the settings let the dice chunk load at all: the switch on and Low power off. */
@@ -35,11 +36,11 @@ export const diceLoader = stageLoader<StageModule>({
 
 preloadInBackground(() => diceLoader.start(), ["dm", "player"]);
 
-/** The Room's throw store, as a Dice panel control reaches it. */
+/** The Room's throw store, as a rolling control reaches it. */
 export type ThrowHooks = {
-  /** A panel roll's tag, with where its tap was. */
+  /** A roll's tag, with its host and where its tap was. */
   register(tag: string, origin: ThrowOrigin): void;
-  /** The origin of the panel tap being handled now. */
+  /** The origin of the Dice panel tap being handled now. */
   origin(): ThrowOrigin;
 };
 

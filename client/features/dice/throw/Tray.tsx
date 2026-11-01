@@ -4,8 +4,8 @@ import { useAccent } from "../../../state/accent.ts";
 import { effectiveZoom } from "../../device/layout.ts";
 import { TRAY_PX } from "./layout.ts";
 import { diceSet } from "./sets.ts";
-import { GONE_MS, LAND_MS, MIN_PANE_PX, type ShownThrow, type ThrowOrigin, type TrayGeometry } from "./store.ts";
-import { useThrows, useThrowView } from "./useThrows.ts";
+import { GONE_MS, LAND_MS, MIN_PANE_PX, type ShownThrow, type ThrowHost, type ThrowOrigin, type TrayGeometry } from "./store.ts";
+import { useThrows, useThrowView, useTrayHost } from "./useThrows.ts";
 
 /**
  * The tray under the header line (docs/design/design-v1-roll-animation.md 7 and
@@ -17,6 +17,12 @@ import { useThrows, useThrowView } from "./useThrows.ts";
  *
  * The tray's layout is in screen px, and the pane is zoomed by the
  * interface size, so every place here is a screen px over the zoom.
+ *
+ * Each rolling surface has its own tray, attached to its host (the given
+ * one, else ThrowHostContext's), and draws only that host's throws
+ * (docs/design/design-v1-token-roll-header.md 4.2): with Dice open beside a
+ * token's panel, a roll from either leaves the other's tray empty. A tray
+ * with no host draws nothing.
  */
 
 /** The scrim between a ring and its die, and the ring's width, in screen px: the ring reads on every set, a gold die by a yellow accent included. */
@@ -52,20 +58,22 @@ export function measureTray(host: HTMLElement, origin: ThrowOrigin): TrayGeometr
   return { width: band.width, height, zoom: effectiveZoom(host, band.width), from };
 }
 
-export function Tray() {
+export function Tray(props: { host?: ThrowHost | null }) {
   const store = useThrows();
-  const { shown } = useThrowView();
-  const host = useRef<HTMLDivElement>(null);
+  const owner = useTrayHost(props.host);
+  const view = useThrowView();
+  const shown = owner && view.shown?.host === owner.id ? view.shown : null;
+  const box = useRef<HTMLDivElement>(null);
   const slot = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
-    const el = host.current;
+    const el = box.current;
     const parent = slot.current;
-    if (!el || !parent) return;
-    return store.attach({ parent, measure: (origin) => measureTray(el, origin) });
-  }, [store]);
+    if (!el || !parent || !owner) return;
+    return owner.attach({ parent, measure: (origin) => measureTray(el, origin) });
+  }, [owner]);
   return (
     <div
-      ref={host}
+      ref={box}
       aria-hidden="true"
       data-dice-tray=""
       // Under the header line's border, as wide as the line, and no taller than nothing: what it holds overflows down into the pane.
@@ -108,6 +116,8 @@ function Scrim(props: { shown: ShownThrow; now: number }) {
         // Square at the top, where it meets the header line's straight edge, and rounded at the foot.
         borderRadius: `0 0 ${theme.radius.md}px ${theme.radius.md}px`,
         background: theme.color.surface,
+        // Over the pane's side padding too, as the header line is, so nothing beside the column shows undimmed (D-261101-093).
+        boxShadow: theme.shadow.paneSides(theme.color.surface),
         opacity: 0.92,
         animation: `rvtt-tray-scrim ${GONE_MS}ms linear ${after(late, 0)} both`,
       }}

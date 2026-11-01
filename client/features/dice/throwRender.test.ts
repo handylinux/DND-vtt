@@ -47,8 +47,8 @@ function render(throwing: boolean): string {
   const module: StageModule = { createStage: () => stage };
   store.bind({ clock: new FakeClock(), idle: (cb) => (cb(), () => undefined), tracker, loader: { loaded: () => module, state: () => "ready", subscribe: () => () => undefined }, hidden: () => false });
   store.setInputs({ on: throwing });
-  store.mount({ kinds: () => ["d20"] });
-  store.attach({ parent: null, measure: () => ({ width: 356, height: 200, zoom: 1, from: null }) });
+  const host = store.mount({ kinds: () => ["d20"] });
+  host.attach({ parent: null, measure: () => ({ width: 356, height: 200, zoom: 1, from: null }) });
   tracker.sending(TAG, 0);
   store.register(TAG, { surface: "dice", element: null, tapAt: 0 });
   tracker.answer(TAG, 0, "taken");

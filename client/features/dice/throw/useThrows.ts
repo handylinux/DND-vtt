@@ -1,20 +1,23 @@
-import { useSyncExternalStore } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject, type SyntheticEvent } from "react";
 import { idle } from "../../../lib/idle.ts";
 import { scopeSlot, useScoped } from "../../../state/scope.ts";
 import { realClock } from "../../../state/timing.ts";
 import { usePreview } from "../../dm/previewContext.ts";
+import { usePanelShown } from "../../panels.ts";
 import { diceSetId, lowPower, rollAnimation, subscribeDiceSet, subscribeLowPower, subscribeRollAnimation } from "../../device/settings.ts";
 import { useReceipts, type ReceiptTracker } from "../useReceipt.ts";
 import { diceLoader, throwHooksSlot, type ThrowHooks } from "./hooks.ts";
-import { ThrowStore, type ThrowView } from "./store.ts";
+import type { DieKind } from "./layout.ts";
+import { ThrowStore, type PaneSize, type ThrowHost, type ThrowSurface, type ThrowView } from "./store.ts";
 
 /**
  * The throw's store bound to the page (docs/design/design-v1-roll-animation.md 6):
  * the dice chunk's loader (throw/hooks.ts), the page's visibility, reduced
  * motion, the device's settings, and one store per Room, so a "view as a
- * player" preview keeps its own and never throws. Only the Dice panel's
- * chunk and This device load this module, and binding the store hands the
- * room's rolling code its hooks.
+ * player" preview keeps its own and never throws. Only the chunks of the
+ * rolling surfaces (the Dice panel, a token's panel and the Characters
+ * panel, through their trays) and This device load this module, and
+ * binding the store hands the room's rolling code its hooks.
  */
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
@@ -78,4 +81,90 @@ export function useThrows(): ThrowStore {
 export function useThrowView(): ThrowView {
   const store = useThrows();
   return useSyncExternalStore(store.subscribe, store.view, store.view);
+}
+
+/** The rolling surface a tray is drawn in, which it attaches to and draws only that surface's throws for. */
+export const ThrowHostContext = createContext<ThrowHost | null>(null);
+
+/** The tray's host: the one given, else the surface around it. */
+export function useTrayHost(given?: ThrowHost | null): ThrowHost | null {
+  const around = useContext(ThrowHostContext);
+  return given ?? around;
+}
+
+/** A pane's border box on screen, as a host's resize baseline reads it. */
+export function paneSize(pane: Element): PaneSize {
+  const r = pane.getBoundingClientRect();
+  return { width: r.width, height: r.height };
+}
+
+/** The control a pointer or key went to, which a roll from it throws its dice from. */
+function controlOf(e: SyntheticEvent): Element | null {
+  const target = e.target instanceof Element ? e.target : null;
+  return target?.closest("button, input, [role='button']") ?? target;
+}
+
+/** The capture-phase listeners a rolling surface's root takes. */
+export type ThrowSurfaceProps = {
+  ref: RefObject<HTMLDivElement | null>;
+  onPointerDownCapture(e: SyntheticEvent): void;
+  onPointerUpCapture(): void;
+  onPointerCancelCapture(): void;
+  onClickCapture(): void;
+  onKeyDownCapture(e: SyntheticEvent): void;
+};
+
+/**
+ * A rolling surface's part in a throw (docs/design/design-v1-roll-animation.md
+ * 3.5 and docs/design/design-v1-token-roll-header.md 4.3): its host, mounted
+ * for the component's life and told when its pane hides. Any tap or key in
+ * the root, or a change of its pane's size off the baseline, ends the
+ * throw. The listeners are on the capture phase and never stop or prevent
+ * the event, so the tap or key still does its own job.
+ *
+ * The host is made as the component first renders and mounted in a layout
+ * effect, so a tray in it can attach in its own layout effect, which runs
+ * first. Give the root `props`, and the trays inside the host through
+ * ThrowHostContext. `rebase()` records the pane's size now as the baseline,
+ * for a change the surface made itself.
+ */
+export function useThrowSurface(surface: ThrowSurface, kinds: () => DieKind[]): { host: ThrowHost; props: ThrowSurfaceProps; rebase(): void } {
+  const store = useThrows();
+  const kindsRef = useRef(kinds);
+  kindsRef.current = kinds;
+  const [host] = useState(() => store.host({ surface, kinds: () => kindsRef.current() }));
+  const root = useRef<HTMLDivElement | null>(null);
+  const visible = usePanelShown();
+  useLayoutEffect(() => {
+    host.mount();
+    return () => host.unmount();
+  }, [host]);
+  useLayoutEffect(() => host.shown(visible), [host, visible]);
+  useEffect(() => {
+    const node = root.current;
+    const fromMenu = (e: Event) => host.keyDown(e.target instanceof Element ? e.target : null);
+    node?.addEventListener("rvtt-roll-mode-origin", fromMenu);
+    return () => node?.removeEventListener("rvtt-roll-mode-origin", fromMenu);
+  }, [host]);
+  useEffect(() => {
+    const pane = root.current?.closest("[data-pane-body]");
+    if (!pane || typeof ResizeObserver === "undefined") return;
+    // An observer reports once as it starts, which is the baseline.
+    const observer = new ResizeObserver(() => host.observed(paneSize(pane)));
+    observer.observe(pane);
+    return () => observer.disconnect();
+  }, [host]);
+  const [props] = useState<ThrowSurfaceProps>(() => ({
+    ref: root,
+    onPointerDownCapture: (e) => host.pointerDown(controlOf(e)),
+    onPointerUpCapture: () => host.pointerUp(),
+    onPointerCancelCapture: () => host.pointerCancel(),
+    onClickCapture: () => host.click(),
+    onKeyDownCapture: (e) => host.keyDown(controlOf(e)),
+  }));
+  const [rebase] = useState(() => () => {
+    const pane = root.current?.closest("[data-pane-body]");
+    if (pane) host.baseline(paneSize(pane));
+  });
+  return { host, props, rebase };
 }

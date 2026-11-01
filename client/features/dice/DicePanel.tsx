@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { LogNames } from "#shared/logText.ts";
 import type { LogEntry } from "#shared/model.ts";
 import { usePanelHere, type PanelProps } from "../panels.ts";
@@ -15,14 +15,7 @@ import { useRestoreGroupSave } from "./groupSave/start.ts";
 import { useGroupSave, useGroupSaveStore } from "./groupSave/store.ts";
 import { recentRolls } from "./logic.ts";
 import { kindsIn } from "./throw/layout.ts";
-import type { ThrowStore } from "./throw/store.ts";
-import { useThrows } from "./throw/useThrows.ts";
-
-/** The control a pointer or key went to, which a roll from it throws its dice from. */
-function controlOf(e: SyntheticEvent): Element | null {
-  const target = e.target instanceof Element ? e.target : null;
-  return target?.closest("button, input, [role='button']") ?? target;
-}
+import { ThrowHostContext, useThrowSurface } from "./throw/useThrows.ts";
 
 /** The dice of the newest rolls in Recent rolls, whose kinds the warm-up draws first. */
 function recentKinds(log: readonly LogEntry[]) {
@@ -30,43 +23,20 @@ function recentKinds(log: readonly LogEntry[]) {
 }
 
 /**
- * The panel's part in a throw (docs/design/design-v1-roll-animation.md 3.5): it
- * is mounted, and any tap or key in it, or a change of its pane's size,
- * ends the throw. The listeners are on the capture phase and never stop
- * or prevent the event, so the tap or key still does its own job.
+ * The panel's part in a throw (docs/design/design-v1-roll-animation.md 3.5):
+ * it is a rolling surface's host, the one a Dice panel origin with no host
+ * names, and its trays draw only its own throws. Its pane's size keeps a
+ * baseline as a stat block's panel's does
+ * (docs/design/design-v1-token-roll-header.md 4.3), which here changes
+ * nothing, since the panel never resizes its own pane. Its rolls are never
+ * held: its tray attaches in the sticky line's layout effect, and that
+ * decides a first roll that waited for it.
  */
-function useThrowPanel(throws: ThrowStore) {
-  const root = useRef<HTMLDivElement>(null);
+function useThrowPanel() {
   const log = useRoomView((s) => s.view?.log);
   const logRef = useRef(log);
   logRef.current = log;
-  useEffect(() => {
-    const node = root.current;
-    const fromMenu = (e: Event) => throws.keyDown(e.target instanceof Element ? e.target : null);
-    node?.addEventListener("rvtt-roll-mode-origin", fromMenu);
-    return () => node?.removeEventListener("rvtt-roll-mode-origin", fromMenu);
-  }, [throws]);
-  useEffect(() => throws.mount({ kinds: () => recentKinds(logRef.current ?? []) }), [throws]);
-  useEffect(() => {
-    const pane = root.current?.closest("[data-pane-body]");
-    if (!pane || typeof ResizeObserver === "undefined") return;
-    let first = true;
-    const observer = new ResizeObserver(() => {
-      // An observer reports once as it starts, which is no change.
-      if (first) first = false;
-      else throws.resized();
-    });
-    observer.observe(pane);
-    return () => observer.disconnect();
-  }, [throws]);
-  return {
-    ref: root,
-    onPointerDownCapture: (e: SyntheticEvent) => throws.pointerDown(controlOf(e)),
-    onPointerUpCapture: () => throws.pointerUp(),
-    onPointerCancelCapture: () => throws.pointerCancel(),
-    onClickCapture: () => throws.click(),
-    onKeyDownCapture: (e: SyntheticEvent) => throws.keyDown(controlOf(e)),
-  };
+  return useThrowSurface("dice", () => recentKinds(logRef.current ?? []));
 }
 
 /**
@@ -113,7 +83,7 @@ export default function DicePanel(props: PanelProps) {
   const groupStore = useGroupSaveStore();
   const group = useGroupSave((s) => s.page);
   const groupShown = useGroupSave((s) => s.shownIn === "dice");
-  const throwPanel = useThrowPanel(useThrows());
+  const { host, props: throwPanel } = useThrowPanel();
   useRestoreGroupSave();
   // The line a tap on the sticky result opened, unfolded in Recent rolls and scrolled into view.
   const [open, setOpen] = useState<string | null>(null);
@@ -158,7 +128,9 @@ export default function DicePanel(props: PanelProps) {
     // One column no wider than the pane: an auto column grows to its widest row's content, so one long roll would widen the whole panel past the screen.
     // A plain box, as above: the sheet or the tab names the panel.
     <div {...throwPanel} data-dice-panel="" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(2) }}>
-      <LastResult onOpen={show} />
+      <ThrowHostContext.Provider value={host}>
+        <LastResult onOpen={show} />
+      </ThrowHostContext.Provider>
       <Roller />
       {/* The roller and what it rolls for part by the panel's section line, 16 px each side, the grid's gap and this margin making the 16 above (docs/design/design-v1-dice-pass.md 7.1). */}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(2), marginTop: theme.space(2), paddingTop: theme.space(4), borderTop: `${theme.line.border}px solid ${theme.color.border}` }}>

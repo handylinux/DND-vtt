@@ -11,7 +11,7 @@ import { createDicePanel, type DiceState } from "../useDicePanel.ts";
 import { ReceiptTracker, type ReceiptState } from "../useReceipt.ts";
 import type { DieKind } from "./layout.ts";
 import type { LoadState } from "./probe.ts";
-import { DISPOSE_MS, GONE_MS, LAND_MS, LATE_MS, PAINT_MS, ThrowStore, type PanelHost, type Stage, type StagedThrow, type StageEvents, type StageModule, type ThrowOrigin, type TrayHost } from "./store.ts";
+import { DISPOSE_MS, GONE_MS, LAND_MS, LATE_MS, PAINT_MS, ThrowStore, type PanelHost, type Stage, type StagedThrow, type StageEvents, type StageModule, type ThrowHost, type ThrowOrigin, type TrayHost } from "./store.ts";
 
 /**
  * The throw's store (docs/design/design-v1-roll-animation.md 3 to 7), with a fake
@@ -176,13 +176,15 @@ function harness() {
   let shortPane = false;
   const panel: PanelHost = { kinds: (): DieKind[] => ["d20", "d6"] };
   const tray: TrayHost = { measure: () => (shortPane ? null : GEOMETRY), parent: null };
+  let host: ThrowHost | null = null;
   /** The panel and its header line's tray, mounted together as the panel opens after a roll. */
   const open = () => {
-    const unmount = store.mount(panel);
-    const detach = store.attach(tray);
+    const opened = store.mount(panel);
+    host = opened;
+    const detach = opened.attach(tray);
     return () => {
       detach();
-      unmount();
+      opened.unmount();
     };
   };
   let tags = 0;
@@ -209,6 +211,8 @@ function harness() {
       shortPane = on;
     },
     stage: () => stages.at(-1) ?? null,
+    /** The Dice panel's host, the last one opened. */
+    host: () => host!,
     /** The chunk arrives, the panel opens and the warm-up ends: from here a panel roll throws. */
     ready(): () => void {
       loader.finish(module);
@@ -220,7 +224,7 @@ function harness() {
     tap(origin: Partial<ThrowOrigin> | null = {}): string {
       const tag = `tag-${++tags}`;
       tracker.set(tag, { state: "sending" });
-      if (origin) store.register(tag, { surface: "dice", element: null, tapAt: clock.now(), ...origin });
+      if (origin) store.register(tag, { surface: "dice", element: null, tapAt: clock.now(), ...origin } as ThrowOrigin);
       return tag;
     },
     commit(tag: string, rolls: DiceRoll[] = [D20]): void {
@@ -417,22 +421,22 @@ describe("the throw's store", () => {
     h.ready();
     const tag = h.tap();
     h.commit(tag);
-    h.store.pointerDown();
+    h.host().pointerDown();
     assert.equal(h.store.view().shown, null, "the dice go at once");
     assert.equal(h.store.held(tag), true, "the result waits for the click");
-    h.store.click();
+    h.host().click();
     assert.equal(h.store.held(tag), false);
     const dragged = h.tap();
     h.commit(dragged);
-    h.store.pointerDown();
-    h.store.pointerUp();
+    h.host().pointerDown();
+    h.host().pointerUp();
     h.clock.advance(299);
     assert.equal(h.store.held(dragged), true);
     h.clock.advance(1);
     assert.equal(h.store.held(dragged), false, "no click after the pointer up: a scroll");
     const keyed = h.tap();
     h.commit(keyed);
-    h.store.keyDown();
+    h.host().keyDown();
     assert.equal(h.store.held(keyed), false);
     assert.equal(h.store.view().shown, null);
   });
@@ -542,8 +546,8 @@ describe("every way a panel control rolls", () => {
     const store = new ThrowStore();
     store.bind({ clock, idle: idle.idle, tracker, loader, hidden: () => false });
     loader.finish({ createStage: (events) => (stage = new FakeStage(clock, events)) });
-    const unmount = store.mount({ kinds: () => ["d20"] });
-    const detach = store.attach({ parent: null, measure: () => GEOMETRY });
+    const host = store.mount({ kinds: () => ["d20"] });
+    const detach = host.attach({ parent: null, measure: () => GEOMETRY });
     idle.runAll();
     stage!.warmups[0]!.finish(true);
     const choices = createStore<DiceState>(() => ({ adv: false, dis: false, secret: null, version: 0, last: null }));
@@ -561,9 +565,9 @@ describe("every way a panel control rolls", () => {
     /** The Dice panel closes: its header line's tray, then the panel, as React cleans them up. */
     const close = () => {
       detach();
-      unmount();
+      host.unmount();
     };
-    return { store, panel, sender, answerAll, origin, stage: () => stage!, tracker, close, clock };
+    return { store, host, panel, sender, answerAll, origin, stage: () => stage!, tracker, close, clock };
   }
 
   const ROLL = { formula: "1d20+4", label: "Stealth", creature: { characterId: "thorn" } };
@@ -674,8 +678,8 @@ describe("every way a panel control rolls", () => {
       const unwatch = h.tracker.watch(tag);
       h.answerAll();
       if (end === "landing") h.clock.advance(LAND_MS);
-      else if (end === "click") h.store.click();
-      else h.store.keyDown();
+      else if (end === "click") h.host.click();
+      else h.host.keyDown();
       assert.equal(h.store.held(tag), false);
       h.clock.advance(PAINT_MS);
       h.close();
@@ -692,8 +696,8 @@ describe("every way a panel control rolls", () => {
       const unwatch = h.tracker.watch(tag);
       h.answerAll();
       // The panel's capture listener sees the key first, then the room's Escape closes the sheet in the same tick.
-      if (end === "key") h.store.keyDown();
-      else h.store.click();
+      if (end === "key") h.host.keyDown();
+      else h.host.click();
       h.close();
       unwatch();
       h.tracker.announced(tag);
@@ -733,6 +737,8 @@ function run(seed: number): void {
   const r = rng(seed);
   const h = harness();
   const { store, clock, tracker } = h;
+  /** The Dice panel's host, mounted and unmounted as the panel opens and closes. */
+  const dice = store.host(h.panel);
   /** What the sequence did, for a failure's message. */
   const trace: string[] = [];
   const did = (what: string) => trace.push(`${clock.now()} ${what}`);
@@ -793,8 +799,9 @@ function run(seed: number): void {
   // Most sequences start with the dice ready, so throws happen often enough to break.
   if (chance(r, 0.75)) {
     h.loader.finish(h.module);
-    unmount = store.mount(h.panel);
-    detachTray = store.attach(h.tray);
+    dice.mount();
+    unmount = () => dice.unmount();
+    detachTray = dice.attach(h.tray);
     h.idle.runAll();
     h.stage()?.warmups.at(-1)?.finish(true);
     mount = ++mounts;
@@ -920,22 +927,22 @@ function run(seed: number): void {
       const e = pick(r, ["down", "click", "up", "cancel", "key"] as const);
       did(e);
       if (e === "down") {
-        store.pointerDown();
+        dice.pointerDown();
         assert.equal(store.view().shown, null, at("a pointer down takes the dice"));
         if (play) play.interrupted = true;
       } else if (e === "click") {
         // A click or a cancel always ends a press in the panel, even one that began before the throw.
         interrupted();
-        store.click();
+        dice.click();
         shownNow();
-      } else if (e === "up") store.pointerUp();
+      } else if (e === "up") dice.pointerUp();
       else if (e === "cancel") {
         interrupted();
-        store.pointerCancel();
+        dice.pointerCancel();
         shownNow();
       } else {
         interrupted();
-        store.keyDown();
+        dice.keyDown();
         shownNow();
       }
     } else if (k < 0.74) {
@@ -944,8 +951,9 @@ function run(seed: number): void {
       if (mount === null) {
         mount = ++mounts;
         did("mount");
-        unmount = store.mount(h.panel);
-        detachTray = store.attach(h.tray);
+        dice.mount();
+        unmount = () => dice.unmount();
+        detachTray = dice.attach(h.tray);
         groupSave = false;
         closedAt = null;
         stageAtClose = null;
@@ -1009,7 +1017,7 @@ function run(seed: number): void {
       if (mount === null) continue;
       if (groupSave) {
         did("group save closes");
-        detachTray = store.attach(h.tray);
+        detachTray = dice.attach(h.tray);
         groupSave = false;
       } else {
         did("group save opens");
