@@ -1219,29 +1219,275 @@ type Drawn = {
   lightRows: LightRow[] | null;
   packed: (Uint8Array | null)[];
   tiles: Map<string, SightTile>;
-  sight: TileSight;
+  sight: PartySight;
 };
 
-type SceneEntry = Drawn & {
-  walls: Held<WallSet>;
-  fpc: number;
+/** What a computation draws once something reads it: the light rows, the union's tiles and their sole sources, and the bytes it then holds. */
+type Drawing = { lightRows: LightRow[] | null; packed: (Uint8Array | null)[]; tiles: Map<string, SightTile>; tileSight: TileSight; sole: Uint16Array | null; bytes: number };
+
+/*
+ * One computation of a scene's union (compute). Its sources' and lights'
+ * entries are worked out at once, and its light rows and tiles only when
+ * first read, from the newest drawn computation before it (its anchor),
+ * where the entries that differ say what to draw again. Until then the
+ * point query answers from the entries alone, so a sweep's moment or a
+ * routed walk's crossing, which ask points and read no tiles, draws
+ * nothing, and the computation after it draws once from the anchor
+ * however many moments came between. The tiles drawn are the same bits
+ * from any anchor (redraw), so drawing later changes nothing but the work.
+ */
+class SceneEntry implements Drawn {
+  readonly walls: Held<WallSet>;
+  readonly w: number;
+  readonly h: number;
+  readonly level: LightLevel;
+  readonly fpc: number;
   /** Everything the result came from, to answer a repeat without work. */
-  signature: string;
-  sources: Map<string, SourceEntry>;
-  lights: Map<string, LightEntry>;
+  readonly signature: string;
+  readonly sources: Map<string, SourceEntry>;
+  readonly lights: Map<string, LightEntry>;
   /** Names this computation for the rasters drawn from it. */
-  serial: number;
+  readonly serial: number;
   /** The holders' sights over this computation, by source set (holderSight). */
-  views: Map<string, PartySight>;
+  readonly views = new Map<string, PartySight>();
+  /** The union's own sight: its tiles once drawn, and until then the point query over every source. */
+  readonly sight: PartySight;
+  readonly #sceneId: string;
+  readonly #perPlayer: boolean;
+  #anchor: SceneEntry | null;
+  #drawing: Drawing | null = null;
+  /** Before drawing: the rows whose light can differ from the anchor's (null for every row), and those worked out for the point query. */
+  #lightDirty: Uint8Array | null | undefined = undefined;
+  #rows = new Map<number, LightRow>();
+
+  constructor(sceneId: string, inp: Inputs, sources: Map<string, SourceEntry>, lights: Map<string, LightEntry>, anchor: SceneEntry | null) {
+    this.walls = new WeakRef(inp.walls);
+    this.w = inp.w;
+    this.h = inp.h;
+    this.level = inp.level;
+    this.fpc = inp.fpc;
+    this.signature = inp.signature;
+    this.sources = sources;
+    this.lights = lights;
+    this.serial = ++serials;
+    this.#sceneId = sceneId;
+    this.#perPlayer = inp.scene.vision?.perPlayer === true;
+    this.#anchor = anchor;
+    this.sight = new UnionSight(this);
+  }
+
+  get drawn(): boolean {
+    return this.#drawing !== null;
+  }
+
+  get lightRows(): LightRow[] | null {
+    return this.#draw().lightRows;
+  }
+
+  get packed(): (Uint8Array | null)[] {
+    return this.#draw().packed;
+  }
+
+  get tiles(): Map<string, SightTile> {
+    return this.#draw().tiles;
+  }
+
+  get tileSight(): TileSight {
+    return this.#draw().tileSight;
+  }
+
   /**
    * On a per-player scene, per tile, the sources by their place in
    * `sources` that alone give some sub-cell its level (soleSources): a
    * holder who lacks one source has the union's tile wherever it is not
    * among them. Null on a whole-party scene.
    */
-  sole: Uint16Array | null;
-  bytes: number;
-};
+  get sole(): Uint16Array | null {
+    return this.#draw().sole;
+  }
+
+  /** What the cache counts for it: once drawn, its tiles and light rows too, and before, the anchor it holds. */
+  get bytes(): number {
+    if (this.#drawing) return this.#drawing.bytes;
+    return this.#entryBytes() + (this.#anchor ? this.#anchor.bytes : 0);
+  }
+
+  /** The light rows if drawn, without drawing them. */
+  get drawnLightRows(): LightRow[] | null {
+    return this.#drawing?.lightRows ?? null;
+  }
+
+  /** What the next computation draws from: this one once drawn, else its anchor, else this one drawn now. */
+  anchorForNext(): SceneEntry {
+    if (this.#drawing || !this.#anchor) {
+      this.#draw();
+      return this;
+    }
+    return this.#anchor;
+  }
+
+  /** Row j's light (null for the scene's base level throughout), worked out alone when nothing is drawn yet. */
+  lightRowAt(j: number): LightRow {
+    if (this.level === "bright") return null;
+    if (this.#drawing) return this.#drawing.lightRows![j] ?? null;
+    const anchor = this.#anchor;
+    const dirty = this.#lightRowsDirty();
+    if (anchor && dirty && dirty[j] !== 1) return anchor.lightRowAt(j);
+    let row = this.#rows.get(j);
+    if (row === undefined) {
+      work.lightRows++;
+      this.#rows.set(j, (row = lightRow(j, this.w * SUB, baseLevel(this.level), [...this.lights.values()], rowScratch(this.w * SUB))));
+    }
+    return row;
+  }
+
+  #entryBytes(): number {
+    let bytes = 4096 + 2 * this.signature.length;
+    for (const s of this.sources.values()) bytes += sourceBytes(s);
+    for (const l of this.lights.values()) bytes += l.runs.data.byteLength + l.runs.off.byteLength + 2 * ARRAY_BYTES + 200;
+    return bytes;
+  }
+
+  /*
+   * The rows a light gained, lost or replaced lit, before or now, against
+   * the anchor's lights. A row's light is a function of the runs the held
+   * lights put in that row alone (lightRow), so every other row keeps the
+   * anchor's. Null with no anchor: every row is worked out.
+   */
+  #lightRowsDirty(): Uint8Array | null {
+    if (this.#lightDirty !== undefined) return this.#lightDirty;
+    const anchor = this.#anchor;
+    if (!anchor) return (this.#lightDirty = null);
+    const H = this.h * SUB;
+    const dirty = new Uint8Array(H);
+    const mark = (b: SubBox | null) => {
+      if (b) dirty.fill(1, Math.max(0, b.r0), Math.min(H, b.r1));
+    };
+    for (const [key, l] of this.lights) {
+      const old = anchor.lights.get(key);
+      if (old === l) continue;
+      mark(l.runs.box);
+      mark(old?.runs.box ?? null);
+    }
+    for (const [key, old] of anchor.lights) if (!this.lights.has(key)) mark(old.runs.box);
+    return (this.#lightDirty = dirty);
+  }
+
+  /*
+   * Draws the light rows and the union's tiles from the anchor, again
+   * wherever an entry differs from the anchor's: a source's tiles where
+   * its entry was replaced, gained or lost, before and now, and a light's
+   * rows and tiles the same way (the reuse rule in compute's comment).
+   * With no anchor, everything, cold.
+   */
+  #draw(): Drawing {
+    if (this.#drawing) return this.#drawing;
+    work.draws++;
+    const anchor = this.#anchor;
+    const { w, h, level } = this;
+    const W = w * SUB;
+    const H = h * SUB;
+    const across = Math.max(1, Math.ceil(w / CHUNK_CELLS));
+    const down = Math.max(1, Math.ceil(h / CHUNK_CELLS));
+    const dirty = new Uint8Array(across * down);
+    const dirtySub = (b: SubBox | null) => markTiles(dirty, across, b);
+    if (!anchor) dirty.fill(1);
+    else {
+      for (const [id, s] of this.sources) {
+        const old = anchor.sources.get(id);
+        if (old === s) continue;
+        dirtySub(old?.spans?.box ?? null);
+        dirtySub(s.spans?.box ?? null);
+      }
+      for (const [id, old] of anchor.sources) if (!this.sources.has(id)) dirtySub(old.spans?.box ?? null);
+      for (const [key, l] of this.lights) {
+        const old = anchor.lights.get(key);
+        if (old === l) continue;
+        dirtySub(l.runs.box);
+        dirtySub(old?.runs.box ?? null);
+      }
+      for (const [key, old] of anchor.lights) if (!this.lights.has(key)) dirtySub(old.runs.box);
+    }
+
+    // The light level, row by row, wherever a light changed, and every row with nothing to start from.
+    let lightRows: LightRow[] | null = null;
+    if (level !== "bright") {
+      const lightDirty = this.#lightRowsDirty();
+      lightRows = anchor ? anchor.lightRows!.slice() : new Array<LightRow>(H).fill(null);
+      const held = [...this.lights.values()];
+      const buf = rowScratch(W);
+      const base0 = baseLevel(level);
+      for (let j = 0; j < H; j++) {
+        if (lightDirty && lightDirty[j] !== 1) continue;
+        const asked = this.#rows.get(j);
+        if (asked === undefined) work.lightRows++;
+        lightRows[j] = asked !== undefined ? asked : lightRow(j, W, base0, held, buf);
+      }
+    }
+
+    // The union over every tile that may have changed.
+    const packed = anchor ? anchor.packed.slice() : new Array<Uint8Array | null>(across * down).fill(null);
+    const tiles = anchor ? new Map(anchor.tiles) : new Map<string, SightTile>();
+    const sole = this.#perPlayer ? keptSole(anchor, this.sources, across * down) : null;
+    redraw({ level, W, H }, across, down, dirty, [...this.sources.values()], lightRows, packed, tiles, sole);
+    let bytes = this.#entryBytes() + tilesBytes(packed);
+    if (lightRows) bytes += lightRowsBytes(lightRows);
+    this.#drawing = { lightRows, packed, tiles, tileSight: new TileSight(tiles, packedReader(packed, across, down)), sole, bytes };
+    this.#anchor = null;
+    this.#lightDirty = undefined;
+    this.#rows = new Map();
+    recount(this.#sceneId);
+    return this.#drawing;
+  }
+}
+
+/** The union drawings and the rows of light worked out so far, for tests and benchmarks (visionWork). */
+const work = { draws: 0, lightRows: 0 };
+
+/** How many computations have drawn their tiles, and how many rows of light were worked out, since the module loaded. For tests and benchmarks. */
+export function visionWork(): { draws: number; lightRows: number } {
+  return { ...work };
+}
+
+/** A row of light levels to fill, one for the whole module, as lightRow fills each row from scratch. */
+let rowBuf = new Uint8Array(0);
+
+function rowScratch(W: number): Uint8Array {
+  if (rowBuf.length < W) rowBuf = new Uint8Array(W);
+  return rowBuf;
+}
+
+/*
+ * The union's sight (SceneEntry.sight): its tiles, drawn when first read,
+ * and before that the point query over every source, which answers as the
+ * tiles would (pointSees), so a sweep's moment draws nothing.
+ */
+class UnionSight implements PartySight {
+  readonly #entry: SceneEntry;
+  #all: SourceEntry[] | null = null;
+
+  constructor(entry: SceneEntry) {
+    this.#entry = entry;
+  }
+
+  get tiles(): ReadonlyMap<string, SightTile> {
+    return this.#entry.tiles;
+  }
+
+  seesToken(probe: SightProbe, g: Grid): boolean {
+    const entry = this.#entry;
+    return entry.drawn ? entry.tileSight.seesToken(probe, g) : pointSees(entry, this.#sources(), probe, g);
+  }
+
+  seesSubcells(subs: readonly (readonly [number, number])[]): boolean {
+    const entry = this.#entry;
+    return entry.drawn ? entry.tileSight.seesSubcells(subs) : subcellsSeen(entry, this.#sources(), inScene(entry, subs));
+  }
+
+  #sources(): SourceEntry[] {
+    return (this.#all ??= [...this.#entry.sources.values()]);
+  }
+}
 
 /** Base light level: what a point has where no light reaches. */
 function baseLevel(level: LightLevel): number {
@@ -1847,14 +2093,9 @@ function sameTile(a: SightTile, b: SightTile): boolean {
  * run split where a free wall far away crossed it changes pieces the chunk
  * rule would not look at.
  */
-function compute(inp: Inputs, prev: SceneEntry | null): SceneEntry {
+function compute(inp: Inputs, prev: SceneEntry | null, sceneId: string = inp.scene.id): SceneEntry {
   const { W, H, w, h } = inp;
-  const across = Math.max(1, Math.ceil(w / CHUNK_CELLS));
-  const down = Math.max(1, Math.ceil(h / CHUNK_CELLS));
   const base = prev !== null && prev.w === w && prev.h === h && prev.level === inp.level && prev.fpc === inp.fpc ? prev : null;
-  const dirty = new Uint8Array(across * down);
-  if (!base) dirty.fill(1);
-  const dirtySub = (b: SubBox | null) => markTiles(dirty, across, b);
   const diffs = new Map<Float64Array, Map<Float64Array, ChangedCells>>();
   const stale = (held: Held<Float64Array> | null, now: Float64Array | null, polyBox: Bounds | null): boolean => {
     const was = held === null ? null : held.deref();
@@ -1874,14 +2115,8 @@ function compute(inp: Inputs, prev: SceneEntry | null): SceneEntry {
     const old = base?.sources.get(plan.id) ?? null;
     const now = plan.eye && plan.box ? plan.set.set.pieces : null;
     const reuse = old && old.polyKey === plan.polyKey && !stale(old.pieces, now, old.polyBox) ? old : null;
-    const entry = reuse && reuse.levelKey === plan.levelKey ? reuse : buildSource(inp, plan, reuse);
-    sources.set(plan.id, entry);
-    if (entry !== old) {
-      dirtySub(old?.spans?.box ?? null);
-      dirtySub(entry.spans?.box ?? null);
-    }
+    sources.set(plan.id, reuse && reuse.levelKey === plan.levelKey ? reuse : buildSource(inp, plan, reuse));
   }
-  if (base) for (const [id, old] of base.sources) if (!sources.has(id)) dirtySub(old.spans?.box ?? null);
 
   /*
    * Lights, lazily (section 4.3.4): a light is computed only when some
@@ -1902,42 +2137,12 @@ function compute(inp: Inputs, prev: SceneEntry | null): SceneEntry {
         continue;
       }
       const litSub = subOf(plan.litBox, W, H);
-      if (seen.some((b) => boxesMeet(b, litSub))) {
-        const entry = buildLight(inp, plan);
-        lights.set(plan.key, entry);
-        dirtySub(entry.runs.box);
-      }
-      dirtySub(old?.runs.box ?? null);
-    }
-    if (base) for (const [key, old] of base.lights) if (!lights.has(key)) dirtySub(old.runs.box);
-  }
-
-  // The light level, row by row, wherever a tile is redrawn.
-  let lightRows: LightRow[] | null = null;
-  if (inp.level !== "bright") {
-    lightRows = base?.lightRows ? base.lightRows.slice() : new Array<LightRow>(H).fill(null);
-    const held = [...lights.values()];
-    const buf = new Uint8Array(W);
-    const base0 = baseLevel(inp.level);
-    for (let ty = 0; ty < down; ty++) {
-      let rowDirty = false;
-      for (let tx = 0; tx < across && !rowDirty; tx++) if (dirty[ty * across + tx] === 1) rowDirty = true;
-      if (!rowDirty) continue;
-      for (let j = ty * TILE; j < Math.min(H, (ty + 1) * TILE); j++) lightRows[j] = lightRow(j, W, base0, held, buf);
+      if (seen.some((b) => boxesMeet(b, litSub))) lights.set(plan.key, buildLight(inp, plan));
     }
   }
 
-  // The union over every tile that may have changed.
-  const packed = base ? base.packed.slice() : new Array<Uint8Array | null>(across * down).fill(null);
-  const tiles = base ? new Map(base.tiles) : new Map<string, SightTile>();
-  const sole = inp.scene.vision?.perPlayer === true ? keptSole(base, sources, across * down) : null;
-  redraw(inp, across, down, dirty, [...sources.values()], lightRows, packed, tiles, sole);
-  const sight = new TileSight(tiles, packedReader(packed, across, down));
-  let bytes = 4096 + 2 * inp.signature.length + tilesBytes(packed);
-  for (const s of sources.values()) bytes += sourceBytes(s);
-  for (const l of lights.values()) bytes += l.runs.data.byteLength + l.runs.off.byteLength + 2 * ARRAY_BYTES + 200;
-  if (lightRows) bytes += lightRowsBytes(lightRows);
-  return { walls: new WeakRef(inp.walls), w, h, level: inp.level, fpc: inp.fpc, signature: inp.signature, sources, lights, lightRows, packed, tiles, sight, serial: ++serials, views: new Map(), sole, bytes };
+  // The light rows and tiles wait until read (SceneEntry), drawn from the newest drawn computation this one's entries came from.
+  return new SceneEntry(sceneId, inp, sources, lights, base ? base.anchorForNext() : null);
 }
 
 let serials = 0;
@@ -2078,6 +2283,15 @@ function remember(sceneId: string, entry: SceneEntry, others: readonly SceneEntr
   keep(sceneId, { entries, rasters: was?.rasters ?? new Map(), bytes: 0 }, was);
 }
 
+/** Counts a scene's record again after one of its computations drew its tiles (SceneEntry), which changes what it holds. The next keep trims the cache. */
+function recount(sceneId: string): void {
+  const rec = cache.get(sceneId);
+  if (!rec) return;
+  cacheBytes -= rec.bytes;
+  rec.bytes = sceneBytes(rec).bytes;
+  cacheBytes += rec.bytes;
+}
+
 /** Puts a scene's record back as the most recently used, and drops the least recently used scenes past the cap. */
 function keep(sceneId: string, next: SceneCache, was: SceneCache | undefined): void {
   if (was) {
@@ -2107,7 +2321,8 @@ function sceneBytes(rec: SceneCache): { bytes: number; pinned: number } {
   for (const e of rec.entries) {
     bytes += e.bytes;
     for (const s of e.sources.values()) counted.add(s);
-    if (e.lightRows) counted.add(e.lightRows);
+    const rows = e.drawnLightRows;
+    if (rows) counted.add(rows);
   }
   for (const list of rec.rasters.values()) {
     for (const r of list) {
@@ -2322,7 +2537,7 @@ export function seesCreature(sight: PartySight, probe: SightProbe, g: Grid, clip
  * TileSight.seesToken reads, so the two answer alike: on hexes those
  * inside the creature's hexes.
  */
-function pointSees(entry: Drawn, sources: readonly SourceEntry[], probe: SightProbe, g: Grid): boolean {
+function pointSees(entry: SceneEntry, sources: readonly SourceEntry[], probe: SightProbe, g: Grid): boolean {
   const W = entry.w * SUB;
   const H = entry.h * SUB;
   if (g.shape === "hex") return subcellsSeen(entry, sources, inScene(entry, footprintSubcells(g, probe)));
@@ -2338,7 +2553,7 @@ function pointSees(entry: Drawn, sources: readonly SourceEntry[], probe: SightPr
   if (near.length === 0) return false;
   const base = baseLevel(entry.level);
   for (let sy = box.r0; sy < box.r1; sy++) {
-    const lrow = entry.lightRows ? (entry.lightRows[sy] ?? null) : null;
+    const lrow = entry.lightRowAt(sy);
     for (let sx = box.c0; sx < box.c1; sx++) {
       const light = lrow ? lightAt(lrow, sx) : base;
       for (const s of near) if (sourceLevel(s, sx, sy, light) !== NOT_SEEN) return true;
@@ -2355,7 +2570,7 @@ function inScene(entry: Drawn, subs: readonly (readonly [number, number])[]): (r
 }
 
 /** `pointSees` over a list of sub-cells inside the scene. */
-function subcellsSeen(entry: Drawn, sources: readonly SourceEntry[], subs: readonly (readonly [number, number])[]): boolean {
+function subcellsSeen(entry: SceneEntry, sources: readonly SourceEntry[], subs: readonly (readonly [number, number])[]): boolean {
   if (subs.length === 0) return false;
   const box: SubBox = { c0: Infinity, r0: Infinity, c1: -Infinity, r1: -Infinity };
   for (const [sx, sy] of subs) {
@@ -2368,7 +2583,7 @@ function subcellsSeen(entry: Drawn, sources: readonly SourceEntry[], subs: reado
   if (near.length === 0) return false;
   const base = baseLevel(entry.level);
   for (const [sx, sy] of subs) {
-    const lrow = entry.lightRows ? (entry.lightRows[sy] ?? null) : null;
+    const lrow = entry.lightRowAt(sy);
     const light = lrow ? lightAt(lrow, sx) : base;
     for (const s of near) if (sourceLevel(s, sx, sy, light) !== NOT_SEEN) return true;
   }
@@ -2427,7 +2642,8 @@ function rasterFor(sceneId: string, entry: SceneEntry, key: string, sources: rea
   const rec = cache.get(sceneId);
   const others: Drawn[] = [];
   if (rec) {
-    for (const e of rec.entries) if (e !== entry) others.push(e);
+    // A computation not yet drawn is no start: drawing it would cost what it saves.
+    for (const e of rec.entries) if (e !== entry && e.drawn) others.push(e);
     for (const [k, list] of rec.rasters) if (k !== key) others.push(...list);
   }
   // The union's own computation always starts it, so another start is taken only when it leaves fewer tiles.

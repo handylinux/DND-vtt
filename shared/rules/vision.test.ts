@@ -31,6 +31,7 @@ import {
   visibleFrom,
   visionCacheReport,
   visionReport,
+  visionWork,
   type VisionWorld,
 } from "./vision.ts";
 import { RAISED, sceneWalls, type WallSet } from "./walls.ts";
@@ -1657,5 +1658,89 @@ describe("sight holders", () => {
     }
     assert.ok(drawn > 14, `${drawn} sets drawn`);
     assert.equal(visionCacheReport().rasters, 14);
+  });
+});
+
+describe("computations drawn when read", () => {
+  /*
+   * Random edits, most of them asked only by points, as a sweep's moments
+   * and a routed walk's crossings are, and now and then read whole. Each
+   * computation then waits undrawn, and the next one draws from the last
+   * one drawn, however many came between. The invariants, every step:
+   * every point answer is the cold tiles' (I1), tiles read are the cold
+   * tiles (I2), asking points draws nothing (I3), and the cache's running
+   * count of bytes is its contents counted again (I4).
+   */
+  for (const level of ["bright", "dim", "dark"] as const) {
+    test(`random edits on a ${level} scene, whole party and per player, most asked only by points`, () => {
+      clearVisionCache();
+      const r = rng(level === "bright" ? 61 : level === "dim" ? 62 : 63);
+      let s = r() < 0.5 ? start(r, level) : holderStart(r, level);
+      const names = Object.keys(holderEdits);
+      let read = 0;
+      let asked = 0;
+      for (let step = 0; step < 90; step++) {
+        const name = names[Math.floor(r() * names.length)]!;
+        if (step % 30 === 15) s = s.scenes.s1!.vision?.perPlayer ? start(r, level) : holderStart(r, level);
+        s = holderEdits[name]!(r, s);
+        if (step % 11 === 7) {
+          // A staged state the size guard refused: asked, then dropped.
+          partySight(holderEdits[name]!(r, s), "s1", world).seesToken(randomProbe(r, SIZE), SQUARES);
+          continue;
+        }
+        const { w, h } = s.scenes.s1!.bounds;
+        const viewers = s.scenes.s1!.vision?.perPlayer ? VIEWERS : [undefined];
+        const sights = viewers.map((v) => (v === undefined ? partySight(s, "s1", world) : holderSight(s, "s1", v, world)));
+        const probes = Array.from({ length: 40 }, () => randomProbe(r, w));
+        const draws = visionWork().draws;
+        const answers = sights.map((sight) => probes.map((p) => sight.seesToken(p, SQUARES)));
+        assert.equal(visionWork().draws, draws, `step ${step} (${name}): asking points drew the union (I3)`);
+        asked++;
+        for (const [i, v] of viewers.entries()) {
+          const cold = v === undefined ? coldPartySight(s, "s1", world) : coldHolderSight(s, "s1", v, world);
+          const levels = levelsOf(cold.tiles, w, h);
+          for (const [k, p] of probes.entries()) assert.equal(answers[i]![k], bruteSees(levels, w, h, p), `step ${step} (${name}), ${v ?? "party"}: ${JSON.stringify(p)} (I1)`);
+          if (r() < 0.25) {
+            read++;
+            sameTiles(sights[i]!.tiles, cold.tiles, `step ${step} (${name}), ${v ?? "party"} (I2)`);
+          }
+        }
+        const report = visionCacheReport();
+        assert.equal(report.bytes, report.recount, `step ${step} (I4)`);
+      }
+      assert.ok(read > 20 && asked > 60, `${read} read, ${asked} asked`);
+    });
+  }
+
+  test("a sweep's moments draw nothing, and the batch after draws once, from the last computation drawn", () => {
+    clearVisionCache();
+    const walker = pc("a", 10, 20, { senses: "darkvision 60 ft", light: { bright: 10, dim: 10 } });
+    const s0 = visionRoom({ w: 40, h: 40, light: "dark", tokens: [walker, pc("b", 30, 20, { senses: "darkvision 60 ft" })], lights: [light("l", 20, 10, 10, 20)] });
+    void partySight(s0, "s1", world).tiles;
+    const draws = visionWork().draws;
+    let s = s0;
+    for (const x of [11, 12, 13]) {
+      s = withToken(s, { ...s.tokens.a!, x });
+      const sight = partySight(s, "s1", world);
+      assert.equal(sight.seesToken({ size: "medium", x: x + 2, y: 20 }, SQUARES), true);
+      assert.equal(sight.seesToken({ size: "medium", x: 38, y: 2 }, SQUARES), false);
+    }
+    assert.equal(visionWork().draws, draws, "the moments drew nothing");
+    s = withToken(s, { ...s.tokens.a!, x: 14 });
+    sameTiles(partySight(s, "s1", world).tiles, coldPartySight(s, "s1", world).tiles, "the batch's state");
+    // Its own drawing and the cold one's: none for the moments.
+    assert.equal(visionWork().draws, draws + 2);
+  });
+
+  test("a light that moves works out only the rows it lights, before and after", () => {
+    clearVisionCache();
+    const s0 = visionRoom({ w: 40, h: 40, light: "dark", tokens: [pc("a", 20, 20, { senses: "darkvision 150 ft" })], lights: [light("small", 20, 22, 0, 10), light("big", 5, 5, 60, 120, { walls: false })] });
+    void partySight(s0, "s1", world).tiles;
+    const rows = visionWork().lightRows;
+    const s1 = { ...s0, lights: { ...s0.lights, small: { ...s0.lights.small!, x: 21 } } };
+    sameTiles(partySight(s1, "s1", world).tiles, coldPartySight(s1, "s1", world).tiles, "after the move");
+    // The cold drawing works out every row, 160, and the move only the 2-cell light's rows, a few cells of them, where a tile's are 64.
+    const moved = visionWork().lightRows - rows - 160;
+    assert.ok(moved > 0 && moved <= 40, `${moved} rows worked out for the move`);
   });
 });
