@@ -1222,14 +1222,43 @@ type Stop = { until: Progress; s: Progress };
  * each stopped group's landing and route cut, which dispatch then moves.
  */
 export function planTrapMove(op: Op, before: TrapRoom, actor: Viewer, env: { opVersion?: number }, pitOpens?: (trap: Trap) => boolean): MovePlan {
-  const none: MovePlan = { springings: [], op };
+  const parts = trapMoveParts(op, before, actor, env, pitOpens);
+  return parts ? { springings: parts.springings, op: parts.op } : { springings: [], op };
+}
+
+/**
+ * Where the trap step's walks leave each token a move walks (5.6): a
+ * stopped group at its stop, every other walk at its end, the public
+ * walks on the op's own and the rest on the walks its cut leaves. Dispatch
+ * puts each token there, which the tests check. Empty where no trap is on
+ * the scene, as the trap step then reads no walk.
+ */
+export function trapLandings(op: Op, before: TrapRoom, actor: Viewer, env: { opVersion?: number }): Map<string, { x: number; y: number; elevation: number }> {
+  const out = new Map<string, { x: number; y: number; elevation: number }>();
+  const parts = trapMoveParts(op, before, actor, env);
+  if (!parts) return out;
+  const pose = (walk: Walk, j: number) => {
+    const t = placedAt(walk, j);
+    out.set(walk.token.id, { x: t.x, y: t.y, elevation: t.elevation });
+  };
+  for (const walk of parts.walks.all) {
+    if (!walk.isPublic) continue;
+    const stop = parts.stops.get(walk.group.named);
+    pose(walk, stop ? latestIndex(walk.spots, stop.s) : walk.spots.length - 1);
+  }
+  for (const walk of (parts.rest ?? parts.walks).all) if (!walk.isPublic) pose(walk, walk.spots.length - 1);
+  return out;
+}
+
+/** The trap step's plan of a move with the walks it read and its stops, or null where it reads none. `rest` is null with no private pass. */
+function trapMoveParts(op: Op, before: TrapRoom, actor: Viewer, env: { opVersion?: number }, pitOpens?: (trap: Trap) => boolean): { springings: Springing[]; op: Op; walks: Walks; stops: Map<string, Stop>; rest: Walks | null } | null {
   const sceneId = liveTrapScene(before);
-  if (sceneId === null || !walkOp(op)) return none;
+  if (sceneId === null || !walkOp(op)) return null;
   const index = trapIndex(before, sceneId);
-  if (index.traps.length === 0) return none;
+  if (index.traps.length === 0) return null;
   const onScene = (e: MovedToken) => e.from.sceneId === sceneId && e.to.sceneId === sceneId;
   const entries = trapPlan(op, before, actor, env).filter(onScene);
-  if (entries.length === 0) return none;
+  if (entries.length === 0) return null;
   const seen = seenByAll(before, env);
   const walks = walksOf(op, before, entries, seen, env.opVersion);
   const spent = new Set<number>();
@@ -1268,7 +1297,7 @@ export function planTrapMove(op: Op, before: TrapRoom, actor: Viewer, env: { opV
   // The private pass (5.5): every other creature, on the walks the public pass left, each on its own step. It never stops.
   const cut = stops.size > 0 ? cutOp(op, walks, stops, before, seen) : op;
   // A move with no walk players cannot see has no private pass, so its cut op needs no walks of its own.
-  if (!walks.all.some((w) => !w.isPublic)) return { springings, op: cut };
+  if (!walks.all.some((w) => !w.isPublic)) return { springings, op: cut, walks, stops, rest: null };
   const rest = cut === op ? walks : walksOf(cut, before, trapPlan(cut, before, actor, env).filter(onScene), seen, env.opVersion);
   const priv = passCache(before, sceneId);
   const hidden = byTrap(rest.all.filter((w) => !w.isPublic), (walk) => walkEvents(walk, index, before, seen, spent, priv));
@@ -1279,7 +1308,7 @@ export function planTrapMove(op: Op, before: TrapRoom, actor: Viewer, env: { opV
     spent.add(event.trap);
     springings.push(springingIn(index.traps[event.trap]!, event.how, "private", together, momentAt(before, rest.byId, event.at, new Map()), env));
   }
-  return { springings, op: cut };
+  return { springings, op: cut, walks, stops, rest };
 }
 
 /**
@@ -1300,13 +1329,13 @@ function trapPlan(op: Op, before: RoomState, actor: Viewer, env: { opVersion?: n
  * first, for the tests. The drag label reads which traps a drag crosses on
  * its own (client/features/traps/rules.ts crossedTraps).
  */
-export function trapWalks(op: Op, before: TrapRoom, actor: Viewer, env: { opVersion?: number }): { tokenId: string; isPublic: boolean; walker: boolean; step: number; spots: { x: number; y: number; progress: Progress }[] }[] {
+export function trapWalks(op: Op, before: TrapRoom, actor: Viewer, env: { opVersion?: number }): { tokenId: string; group: string; isPublic: boolean; walker: boolean; step: number; spots: { x: number; y: number; progress: Progress }[] }[] {
   const sceneId = liveTrapScene(before);
   if (sceneId === null || !walkOp(op)) return [];
   const entries = trapPlan(op, before, actor, env).filter((e) => e.from.sceneId === sceneId && e.to.sceneId === sceneId);
   const walks = walksOf(op, before, entries, seenByAll(before, env), env.opVersion);
   return walks.all
-    .map((w) => ({ tokenId: w.token.id, isPublic: w.isPublic, walker: w.walker, step: w.step, spots: w.spots.map((_, j) => spotAt(w, j)) }))
+    .map((w) => ({ tokenId: w.token.id, group: w.group.named, isPublic: w.isPublic, walker: w.walker, step: w.step, spots: w.spots.map((_, j) => spotAt(w, j)) }))
     .sort((a, b) => cmp(a.tokenId, b.tokenId));
 }
 
