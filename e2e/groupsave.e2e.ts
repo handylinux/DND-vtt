@@ -10,7 +10,7 @@ import { uuidv7 } from "#shared/ids.ts";
 import { blockOf, customMonster } from "#shared/testutil.ts";
 import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
 import { OUTCOME_RESTORED, OUTCOME_UNDONE, OUTCOME_UNAVAILABLE, assertPrivateOutcome, openSaveDice, saveOutcomes } from "./helpers/saveOutcomes.ts";
-import { ConsoleWatch, diceFoldsOpen, multiSelect, OpSocket, reopenRoom, resultLine, Shots, SocketWatch, startServer, tapCell, waitFor, wholeInReach, type Server } from "./harness.ts";
+import { ConsoleWatch, diceFoldsOpen, multiSelect, OpSocket, openSideTab, reopenRoom, resultLine, Shots, SocketWatch, startServer, tapCell, waitFor, wholeInReach, type Server } from "./harness.ts";
 
 /**
  * Roll options and the group save (docs/design/design-v1-roll-options.md 11), on
@@ -113,6 +113,20 @@ function breeHp(): number | undefined {
 /** The Dice sheet on a phone. */
 function diceSheet(page: Page): Locator {
   return page.locator('dialog[data-rvtt-sheet][aria-label="Dice"]');
+}
+
+/** Scrolls the button's scroller until the button's foot is at its foot, so a question opened below it starts out of sight. */
+async function scrollToFoot(button: Locator): Promise<void> {
+  const room = await button.evaluate((el) => {
+    const styleOf = (e: unknown) => (globalThis as unknown as { getComputedStyle(e: unknown): { overflowY: string } }).getComputedStyle(e);
+    let box = el.parentElement;
+    while (box && !(/(auto|scroll)/.test(styleOf(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
+    if (!box) return null;
+    const zoom = box.getBoundingClientRect().height / box.offsetHeight;
+    box.scrollTop += (el.getBoundingClientRect().bottom - box.getBoundingClientRect().bottom) / zoom + 2;
+    return box.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom;
+  });
+  assert.ok(room !== null && room < 8, `the button sits at the panel's foot: ${room} px below it`);
 }
 
 /** The sheet's scrolling body as it shows on screen. */
@@ -909,17 +923,7 @@ describe("raccoon-vtt group save", { timeout: 300_000 }, () => {
     await sheet.waitFor();
     const groupSave = sheet.locator("[data-roll-options]").getByRole("button", { name: "Group save, DC 13 DEX" });
     await groupSave.waitFor();
-    // The button's foot at the scroller's foot, so the question it opens below it starts out of sight.
-    const room = await groupSave.evaluate((el) => {
-      const styleOf = (e: unknown) => (globalThis as unknown as { getComputedStyle(e: unknown): { overflowY: string } }).getComputedStyle(e);
-      let box = el.parentElement;
-      while (box && !(/(auto|scroll)/.test(styleOf(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
-      if (!box) return null;
-      const zoom = box.getBoundingClientRect().height / box.offsetHeight;
-      box.scrollTop += (el.getBoundingClientRect().bottom - box.getBoundingClientRect().bottom) / zoom + 2;
-      return box.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom;
-    });
-    assert.ok(room !== null && room < 8, `the button sits at the panel's foot: ${room} px below it`);
+    await scrollToFoot(groupSave);
     await groupSave.tap();
     const question = sheet.getByRole("alert").filter({ hasText: "Discard the Dexterity save for 2?" });
     await question.waitFor();
@@ -931,6 +935,62 @@ describe("raccoon-vtt group save", { timeout: 300_000 }, () => {
     await dm.keyboard.press("Enter");
     await question.waitFor({ state: "detached" });
     await sheet.locator("[data-open-group-save]").getByText(/^Dexterity save for 2: /).waitFor();
+  });
+
+  test("fu43a-gs-wide. the same question at 1440 x 900, in the Dice tab of the side panel, comes into view and takes focus on Keep it (FU42-OPUS-3)", async () => {
+    // The save fu42b-1 kept is still open on this page. The panel is no sheet here, so its scroller is the tab's own.
+    await dm.setViewportSize({ width: 1440, height: 900 });
+    try {
+      // Turned wide, the page closes the phone's sheet and the Dice tab of the side panel shows the same open save and the wyrmling's rolls.
+      await dm.getByRole("tablist", { name: "Panels" }).waitFor();
+      await openSideTab(dm, "Dice");
+      const panel = dm.getByRole("tabpanel", { name: /^Dice/ });
+      const groupSave = panel.locator("[data-roll-options]").getByRole("button", { name: "Group save, DC 13 DEX" });
+      await groupSave.waitFor();
+      await scrollToFoot(groupSave);
+      await groupSave.click();
+      const question = panel.getByRole("alert").filter({ hasText: "Discard the Dexterity save for 2?" });
+      await question.waitFor();
+      await waitFor("the question whole in view", async () => ((await wholeInReach(question)) ? true : null), 3_000);
+      assert.equal(await question.evaluate((el) => el.ownerDocument.activeElement?.textContent ?? null), "Keep it", "focus on the choice that loses nothing");
+      assert.deepEqual(alignmentLines(await measureAlignment(question), "the replace question at 1440 x 900 at 130%"), []);
+      await shots.take(dm, "fu43a-replace-confirm-in-view-wide");
+      await dm.keyboard.press("Enter");
+      await question.waitFor({ state: "detached" });
+      await panel.locator("[data-open-group-save]").getByText(/^Dexterity save for 2: /).waitFor();
+    } finally {
+      await dm.setViewportSize(PHONE);
+    }
+  });
+
+  test("fu43a-gs-cast. a player's ask for saves, opened on the DM's desk while the save is open, asks the same question in view and focuses Keep it (FU42-OPUS-3)", async () => {
+    const cookie = (await playerContext.cookies(server.origin)).map((c) => `${c.name}=${c.value}`).join("; ");
+    const asking = await OpSocket.open({ origin: server.origin, roomId: run.roomId, cookie });
+    const castId = uuidv7();
+    await dm.setViewportSize({ width: 1440, height: 900 });
+    try {
+      await asking.send({ t: "cast.ask", cast: { id: castId, caster: run.bree.id, sceneId: run.sceneId, spell: "Sacred Flame", targets: [run.goblins[0]!.id] } });
+      await dm.getByRole("tablist", { name: "Panels" }).waitFor();
+      // The DM's desk of asks lies over the map, apart from the Dice tab.
+      const card = dm.getByRole("group", { name: /Bree asks for saves: Sacred Flame/ });
+      await card.waitFor();
+      if ((await card.getByRole("button", { name: /Open/ }).count()) === 0) await card.getByRole("button", { expanded: false }).first().click();
+      await card.getByRole("button", { name: /Open/ }).click();
+      const question = card.getByRole("alert").filter({ hasText: "Discard the Dexterity save for 2?" });
+      await question.waitFor();
+      await waitFor("the question whole in view", async () => ((await wholeInReach(question)) ? true : null), 3_000);
+      assert.equal(await question.evaluate((el) => el.ownerDocument.activeElement?.textContent ?? null), "Keep it", "focus on the choice that loses nothing");
+      assert.deepEqual(alignmentLines(await measureAlignment(question), "the cast page's replace question at 1440 x 900 at 130%"), []);
+      await shots.take(dm, "fu43a-replace-confirm-cast-wide");
+      await question.getByRole("button", { name: "Keep it" }).click();
+      await question.waitFor({ state: "detached" });
+      await openSideTab(dm, "Dice");
+      await dm.getByRole("tabpanel", { name: /^Dice/ }).locator("[data-open-group-save]").getByText(/^Dexterity save for 2: /).waitFor();
+    } finally {
+      await asking.send({ t: "cast.close", castId, end: "dismissed" }).catch(() => undefined);
+      asking.close();
+      await dm.setViewportSize(PHONE);
+    }
   });
 
   test("8. nothing went wrong in the browsers", () => {
