@@ -50,21 +50,22 @@ export type MovedToken = {
 };
 
 /**
- * The walks in single file a trap's cut op carries (traps.ts cutOp, review
- * FU45B-ASTRA-01): each creature's own walk to where the trap step had it
- * at the stop, index by index with its holder's cut walk. The cut op lands
- * its holder full size where the stop stands full, so the op alone would
- * take them by their places, on walks neither the server's wall check nor
- * the trap step read. Only the reducer makes a cut op, and a symbol key
- * never comes off the wire, so no client can send one.
+ * What a trap's cut op carries (traps.ts cutOp): that it is one, since the
+ * trap step judged where every walk it read stops, and the walks in single
+ * file it keeps (review FU45B-ASTRA-01), each creature's own walk to where
+ * the trap step had it at the stop, index by index with its holder's cut
+ * walk. The cut op lands its holder full size where the stop stands full,
+ * so the op alone would take them by their places, on walks neither the
+ * server's wall check nor the trap step read. Only the reducer makes a cut
+ * op, and a symbol key never comes off the wire, so no client can send one.
  */
-const FILE_CUT: unique symbol = Symbol("fileCut");
+const TRAP_CUT: unique symbol = Symbol("trapCut");
 
-type FileCut = { readonly [FILE_CUT]?: ReadonlyMap<string, readonly Point[]> };
+type TrapCut = { readonly [TRAP_CUT]?: { readonly file: ReadonlyMap<string, readonly RoutePoint[]> | null } };
 
-/** `op` with the walks in single file its cut keeps (`FILE_CUT`). */
-export function withFileCut<T extends Op>(op: T, walks: ReadonlyMap<string, readonly Point[]>): T {
-  return { ...op, [FILE_CUT]: walks };
+/** `op` as a trap's cut (`TRAP_CUT`), with the walks in single file it keeps, each point at the height the trap step had it at. */
+export function withTrapCut<T extends Op>(op: T, file: ReadonlyMap<string, readonly RoutePoint[]> | null): T {
+  return { ...op, [TRAP_CUT]: { file } };
 }
 
 /** The op's envelope as the plan reads it: the version it was stored at, if any. */
@@ -205,12 +206,14 @@ export function planWalks(op: Op, before: RoomState, actor: Viewer, env: Version
   const groups = attaches(env.opVersion) ? moveGroups(before.tokens, [...names]) : new Map<string, string[]>();
   // A hidden creature in tow takes the stand test where a move leaves it, as the permission rule judges one every player sees (D-261101-274).
   const stands = (op.t === "token.move" || op.t === "token.moveMany") && hiddenTowStands(env.opVersion);
+  // On a trap's cut, one every player sees stands where the trap step's stop judged it, as its walker: no stand test moves it on.
+  const cut = (op as TrapCut)[TRAP_CUT];
   for (const n of named) {
     out.push({ tokenId: n.token.id, from: poseOf(n.token), to: n.to, route: n.route, trace: n.trace, how: n.how, pass: seen(n.token) ? "public" : "private", ...(n.squeezed ? { squeezed: true as const } : {}) });
     const members = groups.get(n.token.id) ?? [];
     if (members.length <= 1) continue;
     const shown = new Set(publicMembers(before.tokens, n.token.id, seen, names));
-    out.push(...followGroup(before, out[out.length - 1]!, members, (id, holderId) => shown.has(id) && shown.has(holderId), actor.role !== "dm", env, stands, (op as FileCut)[FILE_CUT]));
+    out.push(...followGroup(before, out[out.length - 1]!, members, (id, holderId) => shown.has(id) && shown.has(holderId), actor.role !== "dm", env, stands, cut?.file ?? undefined, cut ? seen : undefined));
   }
   return out.sort((a, b) => (a.tokenId < b.tokenId ? -1 : a.tokenId > b.tokenId ? 1 : 0));
 }
@@ -222,14 +225,15 @@ export function planWalks(op: Op, before: RoomState, actor: Viewer, env: Version
  * every player's. Where the walk lines them up in single file, or seats
  * its passengers apart, those are worked out for the group at once, the
  * public members before the rest, so no public place reads a hidden one.
- * `cut` is the walks in single file a trap's cut keeps (`FILE_CUT`).
+ * `cut` is the walks in single file a trap's cut keeps (`TRAP_CUT`), and
+ * `judged` on a trap's cut those whose stop the trap step judged.
  */
-function followGroup(before: RoomState, lead: MovedToken, members: readonly string[], isPublic: (id: string, holderId: string) => boolean, byPlayer: boolean, env: Versioned, stands = false, cut?: ReadonlyMap<string, readonly Point[]>): MovedToken[] {
+function followGroup(before: RoomState, lead: MovedToken, members: readonly string[], isPublic: (id: string, holderId: string) => boolean, byPlayer: boolean, env: Versioned, stands = false, cut?: ReadonlyMap<string, readonly RoutePoint[]>, judged?: (t: { id: string }) => boolean): MovedToken[] {
   const pub = (id: string) => {
     const link = before.tokens[id]?.attached;
     return link !== undefined && isPublic(id, link.to);
   };
-  const file = cut ?? singleFile(before, lead, members.slice(1), pub, env);
+  const file: ReadonlyMap<string, readonly FilePoint[]> | null = cut ?? singleFile(before, lead, members.slice(1), pub, env);
   const apart = new Map<string, Map<string, Point> | null>();
   const seatsOn = (holder: MovedToken) => {
     let seats = apart.get(holder.tokenId);
@@ -249,7 +253,7 @@ function followGroup(before: RoomState, lead: MovedToken, members: readonly stri
     while (up && !file?.has(up.tokenId) && up.carriedBy !== undefined) up = walked.get(up.carriedBy);
     const upOwn = up ? file?.get(up.tokenId) : undefined;
     const walk = own && up && upOwn ? behindStop(member, own, upOwn, up.route) : own;
-    const moved = follow(before, member, holderMove, pub(id), byPlayer, env, { file: walk, seats: seatsOn, stands });
+    const moved = follow(before, member, holderMove, pub(id), byPlayer, env, { file: walk, seats: seatsOn, stands: stands && judged?.(member) !== true });
     if (!moved) continue;
     walked.set(id, moved);
     out.push(moved);
@@ -299,7 +303,7 @@ function endSeatsApart(before: RoomState, holder: MovedToken, members: readonly 
  * own, on its own lattice, short rather than past it. Taken whole where
  * the holder walked its whole walk.
  */
-function behindStop(member: MovingToken, own: readonly Point[], holderOwn: readonly Point[], walked: readonly Point[]): readonly Point[] {
+function behindStop(member: MovingToken, own: readonly FilePoint[], holderOwn: readonly Point[], walked: readonly Point[]): readonly FilePoint[] {
   const m = walked.length - 1;
   if (m === 0) return own.slice(0, 1);
   const end = walked[m]!;
@@ -314,8 +318,11 @@ function behindStop(member: MovingToken, own: readonly Point[], holderOwn: reado
   return [...own.slice(0, m), at];
 }
 
+/** A point of a walk in single file, at the height a trap's cut read it at where it carries one (`TRAP_CUT`). */
+type FilePoint = Point & { elevation?: number };
+
 /** How a member follows: its single-file walk where it has one, the holder's squeezed seats apart, and whether a hidden one takes the stand test. */
-type Following = { file?: readonly Point[] | undefined; seats?: (holder: MovedToken) => Map<string, Point> | null; stands?: boolean };
+type Following = { file?: readonly FilePoint[] | undefined; seats?: (holder: MovedToken) => Map<string, Point> | null; stands?: boolean };
 
 function samePose(a: Pose, b: Pose): boolean {
   return a.sceneId === b.sceneId && a.x === b.x && a.y === b.y && a.elevation === b.elevation;
@@ -358,7 +365,8 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
   for (const [i, p] of holder.route.entries()) {
     if (i === 0) continue;
     const at = file?.[i] ?? { x: p.x + ox, y: p.y + oy };
-    route.push({ x: at.x, y: at.y, elevation: elevationAt(at.x, at.y, p.elevation) });
+    // On a trap's cut, at the height the trap step had it, which a creature that has not moved yet keeps (review FU45B-ASTRA-06).
+    route.push({ x: at.x, y: at.y, elevation: file?.[i]?.elevation ?? elevationAt(at.x, at.y, p.elevation) });
   }
   if (!isPublic && byPlayer && holder.how === "walk") route = stoppedAtWalls(before, member, route, holder.route, elevationAt, env, how.stands === true);
   const last = route[route.length - 1]!;

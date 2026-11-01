@@ -12,7 +12,7 @@ import { findRouteOn } from "../rules/hexWalk.ts";
 import { planMove } from "../rules/moveLeg.ts";
 import { offGridWallThrough, ownWalk, walkEnd } from "../rules/movement.ts";
 import { fileRoutes } from "../rules/route.ts";
-import { compareProgress, trapWalks } from "../rules/traps.ts";
+import { compareProgress, trapLandings, trapWalks } from "../rules/traps.ts";
 import { groupWalkWorld } from "../rules/walkWorld.ts";
 import { env, member, P1, P2, room, scene, token, trap } from "../testutil.ts";
 
@@ -278,6 +278,20 @@ describe("squares: what a holder drags follows it in single file where its move 
     const stop = walks.find((w) => w.tokenId === "horse")!.spots.filter((p) => p.x === 9 && p.y === 5).at(-1)!.progress;
     const seen = walks.find((w) => w.tokenId === "imp")!.spots.filter((p) => compareProgress(p.progress, stop) <= 0).at(-1)!;
     assert.deepEqual([r.state.tokens.imp!.x, r.state.tokens.imp!.y, r.state.tokens.imp!.attached?.to], [seen.x, seen.y, "horse"], "where the trap step had it, still in tow");
+  });
+
+  test("one in the file a trap's cut stops before it has moved stays as the trap step had it, its height too (review FU45B-ASTRA-06)", () => {
+    // The ogre stands on the horse's first corner, so its walk's first piece has no length, held up at 5 ft.
+    const s = towing(corridor(), "ogre", { size: "large", x: 4, y: 5, elevation: 5 });
+    s.traps.t1 = trap("t1", { zone: { cells: [{ x: 4, y: 5, w: 1, h: 2 }] }, rig: { on: ["enter"], who: "any", floor: true, resets: "never", stops: true, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } });
+    s.traps.t2 = trap("t2", { zone: { cells: [{ x: 5, y: 5, w: 1, h: 1 }] }, rig: { on: ["enter"], who: "any", floor: true, resets: "never", stops: false, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false } });
+    const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 9.5, y: 5.5, squeeze: true, route: [[4, 5, 1, 0], [4.5, 5.5, 1, 0], [9.5, 5.5, 2, 0]] };
+    const after = served(s, op);
+    assert.deepEqual([after.tokens.horse!.x, after.tokens.horse!.y], [3, 5], "stopped on the trap");
+    const ogre = after.tokens.ogre!;
+    assert.deepEqual([ogre.x, ogre.y, ogre.elevation], [4, 5, 5], "not yet walked, so where and as high as it stood");
+    assert.deepEqual(trapLandings(op, s, P1, {}).get("ogre"), { x: 4, y: 5, elevation: 5 }, "as the trap step had it");
+    assert.equal(after.traps.t2!.state, "armed", "so the floor trap below it stays armed, as the trap step saw it");
   });
 
   test("what carries one in the file is walked with it, moved or not, so the file is one trap group and a trap stops the horse (review FU45B-ASTRA-07)", () => {
