@@ -538,6 +538,8 @@ type Walk = {
   holder?: Walk;
   /** Its spots: the group's own at its step plus this offset, or its own walk's with none. */
   spots: readonly WalkSpot[];
+  /** Whether it walks a route of its own, not its group's walk offset by its place. */
+  own: boolean;
   ox: number;
   oy: number;
   step: number;
@@ -689,6 +691,7 @@ function walksOf(op: Op, before: RoomState, entries: readonly MovedToken[], seen
         ...(holder ? { holder } : {}),
         // A member on a route of its own is a creature its holder drags beside it, which walks as itself (moveLeg.ts stoppedAtWalls).
         spots: shared ? base(mine) : e.how === "teleport" ? twoSpots(e.route) : routeWalk(grid, e.trace, build, mine),
+        own: !shared,
         ox: shared ? ox : 0,
         oy: shared ? oy : 0,
         step: mine,
@@ -1635,10 +1638,14 @@ function cutOp(op: Op, walks: Walks, stops: ReadonlyMap<string, Stop>, before: R
       const pieces = route ? cutRoute(route, at.progress, at) : [];
       const cut = pieces.length > 0 ? { ...next, route: pieces as [number, number, number, 0 | 1][] } : next;
       // A walk with no route is one straight piece, so the cut walk has a point more than its pieces, and two at the least.
-      const file = fileCut(walks, op.tokenId, stops.get(op.tokenId)!, Math.max(pieces.length, 1) + 1);
-      return withTrapCut(cut, new Set(stops.keys()), file);
+      const points = Math.max(pieces.length, 1) + 1;
+      const stop = stops.get(op.tokenId)!;
+      return withTrapCut(cut, new Set(stops.keys()), walksToStop(walks, op.tokenId, stop, points, inSingleFile), ownWalksToStop(walks, op.tokenId, stop, points));
     }
-    case "token.moveMany":
+    case "token.moveMany": {
+      // Each named token of a group move walks one straight piece, so each cut walk has two points.
+      const own = new Map<string, RoutePoint[]>();
+      for (const [named, stop] of stops) for (const [id, route] of ownWalksToStop(walks, named, stop, 2) ?? []) own.set(id, route);
       return withTrapCut(
         {
           ...op,
@@ -1649,28 +1656,48 @@ function cutOp(op: Op, walks: Walks, stops: ReadonlyMap<string, Stop>, before: R
         },
         new Set(stops.keys()),
         null,
+        own.size > 0 ? own : null,
       );
+    }
     default:
       return op;
   }
 }
 
+/** Whether a walk is one in single file (moveLeg.ts singleFile). */
+function inSingleFile(walk: Walk): boolean {
+  return walk.entry.file === true;
+}
+
 /**
- * The walks of a stopped group's creatures in single file to the stop
- * (moveLeg.ts withTrapCut, review FU45B-ASTRA-01): each its own walk to its
- * latest spot at or before the stop, where the stop judged it stands and
- * the springings read it, so the cut moves them where the trap step had
- * them, never by their places, each at the height the trap step had it at
- * there, so one that has not moved yet keeps its own (review
- * FU45B-ASTRA-06). Each takes `points` points, index by index with its
- * holder's cut walk, holding at its spot once there. Null where none walks
- * in single file.
+ * The walks of their own a trap's cut keeps beside those in single file
+ * (moveLeg.ts withTrapCut, review FU45B-ASTRA-10): from op version 38 (migrate.ts
+ * stopsStandClear), each walker every player sees on a route of its own,
+ * as one a holder they cannot see drags. The stop judged its stand there,
+ * so the cut lands it there, never by its holder's cut and its place, where
+ * no stand test judged it. Null where none walks so.
  */
-function fileCut(walks: Walks, named: string, stop: Stop, points: number): Map<string, RoutePoint[]> | null {
+function ownWalksToStop(walks: Walks, named: string, stop: Stop, points: number): Map<string, RoutePoint[]> | null {
+  if (!stopsStandClear(walks.opVersion)) return null;
+  return walksToStop(walks, named, stop, points, (walk) => walk.isPublic && walk.walker && walk.own && !inSingleFile(walk));
+}
+
+/**
+ * The walks of a stopped group's creatures that `keeps` takes, such as those
+ * in single file, to the stop (moveLeg.ts withTrapCut, review
+ * FU45B-ASTRA-01): each its own walk to its latest spot at or before the
+ * stop, where the stop judged it stands and the springings read it, so the
+ * cut moves them where the trap step had them, never by their places, each
+ * at the height the trap step had it at there, so one that has not moved
+ * yet keeps its own (review FU45B-ASTRA-06). Each takes `points` points,
+ * index by index with its holder's cut walk, holding at its spot once
+ * there. Null where none walks so.
+ */
+function walksToStop(walks: Walks, named: string, stop: Stop, points: number, keeps: (walk: Walk) => boolean): Map<string, RoutePoint[]> | null {
   const group = walks.groups.get(named);
   const out = new Map<string, RoutePoint[]>();
   for (const walk of walks.all) {
-    if (walk.group !== group || walk.entry.file !== true) continue;
+    if (walk.group !== group || !keeps(walk)) continue;
     const j = latestIndex(walk.spots, stop.s);
     const spot = spotAt(walk, j);
     const [piece, k] = spot.progress;

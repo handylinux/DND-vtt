@@ -118,6 +118,31 @@ describe("a hidden creature in tow stands where no wall passes through its box (
     assert.equal(offGridWallThrough(r.state, walkEnd(r.state, ownWalk({ ...brute, x: 16.5 }), brute)), false, "clear of the wall");
   });
 
+  test("where a trap stops its group, one every player sees that a hidden creature drags lands where the stop judged it stands, not by its holder's cut and its place (review FU45B-ASTRA-10)", () => {
+    const s = room({ members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2") }, scenes: { s1: scene("s1", { bounds: { w: 30, h: 20 }, blockMovement: true, autoWalls: "off" }) } });
+    s.buildChunks = {};
+    wall(s, "fu45bh000003", [21, 14], [21, 16]);
+    // Pat's fighter drags a hidden rat, which drags the brute every player sees, half a square off the grid toward the wall.
+    s.tokens.pc = token("pc", { x: 16, y: 13, name: "Pc", kind: "pc", ownerIds: ["p1"] });
+    s.tokens.rat = token("rat", { x: 15.5, y: 14, name: "Rat", kind: "npc", ownerIds: [], visibility: "dm", attached: { to: "pc", kind: "drag" } });
+    s.tokens.brute = token("brute", { size: "large", x: 16.5, y: 14, name: "Brute", kind: "npc", ownerIds: [], attached: { to: "rat", kind: "drag" } });
+    s.tokens.pc2 = token("pc2", { x: 2, y: 2, name: "Pc2", kind: "pc", ownerIds: ["p1"] });
+    // A trap on the fighter's way that stops it on its square.
+    s.traps.t2 = trap("t2", { zone: { cells: [{ x: 19, y: 13, w: 1, h: 1 }] } });
+    const ops: Op[] = [
+      { t: "token.move", tokenId: "pc", x: 21, y: 13 },
+      { t: "token.moveMany", moves: [{ tokenId: "pc", x: 21, y: 13 }, { tokenId: "pc2", x: 8, y: 2 }] },
+    ];
+    for (const op of ops) {
+      assert.ok(canApply(op, P1, s, { canUseAsset: () => true }).ok, op.t);
+      const r = after(s, op, undefined);
+      assert.deepEqual([r.state.tokens.pc!.x, r.state.tokens.pc!.y], [19, 13], `${op.t}: the trap stops the fighter`);
+      const brute = r.state.tokens.brute!;
+      assert.deepEqual([brute.x, brute.y], [17.5, 14], `${op.t}: where the trap step had it at the stop`);
+      assert.equal(offGridWallThrough(r.state, walkEnd(r.state, ownWalk({ ...brute, x: 16.5 }), brute)), false, `${op.t}: clear of the wall`);
+    }
+  });
+
   test("on ground every player sees, a trap's stop stands a Large walker half a square off its grid only clear of the walls, as the move's own stand test does (review FU45B-ASTRA-10)", () => {
     const s = room({ members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2") }, scenes: { s1: scene("s1", { bounds: { w: 30, h: 20 }, blockMovement: true, autoWalls: "off" }) } });
     s.buildChunks = {};
