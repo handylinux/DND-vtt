@@ -21,6 +21,8 @@ const base = [
   chunk("Room.js", ["../../client/pages/Room.tsx"], 'import{x}from"./room.js";'),
   chunk("room.js", ["../../client/canvas/Stage.tsx"]),
   chunk("DicePanel.js", ["../../client/features/dice/DicePanel.tsx"], 'import{t}from"./theme.js";const s=()=>import("./stage.js");'),
+  chunk("TokenPanel.js", ["../../client/panels/TokenPanel.tsx"], 'import{t}from"./theme.js";'),
+  chunk("CharactersPanel.js", ["../../client/features/tokens/CharactersPanel.tsx"], 'import{t}from"./theme.js";'),
 ];
 
 describe("the dice chunk's post-build check", () => {
@@ -42,5 +44,15 @@ describe("the dice chunk's post-build check", () => {
     assert.match(checkThree(build(imported)).problems.join("\n"), /math\.js loads with/);
     assert.match(checkThree(build([...base, chunk("a.js", [THREE]), chunk("b.js", [THREE])])).problems.join("\n"), /in 2 chunks/);
     assert.match(checkThree(build(base)).problems.join("\n"), /in 0 chunks/);
+  });
+
+  test("fails three in the Token or Characters panel's chunk, or in one they import, and either chunk missing", () => {
+    for (const [file, name] of [["TokenPanel.js", "Token panel"], ["CharactersPanel.js", "Characters panel"]] as const) {
+      const inPanel = base.map((c) => (c.file === file ? { ...c, sources: [...c.sources, THREE] } : c));
+      assert.match(checkThree(build(inPanel)).problems.join("\n"), new RegExp(`loads with the ${name}`), name);
+      const imported = base.map((c) => (c.file === file ? chunk(file, c.sources, 'import{t}from"./math.js";') : c));
+      assert.match(checkThree(build([...imported, chunk("math.js", [THREE])])).problems.join("\n"), /math\.js loads with/, name);
+      assert.match(checkThree(build([...base.filter((c) => c.file !== file), chunk("stage.js", [THREE])])).problems.join("\n"), new RegExp(`no ${name} chunk found`), name);
+    }
   });
 });

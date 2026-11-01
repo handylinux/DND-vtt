@@ -10,7 +10,8 @@ import { brotliCompressSync, gzipSync } from "node:zlib";
  * (client/features/dice/throw/lazyThree.test.ts) holds the imports, and
  * this reads what the build made of them: exactly one chunk holds three's
  * renderer, and it is none of the entry, Room, room and Dice panel chunks,
- * nor any chunk they import. It prints that chunk's size and the room's
+ * nor the Token and Characters panels', whose stat blocks throw dice too
+ * (docs/design/design-v1-token-roll-header.md 4.4), nor any chunk they import. It prints that chunk's size and the room's
  * first load, so a change to either shows in CI's log.
  *
  * `node scripts/three-chunk.ts [dist]` exits 1 when the rule breaks.
@@ -54,7 +55,13 @@ export function closure(chunks: ReadonlyMap<string, Chunk>, from: readonly strin
 }
 
 const THREE = /(^|\/)node_modules\/(\.pnpm\/[^/]+\/node_modules\/)?three\/build\/three\.module\.js$/;
-const NAMED = { Room: /client\/pages\/Room\.tsx$/, room: /client\/canvas\/Stage\.tsx$/, "Dice panel": /client\/features\/dice\/DicePanel\.tsx$/ } as const;
+const NAMED = {
+  Room: /client\/pages\/Room\.tsx$/,
+  room: /client\/canvas\/Stage\.tsx$/,
+  "Dice panel": /client\/features\/dice\/DicePanel\.tsx$/,
+  "Token panel": /client\/panels\/TokenPanel\.tsx$/,
+  "Characters panel": /client\/features\/tokens\/CharactersPanel\.tsx$/,
+} as const;
 
 export type Check = { problems: string[]; stage: string | null; firstLoad: Set<string> };
 
@@ -73,7 +80,7 @@ export function checkThree(build: { entry: string; chunks: ReadonlyMap<string, C
     chunks,
     named.map(([, file]) => file),
   );
-  for (const file of holding) if (loaded.has(file)) problems.push(`three's chunk ${file} loads with the ${named.find(([, f]) => f === file)?.[0] ?? "entry, Room, room or Dice panel"} chunks`);
+  for (const file of holding) if (loaded.has(file)) problems.push(`three's chunk ${file} loads with the ${named.find(([, f]) => f === file)?.[0] ?? "entry, Room, room, Dice panel, Token panel or Characters panel"} chunks`);
   const firstLoad = closure(chunks, [entry, ...named.filter(([n]) => n === "Room" || n === "room").map(([, f]) => f)]);
   return { problems, stage: holding.length === 1 ? holding[0]! : null, firstLoad };
 }
