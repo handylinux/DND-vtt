@@ -1636,7 +1636,7 @@ function cutOp(op: Op, walks: Walks, stops: ReadonlyMap<string, Stop>, before: R
       const cut = pieces.length > 0 ? { ...next, route: pieces as [number, number, number, 0 | 1][] } : next;
       // A walk with no route is one straight piece, so the cut walk has a point more than its pieces, and two at the least.
       const file = fileCut(walks, op.tokenId, stops.get(op.tokenId)!, Math.max(pieces.length, 1) + 1);
-      return withTrapCut(cut, file);
+      return withTrapCut(cut, new Set(stops.keys()), file);
     }
     case "token.moveMany":
       return withTrapCut(
@@ -1647,6 +1647,7 @@ function cutOp(op: Op, walks: Walks, stops: ReadonlyMap<string, Stop>, before: R
             return at ? { ...m, x: at.x, y: at.y, elevation: at.elevation } : m;
           }),
         },
+        new Set(stops.keys()),
         null,
       );
     default:
