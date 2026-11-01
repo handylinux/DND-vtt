@@ -223,3 +223,19 @@ test("a plain HP death-save result keeps the base words without empty mode punct
     assert.equal(status, face === 20 ? "20, Natural 20" : "8");
   }
 });
+
+// The pips of a reader who cannot edit are natively disabled yet show a state, so they keep their colors. The mark tells the app's disabled-look sweep (D-261101-302).
+test("death save pips a reader cannot change carry the read-only mark, and editable ones do not", () => {
+  const draw = (canEdit: boolean) => {
+    const store = createStore(() => ({ view: room({}), you: DM, connection: "open", sceneId: "s1", local: { selectedIds: [], multi: false } }));
+    const saves = createElement(DeathSaves, { saves: { ok: 1, fail: 0 }, canEdit, onChange() {} });
+    return renderToStaticMarkup(createElement(RoomProvider, { store: store as never, actions: {} as never, ui: {} as never, children: createElement(RoomScopeProvider, { scope: new RoomScope(), children: saves }) }));
+  };
+  const pips = (markup: string) => [...markup.matchAll(/<button[^>]*aria-label="(?:Successes|Failures): set to \d"[^>]*>/g)].map((m) => m[0]);
+  const reading = pips(draw(false));
+  assert.equal(reading.length, 6);
+  for (const pip of reading) assert.match(pip, /disabled="" data-disabled-look="readonly"/);
+  const editing = pips(draw(true));
+  assert.equal(editing.length, 6);
+  for (const pip of editing) assert.doesNotMatch(pip, /data-disabled-look|disabled=""/);
+});

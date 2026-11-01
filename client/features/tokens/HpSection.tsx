@@ -601,6 +601,8 @@ export function DeathSaves(props: { saves: { ok: number; fail: number }; canEdit
         key={`${kind}${i}`}
         type="button"
         disabled={!props.canEdit}
+        // A pip shows a state the reader may not change, so it keeps its colors (D-261101-302). The mark tells the disabled-look sweep.
+        data-disabled-look={props.canEdit ? undefined : "readonly"}
         aria-label={`${kind === "ok" ? "Successes" : "Failures"}: set to ${next}`}
         onClick={() => (kind === "ok" ? props.onChange(next, fail) : props.onChange(ok, next))}
         style={{

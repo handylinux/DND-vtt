@@ -113,6 +113,9 @@ export function XCardButton() {
         type="button"
         onClick={() => void send()}
         disabled={sending}
+        // Sending is a busy state, so the card keeps its color (D-261101-302). The mark tells the disabled-look sweep.
+        data-disabled-look={sending ? "busy" : undefined}
+        aria-busy={sending || undefined}
         aria-label={sending ? "Sending the X-card" : "Send the X-card"}
         style={{
           display: "grid",
