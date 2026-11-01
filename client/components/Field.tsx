@@ -1,5 +1,6 @@
 import { createContext, useContext, useId, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { theme } from "../lib/theme.ts";
+import { useHeld } from "./Held.tsx";
 
 /**
  * The look of every text, number and select field (docs/design/design-v1-visual.md
@@ -55,12 +56,14 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement> & { ref?: Ref
   const { error, style, ...rest } = props;
   const number = props.type === "number";
   const describedBy = useRowHint(props["aria-describedby"]);
+  const disabled = useHeld(props.disabled);
   return (
     <input
       aria-invalid={error ? true : undefined}
       {...rest}
+      disabled={disabled}
       aria-describedby={describedBy}
-      style={{ ...fieldStyle({ error, disabled: props.disabled }), ...(number ? { width: NUMBER_FIELD_WIDTH, textAlign: "right", fontVariantNumeric: "tabular-nums" } : null), ...style }}
+      style={{ ...fieldStyle({ error, disabled }), ...(number ? { width: NUMBER_FIELD_WIDTH, textAlign: "right", fontVariantNumeric: "tabular-nums" } : null), ...style }}
     />
   );
 }
@@ -69,20 +72,23 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement> & { ref?: Ref
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement> & { ref?: Ref<HTMLSelectElement>; error?: boolean }) {
   const { error, style, ...rest } = props;
   const describedBy = useRowHint(props["aria-describedby"]);
-  return <select aria-invalid={error ? true : undefined} {...rest} aria-describedby={describedBy} style={{ ...fieldStyle({ error, disabled: props.disabled }), ...style }} />;
+  const disabled = useHeld(props.disabled);
+  return <select aria-invalid={error ? true : undefined} {...rest} disabled={disabled} aria-describedby={describedBy} style={{ ...fieldStyle({ error, disabled }), ...style }} />;
 }
 
 /** A text area in the field look, growing from three lines. */
 export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement> & { ref?: Ref<HTMLTextAreaElement>; error?: boolean }) {
   const { error, style, ...rest } = props;
   const describedBy = useRowHint(props["aria-describedby"]);
+  const disabled = useHeld(props.disabled);
   return (
     <textarea
       aria-invalid={error ? true : undefined}
       rows={3}
       {...rest}
+      disabled={disabled}
       aria-describedby={describedBy}
-      style={{ ...fieldStyle({ error, disabled: props.disabled }), padding: `${theme.space(2)}px ${theme.space(3)}px`, lineHeight: theme.leading.body, resize: "vertical", ...style }}
+      style={{ ...fieldStyle({ error, disabled }), padding: `${theme.space(2)}px ${theme.space(3)}px`, lineHeight: theme.leading.body, resize: "vertical", ...style }}
     />
   );
 }
@@ -99,6 +105,7 @@ export function Field(
   const { label, hint, error, trailing, style, ...rest } = props;
   const id = useId();
   const hintId = `${id}-hint`;
+  const disabled = useHeld(props.disabled);
   return (
     // The column may be narrower than the input's own width (about 20 characters), so a field in a narrow pane shrinks rather than running past its edge.
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(1) }}>
@@ -111,7 +118,8 @@ export function Field(
           aria-describedby={hint || error ? hintId : undefined}
           aria-invalid={error ? true : undefined}
           {...rest}
-          style={{ flex: 1, ...fieldStyle({ error: !!error, disabled: props.disabled }), ...style }}
+          disabled={disabled}
+          style={{ flex: 1, ...fieldStyle({ error: !!error, disabled }), ...style }}
         />
         {trailing}
       </div>

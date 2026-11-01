@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useRef, type ReactNode, type Ref } from "react";
 import { theme } from "../lib/theme.ts";
+import { useHeld } from "./Held.tsx";
 
 /**
  * A native checkbox at 22 px in a full-width row, so the whole line is the
@@ -38,8 +39,9 @@ export function Checkbox(props: {
   const helpId = useId();
   const box = useRef<HTMLInputElement | null>(null);
   const indeterminate = props.indeterminate === true;
-  const held = props["aria-disabled"] === true && !props.disabled;
-  const off = props.disabled === true || held;
+  const disabled = useHeld(props.disabled);
+  const kept = props["aria-disabled"] === true && !disabled;
+  const off = disabled || kept;
   const latest = useRef(indeterminate);
   latest.current = indeterminate;
   /*
@@ -65,16 +67,16 @@ export function Checkbox(props: {
       name={props.name}
       value={props.value}
       checked={props.checked}
-      disabled={props.disabled}
-      aria-disabled={held ? true : undefined}
+      disabled={disabled}
+      aria-disabled={kept ? true : undefined}
       // A click on the box or its row would toggle it before React could hold it, so the click itself is cancelled.
-      onClick={held ? (e) => e.preventDefault() : undefined}
+      onClick={kept ? (e) => e.preventDefault() : undefined}
       // Named by the label alone, with the help as its description, though the whole row is the label that takes the tap.
       aria-labelledby={props.help ? labelId : undefined}
       aria-describedby={props.help ? helpId : undefined}
       onChange={(e) => {
         const el = e.currentTarget;
-        if (held) return;
+        if (kept) return;
         props.onChange(el.checked);
         queueMicrotask(() => {
           el.indeterminate = latest.current;

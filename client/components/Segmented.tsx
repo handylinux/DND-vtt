@@ -4,6 +4,7 @@ import { theme } from "../lib/theme.ts";
 import { choiceLook } from "./looks.ts";
 import { useMeasuring } from "./measuring.ts";
 import { Help } from "./Panel.tsx";
+import { useHeld } from "./Held.tsx";
 
 export type SegmentedOption<T extends string | number> = {
   value: T;
@@ -76,6 +77,7 @@ export function Segmented<T extends string | number>(props: {
 }) {
   const name = useId();
   const descriptionId = useId();
+  const groupOff = useHeld(props.disabled);
   const described = props.description !== undefined && props.description !== null;
   // A measuring copy draws the options alone: a radio there would join this group's name and uncheck the real choice.
   const measuring = useMeasuring();
@@ -85,13 +87,13 @@ export function Segmented<T extends string | number>(props: {
       aria-label={props.labelledBy ? undefined : props.label}
       aria-labelledby={props.labelledBy}
       aria-describedby={[described ? descriptionId : null, props.describedBy || null].filter(Boolean).join(" ") || undefined}
-      aria-disabled={props.disabled ? true : undefined}
+      aria-disabled={groupOff ? true : undefined}
       className={props.even ? evenClass(props.options.length, props.wrap === true) : undefined}
       style={{ display: "flex", flexWrap: props.even ? "nowrap" : "wrap", gap: theme.space(1), minWidth: 0, ...(props.even || described ? null : props.style) }}
     >
       {props.options.map((o) => {
         const chosen = o.value === props.value;
-        const disabled = props.disabled === true || o.disabled === true;
+        const disabled = groupOff || o.disabled === true;
         return (
           <label
             key={String(o.value)}

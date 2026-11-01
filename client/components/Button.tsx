@@ -5,6 +5,7 @@ import { Spinner } from "./Loading.tsx";
 import { addsWords, useTooltip } from "./Tooltip.tsx";
 import { isCoarsePointer } from "../lib/device.ts";
 import { buttonLook, dangerLook, type ButtonVariant } from "./looks.ts";
+import { useHeld } from "./Held.tsx";
 
 export type { ButtonVariant } from "./looks.ts";
 
@@ -106,8 +107,9 @@ function wordsOf(children: ReactNode): string | undefined {
  * destructive actions, and `armed` marks one that waits for its second tap.
  */
 export function Button(props: ButtonProps) {
-  const { tooltipHold, variant = "secondary", size = "md", block, armed, pressed, expanded, busy, icon, iconOnly, title, style, disabled, onClick, children, onPointerEnter, onPointerLeave, onPointerDown, onPointerUp, onPointerCancel, onClickCapture, onFocus, onBlur, ...rest } = props;
-  const ignore = busy === true && disabled !== true;
+  const { tooltipHold, variant = "secondary", size = "md", block, armed, pressed, expanded, busy, icon, iconOnly, title, style, disabled: ownDisabled, onClick, children, onPointerEnter, onPointerLeave, onPointerDown, onPointerUp, onPointerCancel, onClickCapture, onFocus, onBlur, ...rest } = props;
+  const disabled = useHeld(ownDisabled);
+  const ignore = busy === true && !disabled;
   const bare = icon !== undefined && (iconOnly === "always" || (iconOnly === "fine" && !isCoarsePointer()));
   const name = rest["aria-label"] ?? wordsOf(children);
   // An icon alone shows its name on hover, keyboard focus and a long press (Tooltip.tsx), never the native title, which a keyboard never shows.

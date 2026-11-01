@@ -1,6 +1,7 @@
 import { useId, type MouseEvent, type ReactNode, type Ref } from "react";
 import { theme } from "../lib/theme.ts";
 import { Spinner } from "./Loading.tsx";
+import { useHeld } from "./Held.tsx";
 
 /**
  * A setting that is on or off and takes effect at once
@@ -25,7 +26,8 @@ export function Switch(props: {
 }) {
   const nameId = useId();
   const helpId = useId();
-  const { checked, disabled, busy } = props;
+  const { checked, busy } = props;
+  const disabled = useHeld(props.disabled);
   const nameColor = disabled ? theme.color.textDisabled : theme.color.text;
   return (
     <button
