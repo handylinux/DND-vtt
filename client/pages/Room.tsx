@@ -12,7 +12,6 @@ import {
   DEFAULT_CHROME,
   EDGE,
   freeArea,
-  nextToastPlaces,
   NO_TOAST_PLACES,
   noticePlace,
   paneToastTop,
@@ -41,7 +40,7 @@ import { SheetHeader } from "../components/SheetHeader.tsx";
 import { addsWords, useTooltip } from "../components/Tooltip.tsx";
 import { QuietLoadNotice } from "./QuietLoadNotice.tsx";
 import { ToastNote, toastPortals, toastRow, toastStacks, useToastStack } from "./ToastParts.tsx";
-import { measureMapToasts, noticesDock, placeRoomToasts, settleToastHosts, sheetToastsToDismiss, toastHostOf, toastLists, toastPortalKey } from "./toastPlacement.ts";
+import { measureMapToasts, noticesDock, placeRoomToasts, settleToastHosts, sheetToastsToDismiss, toastHostOf, toastLists } from "./toastPlacement.ts";
 import { BlackoutChip } from "./BlackoutChip.tsx";
 import { Loading } from "../components/Loading.tsx";
 import { ScrollStrip } from "../components/ScrollStrip.tsx";
