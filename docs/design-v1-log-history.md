@@ -25,7 +25,7 @@ There is no numeric ordering index and no audience index on this table today.
 `commitBatch` writes the op and every settled archive line in one transaction (`server/rooms/persistence.ts:196`, `:221`, `:346`).
 Inserts use conflict handling, so retry does not duplicate a line.
 Imports archive the complete remapped input and put only its bounded rings in the snapshot (`server/rooms/importRoom.ts:251`, `:267`).
-`loadRoom` repairs older imports from surviving seq-0 snapshot lines, unless any are already archived or the archive holds at least 10,000 rows (`server/rooms/persistence.ts:80`).
+`loadRoom` repairs older imports from surviving seq-0 snapshot lines, unless any are already archived or the archive holds at least 10,000 rows (`server/rooms/persistence.ts:80`). Since LP27-LOG-1 an import keeps each line's op seq (section 7.4).
 
 ### 1.2 Retention, pages and sessions
 
@@ -375,3 +375,13 @@ Server A and server B shipped first, by `ff48d3ef`, and the client lane after th
 - The admin Rooms card says: "A room's size is what it takes on disk: every image it holds and its whole log. An image two rooms share counts in both. Its storage quota, which can stop uploads and make the room read-only, leaves the log out." Measuring the card at a phone's width found a room's Pinned and Read-only tags wrapping alone under its buttons, at half their height, so the tags now take a line of their own above them.
 - The Log's top controls keep their layout from before this work. On a narrow phone at a large interface size Chat only stands under Show older and Export, and the alignment sweep measures the list, Show older and the row under a parted window rather than that row.
 - Tests: a seeded randomized unit of the window (60 seeds of 400 events: older and newer pages, Back to latest, viewer changes, live growth with jumps past the ring, a live log that empties and fills again, trap lines, failures, late and foreign answers), checking order, no duplicates, the 500-row bound, one unbroken run of the viewer's readable lines, the start said only at the start, the anchor row kept and empty pages changing nothing, plus fixed cases for each rule. 33 mutants of the window, the busy retry, the 8 MiB ceiling and the session keys were killed. The phone navigation target of 4.3 was not benchmarked.
+
+### 7.4 Imported line order (LP27-LOG-1)
+
+An import numbered every line at seq 0, each audience in its own range, so an imported room read audience by audience: the DM's lines after every shared line on the live Log, Show older's pages and each export, and each evening listed twice. Decision D-261101-050.
+
+- `remapState` (server/rooms/remap.ts) keeps each line's op seq and numbers the lines again within each op, as the reducer writes them: the shared lines, whispers and players' trap lines from 0 in the old order, each reader's party copies in their run on the new roster, and the DM's lines, trap lines and occurrences from DM_LINE_BASE. A line players may get that does not come through leaves no number in its op. Audience ranges, streams and projection are unchanged, so no reader gains a line.
+- The room's first snapshot is written at `lastLineSeq`, the newest seq the file's lines name, so the room's own ops count on after it and no id collides. A file naming a seq past 2^48 is refused (`bad_room_json`, field `state.log`), so the room's seq stays an exact integer.
+- This needed the import-seeding marker section 3.3 dropped: `rooms.imported_seq` holds the start seq, and `loadRoom` repairs the snapshot lines at or below it (seq 0 when null, as before) under the same guards. Without it, an import made while the disk was short would never get its lines archived.
+- Rooms imported before this keep their seq-0 lines and their order. Repairing them (LOG-1-REPAIR) is a follow-up.
+- Tests: remap units for per-op numbering, party runs and trap lines, and an integration test of a three-evening backup with DM-only lines, a party copy and whispers: the DM's and each player's pages read in time order with exactly the lines they read in the old room, each evening once in Sessions, each evening's file and Everything.
