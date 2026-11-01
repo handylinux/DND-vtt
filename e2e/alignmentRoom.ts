@@ -7048,10 +7048,12 @@ export function logHistoryTests(): void {
         // The admin Rooms card: its size hint, and a room whose long name, size and tags wrap.
         const admin = await page.context().newPage();
         try {
+          // fu43d-admin-storage: the archive warning (LOG-OPUS-18) at its longest wording, beside the Rooms card.
           await admin.route("**/api/admin/storage", (route) => route.fulfill({ json: {
             volume: null, databaseBytes: 0, images: { count: 0, bytes: 0 },
             cleanup: { waiting: { count: 0, bytes: 0 }, trash: { files: 0, bytes: 0 } },
             backup: { last: null, lastGood: null, warning: null },
+            archiveWarning: "Free space on the database's disk (3.0 GB) is near its 2.1 GB floor. Under it, log lines are not archived and images cannot be uploaded in any room. The largest log archive is the room The Sunless Citadel, with a name long enough to wrap (ABCD-2345), at 1.2 GB.",
           } }));
           await admin.route("**/api/admin/rooms", (route) => route.fulfill({ json: { rooms: [
             { id: run.roomId, name: "The Sunless Citadel, with a name long enough to wrap", createdAt: "2026-09-01T19:00:00Z", lastActiveAt: "2026-10-29T22:48:00Z", bytes: 1_234_567_890, images: 42, loaded: true, sockets: 3, pinned: true, readOnly: true },
@@ -7064,6 +7066,11 @@ export function logHistoryTests(): void {
           if (scale !== 1) await card.evaluate((el, z) => { (el as unknown as { style: { zoom: string } }).style.zoom = String(z); }, scale);
           await sweep.measure(admin, "admin-rooms", card);
           await shots.take(admin, `logc-${at}-admin-rooms`);
+          const storage = admin.locator("section").filter({ has: admin.getByRole("heading", { name: "Storage", exact: true }) });
+          await storage.getByRole("alert").filter({ hasText: /^Free space on the database's disk/ }).waitFor();
+          if (scale !== 1) await storage.evaluate((el, z) => { (el as unknown as { style: { zoom: string } }).style.zoom = String(z); }, scale);
+          await sweep.measure(admin, "fu43d-admin-storage", storage);
+          await shots.take(admin, `fu43d-${at}-admin-storage`);
         } finally {
           await admin.close();
           sweep.tally();
