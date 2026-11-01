@@ -1235,7 +1235,7 @@ export function projectToken(state: RoomState, viewer: Viewer, token: Token, opt
  */
 function projectTokenCtx(ctx: Ctx, token: Token): ProjectedToken | null {
   if (!tokenVisibleTo(ctx, token)) return null;
-  const marked = seenAllMarked(ctx.state.scenes[token.sceneId], ctx.viewer.role) && !withheldWhereItStands(ctx.state, token);
+  const marked = seenAllMarked(ctx.state.scenes[token.sceneId], ctx.viewer.role) && seenByAllCtx(ctx, token);
   if (ctx.viewer.role === "dm") return marked ? markedCopy(token) : token;
   const out = projectPlayerToken(ctx, token);
   if (marked) out.seenAll = true;
@@ -1251,6 +1251,13 @@ function projectTokenCtx(ctx: Ctx, token: Token): ProjectedToken | null {
 export function seenAllMarked(scene: Pick<Scene, "vision" | "fogEnabled" | "gridShape"> | undefined, role: Viewer["role"]): boolean {
   if (!scene || !isHex(sceneGrid(scene))) return false;
   return perPlayerScene(scene) || (role === "dm" && scene.fogEnabled);
+}
+
+/** Seen by all where it stands: by the shared class's copy of the walls, or by the build's for an op stored before op version 37 (Ctx `held`). */
+function seenByAllCtx(ctx: Ctx, token: Token): boolean {
+  if (ctx.held) return !withheldWhereItStands(ctx.state, token);
+  const shared = sharedOf(ctx.state);
+  return !withheldFromPlayers(ctx.state, shared.fogged, shared.sight, token, false, "build");
 }
 
 /* A DM's token with the mark, kept per token object, which is replaced and never changed, so the fan-out hashes it once. */
@@ -3832,6 +3839,27 @@ export function projectEntity(key: EntityKey, state: RoomState, viewer: Viewer, 
   return projectEntityCtx(ctxOf(state, viewer, opts), key);
 }
 
+/*
+ * Projections the reducer asks for while it applies an op: who a
+ * correction's copies go to (undoCorrection.ts) and whether a trap step
+ * changed what a player sees (reducer.ts). Their answers are stored or
+ * decide what is, so each takes the op's envelope, and an op stored before
+ * op version 37 projects by the build's walls it was applied under
+ * (clipsByHeldWalls). The envelope is a required argument, so no reducer
+ * caller can fall back to the live rule. The rest of the module's exports
+ * project live, for sockets, previews and devices.
+ */
+
+/** projectEntity for the op `env` stores. */
+export function projectEntityForOp(key: EntityKey, state: RoomState, viewer: Viewer, opts: ProjectOpts, env: Pick<Env, "opVersion">): unknown {
+  return projectEntityCtx(ctxOf(state, viewer, opts, clipsByHeldWalls(env.opVersion)), key);
+}
+
+/** projectState for the op `env` stores. */
+export function projectStateForOp(state: RoomState, viewer: Viewer, opts: ProjectOpts, env: Pick<Env, "opVersion">): ProjectedState {
+  return projectStateCtx(ctxOf(state, viewer, opts, clipsByHeldWalls(env.opVersion)));
+}
+
 function projectEntityCtx(ctx: Ctx, key: EntityKey): unknown {
   const parsed = parseKey(key);
   if (!parsed) return null;
@@ -3933,7 +3961,11 @@ function projectMap<T, P>(map: Record<string, T>, project: (value: T) => P | nul
 
 /** The full snapshot for a viewer: one scene's contents and the room-level data the viewer may see. */
 export function projectState(state: RoomState, viewer: Viewer, opts: ProjectOpts): ProjectedState {
-  const ctx = ctxOf(state, viewer, opts);
+  return projectStateCtx(ctxOf(state, viewer, opts));
+}
+
+function projectStateCtx(ctx: Ctx): ProjectedState {
+  const { state, viewer } = ctx;
   return {
     meta: projectMetaCtx(ctx),
     members: projectMap(state.members, (m) => projectMemberCtx(ctx, m)),

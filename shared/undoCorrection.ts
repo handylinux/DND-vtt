@@ -1,6 +1,7 @@
 import { parseKey, readEntity } from "./keys.ts";
 import type { Character, CorrectionWitness, LineParts, LogEvent, PcRoll, RoomState, Token, Viewer } from "./model.ts";
-import { ownsCharacter, ownsToken, projectEntity, stableStringify } from "./project.ts";
+import { ownsCharacter, ownsToken, projectEntityForOp, stableStringify } from "./project.ts";
+import type { Env } from "./reducer/tx.ts";
 import { unknownOnPass } from "./rules/pcStats.ts";
 import type { CorrectionLogEvent, HistoryDirection, HistoryScope } from "./undoContract.ts";
 
@@ -61,16 +62,20 @@ function ownerOf(state: RoomState, viewer: Viewer, key: string): boolean {
   }
 }
 
-/** One copy per reader. The copy's private witnesses keep later access from widening the frozen audience. */
-export function correctionViews(before: RoomState, after: RoomState, touched: readonly string[], from: HistoryDirection, scope: HistoryScope): [string, LogEvent, LineParts][] {
+/**
+ * One copy per reader. The copy's private witnesses keep later access from
+ * widening the frozen audience. The audience is stored, so each projection
+ * takes the op's envelope (project.ts projectEntityForOp).
+ */
+export function correctionViews(before: RoomState, after: RoomState, touched: readonly string[], from: HistoryDirection, scope: HistoryScope, env: Pick<Env, "opVersion">): [string, LogEvent, LineParts][] {
   const targets = [...new Set(touched)].filter((key) => ["token", "character", "companionBlock"].includes(parseKey(key)?.kind ?? "")).sort();
   const views: [string, LogEvent, LineParts][] = [];
   for (const member of Object.values(after.members).filter((m) => m.kind === "player").sort((a, b) => a.id.localeCompare(b.id))) {
     const viewer: Viewer = { memberId: member.id, role: "player" };
     const witnesses: CorrectionWitness[] = [];
     for (const key of targets) {
-      const was = projectEntity(key, before, viewer, { sceneId: null });
-      const now = projectEntity(key, after, viewer, { sceneId: null });
+      const was = projectEntityForOp(key, before, viewer, { sceneId: null }, env);
+      const now = projectEntityForOp(key, after, viewer, { sceneId: null }, env);
       const oldValue = readEntity(before, key);
       const newValue = readEntity(after, key);
       const characterId = parseKey(key)?.kind === "companionBlock" ? object(newValue ?? oldValue).characterId as string | undefined : undefined;

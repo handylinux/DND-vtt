@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { assertMembership, checkPair } from "./differential.ts";
 import { liftSubs, remember, wall } from "./discoveryTestutil.ts";
 import { keys, tileKey, wallChunk } from "./keys.ts";
@@ -11,7 +14,9 @@ import {
   heldSightClip,
   inSightOfNonOwners,
   lineReader,
+  projectEntityForOp,
   projectState,
+  projectStateForOp,
   rowSeenMark,
   seenAtEvery,
   seenByNonOwners,
@@ -411,6 +416,11 @@ describe("ops stored before op version 37 judge a creature's outline by the buil
       assert.equal(lineReader(s, 37)(line).audience, "shared");
       assert.equal(lineReader(s)(line).audience, "shared");
       assert.equal(lineReader(s, 36)(line).audience, "dm");
+      // The reducer's own projections: a correction's copies and a trap step's check.
+      assert.equal(projectEntityForOp(keys.token("ogre"), s, P1, { sceneId: "s1" }, OLD), null);
+      assert.notEqual(projectEntityForOp(keys.token("ogre"), s, P1, { sceneId: "s1" }, NOW), null);
+      assert.equal(projectStateForOp(s, P1, { sceneId: "s1" }, OLD).tokens.ogre, undefined);
+      assert.ok(projectStateForOp(s, P1, { sceneId: "s1" }, LIVE).tokens.ogre);
     });
 
     test(`${name}: a sight holder's marks and audience by their own copy`, () => {
@@ -697,5 +707,112 @@ describe("what re-projects a hex creature when a copy of the walls round it can 
     const renamed = { ...s, scenes: { ...s.scenes, s1: { ...s.scenes.s1!, name: "Hall" } } };
     assert.ok(!dependents(renamed, [keys.scene("s1")], s).includes(near), "a new name changes no copy");
     assert.equal(tileKey("s1", tx, ty), `s1:${tx},${ty}`);
+  });
+});
+
+/*
+ * What the reducer stores must replay as it was stored, so every projection
+ * it reaches takes the op's envelope or reads no walls. This walks the
+ * reducer's imports and checks each name taken from project.ts, so a new
+ * caller of a live projection fails here before it reaches a replay.
+ */
+describe("the reducer projects only through calls that take the op's envelope", () => {
+  const SHARED = dirname(fileURLToPath(import.meta.url));
+  /** Take the op's envelope (the index of that argument), so an op stored before op version 37 reads the build's walls. */
+  const BY_ENVELOPE: Record<string, number> = {
+    activeRowShownTo: 2,
+    areaSeenMark: 3,
+    inSightOfNonOwners: 2,
+    lineReader: 1,
+    projectEntityForOp: 4,
+    projectStateForOp: 3,
+    rowSeenByNonOwners: 2,
+    rowSeenMark: 2,
+    seenAtEvery: 3,
+    seenByNonOwners: 2,
+    seenMark: 2,
+  };
+  /** Read ownership, members, grids, fog or text, and no walls. */
+  const NO_WALLS = new Set(["allKeys", "anyPlayer", "gridOfScene", "gridOfToken", "groundAnyPlayerSees", "hash128", "hashValue", "initiativeHidden", "listsStripped", "ownsCharacter", "ownsToken", "playerPlays", "playersToken", "stableStringify", "stampCells", "unionSightOf"]);
+  /*
+   * permissions.ts judges ops live, before the reducer applies them, and
+   * calls live projections. The reducer takes only these from it, each
+   * read and found to project nothing, so the walk stops there.
+   */
+  const FROM_PERMISSIONS = new Set(["ANSWERED_MEANWHILE", "ASK_CLOSED", "MOVE_PLAYERS_FIRST_BACK", "SETTLED_MEANWHILE", "expectOf", "fixPending", "playersTypeTotals", "promptRefusal"]);
+
+  type Import = { from: string; names: string[] };
+  function importsOf(file: string): Import[] {
+    const out: Import[] = [];
+    for (const m of readFileSync(file, "utf8").matchAll(/^\s*(?:import|export)\s+(type\s+)?([^;]*?)\s*from\s+"([^"]+)"/gm)) {
+      const spec = m[3]!;
+      if (m[1] || !(spec.startsWith(".") || spec.startsWith("#shared/"))) continue;
+      const from = spec.startsWith("#shared/") ? join(SHARED, spec.slice("#shared/".length)) : join(dirname(file), spec);
+      const braces = /\{([^}]*)\}/.exec(m[2]!);
+      const names = (braces ? braces[1]!.split(",") : [])
+        .map((n) => n.trim())
+        .filter((n) => n !== "" && !n.startsWith("type "))
+        .map((n) => n.split(/\s+as\s+/)[0]!);
+      out.push({ from, names });
+    }
+    return out;
+  }
+
+  /** The args of every call of `name` in `src`, split at top-level commas. */
+  function callsOf(src: string, name: string): string[][] {
+    const out: string[][] = [];
+    for (const m of src.matchAll(new RegExp(`\\b${name}\\(`, "g"))) {
+      const args: string[] = [];
+      let depth = 0;
+      let arg = "";
+      for (let i = m.index + m[0].length; i < src.length; i++) {
+        const ch = src[i]!;
+        if (depth === 0 && (ch === "," || ch === ")")) {
+          if (arg.trim() !== "") args.push(arg.trim());
+          arg = "";
+          if (ch === ")") break;
+          continue;
+        }
+        if ("([{".includes(ch)) depth++;
+        if (")]}".includes(ch)) depth--;
+        arg += ch;
+      }
+      out.push(args);
+    }
+    return out;
+  }
+
+  test("every name the reducer's modules take from project.ts, and every call of one that takes the envelope", () => {
+    const project = join(SHARED, "project.ts");
+    const permissions = join(SHARED, "permissions.ts");
+    const seen = new Set<string>();
+    const stack = [join(SHARED, "reducer.ts")];
+    const wrong: string[] = [];
+    let projecting = 0;
+    while (stack.length > 0) {
+      const file = stack.pop()!;
+      if (seen.has(file)) continue;
+      seen.add(file);
+      const src = readFileSync(file, "utf8");
+      const here = relative(SHARED, file);
+      for (const { from, names } of importsOf(file)) {
+        if (from === project) {
+          projecting++;
+          for (const name of names) {
+            if (NO_WALLS.has(name)) continue;
+            const at = BY_ENVELOPE[name];
+            if (at === undefined) {
+              wrong.push(`${here} takes ${name}, a live projection`);
+              continue;
+            }
+            for (const args of callsOf(src, name)) if (args.length <= at || /^\{\s*\}$/.test(args[at]!)) wrong.push(`${here} calls ${name}(${args.join(", ")}) with no envelope`);
+          }
+        } else if (from === permissions) {
+          for (const name of names) if (!FROM_PERMISSIONS.has(name)) wrong.push(`${here} takes ${name} from permissions.ts, not yet read for projections`);
+        } else if (existsSync(from)) stack.push(from);
+      }
+    }
+    assert.deepEqual(wrong, []);
+    assert.ok(seen.size > 50 && projecting > 15, `the walk reached ${seen.size} modules, ${projecting} taking from project.ts`);
   });
 });

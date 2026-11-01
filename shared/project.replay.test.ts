@@ -7,10 +7,11 @@ import { hash128, stableStringify } from "./project.ts";
 import type { Op } from "./protocol.ts";
 import { applyOp } from "./reducer.ts";
 import { wallSpans } from "./rules/held.ts";
-import { hexCenter, hexNeighbors, hexSubcells, sceneHexes, HEX_R, type Hex, type HexGrid } from "./rules/hex.ts";
+import { hexCenter, hexKey, hexNeighbors, hexSubcells, sceneHexes, HEX_R, type Hex, type HexGrid } from "./rules/hex.ts";
 import { occupiedHexes, storedCenter } from "./rules/footprint.ts";
 import { onHex, ROWS, COLUMNS } from "./rules/hexWalls.testkit.ts";
-import { clearVisionCache } from "./rules/vision.ts";
+import { clearVisionCache, clipFootprint, sightClipOf } from "./rules/vision.ts";
+import { sceneWalls } from "./rules/walls.ts";
 import { liftSubs, remember, wall } from "./discoveryTestutil.ts";
 import { AT, DM, actor, chance, int, member, pick, randomOp, rng, room, scene, trap } from "./testutil.ts";
 
@@ -241,5 +242,73 @@ describe("stored op tails on hex scenes replay to the states they made", () => {
     const tails = Array.from({ length: TAILS }, (_, seed) => tail(seed));
     const moved = tails.filter((t) => replay(t, 36) !== replay(t, 37)).length;
     assert.ok(moved >= 20, `${moved} of ${TAILS} tails end otherwise`);
+  });
+});
+
+const CORRECTIONS = new URL("./project.replay.corrections.fixture.json", import.meta.url);
+const CORRECTION_VERSIONS = [34, 35, 36] as const;
+
+/**
+ * A Huge creature whose HP players see as a label, on a hex fog scene
+ * with three players, whole party or with p1 seeing for themselves, a
+ * short wall through its middle on ground no layer holds, and revealed
+ * only where the build's walls cut off from its middle.
+ */
+function correctionRoom(g: HexGrid, perPlayer: boolean): RoomState {
+  const state = room({
+    members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2"), p3: member("p3") },
+    scenes: { s1: scene("s1", { gridShape: g === ROWS ? "hexRows" : "hexColumns", bounds: { w: 20, h: 16 }, autoWalls: "off", fogEnabled: true, vision: { on: false, light: "bright", ...(perPlayer ? { perPlayer: true as const } : {}) } }) },
+  });
+  if (perPlayer) state.holders = { s1: { sceneId: "s1", rev: 1, entries: [{ memberId: "p1", on: true }] } };
+  const at = { col: 9, row: 7 };
+  const ogre = onHex(g, "ogre", "huge", at, { name: "Ogre", kind: "npc", hpVisibility: "label", actor: { inline: actor({ hp: { cur: 40, max: 40, temp: 0 } }) } });
+  const c = storedCenter(ogre);
+  wall(state, "midwall00001", [q(c.x - 0.25), q(c.y)], [q(c.x + 0.25), q(c.y)]);
+  const kept = new Set(clipFootprint(g, ogre, sightClipOf(sceneWalls(state.scenes.s1!, state.buildChunks))).kept.map((sub) => sub.join(",")));
+  const cut = occupiedHexes(g, ogre).filter((h) => hexKey(h) !== hexKey(at) && hexSubcells(g, h).every((sub) => !kept.has(sub.join(","))));
+  assert.ok(cut.length > 0, "the build's wall cuts some of its hexes off");
+  liftSubs(state, perPlayer ? { holder: "p1" } : "dm", cut.flatMap((h) => hexSubcells(g, h)));
+  if (perPlayer) liftSubs(state, "dm", hexSubcells(g, cut[0]!));
+  state.tokens.ogre = ogre;
+  return state;
+}
+
+/**
+ * The DM hurts the creature, takes it back with a correction, and puts it
+ * back with another, each op stored at `opVersion`, in setup and in play:
+ * every state the three ops leave, hashed whole, their correction lines'
+ * readers and copies included.
+ */
+function correctionHashes(opVersion: number): string[] {
+  const out: string[] = [];
+  for (const g of [ROWS, COLUMNS]) {
+    for (const perPlayer of [false, true]) {
+      for (const scope of ["setup", "play"] as const) {
+        let state = correctionRoom(g, perPlayer);
+        const step = (op: Op, seq: number) => {
+          const r = applyOp(state, op, DM, { seq, at: AT, opVersion });
+          assert.ok(r.ok, `${op.t} at op version ${opVersion}: ${r.ok ? "" : r.message}`);
+          state = r.state;
+          out.push(hash128(stableStringify(state)));
+          return r;
+        };
+        const hurt = step({ t: "token.update", tokenId: "ogre", patch: { actor: { hp: { cur: 5, max: 40, temp: 0 } } } } as Op, 20);
+        const undo = step({ t: "sys.restore", entries: hurt.inverse!, from: "undo", deps: true, scope, correction: { label: "Hit points" } } as Op, 21);
+        step({ t: "sys.restore", entries: undo.inverse!, from: "redo", deps: true, scope, correction: { label: "Hit points" } } as Op, 22);
+      }
+    }
+  }
+  return out;
+}
+
+describe("restores the DM makes with a correction on hex fog scenes replay to the states they made", () => {
+  test("op versions 34, 35 and 36, whole party and per player, in setup and in play", () => {
+    const now = Object.fromEntries(CORRECTION_VERSIONS.map((v) => [String(v), correctionHashes(v)]));
+    if (process.env.REPLAY_TAILS === "write") writeFileSync(CORRECTIONS, `${JSON.stringify(now, null, 2)}\n`);
+    const pinned = JSON.parse(readFileSync(CORRECTIONS, "utf8")) as Record<string, string[]>;
+    for (const v of CORRECTION_VERSIONS) {
+      const differ = now[String(v)]!.flatMap((h, i) => (h !== pinned[String(v)]![i] ? [i] : []));
+      assert.deepEqual(differ, [], `op version ${v}: these steps replay to other states`);
+    }
   });
 });

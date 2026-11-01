@@ -15,7 +15,7 @@ import { remindAfter, remindTurnEnd } from "./reducer/areaTriggers.ts";
 import { linkPass, settleMounts, tokenAttach, tokenDetach } from "./reducer/attach.ts";
 import { attaches, trapsGoOff, writesUndoCorrections } from "./migrate.ts";
 import { correctionViews } from "./undoCorrection.ts";
-import { projectState, stableStringify } from "./project.ts";
+import { projectStateForOp, stableStringify } from "./project.ts";
 import {
   encounterAdd,
   encounterEnd,
@@ -181,7 +181,7 @@ export function applyOp(state: RoomState, op: Op, actor: Viewer, env: Env): Appl
     if (plan && op.t === "sys.restore") capRestoredDues(tx, state.traps);
     remindAfter(tx, state, moved);
     if (writesUndoCorrections(env.opVersion) && op.t === "sys.restore" && op.correction && op.scope && op.undid === undefined && actor.role === "dm") {
-      tx.addCorrection({ type: "correction", from: op.from, scope: op.scope, label: op.correction.label }, correctionViews(state, tx.state, tx.touched(), op.from, op.scope));
+      tx.addCorrection({ type: "correction", from: op.from, scope: op.scope, label: op.correction.label }, correctionViews(state, tx.state, tx.touched(), op.from, op.scope, env));
     }
     tx.finish();
   } catch (err) {
@@ -194,7 +194,7 @@ export function applyOp(state: RoomState, op: Op, actor: Viewer, env: Env): Appl
   let inverse: RestoreEntry[] | null | undefined;
   // Only a player's undo is refused for what a trap did, and only a trap step that wrote something can have changed what they see.
   if (traps?.wrote && actor.role === "player") plain ??= applyOp(state, op, actor, { ...env, withoutTraps: true });
-  const trapped = traps?.wrote === true && actor.role === "player" && (!plain?.ok || playerSeesChange(tx.state, plain.state, actor));
+  const trapped = traps?.wrote === true && actor.role === "player" && (!plain?.ok || playerSeesChange(tx.state, plain.state, actor, env));
   return {
     ok: true,
     state: tx.state,
@@ -217,11 +217,12 @@ export function applyOp(state: RoomState, op: Op, actor: Viewer, env: Env): Appl
  * its trap step, as the server would send each, sight, lights and pits
  * included. A trap action that changed nothing, or changed only what fog,
  * darkness or the DM's side keeps from them, leaves the two alike, so the
- * mark never tells a player that a trap they cannot see went off.
+ * mark never tells a player that a trap they cannot see went off. Both
+ * read the op's envelope, as every projection the reducer asks for does.
  */
-function playerSeesChange(withTraps: RoomState, plain: RoomState, viewer: Viewer): boolean {
+function playerSeesChange(withTraps: RoomState, plain: RoomState, viewer: Viewer, env: Env): boolean {
   const opts = { sceneId: null };
-  return stableStringify(projectState(withTraps, viewer, opts)) !== stableStringify(projectState(plain, viewer, opts));
+  return stableStringify(projectStateForOp(withTraps, viewer, opts, env)) !== stableStringify(projectStateForOp(plain, viewer, opts, env));
 }
 
 function dispatch(tx: Tx, op: Op): void {
