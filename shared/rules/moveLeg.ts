@@ -224,9 +224,12 @@ function followGroup(before: RoomState, lead: MovedToken, members: readonly stri
     const holderMove = walked.get(member.attached!.to);
     if (!holderMove) continue;
     const own = file?.get(id);
-    const holderOwn = file?.get(holderMove.tokenId);
-    // Behind a holder in the file that a wall stopped, no further along than it (review FU45B-ASTRA-03).
-    const walk = own && holderOwn ? behindStop(member, own, holderOwn, holderMove.route) : own;
+    // Behind the nearest one up its chain in the file, through what carries it too, no further along than it where a wall stopped it
+    // (review FU45B-ASTRA-03 and FU45B-ASTRA-05).
+    let up: MovedToken | undefined = holderMove;
+    while (up && !file?.has(up.tokenId) && up.carriedBy !== undefined) up = walked.get(up.carriedBy);
+    const upOwn = up ? file?.get(up.tokenId) : undefined;
+    const walk = own && up && upOwn ? behindStop(member, own, upOwn, up.route) : own;
     const moved = follow(before, member, holderMove, pub(id), byPlayer, env, { file: walk, seats: seatsOn, stands });
     if (!moved) continue;
     walked.set(id, moved);

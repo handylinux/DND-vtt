@@ -226,4 +226,16 @@ describe("squares: what a holder drags follows it in single file where its move 
     assert.deepEqual([walkOf(s, op, "imp"), walkOf(s, op, "gob")], [undefined, undefined], "the plan moves neither");
     assert.deepEqual(canApply(op, P1, s, { canUseAsset: () => true }), { ok: false, code: "forbidden", message: "gob can't follow through there." });
   });
+
+  test("a stop carries down through a creature it carries: a hidden rat its owl drags stops no further along than the stopped imp (review FU45B-ASTRA-05)", () => {
+    let s = towing(corridor(), "imp", { x: 1, y: 4, visibility: "dm" });
+    s = { ...s, tokens: { ...s.tokens, owl: token("owl", { size: "tiny", x: 1, y: 4, name: "owl", kind: "npc", visibility: "dm", attached: { to: "imp", kind: "carry" } }), rat: token("rat", { x: 0, y: 4, name: "rat", kind: "npc", visibility: "dm", attached: { to: "owl", kind: "drag" } }) } };
+    wall(s, "fu45bf000012", [2.25, 4.75], [2.25, 5]);
+    const op: OpOf<"token.move"> = { t: "token.move", tokenId: "horse", x: 9.5, y: 5.5, squeeze: true, route: [[4, 5.5, 1, 0], [9.5, 5.5, 2, 0]] };
+    const after = served(s, op);
+    const [imp, owl, rat] = [after.tokens.imp!, after.tokens.owl!, after.tokens.rat!];
+    assert.deepEqual([imp.x, imp.y, owl.x, owl.y, owl.attached?.to], [2, 5, 2, 5, "imp"], "the imp stops at the wall, the owl in its arms");
+    assert.equal(rat.attached?.to, "owl", `the rat still in the owl's tow, at ${rat.x}, ${rat.y}`);
+    assert.ok(rat.x <= imp.x, `no further along than the imp: ${rat.x}, ${rat.y}`);
+  });
 });
