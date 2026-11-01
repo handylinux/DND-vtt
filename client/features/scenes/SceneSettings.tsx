@@ -516,6 +516,8 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
       const { found, ownGrid } = replacementFound(wait.answer, named !== undefined, next, scene, kept);
       // Fog first, so players on this scene never see the map before it.
       if (firstFog && (!playersHere || fogIt)) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { fogEnabled: true } });
+      // The map the room holds as the upload ends, read before the replacement lands: the refit below asks whether the bounds still follow it.
+      const oldMap = room.getState().view?.scenes[scene.id]?.map;
       actions.dispatch({ t: "scene.setMap", sceneId: scene.id, map: next });
       // A scene with map phases takes new art only in its map's shape, and this device's own
       // prediction has already refused any other with the reducer's words (NOT_SAME_SHAPE). A grid
@@ -534,13 +536,15 @@ function MapImageRow(props: { scene: Scene; close: PanelClose }) {
       // applied). Over an old map, a name's scale that restarts the grid
       // refits bounds that were fitted to the old one (refitsToNamedMap).
       const fallback = { cellPx: next.cellPx, originPx: next.originPx };
-      if (!found && !wait.later && refitsToNamedMap(map, next, named, scene.bounds)) {
+      // Bounds as the room holds them now: another DM may have resized the scene during the upload, and that edit must not be refit away.
+      const bounds0 = room.getState().view?.scenes[scene.id]?.bounds ?? scene.bounds;
+      if (!found && !wait.later && refitsToNamedMap(oldMap, next, named, bounds0)) {
         const bounds = fitBounds(next);
-        if (bounds.w !== scene.bounds.w || bounds.h !== scene.bounds.h) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { bounds } });
+        if (bounds.w !== bounds0.w || bounds.h !== bounds0.h) actions.dispatch({ t: "scene.update", sceneId: scene.id, patch: { bounds } });
       } else if (!map || found || wait.later) {
         // The shape the room holds now, not as the upload began: Grid shape may have changed meanwhile, here or on another device.
         const gridShape = room.getState().view?.scenes[scene.id]?.gridShape;
-        const landing = { id: scene.id, bounds: scene.bounds, gridShape, map: next };
+        const landing = { id: scene.id, bounds: bounds0, gridShape, map: next };
         if (found) {
           const at = { x: next.widthPx / 2, y: next.heightPx / 2 };
           showOutcome({ actions, store: gridStore, scene: landing, found, fit: true, at, fallback, ownGrid, refusal: (to) => refusal(landing, to) });

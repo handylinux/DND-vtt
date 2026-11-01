@@ -1178,6 +1178,44 @@ describe("raccoon-vtt maps run", { timeout: 300_000 }, () => {
     assert.equal(sceneOf(dmSocket.state, scene.id)?.bounds.w, 12, "bounds the DM set by hand stay");
   });
 
+  test("fu43fix5-1: bounds resized while a replacement uploads stay, and are not refit to the new art", async () => {
+    const first = path.join(work, "lot_40x28.png");
+    const second = path.join(work, "cellar_20x14.png");
+    await sharp({ create: { width: 1400, height: 980, channels: 3, background: "#554368" } }).png().toFile(first);
+    await sharp({ create: { width: 1400, height: 980, channels: 3, background: "#685543" } }).png().toFile(second);
+    await pickTool(dm, "Select");
+    await openSideTab(dm, "Scenes");
+    const panel = dm.getByRole("tabpanel", { name: sideTabName("Scenes") });
+    await panel.getByRole("radio", { name: "Map image", exact: true }).click();
+    const known = new Set(Object.keys(dmSocket.state?.scenes ?? {}));
+    await panel.getByRole("button", { name: "Choose a map image" }).setInputFiles(first);
+    await panel.getByRole("button", { name: "Upload and create" }).click();
+    const scene = await waitFor("fu43fix5-1 map", () => Object.values(dmSocket.state?.scenes ?? {}).find((s) => s?.map && !known.has(s.id)), 30_000);
+    await waitFor("the DM on the named map", () => dmSocket.you?.sceneId === scene.id || null);
+    await waitFor("the first image's fit", () => { const b = sceneOf(dmSocket.state, scene.id)?.bounds; return b?.w === 40 && b.h === 28 ? b : null; });
+    // The upload is held while the width changes, as another DM's edit would arrive during it.
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const held = /\/api\/rooms\/[^/]+\/assets\?kind=map/;
+    await dm.route(held, async (route) => {
+      if (route.request().method() === "PUT") await gate;
+      await route.continue();
+    });
+    try {
+      await (await openSceneGroup(panel, "Map image and grid")).getByLabel("Replace map image", { exact: true }).setInputFiles(second);
+      const across = (await openSceneGroup(panel, "Size and view")).getByLabel("Squares across");
+      await across.fill("12");
+      await across.blur();
+      await waitFor("the width set during the upload", () => sceneOf(dmSocket.state, scene.id)?.bounds.w === 12 || null);
+    } finally {
+      release();
+    }
+    await waitFor("the replacement's scale", () => sceneOf(dmSocket.state, scene.id)?.map?.cellPx === 70 || null, 30_000);
+    await dm.unroute(held);
+    await dm.waitForTimeout(500);
+    assert.equal(sceneOf(dmSocket.state, scene.id)?.bounds.w, 12, "the width set during the upload stays");
+  });
+
   test("fu43h-1: a name's counts read as hexes skip alignment on the scene's own orientation, and only there", async () => {
     // 20 x 14 hexes of 70 px: hex rows are 20.5 hexes wide, hex columns 20 hexes tall plus the half hex their odd columns stand out (D-261101-190).
     const art = [
