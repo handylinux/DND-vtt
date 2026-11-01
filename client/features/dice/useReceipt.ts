@@ -297,14 +297,18 @@ export class ReceiptTracker {
   }
 
   /**
-   * Whether a surface may say this tag's result or refusal now: the
-   * claimant always, any other only while nobody claims the tag and nobody
-   * has said it yet.
+   * Whether a surface may say this tag's result or refusal now, if it has
+   * not said it already: nobody may once the toast or a surface said it,
+   * the claimant too, such as a block shown again after the toast told its
+   * result. Before that, the claimant may, and any other surface only while
+   * nobody claims the tag. A surface that said it keeps saying it
+   * (useReceiptVoice), so its words never leave its live region.
    */
   maySpeak(tag: string, claimant: boolean): boolean {
-    if (claimant) return true;
     const entry = this.#entries.get(tag);
-    return !entry || (entry.claims === 0 && !entry.said);
+    if (!entry) return true;
+    if (entry.said) return false;
+    return claimant || entry.claims === 0;
   }
 
   /** A surface said this tag's settled state, so no other surface and no toast says it again. */

@@ -177,11 +177,14 @@ describe("one announcer per roll (D-261031-133)", () => {
     assert.match(render(scope, sent("V")), /aria-live="polite"[^>]*>Rolled 15/);
   });
 
-  test("the line speaks as the sender: a claim held elsewhere, or a roll already said, does not silence it", { skip: !real }, () => {
+  test("the line speaks as the sender while a claim is held elsewhere, and shows a roll the toast or another surface already said silent", { skip: !real }, () => {
     const { scope, tracker } = scopeWith([line("D", die())]);
     tracker.answer("D", 0, "taken");
     tracker.claimVoice("D");
-    tracker.spoken("D");
     assert.match(render(scope, sent("D")), /aria-live="polite"[^>]*>Rolled 15/);
+    tracker.spoken("D");
+    const html = render(scope, sent("D"));
+    assert.match(html, />15</, "the result still shows");
+    assert.doesNotMatch(html, /aria-live="polite"[^>]*>Rolled/, "and its live region says nothing");
   });
 });

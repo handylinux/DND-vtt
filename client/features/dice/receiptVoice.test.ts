@@ -97,7 +97,38 @@ describe("one announcer per roll tag", () => {
     assert.equal(t.maySpeak("a", false), true, "nobody claims it and nobody said it");
     t.spoken("a");
     assert.equal(t.maySpeak("a", false), false);
-    assert.equal(t.maySpeak("a", true), true, "the claimant always says its own");
+    assert.equal(t.maySpeak("a", true), false, "said, so not even a claimant may start: a surface that said it keeps its own words");
+  });
+
+  test("a sender's block shown again after the toast told its result shows it silent: the toast said it, so its claim does not say it twice", () => {
+    for (const outcome of ["committed", "refused"] as const) {
+      const log: LogEntry[] = [];
+      const t = tracker(log);
+      t.sending("a", 0);
+      // Hidden while it waits: the block's line holds no tag and no claim.
+      if (outcome === "committed") log.push(line("a"));
+      t.answer("a", 0, outcome === "committed" ? "taken" : "refused", outcome === "refused" ? { code: "invalid", message: "No.", text: "No." } as never : undefined);
+      assert.deepEqual(t.unannounced().map((u) => u.tag), ["a"], `${outcome}: the toast says it`);
+      // Shown again: the line watches and claims the tag once more.
+      const block = surface(t, "a", true);
+      assert.equal(block.render(), false, `${outcome}: the block shows it and says nothing`);
+      assert.equal(block.render(), false, `${outcome}: on later renders too`);
+      block.unmount();
+      assert.deepEqual(t.unannounced(), [], `${outcome}: and no second toast`);
+    }
+  });
+
+  test("a sender's surface that said its result keeps saying it, and the same claim mounted again after it said shows it silent", () => {
+    const t = tracker([line("a")]);
+    t.sending("a", 0);
+    const block = surface(t, "a", true);
+    t.answer("a", 0, "taken");
+    assert.equal(block.render(), true);
+    assert.equal(block.render(), true, "its words stay in its live region");
+    block.unmount();
+    const again = surface(t, "a", true);
+    assert.equal(again.render(), false, "a remount says nothing it said before");
+    again.unmount();
   });
 
   test("a release lets the surfaces that show the tag look again", () => {
@@ -183,5 +214,6 @@ describe("useReceiptVoice, as a surface's render reads it", async () => {
     release();
     t.spoken("a");
     assert.equal(speaks(scope, "a", false), false, "said already");
+    assert.equal(speaks(scope, "a", true), false, "said already, so its sender shown again says nothing either");
   });
 });
