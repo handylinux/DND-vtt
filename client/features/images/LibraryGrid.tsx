@@ -5,6 +5,7 @@ import { imageAssetId } from "#shared/imageRef.ts";
 import type { Handout, HandoutDoc } from "#shared/model.ts";
 import { Button } from "../../components/Button.tsx";
 import { Empty } from "../../components/Empty.tsx";
+import { useHeld } from "../../components/Held.tsx";
 import { LoadFailed } from "../../components/LoadFailed.tsx";
 import { Loading } from "../../components/Loading.tsx";
 import { Help, Section, SectionLabel } from "../../components/Panel.tsx";
@@ -48,6 +49,19 @@ export const tileStyle = {
 } as const;
 
 export const tileImage = { width: "100%", height: "100%", objectFit: "cover", display: "block" } as const;
+
+/**
+ * An image tile that cannot be picked now. A picture has no words to dim and
+ * must not fade (looks.ts), so it goes gray at full strength and stops
+ * inviting a press, as a held FromControl portrait does.
+ */
+export function tileLook(disabled: boolean) {
+  return disabled ? ({ ...tileStyle, cursor: "default" } as const) : tileStyle;
+}
+
+export function tileImageLook(disabled: boolean) {
+  return disabled ? ({ ...tileImage, filter: "grayscale(1)" } as const) : tileImage;
+}
 
 /**
  * The room's token images this member may use: the server's list (their
@@ -103,13 +117,7 @@ export function LibraryGrid(props: {
   if (props.onPick) {
     const { onPick } = props;
     const { own, starter } = apartFromStarter(ids, (id) => rowsById.get(id));
-    const tile = (id: string) => (
-      <li key={id}>
-        <button type="button" disabled={props.disabled} onClick={() => onPick(id)} aria-label="Use this image" style={tileStyle}>
-          <Thumb id={id} />
-        </button>
-      </li>
-    );
+    const tile = (id: string) => <PickTile key={id} id={id} disabled={props.disabled} onPick={onPick} />;
     return (
       <div data-library="" tabIndex={-1} style={{ display: "grid", gap: theme.space(3), outline: "none" }}>
         <LibraryStatus library={library} />
@@ -126,6 +134,18 @@ export function LibraryGrid(props: {
 
   if (role === "dm") return <ManagedLibrary roomId={props.roomId} library={library} unlisted={ids} unlistedEmpty={emptyText} empty={props.empty ?? "No images yet."} hint={props.hint} />;
   return <PlayerLibrary library={library} ids={ids} empty={(listed || library.failed) && ids.length === 0 ? emptyText : null} hint={props.hint} />;
+}
+
+/** A picker's tile: the image, one press picks it. */
+export function PickTile(props: { id: string; disabled?: boolean; onPick(id: string): void }) {
+  const disabled = useHeld(props.disabled);
+  return (
+    <li>
+      <button type="button" disabled={disabled} onClick={() => props.onPick(props.id)} aria-label="Use this image" style={tileLook(disabled)}>
+        <Thumb id={props.id} disabled={disabled} />
+      </button>
+    </li>
+  );
 }
 
 function PlayerLibrary(props: { library: LibraryState; ids: readonly string[]; empty: string | null; hint?: string }) {
@@ -746,17 +766,17 @@ function Tiles(props: { label: string; children: ReactNode }) {
 }
 
 /** An image's small copy, or a plain tile that says so when it will not load (offline, say), never a broken image. */
-function Thumb(props: { id: string }) {
+function Thumb(props: { id: string; disabled?: boolean }) {
   const assets = useAssets();
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
-      <span style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: theme.color.textMuted, fontSize: theme.font.tiny, textAlign: "center" }}>
+      <span style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: props.disabled ? theme.color.textDisabled : theme.color.textMuted, fontSize: theme.font.tiny, textAlign: "center" }}>
         No preview
       </span>
     );
   }
-  return <img src={assets.url(props.id, "thumb")} alt="" loading="lazy" onError={() => setFailed(true)} style={tileImage} />;
+  return <img src={assets.url(props.id, "thumb")} alt="" loading="lazy" onError={() => setFailed(true)} style={tileImageLook(props.disabled === true)} />;
 }
 
 /** Red text at rest, armed with the red outline for 4 s after the first tap, busy while the delete runs. */

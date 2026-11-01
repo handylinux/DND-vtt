@@ -3,6 +3,7 @@ import type { IconImage } from "#shared/model.ts";
 import { Button } from "../../components/Button.tsx";
 import { PINNED_FOOT } from "../../components/Dialog.tsx";
 import { Input } from "../../components/Field.tsx";
+import { useHeld } from "../../components/Held.tsx";
 import { LoadFailed } from "../../components/LoadFailed.tsx";
 import { Loading } from "../../components/Loading.tsx";
 import { Help } from "../../components/Panel.tsx";
@@ -154,12 +155,14 @@ function IconGrid(props: { entries: readonly IconEntry[]; selected: string | nul
   );
 }
 
-function IconTile(props: { entry: IconEntry; left: number; top: number; selected: boolean; disabled: boolean; onSelect(key: string): void }) {
+export function IconTile(props: { entry: IconEntry; left: number; top: number; selected: boolean; disabled: boolean; onSelect(key: string): void }) {
   const { entry } = props;
   const glyph = useIconGlyph(entry.key);
   const url = iconUrl(entry.key);
   const credit = iconCredit(entry.key);
   const label = credit ? `${credit.title} by ${credit.author}` : entry.title;
+  const disabled = useHeld(props.disabled);
+  const ink = disabled ? theme.color.textDisabled : theme.color.text;
   return (
     <div role="listitem" style={{ position: "absolute", left: props.left, top: props.top, width: TILE, height: TILE }}>
       <button
@@ -167,7 +170,7 @@ function IconTile(props: { entry: IconEntry; left: number; top: number; selected
         aria-label={label}
         aria-pressed={props.selected}
         title={label}
-        disabled={props.disabled}
+        disabled={disabled}
         onClick={() => props.onSelect(entry.key)}
         style={{
           width: TILE,
@@ -176,18 +179,19 @@ function IconTile(props: { entry: IconEntry; left: number; top: number; selected
           display: "grid",
           placeItems: "center",
           borderRadius: theme.radius.sm,
-          border: `${theme.line.strong}px solid ${props.selected ? theme.color.accent : "transparent"}`,
-          background: props.selected ? theme.color.accentTint : theme.color.surfaceRaised,
-          color: theme.color.text,
-          cursor: "pointer",
+          // Off, a tile keeps its place with an outline and a dim glyph, and the chosen one a dimmer outline with no tint (looks.ts choiceLook).
+          border: `${theme.line.strong}px solid ${disabled ? (props.selected ? theme.color.textDisabled : theme.color.border) : props.selected ? theme.color.accent : "transparent"}`,
+          background: props.selected ? (disabled ? "transparent" : theme.color.accentTint) : theme.color.surfaceRaised,
+          color: ink,
+          cursor: disabled ? "default" : "pointer",
           overflow: "hidden",
         }}
       >
         {glyph.status === "ready" && url ? (
-          <Glyph url={url} side={36} color={theme.color.text} />
+          <Glyph url={url} side={36} color={ink} />
         ) : glyph.status === "loading" ? null : (
           // Offline and never fetched, or a file the server lacks: the name says what it is.
-          <span style={{ fontSize: theme.font.tiny, lineHeight: theme.leading.tight, textAlign: "center", overflowWrap: "anywhere", color: theme.color.textMuted }}>{entry.title}</span>
+          <span style={{ fontSize: theme.font.tiny, lineHeight: theme.leading.tight, textAlign: "center", overflowWrap: "anywhere", color: disabled ? theme.color.textDisabled : theme.color.textMuted }}>{entry.title}</span>
         )}
       </button>
     </div>

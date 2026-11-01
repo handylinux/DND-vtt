@@ -5,6 +5,7 @@ import { Button } from "../../components/Button.tsx";
 import { Dialog, DIALOG_PHONE_MAX } from "../../components/Dialog.tsx";
 import { Empty } from "../../components/Empty.tsx";
 import { ErrorText, Input } from "../../components/Field.tsx";
+import { useHeld } from "../../components/Held.tsx";
 import { choiceLook } from "../../components/looks.ts";
 import { Notice } from "../../components/Notice.tsx";
 import { Help } from "../../components/Panel.tsx";
@@ -14,7 +15,7 @@ import { useRoomView } from "../../state/view.ts";
 import { useLayoutSize } from "../device/layout.ts";
 import { licenseName } from "./credit.ts";
 import { imageErrorMessage, isQuotaError, isShortWait } from "./errors.ts";
-import { LibraryGrid, tileImage, tileStyle } from "./LibraryGrid.tsx";
+import { LibraryGrid, tileImageLook, tileLook } from "./LibraryGrid.tsx";
 import { IconsTab } from "./IconsTab.tsx";
 import { rememberAsset } from "./library.ts";
 import { honorsImageOrientation } from "./orientation.ts";
@@ -421,14 +422,15 @@ function SearchTab(props: {
  * not load becomes a plain tile that says so, never a broken image, and can
  * still be picked, since the original may load where the preview did not.
  */
-function SearchTile(props: { result: SearchResult; source: SearchSource; disabled: boolean; onPick(result: SearchResult): void }) {
+export function SearchTile(props: { result: SearchResult; source: SearchSource; disabled: boolean; onPick(result: SearchResult): void }) {
   const { result } = props;
   const [failed, setFailed] = useState(false);
+  const disabled = useHeld(props.disabled);
   const license = result.credit ? licenseName(result.credit.license, result.credit.licenseVersion) : null;
   const label = license ? `${result.title || "Untitled"}, ${license}` : `${result.title} (${result.source})`;
   return (
     <li style={{ display: "grid", gap: theme.space(0.5), alignContent: "start" }}>
-      <button type="button" disabled={props.disabled} onClick={() => props.onPick(result)} title={label} aria-label={label} style={tileStyle}>
+      <button type="button" disabled={disabled} onClick={() => props.onPick(result)} title={label} aria-label={label} style={tileLook(disabled)}>
         {failed ? (
           <span
             style={{
@@ -439,7 +441,7 @@ function SearchTile(props: { result: SearchResult; source: SearchSource; disable
               padding: theme.space(1),
               boxSizing: "border-box",
               background: theme.color.surfaceRaised,
-              color: theme.color.textMuted,
+              color: disabled ? theme.color.textDisabled : theme.color.textMuted,
               fontSize: theme.font.tiny,
               lineHeight: theme.leading.tight,
               textAlign: "center",
@@ -448,11 +450,11 @@ function SearchTile(props: { result: SearchResult; source: SearchSource; disable
             {props.source === "openverse" ? "Openverse could not show this preview" : "This preview did not load"}
           </span>
         ) : (
-          <img src={result.thumbnail} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} style={tileImage} />
+          <img src={result.thumbnail} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} style={tileImageLook(disabled)} />
         )}
       </button>
       {license ? (
-        <span aria-hidden style={{ fontSize: theme.font.tiny, color: theme.color.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span aria-hidden style={{ fontSize: theme.font.tiny, color: disabled ? theme.color.textDisabled : theme.color.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {license}
         </span>
       ) : null}

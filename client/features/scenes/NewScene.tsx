@@ -4,6 +4,7 @@ import { gridOfShape } from "#shared/rules/grid.ts";
 import type { FoundWork } from "#shared/starter.ts";
 import { Button } from "../../components/Button.tsx";
 import { ErrorText, Input } from "../../components/Field.tsx";
+import { useHeld } from "../../components/Held.tsx";
 import { Loading } from "../../components/Loading.tsx";
 import { Help } from "../../components/Panel.tsx";
 import { Segmented } from "../../components/Segmented.tsx";
@@ -105,6 +106,7 @@ export function NewScene(props: { sceneCount: number; close: PanelClose }) {
   /** The DM's own pick of Players see, null for the kind's start. */
   const [seen, setSeen] = useState<PlayersSeeValue | null>(null);
   const [status, setStatus] = useState<{ busy: boolean; waiting: boolean; finding?: boolean; error: string | null }>({ busy: false, waiting: false, error: null });
+  const fileOff = useHeld(status.busy);
   const abortRef = useRef<AbortController | null>(null);
   /** The search for the picked file's grid, running while the DM fills in the form and the file uploads. */
   const searchRef = useRef<{ file: File; search: ImportSearch } | null>(null);
@@ -359,9 +361,9 @@ export function NewScene(props: { sceneCount: number; close: PanelClose }) {
                   minHeight: theme.touch,
                   padding: `0 ${theme.space(3)}px`,
                   borderRadius: theme.radius.md,
-                  border: `${theme.line.border}px dashed ${status.busy ? theme.color.border : theme.color.controlBorder}`,
-                  color: status.busy ? theme.color.textDisabled : theme.color.text,
-                  cursor: status.busy ? "default" : "pointer",
+                  border: `${theme.line.border}px dashed ${fileOff ? theme.color.border : theme.color.controlBorder}`,
+                  color: fileOff ? theme.color.textDisabled : theme.color.text,
+                  cursor: fileOff ? "default" : "pointer",
                   fontSize: theme.font.body14,
                   fontWeight: theme.weight.strong,
                   textAlign: "center",
@@ -372,8 +374,8 @@ export function NewScene(props: { sceneCount: number; close: PanelClose }) {
                 <input
                   type="file"
                   accept="image/*"
-                  disabled={status.busy}
-                  style={{ position: "absolute", inset: 0, width: "100%", opacity: 0, cursor: status.busy ? "default" : "pointer" }}
+                  disabled={fileOff}
+                  style={{ position: "absolute", inset: 0, width: "100%", opacity: 0, cursor: fileOff ? "default" : "pointer" }}
                   onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
                 />
               </label>
@@ -503,8 +505,9 @@ function UploadedMaps(props: { roomId: string; disabled: boolean; onPick(row: As
   );
 }
 
-function MapStrip(props: { maps: readonly AssetRow[]; disabled: boolean; onPick(row: AssetRow): void }) {
+export function MapStrip(props: { maps: readonly AssetRow[]; disabled: boolean; onPick(row: AssetRow): void }) {
   const assets = useAssets();
+  const disabled = useHeld(props.disabled);
   return (
     <div style={{ display: "flex", gap: theme.space(2), overflowX: "auto", paddingBottom: theme.space(1) }}>
       {props.maps.map((m) => (
@@ -512,7 +515,7 @@ function MapStrip(props: { maps: readonly AssetRow[]; disabled: boolean; onPick(
             key={m.id}
             type="button"
             title="Use this map"
-            disabled={props.disabled}
+            disabled={disabled}
             onClick={() => props.onPick(m)}
             style={{
               flex: "none",
@@ -520,14 +523,15 @@ function MapStrip(props: { maps: readonly AssetRow[]; disabled: boolean; onPick(
               border: `${theme.line.border}px solid ${theme.color.border}`,
               borderRadius: theme.radius.sm,
               background: theme.color.bg,
-              cursor: props.disabled ? "default" : "pointer",
+              cursor: disabled ? "default" : "pointer",
             }}
           >
             <img
               src={assets.url(m.id, m.variants.includes("thumb") ? "thumb" : "full")}
               alt={`Map, ${m.width} × ${m.height}`}
               loading="lazy"
-              style={{ display: "block", width: 96, height: 64, objectFit: "cover", borderRadius: theme.radius.sm }}
+              // A picture has no words to dim and must not fade, so a map that cannot be picked now goes gray (looks.ts).
+              style={{ display: "block", width: 96, height: 64, objectFit: "cover", borderRadius: theme.radius.sm, filter: disabled ? "grayscale(1)" : undefined }}
             />
           </button>
         ))}
