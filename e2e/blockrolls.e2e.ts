@@ -1562,16 +1562,17 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await bar.getByRole("button", { name: / below$/ }).click();
       await dm.getByRole("menu", { name: "Panel below" }).getByRole("menuitemradio", { name: sideTabName("Dice") }).click();
       await dm.getByRole("group", { name: "Dice below", exact: true }).waitFor();
-      const toastsNow = () => dm.locator("[data-toast]").filter({ hasText: /Acrobatics/ }).count();
+      // A different skill than sbr-24, so a toast still showing from that step cannot stand in for this one.
+      const toastsNow = () => dm.locator("[data-toast]").filter({ hasText: /Sleight of Hand/ }).count();
       const before = await toastsNow();
       const from = dmSent.ops.length;
       dmWire.hold = true;
       await boxOf(panel, "Dexterity").click();
-      await listOf(dm, "Dexterity").getByRole("menuitem", { name: /^Acrobatics/ }).click();
+      await listOf(dm, "Dexterity").getByRole("menuitem", { name: /^Sleight of Hand/ }).click();
       await dm.getByRole("button", { name: "Hide panels" }).click();
       await panel.first().waitFor({ state: "hidden" });
       dmWire.release();
-      await oneRoll(dmSent, from, "Acrobatics from a split pane hidden before it lands");
+      await oneRoll(dmSent, from, "Sleight of Hand from a split pane hidden before it lands");
       await waitFor("one toast for the roll", async () => ((await toastsNow()) > before ? true : null), 5_000);
       assert.equal((await toastsNow()) - before, 1, "one own-roll toast");
     } finally {
