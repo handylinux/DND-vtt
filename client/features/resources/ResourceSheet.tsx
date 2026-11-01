@@ -6,6 +6,7 @@ import { LIMITS } from "#shared/limits.ts";
 import { Button } from "../../components/Button.tsx";
 import { Checkbox } from "../../components/Checkbox.tsx";
 import { FieldRow, Input, NUMBER_FIELD_WIDTH, Select } from "../../components/Field.tsx";
+import { Held } from "../../components/Held.tsx";
 import { Help, Section } from "../../components/Panel.tsx";
 import { Segmented } from "../../components/Segmented.tsx";
 import { UnsavedInput } from "../../lib/sheetSwipe.ts";
@@ -187,7 +188,7 @@ export function ResourceSheet(props: { character: Character; mode: SheetMode; op
           if (e.key === "Enter" && target instanceof HTMLInputElement && (target.type === "radio" || target.type === "checkbox")) e.preventDefault();
         }}
       >
-        <fieldset disabled={sending} style={{ border: "none", margin: 0, padding: 0, minWidth: 0 }}>
+        <Held held={sending}>
           <div style={{ display: "grid", gap: theme.space(4) }}>
             {mode.kind === "add" ? <Segmented<Tab> label="Add from" value={tab} options={TABS} onChange={change(setTab)} grow /> : null}
             {mode.kind === "edit" ? (
@@ -225,7 +226,7 @@ export function ResourceSheet(props: { character: Character; mode: SheetMode; op
               </Section>
             ) : null}
           </div>
-        </fieldset>
+        </Held>
       </form>
     </SheetDialog>
   );
