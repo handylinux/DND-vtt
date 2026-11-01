@@ -6,6 +6,10 @@ import { numbersFromStatBlock, proficiencyFor } from "#shared/rules/proficiency.
 import { loadMonsters } from "#shared/srd/monsters.ts";
 import { monsterView, statBlockOf } from "#shared/statBlock.ts";
 import { customMonster } from "#shared/testutil.ts";
+import { projectState } from "#shared/project.ts";
+import { DM, room } from "#shared/testutil.ts";
+import { createStore } from "zustand/vanilla";
+import type { RoomState } from "#shared/model.ts";
 import { theme } from "../../lib/theme.ts";
 import { splitAbilityTable } from "./abilityTable.ts";
 
@@ -15,6 +19,8 @@ const { PcStatsView } = await import("../pcstats/PcStatsView.tsx");
 const { StatBlockView } = await import("./StatBlockView.tsx");
 const { Markdown } = await import("../../components/Markdown.tsx");
 const { AbilityGrid } = await import("./AbilityGrid.tsx");
+const { RoomProvider } = await import("../../state/view.ts");
+const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
 const { SavesLine } = await import("../tokens/StatSummary.tsx");
 
 /** Every roll mark the markup holds: a frame, a tint, a name's tooltip or its unseen picture. */
@@ -173,8 +179,23 @@ const BOXES = [
 ] as const;
 const ROLLER = { creature: { tokenId: "t1" }, tokenId: "t1", name: "Thorn", played: true };
 
+/** A rolling box reads the room (connection, rolls), so it renders inside a room as it does in the app. */
+function inRoom(child: unknown): string {
+  const view = projectState(room(), DM, { sceneId: "s1" }) as unknown as RoomState;
+  const store = createStore(() => ({ view, roomId: "r1", connection: "open", you: DM, sceneId: "s1", local: { selectedIds: [], multi: false } }));
+  return renderToStaticMarkup(
+    createElement(RoomProvider, {
+      store: store as never,
+      actions: { dispatch: () => 1 } as never,
+      ui: {} as never,
+      assets: { url: () => "" } as never,
+      children: createElement(RoomScopeProvider, { scope: new RoomScope(), children: child as never }),
+    }),
+  );
+}
+
 function rolling(abilities: readonly (typeof BOXES)[number][] = BOXES): string {
-  return renderToStaticMarkup(createElement(AbilityGrid, { abilities: abilities as never, roll: ROLLER }));
+  return inRoom(createElement(AbilityGrid, { abilities: abilities as never, roll: ROLLER }));
 }
 
 /** Each button's opening tag and its inside, in order. */
@@ -226,6 +247,14 @@ test("sbr: each box keeps the text box's look and puts its three lines in marked
   assert.doesNotMatch(dex!.tag, /data-save-proficient|box-shadow/);
 });
 
+test("sbr: a rolling box keeps the text box's tight line height, so the grid does not grow when it rolls", () => {
+  for (const b of buttonsOf(rolling())) {
+    const style = /style="([^"]*)"/.exec(b.tag)![1]!;
+    // The font shorthand resets line-height, so it must come before the box look's own.
+    assert.ok(style.indexOf("font:inherit") >= 0 && style.indexOf("font:inherit") < style.indexOf("line-height:1.2"), style);
+  }
+});
+
 test("sbr: a box is named by its printed words, once, and says it opens a menu", () => {
   const named = buttonsOf(rolling()).map((b) => /aria-label="([^"]*)"/.exec(b.tag)![1]);
   assert.deepEqual(named, [
@@ -262,13 +291,13 @@ test("sbr: a rolling box's words and numbers are the text box's, so the grid say
 
 test("sbr: the views pass the roller to their grid, and without one stay text", () => {
   const stats: PcStats = { abilities: { str: 10, dex: 16, con: 12, int: 10, wis: 14, cha: 10 }, saves: ["dex"], skills: {}, adjust: {}, defenses: {}, rolls: [] };
-  const pc = (roll?: typeof ROLLER) => renderToStaticMarkup(createElement(PcStatsView, { character: { stats, level: 5 }, ...(roll ? { roll } : {}) }));
+  const pc = (roll?: typeof ROLLER) => inRoom(createElement(PcStatsView, { character: { stats, level: 5 }, ...(roll ? { roll } : {}) }));
   assert.equal(buttonsOf(pc(ROLLER)).length, 6);
   assert.equal(buttonsOf(pc()).length, 0);
   assert.match(pc(), /<dl data-ability-grid=""/);
   const block = statBlockOf(customMonster("scout"));
   const view = monsterView(block);
-  const monster = (roll?: typeof ROLLER) => renderToStaticMarkup(createElement(StatBlockView, { view, source: "room", ...(roll ? { roll } : {}) }));
+  const monster = (roll?: typeof ROLLER) => inRoom(createElement(StatBlockView, { view, source: "room", ...(roll ? { roll } : {}) }));
   assert.equal(buttonsOf(monster(ROLLER)).length, 6);
   assert.equal(buttonsOf(monster()).length, 0);
   assert.equal(outlined(monster()).length, outlined(monster()).length);

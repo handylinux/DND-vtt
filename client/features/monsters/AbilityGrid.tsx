@@ -115,7 +115,8 @@ function RollingBox(props: { box: AbilityBox; roller: BlockRoller; onSent: Param
         {...menu.buttonProps}
         {...(a.proficient ? { "data-save-proficient": "" } : {})}
         aria-label={`${ABILITY_NAMES[a.key]} ${a.score}, ${a.mod}, save ${a.save}${a.proficient ? spokenProficiency("prof") : ""}`}
-        style={{ ...boxStyle(a), display: "block", position: "relative", boxSizing: "border-box", width: "100%", margin: 0, textAlign: "left", font: "inherit", color: "inherit", border: 0, cursor: "pointer", ...menu.pressStyle }}
+        // `font` first: its shorthand resets line-height, which the box look then sets back to FL-15's tight leading.
+        style={{ font: "inherit", ...boxStyle(a), display: "block", position: "relative", boxSizing: "border-box", width: "100%", margin: 0, textAlign: "left", color: "inherit", border: 0, cursor: "pointer", ...menu.pressStyle }}
       >
         <span data-ability-abbr="" style={{ ...line, ...ABBR_STYLE }}>
           {ABILITY_ABBR[a.key]}
