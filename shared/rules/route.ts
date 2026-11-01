@@ -138,6 +138,10 @@ export type FollowLead = { id: string | undefined; elevation: number; grounded: 
  * creature walks on its own ground behind a holder that started on the
  * ground, else moves as much as its holder's height moved, never below its
  * own ground. Past the walk's start only: there each stands as it does.
+ * In single file each member has walked its own way, so `shift` is then
+ * each one's own (`fileShift`), and each holder up the chain is read where
+ * it walks, as the reducer reads its holder's own walk (review
+ * FU45B-ASTRA-02).
  *
  * Null for a member whose chain leaves `memberOf`, as one held by a creature
  * this copy does not hold would. Its height is not followed, and each
@@ -148,10 +152,11 @@ export function followedHeight(
   lead: FollowLead,
   memberOf: (id: string) => Follower | undefined,
   id: string,
-  shift: Point,
+  shift: Point | ((id: string) => Point),
   leadNow: number,
 ): number | null {
   if (id === lead.id) return leadNow;
+  const by = typeof shift === "function" ? shift(id) : shift;
   const member = memberOf(id);
   const link = member?.attached;
   if (!member || !link) return null;
@@ -160,13 +165,27 @@ export function followedHeight(
   const holderFrom = holder ? holder.elevation : lead.elevation;
   if (link.kind === "drag") {
     const grounded = holder ? footing(chunks, followerTrace(holder, [holder])[0]!) === "ground" : lead.grounded;
-    const ground = groundUnder(chunks, followerTrace(member, [member])[0]!, { x: member.x + shift.x, y: member.y + shift.y });
+    const ground = groundUnder(chunks, followerTrace(member, [member])[0]!, { x: member.x + by.x, y: member.y + by.y });
     if (grounded) return ground;
     const holderNow = followedHeight(chunks, lead, memberOf, link.to, shift, leadNow);
     return holderNow === null ? null : Math.max(member.elevation + (holderNow - holderFrom), ground);
   }
   const holderNow = followedHeight(chunks, lead, memberOf, link.to, shift, leadNow);
   return holderNow === null ? null : holderNow + (member.elevation - holderFrom);
+}
+
+/**
+ * How far each member of a group in single file (`fileRoutes`) has walked
+ * at point `i` of the walk, as `followedHeight` reads it: by its own walk
+ * in the file, and by `otherwise` for one with none there, as what sits
+ * on a holder, whose height its holder's gives.
+ */
+export function fileShift(file: ReadonlyMap<string, readonly Point[]>, memberOf: (id: string) => Point | undefined, i: number, otherwise: Point): (id: string) => Point {
+  return (id) => {
+    const at = file.get(id)?.[i];
+    const start = memberOf(id);
+    return at && start ? { x: at.x - start.x, y: at.y - start.y } : otherwise;
+  };
 }
 
 /**

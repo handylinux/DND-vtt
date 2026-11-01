@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { wall } from "#shared/discoveryTestutil.ts";
+import { heights, wall } from "#shared/discoveryTestutil.ts";
 import type { RoomState, Token } from "#shared/model.ts";
 import { canApply } from "#shared/permissions.ts";
 import { footprintRect, occupiedHexes } from "#shared/rules/footprint.ts";
@@ -228,6 +228,37 @@ describe("squares: a mount dragging a goblin into a corridor one square wide (LP
         }
       }
     }
+  });
+});
+
+describe("squares: heights in single file (review FU45B-ASTRA-02)", () => {
+  /** The horse drags an ogre in the air, which drags a goblin, over ground the goblin's offset would read under the ogre, and a low ledge on the goblin's own walk in the file. */
+  function nested(): RoomState {
+    const s = dragCorridor();
+    heights(s, { x: 2, y: 4, w: 7, h: 1 }, 10);
+    heights(s, { x: 2, y: 7, w: 1, h: 1 }, 2);
+    s.tokens.ogre = token("ogre", { size: "large", x: 0, y: 5, elevation: 5, name: "Ogre", kind: "npc", attached: { to: "horse", kind: "drag" } });
+    s.tokens.gob = token("gob", { x: 1, y: 7, elevation: 5, name: "Goblin", kind: "npc", attached: { to: "ogre", kind: "drag" } });
+    return s;
+  }
+
+  test("the drop's own check of the file reads each holder where it walks, so the goblin meets the ledge and the walk is cut", () => {
+    const s = nested();
+    const points = [{ x: 2, y: 5, elevation: 0 }, { x: 2.5, y: 5.5, elevation: 0 }, { x: 4, y: 5.5, elevation: 0 }, { x: 9.5, y: 5.5, elevation: 0 }];
+    // Cut by their places once one cannot follow in the file (D-261101-371), so short of the corridor.
+    const cut = walkersStop(s, ownWalk(s.tokens.horse!), points, [s.tokens.ogre!, s.tokens.gob!], { squeeze: true });
+    assert.ok(cut && cut.at.x < 6, `cut short of the corridor: ${JSON.stringify(cut)}`);
+  });
+
+  test("a goblin an ogre drags behind the horse takes its height from where the ogre walks in the file, as the server does, so the drop is one the server takes", () => {
+    const s = nested();
+    const { plan } = dropOf(s, { x: 9.5, y: 5.5 });
+    assert.ok(plan, "the drop landed");
+    assert.ok(takes(s, plan), `the server takes what the drop sends: ${JSON.stringify(plan.moves)}, stop ${JSON.stringify(plan.stop)}`);
+    // The whole way in is the server's to refuse: the goblin, on its own ground behind an ogre on its own, meets the ledge.
+    const whole = { t: "token.move" as const, tokenId: "horse", x: 9.5, y: 5.5, squeeze: true as const, route: [[2.5, 5.5, 1, 0], [4, 5.5, 1, 0], [9.5, 5.5, 2, 0]] as [number, number, number, 0 | 1][] };
+    assert.deepEqual(canApply(whole, P1, s, { canUseAsset: () => true }), { ok: false, code: "forbidden", message: "A ledge is in the way." });
+    assert.deepEqual([plan.moves.map((m) => [m.tokenId, m.x, m.y, m.squeeze]), plan.stop && stopText(plan.stop)], [[["horse", 3, 5, undefined]], "Goblin can't follow through there."], "so the drop stops short and names it");
   });
 });
 

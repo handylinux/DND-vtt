@@ -5,7 +5,7 @@ import { canSqueeze, footprintSize, snapStep, squeezedSize } from "./footprint.t
 import type { Point } from "./geom.ts";
 import { footing } from "./heights.ts";
 import { crossesInnerLedges, groundUnder, legStop, offGridWallThrough, offKey, onOffHolder, pastHolder, stepTester, walkEnd, walkFrom, walkOn, type MovingToken, type StepTester, type Walker } from "./movement.ts";
-import { fileRoutes, followedHeight, legSteps, routeFeet, routeLattice, seatedOn, seatShift, straightCost, trueLength, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "./route.ts";
+import { fileRoutes, fileShift, followedHeight, legSteps, routeFeet, routeLattice, seatedOn, seatShift, straightCost, trueLength, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "./route.ts";
 import { SQUARES } from "./grid.ts";
 
 /**
@@ -630,7 +630,8 @@ export class WalkWorld {
       const at = (k: number): Walker => {
         if (k === 0) return t.walker;
         const p = walk[k]!;
-        const height = followedHeight(build.buildChunks, this.#lead, (m) => this.#members.get(m), t.walker.id, { x: p.x - t.walker.x, y: p.y - t.walker.y }, this.#leadHeight(points[k]!));
+        const shift = fileShift(file, (m) => (m === t.walker.id ? t.walker : this.#members.get(m)), k, { x: points[k]!.x - token.x, y: points[k]!.y - token.y });
+        const height = followedHeight(build.buildChunks, this.#lead, (m) => this.#members.get(m), t.walker.id, shift, this.#leadHeight(points[k]!));
         return { ...t.walker, x: p.x, y: p.y, elevation: height ?? groundUnder(build.buildChunks, t.walker, p) };
       };
       let from = at(0);
