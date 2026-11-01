@@ -156,17 +156,25 @@ async function setUp(page: Page, cdp: CDPSession, view: View): Promise<void> {
 /** Opens a panel: from the side panel's tabs from 900 layout px up, else from the Panels sheet's list, as size.e2e.ts does. */
 async function openPanel(page: Page, title: string): Promise<void> {
   const tabs = page.getByRole("tablist", { name: "Panels" });
-  if (await tabs.isVisible()) return openSideTab(page, title);
   // Already open: a sheet on a subpage, such as a character's page, has Back where All panels was, and the tool bar's Panels would close it.
   const sheet = page.locator(`dialog[data-rvtt-sheet][aria-label="${title}"]`);
-  if (await sheet.isVisible()) return;
   const picker = page.getByRole("list", { name: "Panels" });
   const all = page.getByRole("button", { name: "All panels" });
+  const toolsPanels = page.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ });
+  // Just after a window turn across 900 px the layout is between its two forms: neither the tabs nor the Panels button is there yet.
+  // Choosing a route on that frame clicked a button that never came.
+  // If none ever shows, say what the page does show, since this wait has timed out in a lane check before.
+  await tabs.or(sheet).or(picker).or(all).or(toolsPanels).filter({ visible: true }).first().waitFor({ timeout: 15_000 }).catch(async (err: unknown) => {
+    const seen = await page.locator("body").ariaSnapshot({ timeout: 5_000 }).catch(() => "(no snapshot)");
+    throw new Error(`no way to open ${title}: ${String(err)}\n${seen.slice(0, 2_000)}`);
+  });
+  if (await tabs.isVisible()) return openSideTab(page, title);
+  if (await sheet.isVisible()) return;
   if (await picker.isVisible()) {
     // The list is already open.
   } else if (await all.isVisible()) await all.click();
   else {
-    await page.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).click();
+    await toolsPanels.click();
     // Add and place can hide the desktop panel. Panels restores its tabs, while a phone restores its sheet or picker.
     await tabs.or(picker).or(sheet).or(all).filter({ visible: true }).first().waitFor();
     if (await tabs.isVisible()) return openSideTab(page, title);
