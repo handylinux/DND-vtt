@@ -2171,10 +2171,12 @@ describe("raccoon-vtt: swipe a phone's bottom sheet", { timeout: 1_500_000 }, ()
           const body = this.parentElement?.closest("[data-pane-body]") ?? null;
           const start = performance.now();
           const result = original.call(this, deep);
+          // Read right after the copy, so the probe's own element count below is not in the time.
+          const elapsed = performance.now() - start;
           if (body && w.fu41CloneSample) {
             if (w.fu41CloneSample.clones === 0) w.fu41CloneSample.elements = body.querySelectorAll("*").length;
             w.fu41CloneSample.clones++;
-            w.fu41CloneSample.ms += performance.now() - start;
+            w.fu41CloneSample.ms += elapsed;
           }
           return result;
         };
