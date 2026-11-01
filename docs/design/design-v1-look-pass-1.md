@@ -1,6 +1,6 @@
 # Look pass 1: locked controls, small roll menus, toasts over sheets, the long formula slip
 
-Status: draft 2.2, after design review round 3 (LOOK1D-SONNET-11 and 12 adopted). Round 2: LOOK1-SOL-03 and LOOK1D-SONNET-10 adopted. Round 1: LOOK1-SOL-01 and 02, LOOK1D-SONNET-1 to 9, all adopted.
+Status: built, and code review round 1 fixed (see As built). Design draft 2.2, after design review round 3 (LOOK1D-SONNET-11 and 12 adopted). Round 2: LOOK1-SOL-03 and LOOK1D-SONNET-10 adopted. Round 1: LOOK1-SOL-01 and 02, LOOK1D-SONNET-1 to 9, all adopted.
 
 Changes from draft 1:
 - `HeldScope` only at Dialog among `components/`. A Popover and a Sheet render in place, so their controls stay inside the fieldset, natively off, and keep the held look (D-261101-301 rewritten, D-261101-312).
@@ -48,7 +48,7 @@ Shots: `screenshots/look-pass-1/` (before and after per surface), the rest kept 
 - Fieldset sites that become `Held`: GroupSave.tsx (setup: What they roll, Ability, Skill, DC, the two switches, What players see and its two checks, Fill from, each row's How it rolls and Bonus, Change it, and the whole Outcome group), RequestSheet.tsx (Recent, the second choice and Remove, DC, Note for the players, What players see), ResourceSheet.tsx (Add from, Name, Spend an amount, Amount, Comes back on, Class, its level, the rows, the modifier, Remove), JournalEditor.tsx (Title, Folder, Who can read it, the player, Secret, Move up and down, Delete block, the block's text, Add text, Add a secret), PcStatsEditor.tsx and MonsterEditor.tsx (every field under `held`), PinPane.tsx and CompanionBlocks.tsx (drop their per-control flags), DiceSetPicker.tsx (keeps its own tile look, inside `Held`).
 - Hand-rolled controls with no disabled look today, given `textDisabled` and the `border` outline: IconsTab IconTile, ImagePicker SearchTile, LibraryGrid's Use this image, NewScene MapStrip, StarterBrowser WorkTile (dim ring and caption), PartyBar's Show it on the map row and the pill's name (`textMuted` to `textDisabled`), CropEditor's Zoom label.
 - FromControl's Marked portrait fades to 0.35 opacity. It keeps its grayscale at full opacity, with the dim outline (D-261101-302).
-- Not changed (D-261101-302): HpSection's death-save pips show a state and are read only, so they keep their colors and take `aria-readonly`, not `disabled`. XCardButton's Send is a busy button and takes `busy`, which keeps its color. DisplayRoom's Leave keeps its red.
+- Not changed (D-261101-302): HpSection's death-save pips show a state and are read only, so they keep their colors, stay natively `disabled` and carry `data-disabled-look="readonly"` (a button takes no `aria-readonly`). XCardButton's Send is a busy button, so it keeps its color, stays natively `disabled` while sending and carries `data-disabled-look="busy"` and `aria-busy`. DisplayRoom's Leave keeps its red.
 
 ## 2. DPF1-SMALL-MENU (D-261101-304)
 
@@ -199,6 +199,34 @@ The rest of components (L1B):
 - Dialog wraps its portal in `HeldScope`. Dialog.test.ts draws a Dialog inside a held group, with a stand-in document, and finds its controls bright and live.
 - Menu reads `useHeld()` as 1 says: a held row draws off with `aria-disabled`, its pointer, reader and key picks do nothing, it drops `it.events`, and the arrows and typeahead still move focus through it.
 - The second press guard (3) reads `covers` from the placement Popover last made, which Popover now keeps in its context (`placed`). That is one file past the plan. Menu reads `covers` only where the placement carries it, so it builds before popoverPlace returns it, and its tests stub the placement. The guard holds a press from its pointer down to its click: the click picks nothing and the row's press binding never starts. A key, and a reader's activation (a click with detail 0), pick at once. The window starts at the menu's first render.
+
+Fieldset sites (L1C), D-261101-330 to 334:
+- Every `<fieldset disabled>` in GroupSave, RequestSheet, ResourceSheet, JournalEditor, PinPane, CompanionBlocks and DiceSetPicker is `Held`, and the hand-told `disabled` that only mirrored the hold is gone (the damage Input, the "On a pass" choice, All fail and All pass, the row marks, RequestSheet's choices, PinPane's and the numbers step's flags). The group save keeps `display: contents` on its `Held`. The EffectPicker tiles read `useHeld`. DiceSetPicker is `Held` though no pixel changes.
+- Kept by hand, since they feed more than the look: `disabled={frozen}` on GroupRollButton (it feeds the roll menu's hook) and `disabled={waits}` on the row marks and checkboxes (off-scene rows).
+- No `HeldScope` was needed at any of these sites. `PinEditor` and `NumbersStep` are exported for their tests (client/features/heldSites.test.ts, new).
+
+Editors and hand-rolled controls (L1D), D-261101-335 to 339:
+- ChoiceRows in the measure kit had no disabled look at all and now takes the shared button look, a native `disabled`, a dim detail and the default cursor. ChoiceTiles, the value chip, the scene panel's Select, NumberInput, ColorInput and Slider, and the Icons, image search, library and map tiles read the group.
+- Wordless picture tiles go gray at full strength with the dim outline and the default cursor, never faded. A held ColorInput takes the quiet outline and keeps its swatch's color. NewScene's file chooser reads `useHeld(status.busy)`.
+- PcStatsEditor and MonsterEditor swap their `<fieldset disabled>` for `Held` with the same box. One e2e step, lk1-held-editor in pcstats.e2e.ts, covers the PC editor's look. MonsterEditor has no step of its own.
+- Exports for tests: PickTile (LibraryGrid), MapStrip, IconTile, SearchTile.
+
+The rest (L1E), D-261101-340 to 344:
+- Death-save pips and X-card Send follow the Not changed line above. The off-scene party row dims its color, its PP figure and its "Not on this scene" line, and keeps the life word, the HP bar and the AC badge, which show state. A stopped starter work tile draws a dim ring and caption, and the crop Zoom label dims while there is no image. FromControl's portrait is gray at full opacity inside the dim outline.
+- The offline Damage Roll is held with its page (D-261101-311), and GroupSave.test.ts says why.
+- lk1-held-menu runs on a fresh page: a reopened save locks itself when the connection drops, which flips its own Roll's `disabled` and closes the menu by that. The Damage Roll on a fresh page is the case only the held group stops. The step discards a kept save first. Its click, Enter, Space and Shift+F10 on a held row leave the menu open. Shift+F10 lands on a roll-mode row, which carries no press bindings, so Menu.test.ts covers the dropped press bindings. Round 1 moved its no-roll checks to after the connection returns, since nothing can be recorded while offline.
+
+Menus and the slip (L2), D-261101-345 to 349:
+- `popoverPlace` slides a flip menu over its button and returns `covers`. The ability-box menu passes `flip` too, so at 320x568 at 130% it also slides over its box and takes the 350 ms guard. Tests that tap a row at once there wait 400 ms (`MENU_SETTLE_MS` in dice.e2e.ts and blockrolls.e2e.ts), two files past the plan.
+- The slide covers only Again's foot at that size, so the guard protects taps on the rows and a tap on the button's middle still closes the menu as a source press does. lk1-again taps the first choice. No break chance follows a sign that follows a sign. The docs are in FEATURES.md only.
+
+Toasts (L3), D-261101-350 to 354:
+- Built as designed. lk1-toasts lives in e2e/alignmentRoom.ts (`toastsOverSheetTests`, called from alignment-followups.e2e.ts) since the sweep's helpers are not exported there, one file past the plan. The three toasts are whispers from a player. The very short sheet's row is checked at 44 chrome px at most. FEATURES.md names the 60 px floor and the DM guide gives no number.
+
+Review fixes, round 1:
+- The sheet's floor follows the sheet's real top: where the on-screen keyboard reaches higher than the toolbar, the sheet stands on it, and `sheetToastFloor` takes the keyboard's inset (LOOK1-SOL-001).
+- Room hands placement the lower of the strip's floor and the sheet's, for the foot the stacks fit to and for the rise that places a stack anew, so a toast below the alert cards when a sheet opens is placed again above it. A new toast starts below the cards only where a whole one fits above that floor too (`toastStartTop`, LOOK1-SOL-002).
+- Toasts that waited undrawn behind the very short sheet's row survive the sheet closing and show over the map as new. Only a toast drawn in the sheet is dismissed with it (D-261101-390, LOOK1-OPUS-01).
 
 The app-wide check (L1A2):
 - `disabledLookLines` reads each visible off control under a root (`:disabled`, the fieldset itself aside, or `aria-disabled="true"`): every word it draws must be `textDisabled`, a field's by its value or, when empty, its placeholder, and nothing from a word up to the root may fade below full opacity. A control with no words passes, and a native input hidden under a drawn one (opacity 0, or a box under 2 px) is not seen. Only `data-disabled-look="busy"` or `"readonly"` exempts a control, and any other value is a line. `sweep.measure` runs it on every root. A drawn case in the helper tests (lk1-disabled-look) covers each rule.
