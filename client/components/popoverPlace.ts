@@ -46,6 +46,8 @@ export type Place = {
   scrolls: boolean;
   /** It took room from the rise region. */
   rose: boolean;
+  /** It slid over its anchor to stand whole, so a fast second press there would land on it (D-261101-313). */
+  covers?: true;
 };
 
 export function popoverPlace(input: PlaceInput): Place {
@@ -65,6 +67,17 @@ export function popoverPlace(input: PlaceInput): Place {
   const inRise = rise ? (side === "above" ? edge - rise.top : rise.bottom - edge) : -Infinity;
   const rose = inBound < input.minHeight && inRise > inBound && content.height > inBound;
   const room = Math.max(0, rose ? inRise : inBound);
+  /*
+   * A menu that may flip and fits on neither side, though the bound holds it,
+   * slides back over its anchor until it is whole, so its choices never
+   * scroll in a box of their own. Its title names what was pressed, which the
+   * box then covers (FL17-AGAIN-320).
+   */
+  const whole = bound.bottom - bound.top - 2 * margin;
+  if (input.flip && !rose && content.height > room && content.height <= whole) {
+    const top = side === "above" ? bound.top + margin : bound.bottom - margin - content.height;
+    return { left, top, width, height: content.height, scrolls: false, rose: false, covers: true };
+  }
   const height = Math.min(content.height, room);
   const top = side === "above" ? edge - height : edge;
   return { left, top, width, height, scrolls: content.height > height, rose };

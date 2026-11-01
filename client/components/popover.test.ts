@@ -138,8 +138,11 @@ describe("where a popover stands", () => {
     assert.deepEqual(menu(150), { left: 17, top: 200, width: 212, height: 202, scrolls: false, rose: false }, "a roll near the top: below it, whole");
     assert.deepEqual(menu(150, { flip: false }), { left: 17, top: 8, width: 212, height: 136, scrolls: true, rose: false }, "without flip it keeps above and scrolls");
     const middle = menu(190);
-    assert.deepEqual([middle.top, middle.height, middle.scrolls], [240, 189, true], "room for it on neither side: the roomier, below, and it scrolls");
-    assert.equal(menu(200).top, 8, "the roomier side above");
+    assert.deepEqual([middle.top, middle.height, middle.scrolls, middle.covers], [437 - 8 - 202, 202, false, true], "room for it on neither side: the roomier, below, slid up over its anchor until whole (FL17-AGAIN-320)");
+    const higher = menu(200);
+    assert.deepEqual([higher.top, higher.height, higher.scrolls, higher.covers], [8, 202, false, true], "the roomier side above, slid down over its anchor");
+    assert.deepEqual([menu(190, { content: { width: 212, height: 430 } }).height, menu(190, { content: { width: 212, height: 430 } }).scrolls], [189, true], "taller than the bound: the roomier side, and it scrolls as before");
+    assert.equal(menu(190, { flip: false }).scrolls, true, "a popover that may not flip never covers its anchor");
     assert.equal(popoverPlace(above({ side: "below", anchor: rect(17, 380, 229, 424), bound: rect(0, 0, 246, 437), content: { width: 212, height: 202 }, flip: true })).top, 380 - 6 - 202, "from below it flips above");
   });
 
