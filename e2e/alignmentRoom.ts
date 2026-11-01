@@ -408,11 +408,13 @@ async function escapeAll(page: Page): Promise<void> {
   for (let i = 0; i < 3; i++) await page.keyboard.press("Escape");
 }
 
-/** Opens the room at a size and interface scale, from a new navigation. */
-async function openAt(page: Page, size: Size, scale: number): Promise<void> {
+/** Opens the room at a size and interface scale, from a new navigation, with any other stored settings `store` names. */
+async function openAt(page: Page, size: Size, scale: number, store: Record<string, string> = {}): Promise<void> {
   await page.setViewportSize({ width: size.width, height: size.height });
   if (!page.url().startsWith(server.origin)) await page.goto(`${server.origin}/`);
-  await page.evaluate((s) => localStorage.setItem("rvtt.uiScale", String(s)), scale);
+  await page.evaluate((kv) => {
+    for (const [k, v] of Object.entries(kv)) localStorage.setItem(k, v);
+  }, { ...store, "rvtt.uiScale": String(scale) });
   if (page.url().includes(`/r/${run.roomId}`)) await reopenRoom(page);
   else await page.goto(`${server.origin}/r/${run.roomId}`);
   await page.getByRole("status", { name: "Connected" }).first().waitFor();
@@ -4539,8 +4541,17 @@ export function proficiencyTests(): void {
   }
 }
 
-/** Lane B's marker for the result line under a rolling grid (docs/design/design-v1-stat-block-rolls.md 8). */
-const BLOCK_RESULT = "[data-block-result]";
+/**
+ * The roll header of the panel around `root` (docs/design/design-v1-token-roll-header.md):
+ * it sits at the top of the panel's host, above the stat block, so it is
+ * found from the host around `root` or inside it.
+ */
+function blockHeaderOf(root: Locator): Locator {
+  return root.locator("xpath=ancestor-or-self::*[@data-block-header-host][1]//*[@data-block-header] | .//*[@data-block-header]");
+}
+
+/** The roll header's own settings for the sweep: the dice off, so the header shows its result at once and no tray of dice lies over what is measured (F13). */
+const NO_THROW = { "rvtt.rollAnimation": "off" };
 
 /** The block of a token's panel, open: the token selected by a tap on its cell, as proficiencyToken opens it. */
 async function openTokenBlock(page: Page, name: string, at: { x: number; y: number }): Promise<Locator> {
@@ -4640,9 +4651,10 @@ async function blockRollScreens(sweep: Sweep, page: Page, screen: string, root: 
   await menu.waitFor();
   await menu.getByRole("menuitem", { name: at.roll }).first().click();
   await menu.waitFor({ state: "detached" });
-  const result = root.locator(BLOCK_RESULT);
+  const result = blockHeaderOf(root);
   await result.first().waitFor();
-  await waitFor(`${screen}'s result line to settle`, async () => ((await result.first().getAttribute("aria-busy")) === "true" ? null : true), 15_000);
+  // The header stays from the panel's last roll, so it is read once it names this one.
+  await result.first().locator("[data-result-label]").filter({ hasText: at.roll }).waitFor({ timeout: 15_000 });
   await sweep.measure(page, `sbr-${screen}-result`, result);
   const after = await grid.boundingBox();
   if (before && after && (Math.abs(before.height - after.height) > 0.5 || Math.abs(before.width - after.width) > 0.5)) {
@@ -4650,10 +4662,19 @@ async function blockRollScreens(sweep: Sweep, page: Page, screen: string, root: 
   }
   // A long label's one row must not widen the grid or the block past the sheet (LP27-A-BLOCK-1), which centering alone never sees.
   await sweep.add(page, `sbr-${screen}-result`, [...(await containmentLines(root, `${where}-result`)), ...(await containmentLines(grid, `${where}-result`)), ...(await containmentLines(result.first(), `${where}-result`))]);
-  const g = await grid.boundingBox();
-  const r = await result.first().boundingBox();
-  if (g && r && (r.y < g.y + g.height || Math.abs(r.x - g.x) > 0.5 || Math.abs(r.width - g.width) > 0.5)) {
-    await sweep.add(page, `sbr-${screen}-result`, [`${where}-result: the line at ${JSON.stringify(r)} is not under the grid at ${JSON.stringify(g)}, at its width`]);
+  // The header spans its host's column and stands inside the pane's view, at its top or stuck there.
+  const place = await result.first().evaluate((el) => {
+    type R = { left: number; right: number; top: number; bottom: number };
+    type E = { getBoundingClientRect(): R; closest(s: string): E | null };
+    const line = el as unknown as E;
+    const r = line.getBoundingClientRect();
+    const host = line.closest("[data-block-header-host]")?.getBoundingClientRect() ?? null;
+    const pane = line.closest("[data-pane-body]")?.getBoundingClientRect() ?? null;
+    return { r, host, pane };
+  });
+  const { r, host, pane } = place;
+  if (!host || !pane || Math.abs(r.left - host.left) > 0.5 || Math.abs(r.right - host.right) > 0.5 || r.top < pane.top - 0.5 || r.bottom > pane.bottom + 0.5) {
+    await sweep.add(page, `sbr-${screen}-result`, [`${where}-result: the header at ${JSON.stringify(r)} is not at its host's width ${JSON.stringify(host)} inside the pane ${JSON.stringify(pane)}`]);
   }
 }
 
@@ -4679,8 +4700,8 @@ export function blockRollTests(): void {
         if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
         const page = await dmPageFor(size);
         page.setDefaultTimeout(10_000);
-        await openAt(page, size, scale);
-        await openAt(pat, size, scale);
+        await openAt(page, size, scale, NO_THROW);
+        await openAt(pat, size, scale, NO_THROW);
         pat.setDefaultTimeout(10_000);
         // The page may come back with a token's bar open, which on a 480 x 320 screen covers the Tools row.
         await escapeAll(page);

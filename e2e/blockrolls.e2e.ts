@@ -15,22 +15,26 @@ import { containmentLines } from "./helpers/alignment.ts";
  * a box opens that ability's list, a tap on a row rolls it through the Dice
  * panel's path and takes none of the panel's Adv, Dis and Secret, a hold,
  * right-click, ContextMenu or Shift+F10 on a row swaps the list for the
- * roll's options in the same popover, and the result shows under the boxes.
- * Then the rules around them: a hold's release over the options picks
+ * roll's options in the same popover, and the result shows in the panel's
+ * roll header (docs/design/design-v1-token-roll-header.md). Then the rules around them: a hold's release over the options picks
  * nothing and its drift scrolls nothing, Escape and Android's Back step back
  * one view at a time, a request is answered and a played creature asked, a
  * score room sets Initiative, Wild Shape rolls "Rolls now", text stays text
  * where no creature stands behind a block, a block folded before its roll
- * lands gives one toast, the Dice panel beside the block stays silent, and
+ * lands keeps its header, a panel closed before it lands gives one toast,
+ * the Dice panel beside the block stays silent, and
  * Poisoned and Restrained show their tags.
  *
  * The markers it reads, from the design: a rolling grid is a
  * `[data-ability-grid]` group of six buttons named by their printed words
  * ("Strength 16, +3, save +6, proficient"), a list is a menu named "Dexterity
  * rolls" whose rows are menu items named by the whole roll, a roll's options
- * are a menu named "Roll options for Dexterity save +2", and the result line
- * is `[data-block-result]`. Every run is under reduced motion, so a result
- * shows at once and no dice are in the air to take the next tap.
+ * are a menu named "Roll options for Dexterity save +2", and the roll header
+ * is `[data-block-header]`, at the top of the panel's `[data-block-header-host]`.
+ * Every run is under reduced motion with the Roll animation switch off
+ * (`rvtt.rollAnimation` "off"), so a result shows at once and no dice,
+ * thrown or drawn landed, lie over the panel or take the next tap. The
+ * throw itself is dice.e2e.ts's `trh-` steps.
  *
  * It runs with `pnpm test:e2e` on E2E_PORT plus thirty-seven, one file after
  * another as the others. The other environment variables are the smoke run's
@@ -52,7 +56,6 @@ const BOUNDS = { w: 20, h: 12 };
 const HELD_MS = 700;
 /** How long a step waits to be sure a gesture sent nothing. */
 const QUIET_MS = 600;
-const RESULT = "[data-block-result]";
 
 let server: Server;
 let browser: Browser;
@@ -296,7 +299,25 @@ const gridOf = (scope: Locator) => scope.locator("[data-ability-grid]").first();
 const boxOf = (scope: Locator, ability: string) => gridOf(scope).getByRole("button", { name: new RegExp(`^${ability} `) });
 const listOf = (page: Page, ability: string) => page.getByRole("menu", { name: `${ability} rolls` });
 const optionsOf = (page: Page, roll: RegExp) => page.getByRole("menu", { name: roll });
-const resultOf = (scope: Locator) => scope.locator(RESULT);
+/** The roll header of the panel around `scope`, or in it: the header sits at the top of the panel's host, above the stat block. */
+const resultOf = (scope: Locator) => scope.locator("xpath=ancestor-or-self::*[@data-block-header-host][1]//*[@data-block-header] | .//*[@data-block-header]");
+/** A live region that is not the roll header's, such as a toast's. */
+const NOT_HEADER = '[role="status"]:not([data-block-header]):not([data-block-header] *)';
+
+/**
+ * Stores the Roll animation switch off on each page the context opens. With
+ * reduced motion alone, the landed dice and their scrim would rest over the
+ * header for 2.1 s, where the reading checks would see them (F13).
+ */
+async function rollAnimationOff(context: BrowserContext): Promise<void> {
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem("rvtt.rollAnimation", "off");
+    } catch {
+      // A page with no storage, such as about:blank, throws no dice.
+    }
+  });
+}
 
 /** Each row's accessible name, in order: the whole roll, such as "Dexterity save +1". */
 async function rowNames(menu: Locator): Promise<string[]> {
@@ -403,14 +424,15 @@ async function lineParts(line: Locator): Promise<{ label: LinePart; verdict: Lin
   });
 }
 
-/** A grid near the top of its scroller, so a shot holds it and the result line under it. Only up and down: a sideways scroll would hide a block wider than its sheet. */
+/** A grid near the top of its scroller, under the roll header stuck there, so a shot holds both. Only up and down: a sideways scroll would hide a block wider than its sheet. */
 async function showUnder(grid: Locator): Promise<void> {
   await grid.evaluate((node) => {
-    type S = { parentElement: S | null; scrollTop: number; scrollHeight: number; clientHeight: number; getBoundingClientRect(): { top: number } };
+    type S = { parentElement: S | null; scrollTop: number; scrollHeight: number; clientHeight: number; getBoundingClientRect(): { top: number; height: number }; querySelector(s: string): S | null };
     const el = node as unknown as S & { ownerDocument: { defaultView: { getComputedStyle(e: S): { overflowY: string } } } };
     let box = el.parentElement;
     while (box && !(/(auto|scroll)/.test(el.ownerDocument.defaultView.getComputedStyle(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
-    if (box) box.scrollTop += el.getBoundingClientRect().top - box.getBoundingClientRect().top - 24;
+    const header = box?.querySelector("[data-block-header]")?.getBoundingClientRect().height ?? 0;
+    if (box) box.scrollTop += el.getBoundingClientRect().top - box.getBoundingClientRect().top - header - 24;
   });
   await sleep(400);
 }
@@ -462,6 +484,8 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     patContext = await browser.newContext({ viewport: PHONE, deviceScaleFactor: 2, isMobile: true, hasTouch: true, reducedMotion: "reduce" });
     await diceFoldsOpen(dmContext);
     await diceFoldsOpen(patContext);
+    await rollAnimationOff(dmContext);
+    await rollAnimationOff(patContext);
     dm = await dmContext.newPage();
     pat = await patContext.newPage();
     await dmWire.install(dm);
@@ -525,13 +549,13 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await dm.locator(".konvajs-content").first().waitFor();
   });
 
-  test("sbr-1. Pat taps DEX on Thorn's sheet: the list in the design's order, then Stealth rolls once, shows under the boxes and is the Dice panel's newest roll", async () => {
+  test("sbr-1. Pat taps DEX on Thorn's sheet: the list in the design's order, then Stealth rolls once, shows in the panel's roll header and is the Dice panel's newest roll", async () => {
     const sheet = await patSheet();
     const view = sheet.locator("[data-pc-stats]");
     const grid = gridOf(view);
     assert.equal(await grid.getAttribute("role"), "group", "a rolling grid is a group");
     assert.equal(await grid.getByRole("button").count(), 6, "of six buttons");
-    assert.equal(await resultOf(view).count(), 0, "no result line before a roll");
+    assert.equal(await resultOf(view).count(), 0, "no roll header before a roll");
     const box = boxOf(view, "Dexterity");
     assert.equal(await box.getAttribute("aria-haspopup"), "menu");
     assert.equal(await box.getAttribute("aria-expanded"), "false");
@@ -866,7 +890,8 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
   });
 
   test("sbr-8. Initiative in a fight, a changed row and a score room: the row is set once, 'Not set' after a change, and the score is set with no dice", async () => {
-    await ops.send({ t: "encounter.start", entries: [{ id: randomUUID(), tokenId: run.thorn.id, value: 5 }, { id: randomUUID(), tokenId: run.goblin.id, value: 9 }] });
+    // Thorn's row starts at a value no d20 + 1 can reach, so the wait below cannot mistake a roll of 4 for no roll (SBR8-FLAKE).
+    await ops.send({ t: "encounter.start", entries: [{ id: randomUUID(), tokenId: run.thorn.id, value: 40 }, { id: randomUUID(), tokenId: run.goblin.id, value: 9 }] });
     await waitFor("the fight", () => dmSocket.state?.encounter || null);
     const sheet = await patSheet();
     const view = sheet.locator("[data-pc-stats]");
@@ -879,7 +904,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     const op = await oneRoll(patSent, from, "Thorn's Initiative");
     await waitFor("Thorn's row set", () => {
       const row = dmSocket.state?.encounter?.entries.find((e) => e.tokenId === run.thorn.id);
-      return row && row.value !== 5 ? row : null;
+      return row && row.value !== 40 ? row : null;
     });
     assert.ok(op.tag, "the roll has a tag");
     // A row the DM changes while the roll waits is left alone.
@@ -1037,37 +1062,48 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await preview.getByRole("button", { name: "Exit", exact: true }).click();
   });
 
-  test("sbr-12. a block folded before a roll lands, with the Dice panel closed: one own-roll toast, and the Dice panel opened after it announces nothing more. (A refused roll is the phase 2 step sbr-12r.)", async () => {
+  test("sbr-12. a panel closed before a roll lands, with the Dice panel closed: one own-roll toast, and the Dice panel opened after it announces nothing more. Kept open, no toast, and folding the block keeps the header. (A refused roll is the phase 2 step sbr-12r.)", async () => {
     const sheet = await patSheet();
     const view = sheet.locator("[data-pc-stats]");
-    const fold = sheet.getByRole("button", { name: "Stat block", exact: true });
     patWire.hold = true;
     const from = patSent.ops.length;
     await boxOf(view, "Strength").tap();
     await listOf(pat, "Strength").getByRole("menuitem", { name: /^Strength check/ }).tap();
-    await fold.click();
+    // Folding the block keeps the header, which then says the result, so it is the panel's closing that leaves the roll to its toast.
+    await closeSheets(pat);
+    await sheet.waitFor({ state: "hidden" });
     patWire.release();
-    await oneRoll(patSent, from, "Strength check from a block folded before it lands");
-    const toasts = pat.locator('[role="status"]:not([data-block-result]):not([data-block-result] *)').filter({ hasText: /Strength/ });
+    await oneRoll(patSent, from, "Strength check from a panel closed before it lands");
+    const toasts = pat.locator(NOT_HEADER).filter({ hasText: /Strength/ });
     await toasts.first().waitFor({ timeout: 5_000 });
     assert.equal(await toasts.count(), 1, "one own-roll toast");
-    await closeSheets(pat);
     const dice = await openDiceSheet(pat);
     await dice.locator("[data-dice-last]").getByText(/Strength/).first().waitFor();
     assert.equal(await dice.locator('[data-dice-last] [role="status"][aria-live], [data-dice-last] [role="alert"]').filter({ hasText: /Strength/ }).count(), 0, "the Dice panel's line says nothing more");
     await closeSheets(pat);
     // Kept open: no toast.
     const open = await patSheet();
-    const again = open.getByRole("button", { name: "Stat block", exact: true });
-    if ((await again.getAttribute("aria-expanded")) !== "true") await again.click();
-    const toastsNow = () => pat.locator('[role="status"]:not([data-block-result]):not([data-block-result] *)').filter({ hasText: /Strength/ }).count();
+    assert.equal(await resultOf(open).count(), 0, "the panel opened again has no header");
+    const toastsNow = () => pat.locator(NOT_HEADER).filter({ hasText: /Strength/ }).count();
     const before = await toastsNow();
     const next = patSent.ops.length;
     await boxOf(open, "Strength").tap();
     await listOf(pat, "Strength").getByRole("menuitem", { name: /^Strength check/ }).tap();
-    await oneRoll(patSent, next, "Strength check with the block kept open");
+    const kept = await oneRoll(patSent, next, "Strength check with the block kept open");
     await sleep(500);
-    assert.equal(await toastsNow(), before, "no toast while the block shows it");
+    assert.equal(await toastsNow(), before, "no toast while the header shows it");
+    // Folding the block leaves the header as it was (D-261101-081).
+    const entry = logEntry(patSocket, kept.tag);
+    assert.ok(entry?.data?.type === "dice", "the kept roll is in Pat's log");
+    const total = String(entry.data.rolls[0]!.total);
+    await open.getByRole("button", { name: "Stat block", exact: true }).click();
+    await open.locator("[data-ability-grid]").waitFor({ state: "detached" });
+    const header = resultOf(open);
+    assert.equal(await header.count(), 1, "the folded block keeps its header");
+    const row = header.locator("[data-block-header-row]");
+    assert.match(await row.innerText(), new RegExp(`^${total}\\b`), "with the total it showed");
+    assert.match(await row.innerText(), /Strength check/, "and its name");
+    await open.getByRole("button", { name: "Stat block", exact: true }).click();
     await closeSheets(pat);
   });
 
@@ -1155,7 +1191,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     }
   });
 
-  test("sbr-16. the Dice panel open beside the block: both lines show each roll, one polite announcement for a success, and folded before it lands the Dice panel's line says it once", async () => {
+  test("sbr-16. the Dice panel open beside the block: both lines show each roll, one polite announcement for a success, and folded before it lands the header keeps the roll and still says it once, the Dice panel's line nothing", async () => {
     await dm.keyboard.press("Escape");
     const panel = await dmPanel("Goblin", run.goblin);
     // Two panels puts the Dice panel under the Token panel, so both lines are mounted at once.
@@ -1182,7 +1218,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     const sticky = (await announced(dice.locator("[data-dice-last]"))).filter((t) => /Stealth/.test(t));
     assert.equal(block.length, 1, `the block says the result once: ${JSON.stringify(block)}`);
     assert.equal(sticky.length, 0, `the Dice panel's line is silent: ${JSON.stringify(sticky)}`);
-    // Folded before the roll lands, with the Dice panel open: its line says the result once.
+    // Folded before the roll lands, with the Dice panel open: the header stays with the panel, so it says the result once and the Dice panel's line stays silent.
     const foldedFrom = dmSent.ops.length;
     dmWire.hold = true;
     await boxOf(view, "Dexterity").click();
@@ -1191,9 +1227,13 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     dmWire.release();
     await oneRoll(dmSent, foldedFrom, "Acrobatics from a block folded before it lands");
     await dice.locator("[data-dice-last]").getByText(/Acrobatics/).first().waitFor();
+    await resultOf(view).getByText(/Acrobatics/).first().waitFor();
+    const header = (await announced(resultOf(view))).filter((t) => /Acrobatics/.test(t));
+    assert.equal(header.length, 1, `the folded block's header says it once: ${JSON.stringify(header)}`);
     const spoken = (await announced(dice.locator("[data-dice-last]"))).filter((t) => /Acrobatics/.test(t));
-    assert.equal(spoken.length, 1, `the Dice panel's line says it once: ${JSON.stringify(spoken)}`);
+    assert.equal(spoken.length, 0, `the Dice panel's line is silent: ${JSON.stringify(spoken)}`);
     assert.equal(await dice.locator('[data-dice-last] [role="alert"]').count(), 0, "and raises no alert");
+    await panel.getByRole("button", { name: "Stat block", exact: true }).click();
     // Back to one panel for the steps after this one.
     await dm.getByRole("button", { name: "Close Dice", exact: true }).click();
     await bar.waitFor({ state: "detached" });
@@ -1253,7 +1293,8 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await boxOf(smallView, "Strength").tap();
       await listOf(pat, "Strength").getByRole("menuitem", { name: /^Strength check/ }).tap();
       const shortLine = resultOf(smallView).first();
-      await shortLine.locator("[aria-description]").waitFor();
+      // A plain roll names no mode, so its body has no description: its label is what lands.
+      await shortLine.locator("[data-result-label]").waitFor();
       const plainHeight = (await shortLine.boundingBox())!.height;
       await boxOf(smallView, "Strength").tap();
       await hold(patCdp, listOf(pat, "Strength").getByRole("menuitem", { name: /^Strength check/ }));
@@ -1261,7 +1302,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await optionsOf(pat, /^Roll options for Strength check/).getByRole("menuitem", { name: "Roll with Advantage" }).tap();
       op = await oneRoll(patSent, from, "Advantage at 320 x 568");
       await shortLine.locator("[data-result-mode]").waitFor({ state: "attached" });
-      // The line's description sits on its body (BlockResult.tsx aria-description).
+      // The line's description sits on its body (BlockHeader.tsx aria-description).
       const describedBy = (await shortLine.locator("[aria-description]").first().getAttribute("aria-description")) ?? "";
       assert.match(describedBy, /Advantage/, "the description keeps the mode");
       // The words give way whole and first: clipped out of the one-row line, which keeps its height.
@@ -1501,7 +1542,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await sheet.waitFor({ state: "hidden" });
       patWire.release();
       await oneRoll(patSent, from, "Wisdom check from a sheet hidden before it lands");
-      const toasts = pat.locator('[role="status"]:not([data-block-result]):not([data-block-result] *)').filter({ hasText: /Wisdom/ });
+      const toasts = pat.locator(NOT_HEADER).filter({ hasText: /Wisdom/ });
       await toasts.first().waitFor({ timeout: 5_000 });
       assert.equal(await toasts.count(), 1, "one own-roll toast, not suppressed by the hidden line");
       // Shown again, the block's line carries the result.
@@ -1561,7 +1602,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       assert.equal(await resultOf(miraView).count(), 0, "Mira's page shows no result line from Lone's roll");
       assert.equal(await resultOf(characters).count(), 0, "and none anywhere in the panel");
       await sleep(500);
-      const said = await characters.locator('[data-block-result] [role="status"], [data-block-result] [role="alert"]').allInnerTexts();
+      const said = await characters.locator('[data-block-header] [role="status"], [data-block-header] [role="alert"]').allInnerTexts();
       assert.deepEqual(said.filter((t) => t.trim() !== ""), [], "no voice carried to the other page");
     } finally {
       for (const id of [mira.moth, mira.token, mira.loneToken]) await ops.send({ t: "token.delete", tokenId: id }).catch(() => undefined);

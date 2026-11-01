@@ -8,7 +8,8 @@ import { chromium, type Browser, type BrowserContext, type Locator, type Page, t
 import { FORMULA_ERRORS } from "#shared/dice/formula.ts";
 import { keptD20 } from "#shared/dice/roll.ts";
 import type { DiceRoll, LogEntry, LogEvent } from "#shared/model.ts";
-import { ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, reopenRoom, Shots, sideTabName, sleep, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
+import { barControl, ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, reopenRoom, Shots, sideTabName, sleep, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
+import { alignmentLines, containmentLines, measureAlignment } from "./helpers/alignment.ts";
 
 /**
  * Dice on the server (docs/design/design-v1-dice.md 13), on the real server serving
@@ -39,6 +40,16 @@ import { ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, reopenRoom, Shots, 
  * by Escape, each do as the design says. The browser draws WebGL in
  * software (SwiftShader), as CI has no GPU, and the steps that measure the
  * header line do so once the dice have gone.
+ *
+ * Last, the roll header on the token screen
+ * (docs/design/design-v1-token-roll-header.md 8), its steps labeled `trh-`:
+ * a stat block roll puts the Dice panel's line at the top of a character's
+ * page or a token's panel with nothing moving, and throws its dice from the
+ * box in that panel's own tray, at 390 x 844, in a phone sheet that grows,
+ * at 320 x 568 at 130% and on a computer. Then the Dice panel beside it,
+ * taps, another token and Hide during a throw, a second roll, a fold, a
+ * close and another page, reduced motion and the fallbacks, a keyboard pick
+ * and Tab under the line, and an unknown result's words in the line's row.
  *
  * It runs with `pnpm test:e2e` on E2E_PORT plus twenty, one file after
  * another as the others. The other environment variables are the smoke
@@ -450,6 +461,250 @@ async function resultWords(page: Page): Promise<string | null> {
   const result = page.locator('[data-dice-last] [aria-label="Show this roll in Recent rolls"]').filter({ visible: true });
   await result.waitFor();
   return result.getAttribute("aria-description");
+}
+
+/**
+ * The roll header on the token screen (docs/design/design-v1-token-roll-header.md 8),
+ * its steps labeled `trh-`: the panel's room, a monster of its own with
+ * nothing but its six abilities, so its panel is short, and a second
+ * character for Pat.
+ */
+const trh = {
+  vexId: randomUUID(),
+  sprite: { monster: randomUUID(), token: randomUUID(), at: { x: 12, y: 2 } },
+  bramble: { token: randomUUID(), at: { x: 15, y: 2 } },
+};
+
+/** A room monster with a stat block and no lines under its six abilities, so its token's panel is short. */
+const SPRITE_BLOCK = {
+  size: "small", type: "Fey", alignment: "Neutral", ac: 12, initiative: 0, hp: { average: 7, formula: "2d6" }, speed: "30 ft.",
+  abilities: { str: { score: 8, save: -1 }, dex: { score: 14, save: 2 }, con: { score: 10, save: 0 }, int: { score: 10, save: 0 }, wis: { score: 10, save: 0 }, cha: { score: 10, save: 0 } },
+  skills: "", vulnerabilities: "", resistances: "", immunities: "", gear: "", senses: "", passivePerception: 10, languages: "", cr: "0", xp: 10,
+  traits: [], actions: [], bonusActions: [], reactions: [], legendaryActions: [],
+};
+
+/** The token panel's groups folded and its stat block open, for the DM's own creatures (client/features/tokens/panelFolds.ts). */
+const SHORT_PANEL = JSON.stringify({ statBlock: true, combat: false, notes: false, position: false, image: false, stats: false, settings: false });
+
+/** What `watchHeader` saw from its start, in the page's milliseconds and screen px. */
+type HeaderWatched = {
+  /** When the host first held a header line. */
+  lineAt: number | null;
+  /** When a dice canvas first showed, where it hung ("own" for this host's tray), and whether the header showed a total then. */
+  canvasAt: number | null;
+  canvasIn: string | null;
+  totalAtCanvas: boolean | null;
+  /** When that canvas stopped showing. */
+  canvasGoneAt: number | null;
+  /** When the header showed a total after a moment without one. */
+  totalAt: number | null;
+  /** How far the watched box's top strayed from where it stood at the start, at every frame and change. */
+  maxDrift: number;
+  /** Whether the host set its scroller's `overflow-anchor` to `none` and took it off again. */
+  anchorOff: boolean;
+  /** Whether a scrim or ring showed in this host's tray, and in any other. */
+  ownDecor: boolean;
+  foreignDecor: boolean;
+  top0: number;
+  scrollTop0: number;
+};
+
+/**
+ * Watches the host of `box`, the ability box a roll goes from, at every
+ * frame and every change to the page's DOM, until the next watch: the
+ * header line, the dice and where they hang, the box's place, and the
+ * scroller's inline `overflow-anchor`.
+ */
+async function watchHeader(box: Locator): Promise<void> {
+  await box.evaluate((el) => {
+    (globalThis as unknown as { __trhBox: unknown }).__trhBox = el;
+  });
+  await js(
+    box.page(),
+    `
+    const box = globalThis.__trhBox;
+    globalThis.__trh?.stop();
+    const scroller = box.closest("[data-pane-body]");
+    const host = box.closest("[data-block-header-host]");
+    const w = { lineAt: null, canvasAt: null, canvasIn: null, totalAtCanvas: null, canvasGoneAt: null, totalAt: null, maxDrift: 0, anchorOff: false, ownDecor: false, foreignDecor: false, top0: box.getBoundingClientRect().top, scrollTop0: scroller.scrollTop, cleared: false };
+    const total = () => /^\\d/.test((host.querySelector("[data-block-header-row]")?.textContent ?? "").trim());
+    const look = () => {
+      const now = performance.now();
+      if (box.isConnected) w.maxDrift = Math.max(w.maxDrift, Math.abs(box.getBoundingClientRect().top - w.top0));
+      if (w.lineAt === null && host.querySelector("[data-block-header]")) w.lineAt = now;
+      const t = total();
+      if (!t) w.cleared = true;
+      const stage = [...document.querySelectorAll("[data-dice-stage]")].find((c) => c.style.display === "block");
+      if (stage && w.canvasAt === null) {
+        w.canvasAt = now;
+        w.totalAtCanvas = t;
+        w.canvasIn = host.contains(stage) ? "own" : stage.closest("[data-block-header]") ? "another header" : stage.closest("[data-dice-last]") ? "dice" : "elsewhere";
+      }
+      if (!stage && w.canvasAt !== null && w.canvasGoneAt === null) w.canvasGoneAt = now;
+      for (const tray of document.querySelectorAll("[data-dice-tray]")) {
+        if (tray.childElementCount < 2) continue;
+        if (host.contains(tray)) w.ownDecor = true;
+        else w.foreignDecor = true;
+      }
+      if (w.cleared && t && w.totalAt === null) w.totalAt = now;
+    };
+    const observer = new MutationObserver((records) => {
+      for (const r of records) if (r.target === scroller && r.attributeName === "style" && /overflow-anchor: none/.test(r.oldValue ?? "")) w.anchorOff = true;
+      look();
+    });
+    observer.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true, attributeOldValue: true });
+    let frame = 0;
+    const tick = () => {
+      look();
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    globalThis.__trh = { w, stop: () => { observer.disconnect(); cancelAnimationFrame(frame); } };
+    `,
+  );
+}
+
+function headerWatched(page: Page): Promise<HeaderWatched> {
+  return js<HeaderWatched>(page, `return globalThis.__trh.w;`);
+}
+
+/** Waits until `watchHeader` has seen what `ready` asks for, and hands back all it saw. */
+function headerSeen(page: Page, what: string, ready: (w: HeaderWatched) => boolean, timeoutMs = 15_000): Promise<HeaderWatched> {
+  return waitFor(
+    what,
+    async () => {
+      const w = await headerWatched(page);
+      return ready(w) ? w : null;
+    },
+    timeoutMs,
+  );
+}
+
+/** The dice in the air: a canvas showing and the header with no total yet. */
+const midThrow = (w: HeaderWatched) => w.canvasAt !== null && w.totalAt === null;
+
+/** The roll header of the panel around `scope`, or in it. */
+function headerOf(scope: Locator): Locator {
+  return scope.locator("xpath=ancestor-or-self::*[@data-block-header-host][1]//*[@data-block-header] | .//*[@data-block-header]");
+}
+
+/** An ability's box in the first rolling grid in `scope`, such as "Dexterity". */
+function abilityBox(scope: Locator, ability: string): Locator {
+  return scope.locator("[data-ability-grid]").first().getByRole("button", { name: new RegExp(`^${ability} `) });
+}
+
+/** A tap on an ability's box and on a row of its list, as a finger picks. */
+async function pickRow(page: Page, scope: Locator, ability: string, row: RegExp, how: "tap" | "click" = "tap"): Promise<void> {
+  const box = abilityBox(scope, ability);
+  const item = page.getByRole("menu", { name: `${ability} rolls` }).getByRole("menuitem", { name: row });
+  if (how === "tap") {
+    await box.tap();
+    await item.tap();
+  } else {
+    await box.click();
+    await item.click();
+  }
+}
+
+/**
+ * Warms the dice through the Dice panel, as `diceReady` does, and leaves
+ * it: a stat block's first roll is the step's own, and it throws only
+ * once the renderer is warm. The renderer stays warm while any rolling
+ * surface is mounted, and for 30 s after the last goes.
+ */
+async function warmDice(page: Page, socket: SocketWatch): Promise<void> {
+  if ((page.viewportSize()?.width ?? 0) < 900) {
+    await closeAll(page);
+    await openDicePhone(page);
+    await diceReady(page, socket);
+    await closeAll(page);
+  } else {
+    await openSideTab(page, "Dice");
+    await diceReady(page, socket);
+  }
+}
+
+async function closeAll(page: Page): Promise<void> {
+  // The formula field keeps Escape for itself, so focus leaves it first.
+  await js(page, "document.activeElement?.blur();");
+  for (let i = 0; i < 3; i++) await page.keyboard.press("Escape");
+  await page.locator("dialog[data-rvtt-sheet][open]").first().waitFor({ state: "hidden", timeout: 1_500 }).catch(() => undefined);
+}
+
+/** Pat's Characters sheet on a phone, at a character's page with its stat block open. */
+async function characterPage(page: Page, id: string, name: string): Promise<Locator> {
+  const sheet = page.locator('dialog[data-rvtt-sheet][aria-label="Characters"]');
+  if (!(await sheet.isVisible())) {
+    await closeAll(page);
+    await page.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).tap();
+    await page.getByRole("region", { name: "Panels" }).getByRole("button", { name: /^Characters/ }).tap();
+    await sheet.waitFor();
+  }
+  const heading = sheet.locator("[data-creature-heading]").filter({ hasText: name });
+  const opener = sheet.locator(`[data-opener="character:${id}"]`);
+  await sheet.locator("[data-creature-heading]").or(opener).first().waitFor();
+  if (!(await heading.isVisible())) {
+    if (!(await opener.isVisible())) await sheet.getByRole("button", { name: "Back to Characters", exact: true }).tap();
+    await opener.tap();
+  }
+  await heading.waitFor();
+  const fold = sheet.getByRole("button", { name: "Stat block", exact: true });
+  if ((await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
+  await sheet.locator("[data-ability-grid]").first().waitFor();
+  return sheet;
+}
+
+/** The DM's token panel for a token, from its cell, with the stat block open. */
+async function tokenPanel(page: Page, name: string, at: { x: number; y: number }, escapeFirst = true): Promise<Locator> {
+  if (escapeFirst) await page.keyboard.press("Escape");
+  const sceneId = dmSocket.state!.meta.playerSceneId!;
+  await tapCell(page, dmSocket.state!.scenes[sceneId]!.bounds, at);
+  const bar = page.getByRole("dialog", { name: `${name} actions` });
+  await bar.waitFor();
+  await (await barControl(bar, "Details")).click();
+  const panel = page.getByRole("tabpanel", { name: "Token", exact: true }).or(page.getByRole("region", { name: "Token", exact: true })).or(page.locator('dialog[data-rvtt-sheet][aria-label="Token"]'));
+  await panel.getByRole("heading", { name, exact: true }).first().waitFor();
+  const fold = panel.getByRole("button", { name: "Stat block", exact: true });
+  if ((await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
+  await panel.locator("[data-ability-grid]").first().waitFor();
+  return panel.first();
+}
+
+/** A scroller's place and size, and its scroll, around `inside`. */
+function scrollerOf(inside: Locator): Promise<{ top: number; bottom: number; scrollTop: number; scrollHeight: number; clientHeight: number; anchor: string; spacer: number }> {
+  return inside.evaluate((el) => {
+    type S = { getBoundingClientRect(): { top: number; bottom: number }; scrollTop: number; scrollHeight: number; clientHeight: number; querySelector(s: string): { offsetHeight: number } | null };
+    const e = el as unknown as { closest(s: string): S | null; ownerDocument: { defaultView: { getComputedStyle(e: S): { overflowAnchor: string } } } };
+    const s = e.closest("[data-pane-body]")!;
+    const r = s.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom, scrollTop: s.scrollTop, scrollHeight: s.scrollHeight, clientHeight: s.clientHeight, anchor: e.ownerDocument.defaultView.getComputedStyle(s).overflowAnchor, spacer: s.querySelector("[data-block-header-spacer]")?.offsetHeight ?? 0 };
+  });
+}
+
+/** Scrolls the scroller around `el` by `by` layout px. */
+function scrollPane(el: Locator, by: number): Promise<void> {
+  return el.evaluate((node, by) => {
+    (node as unknown as { closest(q: string): { scrollTop: number } }).closest("[data-pane-body]").scrollTop += by;
+  }, by);
+}
+
+/** Brings `el`'s top to its scroller's top, so a header line put in would cover it. */
+async function toPaneTop(el: Locator): Promise<void> {
+  const [box, pane] = await Promise.all([el.boundingBox(), scrollerOf(el)]);
+  const zoom = await el.evaluate((n) => (n as unknown as { currentCSSZoom?: number }).currentCSSZoom ?? 1);
+  await scrollPane(el, (box!.y - pane.top) / zoom);
+  await sleep(150);
+}
+
+/** The header's plain words: their lines, and the row's height, in layout px. */
+function headerWords(header: Locator): Promise<{ lines: number; row: number; text: string }> {
+  return header.evaluate((el) => {
+    type E = { offsetHeight: number; textContent: string | null; querySelector(s: string): E | null };
+    const h = el as unknown as E & { ownerDocument: { defaultView: { getComputedStyle(e: E): { lineHeight: string } } } };
+    const words = h.querySelector("[data-block-header-row] span[title]")!;
+    const line = Number.parseFloat(h.ownerDocument.defaultView.getComputedStyle(words).lineHeight);
+    return { lines: Math.round(words.offsetHeight / line), row: h.querySelector("[data-block-header-row]")!.offsetHeight, text: words.textContent ?? "" };
+  });
 }
 
 describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
@@ -1567,6 +1822,540 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
     } finally {
       await context.close();
       for (const g of goblins) await ops!.send({ t: "token.delete", tokenId: g.id }).catch(() => undefined);
+    }
+  });
+
+  test("trh-0. the token screen's room: Vex for Pat, a short Sprite and a goblin for the DM, and the DM's panel groups folded", async () => {
+    const sceneId = dmSocket.state!.meta.playerSceneId!;
+    await ops!.send({ t: "character.create", character: { id: trh.vexId, name: "Vex", size: "medium", ownerIds: [run.patId], actor: THORN_ACTOR, level: 3, stats: THORN_STATS } });
+    await ops!.send({ t: "monster.create", monster: { ...SPRITE_BLOCK, id: trh.sprite.monster, name: "Sprite" } });
+    const inline = { ...THORN_ACTOR, hp: { cur: 7, max: 7, temp: 0 }, ac: 12, initBonus: 2 };
+    await ops!.send({ t: "token.create", token: { id: trh.sprite.token, sceneId, kind: "monster", name: "Sprite", size: "small", ...trh.sprite.at, visibility: "all", disposition: "hostile", actor: { inline: { ...inline, monsterId: trh.sprite.monster } } } });
+    await ops!.send({ t: "token.create", token: { id: trh.bramble.token, sceneId, kind: "monster", name: "Bramble", size: "medium", ...trh.bramble.at, visibility: "all", disposition: "hostile", actor: { inline: { ...THORN_ACTOR, srdId: "goblin-warrior" } } } });
+    await waitFor("Vex on Pat's phone", () => playerSocket.state?.characters[trh.vexId]?.stats ?? null);
+    await waitFor("the Sprite on the DM's page", () => dmSocket.state?.tokens[trh.sprite.token] ?? null);
+    await dm.evaluate((v) => localStorage.setItem("rvtt.tokenPanelFolds", v), SHORT_PANEL);
+    await closeAll(dm);
+    await dm.setViewportSize({ width: 1440, height: 900 });
+    await reopenRoom(dm);
+    await dm.getByRole("status", { name: "Connected" }).first().waitFor();
+    await dm.locator(".konvajs-content").first().waitFor();
+    await closeAll(player);
+    await player.setViewportSize({ width: 390, height: 844 });
+    await reopenRoom(player);
+    await player.getByRole("status", { name: "Connected" }).first().waitFor();
+  });
+
+  test("trh-1. Pat taps DEX, Check, on Thorn's page at 390 x 844: the line goes in at the pane's top with anchoring off and the box still, the dice fly from the box, and the total lands on the chip's face within 1,100 ms", async (t) => {
+    if (!(await needsWebGL(player, t))) return;
+    await warmDice(player, playerSocket);
+    const sheet = await characterPage(player, run.thornId, "Thorn");
+    assert.equal(await headerOf(sheet).count(), 0, "no header before a roll");
+    const box = abilityBox(sheet, "Dexterity");
+    await watchHeader(box);
+    const count = diceLines(playerSocket.state?.log).length;
+    await pickRow(player, sheet, "Dexterity", /^Dexterity check/);
+    const line = await waitFor("the check's line", () => diceLines(playerSocket.state?.log).slice(count).at(-1)?.data ?? null);
+    const mid = await headerSeen(player, "the dice in the air", (w) => w.canvasAt !== null);
+    assert.equal(mid.canvasIn, "own", "the dice hang in the panel's own tray");
+    assert.equal(mid.totalAtCanvas, false, "the header held no total as the dice flew");
+    assert.ok(mid.anchorOff, "the host turned the scroller's anchoring off for the insert");
+    const header = headerOf(sheet);
+    const pane = await scrollerOf(box);
+    const top = (await header.boundingBox())!;
+    assert.ok(top.y <= pane.top + 1 && top.y + top.height > pane.top, `the line sits at the pane's top: ${top.y} in a pane from ${pane.top}`);
+    await shots.take(player, "trh-1-thorn-mid-throw");
+    const w = await headerSeen(player, "the total", (w) => w.totalAt !== null);
+    const land = w.totalAt! - w.canvasAt!;
+    assert.ok(land >= 700 && land <= 1_100, `the total showed ${Math.round(land)} ms after the dice`);
+    assert.ok(w.canvasGoneAt === null || w.canvasGoneAt >= w.totalAt!, "the dice stayed until the total showed");
+    const chip = await header.locator("[data-face]").first().textContent();
+    assert.equal(chip, String(line.rolls[0]!.faces[0]));
+    assert.equal((await stageHook(player))?.landed, chip, "the die landed on the face its chip shows");
+    await settled(player);
+    const after = await headerWatched(player);
+    assert.ok(after.maxDrift <= 1, `the DEX box moved ${after.maxDrift} px`);
+    assert.equal((await scrollerOf(box)).anchor, "auto", "anchoring is back on after the insert");
+    assert.deepEqual(alignmentLines(await measureAlignment(header), "trh-1 390 x 844"), [], "the line is aligned");
+    await shots.take(player, "trh-1-thorn-landed");
+  });
+
+  test("trh-1b. a phone sheet below its cap grows upward by the line: its scroll stays 0, the box stays, and the whole throw plays", async (t) => {
+    // A tall phone, since every stat block outgrows a 390 x 844 sheet's cap: here the Sprite's panel fits below it.
+    const context = await browser.newContext({ viewport: { width: 390, height: 2000 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    try {
+      await context.addCookies(await dmContext.cookies(server.origin));
+      const page = await context.newPage();
+      const quiet = new ConsoleWatch("dm-phone");
+      quiet.attach(page);
+      const socket = new SocketWatch("dm-phone");
+      await socket.attach(context, page);
+      if (!(await needsWebGL(page, t))) return;
+      await page.goto(`${server.origin}/r/${run.roomId}`);
+      await page.evaluate((v) => localStorage.setItem("rvtt.tokenPanelFolds", v), SHORT_PANEL);
+      await reopenRoom(page);
+      await page.getByRole("status", { name: "Connected" }).first().waitFor();
+      await page.locator(".konvajs-content").first().waitFor();
+      await warmDice(page, socket);
+      const panel = await tokenPanel(page, "Sprite", trh.sprite.at);
+      const sheet = page.locator('dialog[data-rvtt-sheet][aria-label="Token"]');
+      const size = async () => ({ height: (await sheet.boundingBox())!.height });
+      await sleep(400);
+      const cap = await sheet.evaluate((d) => {
+        // The sheet's cap: its max-height as the layout works it out, read by asking for the whole window for one synchronous layout.
+        const e = d as unknown as { style: { height: string }; getBoundingClientRect(): { height: number } };
+        const was = e.style.height;
+        e.style.height = "100vh";
+        const h = e.getBoundingClientRect().height;
+        e.style.height = was;
+        return h;
+      });
+      const before = await size();
+      assert.ok(before.height < cap - 49, `the sheet stands below its cap: ${before.height} of ${cap} px`);
+      const box = abilityBox(panel, "Dexterity");
+      await watchHeader(box);
+      await pickRow(page, panel, "Dexterity", /^Dexterity check/);
+      const w = await headerSeen(page, "the total", (w) => w.totalAt !== null);
+      const after = await size();
+      const pane = await scrollerOf(box);
+      assert.ok(after.height > before.height + 40, `the sheet grew by the line: ${before.height} then ${after.height} px`);
+      assert.equal(pane.scrollTop, 0, "the content did not scroll");
+      assert.ok(w.maxDrift <= 1, `the box moved ${w.maxDrift} px`);
+      assert.equal(w.canvasIn, "own", "the dice threw in the sheet's tray");
+      assert.ok(w.canvasGoneAt === null || w.canvasGoneAt >= w.totalAt!, "the sheet's growth did not end the throw before its total");
+      assert.ok(w.totalAt! - w.canvasAt! >= 700, `the throw played to its landing: ${Math.round(w.totalAt! - w.canvasAt!)} ms`);
+      await shots.take(page, "trh-1b-sheet-grew");
+      assert.deepEqual(quiet.errors, []);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test("trh-2. at 320 x 568 at 130% on Thorn's page and at 1440 x 900 on a monster's panel the box stays, the line and tray stay inside the pane and nothing scrolls sideways, and on a 2560 x 1440 screen the short panel's foot spacer makes room", async (t) => {
+    if (!(await needsWebGL(player, t))) return;
+    try {
+      await closeAll(player);
+      await player.setViewportSize({ width: 320, height: 568 });
+      await player.evaluate(() => localStorage.setItem("rvtt.uiScale", "1.3"));
+      await reopenRoom(player);
+      await player.getByRole("status", { name: "Connected" }).first().waitFor();
+      await warmDice(player, playerSocket);
+      const sheet = await characterPage(player, run.thornId, "Thorn");
+      const box = abilityBox(sheet, "Dexterity");
+      await box.scrollIntoViewIfNeeded();
+      await watchHeader(box);
+      await pickRow(player, sheet, "Dexterity", /^Dexterity check/);
+      await headerSeen(player, "the dice in the air", midThrow);
+      const header = headerOf(sheet);
+      const tray = header.locator("[data-dice-tray]");
+      const inPane = [...(await containmentLines(header, "trh-2 320 line")), ...(await containmentLines(tray, "trh-2 320 tray"))];
+      await shots.take(player, "trh-2-thorn-320-130-mid-throw");
+      const w = await headerSeen(player, "the total", (w) => w.totalAt !== null);
+      assert.equal(w.canvasIn, "own");
+      await settled(player);
+      assert.ok((await headerWatched(player)).maxDrift <= 1, `320 x 568 at 130%: the DEX box moved ${(await headerWatched(player)).maxDrift} px`);
+      assert.deepEqual(inPane, [], "the line and the tray stay inside the pane");
+      assert.equal(await sideways(player, "[data-block-header]"), 0, "the sheet never scrolls sideways");
+      assert.deepEqual(alignmentLines(await measureAlignment(header), "trh-2 320 x 568 at 130%"), [], "the line is aligned");
+      await shots.take(player, "trh-2-thorn-320-130-landed");
+    } finally {
+      await closeAll(player);
+      await player.setViewportSize({ width: 390, height: 844 });
+      await player.evaluate(() => localStorage.setItem("rvtt.uiScale", "1"));
+      await reopenRoom(player);
+      await player.getByRole("status", { name: "Connected" }).first().waitFor();
+    }
+
+    // The DM's Sprite at 1440 x 900.
+    await warmDice(dm, dmSocket);
+    let panel = await tokenPanel(dm, "Sprite", trh.sprite.at);
+    let box = abilityBox(panel, "Dexterity");
+    await box.scrollIntoViewIfNeeded();
+    await watchHeader(box);
+    await pickRow(dm, panel, "Dexterity", /^Dexterity check/, "click");
+    await headerSeen(dm, "the dice in the air", midThrow);
+    const header = headerOf(panel);
+    const tray = [...(await containmentLines(header, "trh-2 1440 line")), ...(await containmentLines(header.locator("[data-dice-tray]"), "trh-2 1440 tray"))];
+    const w = await headerSeen(dm, "the total", (w) => w.totalAt !== null);
+    assert.equal(w.canvasIn, "own");
+    await settled(dm);
+    assert.ok((await headerWatched(dm)).maxDrift <= 1, `1440 x 900: the DEX box moved ${(await headerWatched(dm)).maxDrift} px`);
+    assert.deepEqual(tray, [], "the line and the tray stay inside the pane");
+    assert.equal(await sideways(dm, "[data-block-header]"), 0, "the panel never scrolls sideways");
+    assert.deepEqual(alignmentLines(await measureAlignment(header), "trh-2 1440 x 900"), [], "the line is aligned");
+    await shots.take(dm, "trh-2-sprite-1440-landed");
+
+    // On a 2560 x 1440 screen the Sprite's folded panel is shorter than its pane, so the scroll that keeps the box still needs the foot spacer's room.
+    try {
+      await dm.setViewportSize({ width: 2560, height: 1440 });
+      await tokenPanel(dm, "Bramble", trh.bramble.at);
+      panel = await tokenPanel(dm, "Sprite", trh.sprite.at);
+      box = abilityBox(panel, "Dexterity");
+      await sleep(300);
+      const short = await scrollerOf(box);
+      assert.ok(short.scrollHeight <= short.clientHeight, `the panel is shorter than its pane: ${JSON.stringify(short)}`);
+      await watchHeader(box);
+      await pickRow(dm, panel, "Dexterity", /^Dexterity save/, "click");
+      await headerSeen(dm, "the total", (w) => w.totalAt !== null);
+      await settled(dm);
+      const after = await scrollerOf(box);
+      assert.ok(after.spacer > 0, `the foot spacer took the shortfall: ${after.spacer} px`);
+      assert.ok(after.scrollTop > 0, "and the pane scrolled by the line");
+      assert.ok((await headerWatched(dm)).maxDrift <= 1, `2560 x 1440: the DEX box moved ${(await headerWatched(dm)).maxDrift} px`);
+      await shots.take(dm, "trh-2-sprite-2560-spacer");
+    } finally {
+      await dm.setViewportSize({ width: 1440, height: 900 });
+    }
+  });
+
+  test("trh-3. two panels on a computer, Dice below the Token panel: a block roll throws and decorates in the token panel only, a Dice panel roll in the Dice panel only, and the Dice panel's going mid-throw leaves the block's throw to land", async (t) => {
+    if (!(await needsWebGL(dm, t))) return;
+    await warmDice(dm, dmSocket);
+    const panel = await tokenPanel(dm, "Sprite", trh.sprite.at);
+    const tabs = dm.getByRole("tablist", { name: "Panels" });
+    const bar = dm.locator("[data-pane-bar]");
+    if ((await bar.count()) === 0) {
+      await tabs.locator('[role="tab"][aria-haspopup="menu"]').click();
+      await dm.getByRole("menu", { name: "More panels" }).getByRole("menuitemcheckbox", { name: "Two panels" }).click();
+      await dm.getByRole("menu", { name: "More panels" }).waitFor({ state: "detached" });
+    }
+    const below = async (name: string) => {
+      await bar.getByRole("button", { name: / below$/ }).click();
+      await dm.getByRole("menu", { name: "Panel below" }).getByRole("menuitemradio", { name: sideTabName(name) }).click();
+      await dm.getByRole("group", { name: `${name} below`, exact: true }).waitFor();
+    };
+    try {
+      await below("Dice");
+      const dice = dm.getByRole("group", { name: "Dice below", exact: true });
+      const box = abilityBox(panel, "Dexterity");
+      await box.scrollIntoViewIfNeeded();
+      // A block roll: the canvas, the scrim and any ring in the token panel's tray, none in the Dice panel's.
+      await watchHeader(box);
+      await pickRow(dm, panel, "Dexterity", /^Dexterity save/, "click");
+      const block = await headerSeen(dm, "the block's total", (w) => w.totalAt !== null);
+      assert.equal(block.canvasIn, "own", "the block's dice hang in the token panel");
+      assert.ok(block.ownDecor, "its scrim is in the token panel's tray");
+      assert.equal(block.foreignDecor, false, "the Dice panel's tray drew nothing");
+      await shots.take(dm, "trh-3-block-roll-beside-dice");
+      await settled(dm);
+      const headerText = await headerOf(panel).locator("[data-block-header-row]").innerText();
+      // A Dice panel roll: the reverse, and the token panel's header unchanged.
+      await watchHeader(box);
+      const count = diceLines(dmSocket.state?.log).length;
+      await field(dice).fill("1d20 trh-3");
+      await field(dice).press("Enter");
+      await waitFor("the Dice panel's roll", () => (diceLines(dmSocket.state?.log).length > count ? true : null));
+      const panelRoll = await headerSeen(dm, "the Dice panel's dice", (w) => w.canvasAt !== null);
+      assert.equal(panelRoll.canvasIn, "dice", "the Dice panel's dice hang in its own tray");
+      await settled(dm);
+      const seen = await headerWatched(dm);
+      assert.equal(seen.ownDecor, false, "the token panel's tray drew nothing");
+      assert.equal(await headerOf(panel).locator("[data-block-header-row]").innerText(), headerText, "the token panel's header is unchanged");
+      // The Dice panel goes mid-throw, the pane under it swapped for another so the token pane keeps its size: the block's dice still land.
+      await watchHeader(box);
+      await pickRow(dm, panel, "Dexterity", /^Dexterity check/, "click");
+      await headerSeen(dm, "the block's dice in the air", midThrow);
+      await below("Initiative");
+      await dice.waitFor({ state: "detached" });
+      const landed = await headerSeen(dm, "the block's total", (w) => w.totalAt !== null);
+      assert.ok(landed.canvasGoneAt === null || landed.canvasGoneAt >= landed.totalAt!, "the block's throw went on to its landing");
+      assert.ok(landed.totalAt! - landed.canvasAt! >= 700, `the dice flew ${Math.round(landed.totalAt! - landed.canvasAt!)} ms`);
+      await settled(dm);
+    } finally {
+      if ((await bar.count()) > 0) {
+        for (const name of ["Close Initiative", "Close Dice"]) await dm.getByRole("button", { name, exact: true }).click({ timeout: 2_000 }).catch(() => undefined);
+        await bar.waitFor({ state: "detached", timeout: 3_000 }).catch(() => undefined);
+      }
+    }
+  });
+
+  test("trh-4. mid-throw on the DM's computer: a tap on another box shows the result and opens its list, another token selected gives one toast and a panel with no line, and Hide then show gives one toast and keeps the line, silent", async (t) => {
+    if (!(await needsWebGL(dm, t))) return;
+    await warmDice(dm, dmSocket);
+    let panel = await tokenPanel(dm, "Sprite", trh.sprite.at);
+    let box = abilityBox(panel, "Dexterity");
+    await box.scrollIntoViewIfNeeded();
+    // A tap on another box: the total at once, and the box's list opens.
+    await watchHeader(box);
+    await pickRow(dm, panel, "Dexterity", /^Dexterity check/, "click");
+    const mid = await headerSeen(dm, "the dice in the air", midThrow);
+    await abilityBox(panel, "Strength").click();
+    const tapped = await js<number>(dm, "return performance.now();");
+    await dm.getByRole("menu", { name: "Strength rolls" }).waitFor();
+    const shown = await headerSeen(dm, "the total", (w) => w.totalAt !== null, 2_000);
+    assert.ok(shown.totalAt! - mid.canvasAt! < 900, `the tap showed the total at once, ${Math.round(shown.totalAt! - mid.canvasAt!)} ms into the throw`);
+    assert.ok(shown.totalAt! <= tapped + 50, "by the tap's click");
+    await dm.keyboard.press("Escape");
+    await dm.getByRole("menu", { name: "Strength rolls" }).waitFor({ state: "detached" });
+    await settled(dm);
+
+    // Another token selected mid-throw: the panel unmounts, so one toast says the roll nobody saw, and the new panel has no line.
+    const toasts = (label: RegExp) => dm.locator("[data-toast]").filter({ hasText: label }).count();
+    await watchHeader(box);
+    await pickRow(dm, panel, "Wisdom", /^Wisdom check/, "click");
+    await headerSeen(dm, "the dice in the air", midThrow);
+    // No Escape first: a key in the panel would end the throw itself.
+    const bramble = await tokenPanel(dm, "Bramble", trh.bramble.at, false);
+    await waitFor("the unseen roll's toast", async () => ((await toasts(/Wisdom check/)) > 0 ? true : null), 5_000);
+    await sleep(500);
+    assert.equal(await toasts(/Wisdom check/), 1, "one own-roll toast");
+    assert.equal(await headerOf(bramble).count(), 0, "the new token's panel has no line");
+
+    // Hide mid-throw, then show: one toast, and the line kept, saying nothing more.
+    panel = await tokenPanel(dm, "Sprite", trh.sprite.at);
+    box = abilityBox(panel, "Dexterity");
+    await box.scrollIntoViewIfNeeded();
+    await watchHeader(box);
+    await pickRow(dm, panel, "Charisma", /^Charisma check/, "click");
+    await headerSeen(dm, "the dice in the air", midThrow);
+    await dm.getByRole("button", { name: "Hide panels" }).click();
+    await panel.waitFor({ state: "hidden" });
+    await waitFor("the hidden roll's toast", async () => ((await toasts(/Charisma check/)) > 0 ? true : null), 5_000);
+    await dm.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).click();
+    await panel.waitFor();
+    const header = headerOf(panel);
+    await header.locator("[data-result-label]").filter({ hasText: /Charisma check/ }).waitFor();
+    await sleep(600);
+    assert.equal(await toasts(/Charisma check/), 1, "one toast, and none more once shown");
+    const said = (await header.locator('[role="status"], [role="alert"]').allInnerTexts()).filter((t) => t.trim() !== "");
+    assert.deepEqual(said, [], "the line shown again says nothing");
+    await shots.take(dm, "trh-4-shown-again");
+  });
+
+  test("trh-5. a second roll moves nothing and throws, folding the block keeps the line, and closing the panel or going to Vex's page leaves no line", async (t) => {
+    if (!(await needsWebGL(player, t))) return;
+    await warmDice(player, playerSocket);
+    const sheet = await characterPage(player, run.thornId, "Thorn");
+    // A first roll, if the page has none, so the step's roll is a second one.
+    if ((await headerOf(sheet).count()) === 0) {
+      await pickRow(player, sheet, "Dexterity", /^Dexterity check/);
+      await headerOf(sheet).locator("[data-result-label]").waitFor();
+      await settled(player);
+    }
+    const box = abilityBox(sheet, "Dexterity");
+    const before = await scrollerOf(box);
+    await watchHeader(box);
+    await pickRow(player, sheet, "Wisdom", /^Wisdom check/);
+    const w = await headerSeen(player, "the second roll's total", (w) => w.totalAt !== null);
+    assert.equal(w.canvasIn, "own", "the second roll throws, released by the header");
+    assert.equal(w.anchorOff, false, "a later roll leaves anchoring alone");
+    await settled(player);
+    const after = await scrollerOf(box);
+    assert.equal(after.scrollTop, before.scrollTop, "the second roll scrolled nothing");
+    assert.ok((await headerWatched(player)).maxDrift <= 1, `the box moved ${(await headerWatched(player)).maxDrift} px`);
+    // Folded, the block goes and the line stays.
+    const fold = sheet.getByRole("button", { name: "Stat block", exact: true });
+    await fold.click();
+    await sheet.locator("[data-ability-grid]").waitFor({ state: "detached" });
+    await headerOf(sheet).locator("[data-result-label]").filter({ hasText: /Wisdom check/ }).waitFor();
+    await fold.click();
+    await sheet.locator("[data-ability-grid]").first().waitFor();
+    // Closed and opened again: no line.
+    await closeAll(player);
+    const again = await characterPage(player, run.thornId, "Thorn");
+    assert.equal(await headerOf(again).count(), 0, "a panel opened again has no line");
+    // A roll on Thorn's page, then Vex's page: no line (D-261101-095).
+    await pickRow(player, again, "Strength", /^Strength check/);
+    await headerOf(again).locator("[data-result-label]").filter({ hasText: /Strength check/ }).waitFor();
+    await settled(player);
+    const vex = await characterPage(player, trh.vexId, "Vex");
+    assert.equal(await headerOf(vex).count(), 0, "Vex's page carries no line from Thorn's roll");
+    await closeAll(player);
+  });
+
+  test("trh-6. under reduced motion the total shows at once with the landed dice drawn once, and with Low power, the switch off or no WebGL the total shows at once with no canvas and nothing logged", async (t) => {
+    if (!(await needsWebGL(player, t))) return;
+    await warmDice(player, playerSocket);
+    await player.emulateMedia({ reducedMotion: "reduce" });
+    try {
+      const sheet = await characterPage(player, run.thornId, "Thorn");
+      const box = abilityBox(sheet, "Dexterity");
+      await watchHeader(box);
+      const count = diceLines(playerSocket.state?.log).length;
+      await pickRow(player, sheet, "Dexterity", /^Dexterity check/);
+      const line = await waitFor("the check's line", () => diceLines(playerSocket.state?.log).slice(count).at(-1)?.data ?? null);
+      const w = await headerSeen(player, "the total", (w) => w.totalAt !== null && w.canvasAt !== null);
+      assert.equal(w.canvasIn, "own");
+      assert.ok(Math.abs(w.totalAt! - w.canvasAt!) < 100, `the total showed ${Math.round(w.totalAt! - w.canvasAt!)} ms after the dice`);
+      await player.waitForTimeout(600);
+      const hook = (await stageHook(player))!;
+      assert.equal(hook.frames, "1", "one frame, at rest");
+      assert.equal(hook.landed, String(line.rolls[0]!.faces[0]));
+      await shots.take(player, "trh-6-reduced-motion");
+      await settled(player);
+      await closeAll(player);
+    } finally {
+      await player.emulateMedia({ reducedMotion: null });
+    }
+
+    // Low power, then the switch off: each read as the room loads, so the dice never load.
+    const rollsAtOnce = async (page: Page, watch: ConsoleWatch, what: string) => {
+      const sheet = await characterPage(page, run.thornId, "Thorn");
+      await page.waitForTimeout(2_000);
+      const messages = watch.errors.length + watch.warnings.length;
+      const box = abilityBox(sheet, "Dexterity");
+      await watchHeader(box);
+      await pickRow(page, sheet, "Dexterity", /^Dexterity check/);
+      const w = await headerSeen(page, `${what}: the total`, (w) => w.totalAt !== null);
+      await page.waitForTimeout(300);
+      assert.equal((await headerWatched(page)).canvasAt, null, `${what}: no throw`);
+      assert.equal(await page.locator("[data-dice-stage]").count(), 0, `${what}: no canvas`);
+      assert.ok(w.lineAt !== null, `${what}: the header shows`);
+      assert.equal(watch.errors.length + watch.warnings.length, messages, `${what}: no console message`);
+      await closeAll(page);
+    };
+    for (const [key, value] of [["rvtt.lowPower", "on"], ["rvtt.rollAnimation", "off"]] as const) {
+      await player.evaluate((kv) => localStorage.setItem(kv.key, kv.value), { key, value });
+      await reopenRoom(player);
+      await player.getByRole("status", { name: "Connected" }).first().waitFor();
+      try {
+        await rollsAtOnce(player, playerConsole, `${key} ${value}`);
+      } finally {
+        await player.evaluate((k) => localStorage.removeItem(k), key);
+      }
+    }
+    await reopenRoom(player);
+    await player.getByRole("status", { name: "Connected" }).first().waitFor();
+    // No WebGL: every WebGL context refused, in a page of Pat's own.
+    const page = await playerContext.newPage();
+    const quiet = new ConsoleWatch("pat-no-webgl");
+    quiet.attach(page);
+    try {
+      await page.addInitScript(() => {
+        const proto = (globalThis as unknown as { HTMLCanvasElement: { prototype: { getContext(type: string, ...rest: unknown[]): unknown } } }).HTMLCanvasElement.prototype;
+        const real = proto.getContext;
+        proto.getContext = function (this: unknown, type: string, ...rest: unknown[]) {
+          return /webgl/.test(type) ? null : real.call(this, type, ...rest);
+        };
+      });
+      await page.goto(`${server.origin}/r/${run.roomId}`);
+      await page.getByRole("status", { name: "Connected" }).first().waitFor();
+      await rollsAtOnce(page, quiet, "no WebGL");
+      assert.deepEqual([...quiet.errors, ...quiet.warnings], [], "no console message without WebGL");
+    } finally {
+      await page.close();
+    }
+  });
+
+  test("trh-7. with the box at the pane's top a pointer pick leaves it in place under the line, a keyboard pick on another page's first roll brings it clear of the line with focus on it, and Tab brings the next box clear too", async (t) => {
+    if (!(await needsWebGL(player, t))) return;
+    // A pointer pick: the box stays, partly under the line.
+    const sheet = await characterPage(player, run.thornId, "Thorn");
+    assert.equal(await headerOf(sheet).count(), 0, "a fresh page");
+    const box = abilityBox(sheet, "Dexterity");
+    await toPaneTop(box);
+    await watchHeader(box);
+    await pickRow(player, sheet, "Dexterity", /^Dexterity check/);
+    await headerSeen(player, "the total", (w) => w.totalAt !== null);
+    await settled(player);
+    assert.ok((await headerWatched(player)).maxDrift <= 1, `the pointer pick moved the box ${(await headerWatched(player)).maxDrift} px`);
+    const under = { line: (await headerOf(sheet).boundingBox())!, box: (await box.boundingBox())! };
+    assert.ok(under.box.y < under.line.y + under.line.height, "the box stands partly under the line, where the finger left it");
+    await shots.take(player, "trh-7-pointer-pick-under-line");
+
+    // A keyboard pick on Vex's first roll: focus back on the box, the box wholly under the line's bottom.
+    const vex = await characterPage(player, trh.vexId, "Vex");
+    assert.equal(await headerOf(vex).count(), 0, "Vex's page has no line yet");
+    const vexBox = abilityBox(vex, "Dexterity");
+    await toPaneTop(vexBox);
+    await vexBox.focus();
+    await player.keyboard.press("Enter");
+    const list = player.getByRole("menu", { name: "Dexterity rolls" });
+    await list.waitFor();
+    const check = list.getByRole("menuitem", { name: /^Dexterity check/ });
+    await waitFor("focus on Check", async () => ((await check.evaluate((el) => el === (el as unknown as { ownerDocument: { activeElement: unknown } }).ownerDocument.activeElement)) ? true : null));
+    await player.keyboard.press("Enter");
+    await list.waitFor({ state: "detached" });
+    const header = headerOf(vex);
+    await header.locator("[data-result-label]").waitFor();
+    await settled(player);
+    assert.ok(await vexBox.evaluate((el) => el === (el as unknown as { ownerDocument: { activeElement: unknown } }).ownerDocument.activeElement), "focus is back on the box");
+    const line = (await header.boundingBox())!;
+    const clear = (await vexBox.boundingBox())!;
+    assert.ok(clear.y >= line.y + line.height - 1, `the box's top ${clear.y} is under the line's bottom ${line.y + line.height}`);
+    await shots.take(player, "trh-7-keyboard-pick-clear");
+
+    // Tab to the next box while it stands under the line: it comes clear of the line.
+    const next = abilityBox(vex, "Constitution");
+    await toPaneTop(next);
+    await player.keyboard.press("Tab");
+    await waitFor("focus on CON", async () => ((await next.evaluate((el) => el === (el as unknown as { ownerDocument: { activeElement: unknown } }).ownerDocument.activeElement)) ? true : null));
+    await sleep(300);
+    const tabbed = (await next.boundingBox())!;
+    const lineNow = (await header.boundingBox())!;
+    assert.ok(tabbed.y >= lineNow.y + lineNow.height - 1, `the tabbed box's top ${tabbed.y} is under the line's bottom ${lineNow.y + lineNow.height}`);
+    await closeAll(player);
+  });
+
+  test("trh-8. at 320 x 568 at 130% a roll whose op the server never saw, with a snapshot that covers it, reads \"This may have happened. Check the log.\" on two lines in the 44 px row, and the boxes stay", async () => {
+    const page = await playerContext.newPage();
+    const quiet = new ConsoleWatch("pat-unknown");
+    // The failed receipt lookup is logged as a failed resource.
+    quiet.allow = [/status of 503 .*\/receipts\//];
+    quiet.attach(page);
+    const lost: { n: number | null; tag: string | null; snapshots: number; gets: string[] } = { n: null, tag: null, snapshots: 0, gets: [] };
+    // Only the step's own roll is swallowed, not the page's ops before it.
+    let armed = false;
+    try {
+      // The roll's op never reaches the server, its socket closes, and the snapshot on reconnect claims the op settled: the store calls it unknown with the snapshot as the cause (client/state/store.ts applySnapshot).
+      await page.routeWebSocket(/\/ws\?room=/, (ws) => {
+        const up = ws.connectToServer();
+        ws.onMessage((m) => {
+          if (armed && lost.n === null && typeof m === "string" && m.includes('"dice.roll"')) {
+            const frame = JSON.parse(m) as { n: number; op: { tag: string } };
+            lost.n = frame.n;
+            lost.tag = frame.op.tag;
+            setTimeout(() => {
+              void ws.close();
+              void up.close();
+            }, 50);
+            return;
+          }
+          up.send(m);
+        });
+        up.onMessage((m) => {
+          if (lost.n !== null && typeof m === "string" && m.startsWith('{"t":"snapshot"')) {
+            const frame = JSON.parse(m) as { watermark: number };
+            frame.watermark = Math.max(frame.watermark, lost.n);
+            lost.snapshots++;
+            ws.send(JSON.stringify(frame));
+            return;
+          }
+          ws.send(m);
+        });
+      });
+      // The tracker then finds no line and asks the receipt lookup, which fails, so the part stays unknown (useReceipt.ts).
+      await page.route(/\/api\/rooms\/[0-9A-Z]+\/receipts\//, (route) => {
+        lost.gets.push(route.request().url());
+        return route.fulfill({ status: 503, body: "" });
+      });
+      await page.setViewportSize({ width: 320, height: 568 });
+      await page.goto(`${server.origin}/r/${run.roomId}`);
+      await page.evaluate(() => localStorage.setItem("rvtt.uiScale", "1.3"));
+      await reopenRoom(page);
+      await page.getByRole("status", { name: "Connected" }).first().waitFor();
+      const sheet = await characterPage(page, run.thornId, "Thorn");
+      const grid = sheet.locator("[data-ability-grid]").first();
+      await grid.scrollIntoViewIfNeeded();
+      const boxes = () => grid.getByRole("button").evaluateAll((els) => els.map((el) => Math.round((el as unknown as { getBoundingClientRect(): { top: number } }).getBoundingClientRect().top * 10) / 10));
+      armed = true;
+      await abilityBox(sheet, "Dexterity").tap();
+      const before = await boxes();
+      await page.getByRole("menu", { name: "Dexterity rolls" }).getByRole("menuitem", { name: /^Dexterity check/ }).tap();
+      const header = headerOf(sheet);
+      await waitFor("the receipt lookup", () => (lost.gets.length > 0 ? true : null), 20_000);
+      assert.ok(lost.gets[0]!.endsWith(`/receipts/${lost.tag}`), `the lookup asked for the roll's tag: ${lost.gets[0]}`);
+      assert.equal(lost.snapshots > 0, true, "the reconnect's snapshot covered the op");
+      await header.getByText("This may have happened. Check the log.").waitFor();
+      const words = await headerWords(header);
+      assert.equal(words.lines, 2, `the words take two lines: ${JSON.stringify(words)}`);
+      assert.equal(words.row, 44, "the row stays 44 px");
+      const after = await boxes();
+      assert.ok(after.every((top, i) => Math.abs(top - before[i]!) <= 1), `the boxes stayed: ${before.join(", ")} then ${after.join(", ")}`);
+      await shots.take(page, "trh-8-unknown-320-130");
+      assert.deepEqual(quiet.errors, []);
+    } finally {
+      await page.close();
     }
   });
 });
