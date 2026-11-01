@@ -2150,8 +2150,22 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
     await headerOf(sheet).locator("[data-result-label]").filter({ hasText: /Wisdom check/ }).waitFor();
     await fold.click();
     await sheet.locator("[data-ability-grid]").first().waitFor();
+    // Folded mid-throw: the fold's tap shows the total in the line that stays, so the panel closing later gives no toast (FL21-OPUS-01).
+    const toasts = () => player.locator("[data-toast]").filter({ hasText: /Charisma check/ }).count();
+    const quiet = await toasts();
+    await watchHeader(abilityBox(sheet, "Dexterity"));
+    await pickRow(player, sheet, "Charisma", /^Charisma check/);
+    await headerSeen(player, "the dice in the air", midThrow);
+    await fold.tap();
+    await sheet.locator("[data-ability-grid]").waitFor({ state: "detached" });
+    await headerOf(sheet).locator("[data-result-label]").filter({ hasText: /Charisma check/ }).waitFor();
+    await sleep(600);
+    await fold.click();
+    await sheet.locator("[data-ability-grid]").first().waitFor();
     // Closed and opened again: no line.
     await closeAll(player);
+    await sleep(800);
+    assert.equal(await toasts(), quiet, "the line showed the folded roll, so its panel closing gives no toast");
     const again = await characterPage(player, run.thornId, "Thorn");
     assert.equal(await headerOf(again).count(), 0, "a panel opened again has no line");
     // A roll on Thorn's page, then Vex's page: no line (D-261101-095).
@@ -2161,6 +2175,54 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
     const vex = await characterPage(player, trh.vexId, "Vex");
     assert.equal(await headerOf(vex).count(), 0, "Vex's page carries no line from Thorn's roll");
     await closeAll(player);
+  });
+
+  test("trh-5b. two panels on a computer, Dice below the Token panel: the token panel closed mid-throw leaves the Dice panel's line showing the roll, so the Dice panel's next roll gives no toast for it", async (t) => {
+    if (!(await needsWebGL(dm, t))) return;
+    await warmDice(dm, dmSocket);
+    const panel = await tokenPanel(dm, "Sprite", trh.sprite.at);
+    const tabs = dm.getByRole("tablist", { name: "Panels" });
+    const bar = dm.locator("[data-pane-bar]");
+    if ((await bar.count()) === 0) {
+      await tabs.locator('[role="tab"][aria-haspopup="menu"]').click();
+      await dm.getByRole("menu", { name: "More panels" }).getByRole("menuitemcheckbox", { name: "Two panels" }).click();
+      await dm.getByRole("menu", { name: "More panels" }).waitFor({ state: "detached" });
+    }
+    try {
+      await bar.getByRole("button", { name: / below$/ }).click();
+      await dm.getByRole("menu", { name: "Panel below" }).getByRole("menuitemradio", { name: sideTabName("Dice") }).click();
+      const dice = dm.getByRole("group", { name: "Dice below", exact: true });
+      await dice.waitFor();
+      const toasts = () => dm.locator("[data-toast]").filter({ hasText: /Intelligence check/ }).count();
+      const quiet = await toasts();
+      const box = abilityBox(panel, "Dexterity");
+      await box.scrollIntoViewIfNeeded();
+      await watchHeader(box);
+      await pickRow(dm, panel, "Intelligence", /^Intelligence check/, "click");
+      await headerSeen(dm, "the block's dice in the air", midThrow);
+      await dm.getByRole("button", { name: "Close Token", exact: true }).click();
+      await panel.waitFor({ state: "detached" });
+      // The Dice panel's line shows the roll the token panel took with it.
+      const line = dm.locator("[data-dice-last]").filter({ visible: true });
+      await line.locator('[aria-label="Show this roll in Recent rolls"]').filter({ hasText: /Intelligence check/ }).waitFor();
+      await sleep(600);
+      assert.equal(await toasts(), quiet, "the Dice panel's line shows it, so no toast");
+      // The Dice panel's next roll moves its line on, and the roll it showed is still no toast.
+      const count = diceLines(dmSocket.state?.log).length;
+      const formula = field(dm).filter({ visible: true });
+      await formula.fill("1d20 trh-5b");
+      await formula.press("Enter");
+      await waitFor("the Dice panel's roll", () => (diceLines(dmSocket.state?.log).length > count ? true : null));
+      await line.locator('[aria-label="Show this roll in Recent rolls"]').filter({ hasText: /Intelligence check/ }).waitFor({ state: "detached" });
+      await settled(dm);
+      await sleep(800);
+      assert.equal(await toasts(), quiet, "no late toast for the roll the line showed");
+    } finally {
+      if ((await bar.count()) > 0) {
+        for (const name of ["Close Token", "Close Dice"]) await dm.getByRole("button", { name, exact: true }).click({ timeout: 2_000 }).catch(() => undefined);
+        await bar.waitFor({ state: "detached", timeout: 3_000 }).catch(() => undefined);
+      }
+    }
   });
 
   test("trh-6. under reduced motion the total shows at once with the landed dice drawn once, and with Low power, the switch off or no WebGL the total shows at once with no canvas and nothing logged", async (t) => {

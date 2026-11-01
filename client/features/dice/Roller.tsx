@@ -160,7 +160,7 @@ export function LastResult(props: { onOpen(lineId: string): void }) {
   const shown = usePanelShown();
   const tag = shown && last && "tag" in last ? last.tag : null;
   const holding = tag !== null && thrown.held === tag;
-  const receipt = useReceipt(tag);
+  const receipt = useReceipt(tag, holding);
   const waiting = receipt !== null && (receipt.state === "sending" || receipt.state === "checking");
   const { rolls, first, head, data, firstLine, level, said: spoken } = useCommittedRoll(receipt, last && "once" in last ? last.label : undefined);
   // Only the surface that may say a roll puts it in a live region or gives its refusal an alert: a roll sent from a stat block is said there (docs/design/design-v1-stat-block-rolls.md 8).

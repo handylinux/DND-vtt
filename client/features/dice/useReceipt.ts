@@ -80,6 +80,8 @@ type Entry = {
    * goes to the toasts, whatever the closing surfaces say.
    */
   unseen: boolean;
+  /** `said` as it stood when unseen() cleared it, for rendered() to put back. */
+  saidBefore: boolean;
   /** Mounted surfaces that sent it and so say it (claimVoice). */
   claims: number;
   /** A surface or the toast said its settled state (D-261031-133). */
@@ -118,7 +120,7 @@ export class ReceiptTracker {
   #entry(tag: string): Entry {
     let entry = this.#entries.get(tag);
     if (!entry) {
-      entry = { parts: new Map(), watchers: 0, looked: false, looking: null, announced: false, unseen: false, claims: 0, said: false };
+      entry = { parts: new Map(), watchers: 0, looked: false, looking: null, announced: false, unseen: false, saidBefore: false, claims: 0, said: false };
       this.#entries.set(tag, entry);
     }
     return entry;
@@ -325,11 +327,28 @@ export class ReceiptTracker {
   unseen(tag: string): void {
     const entry = this.#entries.get(tag);
     if (!entry) return;
+    if (!entry.unseen) entry.saidBefore = entry.said;
     entry.unseen = true;
     entry.announced = false;
     // Held back, it was shown nowhere, so nobody said it either.
     entry.said = false;
     this.#changed();
+  }
+
+  /**
+   * A mounted surface that shows thrown results rendered this tag, `held`
+   * where the dice still held it back. Rendered committed and let go, the
+   * result is on screen there, so an unseen() from a host that went first
+   * is taken back, such as a block folded or a token panel closed mid-throw
+   * with the Dice panel's line still showing the roll (FL21-OPUS-01). A
+   * surface that is closing never renders again, so the result whose every
+   * surface closed still goes to the toasts.
+   */
+  rendered(tag: string, held: boolean): void {
+    const entry = this.#entries.get(tag);
+    if (!entry?.unseen || held || this.state(tag)?.state !== "committed") return;
+    entry.unseen = false;
+    entry.said = entry.saidBefore;
   }
 }
 
@@ -406,11 +425,20 @@ export class SurfaceVoice {
  * watches nothing and reads null until shown, and the toast says what lands
  * meanwhile (docs/design/design-v1-stat-block-rolls.md 8). Gating here, not in each
  * caller, keeps every surface in a panel to that rule.
+ *
+ * A surface that shows a thrown result passes `held`, whether the dice hold
+ * it back now (ReceiptTracker.rendered). Others pass nothing: a row or a
+ * button that only watches the tag shows no result, so it never takes back
+ * the toast of one nobody saw.
  */
-export function useReceipt(watched: string | null): ReceiptState | null {
+export function useReceipt(watched: string | null, held?: boolean): ReceiptState | null {
   const tag = usePanelShown() ? watched : null;
   const tracker = useReceipts();
-  useSyncExternalStore(tracker.subscribe, tracker.version, tracker.version);
+  const version = useSyncExternalStore(tracker.subscribe, tracker.version, tracker.version);
+  // After every commit that may show the result, the one after an unseen() included, since that changes the version.
+  useEffect(() => {
+    if (tag !== null && held !== undefined) tracker.rendered(tag, held);
+  }, [tracker, tag, held, version]);
   useEffect(() => {
     if (tag === null) return;
     const stop = tracker.watch(tag);

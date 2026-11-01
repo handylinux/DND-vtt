@@ -179,6 +179,44 @@ describe("one announcer per roll tag", () => {
     panel.unmount();
     assert.deepEqual(t.unannounced().map((u) => u.tag), ["a"]);
   });
+
+  test("a result its host sent to the toasts, rendered let go by a line that outlives the host, is no toast when that line goes (FL21-OPUS-01)", () => {
+    const t = tracker([line("a")]);
+    t.sending("a", 0);
+    const header = surface(t, "a", true);
+    const dice = surface(t, "a", false);
+    t.answer("a", 0, "taken");
+    assert.deepEqual([header.render(), dice.render()], [true, false], "the sender says it as it lands");
+    // The block folds within the result's paint time: its host goes and hands the tag to the toasts while the header line stays.
+    t.unseen("a");
+    t.rendered("a", false);
+    assert.equal(t.maySpeak("a", false), false, "said before, so the Dice panel's line still never says it");
+    header.unmount();
+    assert.equal(dice.render(), false, "nor once the sender goes");
+    dice.unmount();
+    assert.deepEqual(t.unannounced(), [], "no late toast");
+  });
+
+  test("only a render that shows the result takes the toast back: one still held or still sending never does", () => {
+    for (const how of ["held", "sending"] as const) {
+      const log: LogEntry[] = [];
+      const t = tracker(log);
+      t.sending("a", 0);
+      const panel = surface(t, "a", false);
+      if (how === "held") {
+        log.push(line("a"));
+        t.answer("a", 0, "taken");
+      }
+      t.unseen("a");
+      t.rendered("a", how === "held");
+      if (how === "sending") {
+        log.push(line("a"));
+        t.answer("a", 0, "taken");
+      }
+      panel.unmount();
+      assert.deepEqual(t.unannounced().map((u) => u.tag), ["a"], how);
+    }
+  });
 });
 
 describe("one mounted line across its showings (SurfaceVoice)", () => {

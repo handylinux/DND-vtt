@@ -1059,6 +1059,31 @@ describe("every way a panel control rolls", () => {
     }
   });
 
+  test("a line that outlives the host shows the result, so the host going mid-throw or before it painted gives no late toast (FL21-OPUS-01)", () => {
+    for (const end of ["held", "click", "key"] as const) {
+      const h = setup();
+      const tag = h.panel.roll([ROLL], { origin: h.origin() })!;
+      // Another line shows the tag and stays: the block's header line as its grid folds, or the Dice panel's beside a token panel that closes.
+      const unwatch = h.tracker.watch(tag);
+      const render = () => h.tracker.rendered(tag, h.store.held(tag));
+      h.tracker.subscribe(render);
+      h.store.subscribe(render);
+      h.answerAll();
+      render();
+      assert.equal(h.store.held(tag), true);
+      // The fold's click or key lets the result go, and the fold takes the grid and its host in the same event.
+      if (end === "click") h.host.click();
+      else if (end === "key") h.host.keyDown();
+      h.close();
+      assert.equal(h.store.held(tag), false, end);
+      h.clock.advance(60_000);
+      // Much later the line goes too.
+      unwatch();
+      h.tracker.announced(tag);
+      assert.deepEqual(h.tracker.unannounced(), [], `${end}: the line showed it, so no toast`);
+    }
+  });
+
   test("the tracker's Roll, which carries no origin, never throws", () => {
     const h = setup();
     const tag = h.panel.roll([ROLL])!;

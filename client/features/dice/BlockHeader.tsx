@@ -231,10 +231,10 @@ export function BlockHeader(props: { outcome: BlockOutcome; host: ThrowHost | nu
   // A hidden sheet or pane keeps this mounted. It then neither watches the roll nor holds its voice, so the toast or a shown Dice panel can say it.
   const shown = usePanelShown();
   const tag = shown ? sentTag : null;
-  const receipt = useReceipt(tag);
-  const speaks = useReceiptVoice(tag, true);
   const thrown = useThrowView();
   const holding = tag !== null && thrown.held === tag;
+  const receipt = useReceipt(tag, holding);
+  const speaks = useReceiptVoice(tag, true);
   const { first, head, data, level, said } = useCommittedRoll(receipt, outcome.kind === "sent" ? outcome.sent.label : undefined);
   const changed = useInitiativeChanged(tag);
   const muted = theme.color.textMuted;
