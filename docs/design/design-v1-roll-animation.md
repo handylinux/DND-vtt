@@ -166,7 +166,7 @@ The throw ends, and the result shows, at once on: a tap or key down anywhere in 
 
 The median frame was 16.7 ms in every case. The long frames without dice are the app's own: drawing the result, and the dev room's server, which runs in the page. The dice add about one long frame a throw, its setup: the prototype makes new meshes and materials each time. The build keeps a pool per kind and only moves and re-labels them, aiming under 5 ms. The first throw's cost moves to the warm-up. Under SwiftShader, the e2e browser's renderer, the median frame was also 16.7 ms, at full speed and slowed 4 times.
 
-- **The GPU's cost on a phone is not measured here.** The prototype drew on this laptop's GPU, which no phone matches. The scene is small: at most 13 dice and a disc, a few hundred triangles and about 45 draw calls. A mid-range phone's GPU should draw it well within a frame, but only a phone can say. The live play review on the owner's phone is the check, and the switch is the way out.
+- **The GPU's cost on a phone is not measured here.** The prototype drew on a laptop's GPU, which no phone matches. The scene is small: at most 13 dice and a disc, a few hundred triangles and about 45 draw calls. A mid-range phone's GPU should draw it well within a frame, but only a phone can say. The live play review on the owner's phone is the check, and the switch is the way out.
 
 ## 9. Look
 
@@ -275,7 +275,7 @@ The owner chose among the options the earlier drafts of this design offered:
 
 ## Assumptions
 
-- The live server answers a roll in about 0.1 to 0.3 s, the dev room's in about 50 ms. The 1 s counts from the answer, so a slow network adds only its own wait.
+- A server on the internet answers a roll in about 0.1 to 0.3 s, the dev room's in about 50 ms. The 1 s counts from the answer, so a slow network adds only its own wait.
 - CI's Chrome on Linux behaves as Chrome on macOS did here: SwiftShader by name passes the performance caveat. Step ra-1 failing in CI with "no WebGL" would show otherwise, and the fix is to drop `failIfMajorPerformanceCaveat`.
 - The probe logs nothing on CI's Chrome on Linux with no GPU either. Every e2e file now runs it once at room ready, and eight files assert no console warnings, so a message there would fail them. The evidence is from macOS only: the first CI run settles it.
 - No database was needed: the dev room runs the server's resolve in the page.

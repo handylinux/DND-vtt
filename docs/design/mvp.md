@@ -1,6 +1,6 @@
 # raccoon-vtt feature set
 
-A self-hosted virtual tabletop for D&D groups playing the 2024 rules (5.5e). One server hosts many groups, each campaign in its own room. Square grid, 5 ft per square. Mobile first, and it also works on tablets and desktops. Exposed to the internet through a Cloudflare tunnel.
+A self-hosted virtual tabletop for D&D groups playing the 2024 rules (5.5e). One server hosts many groups, each campaign in its own room. Square grid, 5 ft per square. Mobile first, and it also works on tablets and desktops. Exposed to the internet through an HTTPS reverse proxy or tunnel.
 
 It suits a group playing in person, each with a phone at the table, and players who join from elsewhere. Dice roll on the server since v1 wave 7, so everyone sees the same result, and players may still roll their own dice or use the D&D Beyond app and type the total (section 14).
 
@@ -669,7 +669,7 @@ Built in v1 wave 7 (docs/design/design-v1-dice.md), at the project owner's reque
 - Deployed with Docker Compose:
   - No published ports.
   - Internal-only networks.
-  - A cloudflared tunnel, run as its own compose project, reaches the app.
+  - An HTTPS reverse proxy or tunnel, run as its own compose project, reaches the app.
   - An egress proxy is the only way out, used for image search.
 - Resource limits on every container, a health check, and structured logs.
 
@@ -677,7 +677,7 @@ Built in v1 wave 7 (docs/design/design-v1-dice.md), at the project owner's reque
 
 - Scheduled automatic database backups.
   - Built in v1 wave 5. A `backup` service on the server dumps the database every night at 04:00 (`BACKUP_AT` and `TZ` change it), reads the whole dump back, and copies every image it names, keeping 7 daily and 4 weekly good backups on a backups volume. A run that fails or runs short of space keeps the last good backup and deletes nothing else, and it always leaves 2 GiB free.
-  - README gives one command to back up now, the restore steps, the sizing, a drill to run once, and how to copy the backups off the server. The backups stay on the server's disk until the server owner copies them. That is the design's recommendation, which the project owner approved on 2026-10-14.
+  - docs/self-hosting.md gives one command to back up now, the restore steps, the sizing, a drill to run once, and how to copy the backups off the server. The backups stay on the server's disk until the server owner copies them. That is the design's recommendation, which the project owner approved on 2026-10-14.
 - Admin page behind the admin password: list rooms, delete rooms, see storage use.
   - Built in v1 wave 5. `/admin` exists only once the server owner sets `ADMIN_PASSWORD_HASH`, made by `node scripts/admin.ts hash-password`. It shows the image volume's and the database's use, the images waiting for cleanup, and the last backup, with a warning when no good one has run for 36 hours. It lists every room with its size, images, last activity and whether it is loaded, pinned or read-only.
   - It pins or unpins a room, and deletes one after its ID is typed, through the DM's own delete. It never shows a room's contents, links, password or members. Wrong passwords are throttled, and a session lasts 12 hours.

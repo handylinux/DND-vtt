@@ -91,7 +91,7 @@ Then open `.env` in an editor and fill in:
 
 - `PUBLIC_ORIGIN`: `https://` plus the hostname, no trailing slash.
 - `TZ` and `BACKUP_AT`: optional, the server's time zone (an IANA name such
-  as `America/Chicago`) and the time of the nightly backup in it. Unset,
+  as `Europe/Berlin`) and the time of the nightly backup in it. Unset,
   backups run at 04:00 UTC.
 - `SERPAPI_KEY`: optional, enables image search.
 - `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET`: optional, both or neither.
