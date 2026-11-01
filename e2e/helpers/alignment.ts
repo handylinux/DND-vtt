@@ -1898,8 +1898,8 @@ export async function leadLines(group: Locator, words: readonly string[], screen
 }
 
 
-/** Lane B's marker for the corner mark inside a rolling box (docs/design-v1-stat-block-rolls.md 3.1): its `data-ability-mark`, else the box's one `aria-hidden` svg. */
-export const ABILITY_MARK = '[data-ability-mark], svg[aria-hidden="true"]';
+/** Lane B's marker for the corner mark inside a rolling box (docs/design-v1-stat-block-rolls.md 3.1): its `data-ability-mark`. */
+export const ABILITY_MARK = '[data-ability-mark]';
 
 /** The shape of a node the rolling grid's checks read in the page, as the page's DOM has it. */
 type RollEl = {

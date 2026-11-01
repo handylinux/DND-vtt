@@ -364,9 +364,10 @@ describe("raccoon-vtt pc stat blocks", { timeout: 600_000 }, () => {
     assert.equal(await view.locator("p").filter({ hasText: /^(Proficiencies|Expertise)\b/ }).count(), 0, "no line lists proficiencies");
     await view.getByText("Initiative", { exact: true }).waitFor();
     // The Dex box of the six across: its score, its modifier, and its save, which a screen reader hears as proficient (docs/design-v1-dice-ui.md 6.1).
-    // A rolling box says it in its label, a text box in its hidden words (docs/design-v1-stat-block-rolls.md 3.1).
-    const dexBox = await view.locator("[data-ability-grid] > [data-save-proficient]").first().evaluate((el) => el.getAttribute("aria-label") ?? el.textContent ?? "");
-    assert.match(dexBox, /^(Dexterity 16, \+3, save \+6, proficient|DEX16 \+3Save \+6, proficient)$/);
+    // Ana plays Bree, so the grid rolls: a group of buttons, the Dex box named by its printed words (docs/design-v1-stat-block-rolls.md 3.1).
+    assert.equal(await view.locator("[data-ability-grid]").first().getAttribute("role"), "group", "a rolling grid");
+    const dexBox = await view.locator("[data-ability-grid] > [data-save-proficient]").first().getAttribute("aria-label");
+    assert.match(dexBox ?? "", /^Dexterity 16, \+3, save \+6, proficient$/);
     assert.equal(await panel.locator('[data-proficiency-level="prof"], [data-proficiency-level="expert"], [data-proficiency-mark]').count(), 0, "no frame or picture marks the sheet or the saves line");
     assert.match(await savesLine(ana), /DEX \+6/);
     await shots.take(ana, "pcstats-panel");

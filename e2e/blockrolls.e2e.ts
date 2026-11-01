@@ -454,7 +454,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
     await ops.send({ t: "character.create", character: { id: run.thornChar, name: "Thorn", size: "medium", ownerIds: [run.patId], actor: actor(), level: 5, stats: THORN_STATS } });
     await ops.send({ t: "character.create", character: { id: run.loneChar, name: "Lone", size: "medium", ownerIds: [], actor: actor(), level: 3, stats: THORN_STATS } });
     await ops.send(tokenOp(run.thorn.id, { kind: "pc", name: "Thorn", x: run.thorn.x, y: run.thorn.y, disposition: "ally", actor: { ref: run.thornChar } }));
-    await ops.send(tokenOp(run.goblin.id, { kind: "monster", name: "Goblin", x: run.goblin.x, y: run.goblin.y, disposition: "hostile", actor: { inline: actor({ srdId: "goblin-warrior", initScore: 12 }) } }));
+    await ops.send(tokenOp(run.goblin.id, { kind: "monster", name: "Goblin", x: run.goblin.x, y: run.goblin.y, disposition: "hostile", actor: { inline: actor({ srdId: "goblin-warrior", initScore: 12, initBonus: 2 }) } }));
     await ops.send(tokenOp(run.wolf.id, { kind: "npc", name: "Wolf", x: run.wolf.x, y: run.wolf.y, disposition: "ally", companion: { of: run.thornChar, turn: "shared" }, actor: { inline: actor({ srdId: "wolf" }) } }));
     await pat.goto(`${server.origin}/r/${run.roomId}`);
     await waitFor("Thorn on Pat's page", () => patSocket.state?.tokens[run.thorn.id]);
