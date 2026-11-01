@@ -47,10 +47,12 @@ export class RoomFullError extends Error {
 
 export interface RoomGateway {
   /**
-   * Writes a new room's first snapshot. Runs in the caller's transaction
-   * when given one, so a room row never exists without its state.
+   * Writes a new room's first snapshot, at `seq` (0 unless an import's lines
+   * name older ops), so the room's first op is `seq + 1`. Runs in the
+   * caller's transaction when given one, so a room row never exists without
+   * its state.
    */
-  createRoom(roomId: string, state: RoomState, tx?: Queryable): Promise<void>;
+  createRoom(roomId: string, state: RoomState, tx?: Queryable, seq?: number): Promise<void>;
   /** Throws RoomFullError at the member limit, RoomNotFoundError for a missing room. */
   addMember(roomId: string, member: Member): Promise<void>;
   /** A no-op when the member is missing or already has that kind. */
@@ -98,10 +100,10 @@ export class DirectGateway implements RoomGateway {
     this.#pool = pool;
   }
 
-  async createRoom(roomId: string, state: RoomState, tx?: Queryable): Promise<void> {
+  async createRoom(roomId: string, state: RoomState, tx?: Queryable, seq = 0): Promise<void> {
     await (tx ?? this.#pool).query(
-      "insert into room_snapshots (room_id, seq, state, schema_version) values ($1, 0, $2::jsonb, $3)",
-      [roomId, JSON.stringify(state), SNAPSHOT_SCHEMA_VERSION],
+      "insert into room_snapshots (room_id, seq, state, schema_version) values ($1, $4, $2::jsonb, $3)",
+      [roomId, JSON.stringify(state), SNAPSHOT_SCHEMA_VERSION, seq],
     );
   }
 

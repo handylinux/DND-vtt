@@ -97,8 +97,8 @@ export async function loadRoom(
   migrations: MigrationStep[] = opMigrations,
   admitArchive: ArchiveGuard = ARCHIVE_ALWAYS,
 ): Promise<LoadedRoom | null> {
-  const snap = await pool.query<{ seq: string; state: unknown; schema_version: number }>(
-    "select seq, state, schema_version from room_snapshots where room_id = $1",
+  const snap = await pool.query<{ seq: string; state: unknown; schema_version: number; imported_seq: string | null }>(
+    "select s.seq, s.state, s.schema_version, r.imported_seq from room_snapshots s left join rooms r on r.id = s.room_id where s.room_id = $1",
     [roomId],
   );
   const row = snap.rows[0];
@@ -107,12 +107,14 @@ export async function loadRoom(
   // The reducer finds a line by its id in each log, so a stored log out of order is put in order before any op meets it.
   let state = logsInIdOrder(migrateSnapshot(row.state, row.schema_version));
   if (state.saveOutcomes !== undefined) saveOutcomeLedgerSchema.parse(state.saveOutcomes);
-  // An import's lines are numbered at seq 0. One made before imports wrote them to the archive has none there, so its
-  // lines still in the log are written now, and Show older reaches them once the live log moves past them. An import
-  // writes them all in its transaction, so one of them in the archive means they came. An archive that once held
-  // LEGACY_LOG_STORED rows may have had some of them trimmed while the archive kept only that many, and is left as it
-  // is. Either way they are not written, and they are not written while the disk is short of space either.
-  const imported = state.log.filter((e) => e.id.startsWith("0:"));
+  // An import's lines are those at or below the seq the room started at, and an import from before imports kept seqs
+  // numbered them all at seq 0. One made before imports wrote them to the archive, or while the disk was short, has
+  // none there, so its lines still in the log are written now, and Show older reaches them once the live log moves
+  // past them. An import writes them all in its transaction, so one of them in the archive means they came. An archive
+  // that once held LEGACY_LOG_STORED rows may have had some of them trimmed while the archive kept only that many, and
+  // is left as it is. Either way they are not written, and they are not written while the disk is short of space either.
+  const importedThrough = row.imported_seq === null ? 0 : Number(row.imported_seq);
+  const imported = state.log.filter((e) => Number(e.id.slice(0, e.id.indexOf(":"))) <= importedThrough);
   if (imported.length > 0) {
     const { rows } = await pool.query<{ held: boolean }>(
       `select exists (select 1 from room_log where room_id = $1 and id = any($2::text[]))

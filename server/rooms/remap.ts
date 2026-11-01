@@ -637,22 +637,21 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
         return null;
     }
   };
-  // Log ids are `"<seq>:<index>"`. The new room's ops start at seq 1, so seq 0 can never collide. Lines are numbered as
-  // the reducer writes them (Tx.addLog), each audience in the old room's order: the shared lines from 0, each reader's
-  // copies of party lines in their own run, and the DM's from DM_LINE_BASE with the traps' (dmLineIdsOf). So the lines a
-  // player gets have no gap where one only others hold was. All of them share seq 0, so the import cannot keep the order
-  // across audiences: it reads audience by audience, and the archive holds every line (importRoom).
+  // Log ids are `"<seq>:<index>"`, and an imported line keeps its op's seq, so the log reads in the old room's order
+  // across audiences, and the new room's ops start after the last of them (lastLineSeq), so none can collide. Within
+  // each op the lines are numbered again as the reducer writes them (Tx.addLog): the shared lines and whispers from 0
+  // with the players' trap lines, each reader's copies of party lines in their own run on the new roster, and the
+  // DM's from DM_LINE_BASE with the traps' (dmLineIdsOf). A line players may get that does not come through leaves no
+  // number behind, so the lines a player gets in an op have no gap where one only others hold was.
   const dmLineIds = dmLineIdsOf(state, scenes);
   const dmLines = new Set(state.log.filter((e) => lineAudience(e) === "dm").map((e) => e.id));
   const ranks = rosterRanks(out.members);
-  const copies = new Map<string, number>();
-  let shared = 0;
+  const kept: { line: LogEntry; old: string; reader?: string; apart: boolean }[] = [];
   blocks.assign(state.log.flatMap((line) => (line.parts?.correction ?? []).flatMap((witness) => {
     const parsed = parseKey(witness.key);
     return parsed?.kind === "companionBlock" && witness.characterId !== undefined && characters.has(witness.characterId) ? [parsed.id] : [];
   })));
   for (const e of state.log) {
-    let id: string;
     const audience = lineAudience(e);
     const apart = audience !== "shared" || dmLineIds.has(e.id);
     const { copyOf, parts, ...rest } = e;
@@ -676,28 +675,41 @@ export function remapState(state: RoomState, opts: RemapOptions): RoomState {
       if (audience === "party" && correction.length === 0) continue;
       next.parts = { correction };
     }
-    if (dmLineIds.has(e.id)) id = dmLineIds.get(e.id)!;
+    let reader: string | undefined;
+    if (dmLineIds.has(e.id)) next.id = dmLineIds.get(e.id)!;
     else if (audience === "party") {
-      const reader = next.to![0];
+      reader = next.to![0];
       // A copy whose reader did not come through, which no one here reads.
       if (e.to!.length !== 1 || reader === undefined || !ranks.has(reader)) continue;
-      const count = copies.get(reader) ?? 0;
-      copies.set(reader, count + 1);
-      id = `0:${partyIndex(ranks.get(reader)!, count)}`;
       // A copy whose DM line did not come with it stands for its event alone (eventLines).
       if (copyOf !== undefined && dmLines.has(copyOf)) next.copyOf = dmLineIds.get(copyOf)!;
-    } else id = `0:${shared++}`;
-    next.id = id;
+    }
     if (next.data) {
       const data = event(next.data);
       if (!data) continue;
       next.data = data;
     }
+    kept.push({ line: next, old: e.id, ...(reader !== undefined ? { reader } : {}), apart });
+  }
+  // The players' trap lines count among the shared lines of their op, in the old room's order with them.
+  const seenKept = (state.trapSeen ?? []).filter((line) => line.data?.type === "trapSeen");
+  const sharedKept = kept.filter((k) => k.reader === undefined && !dmLineIds.has(k.old));
+  const sharedIds = numberedWithin<object>([...sharedKept.map((k) => ({ id: k.old, key: k })), ...seenKept.map((line) => ({ id: line.id, key: line }))], 0);
+  const copies = new Map<string, number>();
+  kept.sort((a, b) => compareLogIds(a.old, b.old));
+  for (const k of kept) {
+    if (k.reader !== undefined) {
+      const seq = seqOf(k.old);
+      const key = `${seq} ${k.reader}`;
+      const count = copies.get(key) ?? 0;
+      copies.set(key, count + 1);
+      k.line.id = `${seq}:${partyIndex(ranks.get(k.reader)!, count)}`;
+    } else if (!dmLineIds.has(k.old)) k.line.id = sharedIds.get(k)!;
     // Each line outside the measures is cut to its bound, as the reducer cuts them, so every ring keeps its bytes.
-    out.log.push(apart ? cutLine(next) : next);
+    out.log.push(k.apart ? cutLine(k.line) : k.line);
   }
   out.log.sort((a, b) => compareLogIds(a.id, b.id));
-  remapTraps(state, out, { scenes, tokens, stampIds, lightIds, newId, dmLineIds, sharedLines: shared });
+  remapTraps(state, out, { scenes, tokens, stampIds, lightIds, newId, dmLineIds, seenLineIds: (line) => sharedIds.get(line)! });
   // A file's trap lines come in its own order, and the reducer finds a line by its id in each log.
   out.trapLog.sort((a, b) => compareLogIds(a.id, b.id));
   out.trapSeen.sort((a, b) => compareLogIds(a.id, b.id));
@@ -865,7 +877,7 @@ function remapParts(parts: LineParts, memberList: (ids: string[]) => string[]): 
 /**
  * The new ids of every line only the DM holds: the room log's DM lines
  * (shared/logRings.ts), party lines' own among them, the trap log's and the
- * occurrences that name them, each ring in the old room's order, all
+ * occurrences that name them, each in its op, in the old room's order, all
  * counting on from DM_LINE_BASE together, as the reducer writes them
  * (docs/design-v1-traps.md 6.3). Numbered with the lines players get, each
  * would leave a gap in theirs.
@@ -875,9 +887,49 @@ function dmLineIdsOf(state: RoomState, scenes: { has(id: string): boolean }): Ma
   for (const line of state.log) if (lineAudience(line) === "dm") dmIds.add(line.id);
   for (const trap of Object.values(state.traps ?? {})) if (scenes.has(trap.sceneId)) for (const d of trap.rig?.due ?? []) dmIds.add(d.id);
   for (const line of state.trapLog ?? []) dmIds.add(line.id);
-  const out = new Map<string, string>();
-  for (const [i, id] of [...dmIds].sort(compareLogIds).entries()) out.set(id, `0:${DM_LINE_BASE + i}`);
+  return numberedWithin([...dmIds].map((id) => ({ id, key: id })), DM_LINE_BASE);
+}
+
+/**
+ * The seq of the op a line id names (`"<seq>:<index>"`), which the stored id
+ * grammar keeps to 18 digits, in its plain decimal form. Exact past the
+ * integers a Number holds, so no two ops of a hand-made file ever merge.
+ */
+function seqOf(id: string): string {
+  return BigInt(id.slice(0, id.indexOf(":"))).toString();
+}
+
+/**
+ * New ids for lines that count together within their op, from `base`, in
+ * the old room's order: each keeps its op's seq and takes the next number
+ * there. Keyed by what the caller names each line by, since two logs, or a
+ * hand-made file, may each hold an id.
+ */
+function numberedWithin<K>(lines: readonly { id: string; key: K }[], base: number): Map<K, string> {
+  const out = new Map<K, string>();
+  const counts = new Map<string, number>();
+  for (const { id, key } of [...lines].sort((a, b) => compareLogIds(a.id, b.id))) {
+    const seq = seqOf(id);
+    const count = counts.get(seq) ?? 0;
+    counts.set(seq, count + 1);
+    out.set(key, `${seq}:${base + count}`);
+  }
   return out;
+}
+
+/**
+ * The seq of the newest op a room's lines name: the room log's, both trap
+ * logs' and the occurrences waiting on a trap. An imported room's lines
+ * keep their seqs (remapState), so its own ops start after this one.
+ */
+export function lastLineSeq(state: RoomState): number {
+  let last = 0;
+  const see = (id: string) => { last = Math.max(last, Number(seqOf(id))); };
+  for (const line of state.log) see(line.id);
+  for (const line of state.trapLog ?? []) see(line.id);
+  for (const line of state.trapSeen ?? []) see(line.id);
+  for (const trap of Object.values(state.traps ?? {})) for (const d of trap.rig?.due ?? []) see(d.id);
+  return last;
 }
 
 /**
@@ -888,9 +940,10 @@ function dmLineIdsOf(state: RoomState, scenes: { has(id: string): boolean }): Ma
  * chunks do. A trap's waiting occurrences and both trap logs come along,
  * named after the new ids, every list keeping only plain ids that came
  * through and counting the rest, as the reducer stores them (6.1). Lines
- * are numbered in the old room's order, the players' after the room log's
- * shared lines and the DM's from DM_LINE_BASE (dmLineIdsOf), so no two
- * imported lines share an id and the newest occurrence stays the newest.
+ * keep their ops and are numbered in the old room's order within each, the
+ * players' with the room log's shared lines (remapState) and the DM's from
+ * DM_LINE_BASE (dmLineIdsOf), so no two imported lines share an id and the
+ * newest occurrence stays the newest.
  */
 function remapTraps(
   state: RoomState,
@@ -902,15 +955,12 @@ function remapTraps(
     lightIds: ReadonlyMap<string, string>;
     newId: () => string;
     dmLineIds: ReadonlyMap<string, string>;
-    sharedLines: number;
+    seenLineIds: (line: LogEntry) => string;
   },
 ): void {
-  const { scenes, tokens, stampIds, lightIds, newId, dmLineIds, sharedLines } = ids;
+  const { scenes, tokens, stampIds, lightIds, newId, dmLineIds, seenLineIds } = ids;
   const trapIds = new Map<string, string>();
   const lineId = (id: string) => dmLineIds.get(id)!;
-  const seenLineIds = new Map<string, string>();
-  const seenKept = (state.trapSeen ?? []).filter((line) => line.data?.type === "trapSeen");
-  for (const [i, id] of seenKept.map((line) => line.id).sort(compareLogIds).entries()) seenLineIds.set(id, `0:${sharedLines + i}`);
   const kept = (list: readonly string[], more = 0): { list: string[]; more: number } => {
     const mapped = list.filter((id) => tokens.has(id)).map((id) => tokens.of(id));
     const plain = mapped.filter(isPlainId);
@@ -969,6 +1019,6 @@ function remapTraps(
     if (data?.type !== "trapSeen") continue;
     const by = kept(data.by, data.more ?? 0);
     const { more: _more, ...rest } = data;
-    out.trapSeen.push({ ...line, id: seenLineIds.get(line.id)!, data: { ...rest, by: by.list, ...(by.more > 0 ? { more: by.more } : {}) } });
+    out.trapSeen.push({ ...line, id: seenLineIds(line), data: { ...rest, by: by.list, ...(by.more > 0 ? { more: by.more } : {}) } });
   }
 }

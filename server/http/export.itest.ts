@@ -72,6 +72,17 @@ async function importZip(client: TestClient, zip: Buffer, fields: Record<string,
   return client.request("POST", "/api/rooms/import", undefined, { "content-type": "application/zip", ...form(fields) }, zip);
 }
 
+/** Joins an imported room as the member named `name`, as "continue as" does. */
+async function continueAs(t: Engine, client: TestClient, roomId: string, name: string): Promise<string> {
+  const { rows } = await t.pool.query<{ state: RoomState }>("select state from room_snapshots where room_id = $1", [roomId]);
+  const member = Object.values(rows[0]!.state.members).find((m) => m.name === name)!;
+  const step1 = await client.post(`/api/rooms/${roomId}/join`, { password: "owlbear-druid-wand" });
+  assert.equal(step1.statusCode, 200, step1.body);
+  const done = await client.post(`/api/rooms/${roomId}/join/complete`, { ticket: step1.json<{ ticket: string }>().ticket, memberId: member.id });
+  assert.equal(done.statusCode, 200, done.body);
+  return member.id;
+}
+
 describe("room export and import", () => {
   let t: Engine;
   before(async () => {
@@ -151,7 +162,10 @@ describe("room export and import", () => {
     const uploaders = await t.pool.query<{ member_id: string }>("select u.member_id from asset_uploaders u join assets a on a.id = u.asset_id where a.room_id = $1 and a.kind = 'token'", [newId]);
     assert.deepEqual(uploaders.rows.map((r) => r.member_id), [owner.id]);
     assert.equal(state.log.length, 2);
-    assert.ok(state.log.every((e) => e.id.startsWith("0:")));
+    // Each line keeps its op's seq, and the room's own ops count on after the newest of them.
+    const oldSeqs = room.state.log.map((e) => Number(e.id.split(":")[0]));
+    assert.ok(state.log.every((e) => oldSeqs.includes(Number(e.id.split(":")[0]))), state.log.map((e) => e.id).join(", "));
+    assert.equal(t.manager.get(newId)!.committed.seq, Math.max(...oldSeqs));
     // The room's own monsters travel in the backup, under new ids like everything else.
     const monsters = Object.values(state.monsters);
     assert.equal(monsters.length, 1);
@@ -864,17 +878,6 @@ describe("room export and import", () => {
     dmSocket.close();
   });
 
-  /** Joins an imported room as the member named `name`, as "continue as" does. */
-  async function continueAs(client: TestClient, roomId: string, name: string): Promise<string> {
-    const { rows } = await t.pool.query<{ state: RoomState }>("select state from room_snapshots where room_id = $1", [roomId]);
-    const member = Object.values(rows[0]!.state.members).find((m) => m.name === name)!;
-    const step1 = await client.post(`/api/rooms/${roomId}/join`, { password: "owlbear-druid-wand" });
-    assert.equal(step1.statusCode, 200, step1.body);
-    const done = await client.post(`/api/rooms/${roomId}/join/complete`, { ticket: step1.json<{ ticket: string }>().ticket, memberId: member.id });
-    assert.equal(done.statusCode, 200, done.body);
-    return member.id;
-  }
-
   test("a hostile manifest cannot make a player the uploader of a thumbnail or a map, and no uploader row lets a player read one", async () => {
     const dm = t.client();
     const { roomId } = await dm.createRoom("Uploader source");
@@ -900,7 +903,7 @@ describe("room export and import", () => {
     const rows = await t.pool.query<{ id: string; kind: string }>("select id, kind from assets where room_id = $1", [newId]);
     const idOf = (kind: string) => rows.rows.find((r) => r.kind === kind)!.id;
     const pip = t.client();
-    const newPip = await continueAs(pip, newId, "Pip");
+    const newPip = await continueAs(t, pip, newId, "Pip");
     const uploaded = await t.pool.query<{ kind: string; member_id: string }>(
       "select a.kind, u.member_id from asset_uploaders u join assets a on a.id = u.asset_id where a.room_id = $1",
       [newId],
@@ -934,7 +937,7 @@ describe("room export and import", () => {
     const newId = imported.json<{ roomId: string }>().roomId;
     t.track(newId);
     const pip = t.client();
-    await continueAs(pip, newId, "Pip");
+    await continueAs(t, pip, newId, "Pip");
     const listed = (await pip.get(`/api/rooms/${newId}/assets`)).json<{ assets: Array<{ id: string; kind: string }> }>().assets;
     assert.deepEqual(listed.map((a) => a.kind), ["token"]);
     assert.equal((await pip.get(`/api/assets/${listed[0]!.id}/full`)).statusCode, 200);
@@ -988,8 +991,117 @@ describe("an imported log in the archive (shared/logRings.ts)", () => {
     assert.deepEqual(archived.map((e) => e.text), Array.from({ length: 250 }, (_, i) => `line ${i}`));
   });
 
+  test("a mixed-audience backup reads back in time order on the DM's pages, each player's and every export, each evening once", async () => {
+    const dm = t.client();
+    const { roomId } = await dm.createRoom("Three evenings");
+    const ana = t.client();
+    const anaId = await ana.join(roomId, "Ana");
+    const ben = t.client();
+    await ben.join(roomId, "Ben");
+    const dmId = (await dm.me(roomId)).memberId!;
+    const dmSocket = await t.connect(roomId, dm);
+    const sceneId = ((await dmSocket.snapshot("dm")).state as ProjectedState).meta.playerSceneId!;
+    const anaSocket = await t.connect(roomId, ana);
+    await anaSocket.snapshot("ana");
+    const benSocket = await t.connect(roomId, ben);
+    await benSocket.snapshot("ben");
+    const creature = async (name: string, extra: Record<string, unknown>) => {
+      const id = uuidv7();
+      await dmSocket.apply({ t: "token.create", token: { id, sceneId, kind: "monster", name, size: "medium", x: 2, y: 2, actor: { inline: actor }, ...extra } });
+      return id;
+    };
+    // A creature only the DM sees (DM lines), one only Ana sees beside the DM (a DM line and Ana's copy), and one all see.
+    const lurker = await creature("Lurker", { visibility: "dm" });
+    const pet = await creature("Pet", { visibility: "dm", ownerIds: [anaId] });
+    const goblin = await creature("Goblin", {});
+    const hurt = (tokenId: string, amount: number) => dmSocket.apply({ t: "actor.hp", target: { tokenId }, change: { kind: "damage", amount } });
+    const evenings: number[] = [];
+    for (let e = 1; e <= 3; e++) {
+      await anaSocket.apply({ t: "log.chat", text: `Ana ${e}` });
+      await hurt(lurker, e * 10 + 1);
+      await hurt(pet, e * 10 + 2);
+      await benSocket.apply({ t: "log.whisper", to: [dmId], text: `Ben whispers ${e}` });
+      await hurt(goblin, e * 10 + 3);
+      await benSocket.apply({ t: "log.chat", text: `Ben ${e}` });
+      evenings.push(t.manager.get(roomId)!.committed.seq);
+    }
+    const sign = (e: LogEntry) => (e.kind === "event" ? `${e.data?.type} ${(e.data as { amount?: number }).amount ?? ""}` : `${e.kind} ${e.text}`);
+    const before = { dm: (await pages(dm, roomId)).map(sign), ana: (await pages(ana, roomId)).map(sign), ben: (await pages(ben, roomId)).map(sign) };
+    for (const socket of [dmSocket, anaSocket, benSocket]) socket.close();
+
+    // The file's evenings a week apart, each line a minute after the one before, as three evenings of play leave them.
+    const res = await dm.get(`/api/rooms/${roomId}/export`);
+    assert.equal(res.statusCode, 200, res.body);
+    const room = JSON.parse((await unzip(res.rawPayload)).get("room.json")!.toString()) as RoomExport;
+    const days = ["2026-09-01", "2026-09-08", "2026-09-15"];
+    room.state.log.forEach((line, i) => {
+      const evening = evenings.findIndex((last) => Number(line.id.split(":")[0]) <= last);
+      line.at = new Date(Date.parse(`${days[evening]}T19:00:00.000Z`) + i * 60_000).toISOString();
+    });
+    assert.ok(room.state.log.some((e) => e.to !== undefined), "the file holds a party copy");
+    assert.ok(room.state.log.some((e) => e.kind === "whisper"), "and whispers");
+    const importer = t.client();
+    const imported = await importZip(importer, await zipOf({ "room.json": JSON.stringify(room) }));
+    assert.equal(imported.statusCode, 201, imported.body);
+    const { roomId: copyId } = imported.json<{ roomId: string }>();
+    t.track(copyId);
+    const anaCopy = t.client();
+    await continueAs(t, anaCopy, copyId, "Ana");
+    const benCopy = t.client();
+    await continueAs(t, benCopy, copyId, "Ben");
+
+    const readers = [
+      // The importing DM is not the old DM, so Ben's whispers to the old DM are not theirs to read.
+      { name: "dm", client: importer, expected: before.dm.filter((line) => !line.startsWith("whisper ")) },
+      { name: "ana", client: anaCopy, expected: before.ana },
+      { name: "ben", client: benCopy, expected: before.ben },
+    ];
+    for (const { name, client, expected } of readers) {
+      const read = (await pages(client, copyId)).filter((e) => e.at < "2026-10");
+      assert.deepEqual(read.map(sign), expected, `${name}: every line they read in the old room, in its order, and no other`);
+      const times = read.map((e) => e.at);
+      assert.deepEqual(times, [...times].sort(), `${name}: in time order`);
+
+      const listing = await client.get(`/api/rooms/${copyId}/log/sessions`);
+      assert.equal(listing.statusCode, 200, listing.body);
+      const sessions = listing.json<{ sessions: { firstId: string; lastId: string; from: string; lines: number }[] }>().sessions.filter((x) => x.from < "2026-10");
+      assert.deepEqual(sessions.map((x) => x.from.slice(0, 10)), [...days].reverse(), `${name}: each evening once, newest first`);
+      for (const [i, session] of sessions.entries()) {
+        const day = days[days.length - 1 - i]!;
+        assert.equal(session.lines, read.filter((e) => e.at.startsWith(day)).length, `${name}: all of ${day}'s lines`);
+        const file = await client.get(`/api/rooms/${copyId}/log/export?tz=UTC&fromId=${session.firstId}&toId=${session.lastId}`);
+        assert.equal(file.statusCode, 200, file.body);
+        assert.equal(file.body.split("\n").filter((l) => l.startsWith("- ")).length, session.lines, `${name}: ${day}'s file`);
+      }
+      const all = await client.get(`/api/rooms/${copyId}/log/export?tz=UTC`);
+      assert.equal(all.statusCode, 200, all.body);
+      const headings = all.body.split("\n").filter((l) => l.startsWith("## "));
+      assert.equal(new Set(headings).size, headings.length, `${name}: the Everything file has each day once`);
+      assert.ok(headings.length >= days.length, `${name}: ${headings.join(", ")}`);
+    }
+  });
+
+  test("a file whose lines name an op past the seqs a room counts on from is refused, and one at the bound comes", async () => {
+    const dm = t.client();
+    const { roomId } = await dm.createRoom("Far seq");
+    const res = await dm.get(`/api/rooms/${roomId}/export`);
+    assert.equal(res.statusCode, 200, res.body);
+    const room = JSON.parse((await unzip(res.rawPayload)).get("room.json")!.toString()) as RoomExport;
+    const line = (seq: number): LogEntry => ({ id: `${seq}:0`, at: "2026-10-01T00:00:00.000Z", kind: "chat", text: "far" });
+    room.state.log = [line(2 ** 48 + 1)];
+    const refused = await importZip(t.client(), await zipOf({ "room.json": JSON.stringify(room) }));
+    assert.equal(refused.statusCode, 400, refused.body);
+    assert.deepEqual(refused.json<{ error: string; field: string }>(), { error: "bad_room_json", field: "state.log" });
+    room.state.log = [line(2 ** 48)];
+    const imported = await importZip(t.client(), await zipOf({ "room.json": JSON.stringify(room) }));
+    assert.equal(imported.statusCode, 201, imported.body);
+    t.track(imported.json<{ roomId: string }>().roomId);
+  });
+
   test("a room imported before imports wrote the archive gets its seq-0 lines there when it loads", async () => {
-    const { roomId, importer } = await importWithLog((i) => ({ id: `${i + 1}:0`, at: "2026-10-01T00:00:00.000Z", kind: "chat", text: `line ${i}` }), 20);
+    // As such an import left a room: every line at seq 0, no import seq on the room, and no archive rows.
+    const { roomId, importer } = await importWithLog((i) => ({ id: `0:${i}`, at: "2026-10-01T00:00:00.000Z", kind: "chat", text: `line ${i}` }), 20);
+    await t.pool.query("update rooms set imported_seq = null where id = $1", [roomId]);
     await t.pool.query("delete from room_log where room_id = $1", [roomId]);
     const socket = await t.connect(roomId, importer);
     await socket.snapshot("i");
@@ -1044,13 +1156,13 @@ describe("an imported log in the archive (shared/logRings.ts)", () => {
     }
   });
 
-  test("a load writes no seq-0 line again once the archive holds some of the import's, so rows an older archive lost stay lost", async () => {
+  test("a load writes no imported line again once the archive holds some of the import's, so rows an older archive lost stay lost", async () => {
     const { roomId, importer } = await importWithLog((i) => ({ id: `${i + 1}:0`, at: "2026-10-01T00:00:00.000Z", kind: "chat", text: `line ${i}` }), 20);
     // As the trim to LEGACY_LOG_STORED rows an archive once took after each snapshot left it: its oldest rows gone.
-    await t.pool.query("delete from room_log where room_id = $1 and id = any($2::text[])", [roomId, ["0:0", "0:1", "0:2"]]);
+    await t.pool.query("delete from room_log where room_id = $1 and id = any($2::text[])", [roomId, ["1:0", "2:0", "3:0"]]);
     const socket = await t.connect(roomId, importer);
     await socket.snapshot("i");
-    const { rows } = await t.pool.query<{ n: number }>("select count(*)::int as n from room_log where room_id = $1 and split_part(id, ':', 1) = '0'", [roomId]);
+    const { rows } = await t.pool.query<{ n: number }>("select count(*)::int as n from room_log where room_id = $1", [roomId]);
     assert.equal(rows[0]!.n, 17);
     socket.close();
   });

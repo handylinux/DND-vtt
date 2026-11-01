@@ -22,10 +22,10 @@ export class ActorGateway implements RoomGateway {
     this.#pool = pool;
   }
 
-  async createRoom(roomId: string, state: RoomState, tx?: Queryable): Promise<void> {
+  async createRoom(roomId: string, state: RoomState, tx?: Queryable, seq = 0): Promise<void> {
     await (tx ?? this.#pool).query(
-      "insert into room_snapshots (room_id, seq, state, schema_version) values ($1, 0, $2::jsonb, $3)",
-      [roomId, JSON.stringify(state), SNAPSHOT_SCHEMA_VERSION],
+      "insert into room_snapshots (room_id, seq, state, schema_version) values ($1, $4, $2::jsonb, $3)",
+      [roomId, JSON.stringify(state), SNAPSHOT_SCHEMA_VERSION, seq],
     );
   }
 

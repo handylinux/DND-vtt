@@ -13,7 +13,7 @@ import { AT, DM, P1, actor, apply, env, castAsk, castTable, character, companion
 import type { AssetKind } from "../assets/kinds.ts";
 import { exportableState } from "./exportRoom.ts";
 import { assertWithinLimits } from "./importRoom.ts";
-import { remapState, type ImportedAsset } from "./remap.ts";
+import { lastLineSeq, remapState, type ImportedAsset } from "./remap.ts";
 import { measuredStateBytes } from "./sizeGuard.ts";
 import { parseRoomState } from "./stateSchema.ts";
 import { imageAssetId } from "#shared/imageRef.ts";
@@ -108,9 +108,18 @@ describe("remapState", () => {
       for (const m of e.monsters) if ("monsterId" in m) assert.ok(out.monsters[m.monsterId]);
     });
     assert.ok(out.meta.playerSceneId && out.scenes[out.meta.playerSceneId]);
-    // The lines a player may get count one after another, and the DM's on their own from DM_LINE_BASE with the trap
-    // log's, so no id a player gets counts a line only the DM holds (shared/logRings.ts).
-    out.log.filter((e) => lineAudience(e) !== "dm").forEach((e, i) => assert.equal(e.id, `0:${i}`));
+    // Each line keeps its op, and within it the lines every player may get count one after another, with the players'
+    // trap lines, and the DM's on their own from DM_LINE_BASE with the trap log's, so no id a player gets counts a
+    // line only the DM holds (shared/logRings.ts).
+    const seqs = new Set([...state.log, ...state.trapSeen].map((e) => e.id.split(":")[0]));
+    const counted = new Map<string, number[]>();
+    for (const e of [...out.log.filter((e) => lineAudience(e) === "shared" || lineAudience(e) === "whisper"), ...out.trapSeen]) {
+      const [seq, index] = e.id.split(":");
+      assert.ok(seqs.has(seq), `${e.id} keeps an op of the old room`);
+      counted.set(seq!, [...(counted.get(seq!) ?? []), Number(index)]);
+    }
+    assert.ok(counted.size > 1, "the random room's lines span several ops");
+    for (const [seq, indexes] of counted) assert.deepEqual(indexes.sort((a, b) => a - b), indexes.map((_, i) => i), `op ${seq}`);
     const dmIds = out.log.filter((e) => lineAudience(e) === "dm").map((e) => e.id);
     assert.ok(dmIds.length > 0, "the random room has lines only the DM gets");
     for (const id of dmIds) assert.ok(dmNumbered(id), id);
@@ -432,9 +441,9 @@ describe("remapState, wave 5 (docs/design-v1-dm-tools.md 2.5)", () => {
     const all = Object.values(out.traps).flatMap((t) => (t.rig?.due ?? []).map((d) => ({ name: t.name, id: d.id })));
     const sorted = [...all].sort((x, y) => compareLogIds(x.id, y.id)).map((d) => d.name);
     assert.deepEqual(sorted, ["b", "b", "a"], "4:0, then 10:900000, then 12:0");
-    // The players' line counts after the log and the DM's from DM_LINE_BASE, as a live room numbers them, so 12:1 comes before 12:0 now.
-    assert.equal(out.trapSeen[0]!.id, `0:${out.log.length}`, "12:1 is the players' first line");
-    assert.equal(all.find((d) => d.name === "a")!.id, `0:${DM_LINE_BASE + 2}`, "12:0 is the DM's third");
+    // Each keeps its op. The players' line counts from 0 and the DM's from DM_LINE_BASE, as a live room numbers them, so 12:1 comes before 12:0 now.
+    assert.equal(out.trapSeen[0]!.id, "12:0", "12:1 is the players' first line of its op");
+    assert.equal(all.find((d) => d.name === "a")!.id, `12:${DM_LINE_BASE}`, "12:0 is the DM's first of its op");
     assert.ok(compareLogIds(out.trapSeen[0]!.id, all.find((d) => d.name === "a")!.id) < 0);
   });
 });
@@ -680,7 +689,7 @@ describe("traps in an import (docs/design-v1-traps.md 6.8)", () => {
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.message);
   });
 
-  test("the players' trap lines are numbered one after another, and the DM's lines and occurrences on their own, so no id players get counts a line only the DM holds", () => {
+  test("the players' trap lines keep their ops, numbered there apart from the DM's lines and occurrences, so no id players get counts a line only the DM holds", () => {
     const state = room();
     state.tokens.thorn = token("thorn", { name: "Thorn", kind: "pc" });
     const t = trap("plate");
@@ -692,10 +701,9 @@ describe("traps in an import (docs/design-v1-traps.md 6.8)", () => {
     state.trapLog = [dmLine("7:900000"), dmLine("9:900000", true), dmLine("11:900000")];
     state.trapSeen = [seenLine("7:0"), seenLine("11:0")];
     const out = remapState(state, { assets: new Map() });
-    const n = out.log.length;
-    assert.deepEqual(out.trapSeen.map((e) => e.id), [`0:${n}`, `0:${n + 1}`], "no gap where the hidden springing was");
-    assert.deepEqual(out.trapLog.map((e) => e.id), ["0:900000", "0:900001", "0:900002"]);
-    assert.equal(Object.values(out.traps)[0]!.rig!.due![0]!.id, "0:900001", "the occurrence still names its line");
+    assert.deepEqual(out.trapSeen.map((e) => e.id), ["7:0", "11:0"], "the hidden springing took no number of theirs");
+    assert.deepEqual(out.trapLog.map((e) => e.id), ["7:900000", "9:900000", "11:900000"]);
+    assert.equal(Object.values(out.traps)[0]!.rig!.due![0]!.id, "9:900000", "the occurrence still names its line");
     const parsed = parseRoomState(JSON.parse(JSON.stringify(out)));
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.message);
   });
@@ -725,21 +733,21 @@ describe("party lines in an import (shared/logRings.ts)", () => {
     const out = remapState(state, { assets: new Map(), memberIds });
     const ranks = rosterRanks(out.members);
     const run = (id: string) => partyIndex(ranks.get(id)!, 0);
+    // Each line keeps its op, and each reader's copies count in the run the new roster gives them there.
     assert.deepEqual(out.log.map((e) => [e.id, e.to, e.copyOf]), [
-      ["0:0", undefined, undefined],
-      [`0:${run("m-p1")}`, ["m-p1"], `0:${DM_LINE_BASE}`],
-      [`0:${run("m-p1") + 1}`, ["m-p1"], `0:${DM_LINE_BASE + 1}`],
-      [`0:${run("m-p1") + 2}`, ["m-p1"], undefined],
-      [`0:${run("m-p2")}`, ["m-p2"], `0:${DM_LINE_BASE + 1}`],
-      [`0:${DM_LINE_BASE}`, undefined, undefined],
-      [`0:${DM_LINE_BASE + 1}`, undefined, undefined],
-      [`0:${DM_LINE_BASE + 2}`, undefined, undefined],
+      ["1:0", undefined, undefined],
+      [`2:${run("m-p1")}`, ["m-p1"], `2:${DM_LINE_BASE}`],
+      [`2:${DM_LINE_BASE}`, undefined, undefined],
+      ...[[`3:${run("m-p1")}`, ["m-p1"], `3:${DM_LINE_BASE}`], [`3:${run("m-p2")}`, ["m-p2"], `3:${DM_LINE_BASE}`]].sort((a, b) => compareLogIds(a[0] as string, b[0] as string)),
+      [`3:${DM_LINE_BASE}`, undefined, undefined],
+      [`4:${DM_LINE_BASE}`, undefined, undefined],
+      [`5:${run("m-p1")}`, ["m-p1"], undefined],
     ]);
-    assert.deepEqual(eventLines(out.log).map((e) => e.id), ["0:0", `0:${run("m-p1") + 2}`, `0:${DM_LINE_BASE}`, `0:${DM_LINE_BASE + 1}`, `0:${DM_LINE_BASE + 2}`], "each copy names its DM line's new id, and one whose line did not come stands for it");
+    assert.deepEqual(eventLines(out.log).map((e) => e.id), ["1:0", `2:${DM_LINE_BASE}`, `3:${DM_LINE_BASE}`, `4:${DM_LINE_BASE}`, `5:${run("m-p1")}`], "each copy names its DM line's new id, and one whose line did not come stands for it");
     const p2 = projectState(out, { memberId: "m-p2", role: "player" }, { sceneId: "s1" }).log;
-    assert.deepEqual(p2.map((e) => [e.id, e.to, e.copyOf]), [["0:0", undefined, undefined], [`0:${run("m-p2")}`, ["m-p2"], undefined]]);
+    assert.deepEqual(p2.map((e) => [e.id, e.to, e.copyOf]), [["1:0", undefined, undefined], [`3:${run("m-p2")}`, ["m-p2"], undefined]]);
     const dm = projectState(out, { memberId: "m-dm", role: "dm" }, { sceneId: "s1" }).log;
-    assert.deepEqual(dm.map((e) => e.id), ["0:0", `0:${DM_LINE_BASE}`, `0:${DM_LINE_BASE + 1}`, `0:${DM_LINE_BASE + 2}`], "the DM reads each line once");
+    assert.deepEqual(dm.map((e) => e.id), ["1:0", `2:${DM_LINE_BASE}`, `3:${DM_LINE_BASE}`, `4:${DM_LINE_BASE}`], "the DM reads each line once");
     const parsed = parseRoomState(JSON.parse(JSON.stringify(out)));
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.message);
   });
@@ -843,7 +851,7 @@ describe("an imported log (importRoom)", () => {
       assert.equal(e.parts, undefined, e.id);
       assert.ok(serializedBytes(e) <= LIMITS.apartLineBytes, e.id);
     }
-    assert.deepEqual(out.log.find((e) => e.kind === "whisper"), { id: "0:0", at: AT, kind: "whisper", from: "m-p1", to: ["m-dm"], text: "psst" }, "a whisper is who it is from and for and what it says");
+    assert.deepEqual(out.log.find((e) => e.kind === "whisper"), { id: "201:0", at: AT, kind: "whisper", from: "m-p1", to: ["m-dm"], text: "psst" }, "a whisper is who it is from and for and what it says");
     assert.ok(serializedBytes(out) - measuredStateBytes(out) <= (LIMITS.dmLogLines + 2) * LIMITS.apartLineBytes);
     assertWithinLimits(out);
   });
@@ -858,7 +866,8 @@ describe("an imported log (importRoom)", () => {
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.message);
     const out = remapState(parsed.state, { assets: new Map() });
     for (const lines of [out.trapSeen, out.trapLog]) assert.deepEqual(lines.map((e) => e.id), lines.map((e) => e.id).sort(byId));
-    const tx = new Tx(out, DM, { seq: 5, at: AT });
+    // The room's own ops start after the file's last line (importRoom).
+    const tx = new Tx(out, DM, { seq: lastLineSeq(out) + 1, at: AT });
     tx.addTrapLine("trapSeen", { type: "trapSeen", by: [], message: "Darts fly." }, LIMITS.trapSeenLines);
     tx.finish();
     assert.equal(tx.state.trapSeen.length, LIMITS.trapSeenLines);

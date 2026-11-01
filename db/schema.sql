@@ -274,3 +274,9 @@ create index if not exists room_log_access_source on room_log_access (id, room_i
 -- The partial index on room_log (room_id) where seq is null, which finds a
 -- room's incomplete rows, is built after boot with create index
 -- concurrently, which cannot run here (logHistoryMigration.ts).
+-- The seq an imported room starts at: the file's lines keep their ops' seqs,
+-- up to this one (server/rooms/remap.ts), so a load can tell which lines of
+-- its log the import brought (persistence.ts loadRoom). Null for a room made
+-- here, and for one imported before imports kept seqs, whose imported lines
+-- are all at seq 0.
+alter table rooms add column if not exists imported_seq bigint;

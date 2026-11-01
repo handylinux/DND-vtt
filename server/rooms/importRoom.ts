@@ -32,7 +32,7 @@ import { warnArchiveSkipped, type Logger } from "./actor.ts";
 import { EXPORT_FORMAT, EXPORT_FORMAT_VERSION, assetFileName } from "./exportRoom.ts";
 import type { RoomGateway } from "./gateway.ts";
 import { archiveAdmitted, archiveLines } from "./persistence.ts";
-import { remapState, type ImportedAsset } from "./remap.ts";
+import { lastLineSeq, remapState, type ImportedAsset } from "./remap.ts";
 import { layerCharge, MEMORY_CAP } from "./memorySize.ts";
 import { checkWholeScenes, measuredStateBytes, MEMORY_FULL, memoryCapOf, memoryReserved, memoryReserves, sharesRoom } from "./sizeGuard.ts";
 import { parseRoomState } from "./stateSchema.ts";
@@ -71,6 +71,12 @@ export const IMPORT_LIMITS = {
   inflatedBytes: 1024 * 1024 * 1024,
   roomJsonBytes: 2 * LIMITS.stateBytes,
   manifestBytes: 2 * 1024 * 1024,
+  /**
+   * The newest op seq a file's log lines may name. The room's own ops count
+   * on from it (lastLineSeq), so it stays far inside the integers a seq is
+   * read as exactly, whatever a hand-made file says.
+   */
+  lineSeq: 2 ** 48,
 } as const;
 
 export type ImportForm = {
@@ -214,6 +220,9 @@ export async function importRoom(deps: ImportDeps, zipPath: string, form: Import
     // room as it will be stored. A full roster plus the importer would make a
     // room that refuses every op, deletions included.
     assertWithinLimits(finishState(withDiscoveryUpgrade(parsed.state, header.data.schemaVersion), dmMember, roomName));
+    // Imported lines keep their ops' seqs, so the room starts at the newest of them and its own lines sort after them.
+    const startSeq = lastLineSeq(parsed.state);
+    if (startSeq > IMPORT_LIMITS.lineSeq) throw new HttpError(400, "bad_room_json", { extra: { field: "state.log" } });
 
     let manifest: z.infer<typeof manifestSchema> = { formatVersion: 1, assets: [] };
     const manifestEntry = entries.get("assets.json");
@@ -229,8 +238,8 @@ export async function importRoom(deps: ImportDeps, zipPath: string, form: Import
       for (let attempt = 0; attempt < 5 && !id; attempt++) {
         const candidate = newRoomId();
         const { rowCount } = await tx.query(
-          `insert into rooms (id, name, player_pw_hash, dm_key_hash, created_ip) values ($1, $2, $3, $4, $5) on conflict (id) do nothing`,
-          [candidate, roomName, form.playerPwHash, sha256(dmKey), form.createdIp],
+          `insert into rooms (id, name, player_pw_hash, dm_key_hash, created_ip, imported_seq) values ($1, $2, $3, $4, $5, $6) on conflict (id) do nothing`,
+          [candidate, roomName, form.playerPwHash, sha256(dmKey), form.createdIp, startSeq],
         );
         if (rowCount === 1) id = candidate;
       }
@@ -267,7 +276,7 @@ export async function importRoom(deps: ImportDeps, zipPath: string, form: Import
       const archive = await archiveAdmitted(() => deps.assets.archiveDiskOk());
       if (!archive) warnArchiveSkipped(deps.log, roomId, Date.now());
       await withTx(deps.pool, async (tx) => {
-        await deps.gateway.createRoom(roomId, state, tx);
+        await deps.gateway.createRoom(roomId, state, tx, startSeq);
         if (archive) await archiveLines(tx, roomId, remapped.log);
         await markDmMembers(tx, roomId, oldDms);
         if (hooks.afterImages) await hooks.afterImages(tx, room);
