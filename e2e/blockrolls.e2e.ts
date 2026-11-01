@@ -384,11 +384,16 @@ async function patAt(size: { width: number; height: number }, scale: string): Pr
   await pat.getByRole("status", { name: "Connected" }).first().waitFor();
 }
 
+/** A menu that slid over its box ignores a press for 350 ms after it opens (Menu.tsx, D-261101-313), so a step that presses its rows waits past that. */
+const MENU_SETTLE_MS = 400;
+
 /** A hold on an ability's row and a tap on one of its options, which must send one roll. */
 async function rollPicked(scope: Locator, ability: string, row: RegExp, option: string): Promise<Op> {
   await boxOf(scope, ability).tap();
+  await sleep(MENU_SETTLE_MS);
   await hold(patCdp, listOf(pat, ability).getByRole("menuitem", { name: row }).first());
   const from = patSent.ops.length;
+  await sleep(MENU_SETTLE_MS);
   await optionsOf(pat, new RegExp(`^Roll options for ${row.source.replace(/^\^/, "")}`)).getByRole("menuitem", { name: option }).tap();
   return oneRoll(patSent, from, `${ability}: ${row.source}, ${option}`);
 }
@@ -1568,6 +1573,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       patWire.hold = true;
       const from = patSent.ops.length;
       await boxOf(view, "Wisdom").tap();
+      await sleep(MENU_SETTLE_MS);
       await listOf(pat, "Wisdom").getByRole("menuitem", { name: /^Wisdom check/ }).tap();
       await sheet.getByRole("button", { name: "Hide Characters" }).tap();
       await sheet.waitFor({ state: "hidden" });

@@ -642,15 +642,20 @@ function abilityBox(scope: Locator, ability: string): Locator {
   return scope.locator("[data-ability-grid]").first().getByRole("button", { name: new RegExp(`^${ability} `) });
 }
 
+/** A menu that slid over its box ignores a press for 350 ms after it opens (Menu.tsx, D-261101-313), so a step that taps its row waits past that. */
+const MENU_SETTLE_MS = 400;
+
 /** A tap on an ability's box and on a row of its list, as a finger picks. */
 async function pickRow(page: Page, scope: Locator, ability: string, row: RegExp, how: "tap" | "click" = "tap"): Promise<void> {
   const box = abilityBox(scope, ability);
   const item = page.getByRole("menu", { name: `${ability} rolls` }).getByRole("menuitem", { name: row });
   if (how === "tap") {
     await box.tap();
+    await sleep(MENU_SETTLE_MS);
     await item.tap();
   } else {
     await box.click();
+    await sleep(MENU_SETTLE_MS);
     await item.click();
   }
 }
@@ -2529,6 +2534,7 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
       armed = true;
       await abilityBox(sheet, "Dexterity").tap();
       const before = await boxes();
+      await sleep(MENU_SETTLE_MS);
       await page.getByRole("menu", { name: "Dexterity rolls" }).getByRole("menuitem", { name: /^Dexterity check/ }).tap();
       const header = headerOf(sheet);
       await waitFor("the receipt lookup", () => (lost.gets.length > 0 ? true : null), 20_000);
