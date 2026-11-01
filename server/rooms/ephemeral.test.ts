@@ -136,6 +136,37 @@ describe("drag previews", () => {
   });
 });
 
+describe("drag previews on squares: the squeezed footprint is not always inside the full one (D-261101-187)", () => {
+  /** A fog scene where only square 9,10 and the squares the creature starts on are revealed, and a custom 1 by 3 creature nobody owns. */
+  function strip(stored?: { squeeze: true }): RoomState {
+    const state = room();
+    state.scenes.s1 = scene("s1", { fogEnabled: true });
+    state.tokens.pole = token("pole", { size: "custom", w: 1, h: 3, x: 2, y: 2, kind: "npc", ...stored });
+    reveal(state, "s1", { x: 2, y: 2, w: 1, h: 3 });
+    reveal(state, "s1", { x: 9, y: 10, w: 1, h: 1 });
+    return state;
+  }
+  // The full footprint snaps to x 8 to 9 and misses the revealed square. The squeezed one, 1 by 2 around the point, reaches into it.
+  const frame: EphEvent = { k: "dragMove", tokenId: "pole", x: 8.49, y: 9 };
+
+  test("a creature that can squeeze is withheld by its full footprint though its squeezed one shows", () => {
+    const t = table(strip());
+    t.send(t.dm.conn, frame);
+    assert.deepEqual(t.p1.got, []);
+    // Control: one step east its snapped full footprint covers the revealed square, so the same drag shows.
+    t.send(t.dm.conn, { ...frame, x: 8.5 });
+    assert.deepEqual(t.p1.got, [{ ...frame, x: 8.5 }]);
+  });
+
+  test("a creature already carrying a squeeze is judged by its full footprint too, so the stored squeeze never hides the part it would reveal", () => {
+    const t = table(strip({ squeeze: true }));
+    t.send(t.dm.conn, frame);
+    assert.deepEqual(t.p1.got, []);
+    t.send(t.dm.conn, { ...frame, x: 8.5 });
+    assert.deepEqual(t.p1.got, [{ ...frame, x: 8.5 }]);
+  });
+});
+
 describe("rulers", () => {
   test("a ruler's ground heights reach every allowed receiver as sent, and a stop on a token a player cannot see still withholds it", () => {
     const state = room();

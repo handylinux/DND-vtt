@@ -137,7 +137,10 @@ function tokenVisibleTo(state: RoomState, receiver: Connection, tokenId: string)
  * any other creature by its full footprint (D-261101-187). The preview
  * point is unsnapped and only the drop settles whether the creature
  * squeezes, so the preview errs toward withholding whichever footprint the
- * drop gives it, and needs no walk to judge.
+ * drop gives it, and needs no walk to judge. The stored squeeze is dropped
+ * first so the full footprint is always tested: the squeezed one does not
+ * always lie inside it (a custom 1 by 3 creature's reaches out of its
+ * snapped rectangle), so a token already squeezed would otherwise skip it.
  *
  * On a hex scene the footprint is one size smaller around the preview
  * point where a creature that can squeeze stands with its core clear and a
