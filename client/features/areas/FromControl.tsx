@@ -197,7 +197,7 @@ function CompactPicture(props: { control: ShownFrom }) {
   if (control.form === "disabled") {
     return control.characterId !== undefined ? (
       <Marked state="disabled">
-        <Portrait entry={{ characterId: control.characterId, label: control.name ?? "" }} size={theme.layout.options.disk} />
+        <Portrait entry={{ characterId: control.characterId, label: control.name ?? "" }} size={theme.layout.options.disk} ring={theme.color.textDisabled} />
       </Marked>
     ) : (
       <Icon name="noCaster" size={theme.layout.options.disk} />
@@ -210,14 +210,16 @@ function CompactPicture(props: { control: ShownFrom }) {
 /**
  * The square's words are gone, so its picture says the state as well as its
  * fill does (WCAG 1.4.1): on, the portrait as it is. Off, the portrait
- * faded under the no-caster slash. Disabled, grey and fainter still, under
- * a slash in the disabled text color.
+ * faded under the no-caster slash. Disabled, grey under a slash in the
+ * disabled text color, with the dim outline of a chosen option that cannot
+ * change (components/looks.ts). It keeps full opacity, since the tokens
+ * forbid fading a disabled control (D-261101-302).
  */
 function Marked(props: { state: "on" | "off" | "disabled"; children: ReactNode }) {
   const { state } = props;
   return (
     <span data-rvtt-from={state} style={{ position: "relative", display: "grid", placeItems: "center" }}>
-      <span style={{ display: "grid", opacity: state === "on" ? 1 : state === "off" ? 0.5 : 0.35, filter: state === "disabled" ? "grayscale(1)" : undefined }}>{props.children}</span>
+      <span style={{ display: "grid", opacity: state === "off" ? 0.5 : 1, filter: state === "disabled" ? "grayscale(1)" : undefined }}>{props.children}</span>
       {state === "on" ? null : (
         <span aria-hidden style={{ position: "absolute", inset: -(SLASH - theme.layout.options.disk) / 2, display: "grid", placeItems: "center" }}>
           <Icon name="noCaster" size={SLASH} />
