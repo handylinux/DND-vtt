@@ -1984,8 +1984,8 @@ function ToastVoice(props: { toasts: readonly Toast[]; heldSince: number | undef
     const fresh = props.toasts.filter((t) => t.id > voice.through);
     if (fresh.length === 0) return;
     voice.through = Math.max(...fresh.map((t) => t.id));
-    // A toast whose time ran out unseen, while play was paused, is not news any more.
-    const words = fresh.filter((t) => (left.get(t.id) ?? 0) > 0).map(toastWords);
+    // A toast whose time ran out unseen, while play was paused, is not news any more, nor is one a live region already said.
+    const words = fresh.filter((t) => !t.quiet && (left.get(t.id) ?? 0) > 0).map(toastWords);
     // A new node each time, so words that repeat, as a second "Undid moving Thorn.", are said again.
     if (words.length > 0) setSaid((was) => ({ key: was.key + 1, text: words.join(" ") }));
   }, [props.toasts, props.heldSince, voice]);

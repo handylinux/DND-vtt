@@ -97,8 +97,11 @@ export const EMPTY_EPHEMERAL: Ephemeral = Object.freeze({
  * `logged` marks one whose words the log keeps, as a whisper's or a roll's,
  * the only kind a stack too tall for its room may drop (review
  * FU22B-OP-4): a refusal or an error that the log never sees stays.
+ * `quiet` marks one whose words a live region already said, as an own
+ * roll's whose dice were still in the air as its panel closed: it shows,
+ * and the toasts' status region skips it (LP28-A-VOICE-1).
  */
-export type Toast = { id: number; text: string; tone: "error" | "info"; die?: ToastDie; action?: ToastAction; shownAt?: number; pausedAt?: number; logged?: true };
+export type Toast = { id: number; text: string; tone: "error" | "info"; die?: ToastDie; action?: ToastAction; shownAt?: number; pausedAt?: number; logged?: true; quiet?: true };
 
 /**
  * A toast's one button, beside its words, such as the falling off

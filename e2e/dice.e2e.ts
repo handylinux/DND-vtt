@@ -593,6 +593,45 @@ function headerSeen(page: Page, what: string, ready: (w: HeaderWatched) => boole
 /** The dice in the air: a canvas showing and the header with no total yet. */
 const midThrow = (w: HeaderWatched) => w.canvasAt !== null && w.totalAt === null;
 
+/** What a live region said, and whose region it was: a roll header's, the Dice panel's line, the toasts' or another. */
+type Heard = { region: "header" | "dice" | "toast" | "other"; text: string };
+
+/**
+ * Records, from now on, every new text in the page's live regions (polite,
+ * status and alert), as a screen reader would hear them, until the next
+ * call. A region that empties and fills again with the same words counts
+ * twice.
+ */
+function listenLive(page: Page): Promise<void> {
+  return js(
+    page,
+    `
+    globalThis.__live?.stop();
+    const heard = [];
+    const last = new Map();
+    const regionOf = (el) => (el.closest("[data-rvtt-toast-status]") ? "toast" : el.closest("[data-block-header]") ? "header" : el.closest("[data-dice-last]") ? "dice" : "other");
+    const look = () => {
+      for (const el of document.querySelectorAll('[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"]')) {
+        const text = (el.textContent ?? "").trim();
+        if (text === (last.get(el) ?? "")) continue;
+        last.set(el, text);
+        if (text !== "") heard.push({ region: regionOf(el), text });
+      }
+    };
+    look();
+    heard.length = 0;
+    const observer = new MutationObserver(look);
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+    globalThis.__live = { heard, stop: () => observer.disconnect() };
+    `,
+  );
+}
+
+/** What the live regions said since `listenLive` that names `label`. */
+async function heardOf(page: Page, label: RegExp): Promise<Heard[]> {
+  return (await js<Heard[]>(page, "return globalThis.__live.heard;")).filter((h) => label.test(h.text));
+}
+
 /** The roll header of the panel around `scope`, or in it. */
 function headerOf(scope: Locator): Locator {
   return scope.locator("xpath=ancestor-or-self::*[@data-block-header-host][1]//*[@data-block-header] | .//*[@data-block-header]");
@@ -2232,6 +2271,84 @@ describe("raccoon-vtt dice", { timeout: 300_000 }, () => {
         await bar.waitFor({ state: "detached", timeout: 3_000 }).catch(() => undefined);
       }
     }
+  });
+
+  test("fu44a-1. one announcement per roll: a block roll's header says it at the answer, and another token selected, Hide or a Dice panel beside it mid-throw says nothing more, nor does the Dice panel's own close mid-throw on a phone (LP28-A-VOICE-1, FL21-LIVE-TWICE)", async (t) => {
+    if (!(await needsWebGL(dm, t))) return;
+    await warmDice(dm, dmSocket);
+    const toasts = (label: RegExp) => dm.locator("[data-toast]").filter({ hasText: label }).count();
+    const once = (said: Heard[], what: string) => assert.deepEqual(said.map((h) => h.region), ["header"], `${what}: said once, by the header: ${JSON.stringify(said)}`);
+
+    // Another token selected mid-throw: a toast shows the roll, and nothing says it again.
+    let panel = await tokenPanel(dm, "Sprite", trh.sprite.at);
+    let box = abilityBox(panel, "Dexterity");
+    await box.scrollIntoViewIfNeeded();
+    await watchHeader(box);
+    await listenLive(dm);
+    await pickRow(dm, panel, "Intelligence", /^Intelligence save/, "click");
+    await headerSeen(dm, "the dice in the air", midThrow);
+    await tokenPanel(dm, "Bramble", trh.bramble.at, false);
+    await waitFor("the unseen roll's toast", async () => ((await toasts(/Intelligence save/)) > 0 ? true : null), 5_000);
+    await sleep(500);
+    once(await heardOf(dm, /Intelligence save/), "another token");
+
+    // Hide mid-throw: the same.
+    panel = await tokenPanel(dm, "Sprite", trh.sprite.at);
+    box = abilityBox(panel, "Dexterity");
+    await box.scrollIntoViewIfNeeded();
+    await watchHeader(box);
+    await listenLive(dm);
+    await pickRow(dm, panel, "Wisdom", /^Wisdom save/, "click");
+    await headerSeen(dm, "the dice in the air", midThrow);
+    await dm.getByRole("button", { name: "Hide panels" }).click();
+    await panel.waitFor({ state: "hidden" });
+    await waitFor("the hidden roll's toast", async () => ((await toasts(/Wisdom save/)) > 0 ? true : null), 5_000);
+    await sleep(500);
+    once(await heardOf(dm, /Wisdom save/), "Hide");
+    await dm.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).click();
+    await panel.waitFor();
+
+    // Two panels, Dice below: the token panel goes mid-throw and the Dice panel's line shows the roll without saying it (FL21-LIVE-TWICE).
+    const bar = dm.locator("[data-pane-bar]");
+    if ((await bar.count()) === 0) {
+      await dm.getByRole("tablist", { name: "Panels" }).locator('[role="tab"][aria-haspopup="menu"]').click();
+      await dm.getByRole("menu", { name: "More panels" }).getByRole("menuitemcheckbox", { name: "Two panels" }).click();
+      await dm.getByRole("menu", { name: "More panels" }).waitFor({ state: "detached" });
+    }
+    try {
+      await bar.getByRole("button", { name: / below$/ }).click();
+      await dm.getByRole("menu", { name: "Panel below" }).getByRole("menuitemradio", { name: sideTabName("Dice") }).click();
+      const dice = dm.getByRole("group", { name: "Dice below", exact: true });
+      await dice.waitFor();
+      await box.scrollIntoViewIfNeeded();
+      await watchHeader(box);
+      await listenLive(dm);
+      await pickRow(dm, panel, "Charisma", /^Charisma save/, "click");
+      await headerSeen(dm, "the dice in the air", midThrow);
+      await tokenPanel(dm, "Bramble", trh.bramble.at, false);
+      await dice.locator('[data-dice-last] [aria-label="Show this roll in Recent rolls"]').filter({ hasText: /Charisma save/ }).waitFor();
+      await sleep(600);
+      once(await heardOf(dm, /Charisma save/), "the Dice panel beside");
+    } finally {
+      if ((await bar.count()) > 0) {
+        await dm.getByRole("button", { name: "Close Dice", exact: true }).click({ timeout: 2_000 }).catch(() => undefined);
+        await bar.waitFor({ state: "detached", timeout: 3_000 }).catch(() => undefined);
+      }
+    }
+
+    // Pat's own Dice panel closed mid-throw: its line said the roll at the answer, so its toast shows it silent.
+    await closeAll(player);
+    await openDicePhone(player);
+    await diceReady(player, playerSocket);
+    await watchThrow(player);
+    await listenLive(player);
+    await rollWithEnter(player, playerSocket, "1d20 fu44a closed");
+    await seen(player, "the dice in the air", (w) => w.canvasAt !== null && w.totalAt === null);
+    await closeAll(player);
+    await waitFor("the closed roll's toast", async () => ((await player.locator("[data-toast]").filter({ hasText: /fu44a closed/ }).count()) > 0 ? true : null), 5_000);
+    await sleep(500);
+    const said = await heardOf(player, /fu44a closed/);
+    assert.deepEqual(said.map((h) => h.region), ["dice"], `the Dice panel's close: said once, by its line: ${JSON.stringify(said)}`);
   });
 
   test("trh-6. under reduced motion the total shows at once with the landed dice drawn once, and with Low power, the switch off or no WebGL the total shows at once with no canvas and nothing logged", async (t) => {

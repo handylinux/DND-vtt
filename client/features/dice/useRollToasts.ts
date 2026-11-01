@@ -119,6 +119,6 @@ export function useRollToasts(diceShown: boolean): void {
   const version = useSyncExternalStore(tracker.subscribe, tracker.version);
   useEffect(() => {
     // Only a roll the server took is in the log: a refusal or an unknown answer is not.
-    for (const { state } of tracker.unannounced()) ui.notify(ownResultText(state), state.state === "refused" ? "error" : "info", undefined, undefined, state.state === "committed");
+    for (const { state, quiet } of tracker.unannounced()) ui.notify(ownResultText(state), state.state === "refused" ? "error" : "info", undefined, undefined, state.state === "committed", quiet);
   }, [tracker, version, ui]);
 }

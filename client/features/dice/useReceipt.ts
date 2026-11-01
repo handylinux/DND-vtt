@@ -80,11 +80,14 @@ type Entry = {
    * goes to the toasts, whatever the closing surfaces say.
    */
   unseen: boolean;
-  /** `said` as it stood when unseen() cleared it, for rendered() to put back. */
-  saidBefore: boolean;
   /** Mounted surfaces that sent it and so say it (claimVoice). */
   claims: number;
-  /** A surface or the toast said its settled state (D-261031-133). */
+  /**
+   * A surface or the toast said its settled state (D-261031-133). Kept
+   * through unseen(): a surface's live region says a thrown result at the
+   * answer, before the dice land, so a result held back as its surface
+   * closed was often said already, and its toast then shows it silent.
+   */
   said: boolean;
 };
 
@@ -120,7 +123,7 @@ export class ReceiptTracker {
   #entry(tag: string): Entry {
     let entry = this.#entries.get(tag);
     if (!entry) {
-      entry = { parts: new Map(), watchers: 0, looked: false, looking: null, announced: false, unseen: false, saidBefore: false, claims: 0, said: false };
+      entry = { parts: new Map(), watchers: 0, looked: false, looking: null, announced: false, unseen: false, claims: 0, said: false };
       this.#entries.set(tag, entry);
     }
     return entry;
@@ -257,19 +260,23 @@ export class ReceiptTracker {
 
   /**
    * Settled tags no surface shows that were not told yet, each once, for the
-   * toast of a roll whose surface closed before its answer (8.7 rule 3).
+   * toast of a roll whose surface closed before its answer (8.7 rule 3), or
+   * whose result the dice held back as it closed. `quiet` marks one a
+   * surface already said, whose toast shows without saying it again
+   * (LP28-A-VOICE-1).
    */
-  unannounced(): { tag: string; state: Exclude<ReceiptState, { state: "sending" | "checking" }> }[] {
-    const out: { tag: string; state: Exclude<ReceiptState, { state: "sending" | "checking" }> }[] = [];
+  unannounced(): { tag: string; state: Exclude<ReceiptState, { state: "sending" | "checking" }>; quiet: boolean }[] {
+    const out: { tag: string; state: Exclude<ReceiptState, { state: "sending" | "checking" }>; quiet: boolean }[] = [];
     for (const [tag, entry] of this.#entries) {
-      if (entry.announced || entry.said || entry.watchers > 0) continue;
+      if (entry.announced || entry.watchers > 0 || (entry.said && !entry.unseen)) continue;
       const state = this.state(tag);
       if (!state || state.state === "sending" || state.state === "checking") continue;
+      const quiet = entry.said;
       entry.announced = true;
       entry.unseen = false;
       // The toast is this tag's one voice, so a surface mounted after it shows the result silent (D-261031-166).
       entry.said = true;
-      out.push({ tag, state });
+      out.push({ tag, state, quiet });
     }
     return out;
   }
@@ -322,16 +329,16 @@ export class ReceiptTracker {
   /**
    * A committed result the roll animation still held back as its panel
    * closed: no surface showed it, so it goes to the toasts once no surface
-   * shows it, in whatever order the closing surfaces clean up.
+   * shows it, in whatever order the closing surfaces clean up. Shown
+   * nowhere is not said nowhere: a live region that said it at the answer
+   * keeps it said, so no other surface says it again and its toast is
+   * quiet (LP28-A-VOICE-1, FL21-LIVE-TWICE).
    */
   unseen(tag: string): void {
     const entry = this.#entries.get(tag);
     if (!entry) return;
-    if (!entry.unseen) entry.saidBefore = entry.said;
     entry.unseen = true;
     entry.announced = false;
-    // Held back, it was shown nowhere, so nobody said it either.
-    entry.said = false;
     this.#changed();
   }
 
@@ -348,7 +355,6 @@ export class ReceiptTracker {
     const entry = this.#entries.get(tag);
     if (!entry?.unseen || held || this.state(tag)?.state !== "committed") return;
     entry.unseen = false;
-    entry.said = entry.saidBefore;
   }
 }
 

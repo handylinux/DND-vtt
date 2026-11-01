@@ -266,10 +266,10 @@ export type RoomUi = {
    * A short note from this page rather than the server, for this device
    * only: why a drag did nothing, or a whisper that arrived while the Log
    * is closed. Someone else's D20 Test leads with its die, and a reminder
-   * may carry one button. `logged` says the log keeps its words too
-   * (types.ts Toast).
+   * may carry one button. `logged` says the log keeps its words too, and
+   * `quiet` that a live region already said them (types.ts Toast).
    */
-  notify(text: string, tone?: Toast["tone"], die?: ToastDie, action?: ToastAction, logged?: boolean): void;
+  notify(text: string, tone?: Toast["tone"], die?: ToastDie, action?: ToastAction, logged?: boolean, quiet?: boolean): void;
   dismissToast(id: number): void;
   /** The toast layer drew these toasts: each drawn for the first time starts its time (toastsLeft). */
   toastsDrawn(ids: readonly number[]): void;
@@ -682,10 +682,10 @@ export function createRoomStore(options: RoomStoreOptions): RoomStore {
     });
   }
 
-  function pushToast(text: string, tone: Toast["tone"] = "error", die?: ToastDie, action?: ToastAction, logged = false): void {
+  function pushToast(text: string, tone: Toast["tone"] = "error", die?: ToastDie, action?: ToastAction, logged = false, quiet = false): void {
     const toasts = get().toasts;
     if (toasts.some((t) => t.text === text)) return;
-    store.setState({ toasts: withToast(toasts, { id: ++toastSeq, text, tone, ...(die ? { die } : {}), ...(action ? { action } : {}), ...(logged ? { logged: true as const } : {}) }) });
+    store.setState({ toasts: withToast(toasts, { id: ++toastSeq, text, tone, ...(die ? { die } : {}), ...(action ? { action } : {}), ...(logged ? { logged: true as const } : {}), ...(quiet ? { quiet: true as const } : {}) }) });
   }
 
   // ------------------------------------------------------------ sending
@@ -791,8 +791,8 @@ export function createRoomStore(options: RoomStoreOptions): RoomStore {
     crossWide(wide) {
       setLocal(crossWide(get().local, wide));
     },
-    notify(text, tone = "info", die, action, logged) {
-      pushToast(text, tone, die, action, logged);
+    notify(text, tone = "info", die, action, logged, quiet) {
+      pushToast(text, tone, die, action, logged, quiet);
     },
     dismissToast(id) {
       const toasts = get().toasts;

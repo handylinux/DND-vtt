@@ -169,15 +169,48 @@ describe("one announcer per roll tag", () => {
     assert.deepEqual(t.unannounced(), []);
   });
 
-  test("a result the roll animation held back as its panel closed was never said, so it still toasts", () => {
+  for (const claim of [true, false]) {
+    const who = claim ? "a stat block's header" : "the Dice panel's line";
+    test(`a result ${who} said at the answer, held back as its panel closed, still toasts, but quiet (LP28-A-VOICE-1)`, () => {
+      const t = tracker([line("a")]);
+      t.sending("a", 0);
+      const panel = surface(t, "a", claim);
+      t.answer("a", 0, "taken");
+      assert.equal(panel.render(), true, "its live region says it before the dice land");
+      t.unseen("a");
+      panel.unmount();
+      assert.deepEqual(t.unannounced().map((u) => [u.tag, u.quiet]), [["a", true]], "the toast shows it and says nothing");
+      assert.deepEqual(t.unannounced(), [], "never twice");
+      const again = surface(t, "a", claim);
+      assert.equal(again.render(), false, "a surface shown later shows it silent too");
+    });
+  }
+
+  test("a held result nobody said yet, as one handed to the toasts before any surface rendered it, toasts aloud", () => {
     const t = tracker([line("a")]);
     t.sending("a", 0);
-    const panel = surface(t, "a", false);
+    const panel = surface(t, "a", true);
     t.answer("a", 0, "taken");
-    panel.render();
     t.unseen("a");
     panel.unmount();
-    assert.deepEqual(t.unannounced().map((u) => u.tag), ["a"]);
+    assert.deepEqual(t.unannounced().map((u) => [u.tag, u.quiet]), [["a", false]]);
+  });
+
+  test("the Dice panel's line beside a header that goes mid-throw never says the roll the header said (FL21-LIVE-TWICE)", () => {
+    const t = tracker([line("a")]);
+    t.sending("a", 0);
+    const header = surface(t, "a", true);
+    const dice = surface(t, "a", false);
+    t.answer("a", 0, "taken");
+    assert.deepEqual([header.render(), dice.render()], [true, false], "the sender says it at the answer");
+    // The token panel closes while the dice fly: its host hands the tag to the toasts and its header releases the claim before the Dice line renders again.
+    t.unseen("a");
+    header.unmount();
+    assert.equal(t.maySpeak("a", false), false, "said, so nobody may say it again");
+    assert.equal(dice.render(), false, "the Dice line shows it silent");
+    t.rendered("a", false);
+    dice.unmount();
+    assert.deepEqual(t.unannounced(), [], "the Dice line showed it, so no toast");
   });
 
   test("a result its host sent to the toasts, rendered let go by a line that outlives the host, is no toast when that line goes (FL21-OPUS-01)", () => {
