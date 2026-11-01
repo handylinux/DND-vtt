@@ -4,6 +4,7 @@ import { MAX_NAME } from "#shared/protocol.ts";
 import { Button } from "../../components/Button.tsx";
 import { Checkbox } from "../../components/Checkbox.tsx";
 import { Input, Select } from "../../components/Field.tsx";
+import { Held } from "../../components/Held.tsx";
 import { Loading } from "../../components/Loading.tsx";
 import { Help, Note } from "../../components/Panel.tsx";
 import { PaneHeader } from "../../components/SheetHeader.tsx";
@@ -111,7 +112,7 @@ export default function PinPane(props: { pin: Pin; camera: Camera; viewport: Siz
   );
 }
 
-function PinEditor(props: { pin: Pin; onClose(): void; dismissRef: { current: () => void }; sheet: boolean }) {
+export function PinEditor(props: { pin: Pin; onClose(): void; dismissRef: { current: () => void }; sheet: boolean }) {
   const { pin } = props;
   const actions = useRoomActions();
   const ui = useRoomUi();
@@ -215,11 +216,10 @@ function PinEditor(props: { pin: Pin; onClose(): void; dismissRef: { current: ()
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(2) }}>
       <PaneHeader title="Pin" closeLabel={saving ? "Close" : "Close without saving"} onClose={close} grab={props.sheet} />
       {/*
-        Disabled as a whole while Done is pending, as editDraft refuses their edits: the label, the page, the color and DM only.
-        Each control is told as well, since a fieldset disables its controls but cannot give them the disabled look
-        (docs/design/design-v1-visual.md 2.3). Done stays outside it, busy, and Delete waits.
+        Held as a whole while Done is pending, as editDraft refuses their edits: the label, the page, the color and DM only.
+        The group stops each control and draws it off. Done stays outside it, busy, and Delete waits.
       */}
-      <fieldset disabled={saving} aria-busy={saving} style={{ margin: 0, padding: 0, border: "none", minWidth: 0 }}>
+      <Held held={saving} aria-busy={saving}>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(2) }}>
           <div ref={fieldRef}>
             <Input
@@ -228,7 +228,6 @@ function PinEditor(props: { pin: Pin; onClose(): void; dismissRef: { current: ()
               placeholder="Label (optional)"
               maxLength={MAX_NAME}
               value={draft.label}
-              disabled={saving}
               onChange={(e) => {
                 const label = e.target.value;
                 setDraft((d) => ({ ...d, label }));
@@ -243,7 +242,6 @@ function PinEditor(props: { pin: Pin; onClose(): void; dismissRef: { current: ()
             <Select
               aria-label="Linked page"
               value={draft.pageId ?? ""}
-              disabled={saving}
               onChange={(e) => {
                 const pageId = e.target.value === "" ? null : e.target.value;
                 setDraft((d) => withPage(pin, d, pageId, pages));
@@ -258,15 +256,15 @@ function PinEditor(props: { pin: Pin; onClose(): void; dismissRef: { current: ()
               ))}
             </Select>
             {draft.pageId !== null && pages[draft.pageId] ? (
-              <Button size="sm" disabled={saving} onClick={() => openPage(draft.pageId!)}>
+              <Button size="sm" onClick={() => openPage(draft.pageId!)}>
                 Open page
               </Button>
             ) : null}
           </div>
-          <Swatches label="Pin color" value={draft.color} options={MEMBER_COLORS} disabled={saving} onChange={(color) => setDraft((d) => ({ ...d, color }))} />
-          <Checkbox checked={draft.dmOnly} disabled={saving} onChange={(on) => setDraft((d) => withDmOnly(d, on))} label="DM only" />
+          <Swatches label="Pin color" value={draft.color} options={MEMBER_COLORS} onChange={(color) => setDraft((d) => ({ ...d, color }))} />
+          <Checkbox checked={draft.dmOnly} onChange={(on) => setDraft((d) => withDmOnly(d, on))} label="DM only" />
         </div>
-      </fieldset>
+      </Held>
       <div role="status" style={{ fontSize: theme.font.body14 }}>
         <span style={{ color: theme.color.textMuted }}>Who will see it: </span>
         {audience}
