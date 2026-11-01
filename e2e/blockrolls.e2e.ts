@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, before, describe, test } from "node:test";
-import { chromium, type Browser, type BrowserContext, type CDPSession, type Locator, type Page, type WebSocketRoute } from "playwright-core";
+import { chromium, type Browser, type BrowserContext, type CDPSession, type Locator, type Page, type Route, type WebSocketRoute } from "playwright-core";
 import { barControl, ConsoleWatch, diceFoldsOpen, OpSocket, openSideTab, reopenRoom, Shots, sideTabName, sleep, SocketWatch, startServer, tapCell, Touches, waitFor, type Server, type TouchAt } from "./harness.ts";
 
 /**
@@ -324,14 +324,14 @@ async function closeSheets(page: Page): Promise<void> {
   await page.locator("dialog[data-rvtt-sheet][open]").first().waitFor({ state: "hidden", timeout: 1_500 }).catch(() => undefined);
 }
 
-/** The DM's token panel for a token, its Stat block open. */
-async function dmPanel(name: string, at: { x: number; y: number }): Promise<Locator> {
-  await dm.keyboard.press("Escape");
-  await tapCell(dm, BOUNDS, at);
-  const bar = dm.getByRole("dialog", { name: `${name} actions` });
+/** The DM's token panel for a token, its Stat block open, on the DM's page or another of the DM's. */
+async function dmPanel(name: string, at: { x: number; y: number }, page: Page = dm): Promise<Locator> {
+  await page.keyboard.press("Escape");
+  await tapCell(page, BOUNDS, at);
+  const bar = page.getByRole("dialog", { name: `${name} actions` });
   await bar.waitFor();
   await (await barControl(bar, "Details")).click();
-  const panel = dm.getByRole("tabpanel", { name: "Token", exact: true }).or(dm.getByRole("region", { name: "Token", exact: true }));
+  const panel = page.getByRole("tabpanel", { name: "Token", exact: true }).or(page.getByRole("region", { name: "Token", exact: true }));
   await panel.getByRole("heading", { name, exact: true }).first().waitFor();
   const fold = panel.getByRole("button", { name: "Stat block", exact: true });
   await fold.waitFor();
@@ -1303,6 +1303,78 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await pat.evaluate(() => localStorage.setItem("rvtt.uiScale", "1"));
       await reopenRoom(pat);
       await closeSheets(pat).catch(() => undefined);
+    }
+  });
+
+  test("sbr-22. a key opening while a monster's rolls still load: focus waits on the box, then lands on the first roll as they arrive, or on the last after Up. Arrows, a key swap and Escape keep it inside, and a failed load puts it on Reload", async () => {
+    // The rolls table is a chunk of its own, fetched once a page (shared/srd/rolls.ts), so each opening takes a fresh page of the DM's.
+    const watch = new ConsoleWatch("dm-rolls-load");
+    const fresh = async (chunk: (route: Route) => Promise<void>, logs: boolean) => {
+      const page = await dmContext.newPage();
+      if (logs) watch.attach(page);
+      dmSent.attach(page);
+      await page.route("**/assets/rolls-*.js", chunk);
+      await page.goto(`${server.origin}/r/${run.roomId}`);
+      await page.getByRole("status", { name: "Connected" }).first().waitFor();
+      await page.locator(".konvajs-content").first().waitFor();
+      return { page, box: boxOf(await dmPanel("Goblin", run.goblin, page), "Dexterity") };
+    };
+    const popoverFocused = (page: Page) => page.evaluate(() => (globalThis as unknown as { document: { activeElement: { matches(s: string): boolean } | null } }).document.activeElement?.matches("[data-rvtt-popover]") === true);
+    const loadingLine = (page: Page) => page.locator("[data-rvtt-popover]").getByText("Loading the rolls…");
+    const focusOn = (what: string, control: Locator) => waitFor(what, async () => ((await isFocused(control)) ? true : null), 5_000);
+
+    for (const key of ["Enter", "ArrowUp"] as const) {
+      let release = () => {};
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const { page, box } = await fresh(async (route) => {
+        await gate;
+        await route.continue();
+      }, true);
+      try {
+        const from = dmSent.ops.length;
+        await box.focus();
+        await page.keyboard.press(key);
+        await loadingLine(page).waitFor();
+        assert.ok(await popoverFocused(page), `${key}: focus waits on the box while the rolls load: ${await focusedName(page)}`);
+        release();
+        const list = listOf(page, "Dexterity");
+        const rows = list.getByRole("menuitem");
+        await list.waitFor();
+        if (key === "ArrowUp") {
+          await focusOn("Up's opening on the last roll", rows.last());
+          await page.keyboard.press("Escape");
+          await focusOn("Escape back to the box", box);
+          continue;
+        }
+        await focusOn("the key opening on the first roll", rows.first());
+        // The menu's own keys reach it: Down to the save, its options by Shift+F10 on their first choice, and Escape back to the save.
+        await page.keyboard.press("ArrowDown");
+        const save = list.getByRole("menuitem", { name: /^Dexterity save/ });
+        await focusOn("Down to the save", save);
+        await page.keyboard.press("Shift+F10");
+        const options = optionsOf(page, /^Roll options for Dexterity save/);
+        await focusOn("the options' first choice", options.getByRole("menuitem").first());
+        await page.keyboard.press("Escape");
+        await focusOn("Escape back to the save", save);
+        await page.keyboard.press("Escape");
+        await focusOn("the second Escape on the box", box);
+        await noRoll(dmSent, from, "the keys");
+      } finally {
+        release();
+        await page.close();
+      }
+    }
+    assert.deepEqual(watch.errors, [], "the delayed pages logged no error");
+
+    // A load that fails: the failure's Reload takes the opening's focus.
+    const { page, box } = await fresh((route) => route.abort(), false);
+    try {
+      await box.focus();
+      await page.keyboard.press("Enter");
+      await focusOn("the failed load's Reload", page.locator("[data-rvtt-popover]").getByRole("button", { name: "Reload", exact: true }));
+    } finally {
+      await page.close();
+      await dm.bringToFront();
     }
   });
 

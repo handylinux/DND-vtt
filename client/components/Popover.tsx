@@ -23,6 +23,7 @@ import { theme } from "../lib/theme.ts";
 import { useScoped } from "../state/scope.ts";
 import { isTextField } from "../state/shortcuts.ts";
 import { sectionLabelLook } from "./Panel.tsx";
+import { KeyOpening } from "./popoverFocus.ts";
 import { anchorInView, chromeRect, clipToVisible, needsPlace, popoverPlace, type PlaceFrame, type PopoverSide, type Rect } from "./popoverPlace.ts";
 import {
   closesAfterTab,
@@ -317,6 +318,18 @@ function OpenPopover(props: PopoverProps) {
   latest.current = props;
   const frame = useRef<PlaceFrame | null>(null);
   const menuFocus = useRef<FocusInside | null>(null);
+  const keyOpening = useRef<KeyOpening | null>(null);
+  keyOpening.current ??= new KeyOpening({
+    focusInside: (from) => {
+      const box = latest.current.handle.box.current;
+      if (menuFocus.current) menuFocus.current(from);
+      else if (box) focusFirstStop(box);
+    },
+    waiting: () => {
+      const box = latest.current.handle.box.current;
+      return box !== null && document.activeElement === box;
+    },
+  });
   const fitContent = useRef<FitContent | null>(null);
   // The field inside it follows, until a scroll of the viewer's own (lib/keyboardInset.ts followField).
   const follower = useRef<ReturnType<typeof followField> | null>(null);
@@ -386,13 +399,10 @@ function OpenPopover(props: PopoverProps) {
   useLayoutEffect(() => {
     const h = latest.current.handle;
     showInTopLayer(h.box.current);
-    h.focusInside.current = (from) => {
-      const box = h.box.current;
-      if (menuFocus.current) menuFocus.current(from);
-      else if (box) focusFirstStop(box);
-    };
+    const opening = keyOpening.current!;
+    h.focusInside.current = (from) => opening.focus(from);
     place(true);
-    if (openFocus(h.how) === "inside") h.focusInside.current(h.how.from);
+    if (openFocus(h.how) === "inside") opening.focus(h.how.from);
     return () => {
       h.focusInside.current = null;
     };
@@ -433,12 +443,15 @@ function OpenPopover(props: PopoverProps) {
       if (backStep("escape", latest.current.stepBack) === "close") h.close("escape");
     };
     const onFocusIn = (e: FocusEvent) => {
+      keyOpening.current!.moved(e.target === box);
       const at = focusAt(e.target, box, h.anchor.current);
       if (at === "inside" && e.target instanceof HTMLElement && e.target !== box) held = { control: e.target, controls: controlsIn(box) };
       if (focusMoveCloses(at)) h.close("focus");
     };
     const onMutate = () => {
       updateMore();
+      // A key opening that found only a loading line completes once the content changes under it.
+      keyOpening.current!.changed();
       if (!held || held.control.isConnected) return;
       const { control, controls } = held;
       held = null;
