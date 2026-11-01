@@ -240,8 +240,10 @@ describe("drag previews on vision scenes (docs/design/design-v1-maps-vision.md 4
 
   test("a Large creature dragged along a narrow corridor out of sight sends no frame at any point, and leaving it into sight sends again", () => {
     const state = corridor();
+    // Where its middle stands in the party's sight too, as a creature that can squeeze is judged by both its footprints (D-261101-187).
+    state.tokens.ogre = { ...state.tokens.ogre!, x: 15 };
     const t = table(state);
-    t.send(t.dm.conn, { k: "dragStart", tokenId: "ogre", x: 16, y: 12 });
+    t.send(t.dm.conn, { k: "dragStart", tokenId: "ogre", x: 15, y: 12 });
     assert.equal(t.p1.got.length, 1, "it starts in sight");
     // Its center on the corridor's middle line, at fractional points: the full footprint would reach the lit room south of the wall.
     for (const x of [13.4, 12.37, 10.5, 8.01, 6.75]) {
@@ -328,12 +330,14 @@ describe("drag previews on vision scenes (docs/design/design-v1-maps-vision.md 4
     }
   });
 
-  test("a Large creature in the open beside the edge of sight is judged by its full footprint", () => {
+  test("a Large creature in the open beside the edge of sight is judged by its squeezed footprint too, reading no walls, so it shows once its middle is in sight (D-261101-187)", () => {
     const state = corridor();
     const t = table(state);
-    // Its west column is just inside darkvision, its middle cell just outside.
+    // Its west column is just inside darkvision, its middle cell just outside: whether it squeezes there is never asked.
     t.send(t.dm.conn, { k: "dragMove", tokenId: "ogre", x: 16.2, y: 12.5 });
-    assert.deepEqual(t.p1.got, [{ k: "dragMove", tokenId: "ogre", x: 16.2, y: 12.5 }]);
+    assert.deepEqual(t.p1.got, []);
+    t.send(t.dm.conn, { k: "dragMove", tokenId: "ogre", x: 15.2, y: 12.5 });
+    assert.deepEqual(t.p1.got, [{ k: "dragMove", tokenId: "ogre", x: 15.2, y: 12.5 }]);
   });
 
   test("a player never receives a drag's path on a vision scene, with or without fog, and the DM does", () => {

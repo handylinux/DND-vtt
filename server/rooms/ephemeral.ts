@@ -1,8 +1,10 @@
 import { keys, partsKey } from "#shared/keys.ts";
 import type { RoomState, Token, Viewer } from "#shared/model.ts";
 import { mayMoveToken } from "#shared/permissions.ts";
-import { inSightOfNonOwners, ownsToken, perPlayerScene, projectEntity, viewerSceneId, withheldFromViewer } from "#shared/project.ts";
+import { gridOfToken, inSightOfNonOwners, ownsToken, perPlayerScene, projectEntity, viewerSceneId, withheldFromViewer } from "#shared/project.ts";
 import { walkerFor } from "#shared/rules/attach.ts";
+import { canSqueeze } from "#shared/rules/footprint.ts";
+import { isHex } from "#shared/rules/grid.ts";
 import type { EphEvent } from "#shared/protocol.ts";
 import type { PartySight } from "#shared/ruleHooks.ts";
 import { previewSqueezed, walkEnd, walkStates, type WalkEnd } from "#shared/rules/movement.ts";
@@ -124,17 +126,24 @@ function tokenVisibleTo(state: RoomState, receiver: Connection, tokenId: string)
  * own rule for a token standing there, by that player's sight and fog
  * (section 13.4 on the merged fog, the party's sight on a vision scene,
  * party members and exempt tokens always shown, and on a per-player scene
- * the player's own, docs/design/design-v1-per-player-vision.md 6.2). Which
- * players a drag carries along a holder with it stays a public rule, read
- * from what every player sees (`inSightOfNonOwners`). The footprint is the
- * server's to judge, whatever the frame says
- * (docs/design/design-v1-maps-vision.md 4.1, "Drag previews"): one size smaller
- * around the preview point where a creature that can squeeze stands with
- * its core clear and a blocker through its full footprint, as along a
- * narrow corridor, and full size otherwise. So a Large creature dragged
- * along a corridor out of sight is not shown by the half of its preview
- * drawn over the corridor's walls.
+ * the player's own, docs/design/design-v1-per-player-vision.md 6.2). The
+ * footprint is the server's to judge, whatever the frame says
+ * (docs/design/design-v1-maps-vision.md 4.1, "Drag previews"). So a Large
+ * creature dragged along a corridor out of sight is not shown by the half
+ * of its preview drawn over the corridor's walls.
  *
+ * On squares a creature that can squeeze is withheld where either its full
+ * footprint or the one size smaller around the preview point would be, and
+ * any other creature by its full footprint (D-261101-187). The preview
+ * point is unsnapped and only the drop settles whether the creature
+ * squeezes, so the preview errs toward withholding whichever footprint the
+ * drop gives it, and needs no walk to judge.
+ *
+ * On a hex scene the footprint is one size smaller around the preview
+ * point where a creature that can squeeze stands with its core clear and a
+ * blocker through its full footprint, as along a narrow corridor, and full
+ * size otherwise. Which players a drag carries along a holder with it stays
+ * a public rule, read from what every player sees (`inSightOfNonOwners`).
  * The squeeze is judged as the end of the walk the frame draws (movement.ts
  * WalkEnd, review AT-ASTRA-21): off a holder every player sees by the walk
  * off it (rules/attach.ts walkerFor), carried through the frame's corners
@@ -146,7 +155,7 @@ function tokenVisibleTo(state: RoomState, receiver: Connection, tokenId: string)
  * off the ground may reach (movement.ts walkStates, review AT-ASTRA-22),
  * and withheld when any of them withholds it.
  *
- * On a hex scene the same holds by the hex rules (docs/design/design-v1-hex-grids.md
+ * This follows the hex rules (docs/design/design-v1-hex-grids.md
  * HX-D10 and HX-D17): the preview squeezes where the squeezed hexes
  * nearest it are a real narrow space, and is judged by the sub-cells
  * inside the hexes it stands on there, as projection judges a creature
@@ -154,6 +163,7 @@ function tokenVisibleTo(state: RoomState, receiver: Connection, tokenId: string)
  */
 function previewWithheld(state: RoomState, viewer: Viewer, token: Token, x: number, y: number, path: readonly number[] | undefined): boolean {
   const { squeeze: _squeeze, ...rest } = token;
+  if (!isHex(gridOfToken(state, token))) return withheldFromViewer(state, viewer, { ...rest, x, y }) || (canSqueeze(rest) && withheldFromViewer(state, viewer, { ...rest, x, y, squeeze: true }));
   const seen = (t: { id: string }) => state.tokens[t.id] !== undefined && inSightOfNonOwners(state, state.tokens[t.id]!, {});
   const walker = walkerFor(state, token, seen);
   const at = { x, y };
@@ -294,7 +304,8 @@ function showsAnywhere(sender: Connection, heldKey: string, receivers: readonly 
 
 /**
  * Whether players may not see a drag frame where it stands, worked out once
- * per event for each judgment (judgedBy), since it is a wall test besides:
+ * per event for each judgment (judgedBy), since it reads up to two
+ * footprints on squares and is a wall test besides on hexes:
  * on a per-player scene one per source set with vision on, or per fog
  * class with fog alone (docs/design/design-v1-per-player-vision.md 7.5).
  */
