@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
 const { Chip } = await import("./Chip.tsx");
+const { drawn } = await import("./testing/drawn.ts");
 
 /*
  * An unavailable chip keeps its focus and says why to a reader. A caller
@@ -15,7 +16,7 @@ const { Chip } = await import("./Chip.tsx");
 type Drawn = { props: { onClick(): void; "aria-disabled"?: boolean; "aria-describedby"?: string; disabled?: boolean } };
 
 function tap(props: Parameters<typeof Chip>[0]): void {
-  (Chip(props) as unknown as Drawn).props.onClick();
+  (drawn(Chip, props) as unknown as Drawn).props.onClick();
 }
 
 describe("a tap on an unavailable chip (CCB-OPUS-9)", () => {
@@ -24,10 +25,10 @@ describe("a tap on an unavailable chip (CCB-OPUS-9)", () => {
     const props = { children: "Use", unavailable: true, describedBy: "none", onClick: () => heard.push("click"), onUnavailable: () => heard.push("why") };
     tap(props);
     assert.deepEqual(heard, ["why"]);
-    const drawn = Chip(props) as unknown as Drawn;
-    assert.equal(drawn.props["aria-disabled"], true);
-    assert.equal(drawn.props["aria-describedby"], "none");
-    assert.equal(drawn.props.disabled, undefined, "it keeps its focus");
+    const tree = drawn(Chip, props) as unknown as Drawn;
+    assert.equal(tree.props["aria-disabled"], true);
+    assert.equal(tree.props["aria-describedby"], "none");
+    assert.ok(!tree.props.disabled, "it keeps its focus");
   });
 
   test("an available chip runs onClick alone, and a disabled one neither", () => {
