@@ -1765,22 +1765,26 @@ export function playerChunk(state: RoomState, at: { sceneId: string; cx: number;
   const memo = memoKey(state, scene, own, ground, at.cx, at.cy);
   const hit = memo === null ? undefined : recall(memo);
   if (hit !== undefined) return hit;
-  const out = chunkFor(state, scene, ground, at.cx, at.cy, piecesNear(state, scene, ground, at.cx, at.cy));
-  if (memo !== null) keep(memo, out);
+  const pieces = piecesNear(state, scene, ground, at.cx, at.cy);
+  const out = chunkFor(state, scene, ground, at.cx, at.cy, pieces);
+  if (memo !== null) keep(memo, out, pieces);
   return out;
 }
 
 /**
  * A batch's positions for one fog class. Only cache misses contribute their
  * neighborhoods to the cut, so neighboring positions share wall work and
- * unrelated held chunks never force a scene-wide cut.
+ * unrelated held chunks never force a scene-wide cut. A miss whose free
+ * walls and ground read the same as its last answer's takes that answer's
+ * pieces and is left out of the cut too (recallPieces), as when a stair or
+ * a floor changes beside walls that stay.
  */
 export function playerChunkBatch(state: RoomState, sceneId: string, positions: readonly { cx: number; cy: number }[], view: FogClass): Map<string, PlayerChunk | null> {
   const out = new Map<string, PlayerChunk | null>();
   const scene = state.scenes[sceneId];
   const own = view !== null && holdsOwnSight(state, sceneId, view) ? view : null;
   const ground = scene?.fogEnabled ? groundOf(state, sceneId, own) : null;
-  const missing: { cx: number; cy: number; key: string; memo: Memo | null }[] = [];
+  const missing: { cx: number; cy: number; key: string; memo: Memo | null; pieces: readonly FreeWall[] | undefined }[] = [];
   for (const { cx, cy } of positions) {
     const key = chunkKey(sceneId, cx, cy);
     if (out.has(key)) continue;
@@ -1789,16 +1793,18 @@ export function playerChunkBatch(state: RoomState, sceneId: string, positions: r
     const memo = memoKey(state, scene, own, ground, cx, cy);
     const hit = memo === null ? undefined : recall(memo);
     if (hit !== undefined) out.set(key, hit);
-    else missing.push({ cx, cy, key, memo });
+    else missing.push({ cx, cy, key, memo, pieces: memo === null ? undefined : recallPieces(memo) });
   }
   if (!scene || !ground || missing.length === 0) return out;
+  const cut = missing.filter((m) => m.pieces === undefined);
   const near = new Set<string>();
-  for (const { cx, cy } of missing) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) near.add(`${cx + dx},${cy + dy}`);
-  const filed = scenePieces(state, scene, ground, near, missing.length === 1 ? missing[0] : undefined);
-  for (const { cx, cy, key, memo } of missing) {
-    const chunk = chunkFor(state, scene, ground, cx, cy, filed.get(`${cx},${cy}`) ?? NO_WALLS);
+  for (const { cx, cy } of cut) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) near.add(`${cx + dx},${cy + dy}`);
+  const filed = cut.length === 0 ? null : scenePieces(state, scene, ground, near, cut.length === 1 ? cut[0] : undefined);
+  for (const { cx, cy, key, memo, pieces } of missing) {
+    const walls = pieces ?? filed?.get(`${cx},${cy}`) ?? NO_WALLS;
+    const chunk = chunkFor(state, scene, ground, cx, cy, walls);
     out.set(key, chunk);
-    if (memo !== null) keep(memo, chunk);
+    if (memo !== null) keep(memo, chunk, walls);
   }
   return out;
 }
@@ -1819,8 +1825,9 @@ export function heldChunks(state: RoomState, sceneId: string, view: FogClass): R
     let chunk = memo === null ? undefined : recall(memo);
     if (chunk === undefined) {
       filed ??= scenePieces(state, scene, ground, null);
-      chunk = chunkFor(state, scene, ground, cx, cy, filed.get(`${cx},${cy}`) ?? NO_WALLS);
-      if (memo !== null) keep(memo, chunk);
+      const pieces = filed.get(`${cx},${cy}`) ?? NO_WALLS;
+      chunk = chunkFor(state, scene, ground, cx, cy, pieces);
+      if (memo !== null) keep(memo, chunk, pieces);
     }
     if (chunk) out[chunkKey(sceneId, cx, cy)] = chunk;
   }
@@ -1877,10 +1884,12 @@ function idOf(o: object | undefined | null): number {
  * of cells already held, or sees ground where no memory is, replaces the
  * tile objects, so the first key misses, but the position reads nothing
  * new and the second finds the same answer (the performance pass).
+ * `walls`, every free wall the position reads, with `region` keys the
+ * pieces filed there on their own (recallPieces).
  */
-type Kept = { key: string; base: string; region: string | null; value: PlayerChunk | null };
+type Kept = { key: string; base: string; region: string | null; value: PlayerChunk | null; walls: string; pieces: readonly FreeWall[] };
 type Slots = Map<string, Kept[]>;
-type Memo = { slots: Slots; slot: string; key: string; base: string; region: () => string | null };
+type Memo = { slots: Slots; slot: string; key: string; base: string; walls: string; region: () => string | null };
 const memos = new WeakMap<object, Slots>();
 const MEMO_SLOTS = 50_000;
 
@@ -1952,6 +1961,7 @@ function memoKey(state: RoomState, scene: Scene, own: FogClass, ground: Ground, 
   if (isWritable(state.buildChunks) || isWritable(state.fogTiles) || isWritable(state.exploredTiles ?? {}) || isWritable(state.exploredBy ?? {}) || isWritable(state.memory ?? {}) || isWritable(state.memoryBy ?? {})) return null;
   const sceneId = scene.id;
   const parts: (number | string)[] = [sceneFields(scene)];
+  const walls: (number | string)[] = [sceneFields(scene)];
   let remembered = false;
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
@@ -1964,6 +1974,7 @@ function memoKey(state: RoomState, scene: Scene, own: FogClass, ground: Ground, 
       const mine = own === null ? 0 : idAt(state.memoryBy, memoryKind, sceneId, own, x, y);
       if (party !== 0 || mine !== 0) remembered = true;
       parts.push(idAt(state.buildChunks, whole ? "chunk" : "walls", sceneId, null, x, y), party, mine);
+      walls.push(idAt(state.buildChunks, "walls", sceneId, null, x, y), idAt(state.memory, "walls", sceneId, null, x, y), own === null ? 0 : idAt(state.memoryBy, "walls", sceneId, own, x, y));
     }
   }
   // A stair's direction reads the scene's whole stair map.
@@ -1978,7 +1989,7 @@ function memoKey(state: RoomState, scene: Scene, own: FogClass, ground: Ground, 
   let slots = memos.get(scene.bounds);
   if (!slots) memos.set(scene.bounds, (slots = new Map()));
   let region: string | null | undefined;
-  return { slots, slot: partsKey([sceneId, own, cx, cy]), key: partsKey(parts), base, region: () => (region === undefined ? (region = regionOf(ground, scene, cx, cy, remembered)) : region) };
+  return { slots, slot: partsKey([sceneId, own, cx, cy]), key: partsKey(parts), base, walls: partsKey(walls), region: () => (region === undefined ? (region = regionOf(ground, scene, cx, cy, remembered)) : region) };
 }
 
 /*
@@ -2014,6 +2025,20 @@ function recall(memo: Memo): PlayerChunk | null | undefined {
 }
 
 /*
+ * The free walls a position's last answers filed there, when it reads the
+ * same walls, stored and remembered, and the same ground as one of them:
+ * the pieces are made of those walls and the cells of the position's
+ * tiles each fog layer holds alone (scenePieces, regionOf), whatever else
+ * the position reads changed. Not on hexes, where no region is kept.
+ */
+function recallPieces(memo: Memo): readonly FreeWall[] | undefined {
+  const held = memo.slots.get(memo.slot);
+  if (!held?.some((m) => m.walls === memo.walls && m.region !== null)) return undefined;
+  const region = memo.region();
+  return region === null ? undefined : held.find((m) => m.walls === memo.walls && m.region === region)?.pieces;
+}
+
+/*
  * The answer just read goes first, so a slot keeps the two answers read
  * last, not the two worked out last. A creature that steps off and comes
  * back, as each move of a turn does, reads one answer again between new
@@ -2027,11 +2052,11 @@ function used(held: Kept[], kept: Kept): Kept {
   return kept;
 }
 
-function keep(memo: Memo, value: PlayerChunk | null): void {
+function keep(memo: Memo, value: PlayerChunk | null, pieces: readonly FreeWall[]): void {
   const { slots } = memo;
   const held = slots.get(memo.slot) ?? [];
   slots.delete(memo.slot);
-  slots.set(memo.slot, [{ key: memo.key, base: memo.base, region: memo.region(), value }, ...held.filter((m) => m.key !== memo.key)].slice(0, 2));
+  slots.set(memo.slot, [{ key: memo.key, base: memo.base, region: memo.region(), value, walls: memo.walls, pieces }, ...held.filter((m) => m.key !== memo.key)].slice(0, 2));
   if (slots.size > MEMO_SLOTS) slots.delete(slots.keys().next().value!);
 }
 

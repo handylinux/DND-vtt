@@ -13,8 +13,9 @@ import { DM, deepClone, env } from "./testutil.ts";
  * pass, MD2-PERF-REST): a position reads its own chunk and memories and
  * the chunks west and north of it whole, and of the rest of its
  * neighborhood the free walls alone, so an edit beside it that leaves the
- * walls keeps its answer. Each case also checks the answer against a room
- * that shares no object with it.
+ * walls keeps its answer. A miss whose walls and ground read the same as
+ * its last answer takes that answer's pieces. Each case also checks the
+ * answer against a room that shares no object with it.
  */
 
 function apply(state: RoomState, op: Op, seq: number): RoomState {
@@ -64,5 +65,30 @@ describe("a player's chunk across build edits beside it", () => {
     const beside = one(west, 1, 0);
     assert.equal(stableStringify(beside), cold(west, 1, 0));
     assert.ok(autoAt(beside ?? undefined, "16,5,w"), "the paint west of the position walls its west edge");
+  });
+
+  test("a floor edit in a position with free walls takes the pieces of its last answer", () => {
+    let state = revealed();
+    wall(state, "abcdefghijkl", [3, 5.5], [9, 5.5]);
+    const before = one(state, 0, 0);
+    assert.ok(before?.walls?.length);
+    state = apply(state, { t: "build.paint", sceneId: "s1", terrain: "wood", cells: ["2,2"] }, 10);
+    const after = one(state, 0, 0);
+    assert.ok(after && after !== before, "the paint changes the position's answer");
+    assert.equal(stableStringify(after), cold(state, 0, 0));
+    assert.equal(after.walls?.length, before.walls.length);
+    for (const [i, piece] of after.walls!.entries()) assert.equal(piece, before.walls[i], `piece ${i} is the last answer's`);
+  });
+
+  test("ground that changes under a free wall cuts its pieces again", () => {
+    const state = revealed();
+    wall(state, "abcdefghijkl", [3, 5.5], [9, 5.5]);
+    const before = one(state, 0, 0);
+    // Cell 6,5 hidden again: the wall is cut there, and nothing else the position reads changed but its ground.
+    const hidden = { ...state, fogTiles: { ...state.fogTiles } };
+    lift(hidden, "dm", { x: 6, y: 5, w: 1, h: 1 }, "s1", false);
+    const after = one(hidden, 0, 0);
+    assert.equal(stableStringify(after), cold(hidden, 0, 0));
+    assert.notEqual(stableStringify(after?.walls), stableStringify(before?.walls), "the hidden cell cuts the wall");
   });
 });
