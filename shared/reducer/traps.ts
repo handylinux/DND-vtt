@@ -54,14 +54,18 @@ export function trapOwnBytes(trap: Trap): number {
  * refused (docs/design/design-v1-hex-grids.md H2), and its wire's ends may lie anywhere on
  * the 1/64 lattice, as hex corners do. A square scene's wire keeps to cell
  * corners and edge midpoints, as before, wherever the op sets the zone
- * (`zoneSet`). A room imported between H2 and the import's halves check
+ * (`set.zone`). A room imported between H2 and the import's halves check
  * can hold a square wire on the 1/64 lattice (FU38-ASTRA-PARSER-NOTE).
  * No stored step moves those ends, since its stored ops would then replay
  * against other ends (FU43-DATA-01), so an edit that leaves the zone as
  * it is takes the wire as it stands. Every stored op passed the stricter
  * check, so the looser one replays each the same, with no op version.
+ * The scene's edge is read the same way. A shrink can leave a trap's zone
+ * or the squares it hits off its scene, so each is checked against the
+ * edge only where the op sets it, and Mark found, a rename or a rig edit
+ * still works on such a trap (SHRUNK-SCENE-TRAP).
  */
-function trapProblem(tx: Tx, trap: Trap, zoneSet: boolean): string | null {
+function trapProblem(tx: Tx, trap: Trap, set: { zone: boolean; hits: boolean }): string | null {
   const scene = tx.scene(trap.sceneId);
   const g = sceneGrid(scene);
   const { w, h } = isHex(g) ? hexKeySpan(g, scene.bounds) : scene.bounds;
@@ -76,12 +80,12 @@ function trapProblem(tx: Tx, trap: Trap, zoneSet: boolean): string | null {
   };
   const rectsInside = (rects: readonly { x: number; y: number; w: number; h: number }[]) => rects.every(inside);
   const word = cellWord(g, true);
-  if ("cells" in zone) {
+  if (set.zone && "cells" in zone) {
     if (!rectsInside(zone.cells)) return `a trap's ${word} lie inside its scene`;
-  } else if ("wire" in zone) {
+  } else if (set.zone && "wire" in zone) {
     const { a, b } = zone.wire;
     if (Math.max(a[0], b[0]) > scene.bounds.w || Math.max(a[1], b[1]) > scene.bounds.h) return "a trip wire lies inside its scene";
-    if (zoneSet && !isHex(g) && ![a[0], a[1], b[0], b[1]].every((v) => Number.isInteger(v * 2))) return "a wire's ends are on cell corners and edge midpoints";
+    if (!isHex(g) && ![a[0], a[1], b[0], b[1]].every((v) => Number.isInteger(v * 2))) return "a wire's ends are on cell corners and edge midpoints";
   }
   if (!rig) return null;
   const squares = "cells" in zone;
@@ -89,7 +93,7 @@ function trapProblem(tx: Tx, trap: Trap, zoneSet: boolean): string | null {
   if (!squares && rig.on.length > 0) return "a trip wire goes off when crossed and a door when opened";
   if (!squares && rig.pit) return `only a trap on ${word} opens a pit`;
   if (!squares && rig.hits === "zone") return `only a trap on ${word} hits everyone on it`;
-  if (typeof rig.hits === "object" && "cells" in rig.hits && !rectsInside(rig.hits.cells)) return `the ${word} it hits lie inside its scene`;
+  if (set.hits && typeof rig.hits === "object" && "cells" in rig.hits && !rectsInside(rig.hits.cells)) return `the ${word} it hits lie inside its scene`;
   if (trapOwnBytes(trap) > LIMITS.trapBytes) return `a trap is at most ${LIMITS.trapBytes / 1024} KiB`;
   return null;
 }
@@ -136,7 +140,7 @@ export function trapCreate(tx: Tx, op: OpOf<"trap.create">): void {
   // A trap on a hex scene is stamped with its shape, which its keys are of (docs/design/design-v1-hex-grids.md HX-D14).
   const shape = shapeOfGrid(sceneGrid(tx.scene(input.sceneId)));
   const trap: Trap = { id: input.id, rev: 0, sceneId: input.sceneId, name: input.name, zone: input.zone, state: "armed", found: input.found ?? false, rig: { ...input.rig }, ...(shape ? { grid: shape } : {}) };
-  const why = trapProblem(tx, trap, true) ?? refProblem(tx, trap, true, true);
+  const why = trapProblem(tx, trap, { zone: true, hits: true }) ?? refProblem(tx, trap, true, true);
   if (why) throw invalid(why);
   tx.write(keys.trap(trap.id), trap);
 }
@@ -168,7 +172,7 @@ export function trapUpdate(tx: Tx, op: OpOf<"trap.update">): void {
     next.rig = rig as TrapRig;
   }
   if (p.state === "armed" && next.rig?.usesLeft === 0) throw invalid(GIVE_IT_USES);
-  const why = trapProblem(tx, next, p.zone !== undefined) ?? refProblem(tx, next, p.zone !== undefined, p.rig?.actions !== undefined, trap.rig?.actions);
+  const why = trapProblem(tx, next, { zone: p.zone !== undefined, hits: p.rig?.hits !== undefined }) ?? refProblem(tx, next, p.zone !== undefined, p.rig?.actions !== undefined, trap.rig?.actions);
   if (why) throw invalid(why);
   tx.write(keys.trap(trap.id), next);
 }

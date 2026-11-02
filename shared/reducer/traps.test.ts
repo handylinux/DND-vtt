@@ -201,6 +201,22 @@ describe("making, changing and deleting traps (docs/design/design-v1-traps.md 6.
     assert.equal(more.traps.t!.rig!.actions.length, 2);
   });
 
+  test("a trap a scene shrink left off its scene still takes Mark found, a rename and a rig edit, and only a zone or hits the op sets must lie inside (SHRUNK-SCENE-TRAP)", () => {
+    const hits = { cells: [{ x: 34, y: 2, w: 2, h: 1 }] };
+    let state = create(table(), input("pit", { zone: { cells: [{ x: 30, y: 2, w: 2, h: 2 }] }, rig: { ...input("pit").rig, hits } }));
+    state = create(state, input("wire", { zone: { wire: { a: [28, 6], b: [31, 6] } }, rig: { ...input("wire").rig, on: [], hits: "trigger" } }), 2);
+    state = apply(state, { t: "scene.update", sceneId: "s1", patch: { bounds: { w: 20, h: 30 } } }, DM, 3);
+    for (const id of ["pit", "wire"]) {
+      assert.equal(apply(state, { t: "trap.update", trapId: id, patch: { found: true } }, DM, 4).traps[id]!.found, true, `${id}: Mark found`);
+      assert.equal(apply(state, { t: "trap.update", trapId: id, patch: { name: "Old snare", rig: { message: "Snap!" } } }, DM, 4).traps[id]!.name, "Old snare", `${id}: a rename and a rig edit`);
+    }
+    assert.match(refused(state, { t: "trap.update", trapId: "pit", patch: { zone: { cells: [{ x: 30, y: 2, w: 2, h: 2 }] } } }).message, /inside its scene/);
+    assert.match(refused(state, { t: "trap.update", trapId: "wire", patch: { zone: { wire: { a: [28, 6], b: [31, 6] } } } }).message, /inside its scene/);
+    assert.match(refused(state, { t: "trap.update", trapId: "pit", patch: { rig: { hits } } }).message, /it hits lie inside/);
+    // A new zone inside the scene keeps the hits the trap already had, which the op does not set.
+    assert.deepEqual(apply(state, { t: "trap.update", trapId: "pit", patch: { zone: { cells: [{ x: 3, y: 2, w: 1, h: 1 }] } } }, DM, 4).traps.pit!.zone, { cells: [{ x: 3, y: 2, w: 1, h: 1 }] });
+  });
+
   test("a refused action names what is wrong with its target", () => {
     const state = table();
     state.lights.far = { ...state.lights.brazier!, id: "far", sceneId: "s2" };
