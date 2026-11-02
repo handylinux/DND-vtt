@@ -50,7 +50,11 @@ build before it goes to a server.
 
 ### Coverage
 
-`pnpm coverage` runs the unit tests, then the integration tests, with Node's built-in coverage (`--experimental-test-coverage`) and prints the share of lines run for `server`, `shared`, `client` and `scripts`, and one figure for the shipped code. Shipped code is `server`, `shared` and `client`, which is what runs in the image or the browser. `scripts` is build and release tooling that does not ship, so it is reported on its own and left out of that figure. Test files and test helpers are not counted, and the browser tests are not measured.
+`pnpm coverage` runs the unit tests, then the integration tests, with Node's built-in coverage (`--experimental-test-coverage`) and prints the share of lines run for `server`, `shared`, `client` and `scripts`, and one figure for the shipped code. Shipped code is `server`, `shared` and `client`, which is what runs in the image or the browser. `scripts` is build and release tooling that does not ship, so it is reported on its own and left out of that figure. The browser tests are not measured.
+
+Node's report lists only the files a test loaded, so a shipped file that no test imports would add nothing and hide its gap. The script therefore lists the tracked `.ts` and `.tsx` files in `server`, `shared` and `client` with `git ls-files` and adds each one the report left out, with all its lines at zero. Node counts every physical line of a loaded file, blank lines and comments included, so an unloaded file is counted the same way. A line that Node never reported for a loaded file stays uncounted.
+
+Test files (`*.test.ts`, `*.itest.ts`) and test infrastructure are left out whether a test loaded them or not. Test infrastructure is found by name in `scripts/coverage.ts`: a file ending in `Testing`, `Testutil` or `Testkit` (as in `shared/testutil.ts`, `shared/perPlayerTestutil.ts`, `server/rooms/undoTesting.ts`, `client/features/dice/abilityMenu.testing.ts`), and anything under `client/components/testing/`. A new helper named that way is left out with no further step. A few helpers have other names and are listed by hand (`server/assets/testApp.ts`, `server/assets/testImages.ts`, `shared/rules/testWorld.ts`, `shared/differential.ts`), as are the development-only room in `client/dev/` and its fixture, which the production bundle drops. Name a new helper to match, or add it to that list, or it counts as shipped code. A listed file that no longer exists fails the script's own test.
 
 ### Property tests
 
