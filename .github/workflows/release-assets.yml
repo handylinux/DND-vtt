@@ -1,0 +1,255 @@
+# Signs a GitHub Release's source and SBOM and attaches them, with their
+# build provenance (docs/releasing.md, "Release assets"):
+#
+#   raccoon-vtt-X.Y.Z.tar.gz                    the tag's files (git archive)
+#   raccoon-vtt-X.Y.Z.cdx.json                  a CycloneDX SBOM of the tag's pnpm-lock.yaml
+#   raccoon-vtt-X.Y.Z.tar.gz.sigstore.json      a keyless Cosign signature bundle of each
+#   raccoon-vtt-X.Y.Z.cdx.json.sigstore.json
+#   raccoon-vtt-X.Y.Z.intoto.jsonl              SLSA build provenance of both, signed
+#
+# OpenSSF Scorecard's Signed-Releases check counts a release as signed by an
+# asset ending in .sigstore.json, and gives it full marks for one ending in
+# .intoto.jsonl (its probes releasesAreSigned and releasesHaveProvenance).
+#
+# The provenance comes from GitHub's artifact attestations
+# (actions/attest-build-provenance), pinned by SHA like every other action
+# here. slsa-framework/slsa-github-generator was not used: it works only
+# when referenced by a tag, and Scorecard's Pinned-Dependencies counts a
+# reusable workflow referenced by a tag as unpinned.
+#
+# image.yml calls this once a tag's release exists. Run it by hand from the
+# Actions tab, from main, with a tag, to add the assets to an older release.
+# It only adds: a release that already has every asset is left as it is,
+# and one that has only some of them is refused, so an asset is never
+# replaced. It needs no secrets and never touches Docker Hub.
+#
+# Each job holds only what it needs: check and build only read, sign may
+# sign and attest but not write the release, and upload may write the
+# release but not sign. Only GitHub's own actions run where a token can
+# sign or write, and Cosign comes from the checksum-pinned download
+# image.yml uses.
+name: Release assets
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: The release's tag, vX.Y.Z.
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release's tag, vX.Y.Z.
+        type: string
+        required: true
+
+permissions: {}
+
+env:
+  # As in ci.yml: the Node of the production image.
+  NODE_VERSION: 24.21.0
+
+jobs:
+  # The tag reaches the scripts only through the environment, and is checked
+  # before anything uses it.
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      needed: ${{ steps.release.outputs.needed }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: The tag and what its release holds
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          # A value as one line of a workflow command: % and line breaks escaped.
+          plain() { local s=${1//"%"/%25}; s=${s//$'\r'/%0D}; printf '%s' "${s//$'\n'/%0A}"; }
+          if ! [[ $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::The tag is '$(plain "$TAG")', not vX.Y.Z."
+            exit 1
+          fi
+          version=${TAG#v}
+          assets=("raccoon-vtt-$version.tar.gz" "raccoon-vtt-$version.tar.gz.sigstore.json" "raccoon-vtt-$version.cdx.json" "raccoon-vtt-$version.cdx.json.sigstore.json" "raccoon-vtt-$version.intoto.jsonl")
+          if ! held=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' 2>&1); then
+            echo "::error::Could not read the GitHub Release $TAG: $(plain "$held")"
+            exit 1
+          fi
+          present=()
+          for asset in "${assets[@]}"; do
+            if grep -Fxq -- "$asset" <<< "$held"; then present+=("$asset"); fi
+          done
+          if [ "${#present[@]}" -eq "${#assets[@]}" ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "The GitHub Release $TAG already has every asset. Leaving it unchanged."
+            exit 0
+          fi
+          if [ "${#present[@]}" -gt 0 ]; then
+            echo "::error::The GitHub Release $TAG already has ${present[*]}, but not every asset. An asset is never replaced: delete those on the release's page, then run this again."
+            exit 1
+          fi
+          {
+            echo "needed=true"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+          echo "The GitHub Release $TAG has none of the assets yet: making them."
+
+  build:
+    needs: check
+    if: needs.check.outputs.needed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: refs/tags/${{ inputs.tag }}
+      - name: The tag sets its version
+        run: |
+          have=$(jq -r .version package.json)
+          if [ "$have" != "$VERSION" ]; then
+            echo "::error::package.json at v$VERSION says the version is '$have', not $VERSION."
+            exit 1
+          fi
+      # Under the folder raccoon-vtt-X.Y.Z/, as GitHub's own source archives
+      # are, with each file dated by the tagged commit.
+      - name: Source archive
+        run: |
+          mkdir -p "$RUNNER_TEMP/assets"
+          git archive --format=tar.gz --prefix="raccoon-vtt-$VERSION/" --output="$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.tar.gz" HEAD
+          echo "raccoon-vtt-$VERSION.tar.gz: $(tar -tzf "$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.tar.gz" | wc -l) entries."
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      # Every package the lockfile holds, devDependencies included, since
+      # the client bundle ships some of them (three.js, for the dice). It
+      # reads the lockfile alone and installs nothing.
+      - name: SBOM
+        run: |
+          pnpm sbom --sbom-format cyclonedx --sbom-type application --lockfile-only --out "$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.cdx.json"
+          echo "raccoon-vtt-$VERSION.cdx.json: $(jq '.components | length' "$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.cdx.json") packages."
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-files
+          path: ${{ runner.temp }}/assets/
+          if-no-files-found: error
+          retention-days: 1
+
+  sign:
+    needs: [check, build]
+    if: needs.check.outputs.needed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      attestations: write
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: ${{ runner.temp }}/assets
+      # The same download and checksum as image.yml's (a unit test keeps them equal).
+      - name: Install Cosign
+        run: |
+          curl -fsSL --retry 3 --max-time 60 --output "$RUNNER_TEMP/cosign" \
+            https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-linux-amd64
+          echo "c956e5dfcac53d52bcf058360d579472f0c1d2d9b69f55209e256fe7783f4c74  $RUNNER_TEMP/cosign" | sha256sum -c --quiet -
+          chmod +x "$RUNNER_TEMP/cosign"
+      # Keyless: the certificate names this workflow and the run's ref, and
+      # the signature is logged in Sigstore's public transparency log. Up to
+      # three tries each, as image.yml signs the image.
+      - name: Sign the archive and the SBOM
+        run: |
+          cd "$RUNNER_TEMP/assets"
+          for file in "raccoon-vtt-$VERSION.tar.gz" "raccoon-vtt-$VERSION.cdx.json"; do
+            for attempt in 1 2 3; do
+              if "$RUNNER_TEMP/cosign" sign-blob --yes --bundle "$file.sigstore.json" "$file"; then
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "::error::Could not sign $file after three attempts."
+                exit 1
+              fi
+              sleep $((attempt * 5))
+            done
+          done
+      - name: Attest the build provenance
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            ${{ runner.temp }}/assets/raccoon-vtt-${{ needs.check.outputs.version }}.tar.gz
+            ${{ runner.temp }}/assets/raccoon-vtt-${{ needs.check.outputs.version }}.cdx.json
+      - name: The provenance as a release asset
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: cp "$BUNDLE" "$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.intoto.jsonl"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-signatures
+          path: |
+            ${{ runner.temp }}/assets/*.sigstore.json
+            ${{ runner.temp }}/assets/*.intoto.jsonl
+          if-no-files-found: error
+          retention-days: 1
+
+  upload:
+    needs: [check, sign]
+    if: needs.check.outputs.needed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    # One upload per tag at a time, none cancelled, so a second run reads
+    # what the first uploaded before it decides anything.
+    concurrency:
+      group: release-assets-${{ inputs.tag }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/assets
+      # What the release holds is read again here: another run may have
+      # added assets since the build job looked. gh refuses to replace an
+      # asset without --clobber, which this never passes.
+      - name: Upload to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          plain() { local s=${1//"%"/%25}; s=${s//$'\r'/%0D}; printf '%s' "${s//$'\n'/%0A}"; }
+          assets=("raccoon-vtt-$VERSION.tar.gz" "raccoon-vtt-$VERSION.tar.gz.sigstore.json" "raccoon-vtt-$VERSION.cdx.json" "raccoon-vtt-$VERSION.cdx.json.sigstore.json" "raccoon-vtt-$VERSION.intoto.jsonl")
+          if ! held=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' 2>&1); then
+            echo "::error::Could not read the GitHub Release $TAG: $(plain "$held")"
+            exit 1
+          fi
+          present=()
+          for asset in "${assets[@]}"; do
+            if grep -Fxq -- "$asset" <<< "$held"; then present+=("$asset"); fi
+          done
+          if [ "${#present[@]}" -eq "${#assets[@]}" ]; then
+            echo "The GitHub Release $TAG got every asset from another run meanwhile. Leaving it unchanged."
+            exit 0
+          fi
+          if [ "${#present[@]}" -gt 0 ]; then
+            echo "::error::The GitHub Release $TAG already has ${present[*]}, but not every asset. An asset is never replaced: delete those on the release's page, then run this again."
+            exit 1
+          fi
+          cd "$RUNNER_TEMP/assets"
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" "${assets[@]}"
+          echo "Attached to $TAG: ${assets[*]}."

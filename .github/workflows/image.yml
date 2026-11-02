@@ -18,6 +18,8 @@
 # (scripts/release-tags.ts).
 # After publication succeeds, separate jobs generate notes with read-only
 # access and create the GitHub Release without changing an existing one.
+# release-assets.yml then attaches the signed source archive, the SBOM and
+# their build provenance to that release, adding only what it lacks.
 #
 # A run on a ci/ branch that changes the image's own files, and a run
 # started by hand, do the checks and the smoke test, and never push. A change
@@ -496,3 +498,17 @@ jobs:
             printf '%s\n' "$found" >&2
             exit 1
           fi
+
+  # The signed source archive, SBOM and provenance (release-assets.yml), once
+  # the release exists, so they never hold up Docker Hub. Its jobs narrow
+  # these permissions each to what it needs.
+  release-assets:
+    needs: release
+    if: github.event_name == 'push' && github.ref_type == 'tag' && needs.release.result == 'success'
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/release-assets.yml
+    with:
+      tag: ${{ github.ref_name }}
