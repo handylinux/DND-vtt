@@ -10,7 +10,6 @@ import { DAMAGE_TYPES, type DamageType } from "./damage.ts";
 import type { PcFill } from "./pcFill.ts";
 import { applyPcStatsPatch, EMPTY_PC_STATS, pcDerived } from "./pcStats.ts";
 import { planResources, resourceLosses, resourcePart, resourceResult, sameButLevels, type ResourceItem, type ResourcePlan, type SpentItem } from "./resourceSync.ts";
-import { ownEntry } from "../records.ts";
 
 /**
  * A D&D Beyond sync merged three ways (docs/design/design-v1-resync.md 2): the
