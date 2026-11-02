@@ -1802,8 +1802,10 @@ function stopIndex(walk: Walk, stop: Stop): number {
  * of the class steps back, as before. Each one players cannot see then
  * takes the latest spot it may stop at in its holder's reach instead, since
  * a public holder ahead of it may have stepped back, and lets go only where
- * none is. One players cannot see that seats a creature they see then
- * stops where that seat holds (`seatingWalk`), as at any stop.
+ * none is. One every player sees that a hidden creature in the file
+ * carries steps back with the public class on its own kept walk
+ * (`keepsOwn`), and the hidden holders under it stop at the same progress,
+ * where `seatingWalk` holds its seat as at any stop.
  *
  * The moments after the stop, the cut and the landing read these spots,
  * and the private pass walks the cut, so it finds a hidden one there too.
