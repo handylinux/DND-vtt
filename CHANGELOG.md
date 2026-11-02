@@ -1,20 +1,91 @@
 # Changelog
 
-## Unreleased
+## v0.3.0 (2026-11-02)
 
 ### Features
 
+- **encounters**: a lair tick joins a fight started later, and in its lair is offered for lair actions alone
+- **combat**: a token keeps its lair tick for the dm alone, and its row's in lair keeps it in step from op version 39
+- **movement**: from op version 38 a squeezing holder's dragged creatures follow in single file as the drag plans it, its passengers sit apart and a hidden one in tow stands clear of walls
+- **toasts**: a phone's open sheet bounds the toasts as one row over the top bar
+- **ui**: death save pips and the x-card send mark why they keep their color
+- **areas**: a disabled from square greys its portrait at full opacity inside the dim outline
+- **party**: a party row for a character off the scene draws as off
+- **ui**: a stopped starter work tile and the crop zoom label take the disabled look
+- **editors**: the stat block editors hold their fields with Held
+- **images**: icon, search, library and map tiles draw the disabled look and read the held group
+- **scenes**: the scene panel's select, number, color and slider read the held group
+- **measure**: the options kit's tiles, rows and chip read the held group
+- **device**: the dice set picker is a Held group when roll animation is off
+- **tokens**: the condition tiles take the held look from their group
+- **tokens**: the companion numbers step holds its choices with Held
+- **pins**: the pin pane holds its fields with Held while Done is pending
+- **journal**: the page editor holds its fields with Held while it saves
+- **resources**: the class resource sheet holds its fields with Held while it saves
+- **rolls**: the roll request sheet holds its fields with Held while it sends
+- **dice**: the group save page holds its setup and outcome with Held
+- **components**: a roll menu that fits on neither side of its button slides back over it until whole
+- **components**: a menu that covers its button ignores a press that starts within 350 ms of its opening
+- **components**: a menu inside a held group draws its rows off, picks nothing and drops their press bindings
+- **components**: a dialog opened from a held page ends the held group, so its controls look as live as they are
+- **components**: chips, radio cards, swatches, section folds and the token panel's fields take the held look
+- **components**: a held group gives every shared button, field, choice, switch and checkbox the disabled look
+- **previews**: a drag preview on hexes is judged by both footprints as on squares, and holders who read one sight are judged by their own walls
+- **vision**: devices read seen by all on hex scenes from a seenAll mark on each projected token, and a copy's change re-projects the creatures round it
+- **vision**: on a per-player hex scene seen by all is what the shared copy of the walls shows, and a sight holder's screen shows it too
+- **vision**: a creature's outline on hexes is clipped by the walls the viewer holds, as its own copy of the map has them
+- **migrate**: op version 37, an identity step with the gates for trap stops between a walk's ends and the hex outline clip
+- **grid**: read hex counts from a map's file name for hex scenes
+- **admin**: warn when a room's log archive passes its quota or the database disk nears its floor
+- **ui**: the throw shortcut names the stat block's panel
+- **ui**: the roll header line on a token's panel and a character's page
+- **dice**: a stat block roll throws its dice from the box
+- **dice**: the throw's store takes a host per rolling surface
+- **ui**: stat block rolls in the shortcut sheet
+- **ui**: ability boxes that open their rolls
+- **dice**: an ability's rolls with one-roll options
+- **ui**: menu rows with their own content and presses, and a popover step back
+- **dice**: roll for one creature without the dice panel's choices
+- **dice**: stat block rolls contract with stubs
+- **dice**: reopen save outcomes and support explicit rerolls
+- **undo**: record and persist tracked save history
+- **undo**: track save outcomes and replace page requests atomically
+- **dice**: define the save reopening draft contract
+- **undo**: the save outcome contract for reopening group saves
+- **ui**: outline a proficient save's ability box in place of the proficiency lines
+- **shortcuts**: list the panel swipe back in the shortcut sheet
+- **panels**: show where a back swipe lands under the sliding page and recover a lost touch
+- **panels**: swipe right in a phone panel to go back
+- **shortcuts**: list the one-roll options in the shortcut sheet
+- **rolls**: add one-roll menus to request and combat controls
+- **dice**: add batch and initiative one-roll options
+- **dice**: add single-creature one-roll options
+- **dice**: add the one-roll mode menu contract
+- **ui**: list proficiencies and expertise under skills in stat blocks
+- **log**: read the log's history through a window of at most 500 rows with show newer and back to latest
+- **log**: page the export sheet's sessions by their ids and offer the browser's own download past 8 MiB
+- **server**: start the log metadata worker once the server listens and stop the boot on an unmeasurable DATABASE_DISK_DIR
+- **server**: check that DATABASE_DISK_DIR can be measured
+- **server**: build the log archive's partial index after boot and backfill rooms' metadata in fair cancellable batches
+- **server**: read log history and receipts through the reader's access rows once a room's metadata is complete
+- **server**: count log access rows in a room's size on disk
+- **server**: write each archived log line with its numeric id and access rows in one statement
+- **ui**: mark proficiency with a border around each roll
+- **areas**: cut area shapes by the hexes they meet
+- **iso**: stand raised hexes, hex walls and connected pits in the relief
+- **iso**: give drawn ground a hex surface and a hex ray walk
+- **server**: let the log archive check free space on the database's own disk
 - **undo**: show the setup history rollout notice once per device
 - **undo**: confirm setup saves from accepted changes
 - **undo**: declare setup gestures and explain resync history
 - **undo**: add authoritative scoped client history
+- **log**: render scoped correction notices
 - **undo**: acknowledge committed operation scope
 - **undo**: record private correction notices
 - **undo**: enforce scoped histories and guarded restores
 - **undo**: wire scoped history protocol and replay versions
 - **undo**: classify play and setup operations
 - **undo**: define scoped history contracts
-- **log**: render scoped correction notices
 - **encounter**: mark save cards and log results
 - **stats**: show skill and save proficiency markers
 - **dice**: show proficiency on rolls and requests
@@ -116,14 +187,234 @@
 
 ### Fixes
 
+- **deps**: fast-uri 3.1.9 and 4.2.3 for four advisories in URI parsing
+- **deps**: override glob to 14.0.3 and minimatch to 11.0.3 for two moderate advisories
+- **release**: the provenance names the tag's own commit when the assets are added from main
+- **dice**: op version 40 gates the grammar bounds on lucky and an added die, so asks stored before replay as accepted
+- **scripts**: close the codeql findings in bench-iso, backup-check and starter-art
+- **encounters**: a deleted block's lair tick is not honored and a ticked creature always waits for its block
+- **ddb**: a fraction where a whole number goes is rounded or skipped, and a cursed weapon reads 1d8-1
+- **markdown**: a repeated heading's id passes over ids the page already has, as github's does
+- **dice**: lucky and an added die refuse a roll they would take past the grammar's bounds
+- **dice**: a mode that would take a roll past 100 characters is refused as too long
+- **protocol**: count a trap's squares only once each rectangle is within its bounds
+- **encounters**: the editor keeps to the panel's width whatever width a platform draws its fields
+- **encounters**: counts that tell a lair stand over the lair tick, and a block read with no lair never takes it
+- **combat**: a change of stat block takes a creature's lair tick, as it takes its marks
+- **measure**: the label reads a straight walk's own route at the steps that paid for it, so a squeeze is never difficult terrain
+- **movement**: a rider's drag picks its mount's stand by walls, so a ledge stays the drop's own landing's to judge
+- **encounters**: a room monster's line and the monsters to add fit a phone at 130%
+- **toasts**: toasts keep in view and clear of a sheet or docked bar with the phone keyboard up
+- **ui**: an off select keeps full strength, where the browser faded it to 0.7
+- **traps**: a seen creature walks its kept cut walk whole, whatever stops its hidden holder
+- **traps**: a cut lands a creature on a seat where the stop judged it, its hidden holder where the seat holds
+- **traps**: a cut lands each walker every player sees on its own walk where the stop judged it
+- **traps**: a cut skips the stand test only in the groups the trap stopped
+- **traps**: a trap's stop stands each walker only where the move's own stand test would leave it
+- **traps**: a trap's cut lands each in single file where and as high as the trap step had it, which every cut marks
+- **movement**: each in single file, and what carries one on the way to its lead, is walked whatever its final pose
+- **traps**: the trap step walks each in single file, one whose walk ends where it started too, so a cut stops it where it walked
+- **traps**: the trap step reads each in single file at the height the move takes it along at
+- **movement**: a stop in single file carries down through what a stopped creature carries
+- **movement**: the reach of each in single file is judged where its walk ends, its start included
+- **movement**: a spot halfway between two steps in single file goes toward the holder, so a walk and its mirror space alike
+- **movement**: single file takes only the creatures that end within reach of their own holder
+- **movement**: a creature behind a stopped holder in single file stops no further along than its holder
+- **movement**: heights in single file read each holder where its own walk has it, on the device as on the server
+- **traps**: a trap's cut of a walk in single file moves each creature on its own walk to where the stop had it
+- **project**: an op stored before op version 37 projects without the seenAll mark, as it was applied
+- **party**: the off-scene row's AC badge carries the readonly mark itself, not a box-less wrapper
+- **party**: an off-scene party row marks the state it keeps in color, which the disabled look check skips
+- **toasts**: the sheet's floor reads the page's height where the layout is held short for the keyboard
+- **toasts**: the sheet's floor follows the keyboard and places stacks again, and unseen toasts outlive the very short sheet
+- **ui**: an off field's placeholder draws the disabled look
+- **dice**: a long damage formula breaks after a sign and never inside a term
+- **vision**: rows the point query works out count toward the cache, and a drawing trims it past its cap
+- **undo**: a correction's copies and a trap step's check project by the op's version
+- **rooms**: only a walk the op rates let through ends the batch staged before it
+- **rooms**: a walk on the trap scene with fog and party vision on commits the batch staged before it
+- **traps**: a stop between a walk's ends reads the ground every player sees, and elsewhere stands only where the walk itself went, from op version 37
+- **dice**: a result line keeps "and N more" that sits centered on its first row
+- **permissions**: standing up in place from a squeeze meets the stand check
+- **movement**: a creature a walk drags stands off the grid only where no wall passes through its box
+- **permissions**: the touch rule steps back past spots the stand check refuses, and lands a lit stand refusal with its words
+- **device**: roll animation help says stat block rolls throw dice too
+- **dice**: a roll line whose dice all wrapped out drops their box, so the label takes the room
+- **dice**: a roll said at its answer is said once, its toast after a close mid-throw shows it silently and the dice panel's line beside it stays quiet
+- **fog**: key a draft's outlines by position and id so repeated op ids stay unique
+- **admin**: keep a room id whole in the storage card's archive warning
+- **scenes**: art named for a new scale and its bounds refit are one setup step
+- **scenes**: new art scales from the map and grid the room holds when its upload ends
+- **grid**: fit a hex scene's size to hold every hex of its map art
+- **movement**: a drag held short stands where its box is clear of every wall, as the server takes it
+- **movement**: refuse a player's full-size stand off the grid where a wall passes through its box
+- **scenes**: the bounds refit after a replacement upload reads the scene's current bounds, not the ones from before it
+- **scenes**: other art named for a new scale refits the scene's bounds when they followed the old grid
+- **swipe**: a page with no picture under it keeps none when Cancel returns to it
+- **fog**: draft edits that share an op id count, outline and undo as one edit
+- **scenes**: other art of a scene's map shape takes its file name's grid size over a kept grid that disagrees
+- **assets**: a single hex row or column reads its file name's count without an odd row's half hex
+- **admin**: the archive warning ties image uploads to images stored on the database's disk, since uploads check their own volume
+- **traps**: a square wire's stored 1/64 ends import and take edits again, and only a zone an op sets keeps to half cells
+- **migrate**: drop snapshot 32's wire step so stored ops replay against the wire ends they applied to
+- **grid**: leave the hex hint off an upload answer that has none
+- **canvas**: dim a DM's hex standee by the sub-cells the wall clip keeps, as players are withheld it
+- **traps**: name a multi-hex trap at the top of its outline, so an unobstructed isometric name keeps its anchor
+- **fog**: a gesture's draft ops are one edit only when numbered from .0 up, so crafted imported ids stay separate edits
+- **canvas**: keep only a right self-copy probe for the page, so a wrong read recovers on the next board
+- **migrate**: snapshot 32 moves a square trap wire's 1/64 ends to half cells
+- **log**: tell a room's pending refused archive writes when its warning entry is forgotten
+- **swipe**: a page shown again keeps the picture under it, and a press past an element budget copies nothing
+- **rooms**: judge a drag preview on squares by its full and squeezed footprints, reading no walls
+- **movement**: read no squeeze from the walls for riders' seats and trap stops between a walk's ends, from op version 36
+- **dice**: a line that stays and shows a thrown result takes back its host's unseen toast
+- **dice**: the roll header's foot spacer takes a short panel's whole shortfall
+- **dice**: lowercase damage in the discard question for an unfilled page
+- **dice**: keep the restored notice's words through the gap before a room op's history message
+- **dice**: name a request's answer on a stat block's result line and in what it says
+- **dice**: keep a stat block result's label and verdict on a narrow line, dropping only its mode words
+- **ui**: keep a stat block's result line from widening its ability grid past a narrow sheet
+- **dice**: a receipt watcher in a hidden pane watches nothing, so the toast says what lands
+- **dice**: an applied group save stops pointing at undo once no play step for it remains
+- **dice**: bring the replace question into view with focus on keep it, and drop "the" before a save's name
+- **import**: keep each imported log line's op seq and start the room after the last, so its log reads in time order
+- **undo**: keep one result per history, so each history sheet shows only its own
+- **dice**: a result line hidden and shown again does not announce its roll twice
+- **dice**: a row in a hidden pane watches no roll
+- **dice**: a hidden dice panel's result line watches no roll and holds no voice
+- **dice**: a hidden panel's result line watches no roll and holds no voice
+- **ui**: key the rolling ability grid by its creature
+- **dice**: a sender's result line shows a roll already said without saying it again
+- **dice**: spend the contextmenu a used context key sends after its keyup
+- **dice**: say why a tap or a pick on an ability's row sent nothing when the connection dropped first
+- **dice**: move key focus into an ability's rows once they load
+- **ui**: keep a rolling ability box at the text box's height, and test boxes inside a room
+- **dice**: fit an ability's roll options to their rows once the held finger lifts
+- **dice**: center an ability row's tags on the row
+- **dice**: keep an ability's popover box when it swaps to a roll's options, and say why blocked rows wait
+- **ui**: place an ability's popover again when it swaps to a roll's options or its rows load
+- **dice**: draw the folded saves and skills lines as plain text, listing a character's trained skills
+- **import**: tell class features by entity type, and keep jack when the classes are cut
+- **import**: count the jack of all trades feature's half proficiency whatever its restriction says
+- **import**: skip restricted half proficiency and class features not yet reached
+- **dice**: judge a shared attack's damage menu by the creatures that hit
+- **dice**: judge a roll menu's secret by the roll's own creatures and raise hosts only without popover support
+- **ui**: close a popover whose anchor scrolls away and start touch rules fresh on each primary touch
+- **dice**: name the roll in its mode menu, ring its source and offer normal only where a tap differs
+- **ui**: show popovers in the top layer and keep them open while a touch scrolls
+- **sync**: send the server's time before every snapshot to re-anchor the clock offset
+- **dice**: relock a redone group save on its applied choices
+- **dice**: keep offline row edits and announcement history, and reckon server time on a monotonic clock
+- **dice**: reopened group save keeps answers, rows, retention, its close and quiet reloads
+- **client**: learn the server clock and announce own corrections once
+- **server**: word clock-ahead refusals and prune expired save outcomes on undo
+- **dice**: lock an unverifiable save page's outcome controls and offer resume only for real edits
+- **dice**: center a relocked save page's Done and keep a reopened row's Evasion with its line
+- **state**: expose confirmed coverage and announce retained blockers
+- **dice**: keep a long press on a roll button from selecting its words on iOS
+- **iso**: hidden tree pills hear no camera, bounded scroll repair, unions on demand
+- **e2e**: follow list section labels to their content items
+- **e2e**: forward optional roots into each sweep measurement
+- **ui**: let a toast leave Escape to a popover by the popover's own rule
+- **ui**: keep each select's current choice in swipe pictures
+- **log**: reset projected history across blackout transitions
+- **ui**: detach swipe pictures from live form controls and measure panel picture cloning
+- **ui**: let focused popovers handle escape before expanded toasts
+- **receipts**: refuse a lookup without spending a pooled connection
+- **server**: revalidate the log index before each backfill job
+- **server**: release receipt connections before waiting for room state and bound the receipt route's auth queries
+- **rolls**: preserve focus beside a sibling answer
+- **ui**: preserve hosts when a popover consumes escape
+- **dice**: tie shared attack mode announcements to totals
+- **dice**: explain normal rolls keep usual visibility
+- **ui**: remove popover ancestor scroll restoration
+- **dice**: close again menus when rolling becomes blocked
+- **rolls**: exclude record bookkeeping from roll menu sources
+- **dice**: set a shared attack's mode words apart from its totals for screen readers
+- **rolls**: keep results readable, fit only added mode words, scope menu sources to their own roll and let plain taps act as before
+- **initiative**: show auto initiative's mode badge and cancel note as before
+- **dice**: keep plain taps, higher overlays and ctrl-click working beside roll menus, name each help choice and say the mode after the label
+- **dice**: block a cancelled press's click only after a touch hold
+- **ui**: keep a keyboard-opened popover from scrolling its ancestors
+- **ui**: keep popover keyboard focus from scrolling ancestors
+- **dice**: keep result mode words from adding lines
+- **dice**: keep roll menus open while their source stays visible
+- **dice**: keep mode details from widening recent rolls
+- **ui**: show one proficiency pair in a wild shape and keep saves' hidden proficient cue
+- **ui**: place proficiency lines after saving throws in older stat blocks
+- **ui**: leave proficiency marks off the token summary, log and toasts
+- **log**: show a line sent from mid-list instead of holding the reader's place
+- **admin**: reword the rooms card's size hint
+- **log**: keep the export sheet's answers after a second setup, drop a stale older sessions answer, and scroll the large-file note into view
+- **log**: hold the reader's row as live lines push held rows out, part the window when the live log fills again, and key it by the scene a player sees
+- **admin**: say a room's size counts its whole log, and give a room's tags a line of their own
+- **bench**: retain operation answers across server frames
+- **server**: send no log archive sql after a cancel, and read receipts on one bounded connection against a state that holds their ops
+- **server**: back off a failing log index build however often rooms are asked for
+- **movement**: compare visible walls before naming blockers
+- **e2e**: treat pictures as neutral in wrap label and orphan checks
+- **e2e**: find the admin header by its actions and count empty parts as no name
+- **movement**: check door words against the batch-start view
+- **grid**: keep an unseen shape switch and apply a found shape with its calibration at once
+- **movement**: match blocker words to the whole held door
+- **grid**: restore defaults atomically
+- **movement**: name visible imported door blockers safely
+- **ui**: pad a folded summary where the browser takes no clip margin
+- **ui**: clip a folded summary 1 px out instead of padding it
+- **ui**: cover the pane's side padding beside every sticky foot
+- **dice**: keep the level on a folded part that names a test with no proficiency
+- **ui**: frame a bonus however a stat block spaces or signs it
+- **ui**: keep the ellipsis on a folded line whose first part fills it
+- **bench**: reread the scene's standing areas each cube round
+- **iso**: read a pit region per face before loops merge and compare ground from the last sync
+- **bench**: time the hex cube from its sending until it stands
+- **iso**: clip each pit region's parts by its own openings and compare ground once a sync
+- **iso**: keep a top-down press on hexes where it falls
+- **iso**: key hex side tints by orientation
+- **iso**: lay a standing area flat when the ground under it changes
+- **iso**: lay a moving mark on the hexes under it
+- **iso**: open an area below 0 only through its own pit regions
+- **server**: cancel log scans by PostgreSQL's cancel request and free their lease only once the connection is gone
+- **server**: warn about refused archive writes once a minute per room, with a count
+- **server**: bound and cancel every step of a log scan's connection, keep the server up when one drops, and find each session list once
+- **server**: end a stalled log export at its deadline, room deletion or shutdown
+- **server**: keep a closed log scan's turn and lease until its running batch ends
+- **server**: keep every archived log line, guard archive writes on free disk, and read history in fair bounded scans of one captured state
+- **server**: leave the log archive out of room quotas and count it only in admin sizes on disk
+- **uvtt**: the import names its choices in one style
+- **display**: the pairing code's label sits on its field
+- **about**: one gap under each heading level
+- **dice**: grid labels keep a section label's gap
+- **attach**: farther away keeps a section label's gap
+- **device**: the dice legend and map detail keep the settings gaps
+- **ui**: radio cards keep their gap under a legend
+- **deps**: update undici to 8.12.2 for its security fixes
 - **deps**: document manual node image updates
 - **image**: sign the digest before publishing any tag
-- **deps**: delay updates and protect container major versions
 - **github**: allow bug reports outside a room
 - **release**: require the changelog version before tagging
 - **image**: require successful push ci on the tagged commit
+- **deps**: delay updates and protect container major versions
 - **image**: resume signing from the immutable version tag
 - **release**: publish notes only after the image succeeds
+- **canvas**: limit name halo clearance to isometric labels
+- **ui**: release alert clearance when its cards or layout change
+- **canvas**: anchor isometric trap names on their actual zones
+- **canvas**: publish board pills only from the shown view
+- **ui**: reserve space for toasts above full alert columns
+- **canvas**: keep a new scene camera in its own view
+- **canvas**: move crowded isometric names clear of token text
+- **ui**: keep toasts clear of the entire alert column
+- **ui**: measure the first card inside alert stacks
+- **canvas**: keep area names clear of drawn token text
+- **vision**: composite isometric sight edges before applying opacity
+- **ui**: fit shortcut rebinding controls on narrow screens
+- **ui**: measure turn card folds and hold alert column clearance until its cards leave
+- **canvas**: guard hidden isometric stages before reading pointers
+- **canvas**: place isometric area and trap names around drawn token labels
+- **undo**: word history refusals and cut labels as one sentence
+- **undo**: keep focus and one edge in the setup history sheet
+- **undo**: announce the setup history notice as a passing toast
 - **undo**: report oversized changes without promising undo
 - **undo**: bound the rollout notice to the deploy window
 - **undo**: name setup history in token and journal feedback
@@ -134,11 +425,8 @@
 - **undo**: report actual history recording in acknowledgments
 - **undo**: compare effective saves and prompt settlements
 - **undo**: use committed scope acknowledgments for save feedback
-- **undo**: word history refusals and cut labels as one sentence
 - **undo**: announce history results once and scope sheet keys
-- **undo**: keep focus and one edge in the setup history sheet
 - **log**: use shared correction text for every client surface
-- **undo**: announce the setup history notice as a passing toast
 - **undo**: preserve histories after no-effect edits
 - **ui**: span the phone toolbar's tools across their section
 - **ui**: refit folded summaries after web fonts load
@@ -397,6 +685,25 @@
 
 ### Performance
 
+- **vision**: a computation draws its light rows and tiles only when read, from the last one drawn
+- **project**: shown edges and stair marks are read once across build edits and fog classes
+- **project**: a chunk the batch misses takes its last pieces when its walls and ground read the same
+- **project**: a player's chunk keys the neighbors it reads only for their free walls by those walls alone
+- **traps**: bench rows for stops on fogged squares and hexes, warm and cold
+- **memory**: an undo's preflight estimate skips unheld ground
+- **ui**: redraw a stat block's roller only when its own roll data changes
+- **iso**: answer the self-copy probe once a page
+- **iso**: compare drawn ground by changed fog tiles only
+- **iso**: keep the relief picture across a pan and move the camera without a board render
+- **memory**: share applied estimates with the map step
+- **memory**: filter unheld ground before estimating changes
+- **projection**: share wall cuts across batch chunks
+- **log**: share live-start scans across viewers
+- **bench**: time a hex cube's arrival apart from its build and count a pan's canvas calls
+- **areas**: charge hex ground enumeration to the build slice and keep hex sides and edge answers
+- **iso**: fill hex tops from one pattern of the ground per ground draw
+- **areas**: budget volume stroke chaining and backward growth
+- **canvas**: enumerate tether stroke bands instead of bounding rectangles
 - **canvas**: reuse flat token geometry and area ring context
 - **ui**: the isometric test hook reads a board's layout only when asked
 - **ui**: a volume's hidden creases and far guides take one dashed stroke
