@@ -1810,9 +1810,18 @@ function fileApart(walks: Walks, group: Group, s: Progress, before: RoomState, s
   const lead = walks.byId.get(group.named);
   const file = walks.all.filter((w) => w.group === group && inSingleFile(w));
   if (!lead || file.length === 0) return undefined;
-  const byId = new Map(file.map((w) => [w.token.id, w]));
-  const classes = [file.filter((w) => w.entry.pass === "public"), file.filter((w) => w.entry.pass !== "public")].map((c) => fileOrder(lead.token, c.map((w) => w.token)).map((t) => byId.get(t.id)!));
+  // One every player sees that a hidden creature in the file carries walks a kept walk of its own on that one's line (keepsOwn).
+  const aboard = (w: Walk) => {
+    if (!w.isPublic || !w.walker || !keepsOwn(w) || !w.holder || w.holder.isPublic) return false;
+    for (let at: Walk | undefined = w.holder; at; at = at.holder) if (inSingleFile(at)) return true;
+    return false;
+  };
+  const seenAboard = walks.all.filter((w) => w.group === group && aboard(w));
+  const byId = new Map([...file, ...seenAboard].map((w) => [w.token.id, w]));
+  const classes = [[...file.filter((w) => w.entry.pass === "public"), ...seenAboard], file.filter((w) => w.entry.pass !== "public")].map((c) => fileOrder(lead.token, c.map((w) => w.token)).map((t) => byId.get(t.id)!));
   const back = new Map<Walk, number>();
+  // The hidden holders up to the file under one every player sees, which stop where it does so it keeps its seat (seatingWalk).
+  const following = new Set<Walk>();
   const latest = (w: Walk) => latestIndex(w.spots, s);
   const rides = (w: Walk) => {
     const kind = w.token.attached?.kind;
@@ -1829,7 +1838,7 @@ function fileApart(walks: Walks, group: Group, s: Progress, before: RoomState, s
     return latest(w);
   };
   const settings = before.meta.settings;
-  const drags = (w: Walk) => !w.holder || linkHolds(w.grid, settings, "drag", placedAt(w, indexOf(w)), placedAt(w.holder, indexOf(w.holder)));
+  const drags = (w: Walk) => !inSingleFile(w) || !w.holder || linkHolds(w.grid, settings, "drag", placedAt(w, indexOf(w)), placedAt(w.holder, indexOf(w.holder)));
   // The latest spot of its walk at or before the stop that it may stop at in its holder's reach, the stop's spot without one.
   const inReach = (w: Walk) => {
     const stands = standSpots(walks, w, before, seen);
@@ -1846,13 +1855,15 @@ function fileApart(walks: Walks, group: Group, s: Progress, before: RoomState, s
     const was = ahead.length;
     for (const walk of order) {
       const j = latest(walk);
-      let k = j;
-      const stands = standSpots(walks, walk, before, seen);
-      for (let i = j; i >= 0; i--) {
-        const box = boxAt(walk, i);
-        if (standsAt(stands, walk.spots[i]!.progress) && ahead.every((a) => !boxesOverlap(a, box))) {
-          k = i;
-          break;
+      let k = back.get(walk) ?? j;
+      if (!following.has(walk)) {
+        const stands = standSpots(walks, walk, before, seen);
+        for (let i = j; i >= 0; i--) {
+          const box = boxAt(walk, i);
+          if (standsAt(stands, walk.spots[i]!.progress) && ahead.every((a) => !boxesOverlap(a, box))) {
+            k = i;
+            break;
+          }
         }
       }
       if (k !== j) back.set(walk, k);
@@ -1864,10 +1875,19 @@ function fileApart(walks: Walks, group: Group, s: Progress, before: RoomState, s
     if (order.some((w) => !drags(w))) {
       ahead.length = was;
       for (const w of order) {
-        back.delete(w);
-        ahead.push(boxAt(w, latest(w)));
+        if (!following.has(w)) back.delete(w);
+        ahead.push(boxAt(w, indexOf(w)));
       }
-      if (order === classes[1]) for (const w of walks.all) if (order.includes(w)) inReach(w);
+      if (order === classes[1]) for (const w of walks.all) if (order.includes(w) && !following.has(w)) inReach(w);
+    }
+    // Each hidden holder under one every player sees that stepped back stops at the same progress of its walk, up to the file.
+    for (const p of order) {
+      const at = back.get(p);
+      if (at === undefined || !aboard(p)) continue;
+      for (let h: Walk | undefined = p.holder; h && !h.isPublic; h = inSingleFile(h) ? undefined : h.holder) {
+        back.set(h, latestIndex(h.spots, p.spots[at]!.progress));
+        following.add(h);
+      }
     }
   }
   if (back.size === 0) return undefined;

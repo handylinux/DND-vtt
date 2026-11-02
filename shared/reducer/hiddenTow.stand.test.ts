@@ -199,7 +199,10 @@ describe("a hidden creature in tow stands where no wall passes through its box (
     for (const s of [open, closed]) assert.ok(canApply(op, P1, s, { canUseAsset: () => true }).ok);
     const a = after(open, op, undefined);
     const b = after(closed, op, undefined);
-    for (const r of [a, b]) assert.deepEqual([r.state.tokens.owl!.x, r.state.tokens.owl!.y], [1.5, 5.5], "where the stop judged it");
+    // The stop judged it at 1.5, 5.5, on the horse's square, so from op version 41 it steps back along its own walk off the horse,
+    // here to where it started, in both rooms (TRAP-STOP-STACK).
+    for (const r of [a, b]) assert.deepEqual([r.state.tokens.owl!.x, r.state.tokens.owl!.y, r.state.tokens.owl!.attached?.to], [2, 7, "imp"], "where the stop judged it, stepped back off the horse");
+    for (const s of [open, closed]) assert.deepEqual([after(s, op, 40).state.tokens.owl!.x, after(s, op, 40).state.tokens.owl!.y], [1.5, 5.5], "on the horse's square before op version 41");
     for (const who of [P1, P2]) assert.equal(copy(b.state, who), copy(a.state, who), who.memberId);
     assert.equal(b.trapped, a.trapped);
   });
