@@ -9,17 +9,25 @@ import fc from "fast-check";
  */
 const DEFAULT_SEED = 20_261_101;
 
-function fromEnv(name: string): number | undefined {
-  const raw = process.env[name];
+type Env = Readonly<Record<string, string | undefined>>;
+
+function wholeNumber(env: Env, name: string, least: number): number | undefined {
+  const raw = env[name];
   if (raw === undefined || raw === "") return undefined;
   const value = Number(raw);
-  // A typo here would quietly run the defaults, which reads as a search that found nothing.
-  if (!Number.isSafeInteger(value)) throw new Error(`${name} must be a whole number, not "${raw}"`);
+  // A typo here would quietly run the defaults, or no cases at all, which reads as a search that found nothing.
+  if (!Number.isSafeInteger(value) || value < least) {
+    throw new Error(Number.isFinite(least) ? `${name} must be a whole number of at least ${least}, not "${raw}"` : `${name} must be a whole number, not "${raw}"`);
+  }
   return value;
 }
 
-const seed = fromEnv("FC_SEED") ?? DEFAULT_SEED;
-const runs = fromEnv("FC_RUNS");
+/** The seed every property runs on, and the run count that replaces each property's own, from FC_SEED and FC_RUNS. */
+export function runSettings(env: Env): { seed: number; runs: number | undefined } {
+  return { seed: wholeNumber(env, "FC_SEED", -Infinity) ?? DEFAULT_SEED, runs: wholeNumber(env, "FC_RUNS", 1) };
+}
+
+const { seed, runs } = runSettings(process.env);
 
 /**
  * Checks a property over `numRuns` generated cases, or FC_RUNS of them. Each
