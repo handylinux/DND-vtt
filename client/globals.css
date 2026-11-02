@@ -1,11 +1,12 @@
 /* Only what inline styles cannot express: the interface font's faces, the
    base document, native controls drawn dark and in the page's font, the
    hidden attribute, focus rings, the tap flash and the disclosure marker,
-   selection, an off field's placeholder, the loading spinner's turn and
-   delay, the "Your turn" notice's keyframes, the interface size's two
-   rules, the room focus keeps under the tracker's sticky header, the HP
-   pair's container query, reduced motion, and the sheet grabber under
-   forced colors. Everything else is inline from lib/theme.ts. */
+   selection, an off field's placeholder, an off select's full strength,
+   the loading spinner's turn and delay, the "Your turn" notice's
+   keyframes, the interface size's two rules, the room focus keeps under
+   the tracker's sticky header, the HP pair's container query, reduced
+   motion, and the sheet grabber under forced colors. Everything else is
+   inline from lib/theme.ts. */
 
 /* Inter, the interface font (lib/interFont.ts, which says why one font),
    from the app's own origin. Each file is variable, so one holds every
@@ -189,6 +190,15 @@ summary::-webkit-details-marker {
    is off, and an inline style cannot reach the placeholder. */
 :is(input, textarea):is(:disabled, [aria-disabled="true"])::placeholder {
   color: #7c7a84;
+}
+
+/* A select that is off keeps full strength. Chrome's own stylesheet fades
+   it to 0.7 (`select:disabled`) and no other control, while the held look
+   draws an off control's words in textDisabled and never fades it
+   (docs/design/design-v1-look-pass-1.md 1). One rule here reaches every
+   select, so none can forget it. */
+select:disabled {
+  opacity: 1;
 }
 
 /* The interface size (features/device/layout.ts). Below 100% a field would

@@ -9,7 +9,7 @@ import type { DiceRoll, LogEntry, LogEvent } from "#shared/model.ts";
 import { uuidv7 } from "#shared/ids.ts";
 import { blockOf, customMonster } from "#shared/testutil.ts";
 import { theme } from "../client/lib/theme.ts";
-import { alignmentLines, measureAlignment } from "./helpers/alignment.ts";
+import { alignmentLines, disabledLookLines, measureAlignment } from "./helpers/alignment.ts";
 import { OUTCOME_RESTORED, OUTCOME_UNDONE, OUTCOME_UNAVAILABLE, assertPrivateOutcome, openSaveDice, saveOutcomes } from "./helpers/saveOutcomes.ts";
 import { ConsoleWatch, diceFoldsOpen, multiSelect, OpSocket, openSideTab, reopenRoom, resultLine, Shots, SocketWatch, startServer, tapCell, waitFor, wholeInReach, type Server } from "./harness.ts";
 
@@ -1042,6 +1042,8 @@ describe("raccoon-vtt group save", { timeout: 300_000 }, () => {
       await waitFor("the page held", async () => ((await roll.isDisabled()) ? true : null));
       await waitFor("every choice off", async () => ((await rowLook()).every((row) => row.ariaDisabled === "true") ? true : null));
       for (const row of await rowLook()) assert.equal(row.color, off, `a held choice draws the disabled color: ${JSON.stringify(row)}`);
+      // The app-wide check on the whole held page, which reads opacity too, so a held select the browser's own sheet fades fails it (LP29-A-LOOK-1).
+      assert.deepEqual(await disabledLookLines(sheet, "lk1-held-menu"), []);
       await shots.take(dm, "lk1-held-menu-130");
 
       const first = rows.first();

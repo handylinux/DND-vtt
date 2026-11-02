@@ -6,6 +6,7 @@ import path from "node:path";
 import { after, before, describe, test } from "node:test";
 import { chromium, type Browser, type BrowserContext, type Locator, type Page } from "playwright-core";
 import { barControl, ConsoleWatch, openSideTab, OpSocket, reopenRoom, Shots, SocketWatch, startServer, tapCell, waitFor, type Server } from "./harness.ts";
+import { disabledLookLines } from "./helpers/alignment.ts";
 
 /**
  * Stat blocks for player characters end to end (docs/design/design-v1-pc-stats.md
@@ -492,6 +493,9 @@ describe("raccoon-vtt pc stat blocks", { timeout: 600_000 }, () => {
       assert.ok(looks.length > 20, `the editor's controls were found: ${looks.length}`);
       const bright = looks.filter((l) => !l.off || l.color !== "rgb(124, 122, 132)");
       assert.deepEqual(bright, [], "every control is natively off and draws textDisabled");
+      // The app-wide check, which also reads opacity: the skill selects are the held selects it never met elsewhere, faded by Chrome's own sheet (LP29-A-LOOK-1).
+      assert.ok(looks.some((l) => / proficiency$/.test(l.name)), "the skill proficiency selects are held with the rest");
+      assert.deepEqual(await disabledLookLines(sheet.locator("fieldset").first(), "lk1-held-editor"), []);
       ana2.release();
       await sheet.waitFor({ state: "detached" });
       // Back to level 9, which the steps after read.

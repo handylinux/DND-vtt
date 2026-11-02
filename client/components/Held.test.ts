@@ -83,4 +83,9 @@ describe("a held group gives every shared control the disabled look (LOCKED-LOOK
     assert.ok(rule, "globals.css dims an off field's placeholder");
     assert.equal(rule[1], theme.color.textDisabled);
   });
+
+  test("an off select keeps full strength, where Chrome's own stylesheet fades it to 0.7 (LP29-A-LOOK-1)", () => {
+    const css = readFileSync(new URL("../globals.css", import.meta.url), "utf8");
+    assert.match(css, /(^|\n)select:disabled \{\s*opacity: 1;\s*\}/, "globals.css undoes the browser's fade on every off select");
+  });
 });
