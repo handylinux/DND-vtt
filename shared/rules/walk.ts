@@ -7,6 +7,7 @@ import { footing } from "./heights.ts";
 import { crossesInnerLedges, groundUnder, legStop, offGridWallThrough, offKey, onOffHolder, pastHolder, stepTester, walkEnd, walkFrom, walkOn, type MovingToken, type StepTester, type Walker } from "./movement.ts";
 import { fileOutOfReach, fileRoutes, fileShift, followedHeight, legSteps, routeFeet, routeLattice, seatedOn, seatShift, straightCost, trueLength, type FileEnd, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "./route.ts";
 import { SQUARES } from "./grid.ts";
+import { onHolder } from "./attach.ts";
 
 /**
  * Finding the way a creature walks (docs/design/design-v1-movement.md section 5):
@@ -649,7 +650,9 @@ export class WalkWorld {
     const last = points[points.length - 1]!;
     const lead: Follower = { ...token, id: (token as { id?: string }).id ?? "" };
     const inFile = new Map([...file.keys()].flatMap((id) => (ends.has(id) ? [[id, ends.get(id)!] as const] : [])));
-    return fileOutOfReach(SQUARES, this.input.rules, lead, { x: last.x, y: last.y, elevation: this.#leadHeight(last) }, (m) => this.#members.get(m), inFile);
+    // The group is its public members, so those sitting on the lead are the riders every player sees, seated as the move seats them.
+    const riders = [...this.#members.values()].filter((m) => m.attached?.to === lead.id && onHolder(m.attached.kind));
+    return fileOutOfReach(SQUARES, this.input.rules, lead, { x: last.x, y: last.y, elevation: this.#leadHeight(last) }, (m) => this.#members.get(m), inFile, riders);
   }
 
   /** Whether the walker drags a creature beside it that a step can leave behind. */

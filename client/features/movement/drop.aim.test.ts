@@ -594,3 +594,55 @@ function board(view: RoomState, role: DragDeps["role"] = "player") {
   };
   return { frames, stops: dragStops(deps), hold: () => deps.scope.get(holdSlot).getState().hold };
 }
+
+describe("squares: a Huge mount into a corridor two squares wide, its rider leading a prisoner in single file (review FU45BR-OPUS-10)", () => {
+  /** The corridor along rows 6 and 7 from x 6 to 14, a Huge horse west of it, and riders by id at their squares, `lead` leading a prisoner beside it. */
+  function ridden(riders: readonly [string, number, number, Partial<Token>?][], lead: string, prisoner: { x: number; y: number }): RoomState {
+    const s = room({ scenes: { s1: scene("s1", { bounds: { w: 22, h: 14 }, blockMovement: true, autoWalls: "off" }) } });
+    s.buildChunks = {};
+    const runs: [[number, number], [number, number]][] = [[[6, 0], [6, 6]], [[6, 8], [6, 14]], [[14, 0], [14, 6]], [[14, 8], [14, 14]], [[6, 6], [14, 6]], [[6, 8], [14, 8]]];
+    runs.forEach(([a, b], i) => wall(s, `fu48mo${String(i).padStart(6, "0")}`, a, b));
+    s.tokens.horse = token("horse", { size: "huge", x: 1, y: 5, name: "Elephant", kind: "npc", ownerIds: ["p1"] });
+    for (const [id, x, y, over] of riders) s.tokens[id] = token(id, { x, y, name: id, kind: "pc", ownerIds: ["p1"], attached: { to: "horse", kind: "ride" }, ...over });
+    s.tokens.pris = token("pris", { ...prisoner, name: "Prisoner", kind: "npc", attached: { to: lead, kind: "drag" } });
+    return s;
+  }
+
+  const held = (plan: DropPlan) => [plan.moves.find((m) => m.tokenId === "horse")?.squeeze === true, plan.stop && stopText(plan.stop)];
+
+  test("the prisoner follows where his rider's seat keeps him in reach, a rider no player sees changing nothing, and the server takes it", () => {
+    for (const shade of [false, true]) {
+      const riders: [string, number, number, Partial<Token>?][] = [["brom", 1, 6]];
+      if (shade) riders.push(["shade", 1, 7, { kind: "npc", ownerIds: [], visibility: "dm" }]);
+      const s = ridden(riders, "brom", { x: 0, y: 6 });
+      const { plan } = dropOf(s, { x: 9.5, y: 5.5 });
+      assert.ok(plan, "the drop landed");
+      assert.deepEqual(held(plan), [true, null], `shade ${shade}: in, squeezed, nothing held`);
+      assert.ok(takes(s, plan), `shade ${shade}: the server takes it`);
+      const r = applyOp(s, moveOpsOf(plan.moves)[0]!, P1, env(1));
+      assert.ok(r.ok);
+      const [brom, pris] = [r.state.tokens.brom!, r.state.tokens.pris!];
+      assert.deepEqual([brom.x, brom.y, brom.attached?.to, pris.x, pris.y, pris.attached?.to], [10, 6, "horse", 9, 7, "brom"], `shade ${shade}: on the near seat, his prisoner right behind`);
+    }
+  });
+
+  test("the seat a second rider leaves him decides: on the far seat the drop holds at the mouth and names the prisoner, and the server refuses the whole way", () => {
+    const far = ridden([["brom", 3, 6], ["ana", 1, 6]], "brom", { x: 4, y: 6 });
+    const { plan } = dropOf(far, { x: 9.5, y: 5.5 });
+    assert.ok(plan, "the drop landed");
+    assert.deepEqual(held(plan), [false, "Prisoner can't follow through there."]);
+    const { towed: _towed, ...input } = groupWalkWorld(far, ownWalk(far.tokens.horse!), { role: "player" }).input;
+    const found = findRouteOn(input, { x: 9.5, y: 5.5 });
+    assert.ok(found && found !== "none", "a way in for the mount alone");
+    const whole: Op = { t: "token.move", tokenId: "horse", x: 9.5, y: 5.5, squeeze: true, route: found.pieces.map(([x, y, e, w]): [number, number, number, 0 | 1] => [x, y, e, w]) };
+    assert.deepEqual(canApply(whole, P1, far, { canUseAsset: () => true }), { ok: false, code: "forbidden", message: "Prisoner can't follow through there." });
+    // With the riders' places swapped he takes the near seat, and the same walk keeps the prisoner in reach.
+    const near = ridden([["brom", 1, 6], ["ana", 3, 6]], "brom", { x: 0, y: 6 });
+    const into = dropOf(near, { x: 9.5, y: 5.5 }).plan!;
+    assert.deepEqual(held(into), [true, null]);
+    assert.ok(takes(near, into), "the server takes it");
+    const r = applyOp(near, moveOpsOf(into.moves)[0]!, P1, env(1));
+    assert.ok(r.ok);
+    assert.deepEqual([r.state.tokens.brom!.attached?.to, r.state.tokens.ana!.attached?.to, r.state.tokens.pris!.attached?.to], ["horse", "horse", "brom"]);
+  });
+});

@@ -7,7 +7,7 @@ import { canSqueeze, footprintRect, footprintSize, isSqueezed, placedOnHex, rang
 import type { Point, Rect } from "./geom.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
 import { hexDistance, hexKey, hexLine, hexNeighbors, type Hex, type HexGrid } from "./hex.ts";
-import { onHolder, seatedAt, withinReach } from "./attach.ts";
+import { onHolder, seatedAt, squeezedSeatsApart, withinReach } from "./attach.ts";
 import { footing, footprintGround, sceneGround } from "./heights.ts";
 import {
   coreBlocked,
@@ -294,14 +294,27 @@ export type FileEnd = { x: number; y: number; elevation: number };
  * in file order, and `end` where the lead's walk ends. Its holder is read
  * where the walk leaves it: the lead at its end, one in the file at its own
  * end, and one sitting on another where that one's change takes it. One
- * sitting on the lead is read from each corner of the squares the lead
- * squeezes onto, since its seat there turns on who else rides
- * (attach.ts squeezedSeatsApart), so a creature passes only where every
- * seat keeps it in reach. The server's check and the device's read it with
- * the same ends, so both hold the drag at the same place.
+ * sitting on the lead that every player sees (`riders`, as they stand where
+ * the walk starts) is read on its seat where the walk ends: the move seats
+ * those before the rest (attach.ts squeezedSeatsApart, moveLeg.ts
+ * endSeatsApart), so that seat reads none a player cannot see (review
+ * FU45BR-OPUS-10). Any other one sitting on the lead is read from each
+ * corner of the squares the lead squeezes onto, since its seat there turns
+ * on hidden riders too, so a creature it drags passes only where every seat
+ * keeps it in reach. The server's check and the device's read it with the
+ * same ends and riders, so both hold the drag at the same place.
  */
-export function fileOutOfReach(g: Grid, rules: DistanceSettings, lead: Follower, end: FileEnd, memberOf: (id: string) => Follower | undefined, ends: ReadonlyMap<string, FileEnd>): string | null {
+export function fileOutOfReach(
+  g: Grid,
+  rules: DistanceSettings,
+  lead: Follower,
+  end: FileEnd,
+  memberOf: (id: string) => Follower | undefined,
+  ends: ReadonlyMap<string, FileEnd>,
+  riders: readonly (PlacedToken & { id: string })[] = [],
+): string | null {
   const at = (id: string): Follower | undefined => (id === lead.id ? lead : memberOf(id));
+  const seats = riders.length > 0 ? squeezedSeatsApart(g, lead, end, [riders]) : null;
   // Every place the walk can leave a holder, chains of seats followed down from the lead (a chain is no longer than the group).
   const places = (id: string, depth: number): FileEnd[] | null => {
     if (id === lead.id) return [end];
@@ -312,6 +325,8 @@ export function fileOutOfReach(g: Grid, rules: DistanceSettings, lead: Follower,
     const holder = link ? at(link.to) : undefined;
     if (!member || !link || !holder || !onHolder(link.kind) || depth > ends.size + 64) return null;
     const rise = member.elevation - holder.elevation;
+    const seat = holder.id === lead.id ? seats?.get(member.id) : undefined;
+    if (seat) return [{ x: seat.x, y: seat.y, elevation: end.elevation + rise }];
     if (holder.id === lead.id) {
       const box = footprintRect(g, { size: lead.size, x: end.x, y: end.y, ...(lead.w !== undefined ? { w: lead.w } : {}), ...(lead.h !== undefined ? { h: lead.h } : {}), squeeze: true });
       const { w, h } = footprintSize(member);

@@ -702,8 +702,13 @@ export function planGroup(state: DropView, tokens: readonly DropToken[], dx: num
   return { moves, stop: null, held };
 }
 
-/** The room a walk's walkers are read in: its build, where it has them its tokens, which hold their holders, and the distance rules a drag's reach reads. */
-type WalkersState = BuildState & { tokens?: Readonly<Record<string, Token | undefined>>; meta?: { settings: DistanceSettings } };
+/**
+ * The room a walk's walkers are read in: its build, where it has them its
+ * tokens, which hold their holders, the distance rules a drag's reach
+ * reads, and who every player sees, which decides whose seats on the lead
+ * that reach reads (route.ts fileOutOfReach).
+ */
+type WalkersState = BuildState & { tokens?: Readonly<Record<string, Token | undefined>>; meta?: { settings: DistanceSettings }; seen?: SeenByAll };
 
 /**
  * The walks of the creatures a holder drags beside it along the holder's
@@ -776,11 +781,22 @@ function followersOf(state: WalkersState, lead: Walker, points: readonly RoutePo
         for (const [k, w] of linked.entries()) if (file.has(w.id)) there.set(w.id, follows[k]!.spot(points[i]!, squeezedAt(i, to), i));
         const inFile = new Map([...file.keys()].flatMap((id) => (there.has(id) ? [[id, there.get(id)!] as const] : [])));
         const end = points[i]!;
-        if (fileOutOfReach(g, state.meta.settings, { ...lead, id: named.id ?? "" }, { x: end.x, y: end.y, elevation: end.elevation }, memberOf, inFile) !== null) return { blocker: "wall" as const, door: null };
+        if (fileOutOfReach(g, state.meta.settings, { ...lead, id: named.id ?? "" }, { x: end.x, y: end.y, elevation: end.elevation }, memberOf, inFile, ridersSeen(state, named)) !== null) return { blocker: "wall" as const, door: null };
       }
       return null;
     },
   };
+}
+
+/** The tokens sitting on the lead that every player sees, as the move seats them before the rest (route.ts fileOutOfReach). */
+function ridersSeen(state: WalkersState, lead: Walker & { id?: string }): Token[] {
+  const seen = state.seen;
+  const holder = lead.id !== undefined ? state.tokens?.[lead.id] : undefined;
+  if (!seen || !state.tokens || !holder || !seen(holder)) return [];
+  return Object.values(state.tokens).flatMap((t) => {
+    const link = t?.attached;
+    return t && link && link.to === holder.id && onHolder(link.kind) && seen(t) ? [t] : [];
+  });
 }
 
 /**

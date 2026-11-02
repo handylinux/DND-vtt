@@ -1615,7 +1615,12 @@ function draggedWalls(c: Check, op: Op): Decision {
   const filed = walks.filter((m) => m.file === true && m.pass === "public" && c.state.tokens[m.tokenId]?.attached?.kind === "drag");
   const lead = walks.find((m) => m.tokenId === first);
   if (filed.length === 0 || !lead) return OK;
-  const far = fileOutOfReach(gridOfToken(c.state, token), c.state.meta.settings, token, lead.to, (id) => c.state.tokens[id], new Map(filed.map((m) => [m.tokenId, m.to])));
+  // Those sitting on the lead that every player sees, as the move seats them first (route.ts fileOutOfReach, review FU45BR-OPUS-10).
+  const riders = walks.flatMap((m) => {
+    const rider = c.state.tokens[m.tokenId];
+    return m.carriedBy === first && m.pass === "public" && rider?.attached && onHolder(rider.attached.kind) ? [rider] : [];
+  });
+  const far = fileOutOfReach(gridOfToken(c.state, token), c.state.meta.settings, token, lead.to, (id) => c.state.tokens[id], new Map(filed.map((m) => [m.tokenId, m.to])), riders);
   const left = far !== null ? c.state.tokens[far] : undefined;
   return left ? refuse("forbidden", `${shownName(left)} can't follow through there.`) : OK;
 }
