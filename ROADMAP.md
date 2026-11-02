@@ -26,6 +26,10 @@ are the ones [mvp.md](docs/design/mvp.md) lists today:
 - Ambient music and sound effects, kept in sync for everyone.
 - An in-game calendar and time of day.
 
+**Offer a desktop app.** A download for Windows, macOS and Linux that runs
+the server on the DM's own computer, so players on the same network join in
+their browsers with nothing to host. Everyone still plays in a web browser.
+
 **Polish what is already there.** Most of the work in any month is making
 existing features easier and more reliable, from what play sessions turn
 up: the map and its tools, hex grids and the isometric view, dice, undo,
@@ -55,7 +59,8 @@ gives the full reasons.
   character can link to its sheet there instead.
 - **Macros, scripting or a plugin system.** Features are built into the app
   instead, so every room works the same way.
-- **Native apps.** The installable web app covers phones and tablets.
+- **Native phone and tablet apps.** The installable web app covers phones and
+  tablets.
 - **Monsters and art from outside the SRD.** The official sourcebooks are
   not openly licensed, so there is no legitimate source to ship them from.
   The custom monster editor covers monsters from books a group owns.
