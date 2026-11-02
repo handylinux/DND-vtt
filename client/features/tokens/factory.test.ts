@@ -18,6 +18,7 @@ import {
   duplicateToken,
   firstFreeSpot,
   hasLairValues,
+  lairHelp,
   monsterToken,
   newCharacter,
   occupiedBoxes,
@@ -146,6 +147,23 @@ describe("monsters to tokens", () => {
     assert.ok("inline" in out.actor);
     assert.equal(out.actor.inline.hp.max, 1, "a typed 0 still makes a live creature");
     assert.deepEqual(out.actor.inline.legendary, { actionsMax: 3, actionsUsed: 0, resistMax: 3, resistUsed: 0 });
+  });
+
+  test("lair46: In its lair rides on the token for a block with a lair, lair actions alone included, and on no other", () => {
+    const keeper = monsterView(customMonster("keeper", { name: "Crypt Keeper", traits: [{ name: "Lair Actions", text: "On initiative count 20, the dead stir." }] }));
+    const lurker = monsterView(customMonster("lurker", { name: "Cave Lurker" }));
+    const tick = (m: Parameters<typeof monsterToken>[0], inLair: boolean) => {
+      const t = monsterToken(m, { hp: null, hidden: false, inLair }, { id: "t", sceneId: "s1", at: { x: 1, y: 1 } });
+      assert.ok("inline" in t.actor);
+      valid({ t: "token.create", token: t });
+      return t.actor.inline.inLair;
+    };
+    assert.deepEqual([tick(byId("adult-red-dragon"), true), tick(keeper, true), tick(lurker, true)], [true, true, undefined], "a block with no lair takes no tick, a line ticked before it lost its lair included");
+    assert.deepEqual([tick(byId("adult-red-dragon"), false), tick(keeper, false)], [undefined, undefined]);
+    // The place card and an encounter's line offer the box with these words, and none for a block with no lair.
+    assert.equal(lairHelp(byId("adult-red-dragon")), "Uses the lair's legendary uses and XP.");
+    assert.equal(lairHelp(keeper), "Joins a fight with In lair on, a reminder that its lair acts.");
+    assert.equal(lairHelp(lurker), null);
   });
 
   test("every one of the 330 stat blocks makes a valid token.create op", () => {

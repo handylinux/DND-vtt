@@ -42,8 +42,8 @@ export function dropPlan(input: {
 }): DropPlan {
   const occupied = occupiedBoxes(Object.values(input.state.tokens), input.scene.id);
   const tokens: TokenInput[] = [];
-  // Each token's block and its line's In lair choice, for its row in the fight.
-  const joins = new Map<string, { block: StatBlockMonster; inLair: boolean | undefined }>();
+  // Each token's block, for its row in the fight. Its line's In lair choice rides on the token (Actor.inLair).
+  const joins = new Map<string, StatBlockMonster>();
   let skipped = 0;
   // The biggest creatures take the spots nearest the middle first, so a dragon is not pushed to the edge by its kobolds.
   const lines = input.monsters
@@ -66,16 +66,13 @@ export function dropPlan(input: {
       const drop = { hp: null, hidden: input.options.hidden, inLair: line.inLair === true };
       const token = monsterToken(m, drop, { id: input.newId(), sceneId: input.scene.id, at, ...(image ? { image } : {}), ...link });
       tokens.push(placeOnGround(input.state.buildChunks ?? {}, token));
-      joins.set(token.id, { block: m, inLair: line.inLair });
+      joins.set(token.id, m);
     }
   }
   const ops: ClientOp[] = tokens.map((token) => ({ t: "token.create", token }));
   if (input.options.addToFight && input.state.encounter && tokens.length > 0) {
     // The reducer fills each row's group, hidden flag and score, as it does for tokens added from the tracker.
-    const entries: EntryInput[] = tokens.map((t) => {
-      const join = joins.get(t.id);
-      return joinEntry({ id: input.newId(), tokenId: t.id }, "inline" in t.actor ? t.actor.inline : undefined, join?.block ?? null, join?.inLair);
-    });
+    const entries: EntryInput[] = tokens.map((t) => joinEntry({ id: input.newId(), tokenId: t.id }, "inline" in t.actor ? t.actor.inline : undefined, joins.get(t.id) ?? null));
     for (let i = 0; i < entries.length; i += MAX_ENTRIES_PER_OP) ops.push({ t: "encounter.add", entries: entries.slice(i, i + MAX_ENTRIES_PER_OP) });
   }
   return { ops, skipped };
@@ -100,16 +97,17 @@ export function placedInLair(actor: Pick<Actor, "legendary" | "xp">, block: Stat
 
 /**
  * A creature's row as it joins a fight: In lair on where it stands placed
- * in its lair (`placedInLair`), so the switch says what its counts say
- * (docs/design/design-v1-combat-controls.md 13.4). Every path into a fight builds
- * its rows with this: a saved encounter's drop, and the tracker's and the
- * group bar's Start and Add (combat/state.ts useFightJoin). A saved line's
- * own choice, `inLair`, true or false, stands over the counts: a block
- * whose lair changes neither its counts nor its XP leaves nothing to tell
- * (review CCB-ASTRA-07).
+ * in its lair (docs/design/design-v1-combat-controls.md 13.4). Every path into a
+ * fight builds its rows with this: a saved encounter's drop, and the
+ * tracker's and the group bar's Start and Add (combat/state.ts
+ * useFightJoin). The token's own tick (`Actor.inLair`), from its placing
+ * or its last row's In lair, says so with no block, which a block whose
+ * lair changes neither its counts nor its XP needs (review CCB-ASTRA-07).
+ * A token placed before the tick was kept falls back on its counts
+ * (`placedInLair`), so the switch says what they say.
  */
-export function joinEntry(entry: EntryInput, actor: Pick<Actor, "legendary" | "xp"> | undefined, block: StatBlockMonster | null, inLair?: boolean): EntryInput {
-  const placed = inLair ?? (actor !== undefined && placedInLair(actor, block));
+export function joinEntry(entry: EntryInput, actor: Pick<Actor, "legendary" | "xp" | "inLair"> | undefined, block: StatBlockMonster | null): EntryInput {
+  const placed = actor !== undefined && (actor.inLair === true || placedInLair(actor, block));
   return placed ? { ...entry, inLair: true } : entry;
 }
 

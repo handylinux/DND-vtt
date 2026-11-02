@@ -6,6 +6,7 @@ import { applyOp } from "#shared/reducer.ts";
 import { loadMonsters } from "#shared/srd/monsters.ts";
 import { DM, actor, comparable, customMonster, env, imageRef, room, srdImage, token } from "#shared/testutil.ts";
 import { footprint } from "../../lib/scene.ts";
+import { fightOps } from "../tokens/groupEdit.ts";
 import { resolveLine, srdIndex } from "./draft.ts";
 import { dropPlan, joinEntry, placedInLair, sendDrop, type DropOptions } from "./drop.ts";
 
@@ -190,7 +191,7 @@ describe("a creature placed in its lair (docs/design/design-v1-combat-controls.m
     assert.equal(placedInLair({ xp: goblin.xp }, xpOnly), false);
   });
 
-  test("a saved line's In lair choice, true or false, stands over the counts, which decide only where the line holds none (CCB-ASTRA-07)", async () => {
+  test("a saved line's In lair choice, true or false, rides on its tokens, and their counts decide only for a token with no tick (CCB-ASTRA-07)", async () => {
     // A block whose lair changes neither its counts nor its XP: its counts can never tell.
     const state = setup();
     state.monsters.mon1 = customMonster("mon1", { xp: 450, xpInLair: 450 });
@@ -206,11 +207,72 @@ describe("a creature placed in its lair (docs/design/design-v1-combat-controls.m
     assert.deepEqual(rows([{ monsterId: "mon1", count: 1 }]), [false], "no choice, and counts that cannot tell");
     assert.deepEqual(rows([{ srdId: "adult-red-dragon", count: 1 }]), [false], "no choice, the base counts");
 
-    // An explicit no stands over counts that say lair, and inference speaks only where there is no choice.
+    // The token's tick says so with no block, and a token from before the tick falls back on its counts.
     const dragon = (await loadMonsters()).find((m) => m.srdId === "adult-red-dragon")!;
     const lair = { legendary: { actionsMax: 4, actionsUsed: 0, resistMax: 4, resistUsed: 0 } };
-    assert.equal(joinEntry({ id: "r", tokenId: "t" }, lair, dragon, false).inLair, undefined);
-    assert.equal(joinEntry({ id: "r", tokenId: "t" }, lair, dragon).inLair, true);
-    assert.equal(joinEntry({ id: "r", tokenId: "t" }, {}, null, true).inLair, true, "a choice needs no block");
+    const base = { legendary: { actionsMax: 3, actionsUsed: 0, resistMax: 3, resistUsed: 0 } };
+    assert.equal(joinEntry({ id: "r", tokenId: "t" }, { inLair: true }, null).inLair, true, "a tick needs no block");
+    assert.equal(joinEntry({ id: "r", tokenId: "t" }, { ...base, inLair: true }, dragon).inLair, true, "a tick stands over counts set by hand");
+    assert.equal(joinEntry({ id: "r", tokenId: "t" }, lair, dragon).inLair, true, "no tick: the lair counts say so");
+    assert.equal(joinEntry({ id: "r", tokenId: "t" }, base, dragon).inLair, undefined);
+    assert.equal(joinEntry({ id: "r", tokenId: "t" }, undefined, dragon).inLair, undefined, "no actor of its own");
+  });
+});
+
+/*
+ * LAIR-TICK-CARRY (D-261026-19): a line ticked In its lair for a block with
+ * lair actions alone reaches a fight started after the drop, as the
+ * tracker's and the group bar's Start a fight build its rows
+ * (combat/state.ts useFightJoin, groupEdit.ts fightOps), not only a drop
+ * into a running one.
+ */
+describe("lair46: a line's In its lair rides on its tokens into a fight started later", () => {
+  const keeper = () => customMonster("keeper", { name: "Crypt Keeper", traits: [{ name: "Lair Actions", text: "On initiative count 20, the dead stir." }] });
+
+  async function placed(lines: SavedEncounterMonster[], withFight: boolean) {
+    const state = setup();
+    state.monsters.keeper = keeper();
+    if (withFight) state.encounter = { rev: 0, round: 1, activeEntryId: null, entries: [] };
+    const srd = srdIndex(await loadMonsters());
+    let n = 0;
+    const resolve = (m: SavedEncounterMonster) => resolveLine(m, srd, state.monsters);
+    const p = dropPlan({ monsters: lines, resolve, state, scene: state.scenes.s1!, center: { x: 10.5, y: 10.5 }, options: { hidden: false, addToFight: true }, newId: () => `new-${n++}` });
+    const after = applyAll(state, p.ops).state;
+    const created = p.ops.flatMap((op) => (op.t === "token.create" ? [op.token.id] : []));
+    return { after, created, block: resolve(lines[0]!)!.view };
+  }
+
+  /** The tracker's Start a fight with these tokens, each row built by the rule every join shares. */
+  function startFight(state: RoomState, ids: string[], block: Parameters<typeof joinEntry>[2]): boolean[] {
+    let n = 0;
+    const tokens = ids.map((id) => state.tokens[id]!);
+    const mark = (entry: Parameters<typeof joinEntry>[0]) => {
+      const t = state.tokens[entry.tokenId!]!;
+      return joinEntry(entry, "inline" in t.actor ? t.actor.inline : undefined, block);
+    };
+    const started = applyAll(state, fightOps(tokens, null, () => `row-${n++}`, mark)).state;
+    return started.encounter!.entries.map((e) => e.inLair);
+  }
+
+  test("ticked, the tokens keep the tick and join a fight started later with In lair on, its block read or not", async () => {
+    const { after, created, block } = await placed([{ monsterId: "keeper", count: 2, inLair: true }], false);
+    assert.equal(after.encounter, null, "no fight to add to");
+    for (const id of created) assert.equal((after.tokens[id]!.actor as { inline: { inLair?: true } }).inline.inLair, true, `${id} keeps the tick`);
+    assert.deepEqual(startFight(after, created, block), [true, true]);
+    assert.deepEqual(startFight(after, created, null), [true, true], "the tick needs no block");
+  });
+
+  test("unticked, they join out of their lair", async () => {
+    const { after, created, block } = await placed([{ monsterId: "keeper", count: 1 }], false);
+    assert.equal("inLair" in (after.tokens[created[0]!]!.actor as { inline: object }).inline, false);
+    assert.deepEqual(startFight(after, created, block), [false]);
+  });
+
+  test("a tick from before its block lost its lair reaches no token and no row, dropped into a running fight included", async () => {
+    const lost = { srdId: "goblin-warrior", count: 1, inLair: true };
+    const quiet = await placed([lost], false);
+    assert.equal("inLair" in (quiet.after.tokens[quiet.created[0]!]!.actor as { inline: object }).inline, false);
+    const running = await placed([lost], true);
+    assert.deepEqual(running.after.encounter!.entries.map((e) => e.inLair), [false]);
   });
 });

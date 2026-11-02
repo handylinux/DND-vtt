@@ -199,9 +199,13 @@ export function lairState(dice: DiceView | null, failed: boolean, target: ActorT
 /** Whether a join can read its creatures' lairs now (useFightJoin): read, its blocks loading, or a block that did not load. */
 export type JoinState = "ready" | "loading" | "failed";
 
-/** A creature that may stand placed in its lair: one with legendary counts, which its block's lair counts are told apart by. */
+/**
+ * A creature whose block must be read to say whether it stands placed in
+ * its lair: one with legendary counts, which its block's lair counts are
+ * told apart by, and no lair tick of its own, which says so without one.
+ */
 function lairCandidate(token: Token): boolean {
-  return "inline" in token.actor && token.actor.inline.legendary !== undefined;
+  return "inline" in token.actor && token.actor.inline.legendary !== undefined && token.actor.inline.inLair !== true;
 }
 
 /**

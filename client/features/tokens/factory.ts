@@ -72,6 +72,10 @@ export type MonsterDrop = {
  * `monsterId` links a room monster's token to the stat block it came from,
  * as an SRD monster's keeps its `srdId`, so the DM reads the full block on
  * the token (docs/design/design-v1-dm-tools.md 3.6).
+ *
+ * In its lair reaches the token only for a block with a lair: a saved line
+ * ticked before its block lost its lair places a creature its row's switch
+ * would never offer In lair for.
  */
 export function monsterToken(
   m: StatBlockMonster,
@@ -79,7 +83,7 @@ export function monsterToken(
   input: { id: string; sceneId: string; at: Point; image?: ImageRef; monsterId?: string },
 ): TokenInput {
   const hp = drop.hp === null ? undefined : Math.max(1, Math.min(100_000, Math.floor(drop.hp)));
-  const actor = monsterActor(m, { ...(hp !== undefined ? { hp } : {}), inLair: drop.inLair });
+  const actor = monsterActor(m, { ...(hp !== undefined ? { hp } : {}), inLair: drop.inLair && blockHasLair(m) });
   if (input.monsterId !== undefined) actor.monsterId = input.monsterId;
   const token: TokenInput = {
     id: input.id,
@@ -98,14 +102,7 @@ export function monsterToken(
   return token;
 }
 
-/**
- * Whether the stat block has different numbers in its lair. The Monsters
- * place card and a saved encounter's line offer In its lair only then: a
- * token keeps its counts and XP and nothing else of the choice, so for a
- * block whose lair changes neither, the tick would reach no fight
- * (encounters/drop.ts placedInLair). A line's own tick reaches one only on
- * a drop into a running fight, too narrow to offer the box for.
- */
+/** Whether the stat block has different numbers in its lair: lair counts or lair XP. */
 export function hasLairValues(m: StatBlockMonster): boolean {
   return m.xpInLair !== undefined || m.legendaryActions?.usesInLair !== undefined || m.legendaryResistance?.usesInLair !== undefined;
 }
@@ -115,11 +112,23 @@ const LAIR_ACTIONS = /^(?:\*\*)?Lair Actions\b/im;
 
 /**
  * Whether a stat block has a lair: lair counts or XP (hasLairValues), or
- * lair actions. A tracker row and the Monsters filter's Has a lair both
- * read it, so a block with lair actions alone has a lair on each.
+ * lair actions. A tracker row, the Monsters filter's Has a lair, the
+ * Monsters place card and a saved encounter's line all read it, so a block
+ * with lair actions alone has a lair on each.
  */
 export function blockHasLair(m: StatBlockMonster): boolean {
   return hasLairValues(m) || LAIR_ACTIONS.test(m.statBlock);
+}
+
+/**
+ * The help under In its lair on the Monsters place card and a saved
+ * encounter's line, or null for a block with no lair. The token keeps the
+ * tick (`Actor.inLair`), so a block with lair actions alone joins a fight
+ * with In lair on however it joins, which its counts alone could not say.
+ */
+export function lairHelp(m: StatBlockMonster): string | null {
+  if (hasLairValues(m)) return "Uses the lair's legendary uses and XP.";
+  return blockHasLair(m) ? "Joins a fight with In lair on, a reminder that its lair acts." : null;
 }
 
 /** A token that points at a character, so HP and conditions follow the PC across scenes (design section 6). */

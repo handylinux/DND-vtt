@@ -19,7 +19,7 @@ import { MonsterEditor } from "../monsters/MonsterEditor.tsx";
 import { MonsterImageSection } from "../monsters/MonsterImage.tsx";
 import { MonsterList, RoomBadge, type Listed } from "../monsters/MonsterList.tsx";
 import { SrdCredit, StatBlockView, useSrdMonsters } from "../monsters/StatBlockView.tsx";
-import { hasLairValues } from "./factory.ts";
+import { lairHelp } from "./factory.ts";
 import { useMonsterFilters } from "./filterState.ts";
 import { MonsterFilterBar } from "./MonsterFilters.tsx";
 import { monsterMatcher } from "./monsterSearch.ts";
@@ -160,8 +160,8 @@ function MonsterDetail(props: {
   const [inLair, setInLair] = useState(false);
   // Only Place sends the choices, so a sheet's swipe springs back once any changed (docs/design/design-v1-sheet-swipe.md 4.5).
   useUnsavedSince({ count, typedHp, useTyped, hidden, inLair });
-  // Not blockHasLair: a token keeps only its counts and XP of the tick, so lair actions alone would reach no fight (factory.ts hasLairValues).
-  const lair = hasLairValues(m);
+  // Null for a block with no lair, which offers no box (factory.ts lairHelp).
+  const lair = lairHelp(m);
   const srdImage = useRoomView((s) => (listed.source === "srd" ? s.view?.srdImages?.[listed.srd.srdId]?.image : undefined));
   const image = listed.source === "room" ? listed.monster.defaultImage : srdImage;
   const target = useMemo<MonsterRef>(() => (listed.source === "room" ? { monsterId: listed.monster.id } : { srdId: listed.srd.srdId }), [listed]);
@@ -175,7 +175,7 @@ function MonsterDetail(props: {
 
   const place = () => {
     const source = listed.source === "room" ? { monsterId: listed.monster.id } : {};
-    setPending(scope, { kind: "monster", monster: m, ...source, count, hp: useTyped ? typedHp : null, hidden, inLair: lair && inLair });
+    setPending(scope, { kind: "monster", monster: m, ...source, count, hp: useTyped ? typedHp : null, hidden, inLair: lair !== null && inLair });
     ui.setTool(PLACE_TOOL_ID);
     props.close({ placing: true });
   };
@@ -212,7 +212,7 @@ function MonsterDetail(props: {
           </FieldRow>
         ) : null}
         <Checkbox checked={hidden} onChange={setHidden} label="Hidden from players" help="Reveal it later from its token." />
-        {lair ? <Checkbox checked={inLair} onChange={setInLair} label="In its lair" help="Uses the lair's legendary uses and XP." /> : null}
+        {lair !== null ? <Checkbox checked={inLair} onChange={setInLair} label="In its lair" help={lair} /> : null}
         <Button variant="primary" size="sm" onClick={place} disabled={useTyped && typedHp === null}>
           {count === 1 ? "Place on the map" : `Place ${count} on the map`}
         </Button>

@@ -6,11 +6,11 @@ import { monsterView } from "#shared/statBlock.ts";
 import { customMonster } from "#shared/testutil.ts";
 
 /*
- * A saved encounter's line offers In its lair where its block has lair
- * counts or XP (tokens/factory.ts hasLairValues), as the Monsters place card
- * does, since outside a drop into a running fight the tick reaches a token's
- * counts and XP and nothing else. A line already in its lair keeps the box,
- * so it can be taken out (D-261026-19).
+ * A saved encounter's line offers In its lair where its block has a lair
+ * (tokens/factory.ts lairHelp), lair actions alone included, as the
+ * Monsters place card does, since the token keeps the tick and a fight
+ * started later reads it (LAIR-TICK-CARRY, D-261026-19). A line already in
+ * its lair keeps the box, so it can be taken out.
  */
 
 const { createElement } = await import("react");
@@ -27,9 +27,16 @@ function line(view: ReturnType<typeof monsterView>, inLair = false): string {
   return renderToStaticMarkup(createElement(MonsterLine, { line: saved, view, loading: false, room: true, maxCount: 20, onCount: () => {}, onLair: () => {}, onRemove: () => {} }));
 }
 
-describe("an encounter's line offers In its lair where its block has lair numbers, as the place card does (FU33-O1)", () => {
-  test("lair actions alone, as a heading's text or a named entry, offer none", () => {
-    for (const view of [keeper, warden]) assert.ok(!line(view).includes("In its lair"), `${view.name}: In its lair`);
+describe("an encounter's line offers In its lair where its block has a lair, as the place card does (FU33-O1, LAIR-TICK-CARRY)", () => {
+  test("lair46: lair actions alone, as a heading's text or a named entry, offer it, saying it joins a fight with In lair on", () => {
+    for (const view of [keeper, warden]) {
+      for (const ticked of [false, true]) {
+        const html = line(view, ticked);
+        assert.ok(html.includes("In its lair"), `${view.name}: In its lair`);
+        assert.ok(html.includes("Joins a fight with In lair on, a reminder that its lair acts."), `${view.name}: the help`);
+        assert.ok(!html.includes("running fight") && !html.includes("changes nothing"), `${view.name}: no older words`);
+      }
+    }
   });
 
   test("lair counts or XP offer it with the lair's numbers in its help", () => {
@@ -38,17 +45,8 @@ describe("an encounter's line offers In its lair where its block has lair number
     assert.ok(html.includes("Uses the lair&#x27;s legendary uses and XP."));
   });
 
-  test("a block with no lair offers none either", () => {
+  test("a block with no lair offers none, and a line ticked before it lost its lair keeps the box that takes it out", () => {
     assert.ok(!line(lurker).includes("In its lair"));
-  });
-
-  test("FU33-O7: a lair-actions-only line already ticked describes its running-fight reminder", () => {
-    for (const view of [keeper, warden]) {
-      const html = line(view, true);
-      assert.ok(html.includes("In its lair"), `${view.name}: no In its lair`);
-      assert.ok(html.includes("Joins a running fight with In lair on when Add to fight is on."), `${view.name}: the help`);
-      assert.ok(!html.includes("changes nothing"));
-    }
     assert.ok(line(lurker, true).includes("Its stat block changes nothing in its lair."));
   });
 });

@@ -22,7 +22,7 @@ import { viewOf } from "../monsters/draft.ts";
 import { currentStageCamera } from "../scenes/stageCamera.ts";
 import type { Point } from "../tokens/factory.ts";
 import { PLACE_TOOL_ID, setPending } from "../tokens/placement.ts";
-import { blockHasLair, hasLairValues } from "../tokens/factory.ts";
+import { lairHelp } from "../tokens/factory.ts";
 import { useMonsterFilters } from "../tokens/filterState.ts";
 import { filterCount } from "../tokens/monsterFilters.ts";
 import { MonsterFilterBar } from "../tokens/MonsterFilters.tsx";
@@ -362,7 +362,7 @@ function PlaceSection(props: { draft: Draft; srd: SrdList; close: PanelClose }) 
   );
 }
 
-/** A saved encounter's line: its monster, how many, Remove, and In its lair where its block has lair counts or XP, or the line is already in it. */
+/** A saved encounter's line: its monster, how many, Remove, and In its lair where its block has a lair, or the line is already in it. */
 export function MonsterLine(props: {
   line: SavedEncounterMonster;
   view: StatBlockMonster | null;
@@ -375,6 +375,7 @@ export function MonsterLine(props: {
 }) {
   const { line, view } = props;
   const name = view ? view.name : props.loading ? "Loading…" : "A monster deleted from this room";
+  const lair = view ? lairHelp(view) : null;
   return (
     <div
       style={{
@@ -402,9 +403,9 @@ export function MonsterLine(props: {
           Remove
         </Button>
       </div>
-      {/* As on the Monsters place card, not for lair actions alone: outside a drop into a running fight, the tick reaches a token's counts and XP and nothing else (factory.ts hasLairValues). One already in its lair keeps the box that takes it out. */}
-      {view && (hasLairValues(view) || line.inLair === true) ? (
-        <Checkbox checked={line.inLair === true} onChange={props.onLair} label="In its lair" help={hasLairValues(view) ? "Uses the lair's legendary uses and XP." : blockHasLair(view) ? "Joins a running fight with In lair on when Add to fight is on." : "Its stat block changes nothing in its lair."} />
+      {/* As on the Monsters place card (factory.ts lairHelp). A line ticked before its block lost its lair keeps the box that takes it out, and its tick reaches no token (factory.ts monsterToken). */}
+      {view && (lair !== null || line.inLair === true) ? (
+        <Checkbox checked={line.inLair === true} onChange={props.onLair} label="In its lair" help={lair ?? "Its stat block changes nothing in its lair."} />
       ) : null}
     </div>
   );

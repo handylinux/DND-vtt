@@ -46,6 +46,9 @@ function table(): RoomState {
   state.tokens.keeper = token("keeper", { name: "Crypt Keeper", x: 26, y: 2, actor: { inline: actor({ monsterId: "keeper" }) } });
   state.tokens.warden = token("warden", { name: "Bog Warden", x: 34, y: 2, actor: { inline: actor({ monsterId: "warden" }) } });
   state.tokens.plain = token("plain", { name: "Cave Lurker", x: 30, y: 2, actor: { inline: actor({ monsterId: "plain" }) } });
+  // Placed in their lair since the tick was kept (Actor.inLair): a dragon at counts set back by hand, and a block with lair actions alone.
+  state.tokens.ticked = token("ticked", { name: "Ticked Dragon", size: "huge", x: 2, y: 8, actor: { inline: actor({ srdId: "adult-red-dragon", legendary: BASE, inLair: true }) } });
+  state.tokens.keeperIn = token("keeperIn", { name: "Crypt Keeper 2", x: 26, y: 8, actor: { inline: actor({ monsterId: "keeper", inLair: true }) } });
   return state;
 }
 
@@ -132,6 +135,17 @@ describe("whether a join or In lair can read its creature's lair (CCB-ASTRA-04, 
     assert.match(lairSwitch(state, "lair") ?? "", /aria-busy="true"/);
     assert.match(lairSwitch(state, "troll") ?? "", /aria-busy="true"/, "only its block can say a troll has no lair");
     assert.equal(lairSwitch(state, "ogre"), null, "a creature with no block has no lair to be in");
+  });
+
+  test("lair46: before the blocks load, a creature with the lair tick holds no join busy and joins with In lair on", () => {
+    assert.equal(loadedMonsters(), null, "this case runs before the SRD loads");
+    const state = table();
+    const t = (id: string) => state.tokens[id] as Token;
+    assert.equal(joinState(diceOf(state, null), false, [t("ticked")]), "ready", "its tick says so with no block");
+    assert.equal(joinState(diceOf(state, null), false, [t("ticked"), t("lair")]), "loading", "the untouched dragon still waits");
+    const read = joined(state, ["ticked", "keeperIn", "keeper"]);
+    assert.equal(read.state, "ready");
+    assert.deepEqual(read.rows.map((r) => [r.tokenId, r.inLair ?? false]), [["ticked", true], ["keeperIn", true], ["keeper", false]]);
   });
 
   test("once read: the dragon placed in its lair joins with In lair on, the one at its base counts and the goblin without", async () => {
