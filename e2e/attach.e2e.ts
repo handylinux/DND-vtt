@@ -9,7 +9,7 @@ import type { RoomState, Token } from "../shared/model.ts";
 import { occupiedHexes, placedOnHex } from "../shared/rules/footprint.ts";
 import { hexCenter, hexKey, type Hex, type HexGrid } from "../shared/rules/hex.ts";
 import { wallsRound } from "../shared/rules/hexWalls.testkit.ts";
-import { barControl, ConsoleWatch, dragCells, dragWorld, expandBar, OpSocket, pagePoint, Shots, SocketWatch, startServer, tapCell, touchSwipe, waitFor, type Server } from "./harness.ts";
+import { barControl, ConsoleWatch, dragCells, dragWorld, expandBar, OpSocket, openSideTab, pagePoint, pickOption, pickTool, Shots, SocketWatch, startServer, tapCell, touchSwipe, waitFor, type Server } from "./harness.ts";
 
 /**
  * Attached tokens end to end (docs/design/design-v1-attach.md 13), on the real
@@ -1158,6 +1158,118 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
     await ops.send({ t: "room.setPlayerScene", sceneId: run.sceneId });
     await waitFor("Pat back on the party's scene", () => ((patSocket.state as RoomState | null)?.meta.playerSceneId === run.sceneId ? true : null));
     for (const id of [keep.gob, keep.brom, keep.horse]) await ops.send({ t: "token.delete", tokenId: id });
+    await ops.send({ t: "scene.delete", sceneId: keep.scene });
+  });
+
+  /** Opens a scene on the DM's desktop from the Scenes panel, and waits for the DM's copy to hold it. */
+  async function dmViews(sceneId: string): Promise<void> {
+    const name = dmSocket.state!.scenes[sceneId]!.name;
+    await openSideTab(dm, "Scenes");
+    await dm.getByRole("button", { name: new RegExp(`^${name}`) }).first().click();
+    await waitFor(`the DM on ${name}`, () => dmSocket.you?.sceneId === sceneId || null, 30_000);
+    await dm.keyboard.press("Escape");
+  }
+
+  /*
+   * Lane 46C's steps (drag46-), two movement bugs guide pass 6 found. A
+   * rider's drag picks its mount's stand by walls alone, so where the box
+   * at the finger's offset lies across the edge of a rise the mount goes as
+   * that box goes: the DM's drop lands it across the edge and a player's
+   * walk is held at the ledge with its note (RIDER-DRAG-LEDGE,
+   * D-261101-470). The straight walk's own route names its squeeze at the
+   * steps that paid for it, so a walking ruler with no way found never names
+   * difficult terrain on plain stone (RULER-DIFFICULT-WORDS, D-261101-471).
+   */
+  test("drag46-1. the DM drags Brom, riding the warhorse, so its box lies across the edge of a rise 10 ft up: it lands there, 10 ft up, as a drag of the warhorse does, and Pat's same drag holds at the ledge and says so", async () => {
+    if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
+    const field = { w: 20, h: 12 };
+    const keep = { scene: randomUUID(), horse: randomUUID(), brom: randomUUID() };
+    await ops.send({ t: "scene.create", scene: { id: keep.scene, name: "Drag46 rise", bounds: field, fogEnabled: false } });
+    await waitFor("the rise's scene in the DM's copy", () => dmSocket.state?.scenes[keep.scene] ?? null);
+    // The DM's copy holds the build of the scene in view, so the DM opens it before its ground goes up.
+    await dmViews(keep.scene);
+    await ops.send({ t: "scene.update", sceneId: keep.scene, patch: { blockMovement: true } });
+    // Every square from x 10 east is 10 ft up.
+    await ops.send({ t: "build.height", sceneId: keep.scene, cells: Array.from({ length: 10 * field.h }, (_, k) => `${10 + (k % 10)},${Math.floor(k / 10)}`), height: 10 });
+    const at = { x: 3, y: 5 };
+    const seat = { x: 3, y: 6 };
+    await ops.send({ t: "token.create", token: { id: keep.horse, sceneId: keep.scene, kind: "npc", name: "Warhorse", size: "large", ...at, disposition: "ally", visibility: "all", ownerIds: [run.patId], actor: { inline: actor({ speeds: { walk: 60 } }) } } });
+    await ops.send({ t: "token.create", token: { id: keep.brom, sceneId: keep.scene, kind: "pc", name: "Brom", size: "medium", ...seat, disposition: "ally", visibility: "all", ownerIds: [run.patId], actor: { inline: actor() } } });
+    await ops.send({ t: "token.attach", tokenId: keep.brom, to: keep.horse, kind: "ride", steer: true, ...seat, elevation: 0 });
+    await waitFor("Brom riding in the DM's copy", () => (token(dmSocket, keep.brom)?.attached ? true : null));
+    await waitFor("the rise in the DM's copy", () => (Object.values(dmSocket.state?.buildChunks ?? {}).some((c) => c?.sceneId === keep.scene && c.heights) ? true : null));
+    await dm.getByRole("button", { name: "Fit the map to the screen" }).click();
+    // Brom's middle a square short of the rise, so the warhorse's box at his offset reaches a square onto it.
+    await dragWorld(dm, field, { x: seat.x + 0.5, y: seat.y + 0.5 }, { x: 9.5, y: 6.5 });
+    const across = await waitFor("the warhorse moved", () => {
+      const t = token(dmSocket, keep.horse);
+      return t && t.x !== at.x ? t : null;
+    });
+    assert.deepEqual([across.x, across.y, across.elevation], [9, 5, 10], "across the rise's edge, 10 ft up, where its box snaps");
+    assert.deepEqual([token(dmSocket, keep.brom)?.x, token(dmSocket, keep.brom)?.y, token(dmSocket, keep.brom)?.attached?.to], [9, 6, keep.horse], "Brom on his seat, under the finger");
+    await shots.take(dm, "drag46-dm-rider-across-the-rise");
+    // Pat's walk from the same place is held at the ledge, a square short, and the note says why.
+    await ops.send({ t: "token.move", tokenId: keep.horse, ...at, elevation: 0 });
+    await waitFor("the warhorse back", () => (token(dmSocket, keep.horse)?.x === at.x && token(dmSocket, keep.brom)?.x === seat.x ? true : null));
+    await ops.send({ t: "room.setPlayerScene", sceneId: keep.scene });
+    await waitFor("Brom riding in Pat's copy", () => (token(patSocket, keep.brom)?.attached && token(patSocket, keep.horse)?.x === at.x ? true : null));
+    await waitFor("the rise in Pat's copy", () => (Object.values((patSocket.state as RoomState | null)?.buildChunks ?? {}).some((c) => c?.sceneId === keep.scene && c.heights) ? true : null));
+    await pat.locator(".konvajs-content").first().waitFor();
+    await touchSwipe(patCdp, await pagePoint(pat, field, { x: seat.x + 0.5, y: seat.y + 0.5 }), await pagePoint(pat, field, { x: 9.5, y: 6.5 }), { steps: 16, everyMs: 20 });
+    const note = pat.getByRole("status").filter({ hasText: /Ledge in the way/ });
+    await note.first().waitFor();
+    assert.equal((await note.first().innerText()).split("\n")[0], "Ledge in the way. No stairs you have seen lead there.");
+    const held = await waitFor("the warhorse held at the ledge", () => {
+      const t = token(patSocket, keep.horse);
+      return t && t.x !== at.x ? t : null;
+    });
+    assert.deepEqual([held.x, held.y, held.elevation], [8, 5, 0], "a square short of the rise, on the low ground");
+    await shots.take(pat, "drag46-pat-rider-held-at-the-ledge");
+    await ops.send({ t: "room.setPlayerScene", sceneId: run.sceneId });
+    await waitFor("Pat back on the party's scene", () => ((patSocket.state as RoomState | null)?.meta.playerSceneId === run.sceneId ? true : null));
+    await dmViews(run.sceneId);
+    for (const id of [keep.brom, keep.horse]) await ops.send({ t: "token.delete", tokenId: id });
+    await ops.send({ t: "scene.delete", sceneId: keep.scene });
+  });
+
+  test("drag46-2. the DM's walking ruler from the warhorse, which drags a goblin, into a corridor one square wide of plain stone finds no way through and names only squeezing", async () => {
+    if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
+    const field = { w: 28, h: 14 };
+    const keep = { scene: randomUUID(), horse: randomUUID(), thorn: randomUUID(), gob: randomUUID() };
+    await ops.send({ t: "scene.create", scene: { id: keep.scene, name: "Drag46 narrow way", bounds: field, fogEnabled: false, blockMovement: true } });
+    await waitFor("the narrow way in the DM's copy", () => dmSocket.state?.scenes[keep.scene] ?? null);
+    await dmViews(keep.scene);
+    // Guide pass 6's Narrow way: a hall, a corridor one square wide along row 4 and one two wide along rows 8 and 9, and a far room, walled by the build.
+    for (const [x, y, w, h, terrain] of [[1, 1, 9, 12, "stone"], [10, 4, 10, 1, "stone"], [10, 8, 10, 2, "stone"], [20, 1, 7, 12, "wood"]] as const) await ops.send({ t: "build.rect", sceneId: keep.scene, terrain, x, y, w, h });
+    await ops.send({ t: "token.create", token: { id: keep.horse, sceneId: keep.scene, kind: "npc", name: "Warhorse", size: "large", x: 6, y: 3, disposition: "ally", visibility: "all", actor: { inline: actor({ speeds: { walk: 60 } }) } } });
+    await ops.send({ t: "token.create", token: { id: keep.thorn, sceneId: keep.scene, kind: "npc", name: "Rider", size: "medium", x: 7, y: 3, disposition: "ally", visibility: "all", actor: { inline: actor() } } });
+    await ops.send({ t: "token.attach", tokenId: keep.thorn, to: keep.horse, kind: "ride", steer: true, x: 7, y: 3, elevation: 0 });
+    await ops.send({ t: "token.create", token: { id: keep.gob, sceneId: keep.scene, kind: "monster", name: "Goblin", size: "small", x: 5, y: 4, disposition: "hostile", visibility: "all", actor: { inline: actor() } } });
+    await ops.send({ t: "token.attach", tokenId: keep.gob, to: keep.horse, kind: "drag", x: 5, y: 4, elevation: 0 });
+    await waitFor("the rider and the goblin in the DM's copy", () => (token(dmSocket, keep.thorn)?.attached && token(dmSocket, keep.gob)?.attached ? true : null));
+    // The walls follow the painted ground, so the far room's last square in the DM's copy means they stand.
+    await waitFor("the narrow way's ground in the DM's copy", () => (Object.values(dmSocket.state?.buildChunks ?? {}).some((c) => c?.sceneId === keep.scene && c.cells["26,12"] === "wood") ? true : null));
+    await dm.getByRole("button", { name: "Fit the map to the screen" }).click();
+    await pickTool(dm, "Ruler");
+    await pickOption(dm, "Ruler", "Measure", "Walking");
+    const from = await pagePoint(dm, field, { x: 7, y: 4 });
+    const to = await pagePoint(dm, field, { x: 15.5, y: 4.5 });
+    await dm.mouse.move(from.x, from.y);
+    await dm.mouse.down();
+    for (let i = 1; i <= 16; i++) await dm.mouse.move(from.x + ((to.x - from.x) * i) / 16, from.y + ((to.y - from.y) * i) / 16);
+    await dm.mouse.up();
+    const line = dm.getByRole("toolbar", { name: "Ruler options" }).locator("[data-options-line]");
+    const text = await waitFor("the walking reading", async () => {
+      const t = await line.innerText();
+      return /No way through/.test(t) ? t : null;
+    });
+    assert.match(text, /^Walking 65 ft · \+20 ft for squeezing · No way through/, "the straight walk, no difficult terrain on plain stone");
+    await shots.take(dm, "drag46-ruler-no-way-through-squeezing");
+    await pickOption(dm, "Ruler", "Measure", "Straight");
+    await dm.keyboard.press("Escape");
+    await pickTool(dm, "Select");
+    await dmViews(run.sceneId);
+    for (const id of [keep.gob, keep.thorn, keep.horse]) await ops.send({ t: "token.delete", tokenId: id });
     await ops.send({ t: "scene.delete", sceneId: keep.scene });
   });
 });
