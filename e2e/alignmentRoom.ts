@@ -6828,8 +6828,8 @@ export function undoSaveAlignmentTests(names: readonly string[]): void {
           await askAgain.click();
           await host.getByText("Asking again…", { exact: true }).waitFor();
           await state(host, "undo-b-pending", ["Roll saves again"]);
-          // A failing answer: a passed save would add a Saved line under the row's damage, a slip the sweep reads only in part (UNDOB-FIN-1).
-          await answer(again.id, 3);
+          // A passing answer against the door's DC 13, so the row shows its Saved line under the damage, which the centering check reads through its display: contents box (UNDOB-FIN-1).
+          await answer(again.id, 20);
           release();
           await host.getByText(/The roll request changed\. Check its answers and ask again\.$/).waitFor();
           await state(host, "undo-b-refusal", ["Ask again", "Roll saves again"]);
