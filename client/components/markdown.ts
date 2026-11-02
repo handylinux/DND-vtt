@@ -106,7 +106,10 @@ function guideHref(raw: string): string | null {
  * A heading's anchor as GitHub spells it, so a link to a section works on
  * GitHub and in the app alike: lower case, punctuation dropped, spaces
  * turned to hyphens. A second heading with the same text gets "-1", a
- * third "-2". `seen` counts the anchors so far on the page.
+ * third "-2", passing over any anchor the page already has, so "Areas",
+ * "Areas" and "Areas-1" are areas, areas-1 and areas-1-1, as GitHub's
+ * slugger numbers them. `seen` holds the anchors so far on the page, each
+ * with how many times its text has repeated.
  */
 export function headingSlug(text: string, seen: Map<string, number>): string {
   const base = text
@@ -114,9 +117,14 @@ export function headingSlug(text: string, seen: Map<string, number>): string {
     .toLowerCase()
     .replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, "")
     .replace(/ /g, "-");
-  const n = seen.get(base) ?? 0;
-  seen.set(base, n + 1);
-  return n === 0 ? base : `${base}-${n}`;
+  let slug = base;
+  while (seen.has(slug)) {
+    const n = (seen.get(base) ?? 0) + 1;
+    seen.set(base, n);
+    slug = `${base}-${n}`;
+  }
+  seen.set(slug, 0);
+  return slug;
 }
 
 /** An address a link may open: https, with a host, as the browser itself reads it. Null for anything else. */

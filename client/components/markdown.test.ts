@@ -184,6 +184,12 @@ describe("the DM guide's Markdown (docs/dm-guide.md)", () => {
     assert.equal(headingSlug("Map phases, imports and exports", new Map()), "map-phases-imports-and-exports");
   });
 
+  test("a repeated heading's number passes over an id the page already has, as GitHub's slugger does", () => {
+    const ids = (text: string) => parseMarkdown(text, guide).map((b) => b.kind === "heading" && b.id);
+    assert.deepEqual(ids("## Areas\n## Areas\n## Areas-1"), ["areas", "areas-1", "areas-1-1"]);
+    assert.deepEqual(ids("## Areas 1\n## Areas\n## Areas"), ["areas-1", "areas", "areas-2"]);
+  });
+
   test("the journal and the stat blocks keep headings without ids", () => {
     const [journalHeading] = parseMarkdown("## Areas", { journal: true });
     const [srdHeading] = parseMarkdown("## Areas");
