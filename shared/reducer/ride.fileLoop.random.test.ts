@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { heights, wall } from "../discoveryTestutil.ts";
-import type { RoomState, Token } from "../model.ts";
+import type { RoomState, Token, Viewer } from "../model.ts";
 import { canApply } from "../permissions.ts";
+import { projectState, stableStringify } from "../project.ts";
 import type { Op, OpOf } from "../protocol.ts";
 import { applyOp } from "../reducer.ts";
 import { movementRules } from "../ruleHooks.ts";
@@ -11,7 +12,7 @@ import { linkHolds, onHolder } from "../rules/attach.ts";
 import { SQUARES } from "../rules/grid.ts";
 import { planWalks, walkedIn } from "../rules/moveLeg.ts";
 import { planTrapMove, trapLandings, trapWalks } from "../rules/traps.ts";
-import { chance, env, int, member, P1, pick, rng, room, scene, token, trap } from "../testutil.ts";
+import { chance, env, int, member, P1, P2, pick, rng, room, scene, token, trap } from "../testutil.ts";
 
 /**
  * Random walks in single file aimed at one class of case (review
@@ -34,6 +35,10 @@ import { chance, env, int, member, P1, pick, rng, room, scene, token, trap } fro
  * square off its grid, dragged by a creature they may not see (review
  * FU45BR-OPUS-12), a Tiny one carried or perched in the middle of a chain,
  * and a goblin riding a Large horse, each holder hidden on most seeds.
+ * Each case with a creature players cannot see is also played in two
+ * fogged rooms, the second with short walls no player sees near the hidden
+ * walks, and every player's copy and the undo mark must match
+ * (`pairedTwin`, review FU45B-ASTRA-12).
  */
 
 /** A corridor one square wide along row 6, from x 6 to 14, its mouth to the west. */
@@ -134,14 +139,78 @@ function linksKept(before: RoomState, landed: ReadonlyMap<string, { x: number; y
  * Whether every seat holds after the move, seen or not: what is carried,
  * perched or rides keeps its seat on a walk, a cut too, since a holder
  * players cannot see that seats one they see walks at its step and a cut
- * keeps its walk (traps.ts seatsOfSeen, review FU45B-ASTRA-11).
+ * keeps its walk, stopped where the seat holds (traps.ts seatsOfSeen and
+ * seatingWalk, review FU45B-ASTRA-11). The one exception: one every player
+ * sees, on a holder they cannot see, that a trap's cut lands where the stop
+ * judged it, where no spot of the holder's own walk seats it, lets go
+ * (D-261101-403, review FU45B-ASTRA-12). `landed` is where the trap step
+ * leaves each token.
  */
-function seatsKept(before: RoomState, after: RoomState, at: string): void {
+function seatsKept(before: RoomState, landed: ReadonlyMap<string, unknown>, after: RoomState, at: string): void {
   for (const t of Object.values(before.tokens)) {
     const link = t?.attached;
     if (!t || !link || !onHolder(link.kind)) continue;
+    if (after.tokens[t.id]!.attached?.to !== link.to && t.visibility !== "dm" && before.tokens[link.to]!.visibility === "dm" && landed.has(t.id)) continue;
     assert.equal(after.tokens[t.id]!.attached?.to, link.to, `${at}: ${t.id} still on ${link.to}`);
   }
+}
+
+
+/** Every player's copy of the scene, a player at a time. */
+function copies(s: RoomState, viewers: readonly Viewer[] = [P1, P2]): string[] {
+  return viewers.map((v) => stableStringify(projectState(s, v, { sceneId: "s1" })));
+}
+
+/** The plan's walks as plain points, to compare two rooms' plans. */
+function walksOfPlan(op: Op, s: RoomState): string {
+  return JSON.stringify(planWalks(op, s, P1, {}).map((m) => [m.tokenId, m.pass, m.route.map((p) => [p.x, p.y, p.elevation])]));
+}
+
+/**
+ * The paired rooms of a case with creatures players cannot see (review
+ * FU45B-ASTRA-12): the room fogged, so players see none of its ground,
+ * every token they see still seen through the fog, and a twin with a few
+ * short walls on that unseen ground near the walks of the creatures they
+ * cannot see. A twin is kept only where its walls change none of the
+ * move's own walks: walls that stop a hidden walk can move a token it
+ * carries, which players see (the private pass's own reveal, 8.0 and
+ * D-261101-274), so only walls the walk itself never meets are a fair
+ * test of what the trap step and its cut read. Every player's copy, the
+ * log in it, and the undo mark must be the same in both rooms. Null where
+ * no fair twin was found or the server refuses the move.
+ */
+function pairedTwin(state: RoomState, op: Op, r: () => number, at: string): "cut" | "whole" | null {
+  if (!Object.values(state.tokens).some((t) => t?.visibility === "dm")) return null;
+  const base = structuredClone(state);
+  base.scenes.s1 = { ...base.scenes.s1!, fogEnabled: true };
+  for (const t of Object.values(base.tokens)) if (t && t.visibility !== "dm") base.tokens[t.id] = { ...t, fogExempt: true };
+  if (!canApply(op, P1, base, { canUseAsset: () => true }).ok) return null;
+  const plan = walksOfPlan(op, base);
+  const hidden = planWalks(op, base, P1, {}).filter((m) => base.tokens[m.tokenId]?.visibility === "dm");
+  if (hidden.length === 0) return null;
+  const q = (v: number) => Math.round(v * 8) / 8;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const twin = structuredClone(base);
+    for (let k = 0, n = int(r, 1, 3); k < n; k++) {
+      const m = pick(r, hidden);
+      const p = pick(r, m.route);
+      const x = q(p.x + (r() * 2 - 0.5));
+      const y = q(p.y + (r() * 2 - 0.5));
+      const len = pick(r, [0.25, 0.375, 0.5]);
+      wall(twin, `fu45bp${String(attempt * 10 + k).padStart(6, "0")}`, [x, y], chance(r, 0.5) ? [x + len, y] : [x, y + len]);
+    }
+    if (walksOfPlan(op, twin) !== plan || !canApply(op, P1, twin, { canUseAsset: () => true }).ok) continue;
+    assert.deepEqual(copies(twin), copies(base), `${at}: the players' copies start the same`);
+    const a = applyOp(structuredClone(base), op, P1, env(5));
+    const b = applyOp(structuredClone(twin), op, P1, env(5));
+    assert.ok(a.ok && b.ok, at);
+    const [pa, pb] = [copies(a.state), copies(b.state)];
+    assert.equal(pb[0], pa[0], `${at}: Pat's copy with walls he cannot see`);
+    assert.equal(pb[1], pa[1], `${at}: the other player's copy with walls they cannot see`);
+    assert.equal(b.trapped, a.trapped, `${at}: the undo mark`);
+    return planTrapMove(op, base, P1, {}).op !== op ? "cut" : "whole";
+  }
+  return null;
 }
 
 describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 to 08)", () => {
@@ -150,6 +219,8 @@ describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 t
     let loops = 0;
     let cuts = 0;
     let still = 0;
+    let twins = 0;
+    let twinCuts = 0;
     for (let seed = 1; seed <= 1500; seed++) {
       const made = caseOf(seed);
       if (!made) continue;
@@ -183,7 +254,10 @@ describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 t
       }
       standsClear(s, r.state, at);
       linksKept(s, landed, r.state, at);
-      seatsKept(s, r.state, at);
+      seatsKept(s, landed, r.state, at);
+      const paired = pairedTwin(s, op, rng(seed * 104729 + 3), at);
+      if (paired) twins++;
+      if (paired === "cut") twinCuts++;
       // Every link the public pass walks holds: one under a holder players cannot see may let go, unread (D-261101-397).
       for (const m of walks) {
         const link = s.tokens[m.tokenId]!.attached;
@@ -197,6 +271,10 @@ describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 t
     assert.ok(loops >= 500, `loops: ${loops}`);
     assert.ok(cuts >= 430, `trap cuts: ${cuts}`);
     assert.ok(still >= 470, `walked, ending where they started: ${still}`);
+    // Fogged twins with unseen walls compared, and of them cut by a trap: few, since off the ground players see a stop stands only
+    // where the walk itself went, and the group moves below cut most of theirs.
+    assert.ok(twins >= 350, `twins compared: ${twins}`);
+    assert.ok(twinCuts >= 5, `twins cut by a trap: ${twinCuts}`);
   });
 
   test("a group move a trap cuts lands each group's walks as the trap step judged them, a group it never stopped as any move, and none across a wall (review FU45BR-OPUS-12, FU45B-ASTRA-10 and 11)", () => {
@@ -206,6 +284,8 @@ describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 t
     let ownJudged = 0;
     let carried = 0;
     let ridden = 0;
+    let twins = 0;
+    let twinCuts = 0;
     const hidden = { visibility: "dm" as const };
     for (let seed = 1; seed <= 3000; seed++) {
       const r = rng(seed * 6007 + 5);
@@ -270,7 +350,10 @@ describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 t
       }
       standsClear(s, done.state, at);
       linksKept(s, landed, done.state, at);
-      seatsKept(s, done.state, at);
+      seatsKept(s, landed, done.state, at);
+      const paired = pairedTwin(s, op, rng(seed * 104729 + 7), at);
+      if (paired) twins++;
+      if (paired === "cut") twinCuts++;
     }
     // Enough of the class: group moves taken, cut by a trap, with one group stopped and the other not, and a stopped walker every
     // player sees on a walk of its own under a holder they cannot see, dragged, carried or ridden.
@@ -280,5 +363,7 @@ describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 t
     assert.ok(ownJudged >= 70, `one every player sees under a hidden holder, stopped: ${ownJudged}`);
     assert.ok(carried >= 45, `one every player sees carried by a hidden holder, stopped: ${carried}`);
     assert.ok(ridden >= 45, `one every player sees riding a hidden horse, stopped: ${ridden}`);
+    assert.ok(twins >= 1500, `twins compared: ${twins}`);
+    assert.ok(twinCuts >= 1200, `twins cut by a trap: ${twinCuts}`);
   });
 });
