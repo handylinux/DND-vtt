@@ -38,7 +38,8 @@ repository to exist.
    Unit tests fail while the generated files or newest released changelog
    heading are out of date.
 3. Wait for CI to pass on that commit.
-4. Tag the commit `vX.Y.Z` and push the tag.
+4. Tag the commit with a signed tag, `git tag -s vX.Y.Z -m vX.Y.Z`, and
+   push the tag. GitHub then shows the tag as Verified.
 
 The tag starts the Image workflow. It checks that the tag matches
 `package.json`, that the commit is on main and that CI passed on that exact
