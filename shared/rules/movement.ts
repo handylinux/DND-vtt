@@ -810,7 +810,7 @@ export type StepTester = {
   walls: WallSet;
   /** Whether the core's straight sweep between two stored positions touches nothing it may not. */
   clear(ax: number, ay: number, bx: number, by: number): boolean;
-  /** Whether the core fits at a stored position and blockers pinch the full footprint there, as a drag preview's squeeze is judged. */
+  /** Whether the core fits at a stored position and blockers pinch the full footprint there, by the unsnapped squeeze check (`previewSqueezed`). */
   pinched(x: number, y: number): boolean;
 };
 
