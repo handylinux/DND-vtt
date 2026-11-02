@@ -6,7 +6,7 @@ import { z } from "zod";
 import { ROOM_ARCHIVE_BYTES_SQL, ROOM_QUOTA_BYTES_SQL } from "../assets/quota.ts";
 import { MIN_FREE_BYTES } from "../assets/service.ts";
 import { AdminLoginLimits, AdminSessions, adminCookieSettings } from "../auth/adminSessions.ts";
-import { enforce, HttpError, parseBody, roomParam, type AuthKit, accessRoutes } from "../auth/http.ts";
+import { enforce, HttpError, parseBody, roomParam, type AuthKit, accessErrors } from "../auth/http.ts";
 import { formatRoomId, parseRoomId } from "../auth/roomId.ts";
 import { verifyTurnstile } from "../auth/turnstile.ts";
 import { deleteRoomAndFiles } from "./rooms.ts";
@@ -284,7 +284,8 @@ export async function registerAdminRoutes(app: FastifyInstance, kit: AuthKit): P
     if (!(await sessions.valid(req))) throw new HttpError(401, "no_session");
   }
 
-  await accessRoutes(app, (r) => {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     // Every answer, refusals included, so nothing of the page sits in a cache.
     r.addHook("onRequest", async (_req, reply: FastifyReply) => {
       reply.header("cache-control", "no-store");

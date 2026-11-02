@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { checkGrant } from "../auth/grants.ts";
-import { accessRoutes, type AuthKit, HttpError, roomParam } from "../auth/http.ts";
+import { accessErrors, type AuthKit, HttpError, roomParam } from "../auth/http.ts";
 import type { RoomManager } from "../rooms/manager.ts";
 
 /**
@@ -66,13 +66,14 @@ export class XCardLimits {
   }
 }
 
-export function registerXCardRoutes(
+export async function registerXCardRoutes(
   app: FastifyInstance,
   kit: AuthKit,
   deps: { manager: Pick<RoomManager, "get">; limits?: XCardLimits },
 ): Promise<void> {
   const limits = deps.limits ?? new XCardLimits();
-  return accessRoutes(app, (r) => {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     r.post("/api/rooms/:id/xcard", { logLevel: "silent" }, async (req, reply) => {
       const roomId = roomParam(req);
       // `lookup` reads the room cookie's session and writes nothing. A table display's session is no session here.

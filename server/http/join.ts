@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { checkGrant, formerDms, putGrant, revokeGrants } from "../auth/grants.ts";
 import {
-  accessRoutes,
+  accessErrors,
   type AuthKit,
   Color,
   enforce,
@@ -39,8 +39,9 @@ const CompleteBody = z.union([
   z.object({ ticket: Token, name: Name, color: Color }),
 ]);
 
-export function registerJoinRoutes(app: FastifyInstance, kit: AuthKit): Promise<void> {
-  return accessRoutes(app, (r) => {
+export async function registerJoinRoutes(app: FastifyInstance, kit: AuthKit): Promise<void> {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     r.post("/api/rooms/:id/join", async (req, reply) => {
       const roomId = roomParam(req);
       const { password, turnstileToken } = parseBody(JoinBody, req.body);

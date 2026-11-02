@@ -13,7 +13,7 @@ import {
   parseDisplayCode,
 } from "../auth/displaySessions.ts";
 import { checkDisplayGrant, putGrant } from "../auth/grants.ts";
-import { accessRoutes, type AuthKit, enforce, HttpError, parseBody, requireGrant, roomParam } from "../auth/http.ts";
+import { accessErrors, type AuthKit, enforce, HttpError, parseBody, requireGrant, roomParam } from "../auth/http.ts";
 import { parseRoomId } from "../auth/roomId.ts";
 import { DISPLAY_SESSION_DAYS } from "../auth/sessions.ts";
 import { sha256 } from "../auth/tokens.ts";
@@ -65,7 +65,8 @@ const LIVE_CODE_ROOM = `select c.room_id from display_codes c join rooms r on r.
 const NO_SESSION = "00000000-0000-0000-0000-000000000000";
 
 export async function registerDisplayRoutes(app: FastifyInstance, kit: AuthKit, deps: { manager: RoomManager }): Promise<void> {
-  await accessRoutes(app, (r) => {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     r.post("/api/rooms/:id/display/code", async (req, reply) => {
       const roomId = roomParam(req);
       const grant = await requireGrant(kit, req, reply, roomId, "dm");

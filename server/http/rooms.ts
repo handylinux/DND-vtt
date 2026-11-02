@@ -6,7 +6,7 @@ import type { Config } from "../config.ts";
 import { deleteUnreferencedFiles, roomFileKeys } from "../assets/store.ts";
 import { putGrant, revokeGrants } from "../auth/grants.ts";
 import {
-  accessRoutes,
+  accessErrors,
   type AuthKit,
   DM_COLOR,
   enforce,
@@ -68,8 +68,9 @@ export async function deleteRoomAndFiles(app: FastifyInstance, roomId: string, l
   return deleted;
 }
 
-export function registerRoomRoutes(app: FastifyInstance, kit: AuthKit): Promise<void> {
-  return accessRoutes(app, (r) => {
+export async function registerRoomRoutes(app: FastifyInstance, kit: AuthKit): Promise<void> {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     // The create form needs the Turnstile site key, which is public by design.
     r.get("/api/config", async () => ({
       turnstileSiteKey: turnstileEnabled(kit.config) ? (kit.config.TURNSTILE_SITE_KEY ?? null) : null,

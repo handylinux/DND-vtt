@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type pg from "pg";
 import { z } from "zod";
 import type { Viewer } from "#shared/model.ts";
-import { accessRoutes, type AuthKit, enforce, HttpError, requireGrant, roomParam } from "../auth/http.ts";
+import { accessErrors, type AuthKit, enforce, HttpError, requireGrant, roomParam } from "../auth/http.ts";
 import { sha256 } from "../auth/tokens.ts";
 import type { GrantContext } from "../auth/types.ts";
 import { admissionHolds, canonicalId, captureView, compareIds, LogHistory, viewNames, type ExportRange, type HistoryAdmission, type LogHistoryOptions } from "../rooms/logHistory.ts";
@@ -90,7 +90,7 @@ export type LogRouteOptions = {
   deadlines?: { pageMs?: number; exportMs?: number };
 };
 
-export function registerLogRoutes(app: FastifyInstance, kit: AuthKit, deps: { manager: RoomManager; options?: LogRouteOptions }): Promise<void> {
+export async function registerLogRoutes(app: FastifyInstance, kit: AuthKit, deps: { manager: RoomManager; options?: LogRouteOptions }): Promise<void> {
   const given = deps.options?.budget;
   const budget = given instanceof LogScanBudget ? given : new LogScanBudget(given);
   const pageMs = deps.options?.deadlines?.pageMs ?? PAGE_DEADLINE_MS;
@@ -151,7 +151,8 @@ export function registerLogRoutes(app: FastifyInstance, kit: AuthKit, deps: { ma
     return err;
   }
 
-  return accessRoutes(app, (r) => {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     r.get("/api/rooms/:id/log/sessions", async (req, reply) => {
       const roomId = roomParam(req);
       reply.header("cache-control", "no-store");

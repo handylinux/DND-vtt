@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { revokeGrants } from "../auth/grants.ts";
-import { accessRoutes, type AuthKit, HttpError, requireGrant, roomParam } from "../auth/http.ts";
+import { accessErrors, type AuthKit, HttpError, requireGrant, roomParam } from "../auth/http.ts";
 
 const MemberParam = z.string().min(1).max(64);
 
@@ -21,8 +21,9 @@ const MemberParam = z.string().min(1).max(64);
  * that sweep is deleted by it, and one committed after it finds the member
  * gone and gives itself up (server/http/join.ts).
  */
-export function registerMemberRoutes(app: FastifyInstance, kit: AuthKit): Promise<void> {
-  return accessRoutes(app, (r) => {
+export async function registerMemberRoutes(app: FastifyInstance, kit: AuthKit): Promise<void> {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     r.delete("/api/rooms/:id/members/:memberId/grants", async (req, reply) => {
       const roomId = roomParam(req);
       const grant = await requireGrant(kit, req, reply, roomId, "dm");

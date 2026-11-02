@@ -7,7 +7,7 @@ import { isAssetError } from "../assets/errors.ts";
 import { WindowLimiter } from "../assets/limits.ts";
 import { receiveToFile, tempFile } from "../assets/upload.ts";
 import { formerDmsOfLiveRoom, putGrant } from "../auth/grants.ts";
-import { accessRoutes, type AuthKit, DM_COLOR, enforce, HttpError, Name, parseBody, Password, requireGrant, roomParam } from "../auth/http.ts";
+import { accessErrors, type AuthKit, DM_COLOR, enforce, HttpError, Name, parseBody, Password, requireGrant, roomParam } from "../auth/http.ts";
 import { passwordProblem } from "../auth/passwords.ts";
 import { storePlayerPassword } from "../auth/playerSecret.ts";
 import { dmLink, formatRoomId } from "../auth/roomId.ts";
@@ -47,7 +47,7 @@ export type ExportOptions = {
   checkEveryMs?: number;
 };
 
-export function registerExportRoutes(app: FastifyInstance, kit: AuthKit, deps: { manager: RoomManager; options?: ExportOptions }): Promise<void> {
+export async function registerExportRoutes(app: FastifyInstance, kit: AuthKit, deps: { manager: RoomManager; options?: ExportOptions }): Promise<void> {
   const o = deps.options ?? {};
   const inFlight = { total: 0, byRoom: new Map<string, number>(), byIp: new Map<string, number>() };
   const perRoom = o.perRoom ?? 1;
@@ -59,7 +59,8 @@ export function registerExportRoutes(app: FastifyInstance, kit: AuthKit, deps: {
   const maxMs = o.maxMs ?? 30 * 60_000;
   const checkEveryMs = o.checkEveryMs ?? 30_000;
 
-  return accessRoutes(app, (r) => {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     r.get("/api/rooms/:id/export", async (req, reply) => {
       const roomId = roomParam(req);
       const grant = await requireGrant(kit, req, reply, roomId, "dm");
@@ -145,89 +146,89 @@ export function registerExportRoutes(app: FastifyInstance, kit: AuthKit, deps: {
         throw err;
       }
     });
-  }).then(() =>
-    app.register(async (scope) => {
-      // The body is the zip itself, read as a stream after the checks, never buffered by Fastify.
-      scope.removeAllContentTypeParsers();
-      scope.addContentTypeParser("application/zip", (_req, _payload, done) => done(null));
-      scope.setErrorHandler<Error>((err, _req, reply) => {
-        if (err instanceof HttpError) {
-          if (err.retryAfter !== undefined) reply.header("retry-after", String(err.retryAfter));
-          return reply.code(err.status).send({ error: err.code, ...err.extra });
-        }
-        // The images' refusals that refuse a whole import: a room over its quota, a full disk.
-        if (isAssetError(err)) {
-          if (err.retryAfter !== undefined) reply.header("retry-after", String(err.retryAfter));
-          return reply.code(err.status).send({ error: err.code });
-        }
-        const status = (err as { statusCode?: number }).statusCode;
-        if (status === 415) return reply.code(415).send({ error: "unsupported_type" satisfies ApiErrorCode });
-        throw err;
-      });
+  });
 
-      scope.post("/api/rooms/import", async (req, reply) => {
-        const form = parseForm(req);
-        const problem = passwordProblem(form.playerPassword);
-        if (problem) throw new HttpError(400, "weak_password", { extra: { reason: problem } });
-        const ip = kit.ip(req);
-        enforce(await kit.limits.creation(ip));
-        if (!(await diskHasRoom(kit.config))) throw new HttpError(507, "disk_full");
-        const declared = Number(req.headers["content-length"]);
-        if (Number.isFinite(declared) && declared > IMPORT_LIMITS.bodyBytes) throw new HttpError(413, "too_large");
-        const session = await kit.sessions.lookup(req);
-        let releaseSlot: (() => void) | undefined;
-        try {
-          releaseSlot = app.assets.slots.tryAcquire({ kind: "roomImport", ip, sessionId: session?.id ?? "", pinned: false }) ?? undefined;
-          if (!releaseSlot) throw new HttpError(503, "busy", { retryAfter: 10 });
-        } catch (err) {
+  await app.register(async (scope) => {
+    // The body is the zip itself, read as a stream after the checks, never buffered by Fastify.
+    scope.removeAllContentTypeParsers();
+    scope.addContentTypeParser("application/zip", (_req, _payload, done) => done(null));
+    scope.setErrorHandler<Error>((err, _req, reply) => {
+      if (err instanceof HttpError) {
+        if (err.retryAfter !== undefined) reply.header("retry-after", String(err.retryAfter));
+        return reply.code(err.status).send({ error: err.code, ...err.extra });
+      }
+      // The images' refusals that refuse a whole import: a room over its quota, a full disk.
+      if (isAssetError(err)) {
+        if (err.retryAfter !== undefined) reply.header("retry-after", String(err.retryAfter));
+        return reply.code(err.status).send({ error: err.code });
+      }
+      const status = (err as { statusCode?: number }).statusCode;
+      if (status === 415) return reply.code(415).send({ error: "unsupported_type" satisfies ApiErrorCode });
+      throw err;
+    });
+
+    scope.post("/api/rooms/import", async (req, reply) => {
+      const form = parseForm(req);
+      const problem = passwordProblem(form.playerPassword);
+      if (problem) throw new HttpError(400, "weak_password", { extra: { reason: problem } });
+      const ip = kit.ip(req);
+      enforce(await kit.limits.creation(ip));
+      if (!(await diskHasRoom(kit.config))) throw new HttpError(507, "disk_full");
+      const declared = Number(req.headers["content-length"]);
+      if (Number.isFinite(declared) && declared > IMPORT_LIMITS.bodyBytes) throw new HttpError(413, "too_large");
+      const session = await kit.sessions.lookup(req);
+      let releaseSlot: (() => void) | undefined;
+      try {
+        releaseSlot = app.assets.slots.tryAcquire({ kind: "roomImport", ip, sessionId: session?.id ?? "", pinned: false }) ?? undefined;
+        if (!releaseSlot) throw new HttpError(503, "busy", { retryAfter: 10 });
+      } catch (err) {
+        reply.header("connection", "close");
+        throw err;
+      }
+      const path = tempFile(app.assets.tmpDir, "intake");
+      let newCookie: string | undefined;
+      try {
+        // After the slot: a Turnstile token works once, and the client
+        // resends the same request after a busy answer, so the token must
+        // not be spent on an attempt that was always going to wait.
+        const turnstile = await verifyTurnstile(kit.config, form.turnstileToken, kit.clientIp(req));
+        if (turnstile !== "ok") {
+          // The body is still unread, and draining up to 95 MB of it for a refusal is wasted work.
           reply.header("connection", "close");
-          throw err;
+          throw turnstile === "failed" ? new HttpError(403, "turnstile_failed") : new HttpError(503, "turnstile_unavailable");
         }
-        const path = tempFile(app.assets.tmpDir, "intake");
-        let newCookie: string | undefined;
-        try {
-          // After the slot: a Turnstile token works once, and the client
-          // resends the same request after a busy answer, so the token must
-          // not be spent on an attempt that was always going to wait.
-          const turnstile = await verifyTurnstile(kit.config, form.turnstileToken, kit.clientIp(req));
-          if (turnstile !== "ok") {
-            // The body is still unread, and draining up to 95 MB of it for a refusal is wasted work.
-            reply.header("connection", "close");
-            throw turnstile === "failed" ? new HttpError(403, "turnstile_failed") : new HttpError(503, "turnstile_unavailable");
-          }
-          await receiveToFile(req.raw, path, { maxBytes: IMPORT_LIMITS.bodyBytes, deadlineMs: 600_000, minBytesPerSec: 32 * 1024, graceMs: 10_000 }).catch(
-            (err: { status?: number; code?: ApiErrorCode }) => {
-              throw new HttpError(err.status ?? 400, err.code ?? "upload_failed");
+        await receiveToFile(req.raw, path, { maxBytes: IMPORT_LIMITS.bodyBytes, deadlineMs: 600_000, minBytesPerSec: 32 * 1024, graceMs: 10_000 }).catch(
+          (err: { status?: number; code?: ApiErrorCode }) => {
+            throw new HttpError(err.status ?? 400, err.code ?? "upload_failed");
+          },
+        );
+        const playerPwHash = await kit.hasher.hash(form.playerPassword);
+        const room = await importRoom(
+          { pool: kit.pool, assets: app.assets, gateway: kit.gateway, log: req.log },
+          path,
+          { name: form.name, playerPwHash, dmName: form.dmName, dmColor: DM_COLOR, createdIp: ip },
+          {
+            beforeImages: async (tx) => {
+              await kit.limits.lockCreation(tx);
+              enforce(await kit.limits.creation(ip, tx));
+              await kit.limits.recordCreation(tx, ip);
             },
-          );
-          const playerPwHash = await kit.hasher.hash(form.playerPassword);
-          const room = await importRoom(
-            { pool: kit.pool, assets: app.assets, gateway: kit.gateway, log: req.log },
-            path,
-            { name: form.name, playerPwHash, dmName: form.dmName, dmColor: DM_COLOR, createdIp: ip },
-            {
-              beforeImages: async (tx) => {
-                await kit.limits.lockCreation(tx);
-                enforce(await kit.limits.creation(ip, tx));
-                await kit.limits.recordCreation(tx, ip);
-              },
-              afterImages: async (tx, created) => {
-                const { row, created: isNew } = await kit.sessions.ensure(tx, req);
-                if (isNew) newCookie = row.token;
-                await putGrant(tx, { sessionId: row.id, roomId: created.roomId, memberId: created.dmMember.id, role: "dm", epoch: 1 });
-                await storePlayerPassword(tx, kit.config.roomSecretKey, created.roomId, form.playerPassword);
-              },
+            afterImages: async (tx, created) => {
+              const { row, created: isNew } = await kit.sessions.ensure(tx, req);
+              if (isNew) newCookie = row.token;
+              await putGrant(tx, { sessionId: row.id, roomId: created.roomId, memberId: created.dmMember.id, role: "dm", epoch: 1 });
+              await storePlayerPassword(tx, kit.config.roomSecretKey, created.roomId, form.playerPassword);
             },
-          );
-          if (newCookie) kit.sessions.setCookie(reply, newCookie);
-          return reply.code(201).send({ roomId: room.roomId, dmLink: dmLink(room.roomId, room.dmKey) });
-        } finally {
-          releaseSlot();
-          await unlink(path).catch(() => undefined);
-        }
-      });
-    }),
-  );
+          },
+        );
+        if (newCookie) kit.sessions.setCookie(reply, newCookie);
+        return reply.code(201).send({ roomId: room.roomId, dmLink: dmLink(room.roomId, room.dmKey) });
+      } finally {
+        releaseSlot();
+        await unlink(path).catch(() => undefined);
+      }
+    });
+  });
 }
 
 function parseForm(req: FastifyRequest): z.infer<typeof ImportForm> {

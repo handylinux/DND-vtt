@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import type pg from "pg";
 import { z } from "zod";
 import type { ApiErrorCode } from "#shared/apiErrors.ts";
@@ -57,25 +57,26 @@ export function enforce(verdict: Verdict): void {
 }
 
 /**
- * Registers routes in their own encapsulated scope, with an error handler
- * that turns the typed errors above into responses. Anything else goes on to
- * the app's default handler unchanged, so the other areas' routes keep
- * Fastify's usual errors.
+ * The error handler of the access routes' scopes: it turns the typed errors
+ * above into responses. Anything else goes on to the app's default handler
+ * unchanged, so the other areas' routes keep Fastify's usual errors.
+ *
+ * Each route module opens its own scope with `app.register` and sets this
+ * handler there, rather than handing its routes to a shared helper as a
+ * callback. CodeQL's rate limiting check follows the server through direct
+ * calls and plugin scopes but not through such a callback, so it reported
+ * every route registered that way as unlimited, though the request limiter
+ * (ratelimit.ts) covers them all.
  */
-export async function accessRoutes(app: FastifyInstance, routes: (scope: FastifyInstance) => void): Promise<void> {
-  await app.register(async (scope) => {
-    scope.setErrorHandler<Error>((err, _req, reply) => {
-      if (err instanceof HttpError) {
-        if (err.retryAfter !== undefined) reply.header("retry-after", String(err.retryAfter));
-        return reply.code(err.status).send({ error: err.code, ...err.extra });
-      }
-      if (err instanceof BusyError) return reply.code(429).header("retry-after", "2").send({ error: "busy" satisfies ApiErrorCode });
-      if (err instanceof RoomFullError) return reply.code(409).send({ error: "room_full" satisfies ApiErrorCode });
-      if (err instanceof RoomNotFoundError) return reply.code(404).send({ error: "room_not_found" satisfies ApiErrorCode });
-      throw err;
-    });
-    routes(scope);
-  });
+export function accessErrors(err: Error, _req: FastifyRequest, reply: FastifyReply): FastifyReply {
+  if (err instanceof HttpError) {
+    if (err.retryAfter !== undefined) reply.header("retry-after", String(err.retryAfter));
+    return reply.code(err.status).send({ error: err.code, ...err.extra });
+  }
+  if (err instanceof BusyError) return reply.code(429).header("retry-after", "2").send({ error: "busy" satisfies ApiErrorCode });
+  if (err instanceof RoomFullError) return reply.code(409).send({ error: "room_full" satisfies ApiErrorCode });
+  if (err instanceof RoomNotFoundError) return reply.code(404).send({ error: "room_not_found" satisfies ApiErrorCode });
+  throw err;
 }
 
 /** The canonical room ID from the `:id` path parameter. */

@@ -7,7 +7,7 @@ import { checkedFill } from "#shared/rules/pcFill.ts";
 import { untilAborted } from "../assets/egress.ts";
 import { WindowLimiter } from "../assets/limits.ts";
 import { Semaphore } from "../assets/slots.ts";
-import { accessRoutes, HttpError, parseBody, roomParam } from "../auth/http.ts";
+import { accessErrors, HttpError, parseBody, roomParam } from "../auth/http.ts";
 import { clientIp } from "../auth/clientIp.ts";
 import { ipKey } from "../auth/ipKey.ts";
 
@@ -121,7 +121,8 @@ export async function registerDdbImportRoutes(app: FastifyInstance, options: Ddb
     };
   }
 
-  await accessRoutes(app, (r) => {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     r.post("/api/rooms/:id/ddb-import", async (req, reply) => {
       const roomId = roomParam(req);
       const { link } = parseBody(Body, req.body);

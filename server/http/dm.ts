@@ -4,7 +4,7 @@ import { z } from "zod";
 import { deviceLabel } from "../auth/device.ts";
 import { checkGrant, putGrant, revokeGrants } from "../auth/grants.ts";
 import {
-  accessRoutes,
+  accessErrors,
   type AuthKit,
   Color,
   DM_COLOR,
@@ -169,8 +169,9 @@ async function redeem(
   });
 }
 
-export function registerDmRoutes(app: FastifyInstance, kit: AuthKit): Promise<void> {
-  return accessRoutes(app, (r) => {
+export async function registerDmRoutes(app: FastifyInstance, kit: AuthKit): Promise<void> {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     r.post("/api/rooms/:id/dm", async (req, reply) => {
       const roomId = roomParam(req);
       const body = parseBody(ClaimBody, req.body);

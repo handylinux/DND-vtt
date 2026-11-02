@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { BuildChunk, FogTile, Label, RoomState, Scene, Stamp, Viewer } from "#shared/model.ts";
 import { projectState } from "#shared/project.ts";
 import { WindowLimiter } from "../assets/limits.ts";
-import { accessRoutes, type AuthKit, HttpError, requireGrant, roomParam } from "../auth/http.ts";
+import { accessErrors, type AuthKit, HttpError, requireGrant, roomParam } from "../auth/http.ts";
 import { ActorClosedError } from "../rooms/actor.ts";
 import { TooBusyError } from "../rooms/errors.ts";
 import type { RoomManager } from "../rooms/manager.ts";
@@ -50,9 +50,10 @@ const SceneId = z.string().min(1).max(64);
 /** Each request projects a whole scene. This many a minute, for the room's DMs together, is far above what exporting needs. */
 const PER_ROOM_PER_MINUTE = 30;
 
-export function registerPlayerViewRoutes(app: FastifyInstance, kit: AuthKit, deps: { manager: RoomManager }): Promise<void> {
+export async function registerPlayerViewRoutes(app: FastifyInstance, kit: AuthKit, deps: { manager: RoomManager }): Promise<void> {
   const limiter = new WindowLimiter(60_000);
-  return accessRoutes(app, (r) => {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     r.get("/api/rooms/:id/scenes/:sceneId/player-view", async (req, reply) => {
       const roomId = roomParam(req);
       await requireGrant(kit, req, reply, roomId, "dm");

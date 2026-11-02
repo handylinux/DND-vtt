@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { LogEntry, RoomState, Viewer } from "#shared/model.ts";
 import { projectArchivedLog } from "#shared/project.ts";
-import { accessRoutes, type AuthKit, HttpError, roomParam } from "../auth/http.ts";
+import { accessErrors, type AuthKit, HttpError, roomParam } from "../auth/http.ts";
 import { ReceiptLines, receiptWait } from "../rooms/logHistory.ts";
 import { ScanBusyError, ScanCancelledError } from "../rooms/logScanBudget.ts";
 import type { RoomManager } from "../rooms/manager.ts";
@@ -42,10 +42,11 @@ export type ReceiptRouteOptions = { lines?: ReceiptLines; deadlineMs?: number };
 /** How often a lookup looks again for the room's state to reach a receipt's seq. */
 const CAUGHT_UP_POLL_MS = 10;
 
-export function registerReceiptRoutes(app: FastifyInstance, kit: AuthKit, deps: { manager: RoomManager; options?: ReceiptRouteOptions }): Promise<void> {
+export async function registerReceiptRoutes(app: FastifyInstance, kit: AuthKit, deps: { manager: RoomManager; options?: ReceiptRouteOptions }): Promise<void> {
   const archive = deps.options?.lines ?? new ReceiptLines({ pool: kit.pool });
   const deadlineMs = deps.options?.deadlineMs ?? RECEIPT_DEADLINE_MS;
-  return accessRoutes(app, (r) => {
+  await app.register(async (r) => {
+    r.setErrorHandler(accessErrors);
     r.get("/api/rooms/:id/receipts/:tag", async (req, reply) => {
       const roomId = roomParam(req);
       const tag = TAG.safeParse((req.params as { tag?: unknown }).tag);
