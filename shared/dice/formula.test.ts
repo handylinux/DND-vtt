@@ -152,6 +152,18 @@ describe("advantage on the dice (3.4)", () => {
     assert.equal(applyMode(formula("1d20+98d4"), "adv").ok, true);
   });
 
+  test("advantage's longer d20 counts against the 100 characters, so the text as rolled still reads", () => {
+    const long = `1d20${"+1000".repeat(18)}+300`;
+    assert.equal(canonical(long).length, 98);
+    assert.deepEqual(applyMode(formula(long), "adv"), { ok: false, error: FORMULA_ERRORS.long });
+    assert.deepEqual(applyMode(formula(long), "dis"), { ok: false, error: FORMULA_ERRORS.long });
+    const fits = `1d20${"+1000".repeat(18)}+3`;
+    assert.equal(canonical(fits).length, 96);
+    const applied = applyMode(formula(fits), "adv");
+    assert.ok(applied.ok);
+    assert.equal(formatFormula(applied.formula).length, 99);
+  });
+
   test("d20Formula writes a bonus, and a mode as rolled", () => {
     assert.equal(d20Formula(5), "1d20+5");
     assert.equal(d20Formula(-1), "1d20-1");

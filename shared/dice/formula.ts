@@ -209,6 +209,8 @@ export function applyMode(formula: Formula, mode: AdvantageMode): Parsed {
   if (at.length !== 1) return { ok: false, error: FORMULA_ERRORS.mode };
   const out = formula.map((t, i): Term => (i === at[0] ? { kind: "dice", sign: 1, count: 2, sides: 20, keep: { high: mode === "adv", n: 1 } } : t));
   if (diceCount(out) > LIMITS.dicePerOp) return { ok: false, error: FORMULA_ERRORS.dice };
+  // `2d20kh1` is three characters longer than `1d20`, and a result stores the text as rolled, which must still parse (roll.ts rolledTerms).
+  if (formatFormula(out).length > LIMITS.diceFormulaChars) return { ok: false, error: FORMULA_ERRORS.long };
   return { ok: true, formula: out };
 }
 
