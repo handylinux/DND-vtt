@@ -305,6 +305,7 @@ type Actor = {
   creatureType?, cr?, xp?, srdId?: string, sheetUrl?: string   // sheetUrl: https only, at most 500 chars
   monsterId?: MonsterId                   // v1 wave 5, DM only, never sent to owners: the room monster it was placed from (section 14.15)
   wildShape?: true                        // v1 wave 7, a character's own actor only, with srdId: the SRD creature is its Wild Shape (docs/design/design-v1-pc-stats.md 3.6)
+  inLair?: true                           // follow-up batch 46, a token's own actor only, DM only, never sent to owners: placed in its lair, kept in step by its row's In lair from op version 39 (docs/design/design-v1-combat-controls.md 13.4)
   effects: Effect[]
   deathSaves: { ok: 0..3, fail: 0..3 }
   legendary?: { actionsMax, actionsUsed, resistMax, resistUsed }

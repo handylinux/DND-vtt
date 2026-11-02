@@ -626,7 +626,7 @@ Filters stay on for this room on this device, and the encounter builder shares t
 1. Set **How many** (1 to 20).
 2. Keep **Average HP**, or untick it and type the **HP for each**. The app doesn't roll Hit Points for you.
 3. Tick **Hidden from players** for an ambush. Players' devices never receive hidden tokens, so nobody can find them early.
-4. For a monster with a lair, tick **In its lair** to give it the extra legendary uses and XP it has in its lair (see [In its lair](#in-its-lair)).
+4. For a monster with a lair, tick **In its lair** to give it the extra legendary uses and XP it has in its lair, or, for one whose stat block lists lair actions alone, the Lair tag in a fight (see [In its lair](#in-its-lair)).
 5. Press **Place on the map** (or **Place 4 on the map**), then tap the map. The copies spread out to the nearest free squares around your tap.
 
 The copies are numbered for you: "Goblin Warrior 1", "Goblin Warrior 2" and so on. Each token placed is its own undo step.
@@ -1151,7 +1151,7 @@ A creature's turn can also leave something in its **Uses** for a while. If you s
 
 ### In its lair
 
-A monster with a lair, such as an adult dragon, is stronger at home: its stat block gives it more Legendary Actions and Legendary Resistances there, and it is worth more XP. To fight it in its lair, tick **In its lair** on its place card in **Monsters**, or on its line in an encounter. The monster then joins a fight with **In lair** on in its tracker row, whichever way you add it: from the tracker, or by selecting it with others and pressing **Start a fight** or **Add to the fight**.
+A monster with a lair, such as an adult dragon, is stronger at home: its stat block gives it more Legendary Actions and Legendary Resistances there, and it is worth more XP. To fight it in its lair, tick **In its lair** on its place card in **Monsters**, or on its line in an encounter. The monster then joins a fight with **In lair** on in its tracker row, whichever way you add it: from the tracker, or by selecting it with others and pressing **Start a fight** or **Add to the fight**. That holds however long it waits on the map before the fight starts, and for a monster with lair actions alone too. If you take it out of a fight, it joins the next one in or out of its lair as you last left its **In lair**. Players can't tell that you placed a monster in its lair until its row shows the tag.
 
 **In lair**, in the row's **⋯**, also works on its own during a fight. It puts a "Lair" tag on the row, which players see too, and gives the monster its lair's Legendary Action and Legendary Resistance counts and XP. Turn it off, and the monster goes back to its own counts, though what it has already used stays used. The switch waits a moment while the monster's stat block loads, and if the stat block can't load, the switch stays off and offers a reload, so the counts never fall out of step with the stat block. The switch is there only for a monster whose stat block gives it a lair: more Legendary Actions or Legendary Resistances there, lair XP, or lair actions, which a stat block typed from an older book may list. For one with lair actions alone, the switch just adds the tag, a reminder that its lair acts too. A troll, or any creature with no stat block, has no lair, so its row has no switch.
 
