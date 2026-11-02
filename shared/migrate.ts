@@ -11,7 +11,7 @@ import type { Op } from "./protocol.ts";
  * no old ops at all. The op pipeline is here for the crash case.
  */
 export const SNAPSHOT_VERSION = 31;
-export const OP_VERSION = 40;
+export const OP_VERSION = 41;
 
 export type MigrationStep = {
   from: number;
@@ -1044,6 +1044,21 @@ export const opMigrations: MigrationStep[] = [
     to: 40,
     apply: (op) => op,
   },
+  {
+    // RIDER-LED-HALF-SEAT: no op changes shape, so the step is the
+    // identity. From this version what sits on a holder whose walk on
+    // squares starts full size is carried by the holder's snapped box
+    // (`seatsFromSnappedFull`), so a rider keeps its square of a mount that
+    // stands off its grid and what the rider drags stays in reach. Older
+    // ops replay by the stored box, as they were written.
+    // Deploy: reload open pages, since an old page seats a rider by the
+    // stored box and its drop preview would part from the landing.
+    // Rollback needs the backup only for a room with version 41 ops after
+    // its last snapshot, which an older build refuses to migrate down.
+    from: 40,
+    to: 41,
+    apply: (op) => op,
+  },
 ];
 
 /** Historical restores keep their original log entries and numbering. */
@@ -1530,6 +1545,22 @@ export function clipsByHeldWalls(opVersion: number | undefined): boolean {
  */
 export function seatsFromSnappedBox(opVersion: number | undefined): boolean {
   return !(opVersion !== undefined && opVersion < 30);
+}
+
+/**
+ * Whether what sits on a holder whose walk starts full size on squares is
+ * carried by the holder's box as it snaps at each point of the walk, as one
+ * on a holder that starts squeezed is (`seatsFromSnappedBox`), so each keeps
+ * the square of the holder's box it sits on (RIDER-LED-HALF-SEAT). A holder
+ * off its snap grid stands on its snapped box, where its seats are, and a
+ * walk by half a square then moved the stored box by a half the snapped one
+ * did not: a seat carried by it rounded onto the next square, a rider off
+ * the far side of its mount's box and a creature it drags out of reach, so
+ * both let go. Ops stored before version 41 carried it by the stored box,
+ * and replay so. Live ops carry no stored version and take today's rule.
+ */
+export function seatsFromSnappedFull(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 41);
 }
 
 /**

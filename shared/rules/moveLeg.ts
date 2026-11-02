@@ -1,11 +1,12 @@
-import { attaches, draggedWalkFull, followsInSingleFile, hiddenTowStands, seatsApart, seatsOnSqueeze, walksRoutes } from "../migrate.ts";
+import { attaches, draggedWalkFull, followsInSingleFile, hiddenTowStands, seatsApart, seatsFromSnappedFull, seatsOnSqueeze, walksRoutes } from "../migrate.ts";
 import type { RoomState, Token, Viewer } from "../model.ts";
 import { inSightOfNonOwners } from "../project.ts";
 import type { Op } from "../protocol.ts";
 import { movementRules, type BuildState } from "../ruleHooks.ts";
 import { carriedGroup, moveGroups, onHolder, publicMembers, seatedAt, squeezedSeatsApart, walkerFor, type SeenByAll } from "./attach.ts";
+import { footprintRect } from "./footprint.ts";
 import type { Point } from "./geom.ts";
-import { isHex, sceneGrid } from "./grid.ts";
+import { isHex, sceneGrid, type Grid } from "./grid.ts";
 import { footing } from "./heights.ts";
 import { groundUnder, hexFullStop, landing, legSpots, legStop, offGridWallThrough, storedBuild, walkEnd, type MovingToken } from "./movement.ts";
 import { fileRoutes, followerTrace, pieceReach, routeWalkers, walkSqueezes, type RoutePoint, type WalkTrace } from "./route.ts";
@@ -406,7 +407,11 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
  * squares that neither squeezes nor starts squeezed, whose offset keeps it
  * on its seat, for a change of scene or shape, which no squeeze survives,
  * and for a holder another token carries, since only a token's own move
- * takes a squeeze (reducer/tokens.ts carriedAlong). At each point it sits where the
+ * takes a squeeze (reducer/tokens.ts carriedAlong). From op version 41 a
+ * walk on squares whose holder starts off its snap grid seats it too, by
+ * the holder's snapped box (attach.ts seatedAt, migrate.ts
+ * seatsFromSnappedFull), since its offset rounds it onto the next square
+ * on a walk by half a square (RIDER-LED-HALF-SEAT). At each point it sits where the
  * holder's stand there seats it (attach.ts seatedAt): on its own seat
  * where the holder stands full size, and where it squeezes on the seat
  * nearest that on the squares or hexes it squeezes onto. So a rider sits
@@ -433,10 +438,17 @@ function squeezedSeats(before: RoomState, member: Token, holder: MovedToken, env
   if (!scene || !standing) return null;
   const squeezedAt = walkSqueezes(before, standing, holder.route, holder.trace, holder.squeezed === true, env.opVersion);
   const g = sceneGrid(scene);
-  if (!isHex(g) && !squeezedAt.some((s) => s)) return null;
+  // From op version 41 a holder that starts off its snap grid carries its seats by its snapped box (attach.ts seatedAt), not its offset.
+  if (!isHex(g) && !squeezedAt.some((s) => s) && !(seatsFromSnappedFull(env.opVersion) && offSnapGrid(g, standing))) return null;
   const last = holder.route.length - 1;
   // Where the walk ends squeezed, the seat it takes apart from the others on the holder, where it has one (followGroup).
   return holder.route.map((p, i) => (i === 0 ? null : i === last && apart ? apart : seatedAt(g, member, standing, p, squeezedAt[i]!, env.opVersion)));
+}
+
+/** Whether a token's stored box lies off the box it snaps to, along either axis: a Large creature half a square off the grid of squares. */
+function offSnapGrid(g: Grid, token: Token): boolean {
+  const box = footprintRect(g, token);
+  return box.x !== token.x || box.y !== token.y;
 }
 
 /**

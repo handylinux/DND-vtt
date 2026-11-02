@@ -5,7 +5,7 @@ import type { RoomState, Token } from "#shared/model.ts";
 import { canApply } from "#shared/permissions.ts";
 import type { Op } from "#shared/protocol.ts";
 import { applyOp } from "#shared/reducer.ts";
-import { linkHolds } from "#shared/rules/attach.ts";
+import { linkHolds, onHolder } from "#shared/rules/attach.ts";
 import { SQUARES } from "#shared/rules/grid.ts";
 import { chance, env, int, member, P1, pick, rng, room, scene, token, trap } from "#shared/testutil.ts";
 import { copyFor } from "../attach/testing.ts";
@@ -22,9 +22,12 @@ import { dragOf } from "./dragTesting.ts";
  * that ends squeezed keeps every link, cut by a trap or not: one the file
  * would leave out of its holder's reach holds the drag instead. Where no
  * trap goes off, the player's copy lands every token where the server
- * does and the preview holds the mount where it lands. A rider's prisoner off a half-square seat
- * can let go on a full-size walk, as on main before single file, so links
- * are asserted on the squeezed walks this batch changed.
+ * does and the preview holds the mount where it lands. On every walk a
+ * rider keeps its seat and the prisoner it leads, a mount off its grid
+ * carrying them by its snapped box (RIDER-LED-HALF-SEAT, op version 41).
+ * Other links are asserted on the squeezed walks single file changed: a
+ * creature the mount drags by its place, at another snap than the mount's,
+ * can still let go on a full-size walk by half a square.
  */
 
 function corridorRoom(wide: 1 | 2, top: number): RoomState {
@@ -86,6 +89,15 @@ function roomOf(seed: number): { state: RoomState; top: number } | null {
   return holds ? { state, top } : null;
 }
 
+/** Whether a token sits on the mount, or a token sitting on it leads it: a rider, and its prisoner (RIDER-LED-HALF-SEAT). */
+function onMount(state: RoomState, token: Token): boolean {
+  const link = token.attached;
+  if (!link) return false;
+  if (link.to === "mount") return onHolder(link.kind);
+  const holder = state.tokens[link.to]?.attached;
+  return holder?.to === "mount" && onHolder(holder.kind);
+}
+
 describe("squares: random drags into a corridor with creatures in tow (D-261101-250, D-261101-397)", () => {
   test("what the board sends the server takes, lands alike on the player's copy, and a walk that ends squeezed keeps every link", () => {
     let squeezed = 0;
@@ -93,6 +105,7 @@ describe("squares: random drags into a corridor with creatures in tow (D-261101-
     let named = 0;
     let cut = 0;
     let carried = 0;
+    let offGrid = 0;
     for (let seed = 1; seed <= 600; seed++) {
       const made = roomOf(seed);
       if (!made) continue;
@@ -123,6 +136,10 @@ describe("squares: random drags into a corridor with creatures in tow (D-261101-
         const landed = server.state.tokens.mount!;
         assert.deepEqual([drag.preview.to.x, drag.preview.to.y], [landed.x, landed.y], `${at}: the preview holds where it lands`);
       }
+      // On every walk a rider keeps its seat and its prisoner: one on a mount off its grid goes by the mount's snapped box (op version 41).
+      const mount = state.tokens.mount!;
+      if (state.tokens.rider0 && (op.t !== "token.move" || op.squeeze !== true) && (!Number.isInteger(mount.x) || !Number.isInteger(mount.y))) offGrid++;
+      for (const t of Object.values(state.tokens)) if (onMount(state, t!)) assert.equal(server.state.tokens[t!.id]!.attached?.to, t!.attached?.to, `${at}: ${t!.id} still held`);
       if (op.t !== "token.move" || op.squeeze !== true) continue;
       squeezed++;
       if (server.state.tokens.mount!.squeeze !== true || server.state.tokens.mount!.x !== op.x) cut++;
@@ -138,6 +155,7 @@ describe("squares: random drags into a corridor with creatures in tow (D-261101-
     assert.ok(named >= 96, `held, naming the one that cannot follow: ${named}`);
     assert.ok(cut >= 16, `walks that end squeezed a trap cut: ${cut}`);
     assert.ok(carried >= 17, `with a goblin carrying an owl: ${carried}`);
+    assert.ok(offGrid >= 18, `full-size walks of a ridden mount off its grid: ${offGrid}`);
   });
 });
 

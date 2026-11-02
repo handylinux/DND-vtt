@@ -33,6 +33,7 @@ import {
   followsInSingleFile,
   keepsLairTick,
   boundsRollChanges,
+  seatsFromSnappedFull,
   seatsApart,
   hiddenTowStands,
   stopsStandClear,
@@ -1636,6 +1637,18 @@ describe("batch 47: op version 40, Lucky and an added die held to the dice gramm
     assert.equal(migrateOp(op, 39), op);
     assert.throws(() => runMigrations(op, 40, 39, opMigrations), /down/);
     assert.deepEqual([boundsRollChanges(1), boundsRollChanges(39), boundsRollChanges(40), boundsRollChanges(undefined)], [false, false, true, true]);
+  });
+});
+
+describe("op version 41, seats on a full-size walk carried by the holder's snapped box (RIDER-LED-HALF-SEAT)", () => {
+  test("keeps stored operations unchanged through the identity step, and gates the seats at 41 with the snapshot at 31", () => {
+    assert.ok(OP_VERSION >= 41);
+    assert.equal(SNAPSHOT_VERSION, 31, "no snapshot field changes");
+    const op = { t: "token.move", tokenId: "mount", x: 6, y: 8 };
+    assert.equal(runMigrations(op, 40, 41, opMigrations), op);
+    assert.equal(migrateOp(op, 40), op);
+    assert.throws(() => runMigrations(op, 41, 40, opMigrations), /down/);
+    assert.deepEqual([seatsFromSnappedFull(1), seatsFromSnappedFull(40), seatsFromSnappedFull(41), seatsFromSnappedFull(undefined)], [false, false, true, true]);
   });
 });
 

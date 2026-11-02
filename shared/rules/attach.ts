@@ -5,7 +5,7 @@ import { boxDistanceFt, tokenCellBox, type DistanceSettings } from "./distance.t
 import { footprintRect, footprintSize, hexAnchor, isSqueezed, occupiedHexes, placedOnHex, sizeCategory, snapStep, storedCenter, type FootprintToken, type PlacedToken, type SizeCategory } from "./footprint.ts";
 import type { Point, Rect } from "./geom.ts";
 import { footing, footprintGround } from "./heights.ts";
-import { holderLedgesOnHexes, seatsFromSnappedBox, seatsOnSqueeze, walksOffFromGround } from "../migrate.ts";
+import { holderLedgesOnHexes, seatsFromSnappedBox, seatsFromSnappedFull, seatsOnSqueeze, walksOffFromGround } from "../migrate.ts";
 import type { Walker } from "./movement.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
 import { hexInScene, hexKey, hexNeighbors, type Hex, type HexGrid } from "./hex.ts";
@@ -279,8 +279,15 @@ export function seatedAt(g: Grid, seated: PlacedToken, walker: PlacedToken, at: 
 
 /** Its own seat carried by the walker's move to `at` (`seatedAt`), before a squeeze there seats it again. */
 function seatPlace(g: Grid, seated: PlacedToken, walker: PlacedToken, at: Point, opVersion?: number): Point {
-  const own = isSqueezed(walker) ? fullSeat(g, seated, walker) : { seat: seated, beside: walker };
-  const box = isSqueezed(walker) && !isHex(g) && seatsFromSnappedBox(opVersion) ? fullRect(g, { ...unsqueezed(walker), x: at.x, y: at.y }) : at;
+  if (!isSqueezed(walker)) {
+    // Along an axis its stored box starts off its snap grid, a walker full size on squares stands on its snapped box, where its seats
+    // are, so from op version 41 it carries them by that box (migrate.ts seatsFromSnappedFull). Along one on its grid the two are one.
+    const stand = !isHex(g) && seatsFromSnappedFull(opVersion) ? fullRect(g, walker) : walker;
+    const box = stand.x !== walker.x || stand.y !== walker.y ? fullRect(g, { ...unsqueezed(walker), x: at.x, y: at.y }) : at;
+    return { x: (stand.x !== walker.x ? box.x : at.x) + (seated.x - stand.x), y: (stand.y !== walker.y ? box.y : at.y) + (seated.y - stand.y) };
+  }
+  const own = fullSeat(g, seated, walker);
+  const box = !isHex(g) && seatsFromSnappedBox(opVersion) ? fullRect(g, { ...unsqueezed(walker), x: at.x, y: at.y }) : at;
   return { x: box.x + (own.seat.x - own.beside.x), y: box.y + (own.seat.y - own.beside.y) };
 }
 
