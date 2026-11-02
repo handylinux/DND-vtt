@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { SQUARES } from "#shared/rules/grid.ts";
-import { readFileSync } from "node:fs";
 import { describe, test } from "node:test";
 import { CHUNK_CELLS, type BuildChunk, type RoomState } from "#shared/model.ts";
 import { encodeHeights } from "#shared/rules/heights.ts";
@@ -12,6 +11,7 @@ import { boardPickFor, drawnAt, DrawnHeightsMemo, flatPick, heldPoint, liftIn, n
 import { token } from "#shared/testutil.ts";
 import type { ViewToken } from "../lib/scene.ts";
 import { standeeShape } from "./relief/standee.ts";
+import { holdViewStill } from "./sceneCamera.ts";
 
 /** One chunk of scene s1 with these cells raised or lowered, in feet. */
 function chunkWith(heights: Record<string, number>): BuildChunk {
@@ -202,9 +202,17 @@ describe("a token's ring as the board draws it (ISO34-ASTRA-3, ASTRA-9)", () => 
       const next = holdStill(cam, toView(TOP_DOWN, held.at, held.before), toView(now.view, held.at, held.after));
       const after = ringCenter({ ...now, camera: next }, bat, standsFor(now, () => false)(bat));
       assert.ok(Math.hypot(after.x - 400, after.y - 300) < 1e-9, `turn ${turn}: ${JSON.stringify(after)}`);
+      // The canvas holds the view still through the same decision: standing is judged by each view's own pick.
+      const camRef = { current: cam as Camera | null };
+      holdViewStill({
+        shown: now.view, viewSeen: { current: TOP_DOWN }, pendingCam: { current: null }, cam: camRef, size: { current: viewport }, fitted: { current: null }, insets: NO_INSETS,
+        pick: (view, camera) => boardPickFor({ room: state, scene: state.scenes.s1!, role: "player", fog: true, view, camera, lowPower: false, canvasHeight: 600 }, new DrawnHeightsMemo()),
+        selected: () => bat,
+        stands: (pick, selected) => standsFor(pick, () => false)(selected),
+        setCam: () => {},
+      });
+      assert.deepEqual(camRef.current, next, `turn ${turn}: the canvas takes the camera that holds the flier still`);
     }
-    // The canvas judges standing by each view's own pick.
-    assert.match(readFileSync(new URL("./Stage.tsx", import.meta.url), "utf8"), /heldPoint\(was, now, selected, s, insetsRef\.current, \(pick\) => !selected \|\| standsFor\(pick, aboveFogRef\.current\)\(selected\)\);/);
   });
 
   test("a flier half revealed to a player lies flat under the fog, and its ring is taken where the ground stage lays it", () => {

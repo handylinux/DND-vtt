@@ -81,6 +81,7 @@ import { useRoomActions, useRoomStore, useRoomUi, useRoomView } from "../state/v
 import { droppedIntoFog, intoFogText, refusedDragText, watchDrop } from "./dragNotes.ts";
 import { barChrome, barCover, barDockSlot, clearAnchor, DOCK_MIN_WIDTH, keepsOpening, largerEach, pastBars, restingBar, stripSqueezed, type BarSubject } from "./barDock.ts";
 import { footAnchor, headAnchor } from "./anchors.ts";
+import { holdViewStill, openSceneCamera } from "./sceneCamera.ts";
 import { boardPickFor, boardPickSlot, drawnAt, DrawnHeightsMemo, drawnRing, groundMapOf, heldPoint, liftIn, nudgeStep, pressAt, ringCenter, standsFor, tokenBase, viewGround, type BoardPick } from "./boardPick.ts";
 import { DRAG_GROUND, liftToDragLayer, returnHome, type Home } from "./dragLayer.ts";
 import { emptyTap, putAway } from "./emptyTap.ts";
@@ -412,22 +413,12 @@ export function MapStage(props: {
   const viewSeenRef = useRef(shown);
   insetsRef.current = insets;
   useLayoutEffect(() => {
-    if (!size || cameraSceneRef.current === scene.id) return;
-    cameraSceneRef.current = scene.id;
-    // This camera already uses the new scene's view. A simultaneous turn
-    // must not convert it again from the previous scene's view.
-    viewSeenRef.current = shownRef.current;
-    pendingCamRef.current = null;
-    let next: Camera;
-    if (scene.defaultView) {
-      fittedRef.current = null;
-      next = cameraForView(size, toView(shownRef.current, scene.defaultView, groundUnderRef.current(scene.defaultView, scene.defaultView.zoom)), scene.defaultView.zoom);
-    } else {
-      fittedRef.current = fitScene(size, scene, insetsRef.current, shownRef.current, null, NO_INSETS, liftRef.current);
-      next = fittedRef.current.cam;
-    }
-    camRef.current = next;
-    setCam(next);
+    openSceneCamera({
+      size, scene, shown: shownRef, viewSeen: viewSeenRef, cameraScene: cameraSceneRef, pendingCam: pendingCamRef, fitted: fittedRef, cam: camRef,
+      groundUnder: (at, zoom) => groundUnderRef.current(at, zoom),
+      fit: () => fitScene(size!, scene, insetsRef.current, shownRef.current, null, NO_INSETS, liftRef.current),
+      setCam,
+    });
   }, [size, scene]);
 
   /*
@@ -438,23 +429,14 @@ export function MapStage(props: {
    * middle meets. Each stands at its drawn height in each view.
    */
   useLayoutEffect(() => {
-    const before = viewSeenRef.current;
-    viewSeenRef.current = shown;
-    if (before === shown) return;
-    const c = pendingCamRef.current ?? camRef.current;
-    const s = sizeRef.current;
-    if (!c || !s) return;
-    const pickIn = (view: View) =>
-      boardPickFor({ room: store.getState().view, scene: sceneRef.current, role, fog: fogRef.current.on, view, camera: c, lowPower: lowPowerRef.current, canvasHeight: s.height }, heightsMemoRef.current);
-    const was = pickIn(before);
-    const now = pickIn(shown);
-    const selected = tokensByIdRef.current.get(store.getState().local.selectedId ?? "");
-    const held = heldPoint(was, now, selected, s, insetsRef.current, (pick) => !selected || standsFor(pick, aboveFogRef.current)(selected));
-    const next = holdStill(c, toView(before, held.at, held.before), toView(shown, held.at, held.after));
-    pendingCamRef.current = null;
-    fittedRef.current = null;
-    camRef.current = next;
-    setCam(next);
+    holdViewStill({
+      shown, viewSeen: viewSeenRef, pendingCam: pendingCamRef, cam: camRef, size: sizeRef, fitted: fittedRef, insets: insetsRef.current,
+      pick: (view, camera, s) =>
+        boardPickFor({ room: store.getState().view, scene: sceneRef.current, role, fog: fogRef.current.on, view, camera, lowPower: lowPowerRef.current, canvasHeight: s.height }, heightsMemoRef.current),
+      selected: () => tokensByIdRef.current.get(store.getState().local.selectedId ?? ""),
+      stands: (pick, selected) => standsFor(pick, aboveFogRef.current)(selected),
+      setCam,
+    });
   }, [shown]);
 
   /*
