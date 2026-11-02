@@ -1,0 +1,12 @@
+name: raccoon-vtt CodeQL config
+
+# Tests and the end-to-end suite are kept out of the analysis. They never run
+# in the server or in a browser that serves the app, and their input is text
+# the test itself wrote: markup it rendered and strips to compare words,
+# fixture strings it escapes to build a pattern, a mock it picks by host name,
+# a script it hands the test browser. The sanitization queries' findings there
+# guard nothing. Everything else, the scripts included, is still analyzed.
+paths-ignore:
+  - "**/*.test.ts"
+  - "**/*.itest.ts"
+  - "e2e/**"
