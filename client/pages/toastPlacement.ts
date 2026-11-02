@@ -1,4 +1,5 @@
-import { EDGE, inToastLayer, nextToastPlaces, restFloor, toastTop, type ColumnFacts, type ToastPlace, type ToastPlaces } from "../canvas/barDock.ts";
+import { EDGE, inToastLayer, nextToastPlaces, restFloor, TOAST_MIN, toastTop, type BarFacts, type ColumnFacts, type ToastPlace, type ToastPlaces } from "../canvas/barDock.ts";
+import { theme } from "../lib/theme.ts";
 
 /** Places portal hosts in display order without remounting their toast contents. */
 export function putToastHosts(stack: HTMLElement, hosts: readonly HTMLElement[]): void {
@@ -200,8 +201,92 @@ export function measureMapToasts(a: {
  */
 export function sheetToastFloor(a: { mode: "none" | "bottom" | "side" | "full"; height: number; toolbar: number | null; sheetHeight: number; keyboard: number | null }): number | null {
   if (a.mode === "side") return 0;
+  const top = bottomSheetTop(a);
+  return top === null ? null : restFloor(top);
+}
+
+/** A bottom sheet's top, standing on the toolbar or the keyboard, or null where there is none or it is not measured yet. */
+function bottomSheetTop(a: { mode: "none" | "bottom" | "side" | "full"; height: number; toolbar: number | null; sheetHeight: number; keyboard: number | null }): number | null {
   if (a.mode !== "bottom" || a.toolbar === null || a.sheetHeight <= 0) return null;
-  return restFloor(a.height - Math.max(a.toolbar, a.keyboard ?? 0) - a.sheetHeight);
+  return a.height - Math.max(a.toolbar, a.keyboard ?? 0) - a.sheetHeight;
+}
+
+/** Where the one row over the top bar's row starts below the safe top (ToastParts.tsx toastRow). */
+export const TOAST_ROW_TOP = theme.space(1);
+
+/**
+ * A token bar docked on the map's right, in its lane or against the free
+ * area's right edge as barDock.ts barCover reads it: its left and top, in
+ * the chrome's own px, or null where none docks there. Its width comes
+ * from the device's font (barDock.ts defaultBarWidth), so it can reach
+ * past the lane's 304 px into the notices' room.
+ */
+export function dockedBarEdge(bar: Pick<BarFacts, "box" | "mode" | "laneLeft" | "freeRight"> | null): { left: number; top: number } | null {
+  if (!bar || bar.mode === "span" || bar.laneLeft <= 0) return null;
+  const inLane = bar.box.left >= bar.laneLeft - 0.5;
+  const againstRight = bar.box.left + bar.box.width >= bar.freeRight - 0.5;
+  return inLane || againstRight ? { left: bar.box.left, top: bar.box.top } : null;
+}
+
+/**
+ * The notices' room left of the lane (barDock.ts noticePlace), ending 8 px
+ * left of a docked bar that reaches into it, as on a phone held sideways
+ * (LP29-A-TOAST-4). Only where the toasts, centered and at most a notice
+ * wide, would come that close: a wide screen's stack keeps its center.
+ */
+export function noticesBesideBar(box: { left: number; width: number } | null, barLeft: number | null): { left: number; width: number } | null {
+  if (box === null || barLeft === null) return box;
+  const room = barLeft - EDGE - box.left;
+  const reach = Math.min(box.width, (box.width + theme.layout.notice) / 2);
+  return reach > room ? { left: box.left, width: Math.max(0, room) } : box;
+}
+
+/**
+ * Where a phone's toasts may stand, in the chrome's own px (UNDOB-FIN-2,
+ * LP29-A-TOAST-1 to 4). The one rule for every sheet shape and for none.
+ *
+ * `floor` is the foot of their room: the open sheet's (sheetToastFloor)
+ * and, with the on-screen keyboard up, the visible area's foot less the
+ * tool's controls standing on the keyboard and an 8 px gap, so no toast
+ * stands under the keyboard. Under 44 px of room, the newest shows as the
+ * one row over the top bar's row (Toasts).
+ *
+ * `row` is where that row can show: its right end `right` px in from the
+ * map's right, so it keeps left of a sideways sheet that took the visible
+ * area's height over the bars (`tall`, Sheet.tsx) and of a docked token bar
+ * standing over the top bar's row. Null where nothing shows it: a bottom
+ * sheet the keyboard lifted over the row, or the very short sheet with the
+ * keyboard up, whose own place for the row (modalSlot.tsx) would push the
+ * field being typed in out of view. Then every toast waits undrawn, its
+ * time not started, until the keyboard closes. A page panned up by the
+ * browser to show a field is not counted.
+ */
+export function phoneToastRoom(a: {
+  mode: "none" | "bottom" | "side" | "full";
+  /** The page's height as the sheet lays out in it (sheetCap.ts pageHeightOf). */
+  height: number;
+  toolbar: number | null;
+  /** The tool's highest control above the layout's foot as it rests, the toolbar included (Room's `chrome.controls`), or null until measured. */
+  controls: number | null;
+  sheetHeight: number;
+  tall: boolean;
+  /** The px of the layout's foot the keyboard hides (sheetCap.ts sheetKeyboard `inset`), 0 on a page held short for it, or null with no keyboard. */
+  keyboard: number | null;
+  safeTop: number;
+  /** A sideways sheet's width, and the map's, which the row's right end counts in from. */
+  sideWidth: number;
+  mapWidth: number;
+  bar: { left: number; top: number } | null;
+}): { floor: number | null; row: { right: number } | null } {
+  const keyboardFloor = a.keyboard === null || a.controls === null || a.toolbar === null ? null : a.height - (a.controls - a.toolbar) - Math.max(a.toolbar, a.keyboard) - EDGE;
+  const floor = lowerFloor(sheetToastFloor(a), keyboardFloor);
+  if (a.mode === "full") return { floor, row: a.keyboard === null ? { right: 0 } : null };
+  const rowFoot = a.safeTop + TOAST_ROW_TOP + TOAST_MIN;
+  const sheetTop = bottomSheetTop(a);
+  if (a.mode === "bottom" && (a.tall || (sheetTop !== null && sheetTop < rowFoot))) return { floor, row: null };
+  const besideSheet = a.mode === "side" && a.tall ? a.sideWidth : 0;
+  const besideBar = a.bar !== null && a.bar.top < rowFoot ? a.mapWidth - a.bar.left : 0;
+  return { floor, row: { right: Math.max(besideSheet, besideBar) } };
 }
 
 /**

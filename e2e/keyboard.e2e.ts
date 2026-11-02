@@ -35,6 +35,10 @@ import { DEFAULT_SNAPSHOT_BUDGET } from "../server/rooms/budgets.ts";
  *   and Add a class resource's Name with Add, a dialog's sheet.
  * - A tap on Spend with the keyboard up spends, the sheet staying on the
  *   keyboard until it closes.
+ * - Three whispers come while Pat types in the Dice sheet or Thorn's docked
+ *   bar: each toast drawn shows whole over the keyboard, clear of the sheet
+ *   and 8 px clear of the bar, the field stays put, and toasts with nowhere
+ *   to show wait until the keyboard closes (toast46).
  * - Then in a fight, on Thorn's turn, the alerts fold into the dock on the
  *   sheet's top edge, which rides the raised sheet or joins its header.
  * - In the fight on the small phone at 130%, with the number pad and with
@@ -747,6 +751,113 @@ async function addResource(view: View, extra = ""): Promise<void> {
   await dialog.waitFor({ state: "detached" });
 }
 
+/** Three asides the DM whispers to Pat at once while he types, as live play 29 sent them. */
+const WHISPERS = ["The altar hums.", "A door creaks open on the far side of the hall.", "Cold air spills out."];
+
+/** What a toast must stay clear of, by name, and the gap it keeps in the chrome's own px. */
+type Cover = { at: Locator; gap: number };
+
+async function showsWithin(target: Locator, ms: number): Promise<boolean> {
+  return target.filter({ visible: true }).first().waitFor({ timeout: ms }).then(() => true, () => false);
+}
+
+/** The Dice sheet, from the toolbar's Panels. */
+async function diceSheet(page: Page): Promise<Locator> {
+  await page.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).click();
+  await page.getByRole("region", { name: "Panels" }).getByRole("button", { name: /^Dice/ }).click();
+  const sheet = page.locator('dialog[data-rvtt-sheet][aria-label="Dice"]');
+  await sheet.waitFor();
+  return sheet;
+}
+
+/** Why each toast drawn now does not show: it must show whole and on top (shownWhole), and keep its gap from every cover that shows. */
+async function toastMisses(page: Page, covers: Record<string, Cover>, scale: number): Promise<string[]> {
+  const misses: string[] = [];
+  const shown = page.locator("[data-toast]").filter({ visible: true });
+  for (let i = 0, n = await shown.count(); i < n; i++) {
+    const toast = shown.nth(i);
+    const words = `"${((await toast.textContent()) ?? "").slice(0, 24)}"`;
+    const off = await shownWhole(toast);
+    if (off) misses.push(`${words} ${off}`);
+    const t = await box(toast);
+    for (const [name, cover] of Object.entries(covers)) {
+      if (!(await cover.at.isVisible())) continue;
+      const c = await box(cover.at);
+      const gap = cover.gap * scale - 0.5;
+      if (t.left < c.right + gap && c.left - gap < t.right && t.top < c.bottom && c.top < t.bottom) misses.push(`${words} at ${Math.round(t.left)} to ${Math.round(t.right)} across, ${Math.round(t.top)} to ${Math.round(t.bottom)} down, is within ${cover.gap} px of ${name} at ${Math.round(c.left)} to ${Math.round(c.right)}, ${Math.round(c.top)} to ${Math.round(c.bottom)}`);
+    }
+  }
+  return misses;
+}
+
+/** `target`'s box once two reads 150 ms apart agree, as a sheet settles over the keyboard and scrolls its field into view. */
+async function settledBox(target: Locator, what: string): Promise<Box> {
+  let last = await box(target);
+  await waitFor(`${what}: settled`, async () => {
+    await target.page().waitForTimeout(150);
+    const now = await box(target);
+    const still = Math.abs(now.top - last.top) < 0.5 && Math.abs(now.bottom - last.bottom) < 0.5;
+    last = now;
+    return still ? true : null;
+  }, 5_000);
+  return last;
+}
+
+/**
+ * toast46 (LP29-A-TOAST-1 to 4): three whispers come while Pat types in
+ * `field` over the keyboard. Each toast drawn shows whole in the visible
+ * area, on top at its middle and clear of `covers`, and the field neither
+ * moves nor leaves the view. Where nothing would show them they wait
+ * undrawn, so the newest shows once the keyboard closes. The very short
+ * sheet's body at 480 x 320 at 130% is shorter than the field even with no
+ * toast, so there only its not moving is asked.
+ */
+async function toastsWhileTyping(view: View, field: Locator, covers: Record<string, Cover>, what: string, extra = ""): Promise<void> {
+  const misses: string[] = [];
+  try {
+    await openKeys(pat, view);
+    const before = await settledBox(field, what);
+    const wasWhole = (await shownWhole(field)) === null;
+    for (const text of WHISPERS) await ops.send({ t: "log.whisper", to: [run.patId], text });
+    // The toasts' one status says each as it is pushed, drawn or waiting (Room.tsx ToastVoice).
+    await pat.locator("[data-rvtt-toast-status]").filter({ hasText: WHISPERS[2]! }).first().waitFor({ state: "attached" });
+    // A beat for the placement to settle, short of a toast's 5 s.
+    await pat.waitForTimeout(400);
+    misses.push(...(await toastMisses(pat, covers, view.scale)));
+    const after = await box(field);
+    if (Math.abs(after.top - before.top) > 1) misses.push(`the field moved from ${Math.round(before.top)} to ${Math.round(after.top)} down as the toasts came`);
+    const off = wasWhole ? await shownWhole(field) : null;
+    if (off) misses.push(`the field ${off}`);
+    await shotWithKeyboard(pat, `toast46-${shotTag(view, extra)}`, view.keyboard);
+    const row = pat.locator('[data-toast-form="row"]').filter({ visible: true });
+    if ((await row.count()) > 0) await measure(pat, row.first(), `the toasts' row ${what}`, view.keyboard);
+  } finally {
+    await closeKeys(pat, view);
+  }
+  // None was lost while it waited: with the keyboard gone the newest shows.
+  if (!(await showsWithin(pat.locator("[data-toast]").filter({ hasText: WHISPERS[2]! }), 3_000))) misses.push("the newest toast never showed once the keyboard closed");
+  assert.deepEqual(misses, [], what);
+}
+
+/** toast46: the Dice sheet's formula takes the keyboard as the whispers come. */
+async function diceWhileTyping(view: View): Promise<void> {
+  await setUp(pat, view);
+  const sheet = await diceSheet(pat);
+  const field = sheet.getByRole("textbox", { name: "Dice formula" });
+  await field.tap();
+  await toastsWhileTyping(view, field, { "the Dice sheet": { at: sheet, gap: 0 } }, `the Dice sheet's formula at ${viewName(view)}`, "dice");
+}
+
+/** toast46: Thorn's bar docks beside the map on a phone held sideways, and its HP entry takes the keyboard as the whispers come. */
+async function barWhileTyping(view: View): Promise<void> {
+  await setUp(pat, view);
+  const bar = await thornsBar(pat);
+  const hp = (await barControl(bar, "HP change", "textbox")).first();
+  await hp.tap();
+  await toastsWhileTyping(view, hp, { "Thorn's bar": { at: bar, gap: 8 } }, `the bar's HP entry at ${viewName(view)}`, "bar");
+  await hp.blur();
+}
+
 describe("raccoon-vtt: a sheet's field over the phone keyboard", { timeout: 900_000 }, () => {
   before(async () => {
     server = await startServer({ port: PORT, assetDir, databaseUrl: DATABASE_URL });
@@ -993,6 +1104,32 @@ describe("raccoon-vtt: a sheet's field over the phone keyboard", { timeout: 900_
    * card folds into "Roll asked" first and opens where the toolbar's lift already stops it.
    */
   test("kb-16. at 844 x 390 at 100%, the roll card's Total and Send show whole over the keyboard in the alerts over the whole screen", () => rollCard({ width: 844, height: 390, scale: 1, keyboard: 216 }, false));
+
+  /*
+   * Live play 29's toast placements with the keyboard up: the sideways sheet risen over the bars, the bottom sheet that fills a page the
+   * browser shortened, and the very short sheet over the visual viewport and with the page resized.
+   */
+  for (const view of [
+    { width: 844, height: 390, scale: 1.3, keyboard: 216 },
+    { width: 320, height: 568, scale: 1.3, keyboard: 300, native: true },
+    { width: 480, height: 320, scale: 1.3, keyboard: 216 },
+    { width: 480, height: 320, scale: 1.3, keyboard: 216, native: true },
+  ] satisfies View[]) {
+    test(`toast46-1. at ${viewName(view)}, toasts that come while Pat types in the Dice sheet show whole, clear of the sheet, and leave the formula in view`, () => diceWhileTyping(view));
+  }
+  for (const scale of [1, 1.3]) {
+    const view: View = { width: 844, height: 390, scale, keyboard: 216 };
+    test(`toast46-2. at ${viewName(view)}, toasts that come while Pat types in Thorn's docked bar show whole over the keyboard, 8 px clear of the bar`, () => barWhileTyping(view));
+    test(`toast46-3. at ${viewName(view)} with no keyboard, toasts beside Thorn's docked bar keep 8 px clear of it`, async () => {
+      await setUp(pat, view);
+      const bar = await thornsBar(pat);
+      for (const text of WHISPERS) await ops.send({ t: "log.whisper", to: [run.patId], text });
+      await pat.locator("[data-toast]").filter({ hasText: WHISPERS[2]! }).filter({ visible: true }).first().waitFor();
+      await pat.waitForTimeout(400);
+      await shots.take(pat, `toast46-beside-bar-${shotTag(view)}`);
+      assert.deepEqual(await toastMisses(pat, { "Thorn's bar": { at: bar, gap: 8 } }, scale), [], `toasts beside the docked bar at ${viewName(view)}`);
+    });
+  }
 
   test("kb-11. Thorn's turn in a fight: the alerts fold into the dock on a phone's sheet", async () => {
     await ops.send({

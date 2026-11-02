@@ -52,10 +52,14 @@ test("FU39 confer: a row toast keeps its portal host when the layout gives it a 
 
 test("FU39 confer: the row's empty stack and both toast stacks stay mounted until a focused host moves", () => {
   const rowStack = { current: null };
-  const row = toastRow({ layer: container() as unknown as HTMLElement, rowBox: { current: null }, rowStack, safeTop: 0, whole: false });
+  const row = toastRow({ layer: container() as unknown as HTMLElement, rowBox: { current: null }, rowStack, safeTop: 0, right: 0, whole: false });
   assert.ok(isPortal(row));
+  // LP29-A-TOAST-1: beside a sideways sheet risen over the bars the row's right end keeps left of it.
+  const beside = toastRow({ layer: container() as unknown as HTMLElement, rowBox: { current: null }, rowStack, safeTop: 0, right: 340, whole: false });
+  assert.ok(isPortal(beside));
+  assert.equal(((beside.children as Node).props.style as { right: number }).right, 340);
   assert.ok(React.Children.toArray((row.children as Node).props.children as React.ReactNode).some((node) => (node as Node).props.ref === rowStack), "the empty row stack must stay mounted until its focused host moves");
-  assert.equal(toastRow({ layer: null, rowBox: { current: null }, rowStack, safeTop: 0, whole: false }), null);
+  assert.equal(toastRow({ layer: null, rowBox: { current: null }, rowStack, safeTop: 0, right: 0, whole: false }), null);
   const stacks = { notices: { name: "notices" }, layer: { name: "layer" } } as never;
   const withLayer = toastStacks({ layer: container() as unknown as HTMLElement, lowAt: null, stacks }) as Node;
   const drawn = React.Children.toArray(withLayer.props.children as React.ReactNode);

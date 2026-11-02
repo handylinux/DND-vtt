@@ -9,7 +9,7 @@ import { D20Icon } from "../features/dice/throw/D20Icon.tsx";
 import { VISUALLY_HIDDEN } from "../lib/a11y.ts";
 import { theme } from "../lib/theme.ts";
 import type { Toast, ToastDie } from "../state/types.ts";
-import { toastPortalKey } from "./toastPlacement.ts";
+import { TOAST_ROW_TOP, toastPortalKey } from "./toastPlacement.ts";
 
 /** The widest a toast stands, and a stack that scrolls with it, so the map either side still takes a tap. */
 export const TOAST_MAX_PX = theme.layout.notice;
@@ -282,13 +282,14 @@ export function toastForm(id: number, rowToast: Toast | undefined, wholeToast: T
 
 /**
  * The one row's box over the top bar's row, 4 px from the safe top, as wide as
- * the layer less its sides. Whole, it stands from the safe top down. Its stack
- * stays mounted while empty, until its focused host moves out.
+ * the layer less its sides and `right`, what stands over the top bar's row at
+ * the right (toastPlacement.ts phoneToastRoom). Whole, it stands from the safe
+ * top down. Its stack stays mounted while empty, until its focused host moves out.
  */
-export function toastRow(a: { layer: HTMLElement | null; rowBox: RefObject<HTMLDivElement | null>; rowStack: RefObject<HTMLDivElement | null>; safeTop: number; whole: boolean }): ReactNode {
+export function toastRow(a: { layer: HTMLElement | null; rowBox: RefObject<HTMLDivElement | null>; rowStack: RefObject<HTMLDivElement | null>; safeTop: number; right: number; whole: boolean }): ReactNode {
   if (!a.layer) return null;
   return createPortal(
-    <div ref={a.rowBox} data-toast-over-bars="" style={{ position: "absolute", top: a.safeTop + (a.whole ? 0 : theme.space(1)), left: 0, right: 0, padding: `0 ${theme.space(3)}px`, display: "flex", justifyContent: "center" }}>
+    <div ref={a.rowBox} data-toast-over-bars="" style={{ position: "absolute", top: a.safeTop + (a.whole ? 0 : TOAST_ROW_TOP), left: 0, right: a.right, padding: `0 ${theme.space(3)}px`, display: "flex", justifyContent: "center" }}>
       <div ref={a.rowStack} style={{ display: "contents" }} />
     </div>,
     a.layer,

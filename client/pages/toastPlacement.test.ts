@@ -2,9 +2,9 @@ import "../components/testing/register.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
-import { test } from "node:test";
+import { describe, test } from "node:test";
 import * as React from "react";
-import { keptMapFoot, mapToastBox, measureMapToasts, lowerFloor, noticesDock, placeRoomToasts, putToastHosts, sheetToastFloor, sheetToastsToDismiss, toastStartTop } from "./toastPlacement.ts";
+import { dockedBarEdge, keptMapFoot, mapToastBox, measureMapToasts, lowerFloor, noticesBesideBar, noticesDock, phoneToastRoom, placeRoomToasts, putToastHosts, sheetToastFloor, sheetToastsToDismiss, toastStartTop } from "./toastPlacement.ts";
 import { columnFacts, columnTop, EDGE, nextToastPlaces, NO_TOAST_PLACES, raisedRow, SHADOW_ROOM, SUMMARY_ROW, toastTop, type ColumnFacts } from "../canvas/barDock.ts";
 import { pageHeightOf } from "../components/sheetCap.ts";
 import { theme } from "../lib/theme.ts";
@@ -623,9 +623,76 @@ test("a page held short for the keyboard sets the sheet's floor from the short p
   assert.equal(sheetToastFloor({ mode: "bottom", height: 844, toolbar: 60, sheetHeight, keyboard: null }), 844 - 60 - sheetHeight - 60, "the steady height would put it 300 px too low");
   // Room reads the page's height, the keyboard's inset and the combined floor, as the tests above assume.
   const room = readFileSync(new URL("./Room.tsx", import.meta.url), "utf8");
-  assert.match(room, /sheetToastFloor\(\{[^}]*height: pageHeight,[^}]*keyboard: sheetKeys\?\.inset \?\? null/);
+  assert.match(room, /phoneToastRoom\(\{[^}]*height: pageHeight,[^}]*keyboard: sheetKeys\?\.inset \?\? null/);
   assert.match(room, /const pageHeight = pageHeightOf\(keyboard, zoom, height\);/);
   assert.match(room, /placeRoomToasts\(\{[\s\S]{0,200}restFloor: floor, floorWas: floorWas\.current/);
+});
+
+// LP29-A-TOAST-1 to 4, at 844 x 390 at 130%: 649.2 x 300 in the chrome's own px, the toolbar 60, a 216 px keyboard 166.2.
+describe("phoneToastRoom: every sheet shape and none keep the toasts in view while the keyboard is up", () => {
+  type Input = Parameters<typeof phoneToastRoom>[0];
+  const sideways: Input = { mode: "none", height: 300, toolbar: 60, controls: 60, sheetHeight: 0, tall: false, keyboard: null, safeTop: 0, sideWidth: 340, mapWidth: 649.2, bar: null };
+  const room = (patch: Partial<Input>) => phoneToastRoom({ ...sideways, ...patch });
+
+  test("with no sheet the keyboard's top bounds the toasts, above the tool's controls standing on it (TOAST-3)", () => {
+    assert.deepEqual(room({}), { floor: null, row: { right: 0 } }, "no keyboard, no sheet: nothing changes");
+    assert.equal(room({ keyboard: 166 }).floor, 300 - 166 - EDGE, "8 px above the keyboard, which hides the toolbar");
+    assert.equal(room({ keyboard: 166, controls: 104 }).floor, 300 - 166 - 44 - EDGE, "the tool's 44 px of options stand on the keyboard");
+    assert.equal(room({ keyboard: 40 }).floor, 300 - 60 - EDGE, "a keyboard under the toolbar's top: above the toolbar");
+    assert.equal(room({ keyboard: 0, height: 268 / 1.3 }).floor, 268 / 1.3 - 60 - EDGE, "a page the browser held short: above its own foot's toolbar");
+    assert.equal(room({ keyboard: 166, controls: null }).floor, null, "the controls not measured yet");
+    assert.deepEqual(room({ keyboard: 166 }).row, { right: 0 }, "the row over the top bar shows");
+  });
+
+  test("beside a sideways sheet the keyboard lifted over the bars, the row keeps left of it (TOAST-1)", () => {
+    assert.deepEqual(room({ mode: "side", keyboard: 166, tall: true }), { floor: 0, row: { right: 340 } });
+    assert.deepEqual(room({ mode: "side", keyboard: 166 }), { floor: 0, row: { right: 0 } }, "standing under the bars, it leaves the row whole");
+    assert.deepEqual(room({ mode: "side" }), { floor: 0, row: { right: 0 } });
+  });
+
+  test("a bottom sheet over the row's place leaves the toasts waiting undrawn (TOAST-1)", () => {
+    // 320 x 568 at 130% on a page held short at 268 px: 206.2 tall, the sheet at least 120.
+    const short = { mode: "bottom" as const, height: 268 / 1.3, mapWidth: 246, keyboard: 0 };
+    assert.equal(room({ ...short, sheetHeight: 120 }).row, null, "the sheet's top at 26, above the row's foot at 48");
+    assert.equal(room({ ...short, sheetHeight: 268 / 1.3, tall: true }).row, null, "a sheet that took the visible area's height");
+    assert.deepEqual(room({ ...short, sheetHeight: 98 }).row, { right: 0 }, "a sheet whose top stands at the row's foot leaves it");
+    assert.deepEqual(room({ ...short, sheetHeight: 98, safeTop: 1 }).row, null, "a notch moves the row down onto it");
+    assert.deepEqual(room({ mode: "bottom", height: 437, sheetHeight: 280, mapWidth: 246 }).row, { right: 0 }, "no keyboard: the sheet stands under the bars");
+    assert.deepEqual(room({ mode: "bottom", height: 437, sheetHeight: 0, keyboard: 166 }).row, { right: 0 }, "the sheet not measured yet");
+  });
+
+  test("the very short sheet's own row waits while the keyboard is up, so it never pushes the field (TOAST-2)", () => {
+    assert.deepEqual(room({ mode: "full" }).row, { right: 0 });
+    assert.equal(room({ mode: "full", keyboard: 80 }).row, null);
+    assert.equal(room({ mode: "full", keyboard: 0, height: 104 / 1.3 }).row, null, "a page held short for the keyboard too");
+  });
+
+  test("a docked token bar over the top bar's row keeps the row 12 px left of it (TOAST-3 and 4)", () => {
+    assert.deepEqual(room({ keyboard: 166, bar: { left: 326, top: 8 } }).row, { right: 649.2 - 326 });
+    assert.deepEqual(room({ bar: { left: 326, top: 61 } }).row, { right: 0 }, "standing under the top bar, it leaves the row whole");
+    assert.deepEqual(room({ mode: "side", tall: true, keyboard: 166, bar: { left: 400, top: 8 } }).row, { right: 340 }, "the farther in of the bar and a risen sheet");
+  });
+
+  test("the notices end 8 px left of a docked bar that reaches into their room, and a wide screen's stack keeps its center (TOAST-4)", () => {
+    // 844 x 390 at 100%: the room left of the lane runs 8 to 524, and a bar 317 px wide docks at 519.
+    assert.deepEqual(noticesBesideBar({ left: 8, width: 516 }, 519), { left: 8, width: 503 }, "the toasts end at 511");
+    assert.deepEqual(noticesBesideBar({ left: 8, width: 516 }, 532), { left: 8, width: 516 }, "a bar inside its lane leaves the room");
+    assert.deepEqual(noticesBesideBar({ left: 8, width: 516 }, null), { left: 8, width: 516 }, "no bar docked");
+    assert.equal(noticesBesideBar(null, 519), null, "notices spanning the map");
+    // A computer's map 1064 px wide: the stack, 520 px at most, centered in 752, ends 116 px short of the room's edge.
+    assert.deepEqual(noticesBesideBar({ left: 8, width: 752 }, 747), { left: 8, width: 752 }, "the centered stack stays clear, so it does not move");
+    assert.deepEqual(noticesBesideBar({ left: 8, width: 752 }, 600), { left: 8, width: 584 }, "a bar made wide enough to meet the stack");
+  });
+
+  test("dockedBarEdge reads a bar docked on the right as barCover does, and no other", () => {
+    const facts = { box: { left: 519, top: 61, width: 317, height: 261 }, mode: "dock" as const, laneLeft: 524, freeRight: 836 };
+    assert.deepEqual(dockedBarEdge(facts), { left: 519, top: 61 }, "a bar wider than the lane, against the right");
+    assert.deepEqual(dockedBarEdge({ ...facts, box: { ...facts.box, left: 524, width: 304 } }), { left: 524, top: 61 }, "a bar inside its lane");
+    assert.equal(dockedBarEdge({ ...facts, box: { ...facts.box, left: 120 } }), null, "a window moved off the right");
+    assert.equal(dockedBarEdge({ ...facts, mode: "span" }), null, "an upright phone's strip");
+    assert.equal(dockedBarEdge({ ...facts, laneLeft: 0 }), null, "no lane fits");
+    assert.equal(dockedBarEdge(null), null);
+  });
 });
 
 // LOOK1-SOL-002: Room hands placement the combined floor, so a stack drawn below the alert cards when a sheet opens takes its place anew.

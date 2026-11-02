@@ -39,7 +39,7 @@ import { SheetHeader } from "../components/SheetHeader.tsx";
 import { addsWords, useTooltip } from "../components/Tooltip.tsx";
 import { QuietLoadNotice } from "./QuietLoadNotice.tsx";
 import { ToastNote, toastPortals, toastRow, toastStacks, useToastStack } from "./ToastParts.tsx";
-import { measureMapToasts, noticesDock, placeRoomToasts, settleToastHosts, lowerFloor, sheetToastFloor, sheetToastsToDismiss, toastHostOf, toastLists, toastStartTop } from "./toastPlacement.ts";
+import { dockedBarEdge, measureMapToasts, noticesBesideBar, noticesDock, phoneToastRoom, placeRoomToasts, settleToastHosts, lowerFloor, sheetToastsToDismiss, toastHostOf, toastLists, toastStartTop } from "./toastPlacement.ts";
 import { BlackoutChip } from "./BlackoutChip.tsx";
 import { Loading } from "../components/Loading.tsx";
 import { ScrollStrip } from "../components/ScrollStrip.tsx";
@@ -802,7 +802,10 @@ function RoomPage() {
   const free = freeArea({ width: mapWidth, height }, chrome ?? DEFAULT_CHROME);
   const beside = chrome ? noticePlace(free) : null;
   const besideLane = beside !== null;
-  const noticeBox = beside;
+  // A docked bar wider than the lane's 304 px, as the device's font can make it, reaches into the room left of the lane: the notices end 8 px short of it (LP29-A-TOAST-4).
+  const barLeft = useStore(barDock, (s) => dockedBarEdge(s.bar)?.left ?? null);
+  const barTop = useStore(barDock, (s) => dockedBarEdge(s.bar)?.top ?? null);
+  const noticeBox = noticesBesideBar(beside, barLeft);
   const previewNotice = previewing?.notice ?? null;
   const previewPush = !beside && previewNotice ? previewNotice.height / zoom + EDGE : 0;
   const reportsPreview = previewNotice !== null && !ended && gate.kind !== "blackout";
@@ -879,8 +882,21 @@ function RoomPage() {
    */
   const stripTop = useStore(barDock, (s) => (s.bar?.rests ? s.bar.box.top : null));
   const toastFloor = stripTop === null ? null : restFloor(stripTop);
-  // The toasts alone take a phone's open sheet as their floor too (toastPlacement.ts sheetToastFloor). The token bar's options and the alerts keep the strip's.
-  const sheetFloor = sheetToastFloor({ mode: !sheetOpen || wide ? "none" : full ? "full" : sheetModeNow === "side" ? "side" : "bottom", height: pageHeight, toolbar: chrome?.toolbar ?? null, sheetHeight, keyboard: sheetKeys?.inset ?? null });
+  // The toasts alone take a phone's open sheet and the on-screen keyboard as their floor too, and the one row its place (toastPlacement.ts phoneToastRoom). The token bar's options and the alerts keep the strip's.
+  const toastRoom = phoneToastRoom({
+    mode: !sheetOpen || wide ? "none" : full ? "full" : sheetModeNow === "side" ? "side" : "bottom",
+    height: pageHeight,
+    toolbar: chrome?.toolbar ?? null,
+    controls: chrome?.controls ?? null,
+    sheetHeight,
+    tall: sheetTall,
+    keyboard: sheetKeys?.inset ?? null,
+    safeTop: safe.top,
+    sideWidth,
+    mapWidth,
+    bar: barLeft !== null && barTop !== null ? { left: barLeft, top: barTop } : null,
+  });
+  const sheetFloor = toastRoom.floor;
   const optionsTop = chrome ? Math.min(height - chrome.bottom, toastFloor ?? Infinity) : 0;
   // The alerts column's width as it works it out (features/encounter/InitiativeStrip.tsx): it steps left of a phone's sideways sheet, and beside the side panel no right safe area is the map's.
   const columnSheet = !wide && width > height && sheetOpen ? sideWidth : 0;
@@ -1028,6 +1044,7 @@ function RoomPage() {
             optionsTop={chrome ? optionsTop : null}
             restFloor={chrome ? toastFloor : null}
             sheetFloor={chrome ? sheetFloor : null}
+            row={toastRoom.row}
             top={chrome ? Math.max(chrome.top, lastingBottom ?? 0) + EDGE : null}
             safeTop={chrome?.safe.top ?? 0}
           />
@@ -1729,8 +1746,10 @@ function Toasts(props: {
   optionsTop: number | null;
   /** The foot of the room a resting strip leaves the toasts (barDock.ts restFloor), or null. */
   restFloor: number | null;
-  /** The foot of the room a phone's open sheet leaves the toasts (toastPlacement.ts sheetToastFloor), or null. */
+  /** The foot of the room a phone's open sheet or the on-screen keyboard leaves the toasts (toastPlacement.ts phoneToastRoom), or null. */
   sheetFloor: number | null;
+  /** Where the one row can show, its right end in from the map's right, or null where nothing shows it and every toast waits undrawn (phoneToastRoom). */
+  row: { right: number } | null;
   /** Where the toasts' room starts, under the top bars and the lasting notices. */
   top: number | null;
   safeTop: number;
@@ -1756,11 +1775,13 @@ function Toasts(props: {
   // The lower of the strip's floor and the sheet's: what is left above both is the toasts' room.
   const floor = lowerFloor(props.restFloor, props.sheetFloor);
   const overBars = floor !== null && props.top !== null && slot === null && !props.paneStands && props.layer !== null && toastsOverBars({ restFloor: floor, top: props.top });
+  // Where nothing shows the row, the newest waits undrawn with the others (LP29-A-TOAST-1 and 2).
+  const rowShows = props.row !== null;
   const [whole, setWhole] = useState<number | null>(null);
-  const wholeToast = overBars && whole !== null ? showing.find((t) => t.id === whole) : undefined;
-  const rowToast = overBars ? (wholeToast ?? showing[showing.length - 1]) : undefined;
+  const wholeToast = overBars && rowShows && whole !== null ? showing.find((t) => t.id === whole) : undefined;
+  const rowToast = overBars && rowShows ? (wholeToast ?? showing[showing.length - 1]) : undefined;
   // The very short sheet's one row shows whole the same way, in its own place (UNDOB-FIN-2).
-  const slotWhole = slot !== null && whole !== null ? showing.find((t) => t.id === whole) : undefined;
+  const slotWhole = slot !== null && rowShows && whole !== null ? showing.find((t) => t.id === whole) : undefined;
   const expanded = wholeToast ?? slotWhole;
   const shrink = useCallback(() => {
     setWhole((id) => {
@@ -1857,8 +1878,10 @@ function Toasts(props: {
    * The very short sheet's place holds one toast too, the newest in the one
    * row's form, and the older ones wait undrawn, so three toasts never take
    * the body's room (UNDOB-FIN-2). A tap shows it whole, as over the bars.
+   * With the keyboard up it waits too, so it never pushes the field being
+   * typed in out of view (LP29-A-TOAST-2).
    */
-  const sheetToast = inSheet.find((t) => t.id === whole) ?? inSheet[inSheet.length - 1];
+  const sheetToast = rowShows ? (inSheet.find((t) => t.id === whole) ?? inSheet[inSheet.length - 1]) : undefined;
   const drawnKey = [...drawn, ...(sheetToast ? [sheetToast] : [])].map((t) => t.id).join(",");
   useLayoutEffect(() => {
     if (drawnKey !== "") ui.toastsDrawn(drawnKey.split(",").map(Number));
@@ -1923,7 +1946,7 @@ function Toasts(props: {
       {/* Keep empty stacks mounted until the layout effect moves their last host, so React cannot detach its focused action first. */}
       {toastStacks({ layer: props.layer, lowAt, stacks })}
       {toastPortals({ drawn, rowToast, wholeToast, hostOf, dismiss: (id) => ui.dismissToast(id), showWhole: (id) => { setWhole(id); ui.holdToast(id, true); }, shrink })}
-      {toastRow({ layer: props.layer, rowBox, rowStack, safeTop: props.safeTop, whole: wholeToast !== undefined })}
+      {toastRow({ layer: props.layer, rowBox, rowStack, safeTop: props.safeTop, right: props.row?.right ?? 0, whole: wholeToast !== undefined })}
       {slot && sheetToast
         ? createPortal(
             <ToastNote key={sheetToast.id} toast={sheetToast} form={whole === sheetToast.id ? "whole" : "row"} onDismiss={() => ui.dismissToast(sheetToast.id)} onWhole={() => { setWhole(sheetToast.id); ui.holdToast(sheetToast.id, true); }} onShrink={shrink} />,
