@@ -5,6 +5,9 @@
 #
 # Every run checks the version, builds the image natively on arm64, and
 # brings the amd64 image up with selfhost/compose.yml (selfhost/smoke-test.sh).
+# Every build dates the image and the files it writes at the commit's time
+# (SOURCE_DATE_EPOCH, with rewrite-timestamp), so building one commit again
+# makes the same image (Dockerfile).
 # A tag run also checks that the tag is `v` plus package.json's version, on a
 # commit in main's history, and that ci.yml passed on that exact commit. Its
 # publish job then runs in the `dockerhub` environment, which holds the Docker
@@ -87,6 +90,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       minor: ${{ steps.version.outputs.minor }}
       sha: ${{ steps.version.outputs.sha }}
+      epoch: ${{ steps.version.outputs.epoch }}
       publish: ${{ steps.version.outputs.publish }}
     steps:
       # The whole history without file contents, so origin/main is there to
@@ -109,6 +113,7 @@ jobs:
             exit 1
           fi
           sha=$(git rev-parse HEAD)
+          epoch=$(git log -1 --format=%ct HEAD)
           publish=false
           if [ "$EVENT" = push ] && [ "$REF_TYPE" = tag ]; then
             if [ "$REF_NAME" != "v$version" ]; then
@@ -125,6 +130,7 @@ jobs:
             echo "version=$version"
             echo "minor=${version%.*}"
             echo "sha=$sha"
+            echo "epoch=$epoch"
             echo "publish=$publish"
           } >> "$GITHUB_OUTPUT"
           echo "Version $version at $sha. Publish: $publish."
@@ -154,10 +160,12 @@ jobs:
         env:
           VERSION: ${{ needs.check.outputs.version }}
           REVISION: ${{ needs.check.outputs.sha }}
+          SOURCE_DATE_EPOCH: ${{ needs.check.outputs.epoch }}
         run: |
           docker buildx build --platform linux/arm64 \
             --build-arg "VERSION=$VERSION" --build-arg "REVISION=$REVISION" --build-arg "SOURCE_URL=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
-            --load --tag raccoon-vtt:arm64 .
+            --build-arg "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" \
+            --output type=docker,name=raccoon-vtt:arm64,rewrite-timestamp=true .
       # The two native modules, which pnpm installs per CPU, load and work.
       - name: sharp and argon2 run on arm64
         run: |
@@ -186,10 +194,12 @@ jobs:
         env:
           VERSION: ${{ needs.check.outputs.version }}
           REVISION: ${{ needs.check.outputs.sha }}
+          SOURCE_DATE_EPOCH: ${{ needs.check.outputs.epoch }}
         run: |
           docker buildx build --platform linux/amd64 \
             --build-arg "VERSION=$VERSION" --build-arg "REVISION=$REVISION" --build-arg "SOURCE_URL=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
-            --load --tag raccoon-vtt:smoke .
+            --build-arg "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" \
+            --output type=docker,name=raccoon-vtt:smoke,rewrite-timestamp=true .
           docker image inspect raccoon-vtt:smoke --format '{{json .Config.Labels}}' | jq .
       - name: Smoke test
         run: sh selfhost/smoke-test.sh raccoon-vtt:smoke
@@ -236,6 +246,7 @@ jobs:
       VERSION: ${{ needs.check.outputs.version }}
       MINOR: ${{ needs.check.outputs.minor }}
       REVISION: ${{ needs.check.outputs.sha }}
+      SOURCE_DATE_EPOCH: ${{ needs.check.outputs.epoch }}
       # The username is an account name, not a credential. Only the steps
       # that log in see the token.
       IMAGE: docker.io/${{ vars.DOCKERHUB_NAMESPACE || secrets.DOCKERHUB_USERNAME }}/raccoon-vtt
@@ -312,7 +323,8 @@ jobs:
         run: |
           docker buildx build --platform linux/amd64 \
             --build-arg "VERSION=$VERSION" --build-arg "REVISION=$REVISION" --build-arg "SOURCE_URL=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
-            --load --tag raccoon-vtt:smoke --metadata-file "$RUNNER_TEMP/load.json" .
+            --build-arg "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" \
+            --output type=docker,name=raccoon-vtt:smoke,rewrite-timestamp=true --metadata-file "$RUNNER_TEMP/load.json" .
           config=$(jq -r '."containerimage.config.digest"' "$RUNNER_TEMP/load.json")
           manifest=$(jq -r '."containerimage.digest"' "$RUNNER_TEMP/load.json")
           # The daemon names an image by its config digest, or by its
@@ -334,7 +346,8 @@ jobs:
         if: env.MODE == 'build'
         run: |
           docker buildx build --platform linux/amd64,linux/arm64 \
-            --build-arg "VERSION=$VERSION" --build-arg "REVISION=$REVISION" --build-arg "SOURCE_URL=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" .
+            --build-arg "VERSION=$VERSION" --build-arg "REVISION=$REVISION" --build-arg "SOURCE_URL=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --build-arg "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" .
       # By digest only, so nothing is tagged until the amd64 image is shown
       # to be the one smoke-tested.
       - name: Push both architectures and check
@@ -347,8 +360,9 @@ jobs:
           printf '%s' "$DOCKERHUB_TOKEN" | docker login docker.io --username "$DOCKERHUB_USERNAME" --password-stdin
           docker buildx build --platform linux/amd64,linux/arm64 \
             --build-arg "VERSION=$VERSION" --build-arg "REVISION=$REVISION" --build-arg "SOURCE_URL=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --build-arg "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" \
             --provenance mode=max --sbom "generator=$SBOM_SCANNER" \
-            --output "type=image,name=$IMAGE,push-by-digest=true,name-canonical=true,push=true" \
+            --output "type=image,name=$IMAGE,push-by-digest=true,name-canonical=true,push=true,rewrite-timestamp=true" \
             --metadata-file "$RUNNER_TEMP/push.json" .
           # As in the check of what Docker Hub holds: the digests below come back from Docker Hub.
           plain() { local s=${1//"%"/%25}; s=${s//$'\r'/%0D}; printf '%s' "${s//$'\n'/%0A}"; }
