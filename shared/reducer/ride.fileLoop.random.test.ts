@@ -9,6 +9,7 @@ import { applyOp } from "../reducer.ts";
 import { movementRules } from "../ruleHooks.ts";
 import { offGridWallThrough, ownWalk, walkEnd } from "../rules/movement.ts";
 import { linkHolds, onHolder } from "../rules/attach.ts";
+import { footprintRect } from "../rules/footprint.ts";
 import { SQUARES } from "../rules/grid.ts";
 import { planWalks, walkedIn } from "../rules/moveLeg.ts";
 import { planTrapMove, trapLandings, trapWalks } from "../rules/traps.ts";
@@ -271,6 +272,18 @@ function pairedTwin(state: RoomState, op: Op, r: () => number, at: string): Twin
 }
 
 describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 to 08)", () => {
+  test("seed 2082: an owl every player sees on a hidden imp in the file steps back off the horse it stood on, on its seat, and the horse the stop squeezes onto raised ground lands as the trap step has it (TRAP-STOP-STACK)", () => {
+    const { state: s, op } = caseOf(2082)!;
+    const r = applyOp(s, op, P1, env(5));
+    assert.ok(r.ok);
+    const [horse, owl] = [r.state.tokens.horse!, r.state.tokens.owl!];
+    assert.equal(horse.squeeze, true, "squeezed at the corridor's mouth, short of its walk's end");
+    for (const [id, pose] of trapLandings(op, s, P1, {})) assert.deepEqual([r.state.tokens[id]!.x, r.state.tokens[id]!.y, r.state.tokens[id]!.elevation], [pose.x, pose.y, pose.elevation], `${id} where the trap step left it`);
+    const [hb, ob] = [footprintRect(SQUARES, horse), footprintRect(SQUARES, owl)];
+    assert.ok(ob.x >= hb.x + hb.w || ob.x + ob.w <= hb.x || ob.y >= hb.y + hb.h || ob.y + ob.h <= hb.y, `the owl at ${owl.x}, ${owl.y} off the horse's square at ${hb.x}, ${hb.y}`);
+    assert.deepEqual([owl.attached?.to, r.state.tokens.rat!.attached?.to], ["imp", "owl"], "still on the imp, the rat in its reach");
+  });
+
   test("every creature in the file is walked alike, moved or not: walls, the trap step's poses, its groups and links", () => {
     let taken = 0;
     let loops = 0;

@@ -1283,6 +1283,11 @@ export function trapLandings(op: Op, before: TrapRoom, actor: Viewer, env: { opV
     pose(walk, stop ? stopIndex(walk, stop) : walk.spots.length - 1);
   }
   for (const walk of (parts.rest ?? parts.walks).all) if (!walk.isPublic) pose(walk, walk.spots.length - 1);
+  // A stop that stands the named token squeezed short of its walk's end lands it on the ground under its squeezed footprint, as
+  // every landing does (cutOp), where its walk read the ground under its full one. No moment reads it there after its stop.
+  const cut = parts.op;
+  const named = cut.t === "token.move" && cut.squeeze === true && cut.elevation !== undefined && parts.stops.has(cut.tokenId) ? out.get(cut.tokenId) : undefined;
+  if (named && cut.t === "token.move" && cut.elevation !== undefined) out.set(cut.tokenId, { ...named, elevation: cut.elevation });
   return out;
 }
 
