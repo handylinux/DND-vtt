@@ -3,9 +3,9 @@ import { describe, test } from "node:test";
 import { OP_VERSION } from "./migrate.ts";
 import type { RoomState, Viewer } from "./model.ts";
 import { canApply } from "./permissions.ts";
-import { projectState } from "./project.ts";
+import { projectState, stableStringify } from "./project.ts";
 import { clientOpSchema, opSchema, serverOnlyOpSchema, type Op } from "./protocol.ts";
-import { applyOp, type Env } from "./reducer.ts";
+import { applyOp, type ApplyResult, type Env } from "./reducer.ts";
 import { ownEntry } from "./records.ts";
 import { RESERVED_ID } from "./reducer/tx.ts";
 import { actor, AT, DM, P1, P2, randomOp, randomState, rng } from "./testutil.ts";
@@ -20,7 +20,10 @@ import { actor, AT, DM, P1, P2, randomOp, randomState, rng } from "./testutil.ts
 const NAMES = ["__proto__", "constructor", "prototype", "toString", "hasOwnProperty"] as const;
 
 const LIVE: Env = { seq: 2, at: AT };
+/** An op stored at today's version: from version 41 a replay reads and refuses as a live op does (records.ts readsOwnKeys). */
 const REPLAY: Env = { seq: 2, at: AT, opVersion: OP_VERSION };
+/** An op stored before own-key reads, which replays as it applied then (reducer/opVersion40.test.ts). */
+const STORED: Env = { seq: 2, at: AT, opVersion: 40 };
 const SERVER_ONLY = new Set<string>(serverOnlyOpSchema.options.map((o) => o.shape.t.value));
 const ALL_KINDS = new Set<string>(opSchema.options.flatMap((o) => ("shape" in o ? [o.shape.t.value] : ["undo", "redo"])));
 
@@ -156,13 +159,11 @@ function at(value: unknown, path: readonly (string | number)[]): unknown {
 /**
  * The op with each name in each slot, and in an entity key's id
  * ("token:constructor"), as the schema the server reads it with takes it.
- * `member` says the parsed op still names a member of Object.prototype: a
- * record's schema drops a "__proto__" key.
  */
-function variants(op: Op): { op: Op; label: string; member: boolean }[] {
+function variants(op: Op): { op: Op; label: string }[] {
   const raw = JSON.parse(JSON.stringify(op)) as unknown;
   const schema = SERVER_ONLY.has(op.t) ? opSchema : clientOpSchema;
-  const out: { op: Op; label: string; member: boolean }[] = [];
+  const out: { op: Op; label: string }[] = [];
   for (const slot of slots(raw)) {
     const text = slot.key ? null : (at(raw, slot.path) as string);
     const colon = text?.indexOf(":") ?? -1;
@@ -171,7 +172,7 @@ function variants(op: Op): { op: Op; label: string; member: boolean }[] {
       if (text !== null && colon > 0 && /^[A-Za-z]+$/.test(text.slice(0, colon))) tries.push(`${text.slice(0, colon)}:${name}`);
       for (const value of tries) {
         const parsed = schema.safeParse(replaced(raw, slot.path, value, slot.key));
-        if (parsed.success) out.push({ op: parsed.data as Op, label: `${op.t} ${slot.key ? "key" : "value"} ${slot.path.join(".")} = ${value}`, member: name !== "prototype" && JSON.stringify(parsed.data).includes(name) });
+        if (parsed.success) out.push({ op: parsed.data as Op, label: `${op.t} ${slot.key ? "key" : "value"} ${slot.path.join(".")} = ${value}` });
       }
     }
   }
@@ -190,7 +191,7 @@ function reparented(value: unknown, path = "state"): string | null {
 }
 
 describe("ids that name Object.prototype's members", () => {
-  test("every op kind with such a name as any id is refused or applies, and never throws, live or on replay", () => {
+  test("every op kind with such a name as any id is refused or applies, and never throws, live or on replay at today's version, which does as live", () => {
     const kinds = new Set<string>();
     let tried = 0;
     for (const seed of [0, 1, 2]) {
@@ -199,7 +200,7 @@ describe("ids that name Object.prototype's members", () => {
         const base = (SERVER_ONLY.has((raw as Op).t) ? opSchema : clientOpSchema).safeParse(raw);
         assert.ok(base.success, `the ${(raw as Op).t} case is a valid op`);
         kinds.add(base.data.t);
-        for (const { op, label, member } of variants(base.data as Op)) {
+        for (const { op, label } of variants(base.data as Op)) {
           tried++;
           let decision;
           try {
@@ -207,20 +208,19 @@ describe("ids that name Object.prototype's members", () => {
           } catch (err) {
             assert.fail(`canApply threw on ${label} for ${who.memberId}: ${(err as Error).message}`);
           }
-          for (const env of [LIVE, REPLAY]) {
-            let result;
+          const results = [LIVE, REPLAY].map((env) => {
             try {
-              result = applyOp(state, op, who, env);
+              return applyOp(state, op, who, env);
             } catch (err) {
               assert.fail(`applyOp threw on ${label} for ${who.memberId}${env === REPLAY ? " on replay" : ""}: ${(err as Error).message}`);
             }
-            // Ops stored before own-key reads replay, as a step that changes nothing where today's rules refuse them.
-            if (env === REPLAY && member) assert.ok(result.ok, `${label} replays`);
-            if (!result.ok) continue;
-            assert.equal(reparented(result.state), null, `${label} leaves every record a plain object`);
-            if (env === REPLAY || !decision.ok) continue;
-            for (const viewer of [DM, P1, P2]) assert.equal(reparented(projectState(result.state, viewer, { sceneId: null }), "projection"), null, `${label} projects for ${viewer.memberId}`);
-          }
+          });
+          const [live, replay] = results as [ApplyResult, ApplyResult];
+          assert.deepEqual(replay.ok ? stableStringify(replay.state) : replay.message, live.ok ? stableStringify(live.state) : live.message, `${label} replays at version ${OP_VERSION} as it applies live`);
+          if (!live.ok) continue;
+          assert.equal(reparented(live.state), null, `${label} leaves every record a plain object`);
+          if (!decision.ok) continue;
+          for (const viewer of [DM, P1, P2]) assert.equal(reparented(projectState(live.state, viewer, { sceneId: null }), "projection"), null, `${label} projects for ${viewer.memberId}`);
         }
       }
     }
@@ -250,25 +250,34 @@ describe("ids that name Object.prototype's members", () => {
     const state = randomState(rng(5));
     const make = (id: string): Op => ({ t: "token.create", token: { id, sceneId: "s1", kind: "monster", name: "Goblin", size: "medium", x: 2, y: 2, actor: { inline: actor() } } });
     for (const name of ["constructor", "toString", "hasOwnProperty", "__proto__"]) {
-      const live = applyOp(state, make(name), DM, LIVE);
-      assert.deepEqual(live.ok ? null : live.message, RESERVED_ID, `a new token named ${name} is refused`);
+      for (const env of [LIVE, REPLAY]) {
+        const made = applyOp(state, make(name), DM, env);
+        assert.deepEqual(made.ok ? null : made.message, RESERVED_ID, `a new token named ${name} is refused${env === REPLAY ? " on replay" : ""}`);
+      }
     }
     assert.ok(applyOp(state, make("prototype"), DM, LIVE).ok, "an id no prototype member holds is any other id");
     // A handout replaced by id was stored under "constructor" before ids were checked, and replays as an entry of its own.
-    const shown = applyOp(state, { t: "handout.show", handout: { id: "constructor", assetId: "img-1", title: "Map", to: "all" } }, DM, REPLAY);
+    const show = (id: string): Op => ({ t: "handout.show", handout: { id, assetId: "img-1", title: "Map", to: "all" } });
+    const shown = applyOp(state, show("constructor"), DM, STORED);
     assert.ok(shown.ok);
     assert.equal(Object.hasOwn(shown.state.handouts, "constructor"), true);
     assert.equal(ownEntry(shown.state.handouts, "constructor")?.title, "Map");
     const closed = applyOp(shown.state, { t: "handout.close", handoutId: "constructor" }, DM, LIVE);
     assert.ok(closed.ok, "an entity stored under such an id is found by it");
     assert.equal(Object.hasOwn(closed.state.handouts, "constructor"), false);
-    // "__proto__" set the record's prototype rather than storing an entry, so a snapshot never held one: its replay changes nothing.
-    const proto = applyOp(state, { t: "handout.show", handout: { id: "__proto__", assetId: "img-1", title: "Map", to: "all" } }, DM, REPLAY);
+    // Its undo would make it again, which no op from today's version may.
+    const remade = applyOp(closed.state, { t: "sys.restore", entries: closed.inverse!, from: "undo", deps: true }, DM, LIVE);
+    assert.deepEqual(remade.ok ? null : remade.message, RESERVED_ID);
+    // "__proto__" set the record's prototype rather than storing an entry, which lasts until the record's next copy and which no snapshot holds.
+    const proto = applyOp(state, show("__proto__"), DM, STORED);
     assert.ok(proto.ok);
-    assert.equal(proto.state, state);
+    assert.equal(Object.hasOwn(proto.state.handouts, "__proto__"), false);
+    assert.equal((Object.getPrototypeOf(proto.state.handouts) as { title?: string }).title, "Map");
+    assert.deepEqual(JSON.parse(JSON.stringify(proto.state.handouts)), JSON.parse(JSON.stringify(state.handouts)));
+    assert.equal(ownEntry(proto.state.handouts, "title"), undefined, "a live read finds nothing through it");
   });
 
-  test("stored ops that named a missing entity by such a name replay as a step that changes nothing", () => {
+  test("stored ops that named a missing entity by such a name replay as they applied before own-key reads, and from today's version refuse as live ones", () => {
     const state = randomState(rng(6));
     const stored: [Op, Viewer][] = [
       [{ t: "drawing.delete", drawingId: "__proto__" }, DM],
@@ -277,13 +286,15 @@ describe("ids that name Object.prototype's members", () => {
       [{ t: "room.setPlayerScene", sceneId: "toString" }, DM],
     ];
     for (const [op, who] of stored) {
-      assert.equal(applyOp(state, op, who, LIVE).ok, false, `${op.t} is refused where it arrives`);
-      const replayed = applyOp(state, op, who, REPLAY);
-      assert.ok(replayed.ok, `${op.t} replays`);
-      assert.equal(replayed.state, state, `${op.t} changes nothing on replay`);
-      assert.deepEqual(replayed.touched, []);
+      const live = applyOp(state, op, who, LIVE);
+      assert.equal(live.ok, false, `${op.t} is refused where it arrives`);
+      const replay = applyOp(state, op, who, REPLAY);
+      assert.deepEqual(replay.ok ? null : replay.message, live.message, `${op.t} stored at version ${OP_VERSION} refuses on replay`);
+      const old = applyOp(state, op, who, STORED);
+      assert.ok(old.ok, `${op.t} stored at version 40 replays`);
+      assert.notEqual(old.state, state, `${op.t} writes what it wrote then`);
     }
     // A replayed op naming nothing of the kind is refused as before, so a replay that went wrong still stops the room.
-    assert.equal(applyOp(state, { t: "token.delete", tokenId: "missing" }, DM, REPLAY).ok, false);
+    assert.equal(applyOp(state, { t: "token.delete", tokenId: "missing" }, DM, STORED).ok, false);
   });
 });

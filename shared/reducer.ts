@@ -105,7 +105,7 @@ import {
   tokenUpdate,
 } from "./reducer/tokens.ts";
 import { Refuse, Tx, invalid, type Env } from "./reducer/tx.ts";
-import { holdsPrototypeName } from "./records.ts";
+import { withRecordReads } from "./records.ts";
 
 export type { Env } from "./reducer/tx.ts";
 export { MAX_LOG } from "./reducer/tx.ts";
@@ -142,12 +142,8 @@ export type ApplyResult = Applied | Refusal;
  * so a stray one can never reach the log.
  */
 export function applyOp(state: RoomState, op: Op, actor: Viewer, env: Env): ApplyResult {
-  const result = applyOnce(state, op, actor, env);
-  if (result.ok || env.opVersion === undefined || env.withoutTraps === true || !holdsPrototypeName(op)) return result;
-  // Before every record was read by own key (records.ts), an op naming "constructor" or "__proto__" could find the
-  // prototype's member as an entity and be stored. Today's rules refuse it, and a refusal on replay would leave the
-  // room read-only, so a stored one replays as a step that changes nothing.
-  return { ok: true, state, touched: [], global: false, log: [], inverse: null };
+  // An op stored before own-key reads replays reading records as it did when applied (records.ts readsOwnKeys).
+  return withRecordReads(env.opVersion, () => applyOnce(state, op, actor, env));
 }
 
 function applyOnce(state: RoomState, op: Op, actor: Viewer, env: Env): ApplyResult {
@@ -200,7 +196,8 @@ function applyOnce(state: RoomState, op: Op, actor: Viewer, env: Env): ApplyResu
   }
   // The inverse hashes every entity the op touched (Tx.inverse), and only the
   // server's undo stack reads it. The client replays its pending ops on every
-  // update and never does, so it is worked out on first read.
+  // update and never does, so it is worked out on first read. That read comes
+  // after applyOp has returned, so it takes the op's rule for reading records again.
   let inverse: RestoreEntry[] | null | undefined;
   // Only a player's undo is refused for what a trap did, and only a trap step that wrote something can have changed what they see.
   if (traps?.wrote && actor.role === "player") plain ??= applyOp(state, op, actor, { ...env, withoutTraps: true });
@@ -212,7 +209,7 @@ function applyOnce(state: RoomState, op: Op, actor: Viewer, env: Env): ApplyResu
     global: tx.global,
     log: tx.log,
     get inverse() {
-      if (inverse === undefined) inverse = tx.inverse();
+      if (inverse === undefined) inverse = withRecordReads(env.opVersion, () => tx.inverse());
       return inverse;
     },
     ...(trapped ? { trapped: true as const } : {}),

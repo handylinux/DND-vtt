@@ -22,7 +22,7 @@ import { decodeTile } from "../rules/fog.ts";
 import type { ActorEvent } from "../rules/hp.ts";
 import { markFinished, markWritable } from "../writable.ts";
 import { Book, type Reminder } from "./reminded.ts";
-import { namesPrototypeMember, ownEntry } from "../records.ts";
+import { namesPrototypeMember, ownEntry, readsOwnKeys } from "../records.ts";
 
 /**
  * The envelope the server stamps on every op: the only source of time and
@@ -68,12 +68,13 @@ export const RESERVED_ID = "that id is reserved";
  * Refuses a new entity whose id names a member of Object.prototype
  * (records.ts), such as "constructor", which the server's and the clients'
  * own maps keyed by entity id would read as the prototype's member. Writing
- * "__proto__" would set the record's prototype rather than add an entry, so
- * no op makes one. Ops stored before ids were checked made a few others,
- * such as a handout named "constructor", and replay makes them again.
+ * "__proto__" would set the record's prototype rather than add an entry.
+ * Ops stored before ids were checked made such ids, a handout named
+ * "constructor" or a token whose "__proto__" set the prototype of the
+ * room's tokens until their next copy, and replay makes them again.
  */
 function checkNewId(id: string, env: Env): void {
-  if (id === "__proto__" || (env.opVersion === undefined && namesPrototypeMember(id))) throw invalid(RESERVED_ID);
+  if (readsOwnKeys(env.opVersion) && namesPrototypeMember(id)) throw invalid(RESERVED_ID);
 }
 
 /** The refusal of an op that would write more log lines than a line's number can count (Tx.sharedIndex, Tx.dmIndex). */
