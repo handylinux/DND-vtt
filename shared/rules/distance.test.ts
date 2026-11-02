@@ -115,7 +115,7 @@ describe("ruler", () => {
   });
 
   test("euclid legs are rounded and the total is their sum", () => {
-    const r = rulerDistanceFt(SQUARES, 
+    const r = rulerDistanceFt(SQUARES,
       [
         { x: 0.5, y: 0.5 },
         { x: 1.5, y: 1.5 },
