@@ -129,7 +129,15 @@ Release assets runs in separate jobs, each with only what it needs. One
 holds the checkout and makes the archive, using only GitHub's own actions.
 A second, with no token, makes the SBOM from the lockfile inside that
 archive, so the package manager never runs beside the checkout or the
-signing and upload permissions.
+signing and upload permissions. The signing and upload jobs download each
+job's artifact into a folder of its own and take each asset by name from
+the job that made it: the archive from the first, the SBOM from the
+second, the signatures and provenance from the signing job. An artifact
+that holds anything else, a symlink or too few files is refused, so the
+SBOM job cannot put an archive of its own in place of the signed one. A job
+with no token can still replace a whole artifact, so the archive must also
+match the SHA-256 digest the first job gave as a job output, and the upload
+job checks the SBOM against the digest of the one the signing job signed.
 
 The provenance comes from GitHub's artifact attestations
 (`actions/attest-build-provenance`) rather than the SLSA project's
