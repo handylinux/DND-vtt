@@ -111,7 +111,7 @@ of hidden data through the sync protocol.
 | The app to the internet (`raccoon-proxy`, then the egress proxy) | Searches, image imports, character imports | Two proxy ports with their own allowlists ([squid.conf](../docker/squid.conf)), and responses treated as hostile |
 | One room to another, and one role to another | Ops, snapshots and HTTP actions | A grant per session and room, checked on every action ([grants.ts](../server/auth/grants.ts), [permissions.ts](../shared/permissions.ts)), and a projection per viewer ([project.ts](../shared/project.ts)) |
 | The admin page | Room listings and deletions | A separate password hash, a separate session cookie, and its own login limits ([adminSessions.ts](../server/auth/adminSessions.ts)) |
-| Source to release | Code, dependencies and signatures | Pinned dependencies and actions, read-only workflow tokens by default, and an approval before an image is published ([image.yml](../.github/workflows/image.yml)) |
+| Source to release | Code, dependencies and signatures | Pinned dependencies and actions, read-only workflow tokens by default, and an approval before an image is published ([image.yml](../.github/workflows/image.yml)), and builds anyone can repeat: one commit gives byte-identical client files and the same image ([vite.config.ts](../vite.config.ts), [Dockerfile](../Dockerfile)) |
 
 Every Docker network in the stack is internal except the egress proxy's
 way out (and Caddy's, with the `https` profile), so a container that is
