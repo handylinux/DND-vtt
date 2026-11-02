@@ -262,7 +262,9 @@ function followGroup(before: RoomState, lead: MovedToken, members: readonly stri
     let up: MovedToken | undefined = holderMove;
     while (up && !file?.has(up.tokenId) && up.carriedBy !== undefined) up = walked.get(up.carriedBy);
     const upOwn = up ? file?.get(up.tokenId) : undefined;
-    const walk = own && up && upOwn ? behindStop(member, own, upOwn, up.route) : own;
+    // A trap's cut keeps each walk in the file where the trap step had it, behind its holder already, so no holder's walk in the
+    // move, which the private pass may stop short, moves it on (review FU45B-ASTRA-12).
+    const walk = own && up && upOwn && !cut ? behindStop(member, own, upOwn, up.route) : own;
     const moved = follow(before, member, holderMove, pub(id), byPlayer, env, { file: walk, kept: cut?.own?.get(id), seats: seatsOn, stands: stands && cut?.judged(member) !== true });
     if (!moved) continue;
     walked.set(id, moved);
@@ -357,12 +359,15 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
   if (holder.how === "teleport" && !onHolder(kind)) return null;
   // In single file, or on a trap's cut where the trap step judged it, its own walk, whatever its link (review FU45B-ASTRA-11).
   const own = how.file ?? how.kept;
+  // Its holder's walk, held at its last point where the private pass stopped it short, so a walk of its own runs to its end: the
+  // landing of one players see never reads the walls that stopped a holder they cannot see (review FU45B-ASTRA-12).
+  const along = own && own.length > holder.route.length ? [...holder.route, ...Array.from({ length: own.length - holder.route.length }, () => holder.route[holder.route.length - 1]!)] : holder.route;
   if (holder.how === "scene" || onHolder(kind)) {
     // What sits on its holder keeps its height above it at every point, and a scene change takes all by the holder's change. On a
-    // cut it lands where the stop judged it, and a holder players cannot see stops where that seat holds (traps.ts seatingSpot).
+    // cut it lands where the stop judged it, and a holder players cannot see stops where that seat holds (traps.ts seatingWalk).
     const oz = member.elevation - holder.from.elevation;
     const seats = onHolder(kind) ? squeezedSeats(before, member, holder, env, how.seats?.(holder)?.get(member.id)) : null;
-    const route = holder.route.map((p, i) => {
+    const route = along.map((p, i) => {
       const kept = i > 0 ? own?.[i] : undefined;
       return kept ? { x: kept.x, y: kept.y, elevation: kept.elevation ?? p.elevation + oz } : { ...(seats?.[i] ?? { x: p.x + ox, y: p.y + oy }), elevation: p.elevation + oz };
     });
@@ -382,13 +387,13 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
   };
   let route: RoutePoint[] = [{ x: member.x, y: member.y, elevation: member.elevation }];
   // Its own walk where it has one, else the holder's offset by its place.
-  for (const [i, p] of holder.route.entries()) {
+  for (const [i, p] of along.entries()) {
     if (i === 0) continue;
     const at = own?.[i] ?? { x: p.x + ox, y: p.y + oy };
     // On a trap's cut, at the height the trap step had it, which a creature that has not moved yet keeps (review FU45B-ASTRA-06).
     route.push({ x: at.x, y: at.y, elevation: own?.[i]?.elevation ?? elevationAt(at.x, at.y, p.elevation) });
   }
-  if (!isPublic && byPlayer && holder.how === "walk") route = stoppedAtWalls(before, member, route, holder.route, elevationAt, env, how.stands === true);
+  if (!isPublic && byPlayer && holder.how === "walk") route = stoppedAtWalls(before, member, route, along, elevationAt, env, how.stands === true);
   const last = route[route.length - 1]!;
   return { tokenId: member.id, from, to: { sceneId: member.sceneId, ...last }, route, trace: followerTrace(member, route), how: holder.how, carriedBy: holder.tokenId, pass, ...(how.file ? { file: true as const } : {}) };
 }

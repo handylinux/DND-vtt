@@ -647,7 +647,7 @@ type Stands = { walk: readonly { progress: Progress }[]; spot: (i: number) => Ro
  * Where the seen one walks as itself, as under a holder players cannot see,
  * the trap step judges its stand on its own walk, so each such holder
  * walks at its step and a cut keeps its walk too (`keepsOwn`), stopped
- * where the seen one is still on its seat (`seatingSpot`).
+ * where the seen one is still on its seat (`seatingWalk`).
  */
 function seatsOfSeen(before: RoomState, members: readonly MovedToken[], seen: (id: string) => boolean, opVersion: number | undefined): Set<string> {
   const out = new Set<string>();
@@ -1701,14 +1701,19 @@ function inSingleFile(walk: Walk): boolean {
  * Whether a trap's cut keeps a walk of its own beside those in single file
  * (moveLeg.ts withTrapCut, review FU45B-ASTRA-10): from op version 38 (migrate.ts
  * stopsStandClear), each walker every player sees on a route of its own,
- * as one a holder they cannot see drags or carries. The stop judged its
+ * as one a holder they cannot see drags or carries, and each such walker
+ * under a holder they cannot see whatever its route. The stop judged its
  * stand there, so the cut lands it there, never by its holder's cut and its
- * place, where no stand test judged it. What seats one of them that
- * players cannot see keeps its walk too, at the same step (`seatsOfSeen`,
- * review FU45B-ASTRA-11).
+ * place, where no stand test judged it and the private pass may stop the
+ * holder short. What seats one of them that players cannot see keeps its
+ * walk too, at the same step (`seatsOfSeen`, review FU45B-ASTRA-11).
  */
 function keepsOwn(walk: Walk): boolean {
-  return ((walk.isPublic && walk.walker) || walk.seatsSeen) && walk.own && !inSingleFile(walk);
+  if (inSingleFile(walk)) return false;
+  // One every player sees under a holder they cannot see keeps its walk even where it is its group's walk offset by its place, so
+  // no wall the private pass reads where its holder stops moves it (review FU45B-ASTRA-12).
+  if (walk.isPublic && walk.walker) return walk.own || (walk.holder !== undefined && !walk.holder.isPublic);
+  return walk.seatsSeen && walk.own;
 }
 
 /**
@@ -1720,7 +1725,7 @@ function keepsOwn(walk: Walk): boolean {
  * never by their places, each at the height the trap step had it at there,
  * so one that has not moved yet keeps its own (review FU45B-ASTRA-06). A
  * holder players cannot see that seats a creature stops where every seat
- * on it holds (`seatingSpot`). Each takes `points` points, index by index
+ * on it holds (`seatingWalk`). Each takes `points` points, index by index
  * with its holder's cut walk, holding at its spot once there. Null where
  * none walks so.
  */
@@ -1748,9 +1753,11 @@ function cutWalks(walks: Walks, named: string, stop: Stop, points: number, befor
   for (const walk of [...routes.keys()].reverse()) {
     const riders = seated.get(walk.token.id);
     if (walk.isPublic || !riders) continue;
-    const route = routes.get(walk)!;
     const on = riders.flatMap((t) => (landed.has(t.id) ? [{ token: t, at: landed.get(t.id)!.at(-1)! }] : []));
-    route[route.length - 1] = { ...route[route.length - 1]!, ...seatingSpot(walk, route, on) };
+    const route = seatingWalk(walk, latestIndex(walk.spots, stop.s), on);
+    routes.set(walk, route);
+    (inSingleFile(walk) ? file : kept).set(walk.token.id, route);
+    landed.set(walk.token.id, route);
   }
   for (const route of routes.values()) {
     while (route.length < points) route.push(route[route.length - 1]!);
@@ -1761,7 +1768,11 @@ function cutWalks(walks: Walks, named: string, stop: Stop, points: number, befor
 
 /** A walk's own route to its latest spot at or before the stop, that spot at the height the trap step had it at there. */
 function walkToStop(walk: Walk, stop: Stop): RoutePoint[] {
-  const j = latestIndex(walk.spots, stop.s);
+  return walkTo(walk, latestIndex(walk.spots, stop.s));
+}
+
+/** A walk's own route to its spot `j`, that spot at the height the trap step had it at there. */
+function walkTo(walk: Walk, j: number): RoutePoint[] {
   const spot = spotAt(walk, j);
   const [piece, k] = spot.progress;
   const route = walk.entry.route.slice(0, piece + 1).map(({ x, y, elevation }) => ({ x, y, elevation }));
@@ -1772,30 +1783,41 @@ function walkToStop(walk: Walk, stop: Stop): RoutePoint[] {
 }
 
 /**
- * Where a holder players cannot see stops on a trap's cut so that each
- * creature it seats there keeps its seat (attach.ts seatHolds, review
- * FU45B-ASTRA-11): its spot at the stop, else the nearest pose half a
- * square off it, on its own lattice first, then back along its walk. `on`
- * are those on it with walks of their own, where they land. It walks at
- * its group's step, a Tiny passenger's half square, so a Medium holder's
- * spot can lie half a square off its grid, where its footprint snaps away
- * from a seat on it.
+ * The cut walk of a holder players cannot see that seats a creature, where
+ * every seat on it holds (attach.ts seatHolds, review FU45B-ASTRA-11): its
+ * walk to its spot at the stop `j`, else to the nearest spot of its own walk
+ * within a square of it, else to a pose half a square off its spot, on its
+ * own lattice first each time, back along its walk before on. `on` are
+ * those on it with walks of their own, where they land, and what rides on
+ * it with none rides on wherever it stops. It walks at its group's step, a
+ * Tiny passenger's half square, so a Medium holder's spot can lie half a
+ * square off its grid, where its footprint snaps away from a seat on it. A
+ * spot of its own walk keeps every leg one its walk already took. A pose
+ * off it is a new leg, which the private pass may stop short, but no token
+ * players see moves for that: one with a walk of its own walks it whole
+ * (moveLeg.ts follow, review FU45B-ASTRA-12), and the seat lets go
+ * (D-261101-403).
  */
-function seatingSpot(walk: Walk, route: readonly RoutePoint[], on: readonly { token: Token; at: RoutePoint }[]): { x: number; y: number } {
-  const at = route[route.length - 1]!;
+function seatingWalk(walk: Walk, j: number, on: readonly { token: Token; at: RoutePoint }[]): RoutePoint[] {
   const lattice = routeLattice(walk.token);
   const onLattice = (p: { x: number; y: number }) => [p.x - walk.token.x, p.y - walk.token.y].every((v) => Math.abs(v / lattice - Math.round(v / lattice)) < 1e-9);
-  const holds = (p: { x: number; y: number }) => on.every((s) => seatHolds(walk.grid, s.token.attached!.kind, { ...s.token, x: s.at.x, y: s.at.y }, { ...walk.token, ...p }));
-  const back = route.length > 1 ? route[route.length - 2]! : at;
-  const near: { x: number; y: number }[] = [];
-  for (const dx of [0, -0.5, 0.5]) for (const dy of [0, -0.5, 0.5]) near.push({ x: at.x + dx, y: at.y + dy });
-  // On its lattice first, then its own spot, then nearest back along its walk.
-  const rank = (p: { x: number; y: number }) => [onLattice(p) ? 0 : 1, p.x === at.x && p.y === at.y ? 0 : 1, Math.hypot(p.x - back.x, p.y - back.y)];
-  const order = (a: { x: number; y: number }, b: { x: number; y: number }) => {
-    const [ra, rb] = [rank(a), rank(b)];
-    return ra[0]! - rb[0]! || ra[1]! - rb[1]! || ra[2]! - rb[2]!;
-  };
-  return near.filter(holds).sort(order)[0] ?? at;
+  const holds = (p: { x: number; y: number }) => on.every((s) => seatHolds(walk.grid, s.token.attached!.kind, { ...s.token, x: s.at.x, y: s.at.y }, { ...walk.token, x: p.x, y: p.y }));
+  const seats = (p: { x: number; y: number }) => holds(p) && (on.length > 0 || onLattice(p));
+  // Its spot, then back before on within a square of the stop at its step, nearest first.
+  const reach = Math.max(1, Math.round(1 / walk.step));
+  const near: number[] = [j];
+  for (let d = 1; d <= reach; d++) near.push(j - d, j + d);
+  const fits = near.filter((k) => k >= 0 && k < walk.spots.length && seats(spotAt(walk, k)));
+  const k = fits.find((i) => onLattice(spotAt(walk, i))) ?? fits[0];
+  if (k !== undefined) return walkTo(walk, k);
+  const route = walkTo(walk, j);
+  const at = route[route.length - 1]!;
+  const off: { x: number; y: number }[] = [];
+  // Along one axis before both.
+  for (const [dx, dy] of [[-0.5, 0], [0.5, 0], [0, -0.5], [0, 0.5], [-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]] as const) off.push({ x: at.x + dx, y: at.y + dy });
+  const pose = off.filter(seats).sort((a, b) => Number(!onLattice(a)) - Number(!onLattice(b)))[0];
+  if (pose) route[route.length - 1] = { ...at, ...pose };
+  return route;
 }
 
 /** A route cut at a spot of piece `progress[0]`: the pieces before it whole, then that piece to the spot, its extra kept. */

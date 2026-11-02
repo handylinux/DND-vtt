@@ -172,6 +172,38 @@ describe("a hidden creature in tow stands where no wall passes through its box (
     }
   });
 
+  test("a cut lands one every player sees on a hidden holder where the stop judged it, whatever unseen walls stop the holder: Pat's copies match with and without them (review FU45B-ASTRA-12)", () => {
+    // A fogged corridor whose ground no player sees. Pat's Large horse drags a hidden imp carrying an owl, both horse and owl seen
+    // through the fog, and squeezes toward the corridor's mouth over a net.
+    const make = (walled: boolean) => {
+      const s = room({ members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2") }, scenes: { s1: scene("s1", { bounds: { w: 22, h: 12 }, blockMovement: true, autoWalls: "off", fogEnabled: true }) } });
+      s.buildChunks = {};
+      const runs: [[number, number], [number, number]][] = [[[6, 0], [6, 6]], [[6, 7], [6, 12]], [[14, 0], [14, 6]], [[14, 7], [14, 12]], [[6, 6], [14, 6]], [[6, 7], [14, 7]]];
+      runs.forEach(([a, b], i) => wall(s, `fu45bc${String(i).padStart(6, "0")}`, a, b));
+      // Two short walls beside the imp, on ground no player sees, which the walk itself never meets.
+      if (walled) {
+        wall(s, "fu45bc000010", [2.375, 7.25], [2.375, 7.5]);
+        wall(s, "fu45bc000011", [2.5, 6.875], [2.5, 7.125]);
+      }
+      s.tokens.horse = token("horse", { size: "large", x: 2, y: 5, name: "Horse", kind: "pc", ownerIds: ["p1"], fogExempt: true });
+      s.tokens.imp = token("imp", { x: 2, y: 7, name: "Imp", kind: "npc", ownerIds: [], visibility: "dm", attached: { to: "horse", kind: "drag" } });
+      s.tokens.owl = token("owl", { size: "tiny", x: 2, y: 7, name: "Owl", kind: "npc", ownerIds: [], fogExempt: true, attached: { to: "imp", kind: "carry" } });
+      s.traps.t5 = trap("t5", { zone: { cells: [{ x: 1, y: 6, w: 1, h: 2 }] } });
+      return s;
+    };
+    const open = make(false);
+    const closed = make(true);
+    const op: Op = { t: "token.move", tokenId: "horse", x: 7.5, y: 5.5, squeeze: true, route: [[1, 5, 1, 0], [5, 5.5, 1, 0], [7.5, 5.5, 1, 0]] };
+    const copy = (s: RoomState, who = P2) => stableStringify(projectState(s, who, { sceneId: "s1" }));
+    assert.equal(copy(closed), copy(open), "the players' copies start the same");
+    for (const s of [open, closed]) assert.ok(canApply(op, P1, s, { canUseAsset: () => true }).ok);
+    const a = after(open, op, undefined);
+    const b = after(closed, op, undefined);
+    for (const r of [a, b]) assert.deepEqual([r.state.tokens.owl!.x, r.state.tokens.owl!.y], [1.5, 5.5], "where the stop judged it");
+    for (const who of [P1, P2]) assert.equal(copy(b.state, who), copy(a.state, who), who.memberId);
+    assert.equal(b.trapped, a.trapped);
+  });
+
   test("on ground every player sees, a trap's stop stands a Large walker half a square off its grid only clear of the walls, as the move's own stand test does (review FU45B-ASTRA-10)", () => {
     const s = room({ members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2") }, scenes: { s1: scene("s1", { bounds: { w: 30, h: 20 }, blockMovement: true, autoWalls: "off" }) } });
     s.buildChunks = {};
