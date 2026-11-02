@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import { parseFormula } from "../dice/formula.ts";
 import type { PcStats } from "../model.ts";
 import { checkedFill, type PcFill } from "../rules/pcFill.ts";
 import { afterSync, defaultTicks, planSync, syncPatch, syncResult, type SyncCharacter } from "../rules/pcSync.ts";
@@ -339,6 +340,29 @@ describe("readDdbCharacter: what does not read", () => {
     assert.ok(checkedFill(fill));
     const entries = readDdbCharacter(wren({ modifiers: { ...(wren().modifiers as J), race: [null, 5, { type: "bonus" }, mod("bonus", "dexterity-score", Number.NaN)] } }), ids)!;
     assert.equal(entries.stats.abilities?.dex, 16);
+  });
+
+  test("a fraction where a whole number goes never costs the whole sheet, and a cursed weapon's minus reads as a formula that rolls", () => {
+    const magic = (value: number): J => ({ type: "bonus", subType: "magic", fixedValue: value, value });
+    const sword = (bonuses: J[], diceString = "1d8"): J => ({ equipped: true, definition: { id: 950, name: "Odd Sword", filterType: "Weapon", damage: { diceString }, damageType: "Slashing", attackType: 1, properties: [], grantedModifiers: bonuses } });
+    // No modifiers, so Dex 16 gives +3.
+    const read = (inventory: J[]) => readDdbCharacter(wren({ inventory, modifiers: {} }), ids)!;
+    const armored = read([{ equipped: true, definition: { id: 1, armorClass: 12.4, armorTypeId: 1 } }]);
+    assert.equal(armored.actor.ac, 15, "12.4 + 3, rounded as HP and speeds are");
+    const cursed = read([sword([magic(-1)])]);
+    assert.deepEqual(cursed.stats.rolls[0]?.dice, [{ formula: "1d8-1", mod: true, type: "slashing" }]);
+    assert.ok(parseFormula(cursed.stats.rolls[0]!.dice[0]!.formula).ok, "not 1d8+-1, which the dice grammar refuses");
+    assert.deepEqual(cursed.stats.rolls[0]?.attack, { prof: true, bonus: -1 });
+    const half = read([sword([magic(1.5)])]);
+    assert.deepEqual(half.stats.rolls[0]?.dice, [{ formula: "1d8", mod: true, type: "slashing" }], "a fractional bonus is mistyped and skipped");
+    assert.deepEqual(half.stats.rolls[0]?.attack, { prof: true, bonus: 0 });
+    // 39 characters, so its +5 would pass a formula's 40.
+    const long = read([sword([magic(5)], Array<string>(10).fill("1d4").join("+"))]);
+    assert.equal(long.stats.rolls.length, 0);
+    assert.equal(long.read?.weapon, false, "left out, so a re-sync keeps the weapon the block has");
+    const spells = readDdbCharacter(ione([spell("Odd Bolt", 1.5, { requiresAttackRoll: true, modifiers: [damage("fire", "1d10")] }), spell("Fire Bolt", 0, { requiresAttackRoll: true, modifiers: [damage("fire", "1d10")] })]), ids)!;
+    assert.deepEqual(spells.stats.rolls.map((r) => r.name), ["Fire Bolt"], "a spell of level 1.5 is skipped");
+    for (const fill of [armored, cursed, half, long, spells]) assert.ok(checkedFill(fill));
   });
 
   test("a spell or equipment list cut at its bound or not a list leaves its rolls read not whole, with its line (DDBBUILD-ASTRA-01)", () => {

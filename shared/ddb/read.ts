@@ -288,7 +288,8 @@ function acOf(data: Obj, mods: readonly Modifier[], dex: number): number {
     else if (type === 2) armor = Math.max(armor ?? 0, ac + Math.min(2, dex));
     else if (type === 3) armor = Math.max(armor ?? 0, ac);
   }
-  return Math.min(100, Math.max(0, (armor ?? 10 + dex) + shield + sumOf(mods, "bonus", "armor-class", null)));
+  // Rounded as the hit points and speeds are: a fraction anywhere in the sources would fail the fill's whole number check and lose the whole sheet.
+  return Math.min(100, Math.max(0, Math.round((armor ?? 10 + dex) + shield + sumOf(mods, "bonus", "armor-class", null))));
 }
 
 function speedsOf(data: Obj): Actor["speeds"] | null {
@@ -324,20 +325,31 @@ function weaponRolls(data: Obj, ctx: Ctx, scores: Record<AbilityKey, number>, sn
     const ranged = num(def.attackType) === 2;
     const finesse = props.has("finesse");
     const ability: AbilityKey = finesse ? (scores.dex >= scores.str ? "dex" : "str") : ranged ? "dex" : "str";
-    let magic = 0;
+    let bonus = 0;
     for (const g of arr(def.grantedModifiers, MAX.modifiers)) {
       const m = obj(g);
-      if (m?.type === "bonus" && m.subType === "magic") magic += num(m.fixedValue) ?? num(m.value) ?? 0;
+      const value = num(m?.fixedValue) ?? num(m?.value);
+      // A fraction is mistyped and skipped, since an attack bonus and a damage formula are whole numbers.
+      if (m?.type === "bonus" && m.subType === "magic" && value !== null && Number.isInteger(value)) bonus += value;
     }
+    const magic = Math.max(-20, Math.min(20, bonus));
     const type = damageType(def.damageType);
-    const part = (f: string): PcDice => ({ formula: magic ? `${f}+${magic}` : f, mod: true, ...(type ? { type } : {}) });
+    // The bonus with its own sign, so a cursed weapon reads 1d8-1. Past a formula's 40 characters the roll is left out, and the weapons are not whole, rather than the whole fill refused.
+    const part = (f: string): PcDice | null => {
+      const text = magic === 0 ? f : `${f}${magic < 0 ? "-" : "+"}${Math.abs(magic)}`;
+      if (text.length <= 40) return { formula: text, mod: true, ...(type ? { type } : {}) };
+      whole = false;
+      return null;
+    };
     const rider: PcDice[] = sneak && type && (finesse || ranged) ? [{ formula: sneak, type, optional: true, name: "Sneak Attack" }] : [];
-    const attack = { prof: true, bonus: Math.max(-20, Math.min(20, magic)) };
-    out.push({ id: ctx.newId(), name: wname, kind: "weapon", ability, attack, dice: [part(dice), ...rider], ddb: true });
+    const attack = { prof: true, bonus: magic };
+    const one = part(dice);
+    if (one) out.push({ id: ctx.newId(), name: wname, kind: "weapon", ability, attack, dice: [one, ...rider], ddb: true });
     if (props.has("versatile")) {
       const versatile = arr(def.properties, MAX.properties).map(obj).find((p) => (name(p?.name, 30) ?? "").toLowerCase() === "versatile");
       const two = formula(versatile?.notes);
-      if (two) out.push({ id: ctx.newId(), name: `${wname} (two hands)`, kind: "weapon", ability, attack, dice: [part(two), ...rider], ddb: true });
+      const both = two ? part(two) : null;
+      if (both) out.push({ id: ctx.newId(), name: `${wname} (two hands)`, kind: "weapon", ability, attack, dice: [both, ...rider], ddb: true });
     }
   }
   return { rolls: out, whole };
@@ -402,7 +414,7 @@ function spellRolls(data: Obj, ctx: Ctx, characterLevel: number, casting: Abilit
     const def = obj(entry.definition);
     const sname = name(def?.name, 60);
     const level = num(def?.level);
-    if (!def || !sname || level === null || level < 0 || level > 9) continue;
+    if (!def || !sname || level === null || !Number.isInteger(level) || level < 0 || level > 9) continue;
     // Prepared, always prepared, known, cantrips, and what a race, item or feat grants.
     const usable = granted || level === 0 || entry.prepared === true || entry.alwaysPrepared === true || entry.countsAsKnownSpell === true;
     const key = `${sname.toLowerCase()}:${level}`;
