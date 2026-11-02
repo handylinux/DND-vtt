@@ -30,7 +30,7 @@ ARG NODE_IMAGE=node:24-trixie-slim@sha256:173f125896c3b47ddf056734c7ea789d04595a
 FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS deps
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN corepack enable pnpm
 RUN --mount=type=cache,id=raccoon-pnpm-store,target=/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile --store-dir /pnpm/store
@@ -63,7 +63,7 @@ RUN pnpm build
 FROM ${NODE_IMAGE} AS prod-deps
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN corepack enable pnpm
 RUN --mount=type=cache,id=raccoon-pnpm-store,target=/pnpm/store,sharing=locked \
     pnpm install --prod --frozen-lockfile --store-dir /pnpm/store

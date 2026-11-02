@@ -1,0 +1,8 @@
+# pnpm 11 reads its settings here, not from package.json. The Dockerfile copies
+# this file beside the lockfile, since a frozen install fails when the
+# overrides it records are missing.
+overrides:
+  # GHSA-3g3m-2fjr-6pw4 and GHSA-g3hv-75wg-m249 are fixed only in these majors.
+  # @fastify/static still asks for glob ^13. Drop both lines once it allows 14.
+  glob: 14.0.3
+  minimatch: 11.0.3

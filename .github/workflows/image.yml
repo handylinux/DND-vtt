@@ -51,6 +51,7 @@ on:
       - scripts/**
       - package.json
       - pnpm-lock.yaml
+      - pnpm-workspace.yaml
       # The Docker Hub overview, which dockerhub-description.yml sends by
       # hand, is not part of the image.
       - "!selfhost/DOCKERHUB.md"
