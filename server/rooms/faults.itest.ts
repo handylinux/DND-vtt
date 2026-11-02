@@ -1,0 +1,314 @@
+import assert from "node:assert/strict";
+import { after, before, beforeEach, describe, test } from "node:test";
+import { serverDraw } from "#shared/dice/roll.ts";
+import { uuidv7 } from "#shared/ids.ts";
+import type { Op, ServerMessage, ServerOnlyOp } from "#shared/protocol.ts";
+import { Connection } from "./connection.ts";
+import { mapStepOps, memoryGrowth } from "./remember.ts";
+import { failCommits, startEngine, type Engine, type Socket, type TestClient } from "./testing.ts";
+
+/**
+ * A fault while the room engine works, on the real server and Postgres:
+ * an op that throws after waiting behind a commit or behind an ask read in
+ * turns, an ask whose reading throws, a delayed snapshot that throws, and
+ * the steps around a commit (the map step, publishing, the snapshots a
+ * commit owed). An op or a snapshot that throws costs the socket it came
+ * from alone, which closes with 1011, and a server command is refused. A
+ * batch that cannot be published is kept, and its room's sockets close to
+ * take it afresh. The room's queue goes on, other rooms never notice, and
+ * nothing reaches the process.
+ *
+ * The faults are scripted through the actor's test seams and the socket's
+ * send, so each test keeps throwing where it means to whatever the rules
+ * come to accept or refuse.
+ */
+
+/** The scripted faults. Each but the slow scan is cleared once it fires. */
+const faults: {
+  draw: boolean;
+  growth: "none" | "slow" | "throw";
+  mapStep: boolean;
+  send: ((conn: Connection, msg: ServerMessage) => boolean) | null;
+} = { draw: false, growth: "none", mapStep: false, send: null };
+
+/** Whatever reached the process: an uncaught exception or an unhandled rejection. */
+const escaped: unknown[] = [];
+const record = (err: unknown) => escaped.push(err);
+const realSend = Connection.prototype.send;
+
+function scriptedFault(what: string): Error {
+  return new Error(`scripted ${what} fault`);
+}
+
+const actorOptions = {
+  batchMs: 10,
+  retryBaseMs: 20,
+  retryMaxMs: 40,
+  draw: (sides: number) => {
+    if (faults.draw) {
+      faults.draw = false;
+      throw scriptedFault("draw");
+    }
+    return serverDraw(sides);
+  },
+  memoryGrowth: (...args: Parameters<typeof memoryGrowth>) => {
+    if (faults.growth === "throw") {
+      faults.growth = "none";
+      throw scriptedFault("scan");
+    }
+    // Slower than a turn of an ask's reading, so a long ask is read over many turns.
+    if (faults.growth === "slow") for (const until = performance.now() + 40; performance.now() < until; );
+    return memoryGrowth(...args);
+  },
+  mapStep: (input: Parameters<typeof mapStepOps>[0]) => {
+    if (!faults.mapStep) return mapStepOps(input);
+    faults.mapStep = false;
+    // A result the step cannot read, which fails past the step's own catch.
+    return null as unknown as ReturnType<typeof mapStepOps>;
+  },
+};
+
+before(() => {
+  process.on("uncaughtException", record);
+  process.on("unhandledRejection", record);
+  Connection.prototype.send = function (this: Connection, msg: ServerMessage): number {
+    if (faults.send?.(this, msg)) {
+      faults.send = null;
+      throw scriptedFault("send");
+    }
+    return realSend.call(this, msg);
+  };
+});
+
+after(() => {
+  process.off("uncaughtException", record);
+  process.off("unhandledRejection", record);
+  Connection.prototype.send = realSend;
+});
+
+beforeEach(() => {
+  faults.draw = false;
+  faults.growth = "none";
+  faults.mapStep = false;
+  faults.send = null;
+  escaped.length = 0;
+});
+
+type Room = { roomId: string; sceneId: string; dm: Socket; dmId: string; player: Socket; playerId: string; playerClient: TestClient };
+
+async function room(t: Engine, name: string): Promise<Room> {
+  const dmClient = t.client();
+  const { roomId } = await dmClient.createRoom(name);
+  const playerClient = t.client();
+  const playerId = await playerClient.join(roomId, "Ayla");
+  const dm = await t.connect(roomId, dmClient);
+  const snap = await dm.snapshot(uuidv7());
+  const player = await t.connect(roomId, playerClient);
+  await player.snapshot(uuidv7());
+  const sceneId = (snap.state as { meta: { playerSceneId: string } }).meta.playerSceneId;
+  return { roomId, sceneId, dm, dmId: snap.you.memberId, player, playerId, playerClient };
+}
+
+function roll(): Op {
+  return { t: "dice.roll", tag: uuidv7(), to: "all", rolls: [{ formula: "1d20" }] } as Op;
+}
+
+async function until(done: () => boolean, what: string): Promise<void> {
+  const deadline = Date.now() + 5_000;
+  while (!done()) {
+    if (Date.now() > deadline) throw new Error(`timed out waiting for ${what}`);
+    await new Promise((r) => setTimeout(r, 2));
+  }
+}
+
+/** `work` settles within five seconds, so a promise left waiting fails the test rather than hanging it. */
+function within<T>(work: Promise<T>, what: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const late = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(`${what} never came`)), 5_000);
+  });
+  return Promise.race([work, late]).finally(() => clearTimeout(timer));
+}
+
+/** Every op of `ns` was taken, not refused, whether one batch answered them or several. */
+async function taken(socket: Socket, ...ns: number[]): Promise<void> {
+  const waiting = new Set(ns);
+  while (waiting.size > 0) {
+    const answers = (m: Extract<ServerMessage, { t: "ev" }>) => [...(m.acks ?? []), ...(m.rejects ?? []).map((r) => r.n)].filter((n) => waiting.has(n));
+    const ev = await socket.next("ev", (m) => answers(m).length > 0);
+    for (const n of answers(ev)) waiting.delete(n);
+    assert.deepEqual(ev.rejects?.filter((r) => ns.includes(r.n)) ?? [], [], `ops ${ns.join(", ")} are taken`);
+  }
+}
+
+/** The room still takes an op from `socket` and shows it to `watcher`. */
+async function goesOn(socket: Socket, watcher: Socket, text: string): Promise<void> {
+  const n = socket.op({ t: "log.chat", text });
+  await taken(socket, n);
+  await watcher.next("ev", (m) => m.changes.some((c) => "value" in c && JSON.stringify(c.value).includes(text)));
+}
+
+/** The process heard of no fault, and another room never noticed. */
+async function contained(other: Room): Promise<void> {
+  await goesOn(other.player, other.dm, `elsewhere ${uuidv7()}`);
+  assert.deepEqual(escaped, [], "nothing reached the process");
+}
+
+describe("a fault in the room engine", () => {
+  let t: Engine;
+  before(async () => {
+    t = await startEngine({ rooms: { actor: actorOptions } });
+  });
+  after(() => t.close());
+
+  test("an op that throws after waiting behind a commit closes only its socket, and the ops queued after it apply", async () => {
+    const r = await room(t, "Behind a commit");
+    const other = await room(t, "Elsewhere");
+    const actor = t.manager.get(r.roomId)!;
+    const failing = failCommits(t.pool, Array.from({ length: 1000 }, () => "before" as const));
+    let first: number;
+    let later: number;
+    try {
+      first = r.dm.op({ t: "log.chat", text: "first" });
+      await until(() => actor.retrying, "the commit to retry");
+      faults.draw = true;
+      r.player.op(roll());
+      later = r.dm.op({ t: "log.chat", text: "later" });
+      await until(() => actor.queueLength === 2, "both ops to wait behind the commit");
+    } finally {
+      failing.restore();
+    }
+    assert.equal((await r.player.waitClosed()).code, 1011);
+    await taken(r.dm, first, later);
+    await contained(other);
+  });
+
+  test("a server command that throws after waiting behind a commit is refused, and the ops queued after it apply", async () => {
+    const r = await room(t, "A server command");
+    const other = await room(t, "Elsewhere");
+    const actor = t.manager.get(r.roomId)!;
+    const failing = failCommits(t.pool, Array.from({ length: 1000 }, () => "before" as const));
+    let refused: Promise<void>;
+    let later: number;
+    try {
+      r.dm.op({ t: "log.chat", text: "first" });
+      await until(() => actor.retrying, "the commit to retry");
+      const op = {
+        t: "sys.memberRemove",
+        get memberId(): string {
+          throw scriptedFault("op");
+        },
+      } as unknown as ServerOnlyOp;
+      refused = actor.sys(op);
+      refused.catch(() => undefined);
+      later = r.player.op({ t: "log.chat", text: "later" });
+      await until(() => actor.queueLength === 2, "both to wait behind the commit");
+    } finally {
+      failing.restore();
+    }
+    await assert.rejects(within(refused, "the server command's answer"), /scripted op fault/);
+    await taken(r.player, later);
+    assert.equal(r.dm.closeCode, null, "no socket pays for a server command");
+    await contained(other);
+  });
+
+  test("an op that throws after waiting behind an ask read in turns closes only its socket, and the ops queued after it apply", async () => {
+    const r = await room(t, "Behind an ask");
+    const other = await room(t, "Elsewhere");
+    const actor = t.manager.get(r.roomId)!;
+    const paints = Array.from({ length: 16 }, (_, i) => ({ t: "build.paint", sceneId: r.sceneId, terrain: "wood", cells: [`${i % 4},${Math.floor(i / 4)}`] }));
+    faults.growth = "slow";
+    let ask: number;
+    let later: number;
+    try {
+      ask = r.dm.nextN();
+      r.dm.send({ t: "op", n: ask, op: { t: "build.ask", sceneId: r.sceneId, ops: paints, part: 0 }, g: uuidv7() });
+      await until(() => actor.askState.reading, "the ask to be read");
+      faults.draw = true;
+      r.player.op(roll());
+      later = r.dm.op({ t: "log.chat", text: "later" });
+      await until(() => actor.queueLength === 2, "both ops to wait behind the ask");
+      assert.equal(actor.askState.reading, true, "the ask is still being read");
+    } finally {
+      faults.growth = "none";
+    }
+    assert.equal((await r.player.waitClosed()).code, 1011);
+    await taken(r.dm, ask, later);
+    await contained(other);
+  });
+
+  test("an ask whose reading throws closes only its socket, and the room's queue goes on", async () => {
+    const r = await room(t, "A failed ask");
+    const other = await room(t, "Elsewhere");
+    const actor = t.manager.get(r.roomId)!;
+    faults.growth = "throw";
+    r.dm.send({ t: "op", n: r.dm.nextN(), op: { t: "build.ask", sceneId: r.sceneId, ops: [{ t: "build.paint", sceneId: r.sceneId, terrain: "wood", cells: ["1,1"] }], part: 0 }, g: uuidv7() });
+    assert.equal((await r.dm.waitClosed()).code, 1011);
+    assert.equal(actor.askState.reading, false);
+    const n = r.player.op({ t: "log.chat", text: "later" });
+    await taken(r.player, n);
+    await contained(other);
+  });
+
+  test("a snapshot owed at a commit's end that throws closes only its socket, and the room goes on", async () => {
+    const r = await room(t, "Owed a snapshot");
+    const other = await room(t, "Elsewhere");
+    const second = await t.connect(r.roomId, r.playerClient);
+    faults.send = (conn, msg) => msg.t === "snapshot" && conn.memberId === r.playerId;
+    // A device that says ops below 5 are settled is answered once the next commit makes that durable.
+    second.hello(uuidv7(), 5);
+    assert.equal((await second.waitClosed()).code, 1011);
+    assert.equal(r.player.closeCode, null, "the player's other device stays");
+    await goesOn(r.dm, r.player, "later");
+    await contained(other);
+  });
+
+  test("a batch whose publishing throws is kept, its room's sockets close, and the room goes on", async () => {
+    const r = await room(t, "Publishing");
+    const other = await room(t, "Elsewhere");
+    const actor = t.manager.get(r.roomId)!;
+    const seq = actor.committed.seq;
+    faults.send = (conn, msg) => msg.t === "ev" && conn.memberId === r.dmId;
+    r.dm.op({ t: "log.chat", text: "first" });
+    assert.equal((await r.dm.waitClosed()).code, 1011);
+    assert.equal((await r.player.waitClosed()).code, 1011);
+    assert.ok(actor.committed.seq > seq, "the batch is stored");
+    const back = await t.connect(r.roomId, r.playerClient);
+    await back.snapshot(uuidv7());
+    const n = back.op({ t: "log.chat", text: "later" });
+    await taken(back, n);
+    await contained(other);
+  });
+
+  test("a batch whose map step throws still commits, and the room goes on", async () => {
+    const r = await room(t, "Map step");
+    const other = await room(t, "Elsewhere");
+    faults.mapStep = true;
+    await goesOn(r.dm, r.player, "first");
+    assert.equal(faults.mapStep, false, "the map step ran");
+    await goesOn(r.player, r.dm, "later");
+    await contained(other);
+  });
+});
+
+describe("a delayed snapshot that throws", () => {
+  let t: Engine;
+  before(async () => {
+    // One snapshot per session a second, so a second device of the same session waits for its own.
+    t = await startEngine({ rooms: { actor: actorOptions, snapshotBudget: { sessionCount: 1, windowMs: 1_000 } } });
+  });
+  after(() => t.close());
+
+  test("closes only its socket, and the room goes on", async () => {
+    const r = await room(t, "Delayed");
+    const other = await room(t, "Elsewhere");
+    const second = await t.connect(r.roomId, r.playerClient);
+    second.hello(uuidv7());
+    await second.next("wait");
+    faults.send = (conn, msg) => msg.t === "snapshot" && conn.memberId === r.playerId;
+    assert.equal((await second.waitClosed()).code, 1011);
+    assert.equal(r.player.closeCode, null, "the player's other device stays");
+    await goesOn(r.dm, r.player, "later");
+    await contained(other);
+  });
+});

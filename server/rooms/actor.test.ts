@@ -3835,6 +3835,40 @@ describe("map discovery on the actor (docs/design/design-v1-map-discovery.md 5.3
     }
   });
 
+  test("a batch whose map step fails past the step's own catch still commits, and fails closed for the scenes it wrote on", async () => {
+    const dm = member("DM", "dm");
+    const player = member("Ayla", "player");
+    const { state, sceneId } = discovery(dm, player);
+    const db = new FakeDb({ state, dmGrants: [dm.id] });
+    const base = deps(db);
+    let failing = true;
+    // A result the step cannot read: it fails where the step's own catch does not reach.
+    const mapStep: typeof mapStepOps = (input) => {
+      if (!failing) return mapStepOps(input);
+      failing = false;
+      return null as unknown as ReturnType<typeof mapStepOps>;
+    };
+    const actor = await RoomActor.load({ ...base, options: { ...base.options, mapStep } });
+    assert.ok(actor);
+    try {
+      const table = connect(actor, dm);
+      await actor.hello(table.conn, { clientId: "c1", resumeFrom: 1 });
+      await actor.op(table.conn, 1, { t: "build.paint", sceneId, terrain: "wood", cells: ["10,10"] });
+      const ev = await answerTo(table.sent, 1);
+      assert.ok(ev !== "stuck" && ev.acks?.includes(1), "the batch commits");
+      assert.equal(failing, false, "the step failed");
+      const now = actor.committed.state;
+      assert.equal(now.exploredTiles[`${sceneId}:0,0`], undefined, "the scene's layer forgot what it does not see");
+      const shown = projectState(now, { memberId: player.id, role: "player" }, { sceneId }).buildChunks;
+      assert.ok(!JSON.stringify(shown).includes('"10,10":"wood"'), "the edit out of sight shows to no one");
+      await actor.op(table.conn, 2, { t: "log.chat", text: "later" });
+      assert.notEqual(await answerTo(table.sent, 2), "stuck", "the room goes on");
+    } finally {
+      db.freeze();
+      void actor.shutdown({ code: 1012, snapshot: false });
+    }
+  });
+
   test("ground a reminder rests on is explored, though a later op in its batch looks away (MD2's review, pendingGround)", async () => {
     const dm = member("DM", "dm");
     const player = member("Ayla", "player");
