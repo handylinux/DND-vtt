@@ -1749,7 +1749,7 @@ const cellRects = z
   .array(cellRect)
   .min(1)
   .max(LIMITS.trapRects)
-  // zod runs this refine even when a rectangle failed its own bounds, so it counts only rectangles within them. A side of 1e300 cells, or one at x 1e300 where a step adds nothing, would never finish.
+  // zod runs this refine when a rectangle fails only its range checks, so it counts only rectangles within them. A side of 1e300 cells walks millions of cells, and one at x 1e300, where a step adds nothing, never ends.
   .refine((rects) => rects.length > LIMITS.trapRects || !rects.every((r) => cellRect.safeParse(r).success) || rectCells(rects) <= LIMITS.trapCells, {
     message: `squares are at most ${LIMITS.trapCells} cells`,
   });
