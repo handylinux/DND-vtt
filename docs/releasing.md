@@ -114,6 +114,11 @@ is, and one that has only some of them is refused, so an asset is never
 replaced. To redo a release's assets, delete them on the release's page
 first.
 
+The assets are uploaded after the release is published. If GitHub's
+immutable releases setting is turned on later, a published release takes no
+new assets, so the upload would fail. The fix then is to create the release
+as a draft, run Release assets on it and publish it after.
+
 The provenance comes from GitHub's artifact attestations
 (`actions/attest-build-provenance`) rather than the SLSA project's
 `slsa-github-generator`, since that generator works only when a workflow
@@ -144,27 +149,31 @@ cosign verify-blob raccoon-vtt-X.Y.Z.cdx.json \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-Assets added by hand were signed by the run from `main`, so for them the
-identity ends in `@refs/heads/main` instead. That is the case for v0.1.0
-and v0.2.0.
+A hand run signs from `main`, so for the assets it adds the identity ends
+in `@refs/heads/main` instead. A hand run for v0.1.0 or v0.2.0, released
+before this workflow existed, gives them assets signed this way. The
+provenance of a hand run names `main` as the workflow that ran and as the
+builder, and lists the tag's own commit as a second source (see below).
 
 With the [GitHub CLI](https://cli.github.com/manual/gh_attestation_verify),
-check the provenance of each file. It reads the attestation from the
-release's `.intoto.jsonl`, or from GitHub when `--bundle` is left out.
-
-Run it from a clone of the repository, so `gh` names the repository itself:
+check the provenance of each file against the workflow that signed it, at
+the tag. It reads the attestation from the release's `.intoto.jsonl`, or
+from GitHub when `--bundle` is left out:
 
 ```sh
-repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+repo=github.com/jwhitlow45/raccoon-vtt
 gh attestation verify raccoon-vtt-X.Y.Z.tar.gz \
   --bundle raccoon-vtt-X.Y.Z.intoto.jsonl \
-  --repo "$repo" \
-  --signer-workflow github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml
+  --repo "${repo#github.com/}" \
+  --cert-identity "https://$repo/.github/workflows/release-assets.yml@refs/tags/vX.Y.Z"
 gh attestation verify raccoon-vtt-X.Y.Z.cdx.json \
   --bundle raccoon-vtt-X.Y.Z.intoto.jsonl \
-  --repo "$repo" \
-  --signer-workflow github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml
+  --repo "${repo#github.com/}" \
+  --cert-identity "https://$repo/.github/workflows/release-assets.yml@refs/tags/vX.Y.Z"
 ```
+
+As with Cosign, for assets added by hand the identity ends in
+`@refs/heads/main` instead.
 
 To see which commit the archive and the SBOM were made from, print the
 sources the provenance lists and compare the last one's `gitCommit` with
@@ -173,8 +182,8 @@ the tag's commit:
 ```sh
 gh attestation verify raccoon-vtt-X.Y.Z.tar.gz \
   --bundle raccoon-vtt-X.Y.Z.intoto.jsonl \
-  --repo "$repo" \
-  --signer-workflow github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml \
+  --repo "${repo#github.com/}" \
+  --cert-identity "https://$repo/.github/workflows/release-assets.yml@refs/tags/vX.Y.Z" \
   --format json \
   --jq '.[].verificationResult.statement.predicate.buildDefinition.resolvedDependencies'
 git rev-parse 'vX.Y.Z^{commit}'
@@ -182,10 +191,11 @@ git rev-parse 'vX.Y.Z^{commit}'
 
 A release's own run lists one source, the tag. Assets added by hand list
 two: `main`, whose workflow ran, then the tag. The signing certificate, and
-`gh`'s `--source-ref` and `--source-digest` checks, which read it, name the
-run's ref and commit, so for those assets they name `main`. The predicate
-is written by the signing workflow itself, and the certificate ties it to
-that workflow, so it can be trusted as far as that workflow can.
+`gh`'s `--cert-identity`, `--source-ref` and `--source-digest` checks,
+which read it, name the run's ref and commit, so for those assets they
+name `main`. The predicate is written by the signing workflow itself, and
+the certificate ties it to that workflow, so it can be trusted as far as
+that workflow can.
 
 ### The Docker Hub overview
 
