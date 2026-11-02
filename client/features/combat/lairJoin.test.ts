@@ -143,6 +143,9 @@ describe("whether a join or In lair can read its creature's lair (CCB-ASTRA-04, 
     const t = (id: string) => state.tokens[id] as Token;
     assert.equal(joinState(diceOf(state, null), false, [t("ticked")]), "loading", "FU46-C2: only its block can say whether its counts stand over the tick");
     assert.equal(joinState(diceOf(state, null), false, [t("keeperIn")]), "ready", "a room's block is at hand");
+    state.tokens.cleared = token("cleared", { name: "Cleared Dragon", size: "huge", x: 8, y: 8, actor: { inline: actor({ srdId: "adult-red-dragon", inLair: true }) } });
+    assert.equal(joinState(diceOf(state, null), false, [t("cleared")]), "loading", "ASTRA-01: counts cleared to zero leave no legendary field, and the tick still waits for its block");
+    assert.equal(joinState(diceOf(state, null), true, [t("cleared")]), "failed");
     const read = joined(state, ["keeperIn", "keeper"]);
     assert.equal(read.state, "ready");
     assert.deepEqual(read.rows.map((r) => [r.tokenId, r.inLair ?? false]), [["keeperIn", true], ["keeper", false]]);

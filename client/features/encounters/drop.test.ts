@@ -223,7 +223,8 @@ describe("a creature placed in its lair (docs/design/design-v1-combat-controls.m
     assert.equal(join({ ...lair, inLair: true }, dragon), true);
     assert.equal(join({ inLair: true }, keeper), true, "lair actions alone: the tick decides");
     assert.equal(join({ inLair: true }, flat), true, "a lair that changes neither counts nor XP: the tick decides");
-    assert.equal(join({ inLair: true }, null), true, "a block not read: the tick decides");
+    assert.equal(join({ srdId: "adult-red-dragon", inLair: true }, null), true, "an SRD block not read: the tick decides");
+    assert.equal(join({ inLair: true }, null), false, "FU46 round 2: a room block deleted since left the link, so no block is loading");
     assert.equal(join({ inLair: true }, goblin), false, "FU46-C1: never for a block read with no lair");
     assert.equal(join({}, keeper), false);
     assert.equal(join(undefined, dragon), false, "no actor of its own");
@@ -270,7 +271,7 @@ describe("lair46: a line's In its lair rides on its tokens into a fight started 
     assert.equal(after.encounter, null, "no fight to add to");
     for (const id of created) assert.equal((after.tokens[id]!.actor as { inline: { inLair?: true } }).inline.inLair, true, `${id} keeps the tick`);
     assert.deepEqual(startFight(after, created, block), [true, true]);
-    assert.deepEqual(startFight(after, created, null), [true, true], "the tick needs no block");
+    assert.deepEqual(startFight(after, created, null), [false, false], "a room block is at hand, so a null one is deleted and the tick goes with it");
   });
 
   test("unticked, they join out of their lair", async () => {

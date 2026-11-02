@@ -112,12 +112,14 @@ function countsTell(block: StatBlockMonster): boolean {
  * the lair, and a token placed before the tick was kept still joins in it.
  * Elsewhere the token's own tick (`Actor.inLair`) decides: for lair
  * actions alone, a block whose lair changes neither (review CCB-ASTRA-07)
- * or a block not read, but never for a block read with no lair, such as a
+ * or an SRD block not read, but never for a block read with no lair, such as a
  * room monster edited since to lose it (review FU46-C1, FU46-C2).
  */
-export function joinEntry(entry: EntryInput, actor: Pick<Actor, "legendary" | "xp" | "inLair"> | undefined, block: StatBlockMonster | null): EntryInput {
+export function joinEntry(entry: EntryInput, actor: Pick<Actor, "legendary" | "xp" | "inLair" | "srdId"> | undefined, block: StatBlockMonster | null): EntryInput {
   if (actor === undefined) return entry;
-  const placed = block !== null && countsTell(block) ? placedInLair(actor, block) : actor.inLair === true && (block === null || blockHasLair(block));
+  // A null block is still loading only for an SRD link. A room monster or companion block is at hand or deleted, and a deleted one left the link (FU46 round 2).
+  const unread = block === null && actor.srdId !== undefined;
+  const placed = block !== null && countsTell(block) ? placedInLair(actor, block) : actor.inLair === true && (block === null ? unread : blockHasLair(block));
   return placed ? { ...entry, inLair: true } : entry;
 }
 

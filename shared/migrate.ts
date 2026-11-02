@@ -1014,6 +1014,8 @@ export const opMigrations: MigrationStep[] = [
     // monster placed in its lair takes at creation, and from this version a
     // row's In lair switch keeps it in step on the row's token
     // (`keepsLairTick`), so a fight it joins later starts it in its lair.
+    // A change of the token's block links drops the tick on the same
+    // version (`lairTickRelinked`).
     // Older ops replay as they were written: their In lair switch wrote no
     // actor, so a stored restore's hash guards still match. The snapshot
     // keeps version 31, since a snapshot without the field is still whole.
@@ -1472,8 +1474,9 @@ export function stopsStandClear(opVersion: number | undefined): boolean {
  * Whether a row's In lair switch writes its token's lair tick
  * (`Actor.inLair`, docs/design/design-v1-combat-controls.md 13.4), so the
  * creature joins its next fight in or out of its lair as the DM last left
- * it. Ops stored before version 39 wrote the row and its counts alone, and
- * replay so.
+ * it, and a change of the token's block links drops the tick
+ * (`lairTickRelinked`). Ops stored before version 39 wrote the row and its
+ * counts alone, and replay so.
  */
 export function keepsLairTick(opVersion: number | undefined): boolean {
   return !(opVersion !== undefined && opVersion < 39);

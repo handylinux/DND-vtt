@@ -201,12 +201,14 @@ export type JoinState = "ready" | "loading" | "failed";
 
 /**
  * A creature that may stand placed in its lair: one with legendary counts,
- * which its block's lair counts are told apart by. Its block is read even
- * where it holds the lair tick, since counts the DM set back by hand stand
- * over the tick (encounters/drop.ts joinEntry).
+ * which its block's lair counts are told apart by, or the lair tick. Its
+ * block is read even where it holds the tick, since counts the DM set back
+ * by hand stand over the tick (encounters/drop.ts joinEntry). Counts
+ * cleared to zero remove the legendary field, so the tick keeps the
+ * creature a candidate (review ASTRA-01).
  */
 function lairCandidate(token: Token): boolean {
-  return "inline" in token.actor && token.actor.inline.legendary !== undefined;
+  return "inline" in token.actor && (token.actor.inline.legendary !== undefined || token.actor.inline.inLair === true);
 }
 
 /**
