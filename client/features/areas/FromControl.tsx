@@ -197,7 +197,7 @@ function CompactPicture(props: { control: ShownFrom }) {
   if (control.form === "disabled") {
     return control.characterId !== undefined ? (
       <Marked state="disabled">
-        <Portrait entry={{ characterId: control.characterId, label: control.name ?? "" }} size={theme.layout.options.disk} ring={theme.color.textDisabled} />
+        <Portrait entry={{ characterId: control.characterId, label: control.name ?? "" }} size={theme.layout.options.disk} ring={theme.color.textDisabled} ink={theme.color.textDisabled} />
       </Marked>
     ) : (
       <Icon name="noCaster" size={theme.layout.options.disk} />

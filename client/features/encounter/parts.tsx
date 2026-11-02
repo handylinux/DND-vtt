@@ -22,9 +22,13 @@ const CHIP_ART = 14;
 /**
  * A row's picture: the token image, else the character's, else initials on
  * the disposition color. The crop follows the token's crop center and zoom
- * closely enough for a 20 to 40 px circle.
+ * closely enough for a 20 to 40 px circle. `ink` is the initials' color,
+ * `textDisabled` inside a control that is off, as every word there is
+ * (docs/design/design-v1-look-pass-1.md 1). `dim` fades a dead creature's
+ * picture, a state the row shows, so it carries the readonly mark the
+ * sweep's disabled-look check reads, as the AC badge does (D-261101-344).
  */
-export function Portrait(props: { entry: Pick<InitEntry, "tokenId" | "characterId" | "label">; size: number; ring?: string; dim?: boolean }) {
+export function Portrait(props: { entry: Pick<InitEntry, "tokenId" | "characterId" | "label">; size: number; ring?: string; dim?: boolean; ink?: string }) {
   const { entry, size } = props;
   const assets = useAssets();
   const token = useRoomView((s) => (entry.tokenId !== undefined ? s.view?.tokens[entry.tokenId] : undefined));
@@ -52,19 +56,19 @@ export function Portrait(props: { entry: Pick<InitEntry, "tokenId" | "characterI
   const letterSize = size >= 30 ? theme.font.small : theme.font.tiny;
   if (shown && !isAssetImage(shown)) {
     // A shipped icon on its disk (docs/design/design-v1-dm-tools.md 3.12), initials until its file arrives.
-    const letters = <span style={{ fontSize: letterSize, fontWeight: theme.weight.bold }}>{initials(name)}</span>;
-    return <IconDisk icon={shown.icon} color={shown.color} width={size} shape="circle" style={frame} fallback={letters} />;
+    const letters = <span style={{ fontSize: letterSize, fontWeight: theme.weight.bold, ...(props.ink ? { color: props.ink } : null) }}>{initials(name)}</span>;
+    return <IconDisk icon={shown.icon} color={shown.color} width={size} shape="circle" style={frame} fallback={letters} readonly={props.dim} />;
   }
   if (!image) {
     return (
-      <span aria-hidden style={{ ...box, color: elsewhere ? theme.color.textMuted : theme.color.text, fontSize: letterSize, fontWeight: theme.weight.bold }}>
+      <span aria-hidden data-disabled-look={props.dim ? "readonly" : undefined} style={{ ...box, color: props.ink ?? (elsewhere ? theme.color.textMuted : theme.color.text), fontSize: letterSize, fontWeight: theme.weight.bold }}>
         {elsewhere ? "?" : initials(name)}
       </span>
     );
   }
   const { cx, cy, zoom } = image.crop;
   return (
-    <span aria-hidden style={box}>
+    <span aria-hidden data-disabled-look={props.dim ? "readonly" : undefined} style={box}>
       <img
         src={assets.url(image.assetId, "thumb")}
         alt=""

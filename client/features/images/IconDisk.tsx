@@ -22,6 +22,8 @@ export function IconDisk(props: {
   ring?: string;
   fallback?: ReactNode;
   style?: CSSProperties;
+  /** Marks a disk faded to show a state, which the sweep's disabled-look check skips inside an off control (encounter/parts.tsx Portrait). */
+  readonly?: boolean;
 }) {
   const height = props.height ?? props.width;
   const glyph = useIconGlyph(props.icon);
@@ -31,6 +33,7 @@ export function IconDisk(props: {
   return (
     <span
       aria-hidden
+      data-disabled-look={props.readonly ? "readonly" : undefined}
       style={{
         position: "relative",
         display: "inline-grid",

@@ -27,4 +27,6 @@ test("a disabled From square greys its portrait at full opacity, inside the dim 
   assert.match(face, /filter:grayscale\(1\)/);
   assert.doesNotMatch(face, /opacity:0\.\d/, "no fade");
   assert.match(markup, new RegExp(`outline:2px solid ${theme.color.textDisabled}`, "i"), "the portrait's ring is the dim outline");
+  // Every word in an off control is textDisabled, the initials of a portrait with no picture too (LOOK1-OPUS-08).
+  assert.match(markup, new RegExp(`color:${theme.color.textDisabled}[^"]*">As</span>`, "i"), "the initials draw the disabled color");
 });

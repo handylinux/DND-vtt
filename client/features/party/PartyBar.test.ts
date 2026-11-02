@@ -130,6 +130,20 @@ describe("a party member's row", () => {
     assert.match(button, new RegExp(`color:${theme.color.textDisabled}`, "i"));
     assert.match(markup, new RegExp(`color:${theme.color.textDisabled}[^>]*>Not on this scene`, "i"));
     assert.match(markup, new RegExp(`PP <span style="color:${theme.color.textDisabled}`, "i"), "the Passive Perception figure dims with its label");
+    // The portrait's initials are words in the off row too (LOOK1-OPUS-08).
+    assert.match(markup, new RegExp(`color:${theme.color.textDisabled}[^"]*">Br</span>`, "i"), "the portrait's initials draw the disabled color");
+  });
+
+  test("a row on the scene keeps its portrait's initials bright, and a dead member's faded portrait says it shows a state (LOOK1-OPUS-08)", () => {
+    const alive = rowOf("alive");
+    assert.match(alive, new RegExp(`color:${theme.color.text}[^"]*">Ay</span>`, "i"), "a live row's initials keep the text color");
+    assert.doesNotMatch(alive, /data-disabled-look="readonly"[^>]*>Ay</, "a live portrait carries no mark");
+    const dead = rowOf("dead");
+    // The fade is the dead state, which the disabled-look check would read as an off control faded inside, so the faded box carries the readonly mark itself.
+    const portrait = /<span aria-hidden="true"( data-disabled-look="readonly")? style="([^"]*)">Ay<\/span>/.exec(dead);
+    assert.ok(portrait, "the dead member's portrait draws its initials");
+    assert.equal(portrait[1], ' data-disabled-look="readonly"', "the faded portrait carries the readonly mark");
+    assert.match(portrait[2]!, /opacity:0\.45/);
   });
 
   test("shows AC on the shield and Passive Perception as PP", () => {

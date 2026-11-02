@@ -220,7 +220,7 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
         cursor: here ? "pointer" : "default",
       }}
     >
-      <Portrait entry={{ characterId: entry.character.id }} size={36} dim={entry.life === "dead"} />
+      <Portrait entry={{ characterId: entry.character.id }} size={36} dim={entry.life === "dead"} ink={here ? undefined : theme.color.textDisabled} />
       {/* One column no wider than the row, so a long name ends in an ellipsis and its HP stays in view. */}
       <span style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(0.5) }}>
         <span style={{ display: "flex", alignItems: "baseline", gap: theme.space(2) }}>
