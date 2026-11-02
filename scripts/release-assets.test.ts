@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, describe, test } from "node:test";
@@ -191,6 +191,113 @@ describe("the tag's files", () => {
     assert.equal(r.status, 0, r.out);
     const archive = path.join(r.dir, "assets/raccoon-vtt-1.2.3.tar.gz");
     assert.deepEqual(execFileSync("tar", ["-tzf", archive], { encoding: "utf8" }).trim().split("\n").toSorted(), ["raccoon-vtt-1.2.3/", "raccoon-vtt-1.2.3/package.json", "raccoon-vtt-1.2.3/server/", "raccoon-vtt-1.2.3/server/main.ts"]);
+  });
+});
+
+describe("the provenance predicate", { skip: jq ? false : "jq is not installed" }, () => {
+  const REPO = "example/raccoon-vtt";
+  const TAG_COMMIT = "abcdef0123456789abcdef0123456789abcdef01";
+  const MAIN_COMMIT = "2222222222222222222222222222222222222222";
+
+  type Run = { workflowRef: string; ref: string; sha: string; event: string };
+
+  /**
+   * GitHub's own predicate for a run, ported from buildSLSAProvenancePredicate
+   * (actions/toolkit, packages/attest/src/provenance.ts), with the OIDC claims
+   * this run would carry. The builder is this workflow at the run's ref, as
+   * image.yml calls it or as it runs by hand.
+   */
+  function githubPredicate(run: Run) {
+    const repository = `https://github.com/${REPO}`;
+    return {
+      buildDefinition: {
+        buildType: "https://actions.github.io/buildtypes/workflow/v1",
+        externalParameters: { workflow: { ref: run.ref, repository, path: run.workflowRef.replace(`${REPO}/`, "").split("@")[0] } },
+        internalParameters: { github: { event_name: run.event, repository_id: "101", repository_owner_id: "202", runner_environment: "github-hosted" } },
+        resolvedDependencies: [{ uri: `git+${repository}@${run.ref}`, digest: { gitCommit: run.sha } }],
+      },
+      runDetails: {
+        builder: { id: `${repository}/.github/workflows/release-assets.yml@${run.ref}` },
+        metadata: { invocationId: `${repository}/actions/runs/303/attempts/2` },
+      },
+    };
+  }
+
+  function predicate(run: Run, commit: string) {
+    const r = runStep("The provenance predicate", {
+      VERSION: "1.2.3",
+      COMMIT: commit,
+      GITHUB_SERVER_URL: "https://github.com",
+      GITHUB_REPOSITORY: REPO,
+      GITHUB_WORKFLOW_REF: run.workflowRef,
+      GITHUB_REF: run.ref,
+      GITHUB_SHA: run.sha,
+      GITHUB_EVENT_NAME: run.event,
+      GITHUB_REPOSITORY_ID: "101",
+      GITHUB_REPOSITORY_OWNER_ID: "202",
+      RUNNER_ENVIRONMENT: "github-hosted",
+      GITHUB_RUN_ID: "303",
+      GITHUB_RUN_ATTEMPT: "2",
+    });
+    const file = path.join(r.dir, "provenance.json");
+    return { ...r, predicate: r.status === 0 ? (JSON.parse(readFileSync(file, "utf8")) as ReturnType<typeof githubPredicate>) : undefined };
+  }
+
+  const TAG_PUSH: Run = { workflowRef: `${REPO}/.github/workflows/image.yml@refs/tags/v1.2.3`, ref: "refs/tags/v1.2.3", sha: TAG_COMMIT, event: "push" };
+  const BY_HAND: Run = { workflowRef: `${REPO}/.github/workflows/release-assets.yml@refs/heads/main`, ref: "refs/heads/main", sha: MAIN_COMMIT, event: "workflow_dispatch" };
+
+  test("a tag's own run, through image.yml, gets GitHub's predicate as it is", () => {
+    const r = predicate(TAG_PUSH, TAG_COMMIT);
+    assert.equal(r.status, 0, r.out);
+    assert.deepEqual(r.predicate, githubPredicate(TAG_PUSH));
+  });
+
+  test("a run by hand from main names main as the workflow and builder, and adds the tag's own commit", () => {
+    const r = predicate(BY_HAND, TAG_COMMIT);
+    assert.equal(r.status, 0, r.out);
+    const expected = githubPredicate(BY_HAND);
+    expected.buildDefinition.resolvedDependencies.push({ uri: `git+https://github.com/${REPO}@refs/tags/v1.2.3`, digest: { gitCommit: TAG_COMMIT } });
+    assert.deepEqual(r.predicate, expected);
+    assert.equal(r.predicate?.runDetails.builder.id, `https://github.com/${REPO}/.github/workflows/release-assets.yml@refs/heads/main`);
+  });
+
+  test("a tag's own run whose checkout found another commit names both", () => {
+    const r = predicate(TAG_PUSH, MAIN_COMMIT);
+    assert.equal(r.status, 0, r.out);
+    assert.deepEqual(r.predicate?.buildDefinition.resolvedDependencies.map((d) => d.digest.gitCommit), [TAG_COMMIT, MAIN_COMMIT]);
+  });
+
+  for (const commit of ["", "v1.2.3", "1111", `${TAG_COMMIT}\n::warning::x`, TAG_COMMIT.toUpperCase()]) {
+    test(`refuses a tagged commit of ${JSON.stringify(commit)}`, () => {
+      const r = predicate(BY_HAND, commit);
+      assert.equal(r.status, 1, r.out);
+      assert.equal(r.predicate, undefined);
+    });
+  }
+
+  test("the builder named is this workflow file", () => {
+    assert.ok(stepScript("The provenance predicate").includes(".github/workflows/release-assets.yml@"));
+    assert.ok(existsSync(new URL("../.github/workflows/release-assets.yml", import.meta.url)));
+  });
+
+  test("the build job names the commit it checked out, and the attestation signs this predicate", () => {
+    const repo = scratch();
+    const env = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1", GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@example.com", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@example.com" };
+    const git = (...args: string[]) => execFileSync("git", args, { cwd: repo, env, encoding: "utf8" }).trim();
+    git("init", "-q", "-b", "main");
+    writeFileSync(path.join(repo, "package.json"), "{}\n");
+    git("add", "-A");
+    git("commit", "-q", "--no-gpg-sign", "-m", "release");
+    const r = runStep("The tagged commit", { VERSION: "1.2.3" }, {}, repo);
+    assert.equal(r.status, 0, r.out);
+    assert.deepEqual(r.output, [`commit=${git("rev-parse", "HEAD")}`]);
+    const build = jobBlock(workflow, "build");
+    assert.match(build, /\n {4}outputs:\n {6}commit: \$\{\{ steps\.source\.outputs\.commit \}\}\n/);
+    assert.ok(build.indexOf("ref: refs/tags/${{ inputs.tag }}") < build.indexOf("- name: The tagged commit"));
+    const sign = jobBlock(workflow, "sign");
+    assert.match(sign, /COMMIT: \$\{\{ needs\.build\.outputs\.commit \}\}\n/);
+    assert.match(sign, /\n {10}predicate-type: https:\/\/slsa\.dev\/provenance\/v1\n {10}predicate-path: \$\{\{ runner\.temp \}\}\/provenance\.json\n/);
+    assert.ok(sign.indexOf("- name: The provenance predicate") < sign.indexOf("- name: Attest the build provenance"));
   });
 });
 

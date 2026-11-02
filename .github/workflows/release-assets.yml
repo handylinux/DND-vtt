@@ -11,11 +11,16 @@
 # asset ending in .sigstore.json, and gives it full marks for one ending in
 # .intoto.jsonl (its probes releasesAreSigned and releasesHaveProvenance).
 #
-# The provenance comes from GitHub's artifact attestations
+# The provenance is signed by GitHub's artifact attestations
 # (actions/attest-build-provenance), pinned by SHA like every other action
 # here. slsa-framework/slsa-github-generator was not used: it works only
 # when referenced by a tag, and Scorecard's Pinned-Dependencies counts a
 # reusable workflow referenced by a tag as unpinned.
+#
+# Its SLSA predicate is the one GitHub would write from the run, plus the
+# tag's commit where the run is not the tag's own. GitHub's names only the
+# run's ref and commit, which for a hand run is main, not the tag whose
+# files the archive holds.
 #
 # image.yml calls this once a tag's release exists. Run it by hand from the
 # Actions tab, from main, with a tag, to add the assets to an older release.
@@ -106,6 +111,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+    outputs:
+      commit: ${{ steps.source.outputs.commit }}
     env:
       VERSION: ${{ needs.check.outputs.version }}
     steps:
@@ -120,6 +127,13 @@ jobs:
             echo "::error::package.json at v$VERSION says the version is '$have', not $VERSION."
             exit 1
           fi
+      # The commit the archive and the SBOM are made from, for the provenance.
+      - name: The tagged commit
+        id: source
+        run: |
+          commit=$(git rev-parse HEAD)
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "v$VERSION is $commit."
       # Under the folder raccoon-vtt-X.Y.Z/, as GitHub's own source archives
       # are, with each file dated by the tagged commit.
       - name: Source archive
@@ -185,6 +199,45 @@ jobs:
               sleep $((attempt * 5))
             done
           done
+      # GitHub's own predicate (actions/toolkit, packages/attest/src/provenance.ts)
+      # reads the run's OIDC claims. The same values come here from the run's
+      # environment: the workflow that started the run, its ref and commit,
+      # and the builder, this file at that ref, as image.yml calls it or as
+      # it is run by hand. The tag's commit joins resolvedDependencies when it
+      # is not the run's own, as in a hand run from main for an older tag.
+      - name: The provenance predicate
+        env:
+          COMMIT: ${{ needs.build.outputs.commit }}
+        run: |
+          if ! [[ $COMMIT =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::The tagged commit is '$COMMIT', not a full commit SHA."
+            exit 1
+          fi
+          workflow=${GITHUB_WORKFLOW_REF#"$GITHUB_REPOSITORY/"}
+          jq -n \
+            --arg repository "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" --arg ref "$GITHUB_REF" --arg sha "$GITHUB_SHA" \
+            --arg path "${workflow%%@*}" --arg event "$GITHUB_EVENT_NAME" --arg repository_id "$GITHUB_REPOSITORY_ID" \
+            --arg owner_id "$GITHUB_REPOSITORY_OWNER_ID" --arg runner "$RUNNER_ENVIRONMENT" \
+            --arg run "$GITHUB_RUN_ID" --arg attempt "$GITHUB_RUN_ATTEMPT" \
+            --arg tag "refs/tags/v$VERSION" --arg commit "$COMMIT" '
+            {
+              buildDefinition: {
+                buildType: "https://actions.github.io/buildtypes/workflow/v1",
+                externalParameters: { workflow: { ref: $ref, repository: $repository, path: $path } },
+                internalParameters: {
+                  github: { event_name: $event, repository_id: $repository_id, repository_owner_id: $owner_id, runner_environment: $runner }
+                },
+                resolvedDependencies: (
+                  [{ uri: "git+\($repository)@\($ref)", digest: { gitCommit: $sha } }]
+                  + (if $tag == $ref and $commit == $sha then [] else [{ uri: "git+\($repository)@\($tag)", digest: { gitCommit: $commit } }] end)
+                )
+              },
+              runDetails: {
+                builder: { id: "\($repository)/.github/workflows/release-assets.yml@\($ref)" },
+                metadata: { invocationId: "\($repository)/actions/runs/\($run)/attempts/\($attempt)" }
+              }
+            }' > "$RUNNER_TEMP/provenance.json"
+          jq -c .buildDefinition.resolvedDependencies "$RUNNER_TEMP/provenance.json"
       - name: Attest the build provenance
         id: attest
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
@@ -192,6 +245,8 @@ jobs:
           subject-path: |
             ${{ runner.temp }}/assets/raccoon-vtt-${{ needs.check.outputs.version }}.tar.gz
             ${{ runner.temp }}/assets/raccoon-vtt-${{ needs.check.outputs.version }}.cdx.json
+          predicate-type: https://slsa.dev/provenance/v1
+          predicate-path: ${{ runner.temp }}/provenance.json
       - name: The provenance as a release asset
         env:
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
