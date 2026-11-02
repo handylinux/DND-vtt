@@ -387,12 +387,17 @@ export function MonsterLine(props: {
         background: theme.color.surfaceRaised,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: theme.space(2) }}>
-        <span style={{ flex: 1, minWidth: 0, fontSize: theme.font.input, fontWeight: theme.weight.strong, color: view ? theme.color.text : theme.color.textMuted }}>{name}</span>
-        {props.room ? <RoomBadge /> : null}
-        {view ? (
-          <span style={{ fontSize: theme.font.small, color: theme.color.textMuted, whiteSpace: "nowrap" }}>
-            CR {view.cr} · {xpText(lineXp(line, view))} each
+      {/* The name takes the room it needs, and where "This room" and the CR do not fit beside it they go on the next line together, the CR under the tag where even they do not fit side by side. Kept on one line, they ran past the sheet at 320 x 568 at 130% (ENC-LINE-320). */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: theme.space(2), rowGap: theme.space(1) }}>
+        <span style={{ flex: "1 1 auto", minWidth: 0, overflowWrap: "anywhere", fontSize: theme.font.input, fontWeight: theme.weight.strong, color: view ? theme.color.text : theme.color.textMuted }}>{name}</span>
+        {props.room || view ? (
+          <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: theme.space(2), rowGap: theme.space(1), minWidth: 0 }}>
+            {props.room ? <RoomBadge /> : null}
+            {view ? (
+              <span style={{ fontSize: theme.font.small, color: theme.color.textMuted, whiteSpace: "nowrap" }}>
+                CR {view.cr} · {xpText(lineXp(line, view))} each
+              </span>
+            ) : null}
           </span>
         ) : null}
       </div>
@@ -463,14 +468,9 @@ function AddMonsters(props: { srd: SrdList; monsters: Readonly<Record<string, Cu
                 onClick={() => props.onAdd(c.ref)}
                 leading={<Icon name="plus" size="sm" />}
                 title={c.view.name}
-                trailing={
-                  <>
-                    {c.room ? <RoomBadge /> : null}
-                    <span style={{ fontSize: theme.font.small, color: theme.color.textMuted, whiteSpace: "nowrap" }}>
-                      CR {c.view.cr} · {xpText(c.view.xp)}
-                    </span>
-                  </>
-                }
+                // Under the name, as the encounters' own rows give their count and XP: beside it with "This room" they left a phone at 130% no room for the name (ENC-LINE-320).
+                detail={`CR ${c.view.cr} · ${xpText(c.view.xp)}`}
+                trailing={c.room ? <RoomBadge /> : undefined}
               />
             </li>
           );
