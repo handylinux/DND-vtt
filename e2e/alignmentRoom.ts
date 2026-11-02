@@ -4959,14 +4959,31 @@ async function shapeScrollbarScreen(sweep: Sweep, page: Page, size: Size, scale:
   }
 }
 
-/** Forget is local only, and each dismissal leaves the saved entry and sign-in intact. */
+/** Whether this file's run has checked what Forget and each dismissal do, which no size or scale changes. */
+let forgetChecked = false;
+
+/**
+ * Forget is local only, and each dismissal leaves the saved entry and
+ * sign-in intact. Checked once a file, at its first size: every later
+ * size and scale measures the question's layout alone, once, and puts it
+ * away with Cancel (FL6-C, suite time).
+ */
 async function forgetRoomScreen(sweep: Sweep, page: Page): Promise<void> {
   await page.goto(`${server.origin}/`);
   const opener = page.getByRole("button", { name: `Forget ${run.roomName} on this device`, exact: true });
   await opener.waitFor();
+  const question = page.getByRole("dialog", { name: "Forget this room?", exact: true });
+  if (forgetChecked) {
+    await opener.click();
+    await question.waitFor();
+    await sweep.measure(page, "fl6-forget-room", question);
+    await shots.take(page, `alignment-${sweep.at}-fl6-forget-room`);
+    await question.getByRole("button", { name: "Cancel", exact: true }).click();
+    await question.waitFor({ state: "detached" });
+    return;
+  }
   const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem("rvtt.rooms") ?? "[]") as { roomId: string }[]);
   const before = await saved();
-  const question = page.getByRole("dialog", { name: "Forget this room?", exact: true });
   for (const dismissal of ["Cancel", "Escape", "Close"] as const) {
     await opener.focus();
     await opener.press("Enter");
@@ -4992,6 +5009,7 @@ async function forgetRoomScreen(sweep: Sweep, page: Page): Promise<void> {
   assert.equal(await opener.count(), 0, "the room stays forgotten after reload");
   const me = await page.context().request.get(`${server.origin}/api/rooms/${run.roomId}/me`);
   assert.equal(me.status(), 200, "forgetting neither deletes the server room nor signs this device out");
+  forgetChecked = true;
 }
 
 /** FL5: the production SideTabs, Popover and Menu mounted together, including phone widths where Room uses the Panels sheet. */
