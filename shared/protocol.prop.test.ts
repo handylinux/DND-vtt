@@ -80,22 +80,6 @@ function zeroed(value: unknown): unknown {
   return value;
 }
 
-/**
- * Whether the op holds a string that names an Object.prototype member, such
- * as "__proto__" or "constructor". As an id it finds the prototype's own
- * member in a state record, which the permissions and the reducer read as
- * an entity and can throw on. Only the sender's socket closes and nothing
- * changes, and the fix is a follow-up across every record lookup, so a
- * throw on such an op is let through here and every other throw fails.
- */
-const PROTOTYPE_NAMES = new Set(Object.getOwnPropertyNames(Object.prototype));
-function namesPrototype(value: unknown): boolean {
-  if (typeof value === "string") return PROTOTYPE_NAMES.has(value);
-  if (Array.isArray(value)) return value.some(namesPrototype);
-  if (value !== null && typeof value === "object") return Object.values(value).some(namesPrototype);
-  return false;
-}
-
 describe("the wire schemas, over hostile input (property)", () => {
   test("any frame is parsed or refused without a throw, and one that parses reads the same from its JSON", () => {
     holds(
@@ -122,15 +106,10 @@ describe("the wire schemas, over hostile input (property)", () => {
         assert.ok(replayed.success, `${op.t} replays: ${replayed.success ? "" : replayed.error.issues[0]?.message}`);
         assert.deepEqual(zeroed(replayed.data), zeroed(op), `${op.t} replays as the op that was applied`);
         const state = randomState(rng(room));
-        try {
-          const decision = canApply(op, viewer, state, { canUseAsset: () => true });
-          if (!decision.ok) return;
-          const result = applyOp(state, op, viewer, env(2));
-          if (result.ok) assert.ok(result.state !== state, "an applied op makes a new state");
-        } catch (err) {
-          if (!(err instanceof assert.AssertionError) && namesPrototype(op)) return;
-          throw err;
-        }
+        const decision = canApply(op, viewer, state, { canUseAsset: () => true });
+        if (!decision.ok) return;
+        const result = applyOp(state, op, viewer, env(2));
+        if (result.ok) assert.ok(result.state !== state, "an applied op makes a new state");
       }),
       4_000,
     );
