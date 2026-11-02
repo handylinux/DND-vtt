@@ -180,13 +180,13 @@ Tiers:
 **v1**
 
 - Hex grids beside squares, the project owner's request of 2026-10-25 ("also hex grids (keep square as the default though)"), with a room default for new scenes.
-  - Designed in docs/design/design-v1-hex-grids.md in three phases. Phase H1 is built: a scene's grid is Squares (the default for new and existing scenes), Hex rows or Hex columns, picked in the new scene form and in a scene's Map image and grid settings, with "Grid on new scenes" in Room settings. A cell is the distance between two hex centers, so positions, fog, sight and lights keep their units. Every hex is one step, so the room's diagonal rule counts only height there. Sizes follow the DMG's hex table: Tiny, Small and Medium 1 hex, Large 3, Huge 7, Gargantuan 12. Snapping, drops, placement, distance, the Straight ruler, drag labels and speed colors, range rings, arrow keys, areas (graded per hex, with emanations counted in steps), fog and party vision, Line up the grid (a box over 7 hexes) and Export as image all work on hexes.
-  - Square only until phases H2 and H3: walls and doors, the Walking ruler and routes, squeezing, difficult ground, riding and carrying, traps, heights, stairs and pits, Reveal room, and Find the grid. Square for good: painted ground and rooms, pillars, automatic walls, Count the squares, the Universal VTT import and the export's WxH file name. The server refuses on a hex scene what is not hex yet.
+  - Built in v1 in three phases (docs/design/design-v1-hex-grids.md). Phase H1: a scene's grid is Squares (the default for new and existing scenes), Hex rows or Hex columns, picked in the new scene form and in a scene's Map image and grid settings, with "Grid on new scenes" in Room settings. A cell is the distance between two hex centers, so positions, fog, sight and lights keep their units. Every hex is one step, so the room's diagonal rule counts only height there. Sizes follow the DMG's hex table: Tiny, Small and Medium 1 hex, Large 3, Huge 7, Gargantuan 12. Snapping, drops, placement, distance, the Straight ruler, drag labels and speed colors, range rings, arrow keys, areas (graded per hex, with emanations counted in steps), fog and party vision, Line up the grid (a box over 7 hexes) and Export as image all work on hexes.
+  - Built in phases H2 and H3: walls and doors, the Walking ruler and routes, squeezing, difficult ground, riding and carrying, traps, heights, stairs and pits, and Reveal room all work on hexes, hex by hex, so hex grids are complete. Square for good: painted ground and rooms, pillars, automatic walls, Count the squares, the Universal VTT import and the export's WxH file name. The server refuses on a hex scene what stays square, and each refusal says so in plain words.
 
 - Ruler counts difficult terrain from the map builder (moved up from Later on 2026-10-18 at the project owner's request).
-  - Designed in docs/design/design-v1-movement.md, not built yet.
+  - Built in v1 (docs/design/design-v1-movement.md). The map builder's Difficult ground mode marks squares, and a drag's cost, its label and the ruler count them, with rubble, water, squeezing and a dragged creature.
 - True walking distance around walls (moved up from Later on 2026-10-18 at the project owner's request).
-  - Designed in docs/design/design-v1-movement.md, not built yet.
+  - Built in v1 (docs/design/design-v1-movement.md). The ruler's Walking measure goes around walls and closed doors, through open doors and up stairs, and a drag walks the cheapest way to where it is dropped.
 
 ## 5. Tokens
 
@@ -232,7 +232,7 @@ Tiers:
 **v1**
 
 - Attached tokens: a rider on a mount, a torch on a character, a familiar on a shoulder, a grappled creature dragged along (moved up from Later on 2026-10-18 at the project owner's request).
-  - Designed in docs/design/design-v1-attach.md, not built yet.
+  - Built in v1 (docs/design/design-v1-attach.md). Attach, in a token's action bar, lists what a token can ride, carry or drag, and a holder's drag takes what it carries.
 
 ## 6. Token images
 
@@ -470,7 +470,7 @@ Tiers:
   - Darkvision.
     - Built in v1 wave 4, read from the creature's senses line, with blindsight and truesight, each up to 150 ft. Darkvision sees dim light as bright and darkness as dim in shades of gray, which the map draws blue-grey. Owners keep editing their senses, which the project owner decided is trusted (2026-10-14), and the DM sees what they set. The token panel says what the creature sees: "Sees in the dark to 60 ft".
   - Light sources with presets: torch 20/20, lamp 15/30, Light cantrip 20/20.
-    - Partly built in v1 wave 3. A Universal VTT import's lights are stored, each with a bright radius and dim light beyond it of at most 120 ft, and the DM sees them as small suns. They light nothing yet, and placing or editing one by hand comes with dynamic lighting.
+    - Built in v1 wave 3 and finished in wave 4. A Universal VTT import's lights are stored, each with a bright radius and dim light beyond it of at most 120 ft, and the DM sees them as small suns. They light scenes with party vision, and placing or editing one by hand is below.
     - Built in v1 wave 4. The builder's Lights mode places a light with a tap (a Torch, or another SRD preset: Candle 5/5, Torch 20/20, Lamp 15/30, Hooded Lantern 30/30, Light 20/20, Daylight 60/60), and a tap on one opens a pane to change its radii, turn it on or off, choose whether walls cast shadows from it, or delete it. A drag moves it. A token's action bar offers Light (None, Candle, Torch, Lamp, Hooded Lantern, Light, Custom) to the DM and the token's owners, with Custom radii up to 120 ft each. At most 100 placed lights per scene. The DM cannot light or show a 21st token light on a scene, while a player's torch is never refused: past 20, the party's own lights light first and the DM's Vision settings say how many light nothing. Players see only a light's effect, never the light.
   - Explored areas are remembered.
     - Built in v1 wave 4. Ground the party has seen stays drawn, dimmed, with no creatures on it, and ground never seen stays under fog. The DM's own fog tools keep working: a reveal shows more, a hide makes players forget the area except where the party is looking now, and undoing a fog edit takes back only the DM's edit, never what the party explored since (the project owner, 2026-10-14). The DM sees explored ground like revealed ground, with a dotted edge.
