@@ -5,7 +5,7 @@ import { keepsLairTick } from "../migrate.ts";
 import { canApply } from "../permissions.ts";
 import { clientOpSchema, type Op } from "../protocol.ts";
 import { applyOp } from "../reducer.ts";
-import { DM, P1, actor, character, comparable, env, room, token } from "../testutil.ts";
+import { DM, P1, actor, character, companionBlock, comparable, env, room, token } from "../testutil.ts";
 
 /*
  * A row's In lair kept on its token (LAIR-TICK-CARRY, D-261026-19,
@@ -93,5 +93,41 @@ describe("lair46: a row's In lair keeps the tick on its token", () => {
     assert.equal(clientOpSchema.safeParse({ t: "token.update", tokenId: "keeper", patch: { actor: { inLair: true } } }).success, false, "the switch alone writes it");
     const op = { t: "encounter.update", entryId: "ek", patch: { inLair: true } } as const;
     assert.equal(canApply(op, P1, table(), { canUseAsset: () => true }).ok, false);
+  });
+});
+
+/*
+ * FU46-C1: the tick says the creature stands in its block's lair, so a
+ * change of the block, or none, takes it, as it takes the marks keyed by
+ * that block (docs/design/design-v1-combat-controls.md 2.4 and 13.4).
+ */
+describe("lair46: a change of a creature's stat block takes its lair tick", () => {
+  function ticked(): RoomState {
+    const state = table();
+    for (const id of ["keeper", "dragon"]) state.tokens[id] = { ...state.tokens[id]!, actor: { inline: { ...inline(state, id), inLair: true } } };
+    return state;
+  }
+  const patch = (tokenId: string, actorPatch: object, opVersion?: number) => run(ticked(), { t: "token.update", tokenId, patch: { actor: actorPatch } } as Op, opVersion).state;
+
+  test("Detach and a new link take it, and a patch that keeps the link keeps it", () => {
+    assert.equal("inLair" in inline(patch("keeper", { monsterId: null, srdId: null, blockId: null }), "keeper"), false, "Detach");
+    assert.equal("inLair" in inline(patch("dragon", { srdId: "goblin-warrior" }), "dragon"), false, "another SRD block");
+    assert.equal("inLair" in inline(patch("keeper", { srdId: "adult-red-dragon" }), "keeper"), false, "an SRD block over a room monster's");
+    assert.equal(inline(patch("dragon", { srdId: "adult-red-dragon" }), "dragon").inLair, true, "the same block again");
+    assert.equal(inline(patch("dragon", { ac: 15, legendary: { actionsMax: 3, actionsUsed: 0, resistMax: 3, resistUsed: 0 } }), "dragon").inLair, true, "counts set by hand leave it, for a join to weigh");
+  });
+
+  test("a companion given to another character lets its block go, and the tick with it", () => {
+    const state = room({
+      characters: { c1: character("c1", { name: "Bree", ownerIds: ["p1"] }), c2: character("c2", { name: "Ash", ownerIds: ["p2"] }) },
+      tokens: { spirit: token("spirit", { kind: "npc", name: "Moth Spirit", ownerIds: ["p1"], companion: { of: "c1", turn: "shared" }, actor: { inline: actor({ blockId: "cb0", inLair: true }) } }) },
+    });
+    state.companionBlocks.cb0 = companionBlock("cb0", "c1");
+    const given = run(state, { t: "token.update", tokenId: "spirit", patch: { companion: { of: "c2", turn: "shared" } } }).state;
+    assert.equal("inLair" in inline(given, "spirit"), false);
+  });
+
+  test("an op stored before version 39 keeps it, as it was written", () => {
+    assert.equal(inline(patch("keeper", { monsterId: null, srdId: null, blockId: null }, 38), "keeper").inLair, true);
   });
 });

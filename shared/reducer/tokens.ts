@@ -1,5 +1,5 @@
 import { keys } from "../keys.ts";
-import { attaches, healRevivesDead, oneLinkPerActor, resizeStop, shapeKeepsOwnNumbers, syncsFromDdb, walksRoutes } from "../migrate.ts";
+import { attaches, healRevivesDead, keepsLairTick, oneLinkPerActor, resizeStop, shapeKeepsOwnNumbers, syncsFromDdb, walksRoutes } from "../migrate.ts";
 import type { Actor, AreaTemplate, Character, ClassResource, DdbSync, Drawing, PathStop, RoomState, Token, TokenPath, TurnStart } from "../model.ts";
 import { gridOfToken, inSightOfNonOwners, seenAtEvery, seenMark } from "../project.ts";
 import { MAX_RULER_STOPS, SYNC_AT_AHEAD, syncAtAhead, syncStamp, type ActorPatch, type CharacterPatch, type DdbSyncPatch, type Op, type OpOf, type TokenPatch } from "../protocol.ts";
@@ -180,8 +180,21 @@ export function applyActorPatch(tx: Tx, resolved: ResolvedActor, patch: ActorPat
   setOrDelete(actor, "legendary", patch.legendary);
   if (resolved.holder === "character" && shapeKeepsOwnNumbers(tx.env.opVersion)) actor = withUnshaped(resolved.actor, actor, patch);
   // Marks are keyed by the block's entries, so a new block, or a shape taken or ended, takes them (docs/design/design-v1-combat-controls.md 2.4).
-  actor = relinked(actor, linkOf(resolved.actor));
+  actor = lairTickRelinked(tx, relinked(actor, linkOf(resolved.actor)), linkOf(resolved.actor));
   return { actor, events };
+}
+
+/**
+ * The actor as a change of its links leaves its lair tick (`Actor.inLair`):
+ * the tick says the creature stands in its block's lair, so a new block, or
+ * none, takes it, as relinked takes the marks
+ * (docs/design/design-v1-combat-controls.md 13.4). From op version 39, as
+ * the tick itself (`keepsLairTick`).
+ */
+function lairTickRelinked(tx: Tx, actor: Actor, was: string | undefined): Actor {
+  if (actor.inLair === undefined || linkOf(actor) === was || !keepsLairTick(tx.env.opVersion)) return actor;
+  const { inLair: _gone, ...rest } = actor;
+  return rest;
 }
 
 /** Optional fields take null in a patch to mean "remove", and undefined to mean "leave alone". */
@@ -272,7 +285,8 @@ function updateCompanion(tx: Tx, token: Token, next: Token, p: TokenPatch): void
   // (docs/design/design-v1-companion-stat-blocks.md 3.2, rule 3). An SRD link holds nothing of the character's and stays.
   if (next.companion?.of !== token.companion?.of && "inline" in next.actor && next.actor.inline.blockId !== undefined) {
     const { blockId: _theirs, ...actor } = next.actor.inline;
-    next.actor = { inline: relinked(actor, linkOf(next.actor.inline)) };
+    const was = linkOf(next.actor.inline);
+    next.actor = { inline: lairTickRelinked(tx, relinked(actor, was), was) };
   }
   if (p.companionReaction !== undefined) {
     if (next.companion?.turn !== "shared") throw invalid(NOT_SHARED);
