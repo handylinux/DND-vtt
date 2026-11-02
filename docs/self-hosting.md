@@ -492,6 +492,27 @@ docker compose --profile restore run --rm restore sh /backup/backup.sh restore r
 On a new server, follow steps 1 to 3 above with the same `ROOM_SECRET_KEY`,
 then [Restore](#restore) from putting the copied backups onto the volume.
 
+### Remove it
+
+Removing raccoon-vtt deletes every room, every image and every backup on
+the server, so first copy off anything you want to keep, as
+[Copy the backups off the server](#copy-the-backups-off-the-server) shows.
+Then stop the stack, delete its containers, networks, volumes and images,
+and delete its folder:
+
+```bash
+cd ~/raccoon-vtt
+docker compose down --volumes --rmi all
+cd ~ && rm -r ~/raccoon-vtt
+```
+
+A server that builds its own image, as in [Deploying](#deploying), is
+removed the same way, with `-f docker-compose.server.yml` added to the
+`down` command. If you added the firewall rules, remove each one by
+running its `iptables -I` line again with `-D` in place of `-I` and
+without the rule number `1`, then save them with
+`sudo netfilter-persistent save`.
+
 ## Updating
 
 Back up first, then update:
