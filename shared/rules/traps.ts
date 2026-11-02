@@ -5,7 +5,7 @@ import type { Op } from "../protocol.ts";
 import { stopsOnPublicGround, stopsOnTrap, stopsStandClear, stopsStandFullSize } from "../migrate.ts";
 import { isWritable } from "../writable.ts";
 import { creaturesInArea, type AreaToken } from "./aoe.ts";
-import { holderOf, insideHolder, onHolder, walkerFor } from "./attach.ts";
+import { holderOf, insideHolder, onHolder, seatHolds, walkerFor } from "./attach.ts";
 import { footprintRect, footprintSize, isSqueezed, occupiedHexes, occupiedRange, rangeAtInto, sizeCategory, type CellRange, type PlacedToken } from "./footprint.ts";
 import { footing, footprintGround, groundAt, sceneGround, standing } from "./heights.ts";
 import { pendingGround } from "./held.ts";
@@ -540,6 +540,8 @@ type Walk = {
   spots: readonly WalkSpot[];
   /** Whether it walks a route of its own, not its group's walk offset by its place. */
   own: boolean;
+  /** Whether players cannot see it and it seats, up a chain of seats, one they all see (`seatsOfSeen`). */
+  seatsSeen: boolean;
   ox: number;
   oy: number;
   step: number;
@@ -639,6 +641,30 @@ type Walks = { all: Walk[]; byId: Map<string, Walk>; groups: Map<string, Group>;
 type Stands = { walk: readonly { progress: Progress }[]; spot: (i: number) => RouteSpot };
 
 /**
+ * The members of a group players cannot see that seat one they all see,
+ * up a chain of seats from it to the first that walks or is seen
+ * (review FU45B-ASTRA-11): from op version 38 (migrate.ts stopsStandClear).
+ * Where the seen one walks as itself, as under a holder players cannot see,
+ * the trap step judges its stand on its own walk, so each such holder
+ * walks at its step and a cut keeps its walk too (`keepsOwn`), stopped
+ * where the seen one is still on its seat (`seatingSpot`).
+ */
+function seatsOfSeen(before: RoomState, members: readonly MovedToken[], seen: (id: string) => boolean, opVersion: number | undefined): Set<string> {
+  const out = new Set<string>();
+  if (!stopsStandClear(opVersion)) return out;
+  const byId = new Map(members.map((e) => [e.tokenId, e]));
+  for (const e of members) {
+    if (!seen(e.tokenId)) continue;
+    for (let at: MovedToken | undefined = e; at?.carriedBy !== undefined; at = byId.get(at.carriedBy)) {
+      const kind = before.tokens[at.tokenId]?.attached?.kind;
+      if (kind === undefined || !onHolder(kind) || seen(at.carriedBy) || out.has(at.carriedBy)) break;
+      out.add(at.carriedBy);
+    }
+  }
+  return out;
+}
+
+/**
  * The walks of an op's move. A group's public members share one step, the
  * finest of theirs (half a square when one steps by halves), so they share
  * `n` on every piece and are judged at one moment (5.3). Every other member
@@ -669,6 +695,7 @@ function walksOf(op: Op, before: RoomState, entries: readonly MovedToken[], seen
     const step = Math.min(1, ...members.filter((e) => seen(e.tokenId)).map((e) => routeLattice(before.tokens[e.tokenId]!)));
     const group: Group = { named, head, base, step };
     groups.set(named, group);
+    const seats = seatsOfSeen(before, members, seen, opVersion);
     for (const e of members) {
       const token = before.tokens[e.tokenId]!;
       const holder = e.carriedBy !== undefined ? byId.get(e.carriedBy) : undefined;
@@ -676,8 +703,8 @@ function walksOf(op: Op, before: RoomState, entries: readonly MovedToken[], seen
       const pub = seen(e.tokenId);
       const linkSeen = holder !== undefined && pub && holder.isPublic;
       // A walk in single file goes at its group's step, seen or not, so what it carries every player sees stops where it does on a
-      // cut (moveLeg.ts withTrapCut).
-      const mine = pub || e.file === true ? step : routeLattice(token);
+      // cut (moveLeg.ts withTrapCut), and so does one that seats a creature every player sees (`seatsOfSeen`).
+      const mine = pub || e.file === true || seats.has(e.tokenId) ? step : routeLattice(token);
       const ox = token.x - headToken.x;
       const oy = token.y - headToken.y;
       const shared = e === head || sameRoute(e.route, head.route, ox, oy);
@@ -692,6 +719,7 @@ function walksOf(op: Op, before: RoomState, entries: readonly MovedToken[], seen
         // A member on a route of its own is a creature its holder drags beside it, which walks as itself (moveLeg.ts stoppedAtWalls).
         spots: shared ? base(mine) : e.how === "teleport" ? twoSpots(e.route) : routeWalk(grid, e.trace, build, mine),
         own: !shared,
+        seatsSeen: seats.has(e.tokenId),
         ox: shared ? ox : 0,
         oy: shared ? oy : 0,
         step: mine,
@@ -1639,13 +1667,13 @@ function cutOp(op: Op, walks: Walks, stops: ReadonlyMap<string, Stop>, before: R
       const cut = pieces.length > 0 ? { ...next, route: pieces as [number, number, number, 0 | 1][] } : next;
       // A walk with no route is one straight piece, so the cut walk has a point more than its pieces, and two at the least.
       const points = Math.max(pieces.length, 1) + 1;
-      const stop = stops.get(op.tokenId)!;
-      return withTrapCut(cut, new Set(stops.keys()), walksToStop(walks, op.tokenId, stop, points, inSingleFile), ownWalksToStop(walks, op.tokenId, stop, points));
+      const kept = cutWalks(walks, op.tokenId, stops.get(op.tokenId)!, points, before);
+      return withTrapCut(cut, new Set(stops.keys()), kept.file, kept.own);
     }
     case "token.moveMany": {
-      // Each named token of a group move walks one straight piece, so each cut walk has two points.
+      // Each named token of a group move walks one straight piece, so each cut walk has two points, and none walks in single file.
       const own = new Map<string, RoutePoint[]>();
-      for (const [named, stop] of stops) for (const [id, route] of ownWalksToStop(walks, named, stop, 2) ?? []) own.set(id, route);
+      for (const [named, stop] of stops) for (const [id, route] of cutWalks(walks, named, stop, 2, before).own ?? []) own.set(id, route);
       return withTrapCut(
         {
           ...op,
@@ -1670,45 +1698,104 @@ function inSingleFile(walk: Walk): boolean {
 }
 
 /**
- * The walks of their own a trap's cut keeps beside those in single file
+ * Whether a trap's cut keeps a walk of its own beside those in single file
  * (moveLeg.ts withTrapCut, review FU45B-ASTRA-10): from op version 38 (migrate.ts
  * stopsStandClear), each walker every player sees on a route of its own,
- * as one a holder they cannot see drags. The stop judged its stand there,
- * so the cut lands it there, never by its holder's cut and its place, where
- * no stand test judged it. Null where none walks so.
+ * as one a holder they cannot see drags or carries. The stop judged its
+ * stand there, so the cut lands it there, never by its holder's cut and its
+ * place, where no stand test judged it. What seats one of them that
+ * players cannot see keeps its walk too, at the same step (`seatsOfSeen`,
+ * review FU45B-ASTRA-11).
  */
-function ownWalksToStop(walks: Walks, named: string, stop: Stop, points: number): Map<string, RoutePoint[]> | null {
-  if (!stopsStandClear(walks.opVersion)) return null;
-  return walksToStop(walks, named, stop, points, (walk) => walk.isPublic && walk.walker && walk.own && !inSingleFile(walk));
+function keepsOwn(walk: Walk): boolean {
+  return ((walk.isPublic && walk.walker) || walk.seatsSeen) && walk.own && !inSingleFile(walk);
 }
 
 /**
- * The walks of a stopped group's creatures that `keeps` takes, such as those
- * in single file, to the stop (moveLeg.ts withTrapCut, review
- * FU45B-ASTRA-01): each its own walk to its latest spot at or before the
- * stop, where the stop judged it stands and the springings read it, so the
- * cut moves them where the trap step had them, never by their places, each
- * at the height the trap step had it at there, so one that has not moved
- * yet keeps its own (review FU45B-ASTRA-06). Each takes `points` points,
- * index by index with its holder's cut walk, holding at its spot once
- * there. Null where none walks so.
+ * The walks a trap's cut keeps for a stopped group (moveLeg.ts withTrapCut):
+ * those in single file (review FU45B-ASTRA-01), and from op version 38
+ * the walks of their own (`keepsOwn`). Each is its own walk to its latest
+ * spot at or before the stop, where the stop judged it stands and the
+ * springings read it, so the cut moves them where the trap step had them,
+ * never by their places, each at the height the trap step had it at there,
+ * so one that has not moved yet keeps its own (review FU45B-ASTRA-06). A
+ * holder players cannot see that seats a creature stops where every seat
+ * on it holds (`seatingSpot`). Each takes `points` points, index by index
+ * with its holder's cut walk, holding at its spot once there. Null where
+ * none walks so.
  */
-function walksToStop(walks: Walks, named: string, stop: Stop, points: number, keeps: (walk: Walk) => boolean): Map<string, RoutePoint[]> | null {
+function cutWalks(walks: Walks, named: string, stop: Stop, points: number, before: RoomState): { file: Map<string, RoutePoint[]> | null; own: Map<string, RoutePoint[]> | null } {
   const group = walks.groups.get(named);
-  const out = new Map<string, RoutePoint[]>();
+  const own = stopsStandClear(walks.opVersion);
+  const file = new Map<string, RoutePoint[]>();
+  const kept = new Map<string, RoutePoint[]>();
+  const routes = new Map<Walk, RoutePoint[]>();
   for (const walk of walks.all) {
-    if (walk.group !== group || !keeps(walk)) continue;
-    const j = latestIndex(walk.spots, stop.s);
-    const spot = spotAt(walk, j);
-    const [piece, k] = spot.progress;
-    const route = walk.entry.route.slice(0, piece + 1).map(({ x, y, elevation }) => ({ x, y, elevation }));
-    // Its spot where the stop leaves it, as high as the trap step had it there.
-    if (k > 0) route.push({ x: spot.x, y: spot.y, elevation: walk.elevation(j) });
-    else route[route.length - 1] = { ...route[route.length - 1]!, elevation: walk.elevation(j) };
-    while (route.length < points) route.push(route[route.length - 1]!);
-    out.set(walk.token.id, route.slice(0, points));
+    if (walk.group !== group) continue;
+    const into = inSingleFile(walk) ? file : own && keepsOwn(walk) ? kept : null;
+    if (!into) continue;
+    const route = walkToStop(walk, stop);
+    into.set(walk.token.id, route);
+    routes.set(walk, route);
   }
-  return out.size > 0 ? out : null;
+  if (routes.size === 0) return { file: null, own: null };
+  // What sits on each token, walked or not: one that ended where it started rides on too where a cut moves its holder.
+  const seated = new Map<string, Token[]>();
+  for (const t of Object.values(before.tokens)) if (t?.attached && onHolder(t.attached.kind)) seated.set(t.attached.to, [...(seated.get(t.attached.to) ?? []), t]);
+  const landed = new Map([...routes].map(([w, route]) => [w.token.id, route]));
+  // From the bottom up, so a holder seats what it carries where that has landed. One every player sees stands where the stop
+  // judged it, and what rides on it with no walk of its own rides on wherever it stops.
+  for (const walk of [...routes.keys()].reverse()) {
+    const riders = seated.get(walk.token.id);
+    if (walk.isPublic || !riders) continue;
+    const route = routes.get(walk)!;
+    const on = riders.flatMap((t) => (landed.has(t.id) ? [{ token: t, at: landed.get(t.id)!.at(-1)! }] : []));
+    route[route.length - 1] = { ...route[route.length - 1]!, ...seatingSpot(walk, route, on) };
+  }
+  for (const route of routes.values()) {
+    while (route.length < points) route.push(route[route.length - 1]!);
+    route.length = points;
+  }
+  return { file: file.size > 0 ? file : null, own: kept.size > 0 ? kept : null };
+}
+
+/** A walk's own route to its latest spot at or before the stop, that spot at the height the trap step had it at there. */
+function walkToStop(walk: Walk, stop: Stop): RoutePoint[] {
+  const j = latestIndex(walk.spots, stop.s);
+  const spot = spotAt(walk, j);
+  const [piece, k] = spot.progress;
+  const route = walk.entry.route.slice(0, piece + 1).map(({ x, y, elevation }) => ({ x, y, elevation }));
+  // Its spot where the stop leaves it, as high as the trap step had it there.
+  if (k > 0) route.push({ x: spot.x, y: spot.y, elevation: walk.elevation(j) });
+  else route[route.length - 1] = { ...route[route.length - 1]!, elevation: walk.elevation(j) };
+  return route;
+}
+
+/**
+ * Where a holder players cannot see stops on a trap's cut so that each
+ * creature it seats there keeps its seat (attach.ts seatHolds, review
+ * FU45B-ASTRA-11): its spot at the stop, else the nearest pose half a
+ * square off it, on its own lattice first, then back along its walk. `on`
+ * are those on it with walks of their own, where they land. It walks at
+ * its group's step, a Tiny passenger's half square, so a Medium holder's
+ * spot can lie half a square off its grid, where its footprint snaps away
+ * from a seat on it.
+ */
+function seatingSpot(walk: Walk, route: readonly RoutePoint[], on: readonly { token: Token; at: RoutePoint }[]): { x: number; y: number } {
+  const at = route[route.length - 1]!;
+  const lattice = routeLattice(walk.token);
+  const onLattice = (p: { x: number; y: number }) => [p.x - walk.token.x, p.y - walk.token.y].every((v) => Math.abs(v / lattice - Math.round(v / lattice)) < 1e-9);
+  const holds = (p: { x: number; y: number }) => on.every((s) => seatHolds(walk.grid, s.token.attached!.kind, { ...s.token, x: s.at.x, y: s.at.y }, { ...walk.token, ...p }));
+  const back = route.length > 1 ? route[route.length - 2]! : at;
+  const near: { x: number; y: number }[] = [];
+  for (const dx of [0, -0.5, 0.5]) for (const dy of [0, -0.5, 0.5]) near.push({ x: at.x + dx, y: at.y + dy });
+  // On its lattice first, then its own spot, then nearest back along its walk.
+  const rank = (p: { x: number; y: number }) => [onLattice(p) ? 0 : 1, p.x === at.x && p.y === at.y ? 0 : 1, Math.hypot(p.x - back.x, p.y - back.y)];
+  const order = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    const [ra, rb] = [rank(a), rank(b)];
+    return ra[0]! - rb[0]! || ra[1]! - rb[1]! || ra[2]! - rb[2]!;
+  };
+  return near.filter(holds).sort(order)[0] ?? at;
 }
 
 /** A route cut at a spot of piece `progress[0]`: the pieces before it whole, then that piece to the spot, its extra kept. */

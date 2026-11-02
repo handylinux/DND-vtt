@@ -355,11 +355,17 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
   const ox = member.x - holder.from.x;
   const oy = member.y - holder.from.y;
   if (holder.how === "teleport" && !onHolder(kind)) return null;
+  // In single file, or on a trap's cut where the trap step judged it, its own walk, whatever its link (review FU45B-ASTRA-11).
+  const own = how.file ?? how.kept;
   if (holder.how === "scene" || onHolder(kind)) {
-    // What sits on its holder keeps its height above it at every point, and a scene change takes all by the holder's change.
+    // What sits on its holder keeps its height above it at every point, and a scene change takes all by the holder's change. On a
+    // cut it lands where the stop judged it, and a holder players cannot see stops where that seat holds (traps.ts seatingSpot).
     const oz = member.elevation - holder.from.elevation;
     const seats = onHolder(kind) ? squeezedSeats(before, member, holder, env, how.seats?.(holder)?.get(member.id)) : null;
-    const route = holder.route.map((p, i) => ({ ...(seats?.[i] ?? { x: p.x + ox, y: p.y + oy }), elevation: p.elevation + oz }));
+    const route = holder.route.map((p, i) => {
+      const kept = i > 0 ? own?.[i] : undefined;
+      return kept ? { x: kept.x, y: kept.y, elevation: kept.elevation ?? p.elevation + oz } : { ...(seats?.[i] ?? { x: p.x + ox, y: p.y + oy }), elevation: p.elevation + oz };
+    });
     const last = route[route.length - 1]!;
     return { tokenId: member.id, from, to: { sceneId: holder.to.sceneId, ...last }, route, trace: followerTrace(member, route), how: holder.how, carriedBy: holder.tokenId, pass };
   }
@@ -375,8 +381,7 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
     return grounded ? ground : Math.max(member.elevation + (holderElevation - holder.from.elevation), ground);
   };
   let route: RoutePoint[] = [{ x: member.x, y: member.y, elevation: member.elevation }];
-  // In single file, or on a trap's cut where the trap step judged it, its own walk, else the holder's offset by its place.
-  const own = how.file ?? how.kept;
+  // Its own walk where it has one, else the holder's offset by its place.
   for (const [i, p] of holder.route.entries()) {
     if (i === 0) continue;
     const at = own?.[i] ?? { x: p.x + ox, y: p.y + oy };

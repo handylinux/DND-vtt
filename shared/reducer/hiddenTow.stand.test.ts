@@ -8,6 +8,7 @@ import { projectState, stableStringify } from "../project.ts";
 import type { Op } from "../protocol.ts";
 import { applyOp } from "../reducer.ts";
 import { offGridWallThrough, ownWalk, walkEnd } from "../rules/movement.ts";
+import { trapLandings } from "../rules/traps.ts";
 import { DM, env, member, P1, P2, room, scene, token, trap } from "../testutil.ts";
 
 /**
@@ -140,6 +141,34 @@ describe("a hidden creature in tow stands where no wall passes through its box (
       const brute = r.state.tokens.brute!;
       assert.deepEqual([brute.x, brute.y], [17.5, 14], `${op.t}: where the trap step had it at the stop`);
       assert.equal(offGridWallThrough(r.state, walkEnd(r.state, ownWalk({ ...brute, x: 16.5 }), brute)), false, `${op.t}: clear of the wall`);
+    }
+  });
+
+  test("where a trap stops its group, one every player sees carried by a creature they cannot see lands where the stop judged it, still carried, and what it drags stays in reach (review FU45B-ASTRA-11)", () => {
+    const s = room({ members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2") }, scenes: { s1: scene("s1", { bounds: { w: 30, h: 20 }, blockMovement: true, autoWalls: "off" }) } });
+    s.buildChunks = {};
+    wall(s, "fu45bh000005", [21, 14], [21, 16]);
+    // Pat's fighter drags a hidden imp, which carries an owl every player sees, which drags a rat every player sees.
+    s.tokens.pc = token("pc", { x: 16, y: 13, name: "Pc", kind: "pc", ownerIds: ["p1"] });
+    s.tokens.imp = token("imp", { x: 16, y: 14, name: "Imp", kind: "npc", ownerIds: [], visibility: "dm", attached: { to: "pc", kind: "drag" } });
+    s.tokens.owl = token("owl", { size: "tiny", x: 16, y: 14, name: "Owl", kind: "npc", ownerIds: [], attached: { to: "imp", kind: "carry" } });
+    s.tokens.rat = token("rat", { x: 15, y: 14, name: "Rat", kind: "npc", ownerIds: [], attached: { to: "owl", kind: "drag" } });
+    s.tokens.pc2 = token("pc2", { x: 2, y: 2, name: "Pc2", kind: "pc", ownerIds: ["p1"] });
+    s.traps.t4 = trap("t4", { zone: { cells: [{ x: 19, y: 13, w: 1, h: 1 }] } });
+    const ops: Op[] = [
+      { t: "token.move", tokenId: "pc", x: 22, y: 13 },
+      { t: "token.moveMany", moves: [{ tokenId: "pc", x: 22, y: 13 }, { tokenId: "pc2", x: 4, y: 2 }] },
+    ];
+    for (const op of ops) {
+      assert.ok(canApply(op, P1, s, { canUseAsset: () => true }).ok, op.t);
+      const r = after(s, op, undefined);
+      const at = (id: string) => [r.state.tokens[id]!.x, r.state.tokens[id]!.y, r.state.tokens[id]!.attached?.to ?? null];
+      assert.deepEqual(at("pc"), [19, 13, null], `${op.t}: the trap stops the fighter`);
+      // The imp walks on at the owl's step, so the owl is still on it where the stop judged the owl, and the rat in its reach.
+      assert.deepEqual(at("imp"), [18, 14, "pc"], op.t);
+      assert.deepEqual(at("owl"), [18, 14, "imp"], op.t);
+      assert.deepEqual(at("rat"), [17, 14, "owl"], op.t);
+      for (const [id, pose] of trapLandings(op, s, P1, {})) assert.deepEqual([r.state.tokens[id]!.x, r.state.tokens[id]!.y, r.state.tokens[id]!.elevation], [pose.x, pose.y, pose.elevation], `${op.t}: ${id} where the trap step left it`);
     }
   });
 
