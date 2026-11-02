@@ -114,10 +114,21 @@ is, and one that has only some of them is refused, so an asset is never
 replaced. To redo a release's assets, delete them on the release's page
 first.
 
-The assets are uploaded after the release is published. If GitHub's
-immutable releases setting is turned on later, a published release takes no
-new assets, so the upload would fail. The fix then is to create the release
-as a draft, run Release assets on it and publish it after.
+The assets are uploaded after the release is published, because the Image
+workflow creates the release already published (never as a draft) and
+Release assets reads it by its tag, which GitHub shows for a published
+release only. If GitHub's immutable releases setting is turned on later, a
+published release takes no new assets, so the upload would fail. Releasing
+would then need a change to both workflows, not only a manual step: Image
+would create the release as a draft, Release assets would find it among the
+draft releases (which its read-only check job may not be allowed to list)
+and Image would publish it after. Until then, do not turn that setting on.
+
+Release assets runs in separate jobs, each with only what it needs. One
+holds the checkout and makes the archive, using only GitHub's own actions.
+A second, with no token, makes the SBOM from the lockfile inside that
+archive, so the package manager never runs beside the checkout or the
+signing and upload permissions.
 
 The provenance comes from GitHub's artifact attestations
 (`actions/attest-build-provenance`) rather than the SLSA project's

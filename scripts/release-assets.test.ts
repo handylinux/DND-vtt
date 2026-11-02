@@ -280,7 +280,7 @@ describe("the provenance predicate", { skip: jq ? false : "jq is not installed" 
     assert.ok(existsSync(new URL("../.github/workflows/release-assets.yml", import.meta.url)));
   });
 
-  test("the build job names the commit it checked out, and the attestation signs this predicate", () => {
+  test("the source job names the commit it checked out, and the attestation signs this predicate", () => {
     const repo = scratch();
     const env = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1", GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@example.com", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@example.com" };
     const git = (...args: string[]) => execFileSync("git", args, { cwd: repo, env, encoding: "utf8" }).trim();
@@ -291,11 +291,11 @@ describe("the provenance predicate", { skip: jq ? false : "jq is not installed" 
     const r = runStep("The tagged commit", { VERSION: "1.2.3" }, {}, repo);
     assert.equal(r.status, 0, r.out);
     assert.deepEqual(r.output, [`commit=${git("rev-parse", "HEAD")}`]);
-    const build = jobBlock(workflow, "build");
+    const build = jobBlock(workflow, "source");
     assert.match(build, /\n {4}outputs:\n {6}commit: \$\{\{ steps\.source\.outputs\.commit \}\}\n/);
     assert.ok(build.indexOf("ref: refs/tags/${{ inputs.tag }}") < build.indexOf("- name: The tagged commit"));
     const sign = jobBlock(workflow, "sign");
-    assert.match(sign, /COMMIT: \$\{\{ needs\.build\.outputs\.commit \}\}\n/);
+    assert.match(sign, /COMMIT: \$\{\{ needs\.source\.outputs\.commit \}\}\n/);
     assert.match(sign, /\n {10}predicate-type: https:\/\/slsa\.dev\/provenance\/v1\n {10}predicate-path: \$\{\{ runner\.temp \}\}\/provenance\.json\n/);
     assert.ok(sign.indexOf("- name: The provenance predicate") < sign.indexOf("- name: Attest the build provenance"));
   });
@@ -350,15 +350,46 @@ describe("release-assets.yml's jobs", () => {
     assert.match(workflow, /\npermissions: \{\}\n/);
     const permissions = (job: string) => /\n {4}permissions:\n((?: {6}[\w-]+: \w+\n)+)/.exec(`\n${jobBlock(workflow, job)}`)?.[1]?.trim().split(/\n\s*/);
     assert.deepEqual(permissions("check"), ["contents: read"]);
-    assert.deepEqual(permissions("build"), ["contents: read"]);
+    assert.deepEqual(permissions("source"), ["contents: read"]);
+    assert.match(jobBlock(workflow, "sbom"), /\n {4}permissions: \{\}\n/);
     assert.deepEqual(permissions("sign"), ["id-token: write", "attestations: write"]);
     assert.deepEqual(permissions("upload"), ["contents: write"]);
   });
 
   test("only GitHub's own actions run where a token can sign or write the release", () => {
-    for (const job of ["sign", "upload"]) {
+    for (const job of ["source", "sign", "upload"]) {
       for (const [, uses] of jobBlock(workflow, job).matchAll(/uses: (\S+)/g)) assert.match(uses!, /^actions\/[\w-]+@[0-9a-f]{40}$/, `${job}: ${uses}`);
     }
+  });
+
+  test("the checkout and the archive never share a job with the package manager", () => {
+    const source = jobBlock(workflow, "source").replace(/^ *#.*$/gm, "");
+    assert.match(source, /actions\/checkout@/);
+    assert.match(source, /git archive/);
+    assert.doesNotMatch(source, /pnpm|setup-node|\bnode\b/);
+    const sbom = jobBlock(workflow, "sbom").replace(/^ *#.*$/gm, "");
+    assert.match(sbom, /pnpm sbom/);
+    assert.doesNotMatch(sbom, /actions\/checkout|git archive|\$\{\{ *(github\.token|secrets)/);
+    for (const job of ["check", "source", "sbom"]) assert.doesNotMatch(jobBlock(workflow, job), /id-token|attestations|contents: write/, job);
+    assert.match(jobBlock(workflow, "sign"), /needs: \[check, source, sbom\]/);
+    assert.match(jobBlock(workflow, "sign"), /pattern: release-\*\n {10}merge-multiple: true/);
+  });
+
+  test("the SBOM job unpacks the archive that is signed, not a second checkout", () => {
+    const work = scratch();
+    const source = path.join(work, "source");
+    mkdirSync(path.join(work, "src/raccoon-vtt-1.2.3"), { recursive: true });
+    mkdirSync(source);
+    writeFileSync(path.join(work, "src/raccoon-vtt-1.2.3/pnpm-lock.yaml"), "lock\n");
+    execFileSync("tar", ["-czf", path.join(source, "raccoon-vtt-1.2.3.tar.gz"), "-C", path.join(work, "src"), "raccoon-vtt-1.2.3"]);
+    const workspace = path.join(work, "workspace");
+    mkdirSync(workspace);
+    const r = runStep("Unpack the archive", { VERSION: "1.2.3", RUNNER_TEMP: work, GITHUB_WORKSPACE: workspace });
+    assert.equal(r.status, 0, r.out);
+    assert.equal(readFileSync(path.join(workspace, "pnpm-lock.yaml"), "utf8"), "lock\n");
+    const sbom = jobBlock(workflow, "sbom");
+    assert.ok(sbom.indexOf("name: release-source") < sbom.indexOf("- name: Unpack the archive"));
+    assert.ok(sbom.indexOf("- name: Unpack the archive") < sbom.indexOf("pnpm/action-setup@"));
   });
 
   test("it is called by image.yml after the release job, and by hand with a tag", () => {
