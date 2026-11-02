@@ -8,6 +8,7 @@ import { projectEntity, projectState } from "../project.ts";
 import { opSchema, type Op, type TrapInput } from "../protocol.ts";
 import { applyOp } from "../reducer.ts";
 import { DM, P1, P2, apply, env, refused, reveal, room, token, trap } from "../testutil.ts";
+import { parseRoomState } from "#server/rooms/stateSchema.ts";
 import { DONE_MEANWHILE, GIVE_IT_USES, SETTLED_MEANWHILE, addDue, trapOwnBytes } from "./traps.ts";
 import { Tx } from "./tx.ts";
 
@@ -450,15 +451,26 @@ describe("a trap's text in the protocol", () => {
     assert.equal(parses({ t: "trap.create", trap: { ...base, zone: { cells: [...rects(1), ...rects(1)] } } }), true);
   });
 
-  test("a square past its own bounds is refused at once, its cells never counted", () => {
+  test("a square past its own bounds is refused at once, its cells never counted, wherever the squares come", () => {
     const base = input("t");
-    const cells = (rect: { x: number; y: number; w: number; h: number }) => parses({ t: "trap.create", trap: { ...base, zone: { cells: [rect] } } });
-    const started = performance.now();
-    assert.equal(cells({ x: 0, y: 0, w: 1e300, h: 1 }), false);
-    // Past 2^53 a step of one adds nothing, so a count that walked these cells would never end.
-    assert.equal(cells({ x: 1e300, y: 0, w: 1e290, h: 1 }), false);
-    assert.equal(cells({ x: 0, y: 0, w: 2.5, h: 1 }), false);
-    assert.ok(performance.now() - started < 1_000, "refused without walking the cells");
+    type Rect = { x: number; y: number; w: number; h: number };
+    // Every place a trap's squares are read: its zone and its rig's hits, as created, as changed, and in a room's import.
+    const places: [string, (rect: Rect) => boolean][] = [
+      ["trap.create zone", (rect) => parses({ t: "trap.create", trap: { ...base, zone: { cells: [rect] } } })],
+      ["trap.create rig.hits", (rect) => parses({ t: "trap.create", trap: { ...base, rig: { ...base.rig, hits: { cells: [rect] } } } })],
+      ["trap.update zone", (rect) => parses({ t: "trap.update", trapId: "t", patch: { zone: { cells: [rect] } } })],
+      ["trap.update rig.hits", (rect) => parses({ t: "trap.update", trapId: "t", patch: { rig: { hits: { cells: [rect] } } } })],
+      ["a room's import", (rect) => parseRoomState(room({ traps: { t: trap("t", { zone: { cells: [rect] } }) } })).ok],
+    ];
+    for (const [where, reads] of places) {
+      assert.equal(reads({ x: 0, y: 0, w: 2, h: 2 }), true, `${where}: a square within its bounds reads`);
+      const started = performance.now();
+      assert.equal(reads({ x: 0, y: 0, w: 1e300, h: 1 }), false, where);
+      assert.equal(reads({ x: 0, y: 0, w: 1, h: 1e300 }), false, where);
+      // Past 2^53 a step of one adds nothing, so a count that walked these cells would never end.
+      assert.equal(reads({ x: 1e300, y: 0, w: 1e290, h: 1 }), false, where);
+      assert.ok(performance.now() - started < 1_000, `${where}: refused without walking the cells`);
+    }
   });
 
   test("a wire is 0.5 to 20 cells, its ends on the 1/64 lattice, and a square scene keeps them on corners and edge midpoints", () => {
