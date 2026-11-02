@@ -356,9 +356,14 @@ class Socket {
         return;
       }
       if (msg.t !== "ev") return;
-      for (const a of msg.acks ?? []) this.waiting.get(a)?.(null);
-      for (const r of msg.rejects ?? []) this.waiting.get(r.n)?.(new Error(`refused: ${r.code}: ${r.message}`));
+      for (const a of msg.acks ?? []) this.settle(a, null);
+      for (const r of msg.rejects ?? []) this.settle(r.n, new Error(`refused: ${r.code}: ${r.message}`));
     });
+  }
+  /** Answers the op with this number, if one waits. The number comes from the server's message, so it may name nothing. */
+  private settle(n: unknown, err: Error | null): void {
+    const done = typeof n === "number" ? this.waiting.get(n) : undefined;
+    if (typeof done === "function") done(err);
   }
   static async open(origin: string, roomId: string, cookie: string): Promise<Socket> {
     const ws = new WebSocket(`${origin.replace(/^http/, "ws")}/ws?room=${roomId}`, { headers: { Origin: origin, Cookie: cookie } });

@@ -358,7 +358,7 @@ describe("backup.sh", { concurrency: false }, () => {
     const before = await snapshotVolume(stack);
     const r = await stack.backup(["once"]);
     assert.equal(r.code, 1);
-    assert.match(r.stderr, new RegExp(NO_LOG.replace(/\./g, "\\.")));
+    assert.ok(r.stderr.includes(NO_LOG), r.stderr);
     assert.equal(await snapshotVolume(stack), before);
     // And again: the lock was released.
     assert.match((await stack.backup(["once"])).stderr, /no backup log yet/);

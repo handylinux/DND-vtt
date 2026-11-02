@@ -970,7 +970,8 @@ ${rows.join("\n")}
 const MD_START = "<!-- starter-packs: written by node scripts/starter-art.ts -->";
 const MD_END = "<!-- end of starter-packs -->";
 
-const md = (text: string) => text.replace(/\|/g, "\\|");
+/** Text for a table cell. Backslashes are escaped too, or one before a pipe would cancel the pipe's escape. */
+const md = (text: string) => text.replace(/[\\|]/g, "\\$&");
 
 /** Text ending as a sentence does, without doubling a full stop it already has. */
 const fullStop = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`);
