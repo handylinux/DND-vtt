@@ -5,7 +5,7 @@ import type { StatBlockMonster } from "#shared/srd/monsters.ts";
 import { MAX_ENTRIES_PER_OP, type ClientOp, type EntryInput, type TokenInput } from "#shared/protocol.ts";
 import { monsterImage, refOf } from "../monsters/images.ts";
 import { placeOnGround } from "../movement/ground.ts";
-import { monsterToken, occupiedBoxes, sizeFootprint, spreadPositions, type Point } from "../tokens/factory.ts";
+import { blockHasLair, monsterToken, occupiedBoxes, sizeFootprint, spreadPositions, type Point } from "../tokens/factory.ts";
 import type { Resolved } from "./draft.ts";
 
 /**
@@ -95,19 +95,29 @@ export function placedInLair(actor: Pick<Actor, "legendary" | "xp">, block: Stat
   return lair.xp !== base.xp && actor.xp === lair.xp;
 }
 
+/** Whether a block's lair changes its legendary counts or XP, so a creature's own can say whether it stands there. */
+function countsTell(block: StatBlockMonster): boolean {
+  const lair = lairCounts(block, true);
+  const base = lairCounts(block, false);
+  return lair.actionsMax !== base.actionsMax || lair.resistMax !== base.resistMax || lair.xp !== base.xp;
+}
+
 /**
  * A creature's row as it joins a fight: In lair on where it stands placed
  * in its lair (docs/design/design-v1-combat-controls.md 13.4). Every path into a
  * fight builds its rows with this: a saved encounter's drop, and the
  * tracker's and the group bar's Start and Add (combat/state.ts
- * useFightJoin). The token's own tick (`Actor.inLair`), from its placing
- * or its last row's In lair, says so with no block, which a block whose
- * lair changes neither its counts nor its XP needs (review CCB-ASTRA-07).
- * A token placed before the tick was kept falls back on its counts
- * (`placedInLair`), so the switch says what they say.
+ * useFightJoin). Where its block's lair changes its counts or XP, those
+ * decide (`placedInLair`), so counts the DM set back by hand join out of
+ * the lair, and a token placed before the tick was kept still joins in it.
+ * Elsewhere the token's own tick (`Actor.inLair`) decides: for lair
+ * actions alone, a block whose lair changes neither (review CCB-ASTRA-07)
+ * or a block not read, but never for a block read with no lair, such as a
+ * room monster edited since to lose it (review FU46-C1, FU46-C2).
  */
 export function joinEntry(entry: EntryInput, actor: Pick<Actor, "legendary" | "xp" | "inLair"> | undefined, block: StatBlockMonster | null): EntryInput {
-  const placed = actor !== undefined && (actor.inLair === true || placedInLair(actor, block));
+  if (actor === undefined) return entry;
+  const placed = block !== null && countsTell(block) ? placedInLair(actor, block) : actor.inLair === true && (block === null || blockHasLair(block));
   return placed ? { ...entry, inLair: true } : entry;
 }
 

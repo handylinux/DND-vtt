@@ -137,15 +137,15 @@ describe("whether a join or In lair can read its creature's lair (CCB-ASTRA-04, 
     assert.equal(lairSwitch(state, "ogre"), null, "a creature with no block has no lair to be in");
   });
 
-  test("lair46: before the blocks load, a creature with the lair tick holds no join busy and joins with In lair on", () => {
+  test("lair46: before the blocks load, a ticked dragon still waits for its block, and a ticked block with lair actions alone joins with In lair on", () => {
     assert.equal(loadedMonsters(), null, "this case runs before the SRD loads");
     const state = table();
     const t = (id: string) => state.tokens[id] as Token;
-    assert.equal(joinState(diceOf(state, null), false, [t("ticked")]), "ready", "its tick says so with no block");
-    assert.equal(joinState(diceOf(state, null), false, [t("ticked"), t("lair")]), "loading", "the untouched dragon still waits");
-    const read = joined(state, ["ticked", "keeperIn", "keeper"]);
+    assert.equal(joinState(diceOf(state, null), false, [t("ticked")]), "loading", "FU46-C2: only its block can say whether its counts stand over the tick");
+    assert.equal(joinState(diceOf(state, null), false, [t("keeperIn")]), "ready", "a room's block is at hand");
+    const read = joined(state, ["keeperIn", "keeper"]);
     assert.equal(read.state, "ready");
-    assert.deepEqual(read.rows.map((r) => [r.tokenId, r.inLair ?? false]), [["ticked", true], ["keeperIn", true], ["keeper", false]]);
+    assert.deepEqual(read.rows.map((r) => [r.tokenId, r.inLair ?? false]), [["keeperIn", true], ["keeper", false]]);
   });
 
   test("once read: the dragon placed in its lair joins with In lair on, the one at its base counts and the goblin without", async () => {
@@ -153,7 +153,7 @@ describe("whether a join or In lair can read its creature's lair (CCB-ASTRA-04, 
     const dragon = monsters.find((m) => m.srdId === "adult-red-dragon")!;
     assert.deepEqual(lairCounts(dragon, true), { actionsMax: LAIR.actionsMax, resistMax: LAIR.resistMax, xp: dragon.xpInLair });
     const state = table();
-    const read = joined(state, ["lair", "away", "gob", "ogre"]);
+    const read = joined(state, ["lair", "away", "gob", "ogre", "ticked"]);
     assert.equal(read.state, "ready");
     assert.deepEqual(
       read.rows.map((r) => [r.tokenId, r.inLair ?? false]),
@@ -162,7 +162,9 @@ describe("whether a join or In lair can read its creature's lair (CCB-ASTRA-04, 
         ["away", false],
         ["gob", false],
         ["ogre", false],
+        ["ticked", false],
       ],
+      "FU46-C2: the ticked dragon's counts, set back by hand, stand over its tick",
     );
     const sw = lairSwitch(state, "lair");
     assert.ok(sw !== null);

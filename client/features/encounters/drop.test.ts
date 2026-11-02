@@ -4,6 +4,7 @@ import type { RoomState, SavedEncounterMonster } from "#shared/model.ts";
 import type { ClientOp, RestoreEntry } from "#shared/protocol.ts";
 import { applyOp } from "#shared/reducer.ts";
 import { loadMonsters } from "#shared/srd/monsters.ts";
+import { monsterView } from "#shared/statBlock.ts";
 import { DM, actor, comparable, customMonster, env, imageRef, room, srdImage, token } from "#shared/testutil.ts";
 import { footprint } from "../../lib/scene.ts";
 import { fightOps } from "../tokens/groupEdit.ts";
@@ -191,7 +192,7 @@ describe("a creature placed in its lair (docs/design/design-v1-combat-controls.m
     assert.equal(placedInLair({ xp: goblin.xp }, xpOnly), false);
   });
 
-  test("a saved line's In lair choice, true or false, rides on its tokens, and their counts decide only for a token with no tick (CCB-ASTRA-07)", async () => {
+  test("a saved line's In lair choice, true or false, rides on its tokens, and their counts decide where the block's lair changes them (CCB-ASTRA-07, FU46-C2)", async () => {
     // A block whose lair changes neither its counts nor its XP: its counts can never tell.
     const state = setup();
     state.monsters.mon1 = customMonster("mon1", { xp: 450, xpInLair: 450 });
@@ -207,15 +208,25 @@ describe("a creature placed in its lair (docs/design/design-v1-combat-controls.m
     assert.deepEqual(rows([{ monsterId: "mon1", count: 1 }]), [false], "no choice, and counts that cannot tell");
     assert.deepEqual(rows([{ srdId: "adult-red-dragon", count: 1 }]), [false], "no choice, the base counts");
 
-    // The token's tick says so with no block, and a token from before the tick falls back on its counts.
-    const dragon = (await loadMonsters()).find((m) => m.srdId === "adult-red-dragon")!;
+    // Where the block's counts tell, they decide, a token from before the tick included. Elsewhere the tick does, only for a block with a lair.
+    const monsters = await loadMonsters();
+    const dragon = monsters.find((m) => m.srdId === "adult-red-dragon")!;
+    const goblin = monsters.find((m) => m.srdId === "goblin-warrior")!;
+    const keeper = monsterView(customMonster("keeper", { traits: [{ name: "Lair Actions", text: "On initiative count 20, the dead stir." }] }));
+    const flat = monsterView(customMonster("flat", { xp: 450, xpInLair: 450 }));
     const lair = { legendary: { actionsMax: 4, actionsUsed: 0, resistMax: 4, resistUsed: 0 } };
     const base = { legendary: { actionsMax: 3, actionsUsed: 0, resistMax: 3, resistUsed: 0 } };
-    assert.equal(joinEntry({ id: "r", tokenId: "t" }, { inLair: true }, null).inLair, true, "a tick needs no block");
-    assert.equal(joinEntry({ id: "r", tokenId: "t" }, { ...base, inLair: true }, dragon).inLair, true, "a tick stands over counts set by hand");
-    assert.equal(joinEntry({ id: "r", tokenId: "t" }, lair, dragon).inLair, true, "no tick: the lair counts say so");
-    assert.equal(joinEntry({ id: "r", tokenId: "t" }, base, dragon).inLair, undefined);
-    assert.equal(joinEntry({ id: "r", tokenId: "t" }, undefined, dragon).inLair, undefined, "no actor of its own");
+    const join = (actor: Parameters<typeof joinEntry>[1], block: Parameters<typeof joinEntry>[2]) => joinEntry({ id: "r", tokenId: "t" }, actor, block).inLair ?? false;
+    assert.equal(join(lair, dragon), true, "no tick: the lair counts say so");
+    assert.equal(join(base, dragon), false);
+    assert.equal(join({ ...base, inLair: true }, dragon), false, "FU46-C2: counts set back by hand stand over the tick");
+    assert.equal(join({ ...lair, inLair: true }, dragon), true);
+    assert.equal(join({ inLair: true }, keeper), true, "lair actions alone: the tick decides");
+    assert.equal(join({ inLair: true }, flat), true, "a lair that changes neither counts nor XP: the tick decides");
+    assert.equal(join({ inLair: true }, null), true, "a block not read: the tick decides");
+    assert.equal(join({ inLair: true }, goblin), false, "FU46-C1: never for a block read with no lair");
+    assert.equal(join({}, keeper), false);
+    assert.equal(join(undefined, dragon), false, "no actor of its own");
   });
 });
 
