@@ -11,9 +11,9 @@ const VIEW_BOX = `${SHIELD_BOUNDS.x} ${SHIELD_BOUNDS.y} ${SHIELD_BOUNDS.width} $
  * "Armor Class 15", so a screen reader hears it as one thing, and not a
  * Tab stop. The title is an extra for a mouse: the shield is the D&D sign
  * for AC, and the panel's Stats field names it in words. Nothing for an AC
- * of 0.
+ * of 0. `readonly` marks the badge as state a disabled row keeps in its own
+ * color, which the sweep's disabled-look check skips (D-261101-344).
  */
-/** `readonly` marks the badge as state a disabled row keeps in its own color, which the sweep's disabled-look check skips (D-261101-344). */
 export function AcBadge(props: { ac: number; size?: AcBadgeSize; readonly?: boolean }) {
   const box = acBadgeBox(props.ac, props.size ?? "md");
   if (!box) return null;
