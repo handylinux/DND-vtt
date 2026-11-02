@@ -109,13 +109,14 @@ by CodeQL, so a change that breaks one fails CI:
   for the second kind.
 - **Straight apostrophes** in the client's words, checked by
   `client/lib/straightApostrophes.test.ts`.
+- **Layout** follows [`.editorconfig`](../.editorconfig): UTF-8, LF line
+  endings, a final newline, space indents and no trailing spaces outside
+  Markdown, checked for every file in the repository by
+  `scripts/editorconfig.test.ts`. Editors that read `.editorconfig` apply it
+  as you type.
 
 These are conventions that review looks for:
 
-- **Layout** follows [`.editorconfig`](../.editorconfig): UTF-8, LF line
-  endings, two-space indents, a final newline and no trailing spaces.
-  Editors that read `.editorconfig` apply it as you type. Otherwise, match
-  the code around your change.
 - **Validate at the edge.** Anything that comes from outside the server is
   checked by a zod schema with explicit bounds, in
   [`shared/protocol.ts`](../shared/protocol.ts) for messages and ops,
