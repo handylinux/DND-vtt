@@ -2782,6 +2782,12 @@ const CASES = `
 <div data-case="kin-lines">
   <div style="display: grid; gap: 4px"><button>One</button><button>Two</button><button style="height: 64px">Three<br>more</button></div>
 </div>
+<div data-case="kin-held-lines">
+  <ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 4px"><li><button style="display: block; width: 100%; height: auto; padding: 8px 12px">Ash<br>Not on this scene</button></li><li><button style="display: block; width: 100%">Cato</button></li><li><button style="display: block; width: 100%">Wren</button></li></ul>
+</div>
+<div data-case="kin-held-tall">
+  <ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 4px"><li><button style="display: block; width: 100%">Cato</button></li><li><button style="display: block; width: 100%; height: 64px">Wren</button></li></ul>
+</div>
 <div data-case="kin-padding">
   <div style="display: grid; gap: 4px"><button>One</button><button>Two</button><button style="padding-left: 20px">Three</button></div>
 </div>
@@ -3417,6 +3423,9 @@ export function helperTest(): void {
       await caught("kin-icon", "kind-height");
       await caught("kin-subgroup", "kind-height");
       await passes("kin-lines");
+      // List items that each hold one button are kin by what the button holds: a row with a line more is not compared, and a taller row of the same lines is caught.
+      await passes("kin-held-lines");
+      await caught("kin-held-tall", "kind-height");
       await caught("kin-padding", "kind-padding");
       await caught("kin-gap", "kind-gap");
       await caught("pad-uneven", "pad");

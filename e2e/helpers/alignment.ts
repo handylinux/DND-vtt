@@ -1523,9 +1523,15 @@ function measureInPage(roots: DomElement[], opts: PageOptions): Finding[] {
         for (const list of kin.values()) {
           if (list.length < 2) continue;
           // Kin are compared with kin that hold the same: lines of words as tall (a name over two lines and its help on one is not a name on one over two lines of help), and as many rows of boxes, such as an open group's fields. An icon beside the words changes neither. Every such group of two or more is checked.
+          // A kin that holds one control alone, as a list item its row's button, holds what that control holds: a party row with "Not on this scene" under its name is not the same as one without.
+          const held = (c: DomElement): DomElement => {
+            const atoms = atomsOf(c);
+            const only = atoms.length === 1 && atoms[0]!.kind === "box" ? atoms[0]!.element : undefined;
+            return only && only.matches(INTERACTIVE) ? held(only) : c;
+          };
           const byLines = new Map<string, DomElement[]>();
           for (const c of list) {
-            const atoms = atomsOf(c);
+            const atoms = atomsOf(held(c));
             const words = linesOf(atoms.filter((a) => a.kind === "text")).map((ln) => Math.round((ln.box.b - ln.box.t) * 2) / 2);
             const n = `${words.join(",")}|${linesOf(atoms.filter((a) => a.kind === "box")).length}`;
             byLines.set(n, [...(byLines.get(n) ?? []), c]);
