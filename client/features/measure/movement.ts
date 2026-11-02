@@ -6,7 +6,7 @@ import type { Rect } from "#shared/rules/geom.ts";
 import { legGeometry, legTaken, pathThisTurn, sameSpot } from "#shared/rules/path.ts";
 import { dismountCost } from "#shared/rules/dismount.ts";
 import { onSqueezedLattice, ownWalk, previewSqueezed, walkEnds, type Walker } from "#shared/rules/movement.ts";
-import { hexRouteFeet, plainLegCost, routeFeet, routeWalk, spotRect, straightCost, walkSqueezes, walkTrace, type LegCost, type RoutePiece, type RoutePoint, type SizedSpot, type WalkSpot, type WalkTrace } from "#shared/rules/route.ts";
+import { alongStraightLeg, hexRouteFeet, legSteps, plainLegCost, routeFeet, routeLattice, routeWalk, spotRect, straightCost, walkSqueezes, walkTrace, type LegCost, type RoutePiece, type RoutePoint, type SizedSpot, type WalkSpot, type WalkTrace } from "#shared/rules/route.ts";
 import { formatFeet, type DistanceRules, type Point } from "./ruler.ts";
 import { isHex, sceneGrid, type Grid } from "#shared/rules/grid.ts";
 
@@ -516,27 +516,64 @@ export function walkWords(walk: DragWalk, token: MovingToken, swimSpeed: boolean
  * piece joins steps of one cost whatever their size, so a straight piece
  * from rubble into a corridor walks only its last steps squeezed. There
  * each step is read where the walk's spots put it, which are the search's
- * steps (route.ts walkSpots), by the search's squeeze test.
+ * steps (route.ts walkSpots), by the search's squeeze test. The straight
+ * walk's own route is read at the straight leg's steps, which paid for it
+ * (`straightSteps`).
  */
 function piecesWalked(build: BuildState, g: Grid, token: MovingToken, points: readonly RoutePoint[], trace: WalkTrace): (piece: number) => PieceWalk {
   if (isHex(g)) {
     const ends = walkSqueezes(build, token, points, trace);
     return (i) => (ends[i] || ends[i + 1] ? "squeezed" : "full");
   }
+  let straight: Point[][] | null | undefined;
   let spots: WalkSpot[] | null = null;
-  return (i) => {
+  const stepsOf = (i: number): readonly Point[] => {
+    if (straight === undefined) straight = straightSteps(trace[0]!, points);
+    if (straight) return straight[i] ?? [];
     spots ??= routeWalk(g, trace, build);
+    return spots.filter((s) => s.progress[0] === i && s.progress[1] !== 0);
+  };
+  return (i) => {
     const at = walkEnds(build, trace[i]!);
     let squeezed = false;
     let full = false;
-    for (const s of spots) {
-      if (s.progress[0] !== i || s.progress[1] === 0) continue;
+    for (const s of stepsOf(i)) {
       if (previewSqueezed(build, at(s))) squeezed = true;
       else full = true;
       if (squeezed && full) return "both";
     }
     return squeezed ? "squeezed" : "full";
   };
+}
+
+/**
+ * The steps of the straight walk's own route by piece, where `points` are
+ * that route's (route.ts alongStraightLeg, read as the server's check of
+ * it reads it, from a start off any holder), else null. LegCheck (walk.ts)
+ * paid each step of the whole straight leg, snapped to the lattice along
+ * the leg's own line, and split the steps into pieces where the cost
+ * changed. Off the eight directions a piece stepped on its own snaps along
+ * its own line instead, and crosses the leg's at other steps: into a
+ * corridor one square wide its first steps stood full across the
+ * corridor's wall, where the leg's had squeezed in, so the label named
+ * difficult terrain for a squeeze's foot (RULER-DIFFICULT-WORDS).
+ */
+function straightSteps(start: Walker, points: readonly RoutePoint[]): Point[][] | null {
+  const end = points[points.length - 1];
+  if (!end || points.length < 3 || start.offHolder || !alongStraightLeg(start, points.slice(1).map((p): RoutePiece => [p.x, p.y, 0, 0]))) return null;
+  const leg = legSteps(start, end, routeLattice(start));
+  const out: Point[][] = points.slice(1).map(() => []);
+  let piece = 0;
+  let last: Point = start;
+  for (let k = 1; k <= leg.n; k++) {
+    const p = leg.at(k);
+    if (p.x === last.x && p.y === last.y) continue;
+    out[piece]!.push(p);
+    last = p;
+    const corner = points[piece + 1]!;
+    if (piece < out.length - 1 && Math.abs(p.x - corner.x) < 1e-7 && Math.abs(p.y - corner.y) < 1e-7) piece++;
+  }
+  return out;
 }
 
 /** The label's lines (docs/design/design-v1-movement.md 3.1): the leg's cost with the band's words, what cost extra, and the Half Speed area it would end in. */

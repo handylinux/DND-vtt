@@ -5,7 +5,7 @@ import { projectState } from "#shared/project.ts";
 import type { Op } from "#shared/protocol.ts";
 import { applyOp } from "#shared/reducer.ts";
 import { RESHAPE_NOT_A_MOVE } from "#shared/reducer/tokens.ts";
-import { DM, P1, P2, room, scene, token } from "#shared/testutil.ts";
+import { apply, DM, P1, P2, room, scene, token } from "#shared/testutil.ts";
 import { resizeGroup } from "../tokens/resize.ts";
 import { dragLabel, dragReading, ellipseExit, extraWords, halvedSpeeds, leftText, movedFeet, movementText, pathNow, remoteWalk, speedsLeft, trailSegments, turnTrail, type DragWalk, type MovingToken, type PieceWalk, type TurnView } from "./movement.ts";
 import { measureWalk, walkText } from "./walkRuler.ts";
@@ -603,6 +603,33 @@ describe("the label names a squeeze as squeezing", () => {
     h.tokens.horse = onHex(g, "horse", "large", { col: 2, row: 5 }, { name: "Warhorse" });
     const onHexes = measureWalk({ view: h, sceneId: "s1", stops: [{ x: 0, y: 0, tokenId: "horse" }, hexCenter(g, { col: 9, row: 6 })], viewer: { role: "player" }, everything: false })!;
     assert.match(walkText(onHexes), /^Walking \d+ ft\n\+\d+ ft for squeezing$/);
+  });
+
+  /**
+   * The straight walk's own route (walk.ts LegCheck), as a drop or a ruler
+   * with no way found counts what it walks over, is read at the steps that
+   * paid for it: the whole straight leg's, never each piece stepped on its
+   * own (route.ts alongStraightLeg). Off the eight directions a piece's own
+   * steps cross the line elsewhere, so the label read some squeezed steps
+   * full size and named difficult terrain on plain stone (guide pass 6,
+   * RULER-DIFFICULT-WORDS).
+   */
+  test("the straight walk's own route into a corridor one square wide says squeezing alone, on the drag's label and on the walking ruler that finds no way for a goblin in tow", () => {
+    // Guide pass 6's Narrow way: a hall, a corridor one square wide along row 4 and one two wide along rows 8 and 9, and a far room, walled by the build.
+    let s = room({ scenes: {} });
+    s.buildChunks = {};
+    s = apply(s, { t: "scene.create", scene: { id: "s1", name: "Narrow way", bounds: { w: 28, h: 14 }, fogEnabled: false, blockMovement: true } } as unknown as Op);
+    for (const [x, y, w, h, terrain] of [[1, 1, 9, 12, "stone"], [10, 4, 10, 1, "stone"], [10, 8, 10, 2, "stone"], [20, 1, 7, 12, "wood"]] as const) s = apply(s, { t: "build.rect", sceneId: "s1", terrain, x, y, w, h } as Op);
+    const warhorse = tok({ size: "large", x: 6, y: 3 });
+    // The straight leg from 6, 3 to the corridor's squeezed 14.5, 3.5, its full steps along row 3 and its squeezed ones from 10.5 on.
+    const pts = [{ x: 6, y: 3, elevation: 0 }, { x: 10, y: 3, elevation: 0 }, { x: 14.5, y: 3.5, elevation: 0 }];
+    const walk: DragWalk = { route: { points: pts, pieces: [[10, 3, 0, 0], [14.5, 3.5, 1, 0]] }, build: s, trace: walkTrace(s.buildChunks, warhorse, pts), halved: () => null, prone: false };
+    assert.equal(dragReading({ grid: SQUARES, ...calm, token: warhorse, to: { x: 14.5, y: 3.5 }, walk }).extra?.words, "+20 ft for squeezing", "the drag's label");
+    s.tokens.horse = token("horse", { size: "large", x: 6, y: 3, name: "Warhorse", kind: "npc" });
+    s.tokens.thorn = token("thorn", { x: 7, y: 3, name: "Thorn", kind: "pc", attached: { to: "horse", kind: "ride", steer: true } });
+    s.tokens.gob = token("gob", { size: "small", x: 5, y: 4, name: "Goblin", kind: "monster", attached: { to: "horse", kind: "drag" } });
+    const m = measureWalk({ view: s, sceneId: "s1", stops: [{ x: 0, y: 0, tokenId: "horse" }, { x: 15.5, y: 4.5 }], viewer: { role: "dm" }, everything: true })!;
+    assert.deepEqual([walkText(m), m.legs[0]!.none, m.legs[0]!.corners], ["Walking 65 ft\n+20 ft for squeezing", true, [{ x: 10, y: 3 }]], "the ruler's No way through, along the straight leg");
   });
 
   test("on hex rows and hex columns a piece that starts squeezed walks squeezed: out of the corridor, and out over rubble, the feet as the walk pays them", () => {
