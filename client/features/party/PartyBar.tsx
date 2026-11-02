@@ -239,11 +239,7 @@ export function Entry(props: { entry: PartyEntry; onFrame(): void }) {
         )}
         <span style={{ display: "flex", alignItems: "center", gap: theme.space(2), fontSize: theme.font.small, color: here ? theme.color.textMuted : theme.color.textDisabled }}>
           {/* Both say what they are on screen, not in a tooltip a touch screen never shows (docs/design/design-v1-layout-hierarchy.md M9). */}
-          {ac !== null ? (
-            <span data-disabled-look="readonly" style={{ display: "contents" }}>
-              <AcBadge ac={ac} size="sm" />
-            </span>
-          ) : null}
+          {ac !== null ? <AcBadge ac={ac} size="sm" readonly /> : null}
           <span style={{ position: "relative", whiteSpace: "nowrap" }}>
             <span aria-hidden>
               PP <span style={{ color: here ? theme.color.text : theme.color.textDisabled, fontVariantNumeric: "tabular-nums" }}>{entry.passivePerception}</span>

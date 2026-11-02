@@ -13,7 +13,8 @@ const VIEW_BOX = `${SHIELD_BOUNDS.x} ${SHIELD_BOUNDS.y} ${SHIELD_BOUNDS.width} $
  * for AC, and the panel's Stats field names it in words. Nothing for an AC
  * of 0.
  */
-export function AcBadge(props: { ac: number; size?: AcBadgeSize }) {
+/** `readonly` marks the badge as state a disabled row keeps in its own color, which the sweep's disabled-look check skips (D-261101-344). */
+export function AcBadge(props: { ac: number; size?: AcBadgeSize; readonly?: boolean }) {
   const box = acBadgeBox(props.ac, props.size ?? "md");
   if (!box) return null;
   return (
@@ -21,6 +22,7 @@ export function AcBadge(props: { ac: number; size?: AcBadgeSize }) {
       role="img"
       aria-label={`Armor Class ${props.ac}`}
       title="Armor Class"
+      data-disabled-look={props.readonly ? "readonly" : undefined}
       style={{ position: "relative", display: "inline-grid", placeItems: "center", flex: "none", width: box.width, height: box.height, verticalAlign: "middle" }}
     >
       <svg aria-hidden width={box.width} height={box.height} viewBox={VIEW_BOX} preserveAspectRatio="none" style={{ position: "absolute", inset: 0 }}>
