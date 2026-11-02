@@ -170,20 +170,26 @@ backups.
 ## Docs
 
 - [docs/self-hosting.md](docs/self-hosting.md): installing a server, its
-  settings, HTTPS and the reverse proxy, updating, backups and verifying
-  the image.
+  settings, HTTPS and the reverse proxy, updating, backups, verifying the
+  image and removing it.
 - [docs/operations.md](docs/operations.md): running it day to day, with the
   admin commands, the admin page and the logs.
 - [docs/development.md](docs/development.md): local development, the checks
-  and tests, and continuous integration.
+  and tests, the coding standards, and continuous integration.
 - [docs/releasing.md](docs/releasing.md): tagging a release, the image
   workflow, the changelog and the Docker Hub overview.
 - [docs/dm-guide.md](docs/dm-guide.md): the DM guide, also in the app at
   `/docs`.
 - [docs/design/](docs/design/README.md): the technical design and the
   design note behind each feature.
-- [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and
-  [CHANGELOG.md](CHANGELOG.md).
+- [docs/assurance-case.md](docs/assurance-case.md): what the app protects
+  and what it leaves to you, its threat model, and how it counters common
+  weaknesses.
+- [ROADMAP.md](ROADMAP.md): what the project plans to do over the next year,
+  and what it has decided not to do.
+- [GOVERNANCE.md](GOVERNANCE.md): how decisions are made and who does what.
+- [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md),
+  [SECURITY.md](SECURITY.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
