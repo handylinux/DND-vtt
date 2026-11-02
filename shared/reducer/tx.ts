@@ -22,6 +22,7 @@ import { decodeTile } from "../rules/fog.ts";
 import type { ActorEvent } from "../rules/hp.ts";
 import { markFinished, markWritable } from "../writable.ts";
 import { Book, type Reminder } from "./reminded.ts";
+import { namesPrototypeMember, ownEntry } from "../records.ts";
 
 /**
  * The envelope the server stamps on every op: the only source of time and
@@ -58,6 +59,21 @@ export function gone(what: string): Refuse {
 
 export function invalid(message: string): Refuse {
   return new Refuse("invalid", message);
+}
+
+/** The refusal of a new entity whose id names a member of Object.prototype (checkNewId). */
+export const RESERVED_ID = "that id is reserved";
+
+/**
+ * Refuses a new entity whose id names a member of Object.prototype
+ * (records.ts), such as "constructor", which the server's and the clients'
+ * own maps keyed by entity id would read as the prototype's member. Writing
+ * "__proto__" would set the record's prototype rather than add an entry, so
+ * no op makes one. Ops stored before ids were checked made a few others,
+ * such as a handout named "constructor", and replay makes them again.
+ */
+function checkNewId(id: string, env: Env): void {
+  if (id === "__proto__" || (env.opVersion === undefined && namesPrototypeMember(id))) throw invalid(RESERVED_ID);
 }
 
 /** The refusal of an op that would write more log lines than a line's number can count (Tx.sharedIndex, Tx.dmIndex). */
@@ -221,7 +237,10 @@ export class Tx {
         const map = this.collection(name) as Record<string, unknown>;
         const id = mapIdOf(parsed);
         if (next === null) delete map[id];
-        else map[id] = next;
+        else {
+          if (prev === null) checkNewId(id, this.env);
+          map[id] = next;
+        }
       }
     }
     if (isGlobalChange(parsed.kind, prev, next)) this.global = true;
@@ -510,7 +529,7 @@ export class Tx {
    * could (project.ts seenMark), or a character.
    */
   about(resolved: ResolvedActor): { tokenId: string; seen?: true; seenBy?: string[] } | { characterId: string } {
-    const token = resolved.holder === "token" ? this.state.tokens[resolved.id] : undefined;
+    const token = resolved.holder === "token" ? ownEntry(this.state.tokens, resolved.id) : undefined;
     return token ? { tokenId: resolved.id, ...seenMark(this.state, token, this.env, "here") } : { characterId: resolved.id };
   }
 
@@ -550,19 +569,19 @@ export class Tx {
   // Lookups that refuse with `gone` when the entity is missing.
 
   scene(id: string): Scene {
-    const scene = this.state.scenes[id];
+    const scene = ownEntry(this.state.scenes, id);
     if (!scene) throw gone("scene");
     return scene;
   }
 
   token(id: string): Token {
-    const token = this.state.tokens[id];
+    const token = ownEntry(this.state.tokens, id);
     if (!token) throw gone("token");
     return token;
   }
 
   character(id: string): Character {
-    const character = this.state.characters[id];
+    const character = ownEntry(this.state.characters, id);
     if (!character) throw gone("character");
     return character;
   }

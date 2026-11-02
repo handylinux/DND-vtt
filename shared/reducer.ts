@@ -105,6 +105,7 @@ import {
   tokenUpdate,
 } from "./reducer/tokens.ts";
 import { Refuse, Tx, invalid, type Env } from "./reducer/tx.ts";
+import { holdsPrototypeName } from "./records.ts";
 
 export type { Env } from "./reducer/tx.ts";
 export { MAX_LOG } from "./reducer/tx.ts";
@@ -141,6 +142,15 @@ export type ApplyResult = Applied | Refusal;
  * so a stray one can never reach the log.
  */
 export function applyOp(state: RoomState, op: Op, actor: Viewer, env: Env): ApplyResult {
+  const result = applyOnce(state, op, actor, env);
+  if (result.ok || env.opVersion === undefined || env.withoutTraps === true || !holdsPrototypeName(op)) return result;
+  // Before every record was read by own key (records.ts), an op naming "constructor" or "__proto__" could find the
+  // prototype's member as an entity and be stored. Today's rules refuse it, and a refusal on replay would leave the
+  // room read-only, so a stored one replays as a step that changes nothing.
+  return { ok: true, state, touched: [], global: false, log: [], inverse: null };
+}
+
+function applyOnce(state: RoomState, op: Op, actor: Viewer, env: Env): ApplyResult {
   const tx = new Tx(state, actor, env);
   let traps: TrapWrites | null = null;
   let trapWrote: Set<EntityKey> | undefined;
