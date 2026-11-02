@@ -2629,18 +2629,20 @@ async function ic2Screens(sweep: Sweep, page: Page, size: Size, scale: number): 
     if (await visible(party)) {
       await sweep.add(page, "ic2-party-chips", await chipLines(party.locator("span[title][aria-hidden]"), at, "ic2-party-chips"));
       await sweep.measure(page, "ic2-party", party);
-      // Rows for two of Pat's characters off this scene, which draw as off: Ash's initials and Bryn's faded portrait, dead (LOOK1-OPUS-08).
-      const off = { ash: randomUUID(), bryn: randomUUID() };
-      await ops.send({ t: "character.create", character: { id: off.ash, name: "Ash", size: "medium", ownerIds: [run.patId], actor: actor({ hp: { cur: 12, max: 20, temp: 0 } }) } });
-      await ops.send({ t: "character.create", character: { id: off.bryn, name: "Bryn", size: "medium", ownerIds: [run.patId], actor: actor({ hp: { cur: 0, max: 20, temp: 0 }, life: "dead" }) } });
-      try {
-        await party.getByRole("button", { name: /^Bryn: .*not on this scene$/ }).waitFor();
-        await sweep.measure(page, "lk-party-off", party);
-        await shots.take(page, `alignment-${at}-lk-party-off`);
-      } finally {
-        for (const id of [off.ash, off.bryn]) await ops.send({ t: "character.delete", characterId: id });
-      }
     } else await sweep.missing(page, "ic2-party", "no party bar");
+  }
+  // Rows for two of Pat's characters off this scene, which draw as off: Ash's initials and Bryn's faded portrait, dead (LOOK1-OPUS-08). The bar on a computer, the Party panel on a phone.
+  const off = { ash: randomUUID(), bryn: randomUUID() };
+  await ops.send({ t: "character.create", character: { id: off.ash, name: "Ash", size: "medium", ownerIds: [run.patId], actor: actor({ hp: { cur: 12, max: 20, temp: 0 } }) } });
+  await ops.send({ t: "character.create", character: { id: off.bryn, name: "Bryn", size: "medium", ownerIds: [run.patId], actor: actor({ hp: { cur: 0, max: 20, temp: 0 }, life: "dead" }) } });
+  try {
+    const party = wide ? page.getByRole("region", { name: "Party" }).or(page.locator('section[aria-label="Party"]')).first() : await openPanel(page, "Party");
+    await party.getByRole("button", { name: /^Bryn: .*not on this scene$/ }).waitFor();
+    await sweep.measure(page, "lk-party-off", party);
+    await shots.take(page, `alignment-${at}-lk-party-off`);
+  } finally {
+    for (const id of [off.ash, off.bryn]) await ops.send({ t: "character.delete", characterId: id });
+    if (!wide) await closeSheets(page);
   }
 
   // The alert lines' leads: time up on the goblin's turn, and an effect that ended as it did.
