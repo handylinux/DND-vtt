@@ -155,6 +155,11 @@ function subscribeAlertsSummary(registry: SheetFocusRegistry, listener: () => vo
   };
 }
 
+/** Orders the ids so a reshuffle of the same cards is no change, while a replaced card still is. */
+export function drawnIdsKey(ids: readonly string[] | undefined): string {
+  return JSON.stringify([...(ids ?? [])].sort());
+}
+
 /**
  * Publishes the rolls' part of the alerts summary while mounted, or
  * nothing for null. `open` may be a new function on every render: the
@@ -170,7 +175,7 @@ export function useAlertsSummary(entry: AlertsSummaryEntry | null): void {
   const waiting = entry?.waiting ?? false;
   const requests = entry?.requests ?? 0;
   const unnamed = entry?.unnamed ?? 0;
-  const drawnKey = JSON.stringify([...(entry?.drawnIds ?? [])].sort());
+  const drawnKey = drawnIdsKey(entry?.drawnIds);
   useLayoutEffect(() => {
     if (text === null || name === null) return;
     return publishAlertsSummary(registry, { text, name, waiting, requests, unnamed, drawnIds: JSON.parse(drawnKey) as string[], open: (options) => open.current?.(options) });

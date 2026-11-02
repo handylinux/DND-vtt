@@ -1,7 +1,6 @@
 import "../components/testing/register.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { stripTypeScriptTypes } from "node:module";
 import { describe, test } from "node:test";
 import * as React from "react";
 import { dockedBarEdge, keptMapFoot, mapToastBox, measureMapToasts, lowerFloor, noticesBesideBar, noticesDock, phoneToastRoom, placeRoomToasts, putToastHosts, sheetToastFloor, sheetToastsToDismiss, toastStartTop } from "./toastPlacement.ts";
@@ -10,6 +9,9 @@ import { pageHeightOf } from "../components/sheetCap.ts";
 import { theme } from "../lib/theme.ts";
 
 const { toastStacks } = await import("./ToastParts.tsx");
+const { deskDrawnIds } = await import("../features/rolls/DmDesk.tsx");
+const { playerDrawnIds } = await import("../features/rolls/PlayerRolls.tsx");
+const { drawnIdsKey } = await import("../components/sheetFocus.ts");
 const { alertColumnTop, columnMeasure, firstCardHeight, heldAfter, measureCards, summaryRowRules } = await import("../features/encounter/InitiativeStrip.tsx");
 type HeldTop = Parameters<typeof alertColumnTop>[0]["held"];
 
@@ -375,43 +377,13 @@ test("FU40B-OPUS-2: a latch that would hide the cards is not kept for the render
 });
 
 test("FU40B-OPUS-2: roll publications track the IDs drawn, including same-count replacements", () => {
-  const dm = readFileSync(new URL("../features/rolls/DmDesk.tsx", import.meta.url), "utf8");
-  const player = readFileSync(new URL("../features/rolls/PlayerRolls.tsx", import.meta.url), "utf8");
-  const idsLine = (source: string) => {
-    const line = source.split("\n").find((line) => line.startsWith("  const drawnIds ="));
-    assert.ok(line, "the roll renderer publishes its drawn identities");
-    return `${stripTypeScriptTypes(line)}\nreturn drawnIds;`;
-  };
-  const dmIds = new Function("shownTraps", "shownAsks", "shownCards", "stack", idsLine(dm));
-  assert.deepEqual(dmIds([{ due: { id: "spring1" } }], [{ id: "ask1" }], [{ id: "request1" }], { button: "more" }), ["trap:spring1", "cast:ask1", "roll:request1", "rolls:summary"]);
-  assert.deepEqual(dmIds([], [], [], { button: "sheet" }), ["rolls:summary"]);
-  const playerIds = new Function("shown", "width", "CARD_MIN_WIDTH", "cardHidden", "yieldsToBar", "chips", "stack", idsLine(player));
-  assert.deepEqual(playerIds({ id: "r1" }, 800, 600, false, false, [{ id: "r2" }, { id: "r3" }], { shown: 1, button: "more" }), ["roll:r1", "chip:r2", "rolls:summary"]);
-  for (const [width, hidden, yields] of [[390, false, false], [800, true, false], [800, false, true]] as const) {
-    assert.deepEqual(playerIds({ id: "r1" }, width, 600, hidden, yields, [], { shown: 0, button: null }), [], "a hidden or foot card is not in the column");
-  }
-  const source = readFileSync(new URL("../components/sheetFocus.ts", import.meta.url), "utf8");
-  const start = source.indexOf("export function useAlertsSummary(");
-  const end = source.indexOf("\n/**", start);
-  assert.ok(start > 0 && end > start);
-  let deps: unknown[] = [];
-  const published: { drawnIds?: string[] }[] = [];
-  const registry = {};
-  const bindings = {
-    useScoped: () => registry, sheetFocusSlot: {}, useRef: () => ({ current: undefined }),
-    useLayoutEffect: (effect: () => void, next: unknown[]) => {
-      if (next.length !== deps.length || next.some((x, i) => x !== deps[i])) effect();
-      deps = next;
-    },
-    publishAlertsSummary: (_registry: unknown, entry: { drawnIds?: string[] }) => { published.push(entry); },
-  };
-  const publish = new Function(...Object.keys(bindings), `${stripTypeScriptTypes(source.slice(start, end).replace("export function", "function"))}\nreturn useAlertsSummary;`)(...Object.values(bindings));
-  const entry = { text: "Rolls", name: "Two rolls", waiting: false, requests: 2, open() {} };
-  publish({ ...entry, drawnIds: ["roll:a", "roll:b"] });
-  publish({ ...entry, drawnIds: ["roll:b", "roll:a"] });
-  assert.equal(published.length, 1, "reordering identical IDs does not publish a new set");
-  publish({ ...entry, drawnIds: ["roll:c", "roll:b"] });
-  assert.deepEqual(published.map((p) => p.drawnIds), [["roll:a", "roll:b"], ["roll:b", "roll:c"]], "same words and count still publish a replacement card");
+  assert.deepEqual(deskDrawnIds({ traps: [{ due: { id: "spring1" } }], asks: [{ id: "ask1" }], cards: [{ id: "request1" }], button: true }), ["trap:spring1", "cast:ask1", "roll:request1", "rolls:summary"]);
+  assert.deepEqual(deskDrawnIds({ traps: [], asks: [], cards: [], button: true }), ["rolls:summary"]);
+  assert.deepEqual(playerDrawnIds({ shown: { id: "r1" }, cardDrawn: true, chips: [{ id: "r2" }], button: true }), ["roll:r1", "chip:r2", "rolls:summary"]);
+  assert.deepEqual(playerDrawnIds({ shown: { id: "r1" }, cardDrawn: false, chips: [], button: false }), [], "a hidden or foot card is not in the column");
+  assert.equal(drawnIdsKey(["roll:a", "roll:b"]), drawnIdsKey(["roll:b", "roll:a"]), "reordering identical IDs does not publish a new set");
+  assert.notEqual(drawnIdsKey(["roll:a", "roll:b"]), drawnIdsKey(["roll:c", "roll:b"]), "same words and count still publish a replacement card");
+  assert.equal(drawnIdsKey(undefined), drawnIdsKey([]));
 });
 
 test("FU40B-OPUS-2: a rotation publishes beside-lane placement even with no lasting notice", () => {

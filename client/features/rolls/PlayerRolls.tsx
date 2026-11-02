@@ -114,6 +114,11 @@ const FOOT_NEED_ESTIMATE: FootNeed = { whole: 134, least: 106 };
 /** What a card at the screen's foot stands on, and how high it may reach (RollCard `stand`). */
 type FootStand = "options" | "toolbar" | "screen";
 
+/** The ids of the parts the player's column draws, in order, so the dock's summary republishes when one is replaced by another of the same count. */
+export function playerDrawnIds(a: { shown: { id: string } | null | undefined; cardDrawn: boolean; chips: { id: string }[]; button: boolean }): string[] {
+  return [...(a.shown && a.cardDrawn ? [`roll:${a.shown.id}`] : []), ...a.chips.map((r) => `chip:${r.id}`), ...(a.button ? ["rolls:summary"] : [])];
+}
+
 /**
  * A player's side of request a roll (docs/design/design-v1-dm-tools.md 3.3). A
  * request for one of their creatures comes up as a card, a bottom sheet on
@@ -342,7 +347,7 @@ export function PlayerRolls() {
   // It names the request its tap opens, as this stack's own summary does.
   const opens = requestToOpen(requests, needs, folded, opened)?.id ?? null;
   const published = requests.length > 0 ? rollsSummary(requests, opens) : null;
-  const drawnIds = [...(shown && width >= CARD_MIN_WIDTH && !cardHidden && !yieldsToBar ? [`roll:${shown.id}`] : []), ...chips.slice(0, stack.shown).map((r) => `chip:${r.id}`), ...(stack.button ? ["rolls:summary"] : [])];
+  const drawnIds = playerDrawnIds({ shown, cardDrawn: width >= CARD_MIN_WIDTH && !cardHidden && !yieldsToBar, chips: chips.slice(0, stack.shown), button: stack.button !== null });
   useAlertsSummary(published ? { ...published, requests: requests.length, drawnIds, open } : null);
 
   // The card is the first place focus returns to once a sheet that was hiding it closes (3.2.1). A request put off with Later has no card, so it is never a target.

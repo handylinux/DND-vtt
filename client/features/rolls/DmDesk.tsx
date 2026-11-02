@@ -63,6 +63,11 @@ const NO_ROLLS = {};
 const NO_CASTS = {};
 const NO_TRAPS = {};
 
+/** The ids of the parts the desk draws in the column, in order, so the dock's summary republishes when one is replaced by another of the same count. */
+export function deskDrawnIds(a: { traps: { due: { id: string } }[]; asks: { id: string }[]; cards: { id: string }[]; button: boolean }): string[] {
+  return [...a.traps.map(({ due }) => `trap:${due.id}`), ...a.asks.map((ask) => `cast:${ask.id}`), ...a.cards.map((request) => `roll:${request.id}`), ...(a.button ? ["rolls:summary"] : [])];
+}
+
 /**
  * How many of the desk's waiting things its summary words leave out
  * (docs/design/design-v1-visual.md 3.2.1): the words name the traps that went
@@ -196,7 +201,7 @@ export function DmDesk() {
   const shownTraps = sprung.slice(0, stack.shown);
   const shownAsks = asked.slice(0, Math.max(0, stack.shown - sprung.length));
   const shownCards = cards.slice(0, Math.max(0, stack.shown - sprung.length - asked.length));
-  const drawnIds = [...shownTraps.map(({ due }) => `trap:${due.id}`), ...shownAsks.map((ask) => `cast:${ask.id}`), ...shownCards.map((request) => `roll:${request.id}`), ...(stack.button ? ["rolls:summary"] : [])];
+  const drawnIds = deskDrawnIds({ traps: shownTraps, asks: shownAsks, cards: shownCards, button: stack.button !== null });
   useAlertsSummary(
     items > 0
       ? {
