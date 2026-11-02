@@ -9,21 +9,26 @@ export const CULL_STEP_PX = 128;
 export type Cull = { box: VBox; key: string; view: VBox };
 
 /**
- * The view box the board lays out for at a camera: the canvas's, grown and
- * snapped to steps of `stepPx` screen pixels with a step to spare on every
- * side, and its key, which changes only when a pan crosses a step. The
- * kept picture's tests lay out in smaller steps, to cross more of them.
+ * The view box the board lays out for at a camera, in steps of `stepPx`
+ * screen pixels, and its key. The kept picture's tests lay out in smaller
+ * steps, to cross more of them.
+ *
+ * The box keeps one size at a zoom and moves only with the step the view's
+ * top-left lies in, so its key changes once for each step a pan crosses on
+ * each axis. A box snapped at all four edges changed its key at each
+ * edge's own step, about three times as often on a pan, and every change
+ * is a board render and a whole repaint (HXPERF-3). It starts a step
+ * before the view and reaches past it by the view's own steps and three
+ * more: one for where the view lies in its first step, at least one to
+ * spare, and the canvas's part step.
  */
 export function cullOf(cam: Camera, size: { width: number; height: number }, stepPx: number = CULL_STEP_PX): Cull {
   const step = stepPx / cam.scale;
   const topLeft = screenToView(cam, { x: 0, y: 0 });
   const bottomRight = screenToView(cam, { x: size.width, y: size.height });
-  const box: VBox = {
-    x0: (Math.floor(topLeft.x / step) - 1) * step,
-    y0: (Math.floor(topLeft.y / step) - 1) * step,
-    x1: (Math.ceil(bottomRight.x / step) + 1) * step,
-    y1: (Math.ceil(bottomRight.y / step) + 1) * step,
-  };
+  const x0 = (Math.floor(topLeft.x / step) - 1) * step;
+  const y0 = (Math.floor(topLeft.y / step) - 1) * step;
+  const box: VBox = { x0, y0, x1: x0 + (Math.ceil(size.width / stepPx) + 3) * step, y1: y0 + (Math.ceil(size.height / stepPx) + 3) * step };
   return { box, key: `${box.x0},${box.y0},${box.x1},${box.y1}`, view: { x0: topLeft.x, y0: topLeft.y, x1: bottomRight.x, y1: bottomRight.y } };
 }
 
