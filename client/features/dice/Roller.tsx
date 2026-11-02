@@ -261,13 +261,29 @@ function dropsWhole(reverse = false): CSSProperties {
 }
 
 /**
- * Whether a part of the dice's box lies on a row below its first, out of
- * sight: its top at or past the first row's height. Not just below the
- * box's top, since the row centers its parts, so "and 2 more" in small
- * words sits a few pixels down on the first row (review FU44-OPUS-2).
+ * Whether a part of the dice's box is out of sight: its top at or past the
+ * header line's foot (`lineBottom`, in page px). Not just below the line's
+ * top, since the row centers its parts, so "and 2 more" in small words sits
+ * a few pixels down on the first row (review FU44-OPUS-2). Read against the
+ * line, not the dice's own box, since the "+2" can wrap out of sight and
+ * take that whole box with it, whose parts then stand on its first row.
  */
-export function wrappedOut(part: Pick<HTMLElement, "offsetTop">): boolean {
-  return part.offsetTop >= REST_PX;
+export function wrappedOut(part: { getBoundingClientRect(): { top: number } }, lineBottom: number): boolean {
+  return part.getBoundingClientRect().top >= lineBottom - 0.5;
+}
+
+/**
+ * How many chips the "+2" says, given `hiddenWith(n)`: how many are out of
+ * sight with it saying n (0 draws none). Showing it takes room, so it can
+ * hide more, and it is tried again until the count holds. The count only
+ * grows, so this ends within one try a chip, even where the "+2" changes
+ * the line enough to bring a count back, which once looped the render it
+ * set (ROLLER-185-LOOP).
+ */
+export function settleDropped(hiddenWith: (n: number) => number): number {
+  let said = 0;
+  for (let out = hiddenWith(0); out > said; out = hiddenWith(said)) said = out;
+  return said;
 }
 
 /** `dropsWhole`'s empty first item. `dice` is for the dice's box, whose gap is the chips' 4 px. */
@@ -299,27 +315,35 @@ export function ResultRest(props: { sum: string | null; label: string | undefine
     return parts.some((p) => p === null) ? null : parts.flatMap((p, i) => (p && p.length > 0 ? [<Fragment key={i}>{p}</Fragment>] : []));
   }, [props.dice]);
   const dice = useRef<HTMLSpanElement>(null);
-  const [dropped, setDropped] = useState(0);
+  const plus = useRef<HTMLSpanElement>(null);
   const row = useRef<HTMLSpanElement>(null);
   const modeBox = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     const line = row.current;
     if (!line) return;
-    // Set on the nodes, not through state, so each trial and its answer land in one layout and no frame shows a part cutting the rest.
+    // Set on the nodes, not through state, so each trial and its answer land in one layout and no frame shows a part cutting the rest. The "+2" too: a count in state would run this again, and a count the "+2" moves back loops (ROLLER-185-LOOP).
     const fit = () => {
       const words = modeBox.current;
       const box = dice.current;
+      const more = plus.current;
       if (words) words.style.display = "";
       if (box) box.style.display = "flex";
+      if (more) more.style.display = "none";
       if (words && partCut(line, words)) words.style.display = "none";
-      if (!box) {
-        setDropped(0);
-        return;
-      }
-      setDropped([...box.querySelectorAll<HTMLElement>("[data-face]")].filter(wrappedOut).length);
+      if (!box || !more) return;
+      const faces = [...box.querySelectorAll<HTMLElement>("[data-face]")];
+      const out = () => {
+        const bottom = line.getBoundingClientRect().bottom;
+        return (part: Element) => wrappedOut(part, bottom);
+      };
+      settleDropped((n) => {
+        more.textContent = `+${n}`;
+        more.style.display = n > 0 ? "inline-flex" : "none";
+        return faces.filter(out()).length;
+      });
       // With every part wrapped out of sight the box would still keep the room its shrink left it and its gap, which the label needs more (LP28-A-LINE-1).
-      const parts = [...box.children].slice(1) as HTMLElement[];
-      if (parts.length > 0 && parts.every(wrappedOut)) box.style.display = "none";
+      const parts = [...box.children].slice(1);
+      if (parts.length > 0 && parts.every(out())) box.style.display = "none";
     };
     fit();
     // A web font that loads after the first fit changes the parts' widths, and no resize says so.
@@ -329,7 +353,7 @@ export function ResultRest(props: { sum: string | null; label: string | undefine
     const observer = new ResizeObserver(fit);
     observer.observe(line);
     return () => observer.disconnect();
-  }, [props.mode, props.label, props.level, props.verdict, props.sum, props.more, chips, dropped]);
+  }, [props.mode, props.label, props.level, props.verdict, props.sum, props.more, chips]);
   const muted = { fontSize: theme.font.small, color: theme.color.textMuted } as const;
   return (
     <span ref={row} style={dropsWhole()}>
@@ -343,11 +367,8 @@ export function ResultRest(props: { sum: string | null; label: string | undefine
             {props.verdict}
           </span>
         ) : null}
-        {dropped > 0 ? (
-          <span aria-hidden="true" style={{ ...FACE_CHIP, border: `${theme.line.border}px solid ${theme.color.border}`, color: theme.color.textMuted }}>
-            +{dropped}
-          </span>
-        ) : null}
+        {/* The chips the dice drop, as "+2": its words and whether it shows are set by the effect above. */}
+        <span ref={plus} aria-hidden="true" style={{ ...FACE_CHIP, border: `${theme.line.border}px solid ${theme.color.border}`, color: theme.color.textMuted, display: "none" }} />
         {/* Grows only to its own width, so the parts after it sit beside it rather than at the line's end. */}
         <span style={{ flex: "1 1 0", minWidth: 0, maxWidth: "max-content", display: "flex", alignItems: "center", gap: theme.space(2), overflow: "hidden" }}>
           {/* A marked label is framed from inside, since every box around it cuts what reaches past its words (D-261030-527). */}

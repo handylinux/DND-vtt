@@ -20,7 +20,7 @@ const { createElement } = await import("react");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { RoomProvider } = await import("../../state/view.ts");
 const { RoomScope, RoomScopeProvider } = await import("../../state/scope.ts");
-const { LastResult, RollModes, Roller, wrappedOut } = await import("./Roller.tsx");
+const { LastResult, RollModes, Roller, settleDropped, wrappedOut } = await import("./Roller.tsx");
 const { PanelHere } = await import("../panels.ts");
 
 function modes(props: Partial<Parameters<typeof RollModes>[0]> = {}): string {
@@ -255,10 +255,68 @@ test("an answer's line says the roll's name the option gave it, since its roll h
   assert.match(markup, /aria-live="polite"[^>]*>Rolled 23, Pass: Wisdom save, Normal\.<\/span>/);
 });
 
-test("a part of a result line's dice box is out of sight only from its second row down: small words centered on the first sit a few px lower (review FU44-OPUS-2)", () => {
-  // Measured in Chrome at 100% and 130%: "and 2 more" in 13 px words on the 24 px first row has an offsetTop of 2, wrapped one row down 24.
-  assert.equal(wrappedOut({ offsetTop: 0 }), false, "a chip on the first row");
-  assert.equal(wrappedOut({ offsetTop: 2 }), false, "\"and 2 more\" centered on the first row");
-  assert.equal(wrappedOut({ offsetTop: 23 }), false);
-  assert.equal(wrappedOut({ offsetTop: 24 }), true, "the second row");
+test("a part of a result line's dice box is out of sight only from the line's foot down: small words centered on the first row sit a few px lower (review FU44-OPUS-2)", () => {
+  // Measured in Chrome at 100% and 130%: "and 2 more" in 13 px words on the 24 px first row stands 2 px down, wrapped one row down 24. The line's top here is 100, its foot 124.
+  const at = (top: number) => ({ getBoundingClientRect: () => ({ top }) });
+  assert.equal(wrappedOut(at(100), 124), false, "a chip on the first row");
+  assert.equal(wrappedOut(at(102), 124), false, "\"and 2 more\" centered on the first row");
+  assert.equal(wrappedOut(at(123), 124), false);
+  assert.equal(wrappedOut(at(124), 124), true, "the second row");
+  assert.equal(wrappedOut(at(100 + 24 * 1.3), 100 + 24 * 1.3), true, "the second row at 130%");
+});
+
+describe("the \"+2\" for the chips a result line drops ends on one count (ROLLER-185-LOOP)", () => {
+  /** `hiddenWith` from a table of what each count drawn hides, failing past a few dozen tries as React's update limit would. */
+  const measured = (table: Record<number, number>) => {
+    const tried: number[] = [];
+    const hiddenWith = (n: number) => {
+      tried.push(n);
+      if (tried.length > 50) throw new Error(`no end: ${tried.slice(0, 8).join(", ")}…`);
+      return table[n] ?? 0;
+    };
+    return { hiddenWith, tried };
+  };
+
+  test("nothing hidden draws none, and a count the \"+2\" holds is tried once more", () => {
+    const none = measured({ 0: 0 });
+    assert.equal(settleDropped(none.hiddenWith), 0);
+    assert.deepEqual(none.tried, [0]);
+    const two = measured({ 0: 2, 2: 2 });
+    assert.equal(settleDropped(two.hiddenWith), 2);
+    assert.deepEqual(two.tried, [0, 2]);
+  });
+
+  test("a \"+2\" that takes the room of another chip says the larger count", () => {
+    const more = measured({ 0: 2, 2: 3, 3: 3 });
+    assert.equal(settleDropped(more.hiddenWith), 3);
+    assert.deepEqual(more.tried, [0, 2, 3], "it says what it drew last");
+  });
+
+  test("a count the \"+2\" brings back, as when it wraps out of sight and frees the dice's room, ends at once", () => {
+    // pl3-b6 at 320 x 568 at 130%: drawn, the "+3" and the dice wrapped out together, and with neither the line had room again.
+    const flips = measured({ 0: 3, 3: 0 });
+    assert.equal(settleDropped(flips.hiddenWith), 3);
+    assert.deepEqual(flips.tried, [0, 3]);
+    const climbs = measured({ 0: 1, 1: 2, 2: 1 });
+    assert.equal(settleDropped(climbs.hiddenWith), 2);
+    assert.deepEqual(climbs.tried, [0, 1, 2]);
+  });
+
+  test("any table of counts ends within one try a chip, on a count it drew", () => {
+    let seed = 7;
+    const next = (n: number) => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed % n;
+    };
+    for (let run = 0; run < 500; run++) {
+      const chips = 1 + next(12);
+      const table: Record<number, number> = {};
+      for (let n = 0; n <= chips; n++) table[n] = next(chips + 1);
+      const { hiddenWith, tried } = measured(table);
+      const said = settleDropped(hiddenWith);
+      assert.ok(tried.length <= chips + 1, `run ${run}: ${tried.length} tries for ${chips} chips`);
+      assert.equal(tried[tried.length - 1], said, `run ${run}: the "+2" drawn last is the count said`);
+      assert.ok(said === 0 || said === table[tried[tried.length - 2]!], `run ${run}: the count said was measured`);
+    }
+  });
 });
