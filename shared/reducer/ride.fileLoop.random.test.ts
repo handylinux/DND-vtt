@@ -7,7 +7,7 @@ import type { Op, OpOf } from "../protocol.ts";
 import { applyOp } from "../reducer.ts";
 import { movementRules } from "../ruleHooks.ts";
 import { offGridWallThrough, ownWalk, walkEnd } from "../rules/movement.ts";
-import { linkHolds } from "../rules/attach.ts";
+import { linkHolds, onHolder } from "../rules/attach.ts";
 import { SQUARES } from "../rules/grid.ts";
 import { planWalks, walkedIn } from "../rules/moveLeg.ts";
 import { planTrapMove, trapLandings, trapWalks } from "../rules/traps.ts";
@@ -26,11 +26,14 @@ import { chance, env, int, member, P1, pick, rng, room, scene, token, trap } fro
  * walk too, dispatch puts every token where the trap step's walks had it,
  * every walk of the group is in the lead's trap group, every link the
  * public pass walks holds, and every token every player sees stands where
- * the move's own stand test lets it stand (review FU45B-ASTRA-10). A
- * second loop does the same for group moves of two groups, a trap
- * stopping one, both or neither, a Large creature every player sees
- * dragged by a creature they may not see toward a wall it could stand
- * across half a square off its grid (review FU45BR-OPUS-12).
+ * the move's own stand test lets it stand (review FU45B-ASTRA-10), and
+ * every link between two tokens every player sees that holds where the
+ * trap step leaves them still holds (review FU45B-ASTRA-11). A second loop
+ * does the same for group moves of two groups, a trap stopping one, both
+ * or neither, toward a wall: a Large creature every player sees half a
+ * square off its grid, dragged by a creature they may not see (review
+ * FU45BR-OPUS-12), a Tiny one carried or perched in the middle of a chain,
+ * and a goblin riding a Large horse, each holder hidden on most seeds.
  */
 
 /** A corridor one square wide along row 6, from x 6 to 14, its mouth to the west. */
@@ -112,6 +115,35 @@ function standsClear(before: RoomState, after: RoomState, at: string): void {
   }
 }
 
+/**
+ * Whether every link between two tokens every player sees that holds where
+ * the trap step leaves them (`trapLandings`) still holds after the move
+ * (review FU45B-ASTRA-11).
+ */
+function linksKept(before: RoomState, landed: ReadonlyMap<string, { x: number; y: number; elevation: number }>, after: RoomState, at: string): void {
+  const poseOf = (id: string): Token => ({ ...before.tokens[id]!, ...landed.get(id) });
+  for (const t of Object.values(before.tokens)) {
+    const link = t?.attached;
+    if (!t || !link || t.visibility === "dm" || before.tokens[link.to]!.visibility === "dm") continue;
+    if (!linkHolds(SQUARES, before.meta.settings, link.kind, poseOf(t.id), poseOf(link.to))) continue;
+    assert.equal(after.tokens[t.id]!.attached?.to, link.to, `${at}: ${t.id} still held by ${link.to}`);
+  }
+}
+
+/**
+ * Whether every seat holds after the move, seen or not: what is carried,
+ * perched or rides keeps its seat on a walk, a cut too, since a holder
+ * players cannot see that seats one they see walks at its step and a cut
+ * keeps its walk (traps.ts seatsOfSeen, review FU45B-ASTRA-11).
+ */
+function seatsKept(before: RoomState, after: RoomState, at: string): void {
+  for (const t of Object.values(before.tokens)) {
+    const link = t?.attached;
+    if (!t || !link || !onHolder(link.kind)) continue;
+    assert.equal(after.tokens[t.id]!.attached?.to, link.to, `${at}: ${t.id} still on ${link.to}`);
+  }
+}
+
 describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 to 08)", () => {
   test("every creature in the file is walked alike, moved or not: walls, the trap step's poses, its groups and links", () => {
     let taken = 0;
@@ -144,11 +176,14 @@ describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 t
       // Dispatch puts each token where the trap step's walks left it.
       const r = applyOp(s, op, P1, env(5));
       assert.ok(r.ok, at);
-      for (const [id, pose] of trapLandings(op, s, P1, {})) {
+      const landed = trapLandings(op, s, P1, {});
+      for (const [id, pose] of landed) {
         const t: Token = r.state.tokens[id]!;
         assert.deepEqual([t.x, t.y, t.elevation], [pose.x, pose.y, pose.elevation], `${at}: ${id} where the trap step left it`);
       }
       standsClear(s, r.state, at);
+      linksKept(s, landed, r.state, at);
+      seatsKept(s, r.state, at);
       // Every link the public pass walks holds: one under a holder players cannot see may let go, unread (D-261101-397).
       for (const m of walks) {
         const link = s.tokens[m.tokenId]!.attached;
@@ -164,12 +199,15 @@ describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 t
     assert.ok(still >= 470, `walked, ending where they started: ${still}`);
   });
 
-  test("a group move a trap cuts lands each group's walks as the trap step judged them, a group it never stopped as any move, and none across a wall (review FU45BR-OPUS-12, FU45B-ASTRA-10)", () => {
+  test("a group move a trap cuts lands each group's walks as the trap step judged them, a group it never stopped as any move, and none across a wall (review FU45BR-OPUS-12, FU45B-ASTRA-10 and 11)", () => {
     let taken = 0;
     let cuts = 0;
     let oneStopped = 0;
     let ownJudged = 0;
-    for (let seed = 1; seed <= 1000; seed++) {
+    let carried = 0;
+    let ridden = 0;
+    const hidden = { visibility: "dm" as const };
+    for (let seed = 1; seed <= 3000; seed++) {
       const r = rng(seed * 6007 + 5);
       const s = room({ members: { dm1: member("dm1", "dm"), p1: member("p1"), p2: member("p2") }, scenes: { s1: scene("s1", { bounds: { w: 30, h: 20 }, blockMovement: true, autoWalls: "off" }) } });
       s.buildChunks = {};
@@ -177,9 +215,26 @@ describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 t
       const wx = int(r, 20, 22);
       wall(s, "fu45bm000000", [wx, int(r, 13, 14)], [wx, 16]);
       s.tokens.pc = token("pc", { x: 16, y: 13, name: "Pc", kind: "pc", ownerIds: ["p1"] });
-      const viaRat = chance(r, 0.7);
-      if (viaRat) s.tokens.rat = token("rat", { x: 15.5, y: 14, name: "Rat", kind: "npc", ownerIds: [], ...(chance(r, 0.7) ? { visibility: "dm" as const } : {}), attached: { to: "pc", kind: "drag" } });
-      s.tokens.brute = token("brute", { size: "large", x: pick(r, [16, 16.5]), y: 14, name: "Brute", kind: "npc", ownerIds: [], ...(chance(r, 0.2) ? { visibility: "dm" as const } : {}), attached: { to: viaRat ? "rat" : "pc", kind: "drag" } });
+      const shape = pick(r, ["brute", "brute", "carried", "ridden"] as const);
+      if (shape === "brute") {
+        const viaRat = chance(r, 0.7);
+        if (viaRat) s.tokens.rat = token("rat", { x: 15.5, y: 14, name: "Rat", kind: "npc", ownerIds: [], ...(chance(r, 0.7) ? hidden : {}), attached: { to: "pc", kind: "drag" } });
+        s.tokens.brute = token("brute", { size: "large", x: pick(r, [16, 16.5]), y: 14, name: "Brute", kind: "npc", ownerIds: [], ...(chance(r, 0.2) ? hidden : {}), attached: { to: viaRat ? "rat" : "pc", kind: "drag" } });
+      } else if (shape === "carried") {
+        // A creature the fighter drags carries a Tiny one, or bears it perched, which drags a third on some seeds: a seat in the
+        // middle of the chain (review FU45B-ASTRA-11).
+        s.tokens.imp = token("imp", { x: 16, y: 14, name: "Imp", kind: "npc", ownerIds: [], ...(chance(r, 0.7) ? hidden : {}), attached: { to: "pc", kind: "drag" } });
+        s.tokens.owl = token("owl", { size: "tiny", x: pick(r, [16, 16.5]), y: pick(r, [14, 14.5]), name: "Owl", kind: "npc", ownerIds: [], ...(chance(r, 0.2) ? hidden : {}), attached: { to: "imp", kind: pick(r, ["carry", "perch"] as const) } });
+        if (chance(r, 0.7)) s.tokens.rat = token("rat", { x: 15, y: 14, name: "Rat", kind: "npc", ownerIds: [], ...(chance(r, 0.2) ? hidden : {}), attached: { to: "owl", kind: "drag" } });
+      } else {
+        // A Large horse the fighter drags, half a square off the grid on some seeds, with a goblin riding it that drags a rat on some.
+        const hx = pick(r, [16, 16.5]);
+        s.tokens.horse = token("horse", { size: "large", x: hx, y: 14, name: "Horse", kind: "npc", ownerIds: [], ...(chance(r, 0.7) ? hidden : {}), attached: { to: "pc", kind: "drag" } });
+        const rx = hx + pick(r, [0, 1]);
+        const ry = 14 + pick(r, [0, 1]);
+        s.tokens.rider = token("rider", { x: rx, y: ry, name: "Rider", kind: "npc", ownerIds: [], ...(chance(r, 0.2) ? hidden : {}), attached: { to: "horse", kind: "ride" } });
+        if (chance(r, 0.5)) s.tokens.rat = token("rat", { x: rx - 1, y: ry, name: "Rat", kind: "npc", ownerIds: [], ...(chance(r, 0.2) ? hidden : {}), attached: { to: "rider", kind: "drag" } });
+      }
       // The second fighter walks elsewhere, into a trap that stops it on most seeds, with a goblin it drags on some.
       s.tokens.pc2 = token("pc2", { x: 2, y: 2, name: "Pc2", kind: "pc", ownerIds: ["p1"] });
       if (chance(r, 0.5)) s.tokens.gob = token("gob", { x: 1, y: 2, name: "Gob", kind: "npc", attached: { to: "pc2", kind: "drag" } });
@@ -200,21 +255,30 @@ describe("squares: random loops and cuts in single file (review FU45B-ASTRA-06 t
       for (const [id, group] of groupOf) assert.equal(group, id === "pc2" || id === "gob" ? "pc2" : "pc", `${at}: ${id}'s trap group`);
       const passOf = new Map(planWalks(op, s, P1, {}).map((m) => [m.tokenId, m.pass]));
       if (stopped.size === 1) oneStopped++;
-      // One every player sees under a holder they cannot see walks a route of its own, which the stop judges where it leaves it.
-      if (stopped.has("pc") && s.tokens.brute!.visibility !== "dm" && passOf.get("brute") === "private") ownJudged++;
+      // One every player sees under a holder they cannot see walks a route of its own, which the stop judges where it leaves it,
+      // dragged, carried or ridden.
+      const seenUnderHidden = (id: string, holder: string) => s.tokens[id] !== undefined && s.tokens[id]!.visibility !== "dm" && s.tokens[holder]!.visibility === "dm" && passOf.get(id) === "private";
+      if (stopped.has("pc") && shape === "brute" && seenUnderHidden("brute", s.tokens.brute!.attached!.to)) ownJudged++;
+      if (stopped.has("pc") && shape === "carried" && seenUnderHidden("owl", "imp")) carried++;
+      if (stopped.has("pc") && shape === "ridden" && seenUnderHidden("rider", "horse")) ridden++;
       const done = applyOp(s, op, P1, env(5));
       assert.ok(done.ok, at);
-      for (const [id, pose] of trapLandings(op, s, P1, {})) {
+      const landed = trapLandings(op, s, P1, {});
+      for (const [id, pose] of landed) {
         const t: Token = done.state.tokens[id]!;
         assert.deepEqual([t.x, t.y, t.elevation], [pose.x, pose.y, pose.elevation], `${at}: ${id} where the trap step left it`);
       }
       standsClear(s, done.state, at);
+      linksKept(s, landed, done.state, at);
+      seatsKept(s, done.state, at);
     }
     // Enough of the class: group moves taken, cut by a trap, with one group stopped and the other not, and a stopped walker every
-    // player sees on a walk of its own under a holder they cannot see.
-    assert.ok(taken >= 600, `group moves taken: ${taken}`);
-    assert.ok(cuts >= 500, `cut by a trap: ${cuts}`);
-    assert.ok(oneStopped >= 420, `one group stopped, the other not: ${oneStopped}`);
-    assert.ok(ownJudged >= 45, `one every player sees under a hidden holder, stopped: ${ownJudged}`);
+    // player sees on a walk of its own under a holder they cannot see, dragged, carried or ridden.
+    assert.ok(taken >= 2000, `group moves taken: ${taken}`);
+    assert.ok(cuts >= 1650, `cut by a trap: ${cuts}`);
+    assert.ok(oneStopped >= 1400, `one group stopped, the other not: ${oneStopped}`);
+    assert.ok(ownJudged >= 70, `one every player sees under a hidden holder, stopped: ${ownJudged}`);
+    assert.ok(carried >= 45, `one every player sees carried by a hidden holder, stopped: ${carried}`);
+    assert.ok(ridden >= 45, `one every player sees riding a hidden horse, stopped: ${ridden}`);
   });
 });
