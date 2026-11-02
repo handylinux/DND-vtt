@@ -1,3 +1,4 @@
+import { LIMITS } from "../limits.ts";
 import type { DiceResult, RollChange } from "../model.ts";
 import { randomIndex } from "../passphrase.ts";
 import { applyMode, FORMULA_ERRORS, formatFormula, parseFormula, type AdvantageMode, type DiceTerm, type Formula, type FormulaError, type NumberTerm, type Term } from "./formula.ts";
@@ -206,9 +207,11 @@ export type Changed = { ok: true; result: DiceResult } | { ok: false; error: str
  * and an added die each grow the roll, and a stored result whose text no
  * longer parses shows only its text and total (rolledTerms), its dice and
  * its natural 20 lost. The same refusal as a typed roll's: its dice, its
- * parts or its length.
+ * parts or its length. `bounded` false is the rule asks stored before op
+ * version 40 were judged by (migrate.ts boundsRollChanges): 20 parts alone.
  */
-function unreadableAs(formula: Formula): FormulaError | null {
+function unreadableAs(formula: Formula, bounded: boolean): FormulaError | null {
+  if (!bounded) return formula.length > LIMITS.diceTermsPerFormula ? FORMULA_ERRORS.terms : null;
   const parsed = parseFormula(formatFormula(formula));
   return parsed.ok ? null : parsed.error;
 }
@@ -238,9 +241,10 @@ export function rerolled(result: DiceResult, reason: ChangeReason, face: number,
  * cancel rule with what it had (3.3). A normal roll draws one more d20 and
  * keeps the higher. On a disadvantage roll the two cancel to a normal roll,
  * so it keeps its first d20 and draws nothing. A roll with advantage
- * already, or whose sources cancelled, changes nothing.
+ * already, or whose sources cancelled, changes nothing. `bounded` as for
+ * unreadableAs.
  */
-export function withLucky(result: DiceResult, draw: Draw): Changed {
+export function withLucky(result: DiceResult, draw: Draw, bounded = true): Changed {
   if (result.mode === "adv" || result.cancelled) return { ok: false, error: LUCKY_CHANGES_NOTHING };
   const terms = rolledTerms(result);
   const parsed = parseFormula(result.formula);
@@ -256,18 +260,19 @@ export function withLucky(result: DiceResult, draw: Draw): Changed {
     return { ok: true, result: withFaces(result, formula, faces, undefined, true) };
   }
   formula[at] = { kind: "dice", sign: 1, count: 2, sides: 20, keep: { high: true, n: 1 } };
-  const unreadable = unreadableAs(formula);
+  // Before version 40 Lucky had no bound at all, the 20 parts included, since it replaces a part.
+  const unreadable = bounded ? unreadableAs(formula, true) : null;
   if (unreadable) return { ok: false, error: unreadable };
   faces.splice(d20.first + 1, 0, draw(20));
   return { ok: true, result: withFaces(result, formula, faces, "adv", false) };
 }
 
-/** An added die, Bardic Inspiration's: `+1dN` after the roll, with its new face. */
-export function withDie(result: DiceResult, sides: number, draw: Draw): Changed {
+/** An added die, Bardic Inspiration's: `+1dN` after the roll, with its new face. `bounded` as for unreadableAs. */
+export function withDie(result: DiceResult, sides: number, draw: Draw, bounded = true): Changed {
   const parsed = parseFormula(result.formula);
   if (!parsed.ok) return { ok: false, error: FORMULA_ERRORS.other };
   const formula: Formula = [...parsed.formula, { kind: "dice", sign: 1, count: 1, sides }];
-  const unreadable = unreadableAs(formula);
+  const unreadable = unreadableAs(formula, bounded);
   if (unreadable) return { ok: false, error: unreadable };
   return { ok: true, result: withFaces(result, formula, [...result.faces, draw(sides)], result.mode, result.cancelled === true) };
 }

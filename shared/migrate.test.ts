@@ -32,6 +32,7 @@ import {
   draggedWalkFull,
   followsInSingleFile,
   keepsLairTick,
+  boundsRollChanges,
   seatsApart,
   hiddenTowStands,
   stopsStandClear,
@@ -1623,6 +1624,18 @@ describe("follow-up batch 46: op version 39, a row's In lair kept on its token (
     assert.equal(migrateOp(op, 38), op);
     assert.throws(() => runMigrations(op, 39, 38, opMigrations), /down/);
     assert.deepEqual([keepsLairTick(1), keepsLairTick(38), keepsLairTick(39), keepsLairTick(undefined)], [false, false, true, true]);
+  });
+});
+
+describe("batch 47: op version 40, Lucky and an added die held to the dice grammar's bounds (FU47-ASTRA-01)", () => {
+  test("keeps stored operations unchanged through the identity step, and gates the bounds at 40 with the snapshot at 31", () => {
+    assert.ok(OP_VERSION >= 40);
+    assert.equal(SNAPSHOT_VERSION, 31, "no snapshot field changes");
+    const op = { t: "roll.change", rollId: "r1", target: { characterId: "c1" }, ask: { id: "a1", on: "t1", reason: "lucky" } };
+    assert.equal(runMigrations(op, 39, 40, opMigrations), op);
+    assert.equal(migrateOp(op, 39), op);
+    assert.throws(() => runMigrations(op, 40, 39, opMigrations), /down/);
+    assert.deepEqual([boundsRollChanges(1), boundsRollChanges(39), boundsRollChanges(40), boundsRollChanges(undefined)], [false, false, true, true]);
   });
 });
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { resolveDiceOp } from "../dice/resolve.ts";
+import { FORMULA_ERRORS } from "../dice/formula.ts";
 import { CANNOT_REROLL, LUCKY_CHANGES_NOTHING, type Draw } from "../dice/roll.ts";
 import { eventLines } from "../logRings.ts";
 import type { Actor, Effect, LogEntry, LogEvent, RollChange, RollTarget, RoomState, Viewer } from "../model.ts";
@@ -454,6 +455,21 @@ describe("asking to change an answer, and the DM's answer (5.5, 6, 7.5)", () => 
     const shown = typed(3, { dcShown: true });
     assert.deepEqual(send(shown, asking("a1", "fix-total", shown), P1), refusal("invalid", SEND_INSTEAD), "with the DC shown the player sends again");
     assert.ok(send(typedFail, asking("a1", "fix-total", typedFail), P1).ok, "a final typed answer");
+  });
+
+  test("from op version 40 Lucky and an added die are refused past the grammar's bounds, and asks stored before replay as they were accepted", () => {
+    // 1d20+99d2-150: within an answer's -50 to 100, and 100 dice, so one more passes the grammar's bound.
+    const hundred = rolled([7, ...Array<number>(99).fill(1)], { extra: "99d2-150" });
+    assert.equal(targetOf(hundred).dice?.faces.length, 100);
+    for (const op of [asking("a1", "lucky", hundred), asking("a1", "bardic-inspiration", hundred, { die: 6 })]) {
+      const why = op.ask!.reason;
+      assert.deepEqual(send(hundred, op, P1), refusal("invalid", FORMULA_ERRORS.dice), `${why}: a live ask`);
+      const replayed = (opVersion: number) => applyOp(hundred, op, P1, { ...env(++seq), opVersion });
+      assert.deepEqual(replayed(40), refusal("invalid", FORMULA_ERRORS.dice), `${why}: stored at 40`);
+      const before = replayed(39);
+      assert.ok(before.ok, `${why}: stored at 39 replays as it was accepted`);
+      assert.equal(targetOf(before.state).change?.id, "a1");
+    }
   });
 
   test("an ask is stored as sent, writes no line, and another replaces it, so the first one's Allow is settled meanwhile", () => {

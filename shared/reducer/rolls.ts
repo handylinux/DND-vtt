@@ -1,7 +1,7 @@
-import { CANNOT_REROLL, LUCKY_CHANGES_NOTHING, rerollable, rerollFace, withDie, withLucky } from "../dice/roll.ts";
+import { CANNOT_REROLL, rerollable, rerollFace, withDie, withLucky } from "../dice/roll.ts";
 import { keys } from "../keys.ts";
 import { LIMITS } from "../limits.ts";
-import { answerProvenance } from "../migrate.ts";
+import { answerProvenance, boundsRollChanges } from "../migrate.ts";
 import type { LogEvent, RollAnswer, RollChange, RollRequest, RollTarget } from "../model.ts";
 import { SETTLED_MEANWHILE, fixPending, playersTypeTotals } from "../permissions.ts";
 import { anyPlayer, playersToken } from "../project.ts";
@@ -270,7 +270,7 @@ export function rollChange(tx: Tx, op: OpOf<"roll.change">): void {
     return;
   }
   if (current.tag === undefined || ask.on !== current.tag) throw invalid(SETTLED_MEANWHILE);
-  const refusal = changeRefusal(request, current, ask);
+  const refusal = changeRefusal(request, current, ask, boundsRollChanges(tx.env.opVersion));
   if (refusal !== undefined) throw invalid(refusal);
   const change: RollChange = { id: ask.id, on: ask.on, reason: ask.reason };
   if (ask.face !== undefined) change.face = ask.face;
@@ -285,8 +285,15 @@ export function rollChange(tx: Tx, op: OpOf<"roll.change">): void {
  * judged by the rules the Allow's resolve runs (dice/resolve.ts), never a
  * copy of them. "Fix my total" needs a typed answer that is final for its
  * player, since one that is not they correct by sending it again.
+ * `bounded` false judges Lucky and an added die as asks stored before op
+ * version 40 were judged (migrate.ts boundsRollChanges).
  */
-export function changeRefusal(request: Pick<RollRequest, "dc" | "dcShown" | "resultShown">, target: Pick<RollTarget, "result" | "dice">, ask: Pick<RollChange, "reason" | "face" | "die">): string | undefined {
+export function changeRefusal(
+  request: Pick<RollRequest, "dc" | "dcShown" | "resultShown">,
+  target: Pick<RollTarget, "result" | "dice">,
+  ask: Pick<RollChange, "reason" | "face" | "die">,
+  bounded = true,
+): string | undefined {
   const dice = target.dice;
   if (ask.reason === "fix-total") {
     if (dice) return TYPED_ONLY;
@@ -300,11 +307,14 @@ export function changeRefusal(request: Pick<RollRequest, "dc" | "dcShown" | "res
       return face !== null && rerollable(dice, ask.reason, face) ? undefined : CANNOT_REROLL;
     }
     // Lucky and an added die refuse by the stored faces' shape alone, never by what is drawn, so a dry run answers as the Allow will.
-    case "lucky":
-      return withLucky(dice, () => 1).ok ? undefined : LUCKY_CHANGES_NOTHING;
+    case "lucky": {
+      // Its own words: that it changes nothing, or the grammar's bound it would pass.
+      const lucky = withLucky(dice, () => 1, bounded);
+      return lucky.ok ? undefined : lucky.error;
+    }
     case "bardic-inspiration": {
       if (ask.die === undefined) return DIE_NEEDED;
-      const added = withDie(dice, ask.die, () => 1);
+      const added = withDie(dice, ask.die, () => 1, bounded);
       return added.ok ? undefined : added.error;
     }
   }

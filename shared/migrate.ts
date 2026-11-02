@@ -11,7 +11,7 @@ import type { Op } from "./protocol.ts";
  * no old ops at all. The op pipeline is here for the crash case.
  */
 export const SNAPSHOT_VERSION = 31;
-export const OP_VERSION = 39;
+export const OP_VERSION = 40;
 
 export type MigrationStep = {
   from: number;
@@ -1028,6 +1028,22 @@ export const opMigrations: MigrationStep[] = [
     to: 39,
     apply: (op) => op,
   },
+  {
+    // Batch 47 (FU47-ASTRA-01): no op changes shape, so the step is the
+    // identity. From this version Lucky and Bardic Inspiration's added die
+    // are refused where they would take a rolled answer past the dice
+    // grammar's 100 dice, 20 parts or 100 characters (`boundsRollChanges`),
+    // since a stored roll whose text no longer parses shows no dice and no
+    // natural 20. An ask stored before was judged by 20 parts alone, and
+    // replays so, so a room with one after its snapshot still loads.
+    // Deploy: nothing to do. An open page that asks past a bound hears the
+    // server's refusal. Rollback needs the backup only for a room with
+    // version 40 ops after its last snapshot, which an older build refuses
+    // to migrate down.
+    from: 39,
+    to: 40,
+    apply: (op) => op,
+  },
 ];
 
 /** Historical restores keep their original log entries and numbering. */
@@ -1480,6 +1496,17 @@ export function stopsStandClear(opVersion: number | undefined): boolean {
  */
 export function keepsLairTick(opVersion: number | undefined): boolean {
   return !(opVersion !== undefined && opVersion < 39);
+}
+
+/**
+ * Whether a roll change's Lucky or added die is held to the dice grammar's
+ * bounds (dice/roll.ts unreadableAs), in the reducer's check of the ask
+ * (reducer/rolls.ts changeRefusal). Asks stored before version 40 were
+ * judged without them, and replay so. The Allow's own resolve runs live
+ * only and always holds them.
+ */
+export function boundsRollChanges(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 40);
 }
 
 /**
