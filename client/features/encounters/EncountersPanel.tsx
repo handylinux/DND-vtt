@@ -212,7 +212,8 @@ function Builder(props: { id: string | null; srd: SrdList; close: PanelClose; on
   });
 
   return (
-    <div style={{ display: "grid", gap: theme.space(2), fontSize: theme.font.body14 }}>
+    // One column no wider than the panel, as Section's: an auto column grew to the name field's own width, 20 characters of its font, which Chrome on Linux draws a third wider, so the whole editor ran past a phone's sheet at 320 x 568 at 130% (ENC-LINE-320).
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: theme.space(2), fontSize: theme.font.body14 }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: theme.space(2) }}>
         <Input
           type="text"

@@ -16,7 +16,8 @@ import { ConsoleWatch, OpSocket, openSideTab, sideTabName, Shots, SocketWatch, s
  * 390 x 844 and 320 x 568, at 100% and 130%, and line up, and so does
  * each monster it offers to add. Nothing in the panel runs sideways past
  * its edge (ENC-LINE-320: at 320 x 568 at 130% the line ran past the
- * sheet, cutting its CR and Remove).
+ * sheet, cutting its CR and Remove), even with its text fields drawn
+ * twice as wide, as a platform with a wider font draws them.
  *
  * It runs with `pnpm test:e2e` on E2E_PORT plus twenty-seven, one file
  * after another. The other environment variables are the smoke run's
@@ -175,6 +176,26 @@ describe("raccoon-vtt: the Encounters panel's lines at every size", { timeout: 6
       }
     }
     assert.deepEqual(lines, [], "the encounter's lines");
+  });
+
+  /*
+   * A field's own width is 20 characters of its font, and Chrome on Linux draws it about a third wider than on macOS: there the
+   * name field's width alone held the editor past the sheet at 320 x 568 at 130%, which macOS never showed. Drawn at 40 characters
+   * here, a field must still widen nothing, so the panel fits whatever font a platform gives its fields.
+   */
+  test("enc46-2b. at 320 x 568 at 130%, the editor's text fields drawn twice as wide, as a platform's wider font draws them, widen nothing past the panel", async () => {
+    await dm.setViewportSize({ width: 320, height: 568 });
+    await dm.evaluate(() => localStorage.setItem("rvtt.uiScale", "1.3"));
+    await dm.goto(`${server.origin}/r/${run.roomId}`);
+    await dm.getByRole("status", { name: "Connected" }).first().waitFor();
+    const panel = await openCrypt(dm);
+    const fields = panel.locator('input[type="text"], input[type="search"]');
+    assert.ok((await fields.count()) >= 2, "the name and search fields are there");
+    await fields.evaluateAll((els) => els.forEach((el) => (el as unknown as { setAttribute(n: string, v: string): void }).setAttribute("size", "40")));
+    const body = panel.locator("[data-pane-body]").first();
+    const lines = await sidewaysLines(body, "320x568-130 with 40-character fields");
+    await shots.take(dm, "enc46-wide-fields-320x568-130");
+    assert.deepEqual(lines, [], "the editor with wide fields");
   });
 
   test("enc46-3. no console errors", () => {
