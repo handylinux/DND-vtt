@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.1 (2026-11-02)
+
+### Fixes
+
+- **rooms**: close only the sender's socket when a room command throws, and keep the queue going
+
 ## v0.3.0 (2026-11-02)
 
 ### Features
