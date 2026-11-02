@@ -26,6 +26,46 @@ function devJsonImports(): Plugin {
   };
 }
 
+/**
+ * Vite's placeholder for an imported asset's URL (formatBuiltAsset): the
+ * bundler's reference id for the emitted file, then an id of its own when the
+ * import named a query or fragment to keep.
+ */
+const ASSET_PLACEHOLDER = /import\.meta\.ROLLDOWN_FILE_URL_([\w$]{22})(?:_[a-f\d]{24})?/g;
+
+/**
+ * Writes the same source maps from every build of one commit
+ * (build_repeatable). Vite's build turns `import x from "./a.webp?url"` into
+ * a module whose whole text is a placeholder naming the file the bundler
+ * emits. The bundler numbers emitted files in the order it is handed them,
+ * and Vite hands each one over when reading it from disk finishes, so a module
+ * that imports many at once (the DM guide's screenshots, by
+ * `import.meta.glob`) gets them numbered in a new order each build. The
+ * bundled code comes out the same, since every placeholder becomes the
+ * file's hashed URL, but a source map embeds each module's text from before
+ * that. So each placeholder in a map becomes the URL the bundled code has in
+ * its place, short of any query or fragment the import kept. It starts where
+ * the placeholder did, so the map's positions still hold. Leaving these
+ * modules out of the map instead would mean renumbering every mapping in it.
+ */
+export function stableAssetMaps(): Plugin {
+  let base = "/";
+  return {
+    name: "raccoon:stable-asset-maps",
+    apply: "build",
+    configResolved(config) {
+      base = config.base;
+    },
+    generateBundle(_options, bundle) {
+      for (const file of Object.values(bundle)) {
+        if (file.type !== "asset" || !file.fileName.endsWith(".map") || typeof file.source !== "string") continue;
+        // Inside the map's JSON, so the URL is written as a JSON string within a JSON string.
+        file.source = file.source.replace(ASSET_PLACEHOLDER, (_whole, referenceId: string) => JSON.stringify(JSON.stringify(base + this.getFileName(referenceId))).slice(1, -1));
+      }
+    },
+  };
+}
+
 const PDFJS = new URL("./node_modules/pdfjs-dist/", import.meta.url);
 
 /**
@@ -89,7 +129,7 @@ const api = `127.0.0.1:${process.env.PORT ?? 3000}`;
 export default defineConfig({
   root: "client",
   publicDir: "../public",
-  plugins: [react(), devJsonImports(), pdfjsDecoders()],
+  plugins: [react(), devJsonImports(), pdfjsDecoders(), stableAssetMaps()],
   /*
    * Workers as ES modules, so a worker can load code by `import()`: the PDF
    * reader's worker loads its decoders and pdf.js only once it runs
