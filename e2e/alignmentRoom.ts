@@ -3160,7 +3160,7 @@ export function helperTest(): void {
       await page.close();
     }
   });
-  test("lk1-disabled-look. an off control with bright or faded words fails, a select the browser's own sheet fades included, while dim words, wordless controls, hidden native inputs, the two marks and a readonly mark on a state inside a control pass", async () => {
+  test("lk1-disabled-look. an off control with bright or faded words fails, a select the browser's own sheet fades included, and a checkbox or radio whose label draws bright, hidden under it or not, while dim words, wordless controls, dim labels, a field's heading, the two marks and a readonly mark on a state inside a control pass", async () => {
     const page = await dmContext.newPage();
     const dim = theme.color.textDisabled;
     const bright = theme.color.text;
@@ -3175,6 +3175,11 @@ export function helperTest(): void {
         <button disabled data-disabled-look="readonly" style="color:${bright}">Pip</button>
         <button disabled style="color:${dim}">Seraphina <span data-disabled-look="readonly" style="color:${bright}">Unconscious</span></button>
         <select disabled aria-label="Skill" style="color:${dim};opacity:1"><option>Stealth</option></select>
+        <label style="color:${dim}"><input type="checkbox" disabled>Players see the DC</label>
+        <label style="position:relative;color:${dim}"><input type="radio" name="dim" disabled style="position:absolute;inset:0;opacity:0">Half</label>
+        <label style="color:${dim}"><input type="checkbox" disabled>Ana <span data-disabled-look="readonly" style="color:${bright}">Stable</span></label>
+        <label for="lasts" style="color:${bright}">It lasts</label><input id="lasts" disabled value="1 minute" style="color:${dim}">
+        <label style="color:${bright}"><input type="checkbox">Live box</label>
         <button style="color:${bright}">Live</button>
       </div>`);
       const root = page.locator("#look");
@@ -3189,11 +3194,14 @@ export function helperTest(): void {
         <button disabled style="color:${dim}">Zoom <span style="opacity:0.5">100%</span></button>
         <button disabled style="color:${dim}">Ana <span data-disabled-look="readonly" style="color:${bright}">Stable</span> <span style="color:${bright}">+3</span></button>
         <select disabled aria-label="Ability" style="color:${dim}"><option>Dexterity</option></select>
+        <label style="color:${bright}"><input type="checkbox" disabled>Secret block</label>
+        <label style="position:relative;color:${dim}"><input type="radio" name="bright" disabled style="position:absolute;inset:0;opacity:0"><span style="color:${bright}">Advantage</span></label>
+        <div style="opacity:0.5"><label style="color:${dim}"><input type="checkbox" disabled>Faded row</label></div>
       </div>`);
       const lines = (await disabledLookLines(root, "lk1-disabled-look")).join("\n");
-      for (const miss of [/"Frightened" is off but draws "Frightened" in rgb\(241, 239, 233\)/, /input "" is off but draws its words in rgb\(241, 239, 233\)/, /"Rounds 2" is off but draws "2"/, /"Marked" is off but faded to opacity 0\.35/, /"Inside a fade" is off but faded to opacity 0\.5 by its div/, /data-disabled-look="dim", which is neither busy nor readonly/, /input "Bonus" is off but draws its words in rgb\(117, 117, 117\)/, /"Zoom 100%" is off but its "100%" is faded to opacity 0\.5/, /"Ana Stable \+3" is off but draws "\+3" in rgb\(241, 239, 233\)/, /select "Ability" is off but faded to opacity 0\.7/]) assert.match(lines, miss);
+      for (const miss of [/"Frightened" is off but draws "Frightened" in rgb\(241, 239, 233\)/, /input "" is off but draws its words in rgb\(241, 239, 233\)/, /"Rounds 2" is off but draws "2"/, /"Marked" is off but faded to opacity 0\.35/, /"Inside a fade" is off but faded to opacity 0\.5 by its div/, /data-disabled-look="dim", which is neither busy nor readonly/, /input "Bonus" is off but draws its words in rgb\(117, 117, 117\)/, /"Zoom 100%" is off but its "100%" is faded to opacity 0\.5/, /"Ana Stable \+3" is off but draws "\+3" in rgb\(241, 239, 233\)/, /select "Ability" is off but faded to opacity 0\.7/, /label "Secret block" is off but draws "Secret block" in rgb\(241, 239, 233\)/, /label "Advantage" is off but draws "Advantage" in rgb\(241, 239, 233\)/, /label "Faded row" is off but faded to opacity 0\.5 by its div/]) assert.match(lines, miss);
       assert.doesNotMatch(lines, /Stable"|Unconscious/, "words inside a readonly mark pass");
-      assert.equal(lines.split("\n").length, 10, lines);
+      assert.equal(lines.split("\n").length, 13, lines);
     } finally {
       await page.close();
     }

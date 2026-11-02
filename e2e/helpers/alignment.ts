@@ -1651,6 +1651,11 @@ const TEXT_DISABLED = (() => {
  *
  * A native control hidden under a drawn one (opacity 0, or a box under
  * 2 px) is not seen, and the fieldset that holds a group is no control.
+ * A checkbox or a radio draws no words, hidden or not: its words are the
+ * label that wraps it, the row or the tile a tap on it takes, and they
+ * must draw dim (LOOK1-SOL-003). A label that names a field by `for` from
+ * outside it is a heading over the field and keeps its own color
+ * (D-261101-303).
  */
 export async function disabledLookLines(root: Locator, screen: string): Promise<string[]> {
   const lines = await root.evaluateAll((roots, want) => {
@@ -1663,6 +1668,7 @@ export async function disabledLookLines(root: Locator, screen: string): Promise<
       getAttribute(name: string): string | null;
       querySelectorAll(selector: string): ArrayLike<El>;
       matches(selector: string): boolean;
+      closest(selector: string): El | null;
       contains(other: El): boolean;
       checkVisibility(opts: { opacityProperty: boolean; visibilityProperty: boolean }): boolean;
       getBoundingClientRect(): { width: number; height: number };
@@ -1673,7 +1679,8 @@ export async function disabledLookLines(root: Locator, screen: string): Promise<
     };
     const OFF = ':disabled:not(fieldset, option, optgroup), [aria-disabled="true"]';
     const EXEMPT = new Set(["busy", "readonly"]);
-    const WORDLESS = new Set(["checkbox", "radio", "range", "color", "file", "hidden"]);
+    const WORDLESS = new Set(["range", "color", "file", "hidden"]);
+    const CHOICE = new Set(["checkbox", "radio"]);
     const out: string[] = [];
     const seen = new Set<El>();
     const nameOf = (el: El) => {
@@ -1693,47 +1700,71 @@ export async function disabledLookLines(root: Locator, screen: string): Promise<
         }
         return null;
       };
-      const controls = [...(root.matches(OFF) ? [root] : []), ...Array.from(root.querySelectorAll(OFF))];
-      for (const control of controls) {
-        if (seen.has(control)) continue;
-        seen.add(control);
-        const box = control.getBoundingClientRect();
-        if (box.width < 2 || box.height < 2 || !shows(control)) continue;
-        const mark = control.getAttribute("data-disabled-look");
-        if (mark !== null) {
-          if (!EXEMPT.has(mark)) out.push(`${nameOf(control)} is marked data-disabled-look="${mark}", which is neither busy nor readonly`);
-          continue;
-        }
-        const fade = fadeOf(control);
-        if (fade) out.push(`${nameOf(control)} is off but faded to opacity ${fade.opacity}${fade.el === control ? "" : ` by its ${nameOf(fade.el)}`}`);
-        const tag = control.tagName.toLowerCase();
-        if (tag === "input" || tag === "textarea" || tag === "select") {
-          if (tag === "input" && WORDLESS.has(control.type ?? "")) continue;
-          const color = tag === "select" || (control.value ?? "") !== "" ? css(control).color : (control.placeholder ?? "") !== "" ? css(control, "::placeholder").color : null;
-          if (color !== null && color !== want) out.push(`${nameOf(control)} is off but draws its words in ${color}, not textDisabled ${want}`);
-          continue;
-        }
+      const faded = (el: El) => {
+        const fade = fadeOf(el);
+        if (fade) out.push(`${nameOf(el)} is off but faded to opacity ${fade.opacity}${fade.el === el ? "" : ` by its ${nameOf(fade.el)}`}`);
+        return fade !== null;
+      };
+      /** The words `owner` draws, each in textDisabled and none faded inside it. `fade` says a fade around it was already found. */
+      const dimWords = (owner: El, fade: boolean) => {
         const bright = new Map<string, string[]>();
         const visit = (node: Node) => {
           if (node.nodeType === 3) {
             const words = (node.textContent ?? "").trim();
             const parent = node.parentElement;
             if (!words || !parent || !shows(parent)) return;
-            const range = control.ownerDocument.createRange();
+            const range = owner.ownerDocument.createRange();
             range.selectNodeContents(node);
             if (!Array.from(range.getClientRects()).some((r) => r.width > 0 && r.height > 0)) return;
             const color = css(parent).color;
             if (color !== want) bright.set(color, [...(bright.get(color) ?? []), words]);
             const inner = fade ? null : fadeOf(parent);
-            if (inner && control.contains(inner.el)) out.push(`${nameOf(control)} is off but its "${words}" is faded to opacity ${inner.opacity}`);
+            if (inner && owner.contains(inner.el)) out.push(`${nameOf(owner)} is off but its "${words}" is faded to opacity ${inner.opacity}`);
           } else {
             // A state shown inside an off control (a life word, a condition chip) keeps its own color and says so itself, as the control may.
-            if (node !== (control as Node) && (node as El).getAttribute?.("data-disabled-look") === "readonly") return;
+            if (node !== (owner as Node) && (node as El).getAttribute?.("data-disabled-look") === "readonly") return;
             for (const child of Array.from(node.childNodes)) visit(child);
           }
         };
-        visit(control);
-        for (const [color, words] of bright) out.push(`${nameOf(control)} is off but draws "${words.join(" ")}" in ${color}, not textDisabled ${want}`);
+        visit(owner);
+        for (const [color, words] of bright) out.push(`${nameOf(owner)} is off but draws "${words.join(" ")}" in ${color}, not textDisabled ${want}`);
+      };
+      const controls = [...(root.matches(OFF) ? [root] : []), ...Array.from(root.querySelectorAll(OFF))];
+      for (const control of controls) {
+        if (seen.has(control)) continue;
+        seen.add(control);
+        const tag = control.tagName.toLowerCase();
+        const choice = tag === "input" && CHOICE.has(control.type ?? "");
+        const box = control.getBoundingClientRect();
+        const hidden = box.width < 2 || box.height < 2 || !shows(control);
+        if (hidden && !choice) continue;
+        const mark = control.getAttribute("data-disabled-look");
+        if (mark !== null) {
+          if (!EXEMPT.has(mark)) out.push(`${nameOf(control)} is marked data-disabled-look="${mark}", which is neither busy nor readonly`);
+          continue;
+        }
+        if (choice) {
+          const label = control.closest("label");
+          if (!label || !shows(label)) {
+            if (!hidden) faded(control);
+            continue;
+          }
+          // A box faded inside its label, which the label's own fade check does not reach.
+          const own = hidden ? null : fadeOf(control);
+          if (own && own.el !== label && label.contains(own.el)) out.push(`${nameOf(control)} is off but faded to opacity ${own.opacity}`);
+          if (seen.has(label)) continue;
+          seen.add(label);
+          dimWords(label, faded(label));
+          continue;
+        }
+        const fade = faded(control);
+        if (tag === "input" || tag === "textarea" || tag === "select") {
+          if (tag === "input" && WORDLESS.has(control.type ?? "")) continue;
+          const color = tag === "select" || (control.value ?? "") !== "" ? css(control).color : (control.placeholder ?? "") !== "" ? css(control, "::placeholder").color : null;
+          if (color !== null && color !== want) out.push(`${nameOf(control)} is off but draws its words in ${color}, not textDisabled ${want}`);
+          continue;
+        }
+        dimWords(control, fade);
       }
     }
     return [...new Set(out)];
