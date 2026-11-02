@@ -687,10 +687,11 @@ const CONTENT_TYPES: Record<string, string> = {
   ".png": "image/png",
 };
 
-function threeFile(path: string): string | null {
-  if (path !== "build/three.module.js" && !/^examples\/jsm\/[A-Za-z0-9_/]+\.js$/.test(path)) return null;
-  const file = resolve(THREE_DIR, path);
-  return file.startsWith(THREE_DIR + sep) ? file : null;
+/** three.module.js imports three.core.js from r171 on, so both builds are served. */
+export function threeFile(path: string, dir = THREE_DIR): string | null {
+  if (path !== "build/three.module.js" && path !== "build/three.core.js" && !/^examples\/jsm\/[A-Za-z0-9_/]+\.js$/.test(path)) return null;
+  const file = resolve(dir, path);
+  return file.startsWith(dir + sep) ? file : null;
 }
 
 export type Renderer = { page: Page; serve: (files: Map<string, Buffer>) => void };
@@ -818,9 +819,13 @@ async function removeStale(keep: Set<string>): Promise<void> {
   }
 }
 
-export async function checkThree(): Promise<void> {
-  const pkg = JSON.parse(await readFile(join(THREE_DIR, "package.json"), "utf8")) as { version?: string };
-  if (pkg.version !== "0.160.0") throw new Error(`expected three 0.160.0, found ${pkg.version}`);
+/** The installed three must be the version package.json pins, so a stale node_modules cannot render the stamps. */
+export async function checkThree(dir = THREE_DIR, rootDir = ROOT): Promise<void> {
+  const installed = JSON.parse(await readFile(join(dir, "package.json"), "utf8")) as { version?: string };
+  const manifest = JSON.parse(await readFile(join(rootDir, "package.json"), "utf8")) as { devDependencies?: Record<string, string>; dependencies?: Record<string, string> };
+  const pinned = manifest.devDependencies?.three ?? manifest.dependencies?.three;
+  if (!pinned) throw new Error("package.json does not pin three");
+  if (installed.version !== pinned) throw new Error(`expected three ${pinned}, found ${installed.version}`);
 }
 
 /** Chrome's software renderer, so the renders never depend on this machine's GPU. */

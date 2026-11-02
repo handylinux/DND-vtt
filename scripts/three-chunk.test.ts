@@ -4,7 +4,8 @@ import { checkThree, closure, staticImports, type Chunk } from "./three-chunk.ts
 
 /** The post-build check of the dice chunk (docs/design/design-v1-roll-animation.md 6), on made-up builds. */
 
-const THREE = "../../node_modules/.pnpm/three@0.160.0/node_modules/three/build/three.module.js";
+const THREE = "../../node_modules/.pnpm/three@0.186.1/node_modules/three/build/three.module.js";
+const THREE_CORE = THREE.replace("three.module.js", "three.core.js");
 
 function chunk(file: string, sources: string[], code = ""): Chunk {
   return { file, code, sources, imports: staticImports(code) };
@@ -35,6 +36,14 @@ describe("the dice chunk's post-build check", () => {
     const result = checkThree(build([...base, chunk("stage.js", ["../../client/features/dice/throw/stage.ts", THREE])]));
     assert.deepEqual(result.problems, []);
     assert.equal(result.stage, "stage.js");
+  });
+
+  test("finds three by its core build alone, which holds the renderer's classes since r171", () => {
+    const result = checkThree(build([...base, chunk("stage.js", ["../../client/features/dice/throw/stage.ts", THREE_CORE])]));
+    assert.deepEqual(result.problems, []);
+    assert.equal(result.stage, "stage.js");
+    const inPanel = base.map((c) => (c.file === "DicePanel.js" ? { ...c, sources: [...c.sources, THREE_CORE] } : c));
+    assert.match(checkThree(build(inPanel)).problems.join("\n"), /loads with the Dice panel/);
   });
 
   test("fails three in the Dice panel's chunk, in one it imports, in two chunks or in none", () => {

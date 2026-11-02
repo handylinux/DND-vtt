@@ -54,7 +54,7 @@ export function closure(chunks: ReadonlyMap<string, Chunk>, from: readonly strin
   return seen;
 }
 
-const THREE = /(^|\/)node_modules\/(\.pnpm\/[^/]+\/node_modules\/)?three\/build\/three\.module\.js$/;
+const THREE = /(^|\/)node_modules\/(\.pnpm\/[^/]+\/node_modules\/)?three\/build\/three\.(module|core)\.js$/;
 const NAMED = {
   Room: /client\/pages\/Room\.tsx$/,
   room: /client\/canvas\/Stage\.tsx$/,

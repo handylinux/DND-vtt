@@ -1010,12 +1010,12 @@ The screenshots in `docs/images/readme-map.webp`, `readme-stat-block.webp`, `rea
 
 ## 3D dice
 
-The dice the Dice panel throws, their numbers and their finishes are drawn in code, with no image, texture or model file. They are rendered with [three.js](https://threejs.org) 0.160.0, by the three.js authors, bundled into the app's dice chunk and used under the MIT License:
+The dice the Dice panel throws, their numbers and their finishes are drawn in code, with no image, texture or model file. They are rendered with [three.js](https://threejs.org) 0.186.1, by the three.js authors, bundled into the app's dice chunk and used under the MIT License:
 
 ```
 The MIT License
 
-Copyright © 2010-2023 three.js authors
+Copyright © 2010-2026 three.js authors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
