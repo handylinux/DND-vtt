@@ -1,8 +1,17 @@
 # Every check on pushes to main or ci/ branches, and on pull requests to
 # main: typecheck, integration tests, unit tests, and e2e files in 14 shards.
-# That is 17 jobs with the build. One run peaks at 16 Linux jobs of the
-# account's 20, so a run that overlaps it queues part of its shards: a single
-# run's speed was chosen over two runs at full speed at once.
+# That is 18 jobs with the build and the CI passed job. One run peaks at 16
+# Linux jobs of the account's 20, so a run that overlaps it queues part of
+# its shards: a single run's speed was chosen over two runs at full speed at
+# once.
+#
+# A pull request from one of this repository's own ci/ branches skips every
+# job, since the push run on the same commit already runs them all. A pull
+# request from anywhere else, such as Dependabot's, runs everything.
+#
+# The CI passed job is the one check main's ruleset requires: it fails
+# unless every other job passed or was skipped by this file's own design
+# (see the job).
 #
 # A push to a ci/ branch on main's tip that changes only docs
 # (scripts/ci-scope.ts) runs the typecheck, the unit tests, the build and
@@ -49,8 +58,13 @@ env:
   # comes from package.json's packageManager field.
   NODE_VERSION: 24.21.0
 
+# The jobs a pull request from this repository's own ci/ branch would start
+# with, build, typecheck-int and unit, skip on that condition, and the rest
+# skip after the build. github.head_ref is set only on pull requests, and a
+# fork's branch, though named ci/, still runs everything.
 jobs:
   build:
+    if: ${{ !(startsWith(github.head_ref, 'ci/') && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
@@ -97,7 +111,7 @@ jobs:
   # no database.
   typecheck-int:
     needs: build
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && !(startsWith(github.head_ref, 'ci/') && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
@@ -142,6 +156,7 @@ jobs:
   # About 5 minutes alone, which ends before the e2e shards do, so the unit
   # tests are not split with --test-shard.
   unit:
+    if: ${{ !(startsWith(github.head_ref, 'ci/') && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -309,3 +324,62 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+  # The one check main's ruleset requires, by the name CI passed. It runs
+  # however the other jobs ended, cancelled included, since a required job
+  # that is skipped counts as passed (GitHub's "Handling skipped but required
+  # checks", https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks#handling-skipped-but-required-checks:
+  # "A job is skipped by a conditional: The job reports 'Success'"). It fails
+  # unless each job passed or was skipped by this file's own design:
+  # e2e-macos while e2e/macos-only.json is empty or on a docs-only push, and
+  # every job in a pull request from this repository's own ci/ branch.
+  #
+  # In that pull request it takes another name, so the only CI passed on the
+  # commit is the push run's, which ran the jobs. Two checks of one name on a
+  # commit leave GitHub's result ambiguous (the tip in "About protected
+  # branches"), and a pull request opened after a failed push run would
+  # otherwise add a passing one.
+  ci-passed:
+    name: ${{ startsWith(github.head_ref, 'ci/') && github.event.pull_request.head.repo.full_name == github.repository && 'Tested by the push run' || 'CI passed' }}
+    needs: [build, typecheck-int, unit, e2e, e2e-macos]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Every job passed or was skipped by design
+        env:
+          PUSH_TESTED: ${{ startsWith(github.head_ref, 'ci/') && github.event.pull_request.head.repo.full_name == github.repository }}
+          BUILD: ${{ needs.build.result }}
+          TYPECHECK_INT: ${{ needs.typecheck-int.result }}
+          UNIT: ${{ needs.unit.result }}
+          E2E: ${{ needs.e2e.result }}
+          E2E_MACOS: ${{ needs.e2e-macos.result }}
+          MACOS_FILES: ${{ needs.build.outputs.macos-files }}
+          DOCS_ONLY: ${{ needs.build.outputs.docs-only }}
+        run: |
+          if [ "$PUSH_TESTED" = true ]; then
+            echo "A pull request from this repository's ci/ branch skips every job: the push run on its head commit runs them, and that run's CI passed is the check that counts."
+            exit 0
+          fi
+          macos_by_design=false
+          if [ "$BUILD" = success ] && { [ "$MACOS_FILES" = 0 ] || [ "$DOCS_ONLY" = true ]; }; then
+            macos_by_design=true
+          fi
+          failed=""
+          for pair in "build=$BUILD" "typecheck-int=$TYPECHECK_INT" "unit=$UNIT" "e2e=$E2E" "e2e-macos=$E2E_MACOS"; do
+            job=${pair%%=*}
+            result=${pair#*=}
+            if [ "$result" = success ]; then continue; fi
+            if [ "$job" = e2e-macos ] && [ "$result" = skipped ] && [ "$macos_by_design" = true ]; then continue; fi
+            failed="$failed $job ($result)"
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::Not every job passed:$failed."
+            exit 1
+          fi
+          if [ "$macos_by_design" = true ]; then
+            echo "Every job passed, and e2e-macos had nothing to run."
+          else
+            echo "Every job passed."
+          fi
