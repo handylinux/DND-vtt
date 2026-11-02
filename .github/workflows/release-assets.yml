@@ -33,7 +33,9 @@
 # may sign and attest but not write the release, and upload may write the
 # release but not sign. Only GitHub's own actions run where a token can
 # sign or write or the checkout is held, and Cosign comes from the
-# checksum-pinned download image.yml uses.
+# checksum-pinned download image.yml uses. Sign and upload take each file
+# by name from the job that made it, and check the archive and the SBOM
+# against the digests passed on as job outputs.
 name: Release assets
 
 on:
@@ -117,6 +119,7 @@ jobs:
       contents: read
     outputs:
       commit: ${{ steps.source.outputs.commit }}
+      archive-sha256: ${{ steps.archive.outputs.sha256 }}
     env:
       VERSION: ${{ needs.check.outputs.version }}
     steps:
@@ -139,16 +142,22 @@ jobs:
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
           echo "v$VERSION is $commit."
       # Under the folder raccoon-vtt-X.Y.Z/, as GitHub's own source archives
-      # are, with each file dated by the tagged commit.
+      # are, with each file dated by the tagged commit. Its digest is a job
+      # output, which only this job can set: a token-less job can still
+      # replace an artifact, since JavaScript actions hold the runner's
+      # artifact token, so the later jobs check the archive against it.
       - name: Source archive
+        id: archive
         run: |
           mkdir -p "$RUNNER_TEMP/assets"
           git archive --format=tar.gz --prefix="raccoon-vtt-$VERSION/" --output="$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.tar.gz" HEAD
-          echo "raccoon-vtt-$VERSION.tar.gz: $(tar -tzf "$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.tar.gz" | wc -l) entries."
+          sha256=$(sha256sum < "$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.tar.gz")
+          echo "sha256=${sha256%% *}" >> "$GITHUB_OUTPUT"
+          echo "raccoon-vtt-$VERSION.tar.gz: $(tar -tzf "$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.tar.gz" | wc -l) entries, sha256 ${sha256%% *}."
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-source
-          path: ${{ runner.temp }}/assets/
+          path: ${{ runner.temp }}/assets/raccoon-vtt-${{ needs.check.outputs.version }}.tar.gz
           if-no-files-found: error
           retention-days: 1
 
@@ -184,10 +193,11 @@ jobs:
           mkdir -p "$RUNNER_TEMP/assets"
           pnpm sbom --sbom-format cyclonedx --sbom-type application --lockfile-only --out "$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.cdx.json"
           echo "raccoon-vtt-$VERSION.cdx.json: $(jq '.components | length' "$RUNNER_TEMP/assets/raccoon-vtt-$VERSION.cdx.json") packages."
+      # Only the SBOM. The later jobs refuse anything else in this artifact.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-sbom
-          path: ${{ runner.temp }}/assets/
+          path: ${{ runner.temp }}/assets/raccoon-vtt-${{ needs.check.outputs.version }}.cdx.json
           if-no-files-found: error
           retention-days: 1
 
@@ -199,14 +209,62 @@ jobs:
     permissions:
       id-token: write
       attestations: write
+    outputs:
+      sbom-sha256: ${{ steps.take.outputs.sbom-sha256 }}
     env:
       VERSION: ${{ needs.check.outputs.version }}
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: release-*
-          merge-multiple: true
-          path: ${{ runner.temp }}/assets
+          name: release-source
+          path: ${{ runner.temp }}/from/source
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-sbom
+          path: ${{ runner.temp }}/from/sbom
+      # Each artifact is downloaded into a folder of its own and must hold
+      # exactly the files named for it, as regular files, so no job can
+      # place a file another job is trusted to make. The sbom job runs the
+      # package manager: an archive it slipped into its artifact would
+      # otherwise land where the signed archive is read. The archive must
+      # also have the digest the source job gave, in case release-source
+      # itself was replaced, and the SBOM's digest goes on to the upload job.
+      - name: Take each job's files
+        id: take
+        env:
+          ARCHIVE_SHA256: ${{ needs.source.outputs.archive-sha256 }}
+        run: |
+          shopt -s nullglob dotglob
+          take() {
+            local from="$RUNNER_TEMP/from/$1" file
+            shift
+            local held=("$from"/*)
+            if [ -L "$from" ] || [ "${#held[@]}" -ne "$#" ]; then
+              echo "::error::The release-${from##*/} artifact must hold $*, and nothing else."
+              exit 1
+            fi
+            for file in "$@"; do
+              if [ -L "$from/$file" ] || ! [ -f "$from/$file" ]; then
+                echo "::error::The release-${from##*/} artifact's $file is missing or not a regular file."
+                exit 1
+              fi
+              cp -- "$from/$file" "$RUNNER_TEMP/assets/$file"
+            done
+          }
+          digest() { local sum; sum=$(sha256sum < "$RUNNER_TEMP/assets/$1"); printf '%s' "${sum%% *}"; }
+          same() {
+            local have
+            have=$(digest "$1")
+            if [ "$have" != "$2" ]; then
+              echo "::error::$1 is not the file $3: its sha256 is $have."
+              exit 1
+            fi
+          }
+          mkdir -p "$RUNNER_TEMP/assets"
+          take source "raccoon-vtt-$VERSION.tar.gz"
+          take sbom "raccoon-vtt-$VERSION.cdx.json"
+          same "raccoon-vtt-$VERSION.tar.gz" "$ARCHIVE_SHA256" "the source job made"
+          echo "sbom-sha256=$(digest "raccoon-vtt-$VERSION.cdx.json")" >> "$GITHUB_OUTPUT"
       # The same download and checksum as image.yml's (a unit test keeps them equal).
       - name: Install Cosign
         run: |
@@ -288,13 +346,14 @@ jobs:
         with:
           name: release-signatures
           path: |
-            ${{ runner.temp }}/assets/*.sigstore.json
-            ${{ runner.temp }}/assets/*.intoto.jsonl
+            ${{ runner.temp }}/assets/raccoon-vtt-${{ needs.check.outputs.version }}.tar.gz.sigstore.json
+            ${{ runner.temp }}/assets/raccoon-vtt-${{ needs.check.outputs.version }}.cdx.json.sigstore.json
+            ${{ runner.temp }}/assets/raccoon-vtt-${{ needs.check.outputs.version }}.intoto.jsonl
           if-no-files-found: error
           retention-days: 1
 
   upload:
-    needs: [check, sign]
+    needs: [check, source, sign]
     if: needs.check.outputs.needed == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -308,9 +367,56 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: release-*
-          merge-multiple: true
-          path: ${{ runner.temp }}/assets
+          name: release-source
+          path: ${{ runner.temp }}/from/source
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-sbom
+          path: ${{ runner.temp }}/from/sbom
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-signatures
+          path: ${{ runner.temp }}/from/signatures
+      # As in the sign job, so the files published are the very ones it
+      # signed, each from the job that made it.
+      - name: Take each job's files
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+          ARCHIVE_SHA256: ${{ needs.source.outputs.archive-sha256 }}
+          SBOM_SHA256: ${{ needs.sign.outputs.sbom-sha256 }}
+        run: |
+          shopt -s nullglob dotglob
+          take() {
+            local from="$RUNNER_TEMP/from/$1" file
+            shift
+            local held=("$from"/*)
+            if [ -L "$from" ] || [ "${#held[@]}" -ne "$#" ]; then
+              echo "::error::The release-${from##*/} artifact must hold $*, and nothing else."
+              exit 1
+            fi
+            for file in "$@"; do
+              if [ -L "$from/$file" ] || ! [ -f "$from/$file" ]; then
+                echo "::error::The release-${from##*/} artifact's $file is missing or not a regular file."
+                exit 1
+              fi
+              cp -- "$from/$file" "$RUNNER_TEMP/assets/$file"
+            done
+          }
+          digest() { local sum; sum=$(sha256sum < "$RUNNER_TEMP/assets/$1"); printf '%s' "${sum%% *}"; }
+          same() {
+            local have
+            have=$(digest "$1")
+            if [ "$have" != "$2" ]; then
+              echo "::error::$1 is not the file $3: its sha256 is $have."
+              exit 1
+            fi
+          }
+          mkdir -p "$RUNNER_TEMP/assets"
+          take source "raccoon-vtt-$VERSION.tar.gz"
+          take sbom "raccoon-vtt-$VERSION.cdx.json"
+          take signatures "raccoon-vtt-$VERSION.tar.gz.sigstore.json" "raccoon-vtt-$VERSION.cdx.json.sigstore.json" "raccoon-vtt-$VERSION.intoto.jsonl"
+          same "raccoon-vtt-$VERSION.tar.gz" "$ARCHIVE_SHA256" "the source job made"
+          same "raccoon-vtt-$VERSION.cdx.json" "$SBOM_SHA256" "the sign job signed"
       # What the release holds is read again here: another run may have
       # added assets since the check job looked. gh refuses to replace an
       # asset without --clobber, which this never passes.

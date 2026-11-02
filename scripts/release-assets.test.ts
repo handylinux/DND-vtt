@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, describe, test } from "node:test";
@@ -49,7 +50,7 @@ function scratch(): string {
 }
 
 /** A step run as GitHub's default bash runs it, with `tools` as stand-in commands ahead on PATH. */
-function runStep(step: string, env: Record<string, string>, tools: Record<string, string> = {}, cwd?: string) {
+function runStep(step: string, env: Record<string, string>, tools: Record<string, string> = {}, cwd?: string, text = workflow) {
   const dir = scratch();
   for (const [name, body] of Object.entries(tools)) {
     writeFileSync(path.join(dir, name), `#!/bin/bash\n${body}`);
@@ -58,7 +59,7 @@ function runStep(step: string, env: Record<string, string>, tools: Record<string
   writeFileSync(path.join(dir, "output"), "");
   writeFileSync(path.join(dir, "calls"), "");
   mkdirSync(path.join(dir, "assets"));
-  const run = spawnSync("bash", ["--noprofile", "--norc", "-e", "-c", stepScript(step)], {
+  const run = spawnSync("bash", ["--noprofile", "--norc", "-e", "-c", stepScript(step, text)], {
     encoding: "utf8",
     cwd: cwd ?? dir,
     env: { PATH: `${dir}:${process.env.PATH ?? ""}`, GITHUB_REPOSITORY: "example/raccoon-vtt", GITHUB_OUTPUT: path.join(dir, "output"), CALLS: path.join(dir, "calls"), RUNNER_TEMP: dir, ...env },
@@ -190,6 +191,7 @@ describe("the tag's files", () => {
     const r = runStep("Source archive", { VERSION: "1.2.3" }, {}, repo);
     assert.equal(r.status, 0, r.out);
     const archive = path.join(r.dir, "assets/raccoon-vtt-1.2.3.tar.gz");
+    assert.deepEqual(r.output, [`sha256=${createHash("sha256").update(readFileSync(archive)).digest("hex")}`]);
     assert.deepEqual(execFileSync("tar", ["-tzf", archive], { encoding: "utf8" }).trim().split("\n").toSorted(), ["raccoon-vtt-1.2.3/", "raccoon-vtt-1.2.3/package.json", "raccoon-vtt-1.2.3/server/", "raccoon-vtt-1.2.3/server/main.ts"]);
   });
 });
@@ -372,7 +374,6 @@ describe("release-assets.yml's jobs", () => {
     assert.doesNotMatch(sbom, /actions\/checkout|git archive|\$\{\{ *(github\.token|secrets)/);
     for (const job of ["check", "source", "sbom"]) assert.doesNotMatch(jobBlock(workflow, job), /id-token|attestations|contents: write/, job);
     assert.match(jobBlock(workflow, "sign"), /needs: \[check, source, sbom\]/);
-    assert.match(jobBlock(workflow, "sign"), /pattern: release-\*\n {10}merge-multiple: true/);
   });
 
   test("the SBOM job unpacks the archive that is signed, not a second checkout", () => {
@@ -407,5 +408,161 @@ describe("release-assets.yml's jobs", () => {
     // releasesAreSigned takes .sigstore.json, among others, and releasesHaveProvenance .intoto.jsonl.
     assert.deepEqual(names.filter((a) => a.endsWith(".sigstore.json")).map((a) => a.replace(/\.sigstore\.json$/, "")), ["raccoon-vtt-1.2.3.tar.gz", "raccoon-vtt-1.2.3.cdx.json"]);
     assert.deepEqual(names.filter((a) => a.endsWith(".intoto.jsonl")), ["raccoon-vtt-1.2.3.intoto.jsonl"]);
+  });
+});
+
+const sha256 = (text: string) => createHash("sha256").update(text).digest("hex");
+/** The digests the source and sign jobs pass on, of an archive holding "source" and an SBOM holding "sbom". */
+const DIGESTS = { ARCHIVE_SHA256: sha256("source\n"), SBOM_SHA256: sha256("sbom\n") };
+
+describe("each asset comes from the job that made it", () => {
+  /** A job's artifact downloads, as [artifact, folder] pairs. */
+  function downloads(job: string) {
+    const block = jobBlock(workflow, job);
+    const pairs = [...block.matchAll(/- uses: actions\/download-artifact@[0-9a-f]{40} # \S+\n {8}with:\n {10}name: (release-[\w-]+)\n {10}path: \$\{\{ runner\.temp \}\}\/from\/([\w-]+)\n/g)].map((m) => [m[1]!, m[2]!]);
+    assert.equal(pairs.length, block.split("actions/download-artifact@").length - 1, `${job}: every download names one artifact and its own folder`);
+    return pairs;
+  }
+
+  /** What a job's "Take each job's files" step takes, as [folder, files] pairs. */
+  function takes(job: string) {
+    return [...stepScript("Take each job's files", jobBlock(workflow, job)).matchAll(/^take (\w+) (.+)$/gm)].map((m) => [m[1]!, [...m[2]!.matchAll(/"([^"]+)"/g)].map((f) => f[1]!.replaceAll("$VERSION", "1.2.3"))]);
+  }
+
+  test("the sign and upload jobs download each job's artifact into its own folder, never merged", () => {
+    assert.doesNotMatch(workflow, /merge-multiple|pattern:/);
+    assert.deepEqual(downloads("sign"), [["release-source", "source"], ["release-sbom", "sbom"]]);
+    assert.deepEqual(downloads("upload"), [["release-source", "source"], ["release-sbom", "sbom"], ["release-signatures", "signatures"]]);
+  });
+
+  test("each job takes every asset by name from the one job that makes it", () => {
+    const source = ["raccoon-vtt-1.2.3.tar.gz"];
+    const sbom = ["raccoon-vtt-1.2.3.cdx.json"];
+    const signatures = ["raccoon-vtt-1.2.3.tar.gz.sigstore.json", "raccoon-vtt-1.2.3.cdx.json.sigstore.json", "raccoon-vtt-1.2.3.intoto.jsonl"];
+    assert.deepEqual(takes("sign"), [["source", source], ["sbom", sbom]]);
+    assert.deepEqual(takes("upload"), [["source", source], ["sbom", sbom], ["signatures", signatures]]);
+    assert.deepEqual([...source, ...sbom, ...signatures].toSorted(), ASSETS.toSorted());
+    const helpers = (job: string) => /^shopt[\s\S]*?\n(?=mkdir )/.exec(stepScript("Take each job's files", jobBlock(workflow, job)))?.[0];
+    assert.match(helpers("sign") ?? "", /\ntake\(\) \{\n[\s\S]*\nsame\(\) \{\n/);
+    assert.equal(helpers("upload"), helpers("sign"));
+    for (const job of ["sign", "upload"]) {
+      const block = jobBlock(workflow, job);
+      assert.ok(block.indexOf("- name: Take each job's files") > block.lastIndexOf("actions/download-artifact@"), job);
+    }
+    const sign = jobBlock(workflow, "sign");
+    assert.ok(sign.indexOf("- name: Take each job's files") < sign.indexOf("- name: Sign the archive and the SBOM"));
+  });
+
+  test("each job uploads only the files it makes, by name", () => {
+    /** The paths a job's upload-artifact step names, one a line after `path: |` or alone after `path:`. */
+    const uploaded = (job: string) => {
+      const [, many, one] = /actions\/upload-artifact@[0-9a-f]{40} # \S+\n {8}with:\n {10}name: release-[\w-]+\n {10}path: (?:\|\n((?: {12}.+\n)+)|(.+)\n)/.exec(jobBlock(workflow, job))!;
+      return (many ?? one)!.trim().split(/\n\s*/).map((p) => p.replace("${{ runner.temp }}/assets/", "").replace("${{ needs.check.outputs.version }}", "1.2.3"));
+    };
+    assert.deepEqual(uploaded("source"), ["raccoon-vtt-1.2.3.tar.gz"]);
+    assert.deepEqual(uploaded("sbom"), ["raccoon-vtt-1.2.3.cdx.json"]);
+    assert.deepEqual(uploaded("sign"), ["raccoon-vtt-1.2.3.tar.gz.sigstore.json", "raccoon-vtt-1.2.3.cdx.json.sigstore.json", "raccoon-vtt-1.2.3.intoto.jsonl"]);
+  });
+
+  /** A job's step run against artifact folders laid out by `lay`, each file holding its producer's name. */
+  function take(job: "sign" | "upload", lay: (from: string) => void, digests: Record<string, string> = DIGESTS) {
+    const temp = scratch();
+    const from = path.join(temp, "from");
+    for (const [producer, files] of Object.entries({ source: [ASSETS[0]!], sbom: [ASSETS[2]!], signatures: [ASSETS[1]!, ASSETS[3]!, ASSETS[4]!] })) {
+      mkdirSync(path.join(from, producer), { recursive: true });
+      for (const file of files) writeFileSync(path.join(from, producer, file), `${producer}\n`);
+    }
+    lay(from);
+    const r = runStep("Take each job's files", { VERSION: "1.2.3", RUNNER_TEMP: temp, ...digests }, {}, undefined, jobBlock(workflow, job));
+    const assets = path.join(temp, "assets");
+    const taken = Object.fromEntries((existsSync(assets) ? readdirSync(assets) : []).map((f) => [f, readFileSync(path.join(assets, f), "utf8").trim()]));
+    return { ...r, taken };
+  }
+
+  test("the sign job takes the archive from the source job and the SBOM from the sbom job", () => {
+    const r = take("sign", () => {});
+    assert.equal(r.status, 0, r.out);
+    assert.deepEqual(r.taken, { [ASSETS[0]!]: "source", [ASSETS[2]!]: "sbom" });
+    assert.deepEqual(r.output, [`sbom-sha256=${DIGESTS.SBOM_SHA256}`]);
+  });
+
+  test("the upload job takes all five, each from the job that made it", () => {
+    const r = take("upload", () => {});
+    assert.equal(r.status, 0, r.out);
+    assert.deepEqual(r.taken, { [ASSETS[0]!]: "source", [ASSETS[1]!]: "signatures", [ASSETS[2]!]: "sbom", [ASSETS[3]!]: "signatures", [ASSETS[4]!]: "signatures" });
+  });
+
+  /** [what is wrong, the job that refuses it, the artifact it is wrong in, the layout, the error] */
+  const refused: [string, "sign" | "upload", string, (from: string) => void, RegExp][] = [
+    ["an archive placed in the sbom job's artifact", "sign", "sbom", (from) => writeFileSync(path.join(from, "sbom", ASSETS[0]!), "sbom\n"), /release-sbom artifact must hold raccoon-vtt-1\.2\.3\.cdx\.json, and nothing else/],
+    ["an archive placed in the sbom job's artifact, at upload", "upload", "sbom", (from) => writeFileSync(path.join(from, "sbom", ASSETS[0]!), "sbom\n"), /release-sbom artifact must hold/],
+    ["an archive placed in the sign job's artifact", "upload", "signatures", (from) => writeFileSync(path.join(from, "signatures", ASSETS[0]!), "signatures\n"), /release-signatures artifact must hold/],
+    ["a hidden file beside the SBOM", "sign", "sbom", (from) => writeFileSync(path.join(from, "sbom", ".npmrc"), "x\n"), /release-sbom artifact must hold/],
+    ["a folder beside the SBOM", "sign", "sbom", (from) => mkdirSync(path.join(from, "sbom", "raccoon-vtt-1.2.3")), /release-sbom artifact must hold/],
+    ["an SBOM under another name", "sign", "sbom", (from) => { rmSync(path.join(from, "sbom", ASSETS[2]!)); writeFileSync(path.join(from, "sbom", "sbom.json"), "sbom\n"); }, /release-sbom artifact's raccoon-vtt-1\.2\.3\.cdx\.json is missing/],
+    ["no SBOM", "sign", "sbom", (from) => rmSync(path.join(from, "sbom", ASSETS[2]!)), /release-sbom artifact must hold/],
+    ["no sbom artifact at all", "sign", "sbom", (from) => rmSync(path.join(from, "sbom"), { recursive: true }), /release-sbom artifact must hold/],
+    ["an SBOM that is a symlink", "sign", "sbom", (from) => { rmSync(path.join(from, "sbom", ASSETS[2]!)); symlinkSync(path.join(from, "source", ASSETS[0]!), path.join(from, "sbom", ASSETS[2]!)); }, /release-sbom artifact's raccoon-vtt-1\.2\.3\.cdx\.json is missing or not a regular file/],
+    ["an SBOM that is a folder", "sign", "sbom", (from) => { rmSync(path.join(from, "sbom", ASSETS[2]!)); mkdirSync(path.join(from, "sbom", ASSETS[2]!)); }, /not a regular file/],
+    ["an sbom folder that is a symlink to the source's", "sign", "sbom", (from) => { rmSync(path.join(from, "sbom"), { recursive: true }); symlinkSync(path.join(from, "source"), path.join(from, "sbom")); }, /release-sbom artifact must hold/],
+    ["a missing signature", "upload", "signatures", (from) => rmSync(path.join(from, "signatures", ASSETS[4]!)), /release-signatures artifact must hold/],
+  ];
+  for (const [what, job, producer, lay, error] of refused) {
+    test(`the ${job} job refuses ${what}, on one error line, taking nothing from that job`, () => {
+      const r = take(job, lay);
+      assert.equal(r.status, 1, r.out);
+      assert.equal(commands(r.out).length, 1, r.out);
+      assert.match(commands(r.out)[0]!, error);
+      assert.equal(r.taken[ASSETS[0]!] ?? "source", "source", "the archive taken is the source job's");
+      for (const [file, from] of Object.entries(r.taken)) assert.notEqual(from, producer, `${file} was taken from the refused artifact`);
+    });
+  }
+});
+
+describe("the archive and the SBOM are the very files their jobs made", () => {
+  /** The step as in the suite above, with the digests given and the archive or SBOM's text replaced. */
+  function take(job: "sign" | "upload", digests: Record<string, string>, replace: Record<string, string> = {}) {
+    const temp = scratch();
+    const files: Record<string, [string, string]> = { [ASSETS[0]!]: ["source", "source\n"], [ASSETS[2]!]: ["sbom", "sbom\n"], [ASSETS[1]!]: ["signatures", "s\n"], [ASSETS[3]!]: ["signatures", "s\n"], [ASSETS[4]!]: ["signatures", "s\n"] };
+    for (const [file, [producer, text]] of Object.entries(files)) {
+      mkdirSync(path.join(temp, "from", producer), { recursive: true });
+      writeFileSync(path.join(temp, "from", producer, file), replace[file] ?? text);
+    }
+    return runStep("Take each job's files", { VERSION: "1.2.3", RUNNER_TEMP: temp, ...digests }, {}, undefined, jobBlock(workflow, job));
+  }
+
+  for (const job of ["sign", "upload"] as const) {
+    test(`the ${job} job refuses a release-source artifact replaced after the source job made it`, () => {
+      const r = take(job, DIGESTS, { [ASSETS[0]!]: "replaced\n" });
+      assert.equal(r.status, 1, r.out);
+      assert.deepEqual(commands(r.out), [`::error::raccoon-vtt-1.2.3.tar.gz is not the file the source job made: its sha256 is ${sha256("replaced\n")}.`]);
+      assert.deepEqual(r.output, []);
+    });
+
+    test(`the ${job} job refuses when the source job gave no digest`, () => {
+      const r = take(job, { ...DIGESTS, ARCHIVE_SHA256: "" });
+      assert.equal(r.status, 1, r.out);
+      assert.match(commands(r.out)[0]!, /^::error::raccoon-vtt-1\.2\.3\.tar\.gz is not the file the source job made/);
+    });
+  }
+
+  test("the upload job refuses an SBOM other than the one the sign job signed", () => {
+    const r = take("upload", DIGESTS, { [ASSETS[2]!]: "replaced\n" });
+    assert.equal(r.status, 1, r.out);
+    assert.deepEqual(commands(r.out), [`::error::raccoon-vtt-1.2.3.cdx.json is not the file the sign job signed: its sha256 is ${sha256("replaced\n")}.`]);
+    const none = take("upload", { ...DIGESTS, SBOM_SHA256: "" });
+    assert.equal(none.status, 1, none.out);
+  });
+
+  test("the digests pass from the job that made each file, as job outputs, to the jobs that check it", () => {
+    const source = jobBlock(workflow, "source");
+    assert.match(source, /\n {4}outputs:\n(?: {6}.+\n)* {6}archive-sha256: \$\{\{ steps\.archive\.outputs\.sha256 \}\}\n/);
+    assert.match(source, /\n {6}- name: Source archive\n {8}id: archive\n/);
+    const sign = jobBlock(workflow, "sign");
+    assert.match(sign, /\n {4}outputs:\n {6}sbom-sha256: \$\{\{ steps\.take\.outputs\.sbom-sha256 \}\}\n/);
+    assert.match(sign, /\n {6}- name: Take each job's files\n {8}id: take\n {8}env:\n {10}ARCHIVE_SHA256: \$\{\{ needs\.source\.outputs\.archive-sha256 \}\}\n/);
+    const upload = jobBlock(workflow, "upload");
+    assert.match(upload, /^ {4}needs: \[check, source, sign\]\n/);
+    assert.match(upload, /\n {10}ARCHIVE_SHA256: \$\{\{ needs\.source\.outputs\.archive-sha256 \}\}\n {10}SBOM_SHA256: \$\{\{ needs\.sign\.outputs\.sbom-sha256 \}\}\n/);
   });
 });
