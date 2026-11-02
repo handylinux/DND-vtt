@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import type { DiceResult, LogEntry, RollTarget } from "#shared/model.ts";
 import { reminderPreset } from "#shared/rules/rollReminders.ts";
-import { askedText, askItems, askKept, askRowText, bestChoice, BONUS_WORDS, cardRoll, dmRoll, choiceLabel, CLEAR_TOTAL, knownOrTyped, NO_INPUTS, parseBonus, rolledDice, rolledNews, rolledText, returnedRollMode, normalResult, informativeRollMode, fitResultWords, watchResultWords, RollResultLine, TYPE_BONUS, verdictText } from "./card.ts";
+import { askedText, askItems, askKept, askRowText, bestChoice, BONUS_WORDS, cardRoll, dmRoll, choiceLabel, CLEAR_TOTAL, knownOrTyped, NO_INPUTS, parseBonus, rolledDice, rolledNews, rolledText, returnedRollMode, normalResult, informativeRollMode, fitResultWords, watchResultWords, syncResultLine, RollResultLine, TYPE_BONUS, verdictText } from "./card.ts";
 
 const DEX = { kind: "save", ability: "dex" } as const;
 const restrained = [{ key: "restrained" as const }];
@@ -292,51 +292,44 @@ test("an existing marked result name survives without creating visible detail", 
 
 
 test("mounted result transitions restore compact words and keep each accessible addition once", async () => {
-  const { readFileSync } = await import("node:fs");
-  const { stripTypeScriptTypes } = await import("node:module");
-  const source = readFileSync(new URL("./card.ts", import.meta.url), "utf8");
-  const body = stripTypeScriptTypes(source.slice(source.indexOf("export function RollResultLine("))).replace("export function", "function");
-  const refs: { current: unknown }[] = [];
-  let cursor = 0;
-  let effect: (() => (() => void) | void) | undefined;
-  let cleanup: (() => void) | void = undefined;
-  const nodes = new Map<string, { hidden: boolean; children: unknown[]; props: Record<string, unknown>; parentElement?: unknown; getBoundingClientRect(): { height: number } }>();
+  type Node = { hidden: boolean; words: string; parentElement?: unknown; clientWidth?: number; scrollWidth?: number; getBoundingClientRect(): { height: number } };
+  const parent: Node = { hidden: false, words: "", clientWidth: 200, scrollWidth: 200, getBoundingClientRect: () => ({ height: 20 }) };
   let narrow = false;
-  const parent = { clientWidth: 200, scrollWidth: 200, getBoundingClientRect: () => ({ height: 20 }) };
-  const make = (_tag: string, props: Record<string, unknown>, ...children: unknown[]) => {
-    const key = ["base", "detail", "missing"].find((k) => `data-roll-result-${k}` in props) ?? "root";
-    let node = nodes.get(key);
-    if (!node) { node = { hidden: !!props.hidden, children, props, parentElement: parent, getBoundingClientRect: () => ({ height: narrow && !nodes.get("detail")?.hidden ? 40 : 20 }) }; nodes.set(key, node); }
-    if (props.hidden !== node.props.hidden) node.hidden = !!props.hidden;
-    node.props = props; node.children = children;
-    const ref = props.ref as { current: unknown } | undefined; if (ref) ref.current = node;
-    return node;
-  };
+  const root: Node = { hidden: false, words: "", parentElement: parent, getBoundingClientRect: () => ({ height: narrow && !detail?.hidden ? 40 : 20 }) };
+  const part = (words: string): Node => ({ hidden: false, words, getBoundingClientRect: () => ({ height: 20 }) });
+  const base = part("15 hit");
+  let detail: Node | null = null;
+  let missing: Node | null = null;
   class Observer { observe() {} disconnect() {} }
   const previous = { ResizeObserver: globalThis.ResizeObserver, document: globalThis.document };
   Object.assign(globalThis, { ResizeObserver: Observer, document: {} });
+  let cleanup: (() => void) | undefined;
+  // React's order: the previous effect's cleanup, the new render's nodes (the detail comes and goes with the suffix), then the effect.
+  const commit = (suffix: string) => {
+    cleanup?.();
+    detail = suffix ? { ...part(`15 hit${suffix}`), hidden: true } : null;
+    missing = suffix ? part(suffix) : null;
+    cleanup = syncResultLine({ root: root as never, base: base as never, detail: detail as never, missing: missing as never }, suffix !== "");
+  };
+  const readable = () => [base, detail, missing].filter((n): n is Node => n !== null && !n.hidden).map((n) => n.words).join("");
   try {
-    const render = new Function("useRef", "useLayoutEffect", "createElement", "watchResultWords", "VISUALLY_HIDDEN", `${body}\nreturn RollResultLine;`)(
-      (value: unknown) => refs[cursor++] ?? (refs[cursor - 1] = { current: value }),
-      (run: typeof effect) => { effect = run; }, make, watchResultWords, { position: "absolute" },
-    ) as (props: { text: string; suffix?: string }) => void;
-    const commit = (suffix: string) => {
-      cursor = 0; effect = undefined; render({ text: "15 hit", suffix });
-      if (!suffix) for (const key of ["detail", "missing"]) { nodes.delete(key); }
-      cleanup?.(); cleanup = (effect as (() => (() => void) | void) | undefined)?.();
-    };
-    const readable = () => [...nodes.entries()].filter(([key, n]) => key !== "root" && !n.hidden).flatMap(([, n]) => n.children).join("");
     commit(" (Secret)");
-    assert.equal(nodes.get("base")!.hidden, true);
+    assert.equal(base.hidden, true);
     assert.equal(readable(), "15 hit (Secret)", "wide text is readable once");
     narrow = true; commit(" (Disadvantage)");
-    assert.equal(nodes.get("base")!.hidden, false);
+    assert.equal(base.hidden, false);
     assert.equal(readable(), "15 hit (Disadvantage)", "the narrow result keeps only missing words out of flow");
     narrow = false; commit(" (Advantage)");
-    assert.equal(nodes.get("base")!.hidden, true);
+    assert.equal(base.hidden, true);
     commit("");
-    assert.equal(nodes.get("base")!.hidden, false, "removing the detail restores the mounted base");
+    assert.equal(base.hidden, false, "removing the detail restores the mounted base");
     assert.equal(readable(), "15 hit");
-    (cleanup as (() => void) | undefined)?.();
+    cleanup?.();
   } finally { Object.assign(globalThis, previous); }
+});
+
+test("a result line with nothing more to show returns to its compact words even when no cleanup ran first", () => {
+  const base = { hidden: true };
+  assert.equal(syncResultLine({ root: null, base: base as never, detail: null, missing: null }, false), undefined);
+  assert.equal(base.hidden, false);
 });

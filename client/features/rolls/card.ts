@@ -421,6 +421,13 @@ export function watchResultWords(root: HTMLElement, base: HTMLElement, detail: H
   };
 }
 
+/** The result line's layout effect: back to the compact words first, because a rerender may have removed the detail it was showing. */
+export function syncResultLine(nodes: { root: HTMLElement | null; base: HTMLElement | null; detail: HTMLElement | null; missing: HTMLElement | null }, more: boolean): (() => void) | undefined {
+  if (nodes.base) nodes.base.hidden = false;
+  if (more && nodes.root && nodes.base && nodes.detail) return watchResultWords(nodes.root, nodes.base, nodes.detail, nodes.missing ?? undefined);
+  return undefined;
+}
+
 /** Start compact, then reveal informative words only if they cost no extra line. */
 export function RollResultLine(props: { as?: "span" | "div"; text: string; suffix?: string; expanded?: string; missing?: string; children?: ReactNode; style?: CSSProperties }) {
   const root = useRef<HTMLElement>(null);
@@ -430,10 +437,10 @@ export function RollResultLine(props: { as?: "span" | "div"; text: string; suffi
   const expanded = props.expanded ?? `${props.text}${props.suffix ?? ""}`;
   const additions = props.missing ?? props.suffix ?? expanded.slice(props.text.length);
   const more = expanded !== props.text;
-  useLayoutEffect(() => {
-    if (base.current) base.current.hidden = false;
-    if (more && root.current && base.current && detail.current) return watchResultWords(root.current, base.current, detail.current, missing.current ?? undefined);
-  }, [expanded, additions, more, props.children]);
+  useLayoutEffect(
+    () => syncResultLine({ root: root.current, base: base.current, detail: detail.current, missing: missing.current }, more),
+    [expanded, additions, more, props.children],
+  );
   return createElement(props.as ?? "span", { ref: root, style: props.style },
     createElement("span", { ref: base, "data-roll-result-base": "" }, props.children ?? props.text),
     more ? createElement("span", { ref: detail, hidden: true, "data-roll-result-detail": "" }, props.children ? [props.children, props.suffix] : expanded) : null,
