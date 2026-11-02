@@ -15,13 +15,14 @@ import { writeHpUndoLine } from "./hpUndo.ts";
 import { forgetExplored } from "./map.ts";
 import { gone, guardHash, invalid, type Tx } from "./tx.ts";
 import { prepareSaveOutcomeRestore, pruneSaveOutcomes, writeSaveOutcome } from "./saveOutcomes.ts";
+import { ownEntry } from "../records.ts";
 
 export function logChat(tx: Tx, op: OpOf<"log.chat">): void {
   tx.addLog({ kind: "chat", from: tx.actor.memberId, text: op.text });
 }
 
 export function logWhisper(tx: Tx, op: OpOf<"log.whisper">): void {
-  for (const id of op.to) if (!tx.state.members[id]) throw gone("member");
+  for (const id of op.to) if (!ownEntry(tx.state.members, id)) throw gone("member");
   tx.addLog({ kind: "whisper", from: tx.actor.memberId, to: op.to, text: op.text });
 }
 
@@ -33,7 +34,7 @@ export function logWhisper(tx: Tx, op: OpOf<"log.whisper">): void {
  */
 export function handoutShow(tx: Tx, op: OpOf<"handout.show">): void {
   const input = op.handout;
-  const existing = tx.state.handouts[input.id];
+  const existing = ownEntry(tx.state.handouts, input.id);
   const first = "pages" in input ? input.pages[0]?.assetId : input.assetId;
   if (first === undefined) throw invalid("a handout has at least one page");
   const handout: Handout = {
@@ -50,7 +51,7 @@ export function handoutShow(tx: Tx, op: OpOf<"handout.show">): void {
 }
 
 export function handoutClose(tx: Tx, op: OpOf<"handout.close">): void {
-  if (!tx.state.handouts[op.handoutId]) throw gone("handout");
+  if (!ownEntry(tx.state.handouts, op.handoutId)) throw gone("handout");
   tx.remove(keys.handout(op.handoutId));
 }
 
@@ -61,14 +62,14 @@ export function handoutClose(tx: Tx, op: OpOf<"handout.close">): void {
  * second document. Documents log nothing, as saved encounters do.
  */
 export function handoutDocCreate(tx: Tx, op: OpOf<"handoutDoc.create">): void {
-  if (tx.state.handoutDocs[op.doc.id]) throw invalid("that handout is already saved");
+  if (ownEntry(tx.state.handoutDocs, op.doc.id)) throw invalid("that handout is already saved");
   const doc: HandoutDoc = { id: op.doc.id, rev: 0, title: op.doc.title, pages: op.doc.pages, createdAt: tx.env.at };
   tx.write(keys.handoutDoc(doc.id), doc);
 }
 
 /** Deletes a document. Its images stay until the DM's device deletes them through the library (section 3.5). */
 export function handoutDocDelete(tx: Tx, op: OpOf<"handoutDoc.delete">): void {
-  if (!tx.state.handoutDocs[op.docId]) throw gone("handout");
+  if (!ownEntry(tx.state.handoutDocs, op.docId)) throw gone("handout");
   tx.remove(keys.handoutDoc(op.docId));
 }
 
@@ -118,7 +119,7 @@ export function restore(tx: Tx, op: OpOf<"sys.restore">): void {
     let value = entry.value === undefined ? null : entry.value;
     const parsed = parseKey(entry.key);
     if (parsed?.kind === "scene" && value !== null) {
-      const current = tx.state.scenes[parsed.id];
+      const current = ownEntry(tx.state.scenes, parsed.id);
       value = keepThumb(forwardWalls(value as Scene, current, wallsMoved.has(parsed.id)), current);
       scenesWritten.add(parsed.id);
     }
@@ -126,7 +127,7 @@ export function restore(tx: Tx, op: OpOf<"sys.restore">): void {
   }
   // A scene a restore takes away takes the party's explored layer with it, as bookkeeping (docs/design/design-v1-maps-vision.md
   // 4.3.3): it is no one's work, so it never counts as work that depends on the scene.
-  for (const p of removed) if (p.kind === "scene" && !tx.state.scenes[p.id]) forgetExplored(tx, p.id);
+  for (const p of removed) if (p.kind === "scene" && !ownEntry(tx.state.scenes, p.id)) forgetExplored(tx, p.id);
   shapesHold(tx, op, before);
   // Only a restore the server marked checks references. An older build
   // accepted restores that strand work, and refusing one of those on replay
@@ -136,7 +137,7 @@ export function restore(tx: Tx, op: OpOf<"sys.restore">): void {
   if (op.rides) ridesBack(tx, op.rides);
   if (op.undid !== undefined) writeHpUndoLine(tx, op.undid);
   for (const sceneId of [...wallsMoved].sort()) {
-    if (!scenesWritten.has(sceneId) && tx.state.scenes[sceneId]) tx.bumpWalls(sceneId);
+    if (!scenesWritten.has(sceneId) && ownEntry(tx.state.scenes, sceneId)) tx.bumpWalls(sceneId);
   }
   if (tracked) writeSaveOutcome(tx, op.saveOutcome!.id, tracked);
   else pruneSaveOutcomes(tx);
@@ -168,13 +169,13 @@ function shapesHold(tx: Tx, op: OpOf<"sys.restore">, before: ReadonlyMap<EntityK
     }
     const placed = placedOn(parsed, value);
     if (!placed) continue;
-    const scene = tx.state.scenes[placed.sceneId];
+    const scene = ownEntry(tx.state.scenes, placed.sceneId);
     if (!scene) continue;
     const found = restoredHolds(tx.state, placed.kind, placed.value, scene);
     if (found) throw invalid(restoreRefusal(op.from, found, scene));
   }
   for (const sceneId of [...reshaped].sort()) {
-    const scene = tx.state.scenes[sceneId];
+    const scene = ownEntry(tx.state.scenes, sceneId);
     const found = scene ? sceneHolds(tx.state, scene) : null;
     if (found && scene) throw invalid(restoreRefusal(op.from, found, scene));
   }
@@ -217,7 +218,7 @@ function companionsAfterRestore(tx: Tx, entries: RestoreEntry[]): void {
   const touches = entries.some((e) => {
     if (e.key === keys.encounter || e.key === keys.encounterHistory) return true;
     const parsed = parseKey(e.key);
-    return parsed?.kind === "token" && actsOnCharacterTurn(s.tokens[parsed.id]);
+    return parsed?.kind === "token" && actsOnCharacterTurn(ownEntry(s.tokens, parsed.id));
   });
   if (touches && (rowsForSharedCompanions(s, s.encounter) || s.encounterHistory.some((step) => rowsForSharedCompanions(s, step.encounter)))) {
     throw invalid(ON_ITS_TURN_NOW);
@@ -227,7 +228,7 @@ function companionsAfterRestore(tx: Tx, entries: RestoreEntry[]): void {
     const parsed = parseKey(entry.key);
     if (parsed?.kind === "character") characters.add(parsed.id);
     if (parsed?.kind === "token") {
-      const of = s.tokens[parsed.id]?.companion?.of;
+      const of = ownEntry(s.tokens, parsed.id)?.companion?.of;
       if (of !== undefined) characters.add(of);
     }
   }
@@ -249,7 +250,7 @@ function ridesBack(tx: Tx, rides: NonNullable<OpOf<"sys.restore">["rides"]>): vo
     const turn = turnUnderWay(encounter);
     if (!encounter || !turn || turn.seq !== ride.seq || turn.tokenId !== ride.rider) continue;
     if (!rowLeadsMounts(tx, encounter, encounter.entries.find((e) => e.id === turn.entryId))) continue;
-    const mount = tx.state.tokens[ride.mount];
+    const mount = ownEntry(tx.state.tokens, ride.mount);
     if (!mount || !ridesUpTo(tx.state, ride.rider, mount.id)) continue;
     const mounts = turn.mounts ?? [];
     if (mounts.includes(mount.id) || mounts.length >= LIMITS.turnMounts) continue;
@@ -260,7 +261,7 @@ function ridesBack(tx: Tx, rides: NonNullable<OpOf<"sys.restore">["rides"]>): vo
 /** Whether `mountId` is up `riderId`'s chain of controlled rides, each of which holds (7.1). */
 function ridesUpTo(state: RoomState, riderId: string, mountId: string): boolean {
   const seen = new Set<string>();
-  for (let rider = state.tokens[riderId]; rider && !seen.has(rider.id); ) {
+  for (let rider = ownEntry(state.tokens, riderId); rider && !seen.has(rider.id); ) {
     seen.add(rider.id);
     const link = rider.attached;
     const holder = link?.kind === "ride" && link.steer === true ? (holderOf(state.tokens, rider) as Token | undefined) : undefined;

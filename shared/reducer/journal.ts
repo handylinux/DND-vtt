@@ -3,6 +3,7 @@ import type { JournalAccess, JournalBlock, JournalPage, Pin } from "../model.ts"
 import type { JournalBlockInput, OpOf } from "../protocol.ts";
 import { sortedById } from "./tokens.ts";
 import { gone, invalid, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Journal pages (docs/design/design-v1-dm-tools.md 3.7), all the DM's. A page is
@@ -16,7 +17,7 @@ import { gone, invalid, type Tx } from "./tx.ts";
  */
 export function journalCreate(tx: Tx, op: OpOf<"journal.create">): void {
   const input = op.page;
-  if (tx.state.journal[input.id]) throw invalid("page already exists");
+  if (ownEntry(tx.state.journal, input.id)) throw invalid("page already exists");
   checkAccess(tx, input.access);
   const page: JournalPage = { id: input.id, rev: 0, title: input.title, access: input.access, blocks: input.blocks.map((b) => storedBlock(b, undefined)) };
   if (input.folder !== undefined) page.folder = input.folder;
@@ -24,7 +25,7 @@ export function journalCreate(tx: Tx, op: OpOf<"journal.create">): void {
 }
 
 export function journalUpdate(tx: Tx, op: OpOf<"journal.update">): void {
-  const page = tx.state.journal[op.pageId];
+  const page = ownEntry(tx.state.journal, op.pageId);
   if (!page) throw gone("page");
   const p = op.patch;
   const next: JournalPage = { ...page };
@@ -44,7 +45,7 @@ export function journalUpdate(tx: Tx, op: OpOf<"journal.update">): void {
 
 /** Reveals a secret block to the page's readers, or hides it again. A block already so changes nothing. */
 export function journalReveal(tx: Tx, op: OpOf<"journal.reveal">): void {
-  const page = tx.state.journal[op.pageId];
+  const page = ownEntry(tx.state.journal, op.pageId);
   if (!page) throw gone("page");
   const block = page.blocks.find((b) => b.id === op.blockId);
   if (!block) throw gone("block");
@@ -63,7 +64,7 @@ export function journalReveal(tx: Tx, op: OpOf<"journal.reveal">): void {
  * and its pins back as they were.
  */
 export function journalDelete(tx: Tx, op: OpOf<"journal.delete">): void {
-  if (!tx.state.journal[op.pageId]) throw gone("page");
+  if (!ownEntry(tx.state.journal, op.pageId)) throw gone("page");
   for (const pin of sortedById(Object.values(tx.state.pins))) {
     if (pin.pageId !== op.pageId) continue;
     const { pageId: _page, ...rest } = pin;
@@ -75,7 +76,7 @@ export function journalDelete(tx: Tx, op: OpOf<"journal.delete">): void {
 
 /** A page private to one player names a member of the room. */
 function checkAccess(tx: Tx, access: JournalAccess): void {
-  if (typeof access === "object" && !tx.state.members[access.member]) throw gone("member");
+  if (typeof access === "object" && !ownEntry(tx.state.members, access.member)) throw gone("member");
 }
 
 function storedBlock(input: JournalBlockInput, stored: JournalBlock | undefined): JournalBlock {

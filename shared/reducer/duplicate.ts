@@ -7,6 +7,7 @@ import { sortedById } from "./tokens.ts";
 import { copyMemory } from "./memory.ts";
 import { invalid, type Env, type Tx } from "./tx.ts";
 import { withoutTurnScoped } from "./uses.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Duplicate a scene (docs/design/design-v1-maps-vision.md section 3.2), in one op.
@@ -33,7 +34,7 @@ import { withoutTurnScoped } from "./uses.ts";
  */
 export function sceneDuplicate(tx: Tx, op: OpOf<"scene.duplicate">): void {
   const original = tx.scene(op.sceneId);
-  if (tx.state.scenes[op.newSceneId]) throw invalid("scene already exists");
+  if (ownEntry(tx.state.scenes, op.newSceneId)) throw invalid("scene already exists");
   const s = tx.state;
   const to = op.newSceneId;
   const copyId = (id: string) => derivedId(to, id);
@@ -108,33 +109,33 @@ export function sceneDuplicate(tx: Tx, op: OpOf<"scene.duplicate">): void {
 
   if (op.include.fog) {
     for (const tile of Object.values(s.fogTiles).filter((t) => t.sceneId === original.id)) {
-      if (s.fogTiles[tileKey(to, tile.tx, tile.ty)]) throw invalid("a copied id is taken");
+      if (ownEntry(s.fogTiles, tileKey(to, tile.tx, tile.ty))) throw invalid("a copied id is taken");
       tx.write(keys.fog(to, tile.tx, tile.ty), { ...tile, sceneId: to });
     }
     // The party's explored layer comes with the fog (section 3.2), as bookkeeping: it has no undo, and undoing the copy
     // takes it with the scene (shared/reducer/misc.ts restore).
     for (const key of Object.keys(s.exploredTiles).sort()) {
-      const tile = s.exploredTiles[key]!;
+      const tile = ownEntry(s.exploredTiles, key)!;
       if (tile.sceneId !== original.id) continue;
-      if (s.exploredTiles[tileKey(to, tile.tx, tile.ty)]) throw invalid("a copied id is taken");
+      if (ownEntry(s.exploredTiles, tileKey(to, tile.tx, tile.ty))) throw invalid("a copied id is taken");
       tx.writeBookkeeping(keys.explored(to, tile.tx, tile.ty), { ...tile, sceneId: to });
     }
     // And so do the sight holder list and each holder's own layer (docs/design/design-v1-per-player-vision.md 6.3), the same way.
-    const list = s.holders?.[original.id];
+    const list = ownEntry(s.holders, original.id);
     if (list) {
-      if (s.holders[to]) throw invalid("a copied id is taken");
+      if (ownEntry(s.holders, to)) throw invalid("a copied id is taken");
       tx.writeBookkeeping(keys.holders(to), { ...list, sceneId: to, rev: 0 });
     }
     for (const key of Object.keys(s.exploredBy ?? {}).sort()) {
-      const tile = s.exploredBy[key]!;
+      const tile = ownEntry(s.exploredBy, key)!;
       if (tile.sceneId !== original.id) continue;
-      if (s.exploredBy[holderTileKey(to, tile.memberId, tile.tx, tile.ty)]) throw invalid("a copied id is taken");
+      if (ownEntry(s.exploredBy, holderTileKey(to, tile.memberId, tile.tx, tile.ty))) throw invalid("a copied id is taken");
       tx.writeBookkeeping(keys.exploredBy(to, tile.memberId, tile.tx, tile.ty), { ...tile, sceneId: to });
     }
     // And so does what each layer remembers (docs/design/design-v1-map-discovery.md 5.4), the same way, with the played mark
     // that reserves room for it (5.5).
     copyMemory(tx, original.id, to, copyId);
-    if (s.playedScenes?.[original.id]) tx.writeBookkeeping(keys.played(to), { sceneId: to, rev: 0 });
+    if (ownEntry(s.playedScenes, original.id)) tx.writeBookkeeping(keys.played(to), { sceneId: to, rev: 0 });
   }
 
   if (op.include.drawings) {
@@ -180,7 +181,7 @@ function copiedRuler(state: RoomState, sceneId: string, drawing: Drawing, copied
     if (tokenId === null) return null;
     const copy = copied.get(tokenId);
     if (copy !== undefined) return copy;
-    const token = state.tokens[tokenId];
+    const token = ownEntry(state.tokens, tokenId);
     if (token?.sceneId === sceneId) {
       // The middle of its footprint: on hexes the anchor it snaps to, where the ruler tool measured from.
       const r = footprintRect(gridOfScene(state, sceneId), token);

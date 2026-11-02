@@ -7,6 +7,7 @@ import type { CellRange } from "../rules/footprint.ts";
 import { isHex, sceneGrid } from "../rules/grid.ts";
 import { hexSubcells, parseHexKey } from "../rules/hex.ts";
 import { invalid, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /*
  * Players' memory of the build (docs/design/design-v1-map-discovery.md 5.3 and
@@ -32,7 +33,7 @@ export function memoryKey(sceneId: string, layer: Layer, cx: number, cy: number)
 
 /** One layer's chunk of memory at a position, if it holds one. */
 export function memoryChunkAt(state: RoomState, sceneId: string, layer: Layer, cx: number, cy: number): MemoryChunk | undefined {
-  return layer === null ? state.memory?.[chunkKey(sceneId, cx, cy)] : state.memoryBy?.[holderChunkKey(sceneId, layer, cx, cy)];
+  return layer === null ? ownEntry(state.memory, chunkKey(sceneId, cx, cy)) : ownEntry(state.memoryBy, holderChunkKey(sceneId, layer, cx, cy));
 }
 
 /** One layer's chunks of a scene, in row order, as every walk here takes them so a replay writes the same keys in the same order. */
@@ -127,7 +128,7 @@ export function layerHeld(state: RoomState, scene: Scene, layer: Layer): Held {
     const at = `${tx},${ty}`;
     let bits = decoded.get(at);
     if (bits === undefined) {
-      const t: FogTile | undefined = layer === null ? state.exploredTiles?.[tileKey(scene.id, tx, ty)] : state.exploredBy?.[holderTileKey(scene.id, layer, tx, ty)];
+      const t: FogTile | undefined = layer === null ? ownEntry(state.exploredTiles, tileKey(scene.id, tx, ty)) : ownEntry(state.exploredBy, holderTileKey(scene.id, layer, tx, ty));
       bits = t ? decodeTile(t.bits) : null;
       decoded.set(at, bits);
     }
@@ -186,7 +187,7 @@ function cellsOf(field: CellField, key: string): string[] {
 /** Every box a label or stamp element is judged by (5.3): each one remembered and the one it has now. */
 function boxes(state: RoomState, sceneId: string, field: "labels" | "stamps", id: string, remembered: readonly (Label | Stamp | null)[]): CellRange[] {
   const out: CellRange[] = [];
-  const live = field === "labels" ? state.labels[id] : state.stamps[id];
+  const live = field === "labels" ? ownEntry(state.labels, id) : ownEntry(state.stamps, id);
   for (const value of [...remembered, live]) {
     if (!value || value.sceneId !== sceneId) continue;
     out.push(field === "labels" ? labelCells(value as Label) : stampCells(value as Stamp));
@@ -269,7 +270,7 @@ export function pruneLostGround(tx: Tx, before: RoomState): void {
 /** Prunes each scene's layers named, a scene in id order and its party's layer before its holders' in id order. */
 function pruneLayers(tx: Tx, lost: ReadonlyMap<string, ReadonlySet<Layer>>): void {
   for (const sceneId of [...lost.keys()].sort()) {
-    const scene = tx.state.scenes[sceneId];
+    const scene = ownEntry(tx.state.scenes, sceneId);
     if (!scene) continue;
     const layers = lost.get(sceneId)!;
     const members = [...layers].filter((l): l is string => l !== null).sort();
@@ -389,7 +390,7 @@ function steppedEntries(state: RoomState, sceneId: string, cx: number, cy: numbe
       if (field === "labels" || field === "stamps") {
         const v = value as Label | Stamp | null;
         if (v !== null && (v.id !== key || v.sceneId !== sceneId)) throw invalid(`a remembered ${field === "labels" ? "label" : "stamp"} goes under its own id on its own scene`);
-        if (field === "stamps" && v !== null && state.stamps[key]?.visibility === "dm") throw invalid("a stamp the DM keeps to themselves is never remembered");
+        if (field === "stamps" && v !== null && ownEntry(state.stamps, key)?.visibility === "dm") throw invalid("a stamp the DM keeps to themselves is never remembered");
       }
       r[key] = value;
     }

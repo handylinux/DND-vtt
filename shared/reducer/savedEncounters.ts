@@ -2,6 +2,7 @@ import { keys } from "../keys.ts";
 import type { SavedEncounter } from "../model.ts";
 import type { OpOf } from "../protocol.ts";
 import { gone, invalid, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Fights the DM builds ahead (features section 10). An encounter only names
@@ -10,12 +11,12 @@ import { gone, invalid, type Tx } from "./tx.ts";
  * a scene, and it may name a room monster deleted since.
  */
 export function savedEncounterCreate(tx: Tx, op: OpOf<"savedEncounter.create">): void {
-  if (tx.state.savedEncounters[op.encounter.id]) throw invalid("encounter already exists");
+  if (ownEntry(tx.state.savedEncounters, op.encounter.id)) throw invalid("encounter already exists");
   tx.write(keys.savedEncounter(op.encounter.id), { ...op.encounter, rev: 0 });
 }
 
 export function savedEncounterUpdate(tx: Tx, op: OpOf<"savedEncounter.update">): void {
-  const encounter = tx.state.savedEncounters[op.encounterId];
+  const encounter = ownEntry(tx.state.savedEncounters, op.encounterId);
   if (!encounter) throw gone("encounter");
   const next: SavedEncounter = { ...encounter };
   const { name, monsters, party } = op.patch;
@@ -27,6 +28,6 @@ export function savedEncounterUpdate(tx: Tx, op: OpOf<"savedEncounter.update">):
 }
 
 export function savedEncounterDelete(tx: Tx, op: OpOf<"savedEncounter.delete">): void {
-  if (!tx.state.savedEncounters[op.encounterId]) throw gone("encounter");
+  if (!ownEntry(tx.state.savedEncounters, op.encounterId)) throw gone("encounter");
   tx.remove(keys.savedEncounter(op.encounterId));
 }

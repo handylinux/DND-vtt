@@ -9,6 +9,7 @@ import { APART, contact, CROSS, MOVEMENT, onSegment, orient, PIECE } from "./seg
 import { LEDGE, PIECE_BAND, pieceBlocks, pieceTouches, sceneWalls, type WallSet } from "./walls.ts";
 import { isHex, sceneGrid, SQUARES } from "./grid.ts";
 import { footprintHexes, hexCenter, hexInScene, hexKey, hexLine, hexNeighbors, referenceHex, snapAnchor, type Hex, type HexGrid } from "./hex.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Walls, doors and ledges stopping moves (docs/design/design-v1-maps-vision.md
@@ -698,7 +699,7 @@ export function pastHolder<T extends Walker>(token: T): T {
  * does the route search keep the two apart (walk.ts WalkWorld `post`).
  */
 export function crossesInnerLedges(state: BuildState, token: Walker): boolean {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene || scene.blockMovement !== true || !token.offHolder) return false;
   const walls = sceneWalls(scene, state.buildChunks);
   return wallsAt(walls, token, token) !== walls;
@@ -767,7 +768,7 @@ export type LegStop = { blocker: Blocker; door: DoorRef | null };
  * a wall and a ledge are met at once.
  */
 export function legStop(state: BuildState, token: Walker, to: LegEnd): LegStop | null {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return null;
   const hex = hexWallsOf(state, token, to.elevation);
   if (hex) return hexLegStopOf(hex, token, to);
@@ -783,7 +784,7 @@ export function legStop(state: BuildState, token: Walker, to: LegEnd): LegStop |
  * steps passes `legStop` too, since its straight sweep is theirs joined.
  */
 export function straightClear(state: BuildState, token: Walker, to: LegEnd): boolean {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return true;
   const hex = hexWallsOf(state, token, to.elevation);
   if (hex) return hexLegStopOf(hex, token, to) === null;
@@ -815,7 +816,7 @@ export type StepTester = {
 };
 
 export function stepTester(state: BuildState, token: Walker): StepTester | null {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return null;
   const walls = sceneWalls(scene, state.buildChunks);
   const test = pieceTestOf(state.buildChunks);
@@ -941,7 +942,7 @@ export type Part = readonly [number, number, number, number];
  * D-261027-04), so they speak of the very blocker that stopped the walk.
  */
 export function legStopPart(state: BuildState, token: Walker, to: LegEnd): { stop: LegStop; part: Part | null } | null {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return null;
   const hex = hexWallsOf(state, token, to.elevation);
   if (hex) return hexLegStopPart(hex, token, to);
@@ -999,7 +1000,7 @@ function coreTouchesAt(walls: WallSet, token: MovingToken, at: Point, floor: num
 /** Whether the walker's core, at the stored position its walk ends at, touches the movement set, so no leg may end there. */
 export function coreBlocked(state: BuildState, end: WalkEnd): boolean {
   const { walker: token, at } = end;
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return false;
   const hex = hexWallsOf(state, token);
   if (hex) return hexFitWall(hex, hexEndStand(hex.g, token, at)) >= 0;
@@ -1015,7 +1016,7 @@ export function coreBlocked(state: BuildState, end: WalkEnd): boolean {
  */
 export function coreWalled(state: BuildState, end: WalkEnd): boolean {
   const { walker: token, at } = end;
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return false;
   const hex = hexWallsOf(state, token);
   if (hex) return hexFitWall({ ...hex, floor: Infinity }, hexEndStand(hex.g, token, at)) >= 0;
@@ -1044,7 +1045,7 @@ export function coreWalled(state: BuildState, end: WalkEnd): boolean {
 export function offGridWallThrough(state: BuildState, end: WalkEnd): boolean {
   const { walker: token, at } = end;
   if (!canSqueeze(token)) return false;
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene || isHex(sceneGrid(scene))) return false;
   const step = snapStep(token);
   const onGrid = (v: number) => Math.abs(v / step - Math.round(v / step)) < 1e-9;
@@ -1075,7 +1076,7 @@ export function offGridWallThrough(state: BuildState, end: WalkEnd): boolean {
 
 /** Standing: the new size's core at the new spot touches no movement blocker, the test a move ends on. */
 export function resizeStands(state: BuildState, token: MovingToken, to: PlacedToken): boolean {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return true;
   const hex = hexWallsOf(state, token);
   if (hex) return hexFitWall(hex, hexStandAt(hex.g, to, to, isSqueezed(to))) < 0;
@@ -1093,7 +1094,7 @@ export function resizeStands(state: BuildState, token: MovingToken, to: PlacedTo
  * and never crossed (partClear), and a resize that keeps the middle passes.
  */
 export function resizeLegStop(state: BuildState, token: MovingToken, to: PlacedToken): Blocker | null {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return null;
   const hex = hexWallsOf(state, token);
   if (hex) return hexResizeStop(hex, token, to);
@@ -1116,7 +1117,7 @@ export function resizeLegStop(state: BuildState, token: MovingToken, to: PlacedT
  */
 function squeezedThere(state: BuildState, token: Walker, at: Point, fit: boolean): boolean {
   if (!canSqueeze(token)) return false;
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return false;
   const all = sceneWalls(scene, state.buildChunks);
   const floor = ledgeFloor(all, scene, token, token.elevation);
@@ -1219,7 +1220,7 @@ export type DropMode = "walk" | "free" | "teleport";
  * heights.ts), and `to.elevation` is only read for a flier's ledges.
  */
 export function landing(state: BuildState, token: Walker, to: LegEnd, mode: DropMode): Landing {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return { x: to.x, y: to.y, squeeze: false, stopped: null };
   const hex = hexWallsOf(state, token, to.elevation);
   if (hex) return hexLanding(hex, token, to, mode);
@@ -1299,7 +1300,7 @@ export function legSpots(token: MovingToken, to: Point): Point[] {
  * Ledges count as for a move from where it stands, by its own footing.
  */
 export function lineClear(state: BuildState, token: MovingToken, to: Point, door: DoorRef): boolean {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return false;
   const walls = sceneWalls(scene, state.buildChunks);
   const r = footprintRect(sceneGrid(scene), token);
@@ -1365,7 +1366,7 @@ const onward = new WeakSet<object>();
 
 /** The scene's grid when it is hexes, else null. */
 export function hexGridOf(state: BuildState, token: Pick<Token, "sceneId">): HexGrid | null {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return null;
   const g = sceneGrid(scene);
   return isHex(g) ? g : null;
@@ -1461,7 +1462,7 @@ export function storedBuild<T extends BuildState>(state: T, opVersion: number | 
  * them (`legFrom`).
  */
 export function hexWallsOf(state: BuildState, token: MovingToken, endElevation = token.elevation): HexWalls | null {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   const g = scene ? sceneGrid(scene) : SQUARES;
   if (!scene || !isHex(g)) return null;
   const walls = sceneWalls(scene, state.buildChunks);

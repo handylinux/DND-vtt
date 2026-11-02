@@ -17,6 +17,7 @@ import { APART, contact, orient } from "./segments.ts";
 import { sceneWalls } from "./walls.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
 import { cornerAt, hexAt, hexCorners, hexInScene, hexKey, hexNeighbors, hexSubcells, sceneHexSpan, type Hex, type HexGrid } from "./hex.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Triggers and traps (docs/design/design-v1-traps.md section 5): which creatures
@@ -283,7 +284,7 @@ export function doorCells(state: Pick<RoomState, "buildChunks">, sceneId: string
 
 /** The two points a 256th of a cell off a free door's middle, one on each side of it, or null for a door that is gone. */
 function doorSides(state: Pick<RoomState, "buildChunks">, sceneId: string, ref: { cx: number; cy: number; id: string }): [{ x: number; y: number }, { x: number; y: number }] | null {
-  const wall = state.buildChunks[chunkKey(sceneId, ref.cx, ref.cy)]?.walls?.find((w) => w.id === ref.id);
+  const wall = ownEntry(state.buildChunks, chunkKey(sceneId, ref.cx, ref.cy))?.walls?.find((w) => w.id === ref.id);
   if (!wall) return null;
   const [mx, my] = wallMidpoint(wall);
   const nx = -(wall.b[1] - wall.a[1]);
@@ -297,10 +298,10 @@ function doorSides(state: Pick<RoomState, "buildChunks">, sceneId: string, ref: 
 export function doorExists(state: Pick<RoomState, "buildChunks">, sceneId: string, ref: TrapDoorRef): boolean {
   if ("edge" in ref) {
     const [xs, ys] = ref.edge.split(",");
-    const chunk = state.buildChunks[chunkKey(sceneId, Math.floor(Number(xs) / CHUNK_CELLS), Math.floor(Number(ys) / CHUNK_CELLS))];
+    const chunk = ownEntry(state.buildChunks, chunkKey(sceneId, Math.floor(Number(xs) / CHUNK_CELLS), Math.floor(Number(ys) / CHUNK_CELLS)));
     return chunk?.edges[ref.edge]?.kind === "door";
   }
-  return state.buildChunks[chunkKey(sceneId, ref.cx, ref.cy)]?.walls?.find((w) => w.id === ref.id)?.f.kind === "door";
+  return ownEntry(state.buildChunks, chunkKey(sceneId, ref.cx, ref.cy))?.walls?.find((w) => w.id === ref.id)?.f.kind === "door";
 }
 
 // ---------------------------------------------------------------------------
@@ -309,7 +310,7 @@ export function doorExists(state: Pick<RoomState, "buildChunks">, sceneId: strin
 /** A creature a trap can catch or hit: not an object and not dead, which every player's projection holds. */
 export function trapCreature(state: Pick<RoomState, "characters">, token: Pick<Token, "kind" | "actor">): boolean {
   if (token.kind === "object") return false;
-  const actor = "inline" in token.actor ? token.actor.inline : state.characters[token.actor.ref]?.actor;
+  const actor = "inline" in token.actor ? token.actor.inline : ownEntry(state.characters, token.actor.ref)?.actor;
   return actor?.life !== "dead";
 }
 
@@ -387,7 +388,7 @@ export function trapIndex(state: Pick<TrapRoom, "traps" | "scenes">, sceneId: st
   const cached = indexes.get(traps)?.get(sceneId);
   if (cached) return cached;
   const armed = armedTraps(traps, sceneId);
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   const index = armed.length === 0 || !scene ? EMPTY_INDEX : buildIndex(armed, keySpan(sceneGrid(scene), scene.bounds));
   if (!isWritable(traps)) {
     let byScene = indexes.get(traps);
@@ -566,7 +567,7 @@ function seenByAll(state: RoomState, env: { opVersion?: number }): (id: string) 
   return (id) => {
     let hit = cache.get(id);
     if (hit === undefined) {
-      const token = state.tokens[id];
+      const token = ownEntry(state.tokens, id);
       cache.set(id, (hit = token !== undefined && seenByNonOwners(state, token, env)));
     }
     return hit;
@@ -657,7 +658,7 @@ function seatsOfSeen(before: RoomState, members: readonly MovedToken[], seen: (i
   for (const e of members) {
     if (!seen(e.tokenId)) continue;
     for (let at: MovedToken | undefined = e; at?.carriedBy !== undefined; at = byId.get(at.carriedBy)) {
-      const kind = before.tokens[at.tokenId]?.attached?.kind;
+      const kind = ownEntry(before.tokens, at.tokenId)?.attached?.kind;
       if (kind === undefined || !onHolder(kind) || seen(at.carriedBy) || out.has(at.carriedBy)) break;
       out.add(at.carriedBy);
     }
@@ -682,7 +683,7 @@ function walksOf(op: Op, before: RoomState, entries: readonly MovedToken[], seen
   for (const [named, members] of byGroup(entries)) {
     const head = members[0]!;
     if (head.how !== "walk" && head.how !== "teleport") continue;
-    const headToken = before.tokens[head.tokenId]!;
+    const headToken = ownEntry(before.tokens, head.tokenId)!;
     const squeeze = op.t === "token.move" && op.tokenId === head.tokenId && op.squeeze === true;
     // The head's walk on hexes ends squeezed as the move leaves it, so its spots squeeze as the stored move does (squeezeRule).
     const ending = { endSqueezed: isSqueezed(endsAs(op, headToken, squeeze)) };
@@ -693,12 +694,12 @@ function walksOf(op: Op, before: RoomState, entries: readonly MovedToken[], seen
       return hit;
     };
     // The public members: every member seen by all. One under a holder players cannot see walks as itself (listed reveal 2).
-    const step = Math.min(1, ...members.filter((e) => seen(e.tokenId)).map((e) => routeLattice(before.tokens[e.tokenId]!)));
+    const step = Math.min(1, ...members.filter((e) => seen(e.tokenId)).map((e) => routeLattice(ownEntry(before.tokens, e.tokenId)!)));
     const group: Group = { named, head, base, step };
     groups.set(named, group);
     const seats = seatsOfSeen(before, members, seen, opVersion);
     for (const e of members) {
-      const token = before.tokens[e.tokenId]!;
+      const token = ownEntry(before.tokens, e.tokenId)!;
       const holder = e.carriedBy !== undefined ? byId.get(e.carriedBy) : undefined;
       const kind = holder ? token.attached?.kind : undefined;
       const pub = seen(e.tokenId);
@@ -1631,7 +1632,7 @@ function spotIn(m: Moment, walk: Walk): number {
 
 function tokenAt(m: Moment, id: string): Token | undefined {
   const walk = m.walks.get(id);
-  return walk ? placedAt(walk, spotIn(m, walk)) : m.before.tokens[id];
+  return walk ? placedAt(walk, spotIn(m, walk)) : ownEntry(m.before.tokens, id);
 }
 
 function roomAt(m: Moment): RoomState {
@@ -1978,7 +1979,7 @@ function cutRoute(route: readonly RoutePiece[], progress: Progress, at: { x: num
  */
 function springingIn(trap: Trap, how: TrapHow, pass: "public" | "private", together: readonly TrapEvent[], m: Moment, env: { opVersion?: number }): Springing {
   const by = [...new Set(together.map((t) => t.tokenId))].sort(cmp);
-  const sightRoom = m.before.scenes[trap.sceneId]?.vision?.on === true ? roomAt(m) : m.before;
+  const sightRoom = ownEntry(m.before.scenes, trap.sceneId)?.vision?.on === true ? roomAt(m) : m.before;
   const seen = new Set<string>();
   const party = new Set<string>();
   for (const id of by) {
@@ -2046,7 +2047,7 @@ function springingAt(trap: Trap, how: TrapHow, pass: "public" | "private", toget
   const seen = new Set<string>();
   const party = new Set<string>();
   for (const id of by) {
-    const token = moment.tokens[id];
+    const token = ownEntry(moment.tokens, id);
     if (!token) continue;
     if (seenByNonOwners(moment, token, env)) seen.add(id);
     if (playersToken(moment, token)) party.add(id);
@@ -2066,7 +2067,7 @@ export function trapHits(trap: Trap, moment: RoomState, by: readonly string[], o
   const rig = trap.rig;
   if (!rig) return [];
   const isCreature = (t: Token | undefined): t is Token => t !== undefined && t.sceneId === trap.sceneId && trapCreature(moment, t);
-  const named = () => by.filter((id) => isCreature(moment.tokens[id]));
+  const named = () => by.filter((id) => isCreature(ownEntry(moment.tokens, id)));
   const g = gridOfScene(moment, trap.sceneId);
   const onCells = (rects: readonly CellRect[]) => {
     const box = rectsBox(rects);
@@ -2081,7 +2082,7 @@ export function trapHits(trap: Trap, moment: RoomState, by: readonly string[], o
     return rects ? onCells(rects) : named();
   }
   if ("cells" in hits) return onCells(hits.cells);
-  const scene = moment.scenes[trap.sceneId];
+  const scene = ownEntry(moment.scenes, trap.sceneId);
   if (!scene) return [];
   const creatures = Object.values(moment.tokens)
     .filter(isCreature)
@@ -2126,7 +2127,7 @@ function carriedSeen(state: Pick<RoomState, "tokens" | "scenes">, token: Token, 
  */
 export function planTurn(room: TrapRoom, tokenId: string, how: "turnStart" | "turnEnd", env: { opVersion?: number }, spent: ReadonlySet<string> = new Set()): Springing[] {
   const sceneId = liveTrapScene(room);
-  const token = room.tokens[tokenId];
+  const token = ownEntry(room.tokens, tokenId);
   if (sceneId === null || !token || token.sceneId !== sceneId) return [];
   const index = trapIndex(room, sceneId);
   if (index.turns.length === 0) return [];
@@ -2148,7 +2149,7 @@ export function planTurn(room: TrapRoom, tokenId: string, how: "turnStart" | "tu
  */
 export function planDoor(before: RoomState, room: TrapRoom, sceneId: string, door: TrapDoorRef, by: string, env: { opVersion?: number }): Springing[] {
   if (liveTrapScene(room) !== sceneId) return [];
-  const token = before.tokens[by];
+  const token = ownEntry(before.tokens, by);
   if (!token || token.sceneId !== sceneId) return [];
   const index = trapIndex(room, sceneId);
   const list = index.doors.get(doorKey(door));
@@ -2167,7 +2168,7 @@ export function planDoor(before: RoomState, room: TrapRoom, sceneId: string, doo
 /** The DM's Set it off (6.2): whatever its state, for the creatures named, never an object or the dead, stopping nothing, at the room as it stands. */
 export function planHand(room: TrapRoom, trap: Trap, tokenIds: readonly string[], env: { opVersion?: number }): Springing {
   const by = tokenIds.filter((id) => {
-    const t = room.tokens[id];
+    const t = ownEntry(room.tokens, id);
     return t?.sceneId === trap.sceneId && trapCreature(room, t);
   });
   return { ...springingAt(trap, "hand", "public", by, room, env), perceived: true };

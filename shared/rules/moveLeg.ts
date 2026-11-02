@@ -10,6 +10,7 @@ import { isHex, sceneGrid, type Grid } from "./grid.ts";
 import { footing } from "./heights.ts";
 import { groundUnder, hexFullStop, landing, legSpots, legStop, offGridWallThrough, storedBuild, walkEnd, type MovingToken } from "./movement.ts";
 import { fileRoutes, followerTrace, pieceReach, routeWalkers, walkSqueezes, type RoutePoint, type WalkTrace } from "./route.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * One description of a move (contract section 1, docs/design/design-v1-attach.md
@@ -98,7 +99,7 @@ function namedMoves(op: Op, before: RoomState, env: Versioned): Named[] {
   const straight = (token: Token, to: Pose, how: MoveHow): Named => walked(token, to, how);
   switch (op.t) {
     case "token.move": {
-      const token = before.tokens[op.tokenId];
+      const token = ownEntry(before.tokens, op.tokenId);
       if (!token) return [];
       const to: Pose = { sceneId: token.sceneId, x: op.x, y: op.y, elevation: op.elevation ?? token.elevation };
       const named = op.route && walksRoutes(env.opVersion) ? walked(token, to, "walk", op.route) : straight(token, to, op.teleport !== undefined ? "teleport" : "walk");
@@ -106,11 +107,11 @@ function namedMoves(op: Op, before: RoomState, env: Versioned): Named[] {
     }
     case "token.moveMany":
       return op.moves.flatMap((m) => {
-        const token = before.tokens[m.tokenId];
+        const token = ownEntry(before.tokens, m.tokenId);
         return token ? [straight(token, { sceneId: token.sceneId, x: m.x, y: m.y, elevation: m.elevation ?? token.elevation }, "walk")] : [];
       });
     case "token.update": {
-      const token = before.tokens[op.tokenId];
+      const token = ownEntry(before.tokens, op.tokenId);
       const p = op.patch;
       if (!token || (p.x === undefined && p.y === undefined && p.elevation === undefined && p.sceneId === undefined && p.size === undefined && p.w === undefined && p.h === undefined)) return [];
       const to: Pose = { sceneId: p.sceneId ?? token.sceneId, x: p.x ?? token.x, y: p.y ?? token.y, elevation: p.elevation ?? token.elevation };
@@ -121,14 +122,14 @@ function namedMoves(op: Op, before: RoomState, env: Versioned): Named[] {
     }
     case "token.attach": {
       // A drag leaves the creature where it stands. The rest step onto their seat, a walk.
-      const token = before.tokens[op.tokenId];
+      const token = ownEntry(before.tokens, op.tokenId);
       if (!token || !onHolder(op.kind) || !attaches(env.opVersion)) return [];
       // A seat is at its holder's elevation, whatever the op says (4.1).
-      const elevation = before.tokens[op.to]?.elevation ?? op.elevation;
+      const elevation = ownEntry(before.tokens, op.to)?.elevation ?? op.elevation;
       return [straight(token, { sceneId: token.sceneId, x: op.x, y: op.y, elevation }, "walk")];
     }
     case "token.detach": {
-      const token = before.tokens[op.tokenId];
+      const token = ownEntry(before.tokens, op.tokenId);
       if (!token || op.x === undefined || op.y === undefined || !attaches(env.opVersion)) return [];
       return [straight(token, { sceneId: token.sceneId, x: op.x, y: op.y, elevation: op.elevation ?? token.elevation }, "walk")];
     }
@@ -165,7 +166,7 @@ function namedMoves(op: Op, before: RoomState, env: Versioned): Named[] {
 /** Whether every player sees a token in this state, by the op's envelope. */
 function seenIn(state: RoomState, env: Versioned): (t: { id: string }) => boolean {
   return (t) => {
-    const token = state.tokens[t.id];
+    const token = ownEntry(state.tokens, t.id);
     return token !== undefined && inSightOfNonOwners(state, token, env);
   };
 }
@@ -241,7 +242,7 @@ export function planWalks(op: Op, before: RoomState, actor: Viewer, env: Version
  */
 function followGroup(before: RoomState, lead: MovedToken, members: readonly string[], isPublic: (id: string, holderId: string) => boolean, byPlayer: boolean, env: Versioned, stands = false, cut?: GroupCut): MovedToken[] {
   const pub = (id: string) => {
-    const link = before.tokens[id]?.attached;
+    const link = ownEntry(before.tokens, id)?.attached;
     return link !== undefined && isPublic(id, link.to);
   };
   const file: ReadonlyMap<string, readonly FilePoint[]> | null = cut?.file ?? singleFile(before, lead, members.slice(1), pub, env);
@@ -254,7 +255,7 @@ function followGroup(before: RoomState, lead: MovedToken, members: readonly stri
   const out: MovedToken[] = [];
   const walked = new Map<string, MovedToken>([[lead.tokenId, lead]]);
   for (const id of members.slice(1)) {
-    const member = before.tokens[id]!;
+    const member = ownEntry(before.tokens, id)!;
     const holderMove = walked.get(member.attached!.to);
     if (!holderMove) continue;
     const own = file?.get(id);
@@ -283,10 +284,10 @@ function followGroup(before: RoomState, lead: MovedToken, members: readonly stri
  */
 function singleFile(before: RoomState, lead: MovedToken, members: readonly string[], pub: (id: string) => boolean, env: Versioned): Map<string, Point[]> | null {
   if (!followsInSingleFile(env.opVersion) || lead.squeezed !== true || lead.how !== "walk" || lead.carriedBy !== undefined) return null;
-  const scene = before.scenes[lead.from.sceneId];
-  const standing = before.tokens[lead.tokenId];
+  const scene = ownEntry(before.scenes, lead.from.sceneId);
+  const standing = ownEntry(before.tokens, lead.tokenId);
   if (!scene || !standing || isHex(sceneGrid(scene))) return null;
-  const dragged = members.map((id) => before.tokens[id]!).filter((t) => t.attached?.kind === "drag");
+  const dragged = members.map((id) => ownEntry(before.tokens, id)!).filter((t) => t.attached?.kind === "drag");
   if (dragged.length === 0) return null;
   return fileRoutes(standing, lead.route, [dragged.filter((t) => pub(t.id)), dragged.filter((t) => !pub(t.id))]);
 }
@@ -300,10 +301,10 @@ function singleFile(before: RoomState, lead: MovedToken, members: readonly strin
  */
 function endSeatsApart(before: RoomState, holder: MovedToken, members: readonly string[], pub: (id: string) => boolean, env: Versioned): Map<string, Point> | null {
   if (!seatsApart(env.opVersion) || holder.squeezed !== true || holder.how !== "walk" || holder.carriedBy !== undefined) return null;
-  const scene = before.scenes[holder.from.sceneId];
-  const standing = before.tokens[holder.tokenId];
+  const scene = ownEntry(before.scenes, holder.from.sceneId);
+  const standing = ownEntry(before.tokens, holder.tokenId);
   if (!scene || !standing || isHex(sceneGrid(scene))) return null;
-  const seated = members.map((id) => before.tokens[id]!).filter((t) => t.attached?.to === holder.tokenId && onHolder(t.attached.kind));
+  const seated = members.map((id) => ownEntry(before.tokens, id)!).filter((t) => t.attached?.to === holder.tokenId && onHolder(t.attached.kind));
   if (seated.length < 2) return null;
   return squeezedSeatsApart(sceneGrid(scene), standing, holder.route[holder.route.length - 1]!, [seated.filter((t) => pub(t.id)), seated.filter((t) => !pub(t.id))], env.opVersion);
 }
@@ -433,8 +434,8 @@ function follow(before: RoomState, member: Token, holder: MovedToken, isPublic: 
  */
 function squeezedSeats(before: RoomState, member: Token, holder: MovedToken, env: Versioned, apart?: Point): (Point | null)[] | null {
   if (!seatsOnSqueeze(env.opVersion) || holder.carriedBy !== undefined || (holder.how !== "walk" && holder.how !== "teleport")) return null;
-  const scene = before.scenes[member.sceneId];
-  const standing = before.tokens[holder.tokenId];
+  const scene = ownEntry(before.scenes, member.sceneId);
+  const standing = ownEntry(before.tokens, holder.tokenId);
   if (!scene || !standing) return null;
   const squeezedAt = walkSqueezes(before, standing, holder.route, holder.trace, holder.squeezed === true, env.opVersion);
   const g = sceneGrid(scene);
@@ -474,7 +475,7 @@ export function checkSetReach(before: RoomState, token: Pick<Token, "id" | "scen
   const lead: MovedToken = { tokenId: token.id, from: poseOf(token), to: { sceneId: token.sceneId, ...route[route.length - 1]! }, route, trace, how: "walk", pass: "public", ...(squeezed ? { squeezed: true as const } : {}) };
   const walks = [lead, ...followGroup(before, lead, publicMembers(before.tokens, token.id, seen, new Set([token.id])), () => true, false, {})];
   // Infinite feet per square make every rise no reach.
-  const perSquare = role === "player" && before.scenes[token.sceneId]?.fogEnabled === true ? Infinity : feetPerCell;
+  const perSquare = role === "player" && ownEntry(before.scenes, token.sceneId)?.fogEnabled === true ? Infinity : feetPerCell;
   let reach = 0;
   for (let i = 1; i < route.length; i++) reach += Math.max(...walks.map((w) => pieceReach(w.route[i - 1]!, w.route[i]!, perSquare)));
   return reach;
@@ -497,7 +498,7 @@ export function checkSetReach(before: RoomState, token: Pick<Token, "id" | "scen
  * stand test too (`standsBack`).
  */
 function stoppedAtWalls(before: RoomState, member: Token, route: RoutePoint[], holderRoute: readonly RoutePoint[], elevationAt: (x: number, y: number, holderElevation: number) => number, env: Versioned, stands = false): RoutePoint[] {
-  const scene = before.scenes[member.sceneId];
+  const scene = ownEntry(before.scenes, member.sceneId);
   if (scene?.blockMovement !== true) return route;
   // Its stands on hexes as the op was written under (movement.ts storedBuild).
   const build = storedBuild(before, env.opVersion);
@@ -553,7 +554,7 @@ function standsBack(build: BuildState, member: Token, route: RoutePoint[], holde
 export function describeMove(op: Op, before: RoomState, after: RoomState, actor: Viewer, env: Versioned): MovedToken[] {
   const out: MovedToken[] = [];
   for (const moved of planMove(op, before, actor, env)) {
-    const token = after.tokens[moved.tokenId];
+    const token = ownEntry(after.tokens, moved.tokenId);
     if (token) out.push({ ...moved, to: poseOf(token) });
   }
   return out;

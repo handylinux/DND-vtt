@@ -35,6 +35,7 @@ import { effectEvent } from "../rules/hp.ts";
 import { actorOfEntry, groupKeyFor, nextTurn, placeEntry, renumber, rowCharacter, scoredValue, sortEntries, turnMovedOn } from "../rules/initiative.ts";
 import { gone, invalid, type Env, type ResolvedActor, type Tx } from "./tx.ts";
 import { restoreTurnUses, savedHolder, startTurnUses, withoutTurnScoped } from "./uses.ts";
+import { ownEntry } from "../records.ts";
 
 /** How many `next` steps `prev` can walk back. */
 export const MAX_HISTORY = 20;
@@ -63,7 +64,7 @@ function withTurn(tx: Tx, encounter: Encounter, activeEntryId: string | null): E
   const next: Encounter = { ...rest, activeEntryId };
   const entry = activeEntryId === null ? undefined : encounter.entries.find((e) => e.id === activeEntryId);
   if (entry && !entry.hadTurn && marksHadTurn(tx.env.opVersion)) next.entries = encounter.entries.map((e) => (e === entry ? { ...e, hadTurn: true } : e));
-  const token = entry?.tokenId !== undefined ? tx.state.tokens[entry.tokenId] : undefined;
+  const token = entry?.tokenId !== undefined ? ownEntry(tx.state.tokens, entry.tokenId) : undefined;
   if (entry && token) {
     // The seq names this turn, so a path recorded during it is told from one of an earlier turn (rules/path.ts).
     const start: TurnStart = { entryId: entry.id, tokenId: token.id, sceneId: token.sceneId, x: token.x, y: token.y, elevation: token.elevation, seq: tx.env.seq };
@@ -84,7 +85,7 @@ function withTurn(tx: Tx, encounter: Encounter, activeEntryId: string | null): E
 export function tokenRow(entries: readonly InitEntry[], state: RoomState, tokenId: string): InitEntry | undefined {
   const own = entries.find((e) => e.tokenId === tokenId);
   if (own) return own;
-  const token = state.tokens[tokenId];
+  const token = ownEntry(state.tokens, tokenId);
   const ref = token && "ref" in token.actor ? token.actor.ref : undefined;
   return ref === undefined ? undefined : entries.find((e) => e.tokenId === undefined && e.characterId === ref);
 }
@@ -104,14 +105,14 @@ export function mountSeenByAll(tx: Tx, token: Token): boolean {
 export function sharedMounts(tx: Tx, creatureId: string): string[] {
   const mounts: string[] = [];
   const seen = new Set<string>();
-  let rider = tx.state.tokens[creatureId];
+  let rider = ownEntry(tx.state.tokens, creatureId);
   while (rider && !seen.has(rider.id) && mounts.length < LIMITS.turnMounts) {
     seen.add(rider.id);
     const link = rider.attached;
     const mount = link?.kind === "ride" && link.steer ? holderOf(tx.state.tokens, rider) : undefined;
-    if (!mount || !mountSeenByAll(tx, rider) || !mountSeenByAll(tx, tx.state.tokens[mount.id]!)) break;
+    if (!mount || !mountSeenByAll(tx, rider) || !mountSeenByAll(tx, ownEntry(tx.state.tokens, mount.id)!)) break;
     mounts.push(mount.id);
-    rider = tx.state.tokens[mount.id];
+    rider = ownEntry(tx.state.tokens, mount.id);
   }
   return mounts;
 }
@@ -202,7 +203,7 @@ function unbindDurations(tx: Tx, entry: InitEntry): void {
 
 function clearAutoExempt(tx: Tx, tokenId: string | undefined): void {
   if (tokenId === undefined) return;
-  const token = tx.state.tokens[tokenId];
+  const token = ownEntry(tx.state.tokens, tokenId);
   if (token?.fogExemptAuto) tx.write(keys.token(token.id), { ...token, fogExemptAuto: false });
 }
 
@@ -425,9 +426,9 @@ function ownsActiveRow(state: RoomState, viewer: Viewer): boolean {
   const encounter = state.encounter;
   const entry = encounter?.entries.find((e) => e.id === encounter.activeEntryId);
   if (!entry) return false;
-  const token = entry.tokenId !== undefined ? state.tokens[entry.tokenId] : undefined;
+  const token = entry.tokenId !== undefined ? ownEntry(state.tokens, entry.tokenId) : undefined;
   const ref = entry.characterId ?? (token && "ref" in token.actor ? token.actor.ref : undefined);
-  const character = ref !== undefined ? state.characters[ref] : undefined;
+  const character = ref !== undefined ? ownEntry(state.characters, ref) : undefined;
   return (token?.ownerIds ?? []).includes(viewer.memberId) || (character?.ownerIds ?? []).includes(viewer.memberId);
 }
 
@@ -462,7 +463,7 @@ export function encounterNext(tx: Tx, op: OpOf<"encounter.next">): void {
     // Older ops changed the row in place, the state's own when it kept its Reaction, and replay so (revealsRowAnew).
     if (!revealsRowAnew(tx.env.opVersion)) landing.hidden = false;
     if (landing.tokenId !== undefined) {
-      const token = tx.state.tokens[landing.tokenId];
+      const token = ownEntry(tx.state.tokens, landing.tokenId);
       if (token) {
         snapshot.revealed.push({ tokenId: token.id, visibility: token.visibility, fogExemptAuto: token.fogExemptAuto });
         tx.write(keys.token(token.id), { ...token, visibility: "all", fogExemptAuto: true });
@@ -545,9 +546,9 @@ function effectChanges(state: RoomState, before: Readonly<Record<string, Effect[
 
 /** The effects of a character or of a token's own actor, by holder id, as restoreEffects writes them. */
 function effectsOf(state: RoomState, id: string): Effect[] | undefined {
-  const character = state.characters[id];
+  const character = ownEntry(state.characters, id);
   if (character) return character.actor.effects;
-  const token = state.tokens[id];
+  const token = ownEntry(state.tokens, id);
   return token && "inline" in token.actor ? token.actor.inline.effects : undefined;
 }
 
@@ -615,7 +616,7 @@ function clearCompanionReactions(tx: Tx, landing: InitEntry, snapshot: Encounter
 function sharedCompanions(tx: Tx, landing: InitEntry): Token[] {
   const characterId = rowCharacter(tx.state, landing);
   if (characterId === undefined) return [];
-  const sceneId = landing.tokenId !== undefined ? tx.state.tokens[landing.tokenId]?.sceneId : tx.state.meta.playerSceneId;
+  const sceneId = landing.tokenId !== undefined ? ownEntry(tx.state.tokens, landing.tokenId)?.sceneId : tx.state.meta.playerSceneId;
   return Object.values(tx.state.tokens)
     .sort((a, b) => (a.id < b.id ? -1 : 1))
     .filter((token) => token.companion?.of === characterId && token.companion.turn === "shared" && token.sceneId === sceneId);
@@ -856,13 +857,13 @@ function undoStep(tx: Tx, snapshot: EncounterSnapshot): void {
   if (snapshot.legendary) restoreLegendary(tx, snapshot.legendary, snapshot.turnUses);
   if (snapshot.turnUses) restoreTurnUses(tx, snapshot.turnUses);
   for (const revealed of snapshot.revealed) {
-    const token = tx.state.tokens[revealed.tokenId];
+    const token = ownEntry(tx.state.tokens, revealed.tokenId);
     if (!token) continue;
     tx.write(keys.token(token.id), { ...token, visibility: revealed.visibility, fogExemptAuto: revealed.fogExemptAuto });
   }
   // A companion converted, detached or deleted since gets nothing back.
   for (const tokenId of snapshot.companionReactions ?? []) {
-    const token = tx.state.tokens[tokenId];
+    const token = ownEntry(tx.state.tokens, tokenId);
     if (token?.companion?.turn !== "shared" || token.companion.reactionUsed) continue;
     tx.write(keys.token(token.id), { ...token, companion: { ...token.companion, reactionUsed: true } });
   }
@@ -878,7 +879,7 @@ function restoreLegendary(tx: Tx, saved: NonNullable<EncounterSnapshot["legendar
   const turn = turns?.find((t) => t.holderId === saved.holderId);
   const resolved = turns
     ? turn && savedHolder(tx, turn)
-    : tx.state.characters[saved.holderId]
+    : ownEntry(tx.state.characters, saved.holderId)
       ? tx.tryResolveActor({ characterId: saved.holderId })
       : tx.tryResolveActor({ tokenId: saved.holderId });
   const legendary = resolved?.actor.legendary;
@@ -890,12 +891,12 @@ function restoreLegendary(tx: Tx, saved: NonNullable<EncounterSnapshot["legendar
 }
 
 function restoreEffects(tx: Tx, id: string, effects: Effect[]): void {
-  const character = tx.state.characters[id];
+  const character = ownEntry(tx.state.characters, id);
   if (character) {
     tx.write(keys.character(id), { ...character, actor: { ...character.actor, effects } });
     return;
   }
-  const token = tx.state.tokens[id];
+  const token = ownEntry(tx.state.tokens, id);
   if (token && "inline" in token.actor) {
     tx.write(keys.token(id), { ...token, actor: { inline: { ...token.actor.inline, effects } } });
   }

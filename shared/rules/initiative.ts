@@ -1,6 +1,7 @@
 import type { Actor, Effect, Encounter, EntryId, InitEntry, OrderReveal, RoomSettings, RoomState } from "../model.ts";
 import { storedSrdId, todaysSrdId } from "../migrate.ts";
 import { INCAPACITATING_KEYS } from "./hp.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Initiative order and turn stepping (design section 9.4). The encounter's
@@ -31,11 +32,11 @@ export function compareTieKeys(a: TieKey, b: TieKey): number {
 /** The actor behind an entry, through its token or its character. */
 export function actorOfEntry(state: RoomState, entry: InitEntry): Actor | undefined {
   if (entry.tokenId !== undefined) {
-    const token = state.tokens[entry.tokenId];
+    const token = ownEntry(state.tokens, entry.tokenId);
     if (!token) return undefined;
-    return "ref" in token.actor ? state.characters[token.actor.ref]?.actor : token.actor.inline;
+    return "ref" in token.actor ? ownEntry(state.characters, token.actor.ref)?.actor : token.actor.inline;
   }
-  if (entry.characterId !== undefined) return state.characters[entry.characterId]?.actor;
+  if (entry.characterId !== undefined) return ownEntry(state.characters, entry.characterId)?.actor;
   return undefined;
 }
 
@@ -50,7 +51,7 @@ export function actorOfEntry(state: RoomState, entry: InitEntry): Actor | undefi
  */
 export function rowCharacter(state: Pick<RoomState, "tokens">, entry: Pick<InitEntry, "tokenId" | "characterId">): string | undefined {
   if (entry.tokenId !== undefined) {
-    const token = state.tokens[entry.tokenId];
+    const token = ownEntry(state.tokens, entry.tokenId);
     return token && "ref" in token.actor ? token.actor.ref : undefined;
   }
   return entry.characterId;
@@ -61,14 +62,14 @@ export function tieKeyOf(state: RoomState, entry: InitEntry): TieKey {
   let isPc = false;
   let name = entry.label ?? "";
   if (entry.tokenId !== undefined) {
-    const token = state.tokens[entry.tokenId];
+    const token = ownEntry(state.tokens, entry.tokenId);
     if (token) {
       isPc = token.kind === "pc";
       name = token.name;
     }
   } else if (entry.characterId !== undefined) {
     isPc = true;
-    name = state.characters[entry.characterId]?.name ?? name;
+    name = ownEntry(state.characters, entry.characterId)?.name ?? name;
   }
   return { isPc, initBonus: actor?.initBonus ?? 0, name };
 }
@@ -188,7 +189,7 @@ export function nextTurn(state: RoomState, encounter: Encounter, settings: RoomS
  */
 export function groupKeyFor(state: Pick<RoomState, "tokens">, entry: Pick<InitEntry, "tokenId" | "characterId">, opVersion?: number): string | undefined {
   if (entry.tokenId === undefined) return undefined;
-  const token = state.tokens[entry.tokenId];
+  const token = ownEntry(state.tokens, entry.tokenId);
   if (!token || token.kind === "pc" || "ref" in token.actor) return undefined;
   const { srdId } = token.actor.inline;
   return srdId !== undefined ? storedSrdId(srdId, opVersion) : token.name;

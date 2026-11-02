@@ -1,6 +1,7 @@
 import type { DurationAnchor, Effect, Encounter, EntryId, InitEntry, RoomState } from "../model.ts";
 import type { DurationInput } from "../protocol.ts";
 import { rowCharacter } from "./initiative.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Effect durations (design section 9.5). A duration counts crossings of one
@@ -19,7 +20,7 @@ export function isPaused(duration: StoredDuration): boolean {
 
 /** The character a token's actor lives on, if any. */
 function refOf(state: RoomState, tokenId: string): string | undefined {
-  const token = state.tokens[tokenId];
+  const token = ownEntry(state.tokens, tokenId);
   if (!token) return undefined;
   return "ref" in token.actor ? token.actor.ref : undefined;
 }
@@ -30,7 +31,7 @@ function refOf(state: RoomState, tokenId: string): string | undefined {
  * count that character's row.
  */
 function actsOnTurnOf(state: RoomState, tokenId: string): string | undefined {
-  const companion = state.tokens[tokenId]?.companion;
+  const companion = ownEntry(state.tokens, tokenId)?.companion;
   return companion !== undefined && companion.turn !== "own" ? companion.of : undefined;
 }
 

@@ -2,6 +2,7 @@ import { keys } from "../keys.ts";
 import type { CustomMonster, SrdImage } from "../model.ts";
 import type { OpOf } from "../protocol.ts";
 import { gone, invalid, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * The room's own stat blocks (design section 6). Tokens made from one are
@@ -9,12 +10,12 @@ import { gone, invalid, type Tx } from "./tx.ts";
  * without touching anything on a scene.
  */
 export function monsterCreate(tx: Tx, op: OpOf<"monster.create">): void {
-  if (tx.state.monsters[op.monster.id]) throw invalid("monster already exists");
+  if (ownEntry(tx.state.monsters, op.monster.id)) throw invalid("monster already exists");
   tx.write(keys.monster(op.monster.id), { ...op.monster, rev: 0 });
 }
 
 export function monsterUpdate(tx: Tx, op: OpOf<"monster.update">): void {
-  const monster = tx.state.monsters[op.monsterId];
+  const monster = ownEntry(tx.state.monsters, op.monsterId);
   if (!monster) throw gone("monster");
   const next: CustomMonster = { ...monster };
   const { sizeAlt, xpInLair, defaultImage, ...lines } = op.patch;
@@ -31,7 +32,7 @@ export function monsterUpdate(tx: Tx, op: OpOf<"monster.update">): void {
 }
 
 export function monsterDelete(tx: Tx, op: OpOf<"monster.delete">): void {
-  if (!tx.state.monsters[op.monsterId]) throw gone("monster");
+  if (!ownEntry(tx.state.monsters, op.monsterId)) throw gone("monster");
   tx.remove(keys.monster(op.monsterId));
 }
 
@@ -44,7 +45,7 @@ export function monsterDelete(tx: Tx, op: OpOf<"monster.delete">): void {
 export function monsterSetSrdImage(tx: Tx, op: OpOf<"monster.setSrdImage">): void {
   const key = keys.srdImage(op.srdId);
   if (op.image === null) {
-    if (tx.state.srdImages[op.srdId]) tx.remove(key);
+    if (ownEntry(tx.state.srdImages, op.srdId)) tx.remove(key);
     return;
   }
   const next: SrdImage = { id: op.srdId, rev: 0, image: op.image };

@@ -7,6 +7,7 @@ import { DAMAGE_TYPES } from "./rules/damage.ts";
 import { ABILITY_NAMES, testText } from "./rules/skills.ts";
 import { CONDITIONS } from "./srd/conditions.ts";
 import { STATUSES } from "./srd/statuses.ts";
+import { ownEntry } from "./records.ts";
 
 /**
  * How log entries read, on a device and in the session log export
@@ -265,11 +266,11 @@ function rollVerdict(roll: DiceRoll, line: Pick<DiceEvent, "dc" | "ac">): string
  * (`projectDiceCtx`), else "players".
  */
 export function keptFrom(roll: Pick<DiceRoll, "tokenId" | "characterId">, names: LogNames): "players" | "other players" {
-  const token = roll.tokenId !== undefined ? names.tokens[roll.tokenId] : undefined;
+  const token = roll.tokenId !== undefined ? ownEntry(names.tokens, roll.tokenId) : undefined;
   const ref = token && "ref" in token.actor ? token.actor.ref : roll.characterId;
-  const character = ref !== undefined ? names.characters[ref] : undefined;
+  const character = ref !== undefined ? ownEntry(names.characters, ref) : undefined;
   const owners = [...(token?.ownerIds ?? []), ...(character?.ownerIds ?? [])];
-  return owners.some((id) => names.members[id]?.kind === "player") ? "other players" : "players";
+  return owners.some((id) => ownEntry(names.members, id)?.kind === "player") ? "other players" : "players";
 }
 
 /**
@@ -349,14 +350,14 @@ export function rollToastText(lines: readonly DiceEvent[], names: LogNames): str
 }
 
 export function memberName(names: { members: Readonly<Record<string, Member | undefined>> }, id: string | undefined): string {
-  return (id !== undefined && names.members[id]?.name) || SOMEONE;
+  return (id !== undefined && ownEntry(names.members, id)?.name) || SOMEONE;
 }
 
 /** The viewer's own name for the creature an event is about: its token on this view, else its character. */
 export function creatureName(names: LogNames, ref: { tokenId?: string; characterId?: string }): string {
-  const token = ref.tokenId !== undefined ? names.tokens[ref.tokenId] : undefined;
+  const token = ref.tokenId !== undefined ? ownEntry(names.tokens, ref.tokenId) : undefined;
   if (token) return displayName(token);
-  const character = ref.characterId !== undefined ? names.characters[ref.characterId] : undefined;
+  const character = ref.characterId !== undefined ? ownEntry(names.characters, ref.characterId) : undefined;
   if (character) return character.name;
   return A_CREATURE;
 }
@@ -517,7 +518,7 @@ function eventText(data: LogEvent, names: LogNames, dm: boolean): string {
     case "encounter":
       return data.action === "start" ? "Combat starts." : "Combat ends.";
     case "handout": {
-      const handout = names.handouts[data.handoutId];
+      const handout = ownEntry(names.handouts, data.handoutId);
       return handout ? `The DM shows a handout: ${handout.title}.` : "The DM shows a handout.";
     }
     case "member": {
@@ -548,7 +549,7 @@ function eventText(data: LogEvent, names: LogNames, dm: boolean): string {
       return rollText(data, creatureName(names, data), dm);
     case "companion": {
       // Only the DM's log holds it (docs/design/design-v1-combat-flow.md 3.6.3). The name is the companion's when it came.
-      const character = names.characters[data.characterId]?.name ?? "their character";
+      const character = ownEntry(names.characters, data.characterId)?.name ?? "their character";
       return `${memberName(names, data.memberId)} added ${data.name} beside ${character}.`;
     }
     case "characterDeleted":
@@ -572,7 +573,7 @@ function eventText(data: LogEvent, names: LogNames, dm: boolean): string {
     }
     case "trapNotice": {
       // "Thorn's Passive Perception (16) would notice the pressure plate of Poisoned Darts (DC 15)."
-      const trap = names.traps?.[data.trapId];
+      const trap = ownEntry(names.traps, data.trapId);
       const what = trap?.rig?.find.find((c) => c.skill === "perception" && c.dc === data.dc)?.what;
       const it = trap ? (what ? `${what} of ${trap.name}` : trap.name) : "a trap";
       return `${possessive(creatureName(names, { tokenId: data.tokenId }))} Passive Perception (${data.passive}) would notice ${it} (DC ${data.dc}).`;
@@ -695,7 +696,7 @@ export function composerTarget(
   const found = targets.find((t) => targetKey(t.target) === key);
   if (found) return { gone: false, ...found };
   if (key.startsWith("m:")) {
-    const name = members[key.slice(2)]?.name;
+    const name = ownEntry(members, key.slice(2))?.name;
     return { gone: true, label: name ? `${name} (not available)` : "A player who left" };
   }
   return { gone: true, label: "The DM (nobody else is DM now)" };
@@ -715,7 +716,7 @@ export function messageOp(
       .map((m) => m.id);
     return to.length > 0 ? { t: "log.whisper", to, text } : null;
   }
-  if (target.memberId === me || !members[target.memberId]) return null;
+  if (target.memberId === me || !ownEntry(members, target.memberId)) return null;
   return { t: "log.whisper", to: [target.memberId], text };
 }
 
@@ -726,7 +727,7 @@ export function messageOp(
  */
 export function whisperHeading(entry: Pick<LogEntry, "from" | "to">, members: Record<string, Member | undefined>, me: string): string {
   const to = entry.to ?? [];
-  if (to.length > 0 && to.every((id) => members[id]?.kind === "dm")) return "Whisper to the DM";
+  if (to.length > 0 && to.every((id) => ownEntry(members, id)?.kind === "dm")) return "Whisper to the DM";
   const names = to.map((id) => (id === me ? "you" : memberName({ members }, id)));
   // "you" first reads naturally: "to you and Thorn".
   names.sort((a, b) => (a === "you" ? -1 : b === "you" ? 1 : 0));

@@ -5,6 +5,7 @@ import type { ProjectedState } from "./project.ts";
 import { moveGroups } from "./rules/attach.ts";
 import { stepsTakenBack } from "./reducer/encounter.ts";
 import { nextTurn } from "./rules/initiative.ts";
+import { ownEntry } from "./records.ts";
 
 /**
  * What an op reads (design 7.4), so the client knows whether its redacted
@@ -39,7 +40,7 @@ function of(keys_: Read[], complete: Collection[] = []): Reads {
 /** The entity that holds a target's actor, with the fields the op needs on it. */
 function holderRead(state: RoomState, target: ActorTarget, fields: string[]): Read {
   if ("characterId" in target) return { key: keys.character(target.characterId), fields: fields.map((f) => `actor.${f}`) };
-  const token = state.tokens[target.tokenId];
+  const token = ownEntry(state.tokens, target.tokenId);
   if (token && "ref" in token.actor) return { key: keys.character(token.actor.ref), fields: fields.map((f) => `actor.${f}`) };
   return { key: keys.token(target.tokenId), fields: fields.map((f) => `actor.inline.${f}`) };
 }
@@ -53,7 +54,7 @@ function holderRead(state: RoomState, target: ActorTarget, fields: string[]): Re
 function endsReads(state: RoomState, rollIds: readonly string[]): Read[] {
   const out: Read[] = [];
   for (const id of rollIds) {
-    const request = state.rolls[id];
+    const request = ownEntry(state.rolls, id);
     const target = request?.ends ? request.targets[0] : undefined;
     if (target) out.push(holderRead(state, target.tokenId !== undefined ? { tokenId: target.tokenId } : { characterId: target.characterId! }, ["effects"]));
   }
@@ -130,7 +131,7 @@ export function reads(op: Op, state: RoomState): Reads {
     }
     // A companion's deletion rewrites the fight's history (docs/design/design-v1-combat-flow.md 3.6.8).
     case "token.delete": {
-      const token = state.tokens[op.tokenId];
+      const token = ownEntry(state.tokens, op.tokenId);
       return of([{ key: keys.token(op.tokenId) }, { key: keys.encounterHistory }], token ? [`scene:${token.sceneId}`, "encounter"] : ["encounter"]);
     }
     // A holder's move reads its group as the viewer's copy holds it (docs/design/design-v1-attach.md 8.4). A visible token that
@@ -144,7 +145,7 @@ export function reads(op: Op, state: RoomState): Reads {
     case "token.attach":
       return of([...groupReads(state, [op.tokenId]), { key: keys.token(op.to) }], op.steer && state.encounter ? ["encounter"] : []);
     case "token.detach": {
-      const link = state.tokens[op.tokenId]?.attached;
+      const link = ownEntry(state.tokens, op.tokenId)?.attached;
       return of([...groupReads(state, [op.tokenId]), ...(link ? [{ key: keys.token(link.to) }] : [])], link?.steer && state.encounter ? ["encounter"] : []);
     }
     case "token.countLeg":
@@ -325,7 +326,7 @@ export function reads(op: Op, state: RoomState): Reads {
     case "token.deleteMany": {
       const scenes = new Set<string>();
       for (const id of op.tokenIds) {
-        const token = state.tokens[id];
+        const token = ownEntry(state.tokens, id);
         if (token) scenes.add(token.sceneId);
       }
       return of(
@@ -364,7 +365,7 @@ export function reads(op: Op, state: RoomState): Reads {
     case "trap.create":
       return of([{ key: keys.scene(op.trap.sceneId) }], [`scene:${op.trap.sceneId}`]);
     case "trap.update": {
-      const trap = state.traps[op.trapId];
+      const trap = ownEntry(state.traps, op.trapId);
       return trap ? of([{ key: keys.trap(op.trapId) }], [`scene:${trap.sceneId}`]) : of([{ key: keys.trap(op.trapId) }]);
     }
     case "trap.delete":
@@ -396,7 +397,7 @@ export function reads(op: Op, state: RoomState): Reads {
       return of([...op.rollIds.map((id) => ({ key: keys.roll(id) })), ...endsReads(state, op.rollIds)]);
     // The ask and its caster, whose owners may withdraw it: a player's view of a lent caster on another scene lacks the token, so it waits.
     case "cast.close": {
-      const ask = state.casts[op.castId];
+      const ask = ownEntry(state.casts, op.castId);
       return of([{ key: keys.cast(op.castId) }, ...(ask ? [{ key: keys.token(ask.caster) }] : [])]);
     }
   }
@@ -407,7 +408,7 @@ function groupReads(state: RoomState, named: readonly string[]): Read[] {
   const out: Read[] = [];
   for (const ids of moveGroups(state.tokens, named).values()) for (const id of ids) out.push({ key: keys.token(id) });
   // A named token the copy lacks still reads, so the prediction waits for the server.
-  for (const id of named) if (!state.tokens[id]) out.push({ key: keys.token(id) });
+  for (const id of named) if (!ownEntry(state.tokens, id)) out.push({ key: keys.token(id) });
   return out;
 }
 
@@ -424,7 +425,7 @@ function companionScene(state: RoomState): Collection[] {
   const landing = step ? encounter.entries.find((e) => e.id === step.landing) : undefined;
   if (!landing) return [];
   if (landing.tokenId !== undefined) {
-    const token = state.tokens[landing.tokenId];
+    const token = ownEntry(state.tokens, landing.tokenId);
     return token ? [`scene:${token.sceneId}`] : [];
   }
   return state.meta.playerSceneId !== null ? [`scene:${state.meta.playerSceneId}`] : [];
@@ -470,8 +471,8 @@ export function satisfies(reads_: Reads, view: ProjectedState, viewer: Viewer, o
     const encounter = state.encounter;
     if (!encounter) continue;
     for (const entry of encounter.entries) {
-      if (entry.tokenId !== undefined && state.tokens[entry.tokenId] === undefined) return false;
-      if (entry.characterId !== undefined && state.characters[entry.characterId] === undefined) return false;
+      if (entry.tokenId !== undefined && ownEntry(state.tokens, entry.tokenId) === undefined) return false;
+      if (entry.characterId !== undefined && ownEntry(state.characters, entry.characterId) === undefined) return false;
     }
   }
   return true;

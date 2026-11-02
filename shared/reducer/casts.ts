@@ -7,6 +7,7 @@ import { ASK_CLOSED } from "../permissions.ts";
 import type { OpOf } from "../protocol.ts";
 import { DAMAGE_TYPES, type DamageType } from "../rules/damage.ts";
 import { Refuse, invalid, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * A player's asks for saves (docs/design/design-v1-player-save-spell.md 5.2 and
@@ -26,7 +27,7 @@ export function labelDamageType(label: string | undefined): DamageType | undefin
 
 export function castAsk(tx: Tx, op: OpOf<"cast.ask">): void {
   const input = op.cast;
-  if (tx.state.casts[input.id]) throw invalid("that ask already exists");
+  if (ownEntry(tx.state.casts, input.id)) throw invalid("that ask already exists");
   const ask: CastAsk = { id: input.id, rev: 0, by: tx.actor.memberId, caster: input.caster, sceneId: input.sceneId, spell: input.spell, at: tx.env.at };
   if (input.roll !== undefined) ask.roll = input.roll;
   if (input.slot !== undefined) ask.slot = input.slot;
@@ -34,7 +35,7 @@ export function castAsk(tx: Tx, op: OpOf<"cast.ask">): void {
   if (input.targets !== undefined) ask.targets = [...input.targets];
   if (input.damage !== undefined) {
     ask.damage = { tag: input.damage.tag, parts: input.damage.parts };
-    const rolled = rolledOf(tx, ask, tx.state.tokens[ask.caster]);
+    const rolled = rolledOf(tx, ask, ownEntry(tx.state.tokens, ask.caster));
     if (rolled) ask.rolled = rolled;
   }
   // First in the op, so the line's `<seq>:0` id is the same whatever else the op writes (5.3).
@@ -43,7 +44,7 @@ export function castAsk(tx: Tx, op: OpOf<"cast.ask">): void {
 }
 
 export function castClose(tx: Tx, op: OpOf<"cast.close">): void {
-  const ask = tx.state.casts[op.castId];
+  const ask = ownEntry(tx.state.casts, op.castId);
   if (!ask) throw new Refuse("gone", ASK_CLOSED);
   closeCast(tx, ask, op.end);
 }

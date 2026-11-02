@@ -2,6 +2,7 @@ import { LIMITS, type LimitCheck } from "./limits.ts";
 import type { RoomState, SceneId } from "./model.ts";
 import { SIGHT_POTENTIAL } from "./rules/segments.ts";
 import { sceneWalls } from "./rules/walls.ts";
+import { ownEntry } from "./records.ts";
 
 /**
  * The cap on a vision scene's potential sight pieces (docs/design/design-v1-maps-vision.md
@@ -16,7 +17,7 @@ type Walls = Pick<RoomState, "scenes" | "buildChunks">;
 
 /** How many pieces of the scene's split wall set could block sight. */
 export function sightPieces(state: Walls, sceneId: SceneId): number {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene) return 0;
   return sceneWalls(scene, state.buildChunks).segmentsWith(SIGHT_POTENTIAL).length / 4;
 }
@@ -35,10 +36,10 @@ export function tooManySightPieces(count: number): string {
  * room import, the cap is absolute.
  */
 export function sightPiecesCheck(state: Walls, sceneId: SceneId, before?: Walls): LimitCheck {
-  if (state.scenes[sceneId]?.vision?.on !== true) return { ok: true };
+  if (ownEntry(state.scenes, sceneId)?.vision?.on !== true) return { ok: true };
   const count = sightPieces(state, sceneId);
   if (count <= LIMITS.sightPiecesPerScene) return { ok: true };
-  const was = before?.scenes[sceneId];
+  const was = ownEntry(before?.scenes, sceneId);
   if (before && was?.vision?.on === true && sightPieces(before, sceneId) >= count) return { ok: true };
   return { ok: false, code: "quota", message: tooManySightPieces(count) };
 }

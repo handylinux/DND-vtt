@@ -6,6 +6,7 @@ import { planDoor, planHand, planTrapMove, planTurn, walkOp, type Springing, typ
 import { pressChangesNothing } from "./encounter.ts";
 import { addDue, dmLine, orderedBy, PIT_ACTION, pitOpens, plainList, playersLine, runActions } from "./traps.ts";
 import { gone, Refuse, type Env, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /*
  * The trap step (docs/design/design-v1-traps.md 5 and 13.2): what sets traps off
@@ -63,7 +64,7 @@ export function trapStep(tx: Tx, op: Op, before: RoomState, plan: TrapPlan): Tra
     // The turn's own test sees the room with its nextTurn traps armed again, the ending turn's springings counted (5.4).
     const traps = { ...tx.state.traps };
     for (const s of plan.before) {
-      const t = traps[s.trap.id];
+      const t = ownEntry(traps, s.trap.id);
       if (t && writesTrap(s, tx.actor)) traps[t.id] = sprungOf(t);
     }
     for (const [id, t] of Object.entries(traps)) if (rearms(t)) traps[id] = { ...t, state: "armed" };
@@ -82,9 +83,9 @@ export function trapStep(tx: Tx, op: Op, before: RoomState, plan: TrapPlan): Tra
 
 /** The DM's Set it off (6.2): whatever its state and wherever it is, for the creatures named, as a DM op's springing. */
 export function trapSpring(tx: Tx, op: OpOf<"trap.spring">): void {
-  const trap = tx.state.traps[op.trapId];
+  const trap = ownEntry(tx.state.traps, op.trapId);
   if (!trap) throw gone("trap");
-  const tokenIds = op.tokenIds.filter((id) => tx.state.tokens[id]?.sceneId === trap.sceneId);
+  const tokenIds = op.tokenIds.filter((id) => ownEntry(tx.state.tokens, id)?.sceneId === trap.sceneId);
   const out: TrapWrites = { wrote: false };
   write(tx, planHand(tx.state as TrapRoom, trap, tokenIds, tx.env), out);
   if (!tx.state.encounter) rearmNow(tx, trap.id);
@@ -101,7 +102,7 @@ function turnStarted(tx: Tx, op: Op): string | null {
 
 function doorWasShut(state: RoomState, sceneId: string, ref: TrapDoorRef): boolean {
   const { cx, cy } = doorChunk(ref);
-  const chunk = state.buildChunks[chunkKey(sceneId, cx, cy)];
+  const chunk = ownEntry(state.buildChunks, chunkKey(sceneId, cx, cy));
   const feature = "edge" in ref ? chunk?.edges[ref.edge] : chunk?.walls?.find((w) => w.id === ref.id)?.f;
   return feature?.kind === "door" && feature.state !== "open";
 }
@@ -128,7 +129,7 @@ function armNextTurn(tx: Tx): void {
 }
 
 function rearmNow(tx: Tx, trapId: string): void {
-  const trap = tx.state.traps?.[trapId];
+  const trap = ownEntry(tx.state.traps, trapId);
   if (trap && rearms(trap)) tx.write(keys.trap(trap.id), { ...trap, state: "armed" });
 }
 
@@ -142,7 +143,7 @@ function rearmNow(tx: Tx, trapId: string): void {
  * damage or conditions, marked done since its actions ran.
  */
 function write(tx: Tx, s: Springing, out: TrapWrites): void {
-  const trap = tx.state.traps?.[s.trap.id];
+  const trap = ownEntry(tx.state.traps, s.trap.id);
   const rig = trap?.rig;
   if (!trap || !rig) return;
   out.wrote = true;
@@ -168,7 +169,7 @@ function write(tx: Tx, s: Springing, out: TrapWrites): void {
   const did = runActions(tx, trap);
   if (did.some((d) => d.action === PIT_ACTION && d.ok)) out.pit = true;
   const perceived = s.pass === "public" && s.perceived;
-  const next = sprungOf(tx.state.traps[trap.id] ?? trap);
+  const next = sprungOf(ownEntry(tx.state.traps, trap.id) ?? trap);
   const found = perceived && rig.foundOnSpring === true && !trap.found;
   if (found) next.found = true;
   tx.write(keys.trap(trap.id), next);

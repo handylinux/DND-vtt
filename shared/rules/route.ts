@@ -40,6 +40,7 @@ import {
   type Walker,
   type Walking,
 } from "./movement.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * A move's route, what it costs and the spots it passes
@@ -376,7 +377,7 @@ export function fileOutOfReach(
  * judges a squeeze.
  */
 export function walkSqueezes(build: BuildState, token: PlacedToken & Pick<Walker, "sceneId">, points: readonly Point[], trace: WalkTrace, end?: boolean, opVersion?: number): boolean[] {
-  const scene = build.scenes[token.sceneId];
+  const scene = ownEntry(build.scenes, token.sceneId);
   const g = scene ? sceneGrid(scene) : SQUARES;
   const last = points.length - 1;
   const full = seatsFullBetweenEnds(opVersion);
@@ -981,7 +982,7 @@ export function routeStands(build: BuildState, route: readonly RoutePoint[], tok
   const walk = spots ?? routeWalk(SQUARES, trace, build, step);
   const lattice = step ?? routeLattice(token);
   const grid = snapStep(token);
-  const blocks = build.scenes[token.sceneId]?.blockMovement === true;
+  const blocks = ownEntry(build.scenes, token.sceneId)?.blockMovement === true;
   const squeezes = canSqueeze(token);
   const pieces: { endAt: (p: Point) => WalkEnd; exact: boolean; sweep?: boolean }[] = [];
   const pieceAt = (i: number) => {
@@ -1068,7 +1069,7 @@ function hexStands(
   spots?: readonly WalkSpot[],
 ): { walk: readonly WalkSpot[]; trace: WalkTrace; spot: (s: number) => RouteSpot } {
   const walk = spots ?? routeWalk(t.g, trace, build, undefined, opts.squeeze !== undefined ? { endSqueezed: opts.squeeze } : {});
-  const blocks = build.scenes[token.sceneId]?.blockMovement === true;
+  const blocks = ownEntry(build.scenes, token.sceneId)?.blockMovement === true;
   const ground = opts.publicGround;
   // Each piece's own leg, as its walk took it (hexPiece): the last ends squeezed as the op does.
   const pieceLegs: HexLeg[] = [];

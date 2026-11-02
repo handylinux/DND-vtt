@@ -7,6 +7,7 @@ import { SQUARES, type Grid } from "./grid.ts";
 import { cornerAt, footprintHexes, HEX_R, HEX_S, hexAt, hexCenter, hexCorners, hexInScene, hexKey, snapAnchor, type Hex, type HexGrid } from "./hex.ts";
 import { AREAS, stepOffWalls } from "./segments.ts";
 import { cachedVisibility, crossingsAt, indexPolygon, insideCrossings, markPolygonCells, type Polygon, type PolygonIndex, type WallSet } from "./walls.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Areas of effect (design section 9.3).
@@ -696,8 +697,8 @@ function feetPerCellOf(ctx: AreaContext): number {
  */
 export function resolveArea(template: AreaTemplateInput, ctx: AreaContext): ResolvedArea | null {
   const fpc = feetPerCellOf(ctx);
-  const attached = template.attachedTo ? ctx.tokens?.[template.attachedTo] : undefined;
-  const caster = template.casterId ? ctx.tokens?.[template.casterId] : undefined;
+  const attached = template.attachedTo ? ownEntry(ctx.tokens, template.attachedTo) : undefined;
+  const caster = template.casterId ? ownEntry(ctx.tokens, template.casterId) : undefined;
   const sizeFt = areaFt(template.size, AREA_MIN_FT);
   const origin = attached
     ? castFromToken(ctx.grid, { shape: template.shape, size: sizeFt, yaw: template.yaw, anchor: template.anchor }, attached, fpc).origin
@@ -1078,7 +1079,7 @@ function samplesOf(ctx: AreaContext): number {
  */
 export function coverageCacheKey(template: AreaTemplateInput, ctx: AreaContext): string {
   const tok = (id: string | undefined) => {
-    const t = id ? ctx.tokens?.[id] : undefined;
+    const t = id ? ownEntry(ctx.tokens, id) : undefined;
     return t ? [t.id, t.rev, t.size, t.w, t.h, t.x, t.y, t.elevation, t.height] : null;
   };
   return JSON.stringify([
@@ -1125,7 +1126,7 @@ export function computeCoverage(template: AreaTemplateInput, ctx: AreaContext): 
   }
   if (ctx.grid.shape === "hex") {
     const hs = new HexSampler(ctx.grid, area.shade ? { ...area, shape: area.shade } : area, n, sceneBounds(ctx));
-    const excluded = !template.includeOrigin && area.originTokenId ? ctx.tokens?.[area.originTokenId] : undefined;
+    const excluded = !template.includeOrigin && area.originTokenId ? ownEntry(ctx.tokens, area.originTokenId) : undefined;
     const own = new Set(excluded ? occupiedHexes(ctx.grid, excluded).map(hexKey) : []);
     const covered = hs.covered(area.originZ, ctx.settings.aoeCoverage);
     const hexes = own.size === 0 ? covered : covered.filter((c) => !own.has(`${c.col},${c.row}`));
@@ -1137,7 +1138,7 @@ export function computeCoverage(template: AreaTemplateInput, ctx: AreaContext): 
   const centers = new Uint8Array(s.nx * s.ny);
   const covered = new Uint8Array(s.nx * s.ny);
   const rule = ctx.settings.aoeCoverage;
-  const excluded = !template.includeOrigin && area.originTokenId ? ctx.tokens?.[area.originTokenId] : undefined;
+  const excluded = !template.includeOrigin && area.originTokenId ? ownEntry(ctx.tokens, area.originTokenId) : undefined;
   const ex = excluded ? occupiedRange(ctx.grid, excluded) : null;
   const cells: CoveredCell[] = [];
   for (let j = s.gy; j < s.gy + s.ny; j++) {

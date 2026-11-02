@@ -11,6 +11,7 @@ import { resultOf } from "../rules/rolls.ts";
 import { Refuse, gone, guardHash, invalid, type Tx } from "./tx.ts";
 import { savePageAskFieldsSchema } from "../saveOutcomeContract.ts";
 import { tracksSaveOutcomes } from "../saveOutcomes.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Roll requests (docs/design/design-v1-dm-tools.md 3.3 and docs/design/design-v1-roll-request.md).
@@ -42,12 +43,12 @@ export const SAVE_SETTLED = "That save is no longer waiting.";
 
 export function rollAsk(tx: Tx, op: OpOf<"roll.ask">): void {
   const input = op.request;
-  if (tx.state.rolls[input.id]) throw invalid("roll request already exists");
+  if (ownEntry(tx.state.rolls, input.id)) throw invalid("roll request already exists");
   if (tracksSaveOutcomes(tx.env.opVersion) && op.replaces !== undefined) {
     if (tx.actor.role !== "dm") throw new Refuse("forbidden", "only the DM can replace save requests");
     if (!savePageAskFieldsSchema.safeParse({ reason: op.reason, replaces: op.replaces }).success) throw invalid("the save request replacement is invalid");
     for (const replacement of op.replaces) {
-      const request = tx.state.rolls[replacement.id];
+      const request = ownEntry(tx.state.rolls, replacement.id);
       if (!request || guardHash(keys.roll(replacement.id), request) !== replacement.expectHash) throw invalid("The roll request changed. Check its answers and ask again.");
     }
     for (const replacement of op.replaces) tx.writeBookkeeping(keys.roll(replacement.id), null);
@@ -126,7 +127,7 @@ export function isFinal(request: Pick<RollRequest, "dc" | "dcShown" | "resultSho
  * overrule one.
  */
 export function rollAnswer(tx: Tx, op: OpOf<"roll.answer">): void {
-  const request = tx.state.rolls[op.rollId];
+  const request = ownEntry(tx.state.rolls, op.rollId);
   if (!request) throw gone("roll request");
   const index = request.targets.findIndex((t) => sameCreature(t, op.target));
   const current = request.targets[index];
@@ -233,7 +234,7 @@ function taggedAnswer(tx: Tx, request: RollRequest, index: number, current: Roll
  * corrected answer writes its own.
  */
 export function rollReopen(tx: Tx, op: OpOf<"roll.reopen">): void {
-  const request = tx.state.rolls[op.rollId];
+  const request = ownEntry(tx.state.rolls, op.rollId);
   if (!request) throw gone("roll request");
   const index = request.targets.findIndex((t) => sameCreature(t, op.target));
   const current = request.targets[index];
@@ -257,7 +258,7 @@ export function rollReopen(tx: Tx, op: OpOf<"roll.reopen">): void {
  * between the player and the DM, and an allowed change writes its own.
  */
 export function rollChange(tx: Tx, op: OpOf<"roll.change">): void {
-  const request = tx.state.rolls[op.rollId];
+  const request = ownEntry(tx.state.rolls, op.rollId);
   if (!request) throw gone("roll request");
   const index = request.targets.findIndex((t) => sameCreature(t, op.target));
   const current = request.targets[index];
@@ -336,7 +337,7 @@ export function changeRefusal(
  */
 export function rollClose(tx: Tx, op: OpOf<"roll.close">): void {
   for (const id of new Set(op.rollIds)) {
-    const request = tx.state.rolls[id];
+    const request = ownEntry(tx.state.rolls, id);
     if (!request) continue;
     if (op.ifSettled && !request.targets.every((t) => isAnswered(t) && t.change === undefined)) continue;
     if (request.ends) settleOccurrence(tx, request, op.settle);

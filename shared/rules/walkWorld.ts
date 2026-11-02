@@ -12,6 +12,7 @@ import type { WalkArea, WalkCreature, WalkInput } from "./walk.ts";
 import { sceneWalls } from "./walls.ts";
 import { isHex, sceneGrid, SQUARES } from "./grid.ts";
 import { hexKey } from "./hex.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * The public world a route is searched in (docs/design/design-v1-movement.md 5.5):
@@ -100,15 +101,15 @@ export type WorldOptions = {
  */
 export function publicToken(state: RoomState, token: Token, viewer: WalkViewer): boolean {
   if (token.visibility === "dm") return false;
-  if (viewer.role === "player" && !perPlayerScene(state.scenes[token.sceneId])) return true;
+  if (viewer.role === "player" && !perPlayerScene(ownEntry(state.scenes, token.sceneId))) return true;
   if (state.meta.view?.blackout === true) return false;
-  if (seenAllMarked(state.scenes[token.sceneId], viewer.role)) return (token as Token & { seenAll?: true }).seenAll === true;
+  if (seenAllMarked(ownEntry(state.scenes, token.sceneId), viewer.role)) return (token as Token & { seenAll?: true }).seenAll === true;
   const above = viewer.role === "player" && (token as Token & { aboveFog?: boolean }).aboveFog === true;
   return !withheldWhereItStands(state, above ? { ...token, fogExempt: true } : token);
 }
 
 function actorOf(state: RoomState, token: Token) {
-  return "inline" in token.actor ? token.actor.inline : state.characters[token.actor.ref]?.actor;
+  return "inline" in token.actor ? token.actor.inline : ownEntry(state.characters, token.actor.ref)?.actor;
 }
 
 /** The conditions players receive on a token: none the DM hid. A player's copy has dropped those already. */
@@ -152,7 +153,7 @@ function publicAreas(state: RoomState, sceneId: string, seen: (id: string) => To
     }
     if (t.visibility === "dm") continue;
     if (t.attachedTo !== undefined && !seen(t.attachedTo)) continue;
-    if (!state.meta.settings.playersSeeAoeOfOthers && state.members[t.ownerId]?.kind !== "dm") continue;
+    if (!state.meta.settings.playersSeeAoeOfOthers && ownEntry(state.members, t.ownerId)?.kind !== "dm") continue;
     out.push({ template: t, caster: t.casterId ? seen(t.casterId) : undefined });
   }
   return out.sort((a, b) => (a.template.id < b.template.id ? -1 : a.template.id > b.template.id ? 1 : 0));
@@ -164,7 +165,7 @@ function publicAreas(state: RoomState, sceneId: string, seen: (id: string) => To
  * holds them, for the public counters, or none outside a turn.
  */
 export function publicWorld(state: RoomState, token: Token & Walker, viewer: WalkViewer, stops: readonly PathStop[] = [], opts: WorldOptions = {}): PublicWorld {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   const rules: DistanceSettings = { feetPerCell: state.meta.settings.feetPerCell, diagonal: state.meta.settings.diagonal };
   const blocks = scene?.blockMovement === true;
   const everything = opts.everything === true && viewer.role === "dm";
@@ -229,11 +230,11 @@ export function publicWorld(state: RoomState, token: Token & Walker, viewer: Wal
 export function groupWalkWorld(state: RoomState, token: Token & Walker, viewer: WalkViewer, stops: readonly PathStop[] = [], opts: WorldOptions = {}): PublicWorld {
   const shown = shownBy(state, viewer, opts);
   const seen = (t: { id: string }) => {
-    const other = state.tokens[t.id];
+    const other = ownEntry(state.tokens, t.id);
     return other !== undefined && shown(other);
   };
   const members = publicMembers(state.tokens, token.id, seen).slice(1);
-  const party = members.some((id) => isPartyMember(state, state.tokens[id]!));
+  const party = members.some((id) => isPartyMember(state, ownEntry(state.tokens, id)!));
   const world = publicWorld(state, token, viewer, stops, party ? { ...opts, seenGround: true } : opts);
   const drag = dragExtra(state.tokens, token.id, seen);
   if (drag === 0 && members.length === 0) return world;
@@ -241,12 +242,12 @@ export function groupWalkWorld(state: RoomState, token: Token & Walker, viewer: 
   const keep = world.spaces.map((space) => !moving.has(space.id));
   // Each as itself, never squeezed, as its holder's walk takes it along (moveLeg.ts follow).
   const towed = members.flatMap((id) => {
-    const member = state.tokens[id]!;
+    const member = ownEntry(state.tokens, id)!;
     return member.attached?.kind === "drag" ? followerTrace(member, [member]) : [];
   });
   return {
     ...world,
-    input: { ...world.input, drag, creatures: world.input.creatures.filter((_, i) => keep[i]), ...(towed.length > 0 ? { towed, group: members.map((id) => state.tokens[id]!) } : {}) },
+    input: { ...world.input, drag, creatures: world.input.creatures.filter((_, i) => keep[i]), ...(towed.length > 0 ? { towed, group: members.map((id) => ownEntry(state.tokens, id)!) } : {}) },
     spaces: world.spaces.filter((_, i) => keep[i]),
   };
 }
@@ -283,7 +284,7 @@ export function seenWhereMoved(state: RoomState, token: Token): boolean {
  * chunks as players hold them (`asPlayers`). A player's copy already is.
  */
 function areaContext(state: RoomState, token: Token, shown: ReadonlyMap<string, Token>, asPlayers: boolean): AreaContext {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   return {
     settings: state.meta.settings,
     bounds: scene?.bounds ?? { w: 0, h: 0 },
@@ -305,7 +306,7 @@ function areaContext(state: RoomState, token: Token, shown: ReadonlyMap<string, 
  */
 function rigidWith(state: RoomState, token: Token, shown: (t: Token) => boolean): ReadonlySet<string> {
   const pub = (t: { id: string }) => {
-    const other = state.tokens[t.id];
+    const other = ownEntry(state.tokens, t.id);
     return other !== undefined && shown(other);
   };
   const rigid = carriedGroup(state.tokens, token.id, new Set(), (child, holder) => child.attached !== undefined && onHolder(child.attached.kind) && pub(child) && pub(holder));
@@ -341,7 +342,7 @@ const playerBuilds = new WeakMap<object, Map<string, Record<string, BuildChunk>>
 function playersChunks(state: RoomState, sceneId: string): Record<string, BuildChunk> {
   let byScene = playerBuilds.get(state.buildChunks);
   if (!byScene) playerBuilds.set(state.buildChunks, (byScene = new Map()));
-  const autoWalls = state.scenes[sceneId]?.autoWalls;
+  const autoWalls = ownEntry(state.scenes, sceneId)?.autoWalls;
   const key = `${sceneId},${autoWalls ?? ""}`;
   const hit = byScene.get(key);
   if (hit) return hit;

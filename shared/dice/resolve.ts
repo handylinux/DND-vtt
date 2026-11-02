@@ -5,6 +5,7 @@ import { creatureBonus, isSave, testOf, type D20Test, type SrdRolls } from "./bo
 import { critRuleOf, rollCritical } from "./crit.ts";
 import { formulaRange, parseExtra, parseFormula, type Formula } from "./formula.ts";
 import { CANNOT_REROLL, rerolled, rerollFace, rollFormula, withDie, withLucky, type Changed, type Draw } from "./roll.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * The resolve (docs/design/design-v1-dice.md 4.2 step 4): a dice op the actor has
@@ -78,10 +79,10 @@ function d20Roll(bonus: number, extra: string | undefined): { ok: true; formula:
 }
 
 function actorOf(state: RoomState, target: ActorTarget): Actor | undefined {
-  if ("characterId" in target) return state.characters[target.characterId]?.actor;
-  const token = state.tokens[target.tokenId];
+  if ("characterId" in target) return ownEntry(state.characters, target.characterId)?.actor;
+  const token = ownEntry(state.tokens, target.tokenId);
   if (!token) return undefined;
-  return "inline" in token.actor ? token.actor.inline : state.characters[token.actor.ref]?.actor;
+  return "inline" in token.actor ? token.actor.inline : ownEntry(state.characters, token.actor.ref)?.actor;
 }
 
 /** A rolled save that a condition its players can see fails whatever the total (4.2), judged again on every roll. */
@@ -106,7 +107,7 @@ function inRange(result: DiceResult): boolean {
  * writes a total an answer could not hold.
  */
 function rolledAnswer(op: OpOf<"roll.dice">, state: RoomState, deps: ResolveDeps): Resolved {
-  const request = state.rolls[op.rollId];
+  const request = ownEntry(state.rolls, op.rollId);
   if (!request) return refuse("roll request is not here", "gone");
   const choice = op.choice ?? 0;
   if (choice >= request.test.choices.length) return refuse("a choice names one the test offers");
@@ -132,7 +133,7 @@ function rolledAnswer(op: OpOf<"roll.dice">, state: RoomState, deps: ResolveDeps
  * the ask pending on this answer.
  */
 function changedAnswer(op: OpOf<"roll.dice">, change: string, state: RoomState, deps: ResolveDeps): Resolved {
-  const request = state.rolls[op.rollId];
+  const request = ownEntry(state.rolls, op.rollId);
   const target = request?.targets.find((t) => ("tokenId" in op.target ? t.tokenId === op.target.tokenId : t.characterId === op.target.characterId));
   const ask = target?.change;
   const dice = target?.dice;

@@ -9,6 +9,7 @@ import { actorUse, addUseLine } from "./uses.ts";
 import { prepareSaveOutcome, writeSaveOutcome } from "./saveOutcomes.ts";
 import { tracksSaveOutcomes } from "../saveOutcomes.ts";
 import { saveRechargeSpendSchema } from "../saveOutcomeContract.ts";
+import { ownEntry } from "../records.ts";
 
 /** The refusal of a Legendary Resistance a creature has no use of left. */
 export const NO_RESISTANCE_LEFT = "it has no Legendary Resistance left";
@@ -31,7 +32,7 @@ export function actorOutcome(tx: Tx, op: OpOf<"actor.outcome">): void {
     if (!saveRechargeSpendSchema.safeParse(op.recharge).success) throw invalid("the save recharge is invalid");
   }
   if (op.cast !== undefined) {
-    const ask = tx.state.casts[op.cast];
+    const ask = ownEntry(tx.state.casts, op.cast);
     if (!ask) throw new Refuse("gone", ASK_CLOSED);
     closeCast(tx, ask, "done");
   }

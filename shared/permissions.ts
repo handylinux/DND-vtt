@@ -46,6 +46,7 @@ import { turnMovedOn } from "./rules/initiative.ts";
 import { turnUnderWay } from "./rules/path.ts";
 import { entryMatchesAnchor } from "./rules/durations.ts";
 import { EXHAUSTION_MAX_LEVEL, levelFits } from "./srd/conditions.ts";
+import { ownEntry } from "./records.ts";
 
 /**
  * Who may do what (design sections 8.1 and 8.2). The DM may do everything a
@@ -127,7 +128,7 @@ class Check {
   }
 
   visibleToken(id: string): Token | undefined {
-    const token = this.state.tokens[id];
+    const token = ownEntry(this.state.tokens, id);
     return token && this.visible(keys.token(id)) ? token : undefined;
   }
 
@@ -140,7 +141,7 @@ class Check {
    */
   liveGround(sceneId: string): Ground | null {
     if (!this.grounds.has(sceneId)) {
-      const scene = this.state.scenes[sceneId];
+      const scene = ownEntry(this.state.scenes, sceneId);
       const speaks = this.actor.role === "player" && scene?.fogEnabled === true;
       this.grounds.set(sceneId, speaks ? groundOf(this.state, sceneId, fogClassOf(this.state, sceneId, this.actor.memberId)) : null);
     }
@@ -159,12 +160,12 @@ class Check {
   }
 
   ownsTokenId(id: string): boolean {
-    const token = this.state.tokens[id];
+    const token = ownEntry(this.state.tokens, id);
     return token !== undefined && ownsToken(this.state, this.actor, token);
   }
 
   ownsCharacterId(id: string): boolean {
-    const character = this.state.characters[id];
+    const character = ownEntry(this.state.characters, id);
     return character !== undefined && ownsCharacter(this.actor, character);
   }
 
@@ -180,17 +181,17 @@ class Check {
       const token = this.visibleToken(target.tokenId);
       return { visible: token !== undefined, owned: token !== undefined && ownsToken(this.state, this.actor, token), viaToken: true };
     }
-    const character = this.state.characters[target.characterId];
+    const character = ownEntry(this.state.characters, target.characterId);
     return { visible: character !== undefined, owned: character !== undefined && ownsCharacter(this.actor, character), viaToken: false };
   }
 
   /** The target's effect with this id, whether or not players may see it. */
   effect(target: ActorTarget, effectId: string): Effect | undefined {
     let actor: Actor | undefined;
-    if ("characterId" in target) actor = this.state.characters[target.characterId]?.actor;
+    if ("characterId" in target) actor = ownEntry(this.state.characters, target.characterId)?.actor;
     else {
-      const token = this.state.tokens[target.tokenId];
-      actor = token && ("inline" in token.actor ? token.actor.inline : this.state.characters[token.actor.ref]?.actor);
+      const token = ownEntry(this.state.tokens, target.tokenId);
+      actor = token && ("inline" in token.actor ? token.actor.inline : ownEntry(this.state.characters, token.actor.ref)?.actor);
     }
     return actor?.effects.find((e) => e.id === effectId);
   }
@@ -212,7 +213,7 @@ class Check {
 
   anchorVisible(of: DurationAnchor): boolean {
     if ("tokenId" in of) return this.visibleToken(of.tokenId) !== undefined;
-    if ("characterId" in of) return this.state.characters[of.characterId] !== undefined;
+    if ("characterId" in of) return ownEntry(this.state.characters, of.characterId) !== undefined;
     return this.visibleEntry(of.entryId) !== undefined;
   }
 
@@ -281,7 +282,7 @@ const HEX_ASKS: ReadonlySet<string> = new Set(["build.erase", "build.rough", "bu
 
 function hexPhaseFits(op: Op, c: Check): Decision {
   const hex = (sceneId: string | undefined) => {
-    const scene = sceneId === undefined ? undefined : c.state.scenes[sceneId];
+    const scene = sceneId === undefined ? undefined : ownEntry(c.state.scenes, sceneId);
     return scene !== undefined && isHex(sceneGrid(scene));
   };
   const no = (words: string) => refuse("invalid", words);
@@ -351,13 +352,13 @@ export function promptRefusal(state: Pick<RoomState, "encounter">, actor: Pick<A
 /** The creature an op names, with the name a refusal gives it: its character's, for a token that plays one. */
 function creatureOf(state: RoomState, target: ActorTarget): { actor: Actor; name: string } | undefined {
   if ("characterId" in target) {
-    const character = state.characters[target.characterId];
+    const character = ownEntry(state.characters, target.characterId);
     return character && { actor: character.actor, name: character.name };
   }
-  const token = state.tokens[target.tokenId];
+  const token = ownEntry(state.tokens, target.tokenId);
   if (!token) return undefined;
   if ("inline" in token.actor) return { actor: token.actor.inline, name: token.name };
-  const character = state.characters[token.actor.ref];
+  const character = ownEntry(state.characters, token.actor.ref);
   return character && { actor: character.actor, name: character.name };
 }
 
@@ -451,7 +452,7 @@ export function expectOf(character: ExpectSubject, parts: Iterable<ExpectPart>):
  */
 function expectFits(op: Op, c: Check): Decision {
   if (op.t !== "character.update" || op.expect === undefined) return OK;
-  const character = c.state.characters[op.characterId];
+  const character = ownEntry(c.state.characters, op.characterId);
   if (!character) return OK;
   for (const [part, hash] of Object.entries(op.expect) as [ExpectPart, string | undefined][]) {
     if (hash !== undefined && expectHash(character, part) !== hash) return refuse("invalid", CHARACTER_CHANGED);
@@ -470,7 +471,7 @@ export const SYNC_STAMP_FULL = "this character's sync record cannot take a later
  */
 function stampFits(op: Op, c: Check): Decision {
   if (op.t !== "character.update" || !op.patch.ddbSync || op.patch.ddbSync.at !== undefined || op.patch.stats === null) return OK;
-  const before = c.state.characters[op.characterId]?.ddbSync?.at;
+  const before = ownEntry(c.state.characters, op.characterId)?.ddbSync?.at;
   return syncStampFits(before) ? OK : refuse("invalid", SYNC_STAMP_FULL);
 }
 
@@ -492,8 +493,8 @@ export const ROUTE_OFF_HEXES = "a route steps from hex to hex, each stop on its 
  */
 function routeFits(op: Op, c: Check): Decision {
   if (op.t !== "token.move" || !op.route) return OK;
-  const token = c.state.tokens[op.tokenId];
-  const scene = token ? c.state.scenes[token.sceneId] : undefined;
+  const token = ownEntry(c.state.tokens, op.tokenId);
+  const scene = token ? ownEntry(c.state.scenes, token.sceneId) : undefined;
   if (!token || !scene) return OK;
   const fp = footprintSize(token);
   const grid = sceneGrid(scene);
@@ -577,7 +578,7 @@ export const NOT_A_SQUEEZE = "it only squeezes where an opening is too narrow fo
  */
 function squeezeFits(op: Op, c: Check): Decision {
   if (op.t !== "token.move" || !op.squeeze) return OK;
-  const token = c.state.tokens[op.tokenId];
+  const token = ownEntry(c.state.tokens, op.tokenId);
   if (!token) return OK;
   const walker = walkerFor(c.state, token, seenAllIn(c), { to: op });
   const points = op.route ? routePoints(c.state.buildChunks, walker, op.route, op.elevation ?? token.elevation) : [];
@@ -692,7 +693,7 @@ function forDm(op: Op, c: Check): Decision {
     // The DM's death roll and recharge roll need a creature that exists, checked before anything is drawn.
     case "actor.deathRoll":
     case "actor.rechargeRoll":
-      return ("tokenId" in op.target ? c.state.tokens[op.target.tokenId] : c.state.characters[op.target.characterId]) ? OK : GONE;
+      return ("tokenId" in op.target ? ownEntry(c.state.tokens, op.target.tokenId) : ownEntry(c.state.characters, op.target.characterId)) ? OK : GONE;
     // The rule of the op it carries (docs/design/design-v1-dice.md 4.2).
     case "sys.dice":
       return forDm(op.asked, c);
@@ -701,10 +702,10 @@ function forDm(op: Op, c: Check): Decision {
       return refuse("forbidden", DM_RUNS_GROUP_SAVE);
     case "cast.close":
       if (op.end === "withdrawn") return refuse("forbidden", ONLY_ITS_PLAYER_WITHDRAWS);
-      return c.state.casts[op.castId] ? OK : refuse("gone", ASK_CLOSED);
+      return ownEntry(c.state.casts, op.castId) ? OK : refuse("gone", ASK_CLOSED);
     // Two DM devices that opened one ask apply it once.
     case "actor.outcome":
-      return op.cast === undefined || c.state.casts[op.cast] ? OK : refuse("gone", ASK_CLOSED);
+      return op.cast === undefined || ownEntry(c.state.casts, op.cast) ? OK : refuse("gone", ASK_CLOSED);
     default:
       return OK;
   }
@@ -722,7 +723,7 @@ export const PAGE_FOR_A_PLAYER = "a page is private to one player, never to a DM
  */
 function pageReader(c: Check, access: JournalAccess): Decision {
   if (typeof access !== "object") return OK;
-  return c.state.members[access.member]?.kind === "dm" ? refuse("invalid", PAGE_FOR_A_PLAYER) : OK;
+  return ownEntry(c.state.members, access.member)?.kind === "dm" ? refuse("invalid", PAGE_FOR_A_PLAYER) : OK;
 }
 
 function forPlayer(op: Op, c: Check): Decision {
@@ -952,7 +953,7 @@ function forPlayer(op: Op, c: Check): Decision {
       // Class resources are the character's players' alone (docs/design/design-v1-combat-controls.md 7.2), so a player lent
       // only the token spends none, as they read and edit none.
       if (op.use.kind !== "resource" || !("tokenId" in op.target)) return OK;
-      const token = c.state.tokens[op.target.tokenId];
+      const token = ownEntry(c.state.tokens, op.target.tokenId);
       return token && "ref" in token.actor && !c.ownsCharacterId(token.actor.ref) ? NOT_YOURS : OK;
     }
 
@@ -983,7 +984,7 @@ function forPlayer(op: Op, c: Check): Decision {
     }
 
     case "character.update": {
-      const character = c.state.characters[op.characterId];
+      const character = ownEntry(c.state.characters, op.characterId);
       if (!character) return GONE;
       if (!ownsCharacter(c.actor, character)) return NOT_YOURS;
       for (const field of Object.keys(op.patch)) {
@@ -998,7 +999,7 @@ function forPlayer(op: Op, c: Check): Decision {
 
     case "character.delete": {
       // Who plays a character is no secret at the table, so a refusal may say which rule it failed.
-      const character = c.state.characters[op.characterId];
+      const character = ownEntry(c.state.characters, op.characterId);
       if (!character) return GONE;
       if (!ownsCharacter(c.actor, character)) return NOT_YOURS;
       return playsAlone(c.actor.memberId, character) ? OK : refuse("forbidden", PLAYED_WITH_OTHERS);
@@ -1006,7 +1007,7 @@ function forPlayer(op: Op, c: Check): Decision {
 
     case "template.create": {
       const t = op.template;
-      if (c.state.templates[t.id]) return GONE;
+      if (ownEntry(c.state.templates, t.id)) return GONE;
       if (t.ownerId !== c.actor.memberId) return NOT_YOURS;
       if (t.visibility !== "all") return refuse("forbidden", "players cannot hide areas");
       if (t.sceneId !== playerScene) return GONE;
@@ -1015,7 +1016,7 @@ function forPlayer(op: Op, c: Check): Decision {
       return OK;
     }
     case "template.update": {
-      const template = c.state.templates[op.templateId];
+      const template = ownEntry(c.state.templates, op.templateId);
       if (!template || !c.visible(keys.template(op.templateId))) return GONE;
       if (template.ownerId !== c.actor.memberId) return NOT_YOURS;
       const asked = askedAreaRefusal(c, template.id);
@@ -1026,7 +1027,7 @@ function forPlayer(op: Op, c: Check): Decision {
       return OK;
     }
     case "template.delete": {
-      const template = c.state.templates[op.templateId];
+      const template = ownEntry(c.state.templates, op.templateId);
       if (!template || !c.visible(keys.template(op.templateId))) return GONE;
       if (template.ownerId !== c.actor.memberId) return NOT_YOURS;
       return askedAreaRefusal(c, template.id) ?? OK;
@@ -1036,7 +1037,7 @@ function forPlayer(op: Op, c: Check): Decision {
       const d = op.drawing;
       // A kept ruler is a measurement from the ruler tool, not a drawing, so it stays allowed (question 6).
       if (d.kind !== "ruler" && !drawsAllowed(c.state.meta.settings, c.actor.memberId)) return refuse("forbidden", NO_DRAWING);
-      if (c.state.drawings[d.id]) return GONE;
+      if (ownEntry(c.state.drawings, d.id)) return GONE;
       if (d.ownerId !== c.actor.memberId) return NOT_YOURS;
       if (d.visibility !== "all") return refuse("forbidden", "players cannot hide drawings");
       if (d.sceneId !== playerScene) return GONE;
@@ -1045,7 +1046,7 @@ function forPlayer(op: Op, c: Check): Decision {
       return OK;
     }
     case "drawing.delete": {
-      const drawing = c.state.drawings[op.drawingId];
+      const drawing = ownEntry(c.state.drawings, op.drawingId);
       if (!drawing || !c.visible(keys.drawing(op.drawingId))) return GONE;
       return drawing.ownerId === c.actor.memberId ? OK : NOT_YOURS;
     }
@@ -1063,7 +1064,7 @@ function forPlayer(op: Op, c: Check): Decision {
           if (!c.visibleToken(entry.tokenId)) return GONE;
           if (!c.ownsTokenId(entry.tokenId)) return NOT_YOURS;
         } else if (entry.characterId !== undefined) {
-          if (!c.state.characters[entry.characterId]) return GONE;
+          if (!ownEntry(c.state.characters, entry.characterId)) return GONE;
           if (!c.ownsCharacterId(entry.characterId)) return NOT_YOURS;
         } else {
           return refuse("forbidden", "players add only their own characters");
@@ -1116,7 +1117,7 @@ function forPlayer(op: Op, c: Check): Decision {
     case "log.chat":
       return OK;
     case "log.whisper":
-      return op.to.every((id) => c.state.members[id] !== undefined) ? OK : GONE;
+      return op.to.every((id) => ownEntry(c.state.members, id) !== undefined) ? OK : GONE;
 
     case "undo":
       // Taking back an HP change from the log is the DM's (features section 10). A player's own stack is theirs.
@@ -1137,20 +1138,20 @@ function forPlayer(op: Op, c: Check): Decision {
           const tokenId = entry.key.slice("token:".length);
           // A silent passenger of the step answers nothing, whatever the DM changed about it unseen since (docs/design/design-v1-attach.md 8.3).
           if (quiet.has(tokenId)) {
-            const current = c.state.tokens[tokenId];
+            const current = ownEntry(c.state.tokens, tokenId);
             const restored = entry.value && typeof entry.value === "object" ? (entry.value as Token) : null;
             if (!current || !restored || withoutPose(restored) !== withoutPose(current)) return FORBIDDEN;
             continue;
           }
           const redo = op.from === "redo" && !op.teleport;
           const holder = carriedThroughout(c, tokenId, entry.value, restoring);
-          const d = holder ? restoreCarriedCheck(c, tokenId, entry.value, redo, holder, op.routes?.[holder], restoring) : restorePoseCheck(c, tokenId, entry.value, redo, op.routes?.[tokenId]);
+          const d = holder ? restoreCarriedCheck(c, tokenId, entry.value, redo, holder, ownEntry(op.routes, holder), restoring) : restorePoseCheck(c, tokenId, entry.value, redo, ownEntry(op.routes, tokenId));
           if (!d.ok) return restoreWords(d);
           continue;
         }
         if (!entry.key.startsWith("drawing:")) return FORBIDDEN;
         const before = entry.value as Drawing | null | undefined;
-        const current = c.state.drawings[entry.key.slice("drawing:".length)];
+        const current = ownEntry(c.state.drawings, entry.key.slice("drawing:".length));
         // Only on the scene the player holds, as a drawing op is, so an undo never writes off it and answers
         // the same whether a scene the players left is still there or was deleted since.
         if ((before && before.sceneId !== playerScene) || (current && current.sceneId !== playerScene)) return GONE;
@@ -1187,18 +1188,18 @@ function tokenImagesUsable(c: Check, input: { image?: ImageRef | null; altImages
  * preview at a wall, and the move it drops is tested when it arrives.
  */
 export function mayMoveToken(state: RoomState, viewer: Viewer, tokenId: string): Decision {
-  if (viewer.role === "dm") return state.tokens[tokenId] ? OK : GONE;
+  if (viewer.role === "dm") return ownEntry(state.tokens, tokenId) ? OK : GONE;
   const c = new Check(state, viewer, { canUseAsset: () => false });
   const d = namedMoveCheck(c, tokenId);
   if (d.ok || d.code === "gone") return d;
   // A token a holder the player moves carries goes with it, however the player stands with it (docs/design/design-v1-attach.md 6),
   // up links the player sees alone, so a hidden holder lends no drag a right (8.0).
   const seen = new Set<string>([tokenId]);
-  let at = state.tokens[tokenId];
+  let at = ownEntry(state.tokens, tokenId);
   for (let up = at && holderOf(state.tokens, at); up && !seen.has(up.id) && c.visibleToken(up.id); up = at && holderOf(state.tokens, at)) {
     seen.add(up.id);
     if (namedMoveCheck(c, up.id).ok) return OK;
-    at = state.tokens[up.id];
+    at = ownEntry(state.tokens, up.id);
   }
   return d;
 }
@@ -1224,7 +1225,7 @@ export function drawsAllowed(settings: Partial<Pick<RoomSettings, "playersDraw">
  * shows.
  */
 function rollAnswerCheck(c: Check, op: OpOf<"roll.answer">): Decision {
-  const request = c.state.rolls[op.rollId];
+  const request = ownEntry(c.state.rolls, op.rollId);
   if (!request || !c.visible(keys.roll(op.rollId))) return GONE;
   const named = request.targets.some((t) => ("tokenId" in op.target ? t.tokenId === op.target.tokenId : t.characterId === op.target.characterId));
   const owned = "tokenId" in op.target ? c.ownsTokenId(op.target.tokenId) : c.ownsCharacterId(op.target.characterId);
@@ -1322,7 +1323,7 @@ export const SETTLED_MEANWHILE = "It was settled meanwhile.";
  * travels, or a second device's Allow, draws nothing. All before any draw.
  */
 function rollDiceCheck(c: Check, op: OpOf<"roll.dice">): Decision {
-  const request = c.state.rolls[op.rollId];
+  const request = ownEntry(c.state.rolls, op.rollId);
   if (!request || !c.visible(keys.roll(op.rollId))) return GONE;
   const target = request.targets.find((t) => ("tokenId" in op.target ? t.tokenId === op.target.tokenId : t.characterId === op.target.characterId));
   if (!target) return GONE;
@@ -1350,7 +1351,7 @@ export const ONLY_PLAYERS_ASK = "Only a player asks to change a roll.";
  * while the room lets players type their totals.
  */
 function rollChangeCheck(c: Check, op: OpOf<"roll.change">): Decision {
-  const request = c.state.rolls[op.rollId];
+  const request = ownEntry(c.state.rolls, op.rollId);
   if (!request || !c.visible(keys.roll(op.rollId))) return GONE;
   const named = request.targets.some((t) => ("tokenId" in op.target ? t.tokenId === op.target.tokenId : t.characterId === op.target.characterId));
   const owned = "tokenId" in op.target ? c.ownsTokenId(op.target.tokenId) : c.ownsCharacterId(op.target.characterId);
@@ -1368,7 +1369,7 @@ function rollChangeCheck(c: Check, op: OpOf<"roll.change">): Decision {
  * replaced reopens nothing.
  */
 function allowFixCheck(c: Check, op: OpOf<"roll.reopen">): Decision {
-  const target = c.state.rolls[op.rollId]?.targets.find((t) => ("tokenId" in op.target ? t.tokenId === op.target.tokenId : t.characterId === op.target.characterId));
+  const target = ownEntry(c.state.rolls, op.rollId)?.targets.find((t) => ("tokenId" in op.target ? t.tokenId === op.target.tokenId : t.characterId === op.target.characterId));
   if (!target) return GONE;
   return fixPending(target, op.change) ? OK : refuse("invalid", SETTLED_MEANWHILE);
 }
@@ -1395,7 +1396,7 @@ function diceRollCheck(c: Check, op: OpOf<"dice.roll">): Decision {
     const creature = roll.creature;
     if (!creature) continue;
     if (c.actor.role === "dm") {
-      const exists = "tokenId" in creature ? c.state.tokens[creature.tokenId] !== undefined : c.state.characters[creature.characterId] !== undefined;
+      const exists = "tokenId" in creature ? ownEntry(c.state.tokens, creature.tokenId) !== undefined : ownEntry(c.state.characters, creature.characterId) !== undefined;
       if (!exists) return GONE;
       continue;
     }
@@ -1462,7 +1463,7 @@ export function askedArea(state: Pick<RoomState, "casts">, templateId: string): 
 export function waitingAsks(state: Pick<RoomState, "casts" | "tokens" | "characters">, viewer: Viewer): CastAsk[] {
   return Object.values(state.casts).filter((ask) => {
     if (ask.by !== viewer.memberId) return false;
-    const token = state.tokens[ask.caster];
+    const token = ownEntry(state.tokens, ask.caster);
     return token !== undefined && ownsToken(state as RoomState, viewer, token);
   });
 }
@@ -1477,12 +1478,12 @@ export function waitingAsks(state: Pick<RoomState, "casts" | "tokens" | "charact
  */
 function castAskCheck(c: Check, op: OpOf<"cast.ask">, playerScene: string | null): Decision {
   const input = op.cast;
-  if (c.state.casts[input.id]) return GONE;
+  if (ownEntry(c.state.casts, input.id)) return GONE;
   const caster = c.visibleToken(input.caster);
   if (!caster || playerScene === null || caster.sceneId !== playerScene || input.sceneId !== playerScene) return GONE;
   if (!ownsToken(c.state, c.actor, caster)) return NOT_YOURS;
   if (input.area !== undefined) {
-    const area = c.state.templates[input.area];
+    const area = ownEntry(c.state.templates, input.area);
     if (!area || area.sceneId !== playerScene || !c.visible(keys.template(input.area))) return GONE;
     if (area.ownerId !== c.actor.memberId) return NOT_YOURS;
   }
@@ -1501,7 +1502,7 @@ function castAskCheck(c: Check, op: OpOf<"cast.ask">, playerScene: string | null
 
 /** A player's withdrawal, of an ask whose caster they own now. The DM's resolve and dismissal are the DM's alone. */
 function castCloseCheck(c: Check, op: OpOf<"cast.close">, playerScene: string | null): Decision {
-  const ask = c.state.casts[op.castId];
+  const ask = ownEntry(c.state.casts, op.castId);
   // Behind a pause a player holds no ask (shared/project.ts), so none is there to withdraw.
   if (!ask || playerScene === null || !c.ownsTokenId(ask.caster)) return refuse("gone", ASK_CLOSED);
   return op.end === "withdrawn" ? OK : FORBIDDEN;
@@ -1524,7 +1525,7 @@ function seenByAll(c: Check, token: Token): boolean {
 /** seenByAll by id, as the attach rules ask it. */
 function seenAllIn(c: Check): (t: { id: string }) => boolean {
   return (t) => {
-    const token = c.state.tokens[t.id];
+    const token = ownEntry(c.state.tokens, t.id);
     return token !== undefined && seenByAll(c, token);
   };
 }
@@ -1539,7 +1540,7 @@ function seenAllIn(c: Check): (t: { id: string }) => boolean {
 function directsMount(c: Check, mount: Token): boolean {
   if (!seenByAll(c, mount)) return false;
   for (const id of carriedIndex(c.state.tokens).get(mount.id) ?? []) {
-    const rider = c.state.tokens[id];
+    const rider = ownEntry(c.state.tokens, id);
     if (rider?.attached?.kind !== "ride" || rider.attached.steer !== true || !isCreature(rider)) continue;
     if (ownsToken(c.state, c.actor, rider) && seenByAll(c, rider)) return true;
   }
@@ -1589,14 +1590,14 @@ function namedMoveCheck(c: Check, tokenId: string, to?: Pick<Token, "x" | "y"> &
 function draggedWalls(c: Check, op: Op): Decision {
   const first =
     op.t === "token.move" || op.t === "token.attach" || op.t === "token.detach" ? op.tokenId : op.t === "token.moveMany" ? op.moves[0]?.tokenId : undefined;
-  const token = first !== undefined ? c.state.tokens[first] : undefined;
-  if (!token || c.state.scenes[token.sceneId]?.blockMovement !== true) return OK;
+  const token = first !== undefined ? ownEntry(c.state.tokens, first) : undefined;
+  if (!token || ownEntry(c.state.scenes, token.sceneId)?.blockMovement !== true) return OK;
   if (op.t === "token.move" && op.teleport !== undefined) return OK;
   // Every walk, those that end where they start too: one in single file walks its holder's line on the way all the same.
   const walks = planWalks(op, c.state, c.actor, {});
   const walked = walkedIn(walks);
   for (const moved of walks) {
-    const member = c.state.tokens[moved.tokenId];
+    const member = ownEntry(c.state.tokens, moved.tokenId);
     if (moved.carriedBy === undefined || !walked(moved) || moved.pass !== "public" || !member || member.attached?.kind !== "drag") continue;
     for (let i = 1; i < moved.route.length; i++) {
       // A creature a holder drags beside it walks as itself, since a drag is no seat: as the move's trace has it (route.ts followerTrace),
@@ -1612,16 +1613,16 @@ function draggedWalls(c: Check, op: Op): Decision {
     const n = moved.route.length;
     if (c.stands && (op.t === "token.move" || op.t === "token.moveMany") && n > 1 && offGridWallThrough(c.state, walkEnd(c.state, moved.trace[n - 2]!, moved.route[n - 1]!))) return refuse("forbidden", standWords(c, member, moved.route[n - 1]!));
   }
-  const filed = walks.filter((m) => m.file === true && m.pass === "public" && c.state.tokens[m.tokenId]?.attached?.kind === "drag");
+  const filed = walks.filter((m) => m.file === true && m.pass === "public" && ownEntry(c.state.tokens, m.tokenId)?.attached?.kind === "drag");
   const lead = walks.find((m) => m.tokenId === first);
   if (filed.length === 0 || !lead) return OK;
   // Those sitting on the lead that every player sees, as the move seats them first (route.ts fileOutOfReach, review FU45BR-OPUS-10).
   const riders = walks.flatMap((m) => {
-    const rider = c.state.tokens[m.tokenId];
+    const rider = ownEntry(c.state.tokens, m.tokenId);
     return m.carriedBy === first && m.pass === "public" && rider?.attached && onHolder(rider.attached.kind) ? [rider] : [];
   });
-  const far = fileOutOfReach(gridOfToken(c.state, token), c.state.meta.settings, token, lead.to, (id) => c.state.tokens[id], new Map(filed.map((m) => [m.tokenId, m.to])), riders);
-  const left = far !== null ? c.state.tokens[far] : undefined;
+  const far = fileOutOfReach(gridOfToken(c.state, token), c.state.meta.settings, token, lead.to, (id) => ownEntry(c.state.tokens, id), new Map(filed.map((m) => [m.tokenId, m.to])), riders);
+  const left = far !== null ? ownEntry(c.state.tokens, far) : undefined;
   return left ? refuse("forbidden", `${shownName(left)} can't follow through there.`) : OK;
 }
 
@@ -1635,7 +1636,7 @@ function shownName(token: Token): string {
 
 /** Whether the creature holds a Grappled effect players see: the DM's mark is the DM's consent to drag it (question 2). */
 function grappledShown(c: Check, token: Token): boolean {
-  const actor = "inline" in token.actor ? token.actor.inline : c.state.characters[token.actor.ref]?.actor;
+  const actor = "inline" in token.actor ? token.actor.inline : ownEntry(c.state.characters, token.actor.ref)?.actor;
   return actor?.effects.some((e) => e.key === "grappled" && e.hiddenFromPlayers !== true) ?? false;
 }
 
@@ -1654,7 +1655,7 @@ function ownTurnOr(c: Check, tokenId: string): Decision {
   if (!encounter || (encounter.activeEntryId === null && encounter.started !== true)) return OK;
   const entry = encounter.activeEntryId !== null ? c.visibleEntry(encounter.activeEntryId) : undefined;
   if (!entry) return turnUnderWay(c.state.encounter)?.tokenId === tokenId && c.ownsTokenId(tokenId) ? OK : refuse("forbidden", RIDE_ON_YOUR_TURN);
-  const token = c.state.tokens[tokenId];
+  const token = ownEntry(c.state.tokens, tokenId);
   const ref = token && "ref" in token.actor ? token.actor.ref : undefined;
   const its = entry.tokenId === tokenId || (entry.tokenId === undefined && ref !== undefined && entry.characterId === ref);
   return its ? OK : refuse("forbidden", RIDE_ON_YOUR_TURN);
@@ -1775,7 +1776,7 @@ function withoutPose(token: Token, also: readonly string[] = []): string {
  * player who moves the token without owning it still needs it unlocked.
  */
 function restoreMoveCheck(c: Check, tokenId: string, value: unknown): Decision {
-  const current = c.state.tokens[tokenId];
+  const current = ownEntry(c.state.tokens, tokenId);
   if (!current) return GONE;
   const token = c.visibleToken(tokenId);
   if (!token) return GONE;
@@ -1812,9 +1813,9 @@ function carriedThroughout(c: Check, tokenId: string, value: unknown, restoring:
   // Up links the player sees alone, from the first: a hidden holder between never carries a token through (8.0).
   const holderIn = (id: string, v: unknown): string | undefined => {
     const to = v && typeof v === "object" ? (v as Token).attached?.to : undefined;
-    return to !== undefined && c.visibleToken(to) && c.state.tokens[to]?.sceneId === c.state.tokens[id]?.sceneId ? to : undefined;
+    return to !== undefined && c.visibleToken(to) && ownEntry(c.state.tokens, to)?.sceneId === ownEntry(c.state.tokens, id)?.sceneId ? to : undefined;
   };
-  const linkOf = (id: string, put: boolean): string | undefined => holderIn(id, put && restoring.has(id) ? restoring.get(id) : c.state.tokens[id]);
+  const linkOf = (id: string, put: boolean): string | undefined => holderIn(id, put && restoring.has(id) ? restoring.get(id) : ownEntry(c.state.tokens, id));
   const under = (put: boolean): string | undefined => {
     const visited = new Set<string>([tokenId]);
     let found: string | undefined;
@@ -1838,16 +1839,16 @@ function carriedThroughout(c: Check, tokenId: string, value: unknown, restoring:
  * walks its holder's kept routes offset by its place, as the move did.
  */
 function restoreCarriedCheck(c: Check, tokenId: string, value: unknown, redo: boolean, holderId: string, routes: readonly (readonly RoutePiece[])[] | undefined, restoring: ReadonlyMap<string, unknown>): Decision {
-  const current = c.state.tokens[tokenId];
+  const current = ownEntry(c.state.tokens, tokenId);
   const restored = value && typeof value === "object" ? (value as Token) : null;
   if (!current || !restored) return OK;
   const seenAll = (id: string) => {
-    const t = c.state.tokens[id];
+    const t = ownEntry(c.state.tokens, id);
     return t !== undefined && seenByAll(c, t);
   };
   const chain = (): boolean => {
     const visited = new Set<string>([tokenId]);
-    for (let at = tokenId, up = current.attached?.to; up !== undefined && !visited.has(up); at = up, up = c.state.tokens[up]?.attached?.to) {
+    for (let at = tokenId, up = current.attached?.to; up !== undefined && !visited.has(up); at = up, up = ownEntry(c.state.tokens, up)?.attached?.to) {
       visited.add(up);
       if (!seenAll(at) || !seenAll(up)) return false;
       if (restoring.has(up)) return true;
@@ -1858,7 +1859,7 @@ function restoreCarriedCheck(c: Check, tokenId: string, value: unknown, redo: bo
   if (!c.visibleToken(tokenId)) return GONE;
   if (withoutPose(restored) !== withoutPose(current)) return refuse("forbidden", "an undo of yours only moves tokens back");
   if (!redo || current.attached?.kind !== "drag") return OK;
-  const holder = c.state.tokens[holderId];
+  const holder = ownEntry(c.state.tokens, holderId);
   if (!holder || !routes || routes.length === 0) return legCheck(c, tokenId, restored, false);
   const ox = current.x - holder.x;
   const oy = current.y - holder.y;
@@ -1895,7 +1896,7 @@ const SIZE_FIELDS = ["size", "w", "h"] as const;
  * and nothing but the pose and the size may differ.
  */
 function restorePoseCheck(c: Check, tokenId: string, value: unknown, redo: boolean, routes?: readonly (readonly RoutePiece[])[]): Decision {
-  const current = c.state.tokens[tokenId];
+  const current = ownEntry(c.state.tokens, tokenId);
   const restored = value && typeof value === "object" ? (value as Token) : null;
   if (!current || !restored || SIZE_FIELDS.every((field) => restored[field] === current[field])) {
     const d = restoreMoveCheck(c, tokenId, value);
@@ -2023,7 +2024,7 @@ function coverLive(g: Ground, token: FootprintToken & Point): boolean {
 function stoppingStep(state: RoomState, walker: Walker, to: LegEnd): { from: Point; to: Point } | null {
   const allowed = (at: Point) => legStop(state, walker, { x: at.x, y: at.y, elevation: to.elevation }) === null;
   if (allowed(to)) return null;
-  const scene = state.scenes[walker.sceneId];
+  const scene = ownEntry(state.scenes, walker.sceneId);
   const g = scene ? sceneGrid(scene) : SQUARES;
   if (isHex(g)) return hexStoppingStep(state, g, walker, to);
   const from = lastClearSpot(walker, to, allowed);
@@ -2091,14 +2092,14 @@ export function stopWords(state: RoomState, ground: Ground | null, walker: Walke
 function doorMatchesLive(state: RoomState, ground: Ground, door: DoorRef, batchBefore?: RoomState): ((x: number, y: number) => boolean) | undefined {
   if ("edge" in door) return undefined;
   const key = chunkKey(ground.sceneId, door.cx, door.cy);
-  const wall = state.buildChunks[key]?.walls?.find((w) => w.id === door.id);
+  const wall = ownEntry(state.buildChunks, key)?.walls?.find((w) => w.id === door.id);
   if (!wall) return undefined;
   const shown = shownFreeWall(wall);
   const live = stableStringify(shown);
   // Secret doors project as wall pieces, whose per-cell memory also waits
   // for batch end. Compare shown versions so private locks cannot change the words.
   if (batchBefore && batchBefore !== state) {
-    const before = batchBefore.buildChunks[key]?.walls?.find((w) => w.id === door.id);
+    const before = ownEntry(batchBefore.buildChunks, key)?.walls?.find((w) => w.id === door.id);
     if (!before || stableStringify(shownFreeWall(before)) !== live) return () => false;
   }
   const held = heldFreeDoor(state, ground, door);
@@ -2114,7 +2115,7 @@ function doorMatchesLive(state: RoomState, ground: Ground, door: DoorRef, batchB
     return () => matches;
   }
   return (x, y) => {
-    const memory = ground.holder !== null && ground.own(x, y) ? state.memoryBy?.[holderChunkKey(ground.sceneId, ground.holder, door.cx, door.cy)] : state.memory?.[key];
+    const memory = ground.holder !== null && ground.own(x, y) ? ownEntry(state.memoryBy, holderChunkKey(ground.sceneId, ground.holder, door.cx, door.cy)) : ownEntry(state.memory, key);
     const version = memory?.walls?.[door.id]?.find((v) => v.cells.includes(`${x},${y}`));
     return version === undefined || stableStringify(version.wall) === live;
   };
@@ -2198,8 +2199,8 @@ export function touchLanding(op: Op, actor: Viewer, state: RoomState, deps: Perm
 
 /** The token a touch landing moves, its scene's live ground, and its walker, where the rule lands its walks. */
 function walkingOn(c: Check, tokenId: string, to: Point): { token: Token; ground: Ground; walker: Token & Walker } | null {
-  const token = c.state.tokens[tokenId];
-  const scene = token ? c.state.scenes[token.sceneId] : undefined;
+  const token = ownEntry(c.state.tokens, tokenId);
+  const scene = token ? ownEntry(c.state.scenes, token.sceneId) : undefined;
   const ground = token ? c.liveGround(token.sceneId) : null;
   if (!token || !scene || !ground || scene.blockMovement !== true) return null;
   return { token, ground, walker: walkerFor(c.state, token, seenAllIn(c), { to }) };
@@ -2266,7 +2267,7 @@ function moveLanding(c: Check, op: OpOf<"token.move">, takes: (o: Op) => boolean
   }
   // Cut back along the whole walk to the last spot the check takes, by gallop and bisection as `landing` steps a leg.
   const spots: { piece: number; at: Point; from: Walker; squeeze?: boolean }[] = [{ piece: 0, at: { x: token.x, y: token.y }, from: walker }];
-  const hexGrid = sceneGrid(c.state.scenes[token.sceneId]!);
+  const hexGrid = sceneGrid(ownEntry(c.state.scenes, token.sceneId)!);
   for (const [i, piece] of pieces.entries()) {
     if (isHex(hexGrid)) {
       // On hexes each spot is a stand of the leg's hex line, squeezed where the leg walks squeezed (movement.ts hexLegSpots).
@@ -2347,7 +2348,7 @@ function groupLanding(c: Check, op: OpOf<"token.moveMany">, takes: (o: Op) => bo
 
 function resizeLanding(c: Check, op: OpOf<"token.update">, takes: (o: Op) => boolean): TouchLanding | null {
   const size = op.patch.size;
-  const token = c.state.tokens[op.tokenId];
+  const token = ownEntry(c.state.tokens, op.tokenId);
   const ground = token ? c.liveGround(token.sceneId) : null;
   if (size === undefined || !token || !ground) return null;
   const x = op.patch.x ?? token.x;
@@ -2355,7 +2356,7 @@ function resizeLanding(c: Check, op: OpOf<"token.update">, takes: (o: Op) => boo
   const { squeeze: _squeeze, ...rest } = token;
   if (coverLive(ground, { ...rest, size, x, y })) return null;
   // The spots a resize may take, in its own search's order (rules/resize.ts resizeCandidates): a half-cell shift is no spot of a size on whole cells.
-  const scene = c.state.scenes[token.sceneId]!;
+  const scene = ownEntry(c.state.scenes, token.sceneId)!;
   for (const at of resizeCandidates(token, { size }, scene)) {
     if (at.x === x && at.y === y) continue;
     const shifted: OpOf<"token.update"> = { ...op, patch: { ...op.patch, x: at.x, y: at.y } };
@@ -2388,7 +2389,7 @@ function companionLanding(c: Check, op: OpOf<"token.create">, takes: (o: Op) => 
   // Only spots within the companion's reach of a token of its character can be taken, so the check runs on those alone,
   // and on at most COMPANION_LANDING_TRIES of them, so one crafted op costs a bounded number of checks (MD2-O-12).
   const settings = c.state.meta.settings;
-  const scene = c.state.scenes[input.sceneId];
+  const scene = ownEntry(c.state.scenes, input.sceneId);
   const ref = input.companion?.of;
   const own = Object.values(c.state.tokens).filter((t) => t.sceneId === input.sceneId && "ref" in t.actor && t.actor.ref === ref);
   let tries = 0;
@@ -2422,8 +2423,8 @@ export const TELEPORT_OFF_MAP = "a teleport lands inside the map";
  * the token always agree.
  */
 function legCheck(c: Check, tokenId: string, to: StoredEnd, teleport: boolean): Decision {
-  const token = c.state.tokens[tokenId];
-  const scene = token ? c.state.scenes[token.sceneId] : undefined;
+  const token = ownEntry(c.state.tokens, tokenId);
+  const scene = token ? ownEntry(c.state.scenes, token.sceneId) : undefined;
   if (!token || !scene) return OK;
   const end = legEndOf(scene, to, token.elevation);
   if (teleport) return insideScene(scene, token, end) ? OK : refuse("forbidden", TELEPORT_OFF_MAP);
@@ -2448,8 +2449,8 @@ function legCheck(c: Check, tokenId: string, to: StoredEnd, teleport: boolean): 
  * of plain moves is.
  */
 function routeCheck(c: Check, tokenId: string, routes: readonly (readonly RoutePiece[])[], to: StoredEnd): Decision {
-  const token = c.state.tokens[tokenId];
-  const scene = token ? c.state.scenes[token.sceneId] : undefined;
+  const token = ownEntry(c.state.tokens, tokenId);
+  const scene = token ? ownEntry(c.state.scenes, token.sceneId) : undefined;
   if (!token || !scene || scene.blockMovement !== true) return OK;
   // Off a holder on the ground it walks on the ground, crossing only the holder's inner ledges until clear of it, as the drag searched it (rules/attach.ts walkerFor).
   let at: Token & Walker = walkerFor(c.state, token, seenAllIn(c));
@@ -2482,8 +2483,8 @@ function routeCheck(c: Check, tokenId: string, routes: readonly (readonly RouteP
  * the sender sees the whole footprint live.
  */
 function standCheck(c: Check, tokenId: string, to: StoredEnd, route?: readonly RoutePiece[]): Decision {
-  const token = c.state.tokens[tokenId];
-  const scene = token ? c.state.scenes[token.sceneId] : undefined;
+  const token = ownEntry(c.state.tokens, tokenId);
+  const scene = token ? ownEntry(c.state.scenes, token.sceneId) : undefined;
   // In place it is judged only where it stands up from a squeeze there, which the leg test reads by the core alone (FU44-OPUS-6).
   if (!c.stands || !token || !scene || scene.blockMovement !== true || to.squeeze === true || (to.x === token.x && to.y === token.y && token.squeeze !== true)) return OK;
   const walker = walkerFor(c.state, token, seenAllIn(c), { to });
@@ -2539,8 +2540,8 @@ export const HEX_STOP_OFF = "a walk on hexes ends on its own hexes, or squeezed 
  * place included. A teleport walks no leg.
  */
 function hexStopAgrees(c: Check, op: OpOf<"token.move">): Decision {
-  const token = c.state.tokens[op.tokenId];
-  const scene = token ? c.state.scenes[token.sceneId] : undefined;
+  const token = ownEntry(c.state.tokens, op.tokenId);
+  const scene = token ? ownEntry(c.state.scenes, token.sceneId) : undefined;
   if (!token || !scene || scene.blockMovement !== true || op.teleport !== undefined) return OK;
   const g = sceneGrid(scene);
   if (!isHex(g) || (op.x === token.x && op.y === token.y)) return OK;
@@ -2601,7 +2602,7 @@ function doorCheck(c: Check, op: OpOf<"door.set">): Decision {
     if (!own.some((token) => reachesDoor(c.state, token, op.door, shown))) return refuse("forbidden", reachWords(c, own, op.door, shown));
   }
   const { cx, cy } = doorChunk(op.door);
-  const stored = c.state.buildChunks[chunkKey(op.sceneId, cx, cy)];
+  const stored = ownEntry(c.state.buildChunks, chunkKey(op.sceneId, cx, cy));
   const real = stored ? doorIn(stored, op.door) : null;
   // A door the DM hid again since the sender saw it found is a wall to players, as their projection shows it once seen (MD2-O-2).
   if (!stored || !real || (real.secret && !real.discovered) || !samePlace(shown, stored, op.door)) return GONE;
@@ -2685,7 +2686,7 @@ export function reachesDoor(state: RoomState, token: Token, ref: DoorRef, chunk:
 
 /** The grid a door's reach is read on: its scene's. */
 function doorGrid(state: RoomState, sceneId: string): Grid {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   return scene ? sceneGrid(scene) : SQUARES;
 }
 
@@ -2777,7 +2778,7 @@ function playersCreate(c: Check): boolean {
  */
 function createCharacterCheck(c: Check, input: Extract<Op, { t: "character.create" }>["character"]): Decision {
   if (!playersCreate(c)) return FORBIDDEN;
-  if (c.state.characters[input.id]) return GONE;
+  if (ownEntry(c.state.characters, input.id)) return GONE;
   if (input.ownerIds.length !== 1 || input.ownerIds[0] !== c.actor.memberId) return refuse("forbidden", "a character you make belongs to you alone");
   const owned = Object.values(c.state.characters).filter((ch) => ownsCharacter(c.actor, ch)).length;
   if (owned >= LIMITS.charactersPerPlayer) {
@@ -2802,10 +2803,10 @@ function createCharacterCheck(c: Check, input: Extract<Op, { t: "character.creat
  */
 function companionBlockCheck(c: Check, op: OpOf<"companionBlock.create" | "companionBlock.update" | "companionBlock.delete">): Decision {
   if (op.t === "companionBlock.create") {
-    const character = c.state.characters[op.block.characterId];
+    const character = ownEntry(c.state.characters, op.block.characterId);
     if (!character) return GONE;
     if (!ownsCharacter(c.actor, character)) return NOT_YOURS;
-    if (c.state.companionBlocks[op.block.id]) return GONE;
+    if (ownEntry(c.state.companionBlocks, op.block.id)) return GONE;
     return imageUsable(c, op.block.defaultImage) ? OK : GONE;
   }
   if (!ownsBlock(c, op.blockId)) return GONE;
@@ -2814,7 +2815,7 @@ function companionBlockCheck(c: Check, op: OpOf<"companionBlock.create" | "compa
 
 /** Whether a block exists and belongs to a character the player owns: the blocks in their view. */
 function ownsBlock(c: Check, blockId: string): boolean {
-  const block = c.state.companionBlocks[blockId];
+  const block = ownEntry(c.state.companionBlocks, blockId);
   return block !== undefined && c.ownsCharacterId(block.characterId);
 }
 
@@ -2936,11 +2937,11 @@ export const companionWords = {
  * power over it afterwards.
  */
 function companionCheck(c: Check, input: TokenInput, link: NonNullable<TokenInput["companion"]>): Decision {
-  const character: Character | undefined = c.state.characters[link.of];
+  const character: Character | undefined = ownEntry(c.state.characters, link.of);
   if (!character) return GONE;
   if (!ownsCharacter(c.actor, character)) return NOT_YOURS;
-  const scene = c.state.scenes[input.sceneId];
-  if (c.state.tokens[input.id] || !scene || input.sceneId !== viewerSceneId(c.state, c.actor, c.opts)) return GONE;
+  const scene = ownEntry(c.state.scenes, input.sceneId);
+  if (ownEntry(c.state.tokens, input.id) || !scene || input.sceneId !== viewerSceneId(c.state, c.actor, c.opts)) return GONE;
   if (!insideScene(scene, input, input)) return refuse("forbidden", "place it inside the map");
   const settings = c.state.meta.settings;
   const placed = { ...input, elevation: input.elevation ?? 0 };
@@ -3010,11 +3011,11 @@ function sameMembers(a: readonly string[], b: readonly string[]): boolean {
 function placeTokenCheck(c: Check, input: Extract<Op, { t: "token.create" }>["token"]): Decision {
   if (!playersCreate(c)) return FORBIDDEN;
   if (!("ref" in input.actor)) return FORBIDDEN;
-  const character: Character | undefined = c.state.characters[input.actor.ref];
+  const character: Character | undefined = ownEntry(c.state.characters, input.actor.ref);
   if (!character) return GONE;
   if (!ownsCharacter(c.actor, character)) return NOT_YOURS;
-  const scene = c.state.scenes[input.sceneId];
-  if (c.state.tokens[input.id] || !scene || input.sceneId !== viewerSceneId(c.state, c.actor, c.opts)) return GONE;
+  const scene = ownEntry(c.state.scenes, input.sceneId);
+  if (ownEntry(c.state.tokens, input.id) || !scene || input.sceneId !== viewerSceneId(c.state, c.actor, c.opts)) return GONE;
   const special =
     input.kind !== "pc" ||
     (input.visibility ?? "all") !== "all" ||

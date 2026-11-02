@@ -16,6 +16,7 @@ import {
   type SightTile,
 } from "./model.ts";
 import type { SaveOutcomeRecord } from "./saveOutcomeContract.ts";
+import { ownEntry } from "./records.ts";
 
 /**
  * One entity key scheme for everything that names an entity outside the
@@ -406,47 +407,47 @@ export function readEntity(state: RoomState, key: EntityKey): unknown {
   if (!parsed) return null;
   switch (parsed.kind) {
     case "token":
-      return state.tokens[parsed.id] ?? null;
+      return ownEntry(state.tokens, parsed.id) ?? null;
     case "scene":
-      return state.scenes[parsed.id] ?? null;
+      return ownEntry(state.scenes, parsed.id) ?? null;
     case "member":
-      return state.members[parsed.id] ?? null;
+      return ownEntry(state.members, parsed.id) ?? null;
     case "character":
-      return state.characters[parsed.id] ?? null;
+      return ownEntry(state.characters, parsed.id) ?? null;
     case "template":
-      return state.templates[parsed.id] ?? null;
+      return ownEntry(state.templates, parsed.id) ?? null;
     case "drawing":
-      return state.drawings[parsed.id] ?? null;
+      return ownEntry(state.drawings, parsed.id) ?? null;
     case "label":
-      return state.labels[parsed.id] ?? null;
+      return ownEntry(state.labels, parsed.id) ?? null;
     case "handout":
-      return state.handouts[parsed.id] ?? null;
+      return ownEntry(state.handouts, parsed.id) ?? null;
     case "monster":
-      return state.monsters[parsed.id] ?? null;
+      return ownEntry(state.monsters, parsed.id) ?? null;
     case "srdImage":
-      return state.srdImages[parsed.id] ?? null;
+      return ownEntry(state.srdImages, parsed.id) ?? null;
     case "savedEncounter":
-      return state.savedEncounters[parsed.id] ?? null;
+      return ownEntry(state.savedEncounters, parsed.id) ?? null;
     case "stamp":
-      return state.stamps[parsed.id] ?? null;
+      return ownEntry(state.stamps, parsed.id) ?? null;
     case "light":
-      return state.lights[parsed.id] ?? null;
+      return ownEntry(state.lights, parsed.id) ?? null;
     case "journal":
-      return state.journal[parsed.id] ?? null;
+      return ownEntry(state.journal, parsed.id) ?? null;
     case "pin":
-      return state.pins[parsed.id] ?? null;
+      return ownEntry(state.pins, parsed.id) ?? null;
     case "roll":
-      return state.rolls[parsed.id] ?? null;
+      return ownEntry(state.rolls, parsed.id) ?? null;
     case "handoutDoc":
-      return state.handoutDocs[parsed.id] ?? null;
+      return ownEntry(state.handoutDocs, parsed.id) ?? null;
     case "companionBlock":
-      return state.companionBlocks[parsed.id] ?? null;
+      return ownEntry(state.companionBlocks, parsed.id) ?? null;
     case "cast":
-      return state.casts[parsed.id] ?? null;
+      return ownEntry(state.casts, parsed.id) ?? null;
     case "saveOutcome":
-      return state.saveOutcomes?.[parsed.id] ?? null;
+      return ownEntry(state.saveOutcomes, parsed.id) ?? null;
     case "trap":
-      return state.traps?.[parsed.id] ?? null;
+      return ownEntry(state.traps, parsed.id) ?? null;
     case "log":
       return state.log.find((e) => e.id === parsed.id) ?? null;
     case "trapLog":
@@ -454,11 +455,11 @@ export function readEntity(state: RoomState, key: EntityKey): unknown {
     case "trapSeen":
       return (state.trapSeen ?? []).find((e) => e.id === parsed.id) ?? null;
     case "chunk":
-      return state.buildChunks[chunkKey(parsed.sceneId, parsed.cx, parsed.cy)] ?? null;
+      return ownEntry(state.buildChunks, chunkKey(parsed.sceneId, parsed.cx, parsed.cy)) ?? null;
     case "fog":
-      return state.fogTiles[tileKey(parsed.sceneId, parsed.tx, parsed.ty)] ?? null;
+      return ownEntry(state.fogTiles, tileKey(parsed.sceneId, parsed.tx, parsed.ty)) ?? null;
     case "explored":
-      return state.exploredTiles[tileKey(parsed.sceneId, parsed.tx, parsed.ty)] ?? null;
+      return ownEntry(state.exploredTiles, tileKey(parsed.sceneId, parsed.tx, parsed.ty)) ?? null;
     case "sight":
       return sightOf(state)?.[tileKey(parsed.sceneId, parsed.tx, parsed.ty)] ?? null;
     case "sightAll":
@@ -466,19 +467,19 @@ export function readEntity(state: RoomState, key: EntityKey): unknown {
     case "exploredAny":
       return viewMapsOf(state)[parsed.kind]?.[tileKey(parsed.sceneId, parsed.tx, parsed.ty)] ?? null;
     case "exploredBy":
-      return state.exploredBy?.[holderTileKey(parsed.sceneId, parsed.memberId, parsed.tx, parsed.ty)] ?? null;
+      return ownEntry(state.exploredBy, holderTileKey(parsed.sceneId, parsed.memberId, parsed.tx, parsed.ty)) ?? null;
     case "holders":
-      return state.holders?.[parsed.sceneId] ?? null;
+      return ownEntry(state.holders, parsed.sceneId) ?? null;
     case "fogDraft":
-      return state.fogDrafts[parsed.sceneId] ?? null;
+      return ownEntry(state.fogDrafts, parsed.sceneId) ?? null;
     case "memory":
-      return state.memory?.[parsed.id] ?? null;
+      return ownEntry(state.memory, parsed.id) ?? null;
     case "memoryBy":
-      return state.memoryBy?.[parsed.id] ?? null;
+      return ownEntry(state.memoryBy, parsed.id) ?? null;
     case "played":
-      return state.playedScenes?.[parsed.id] ?? null;
+      return ownEntry(state.playedScenes, parsed.id) ?? null;
     case "memoryShared":
-      return state.memoryShared?.[parsed.id] ?? null;
+      return ownEntry(state.memoryShared, parsed.id) ?? null;
     case "encounter":
       return state.encounter;
     case "encounterHistory":

@@ -6,6 +6,7 @@ import { renumber, rowCharacter, sortEntries } from "../rules/initiative.ts";
 import { bindDurations, removeEntries } from "./encounter.ts";
 import { gone, invalid, type Tx } from "./tx.ts";
 import { linkOf, relinked } from "./uses.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * The companion rules (docs/design/design-v1-combat-flow.md 3.6) the token,
@@ -65,7 +66,7 @@ export function checkBlockLink(tx: Tx, token: Token): void {
   const blockId = token.actor.inline.blockId;
   if (blockId === undefined) return;
   if (!token.companion) throw invalid(BLOCK_OF_ITS_CHARACTER);
-  const block = tx.state.companionBlocks[blockId];
+  const block = ownEntry(tx.state.companionBlocks, blockId);
   if (!block) throw gone("stat block");
   if (block.characterId !== token.companion.of) throw invalid(BLOCK_OF_ITS_CHARACTER);
 }
@@ -91,7 +92,7 @@ export function syncOwners(tx: Tx, characterIds: Iterable<string>): void {
   for (const token of byId(Object.values(tx.state.tokens))) {
     const of = token.companion?.of;
     if (of === undefined || !wanted.has(of)) continue;
-    const character = tx.state.characters[of];
+    const character = ownEntry(tx.state.characters, of);
     if (!character || sameList(token.ownerIds, character.ownerIds)) continue;
     tx.write(keys.token(token.id), { ...token, ownerIds: [...character.ownerIds] });
   }
@@ -217,7 +218,7 @@ export function dropRows(tx: Tx, token: Token, rebind: boolean): void {
 
 /** Whether an encounter holds a row for a companion that acts on its character's turn, which no row may stand for. */
 export function rowsForSharedCompanions(state: Pick<RoomState, "tokens">, encounter: Encounter | null): boolean {
-  return encounter?.entries.some((e) => e.tokenId !== undefined && actsOnCharacterTurn(state.tokens[e.tokenId])) ?? false;
+  return encounter?.entries.some((e) => e.tokenId !== undefined && actsOnCharacterTurn(ownEntry(state.tokens, e.tokenId))) ?? false;
 }
 
 /**
@@ -246,7 +247,7 @@ export function normalizeCompanionState(state: RoomState): RoomState {
       tokens[id] = token;
       continue;
     }
-    const character = state.characters[companion.of];
+    const character = ownEntry(state.characters, companion.of);
     if (!character || !("inline" in token.actor) || token.kind === "pc") {
       const { companion: _gone, ...plain } = token;
       tokens[id] = withLinkRules(state, plain);
@@ -280,7 +281,7 @@ export function normalizeCompanionState(state: RoomState): RoomState {
 function withLinkRules(state: RoomState, token: Token): Token {
   if (!("inline" in token.actor) || token.actor.inline.blockId === undefined) return token;
   const { srdId: _srd, monsterId: _monster, ...one } = token.actor.inline;
-  const block = state.companionBlocks[one.blockId!];
+  const block = ownEntry(state.companionBlocks, one.blockId!);
   const belongs = token.companion !== undefined && (block === undefined || block.characterId === token.companion.of);
   // Marks keyed by a link that goes go with it (docs/design/design-v1-combat-controls.md 2.4).
   if (belongs) return linksSet(token.actor.inline) > 1 ? { ...token, actor: { inline: relinked(one, linkOf(token.actor.inline)) } } : token;

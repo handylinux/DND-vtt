@@ -23,6 +23,7 @@ import { footprintGround, groundAt, standing } from "./heights.ts";
 import { boundsOf, clipToBox, contact, CROSS, crossingsAt, indexPolygon, onSegment, orient, SIGHT, stepOffWalls, TOUCH, type Polygon, type SegmentIndex } from "./segments.ts";
 import type { SightSet, WallSet } from "./walls.ts";
 import { isWritable } from "../writable.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Party vision (docs/design/design-v1-maps-vision.md section 4.3): who lends the
@@ -249,13 +250,13 @@ export function parseSenses(line: unknown): Senses {
 function actorOf(state: Pick<RoomState, "characters">, token: Token): Actor | undefined {
   const a = token.actor;
   if (!a) return undefined;
-  return "inline" in a ? a.inline : state.characters[a.ref]?.actor;
+  return "inline" in a ? a.inline : ownEntry(state.characters, a.ref)?.actor;
 }
 
 function playerOwned(state: Pick<RoomState, "characters">, token: Token): boolean {
   if ((token.ownerIds?.length ?? 0) > 0) return true;
   const a = token.actor;
-  return a !== undefined && "ref" in a && (state.characters[a.ref]?.ownerIds?.length ?? 0) > 0;
+  return a !== undefined && "ref" in a && (ownEntry(state.characters, a.ref)?.ownerIds?.length ?? 0) > 0;
 }
 
 /**
@@ -2406,7 +2407,7 @@ export function visionCacheReport(): { bytes: number; recount: number; pinned: n
  * to the cold answer. A finished state keeps it, and its viewers' sights.
  */
 function resultOf(state: RoomState, sceneId: SceneId, world: VisionWorld): SceneResult | null {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene || scene.vision?.on !== true) return null;
   const finished = !writes(state);
   let byScene = finished ? results.get(state) : undefined;
@@ -2448,7 +2449,7 @@ function writes(state: RoomState): boolean {
 
 /** The same answer computed from nothing, ignoring and leaving the cache. For tests and benchmarks. */
 export function coldPartySight(state: RoomState, sceneId: SceneId, world: VisionWorld): PartySight {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene || scene.vision?.on !== true) return NO_PARTY_SIGHT;
   return compute(gather(state, scene, world), null).sight;
 }
@@ -2483,7 +2484,7 @@ export function holderSight(state: RoomState, sceneId: SceneId, memberId: Member
 function ownedBy(state: Pick<RoomState, "characters">, token: Token, memberId: MemberId): boolean {
   if (token.ownerIds?.includes(memberId)) return true;
   const a = token.actor;
-  return a !== undefined && "ref" in a && state.characters[a.ref]?.ownerIds?.includes(memberId) === true;
+  return a !== undefined && "ref" in a && ownEntry(state.characters, a.ref)?.ownerIds?.includes(memberId) === true;
 }
 
 /** Whether a source of the union lends to this viewer: one marked to share sight lends to every player (decision 2), any other to its owners. */
@@ -2499,7 +2500,7 @@ function viewOf(state: RoomState, sceneId: SceneId, entry: SceneEntry, memberId:
     // A source whose sweep sees nothing adds nothing to any raster, so it divides no viewers.
     if (!s.spans?.box) continue;
     seeing++;
-    if (lendsTo(state, state.tokens[id], memberId)) ids.push(id);
+    if (lendsTo(state, ownEntry(state.tokens, id), memberId)) ids.push(id);
   }
   if (ids.length === 0) return NO_PARTY_SIGHT;
   if (ids.length === seeing) return entry.sight;
@@ -2949,12 +2950,12 @@ function rowChange(a: LightRow, b: LightRow, W: number, base: number): [number, 
  * the viewer. For tests and benchmarks.
  */
 export function coldHolderSight(state: RoomState, sceneId: SceneId, memberId: MemberId | null, world: VisionWorld): PartySight {
-  return coldSightOf(state, sceneId, (id) => lendsTo(state, state.tokens[id], memberId), world);
+  return coldSightOf(state, sceneId, (id) => lendsTo(state, ownEntry(state.tokens, id), memberId), world);
 }
 
 /** The sight of the union's sources that `keep` keeps, computed from nothing. For tests. */
 export function coldSightOf(state: RoomState, sceneId: SceneId, keep: (tokenId: string) => boolean, world: VisionWorld): PartySight {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene || scene.vision?.on !== true) return NO_PARTY_SIGHT;
   const inp = gather(state, scene, world);
   return compute({ ...inp, sources: inp.sources.filter((p) => keep(p.id)) }, null).sight;
@@ -2987,7 +2988,7 @@ export function soleSourcesOf(state: RoomState, sceneId: SceneId, world: VisionW
  * only, whose sight tiles already answer it (client/features/vision/moveWarning.ts).
  */
 export function visionReport(state: RoomState, sceneId: SceneId, world: VisionWorld): { members: MemberReport[]; overCap: number } {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene) return { members: [], overCap: 0 };
   // The scene's light level counts whether or not vision is on yet, so the DM can check before turning it on.
   const inp = gather(state, scene, world);
@@ -3004,7 +3005,7 @@ export function visionReport(state: RoomState, sceneId: SceneId, world: VisionWo
 
 /** The sight polygon of one source as the cache would compute it, or null when it sees nothing. For tests. */
 export function sourcePolygon(state: RoomState, sceneId: SceneId, tokenId: string, world: VisionWorld): { eye: { x: number; y: number }; box: Bounds; polygon: Polygon } | null {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene) return null;
   const plan = gather(state, scene, world).sources.find((p) => p.id === tokenId);
   if (!plan?.eye || !plan.box) return null;

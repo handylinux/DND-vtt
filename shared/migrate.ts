@@ -1,5 +1,6 @@
 import type { RoomSettings, RoomState, SceneMark, ShareMark } from "./model.ts";
 import type { Op } from "./protocol.ts";
+import { ownEntry } from "./records.ts";
 
 /**
  * Snapshot and op versioning (design 16.2). A snapshot row carries the
@@ -1780,7 +1781,7 @@ export function mapDiscoveryUpgrade(state: RoomState): RoomState {
   const playedScenes: Record<string, SceneMark> = { ...state.playedScenes };
   const memoryShared: Record<string, ShareMark> = { ...state.memoryShared };
   for (const id of Object.keys(state.scenes).sort()) {
-    const scene = state.scenes[id]!;
+    const scene = ownEntry(state.scenes, id)!;
     playedScenes[id] ??= { sceneId: id, rev: 0 };
     if (scene.fogEnabled && scene.vision?.on === true) memoryShared[id] ??= { sceneId: id, rev: 0, ...(scene.vision.perPlayer === true ? {} : { party: true as const }) };
   }

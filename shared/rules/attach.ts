@@ -9,6 +9,7 @@ import { holderLedgesOnHexes, seatsFromSnappedBox, seatsFromSnappedFull, seatsOn
 import type { Walker } from "./movement.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
 import { hexInScene, hexKey, hexNeighbors, type Hex, type HexGrid } from "./hex.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Attached tokens (docs/design/design-v1-attach.md): a rider on a mount, a
@@ -464,7 +465,7 @@ export function walkerFor<T extends Walking>(
   const holder = holderOf(state.tokens, token) as Walking | undefined;
   if (!holder || !seen(token) || !seen(holder) || footing(state.buildChunks, holder) !== "ground") return token as T & Walker;
   const squeezed = isSqueezed(holder) && seatsOnSqueeze(off.opVersion);
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   const g = scene ? sceneGrid(scene) : SQUARES;
   // On hexes the walk reads the holder by its hexes from op version 32, before which it crossed no ledge there (movement.ts OffHolder).
   const hex = isHex(g) && holderLedgesOnHexes(off.opVersion) ? { hex: g } : {};
@@ -594,10 +595,10 @@ export function carriedIndex(tokens: Tokens): ReadonlyMap<string, readonly strin
   if (cached) return cached;
   const out = new Map<string, string[]>();
   for (const id of Object.keys(tokens).sort()) {
-    const t = tokens[id];
+    const t = ownEntry(tokens, id);
     const to = t?.attached?.to;
     if (!t || to === undefined || to === t.id) continue;
-    const holder = tokens[to];
+    const holder = ownEntry(tokens, to);
     if (!holder || holder.sceneId !== t.sceneId) continue;
     let list = out.get(to);
     if (!list) out.set(to, (list = []));
@@ -611,7 +612,7 @@ export function carriedIndex(tokens: Tokens): ReadonlyMap<string, readonly strin
 export function holderOf(tokens: Tokens, token: Linked): Linked | undefined {
   const to = token.attached?.to;
   if (to === undefined || to === token.id) return undefined;
-  const holder = tokens[to];
+  const holder = ownEntry(tokens, to);
   return holder && holder.sceneId === token.sceneId ? holder : undefined;
 }
 
@@ -627,16 +628,16 @@ export function carriedGroup(tokens: Tokens, tokenId: string, named: ReadonlySet
   const seen = new Set<string>([tokenId]);
   const visit = (id: string) => {
     out.push(id);
-    const holder = tokens[id];
+    const holder = ownEntry(tokens, id);
     for (const child of index.get(id) ?? []) {
       if (seen.has(child) || named.has(child)) continue;
-      const t = tokens[child];
+      const t = ownEntry(tokens, child);
       if (!t || !holder || (include && !include(t, holder))) continue;
       seen.add(child);
       visit(child);
     }
   };
-  if (tokens[tokenId]) visit(tokenId);
+  if (ownEntry(tokens, tokenId)) visit(tokenId);
   return out;
 }
 
@@ -688,12 +689,12 @@ export function checkSet(tokens: Tokens, tokenId: string, named: ReadonlySet<str
  * the whole graph for the DM, the check set for a player.
  */
 export function linkLimitRefusal(tokens: Tokens, carriedId: string, holderId: string, inGraph: (token: Linked) => boolean, names: LinkNames): string | null {
-  const carried = tokens[carriedId];
-  const holder = tokens[holderId];
+  const carried = ownEntry(tokens, carriedId);
+  const holder = ownEntry(tokens, holderId);
   if (!carried || !holder) return null;
   const parent = (id: string): string | undefined => {
     if (id === carriedId) return holderId;
-    const t = tokens[id];
+    const t = ownEntry(tokens, id);
     const up = t ? holderOf(tokens, t) : undefined;
     return t && up && inGraph(t) && inGraph(up) ? up.id : undefined;
   };
@@ -755,10 +756,10 @@ function subtreeSize(id: string, children: (id: string) => string[]): number {
  * a condition, so it is the same whoever moves the holder.
  */
 export function dragExtra<T extends Linked & Sized>(tokens: Readonly<Record<string, T | undefined>>, holderId: string, seen: SeenByAll): 0 | 1 {
-  const holder = tokens[holderId];
+  const holder = ownEntry(tokens, holderId);
   if (!holder || !isCreature(holder) || !seen(holder)) return 0;
   for (const id of carriedIndex(tokens).get(holderId) ?? []) {
-    const t = tokens[id];
+    const t = ownEntry(tokens, id);
     if (!t?.attached || !isCreature(t) || !seen(t)) continue;
     if (t.attached.kind !== "drag" && t.attached.kind !== "carry") continue;
     if (sizeCategory(t) === "tiny" || sizesLarger(holder, t) >= 2) continue;

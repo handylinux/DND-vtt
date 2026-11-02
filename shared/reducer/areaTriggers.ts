@@ -13,6 +13,7 @@ import { convexLive, fogClassOf, pendingGround } from "../rules/held.ts";
 import { sceneWalls } from "../rules/walls.ts";
 import type { Tx } from "./tx.ts";
 import { isHex, sceneGrid, type Grid } from "../rules/grid.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Reminders that an area hits a creature again (features section 9): the
@@ -63,12 +64,12 @@ function triggering(state: RoomState, sceneId: string, trigger: AreaTrigger): Ar
 /** A creature an area can hit: not an object, and not dead. */
 function isCreature(state: RoomState, token: Token): boolean {
   if (token.kind === "object") return false;
-  const actor = "inline" in token.actor ? token.actor.inline : state.characters[token.actor.ref]?.actor;
+  const actor = "inline" in token.actor ? token.actor.inline : ownEntry(state.characters, token.actor.ref)?.actor;
   return actor?.life !== "dead";
 }
 
 function contextOf(state: RoomState, sceneId: string): AreaContext | null {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene) return null;
   return {
     settings: state.meta.settings,
@@ -120,7 +121,7 @@ function areaName(t: AreaTemplate): string {
 function remind(tx: Tx, template: AreaTemplate, token: Token, trigger: AreaTrigger, areaMoved: boolean, at: RoomState = tx.state): void {
   const recorded = logsByAudience(tx.env.opVersion);
   if (!recorded && remindedInLog(tx.state.log, template, token.id, trigger)) return;
-  const there = at.tokens[token.id] ?? token;
+  const there = ownEntry(at.tokens, token.id) ?? token;
   const line: Extract<LogEvent, { type: "area" }> = {
     type: "area",
     templateId: template.id,
@@ -149,7 +150,7 @@ function marksOf(tx: Tx, template: AreaTemplate, there: Token, at: RoomState): {
     const { hidden, ...seen } = perPlayer;
     return { ...(rays ? byLiveGround(at, seen, rays) : seen), ...(hidden ? { hidden } : {}) };
   }
-  const attached = template.attachedTo !== undefined ? at.tokens[template.attachedTo] : undefined;
+  const attached = template.attachedTo !== undefined ? ownEntry(at.tokens, template.attachedTo) : undefined;
   // On a whole-party scene every player reads the shared class's ground, so a ray off it keeps the line the DM's alone.
   const hidden = template.visibility === "dm" || (attached !== undefined && !seenByNonOwners(at, attached, tx.env)) || (rays !== null && !rays(null));
   return { ...(seenByNonOwners(at, there, tx.env) ? { seen: true as const } : {}), ...(hidden ? { hidden: true as const } : {}) };
@@ -191,12 +192,12 @@ function byLiveGround(at: RoomState, seen: { seen?: true; seenBy?: string[] }, r
  * (MD2-O-3).
  */
 function raysOnLiveGround(at: RoomState, template: AreaTemplate, there: Token): ((holder: string | null) => boolean) | null {
-  const scene = at.scenes[template.sceneId];
+  const scene = ownEntry(at.scenes, template.sceneId);
   if (!scene?.fogEnabled) return null;
   const grid = sceneGrid(scene);
   const ctx = contextOf(at, template.sceneId);
   const area = ctx ? resolveArea(template, ctx) : null;
-  const attached = template.attachedTo !== undefined ? at.tokens[template.attachedTo] : undefined;
+  const attached = template.attachedTo !== undefined ? ownEntry(at.tokens, template.attachedTo) : undefined;
   const hull = rayHull(grid, template, area, attached, there);
   const answers = new Map<string | null, boolean>();
   return (member) => {
@@ -257,7 +258,7 @@ function hexOutline(grid: HexGrid, hexes: readonly Hex[]): Point[] {
 function activeCreature(state: RoomState): Token | undefined {
   const encounter = state.encounter;
   const entry = encounter?.entries.find((e) => e.id === encounter.activeEntryId);
-  const token = entry?.tokenId !== undefined ? state.tokens[entry.tokenId] : undefined;
+  const token = entry?.tokenId !== undefined ? ownEntry(state.tokens, entry.tokenId) : undefined;
   return token && isCreature(state, token) ? token : undefined;
 }
 
@@ -306,13 +307,13 @@ function movedBy(tx: Tx, op: Op, before: RoomState, after: RoomState): Moved {
   const templateId = op.t === "template.update" ? op.templateId : null;
   // From op version 14 a holder's group moves with it, and the move's one description names every token (docs/design/design-v1-attach.md 9).
   if (attaches(tx.env.opVersion)) {
-    const described = describeMove(op, before, after, tx.actor, tx.env).filter((m) => placeChanged(before.tokens[m.tokenId], after.tokens[m.tokenId]));
+    const described = describeMove(op, before, after, tx.actor, tx.env).filter((m) => placeChanged(ownEntry(before.tokens, m.tokenId), ownEntry(after.tokens, m.tokenId)));
     for (const m of described) tokens.add(m.tokenId);
     return { tokens, templateId, walks: { named: described.filter((m) => m.carriedBy === undefined), all: described } };
   }
   const ids =
     op.t === "token.move" ? [op.tokenId] : op.t === "token.moveMany" ? op.moves.map((m) => m.tokenId) : op.t === "token.update" ? [op.tokenId] : [];
-  for (const id of ids) if (placeChanged(before.tokens[id], after.tokens[id])) tokens.add(id);
+  for (const id of ids) if (placeChanged(ownEntry(before.tokens, id), ownEntry(after.tokens, id))) tokens.add(id);
   return { tokens, templateId };
 }
 
@@ -345,11 +346,11 @@ type Walked = { tokenId: string; points: RoutePoint[] };
  */
 function walkOf(before: RoomState, after: RoomState, op: Op, opVersion: number | undefined): Walked | null {
   if (op.t !== "token.move" || !op.route || !walksRoutes(opVersion)) return null;
-  const from = before.tokens[op.tokenId];
-  const to = after.tokens[op.tokenId];
+  const from = ownEntry(before.tokens, op.tokenId);
+  const to = ownEntry(after.tokens, op.tokenId);
   if (!from || !to || from.sceneId !== to.sceneId) return null;
   const seen = (t: { id: string }) => {
-    const token = before.tokens[t.id];
+    const token = ownEntry(before.tokens, t.id);
     return token !== undefined && inSightOfNonOwners(before, token, { opVersion });
   };
   return { tokenId: op.tokenId, points: routePoints(before.buildChunks, walkerFor(before, from, seen, { opVersion, to }), op.route, to.elevation) };
@@ -401,7 +402,7 @@ export function routeSweepPlan(points: readonly RoutePoint[], feetPerCell: numbe
  */
 function alongWalkBeforeV14(after: RoomState, walk: Walked): RoomState[] {
   const fpc = after.meta.settings.feetPerCell;
-  const token = after.tokens[walk.tokenId]!;
+  const token = ownEntry(after.tokens, walk.tokenId)!;
   const out: RoomState[] = [];
   const { points } = walk;
   const plan = routeSweepPlan(points, fpc);
@@ -447,7 +448,7 @@ function alongGroups(after: RoomState, moved: Moved & { walks: GroupWalks }, rou
   const pieces = new Map<MovedToken, HexPiece>();
   const pieceOf = (g: HexGrid, walk: MovedToken): HexPiece => {
     let piece = pieces.get(walk);
-    const token = after.tokens[walk.tokenId];
+    const token = ownEntry(after.tokens, walk.tokenId);
     if (!piece) pieces.set(walk, (piece = hexPiece(g, walk.trace[0] ?? token!, walk.route[0]!, walk.route[walk.route.length - 1]!, token ? isSqueezed(token) : undefined)));
     return piece;
   };
@@ -458,7 +459,7 @@ function alongGroups(after: RoomState, moved: Moved & { walks: GroupWalks }, rou
     if (!known) routedPieces.set(walk, (known = []));
     const points = walk.route;
     const last = piece === points.length - 1;
-    const token = after.tokens[walk.tokenId];
+    const token = ownEntry(after.tokens, walk.tokenId);
     return (known[piece] ??= hexPiece(g, walk.trace[piece - 1] ?? token!, points[piece - 1]!, points[piece]!, last && token ? isSqueezed(token) : undefined));
   };
   // The spot at progress `f` along piece `piece` (1 the first) of a walk, with which of its trace's walkers stands there, and on hexes whether it squeezes there.
@@ -486,7 +487,7 @@ function alongGroups(after: RoomState, moved: Moved & { walks: GroupWalks }, rou
   const place = (piece: number, f: number): RoomState => {
     const placed = { ...after.tokens };
     for (const walk of all) {
-      const token = after.tokens[walk.tokenId];
+      const token = ownEntry(after.tokens, walk.tokenId);
       if (!token || walk.from.sceneId !== walk.to.sceneId) continue;
       const p = at(walk, piece, f);
       const spot = placedOnTrace(walk.trace, p.piece, p.end, token, p.spot);
@@ -547,14 +548,14 @@ function alongLeg(before: RoomState, after: RoomState, moved: Moved): RoomState[
   let reach = 0;
   const tokens: [Token, Token][] = [];
   for (const id of moved.tokens) {
-    const from = before.tokens[id];
-    const to = after.tokens[id];
+    const from = ownEntry(before.tokens, id);
+    const to = ownEntry(after.tokens, id);
     if (!from || !to || from.sceneId !== to.sceneId) continue;
     tokens.push([from, to]);
     reach = Math.max(reach, Math.abs(to.x - from.x), Math.abs(to.y - from.y), Math.abs(to.elevation - from.elevation) / fpc);
   }
-  const fromArea = moved.templateId !== null ? before.templates[moved.templateId] : undefined;
-  const toArea = moved.templateId !== null ? after.templates[moved.templateId] : undefined;
+  const fromArea = moved.templateId !== null ? ownEntry(before.templates, moved.templateId) : undefined;
+  const toArea = moved.templateId !== null ? ownEntry(after.templates, moved.templateId) : undefined;
   const areaLeg = fromArea && toArea && fromArea.sceneId === toArea.sceneId ? ([fromArea, toArea] as const) : null;
   if (areaLeg) {
     const [a, b] = [areaLeg[0].origin, areaLeg[1].origin];
@@ -622,16 +623,16 @@ export function remindAfter(tx: Tx, before: RoomState, op: Op): void {
       .filter((t) => t.sceneId === template.sceneId && (areaMoved || moved.tokens.has(t.id)) && isCreature(after, t))
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     if (candidates.length === 0) continue;
-    const was = before.templates[template.id];
-    const earlier = was ? inside(before, was, candidates.map((t) => before.tokens[t.id]).filter((t): t is Token => t !== undefined), tx.env.opVersion) : new Set<string>();
+    const was = ownEntry(before.templates, template.id);
+    const earlier = was ? inside(before, was, candidates.map((t) => ownEntry(before.tokens, t.id)).filter((t): t is Token => t !== undefined), tx.env.opVersion) : new Set<string>();
     let outside = candidates.filter((t) => !earlier.has(t.id));
     // Each creature that entered, with the room at the point of the leg where it did.
     const entered = new Map<string, RoomState>();
     const leg = outside.length > 0 ? (swept ??= landsOnly ? [after] : grouped ? alongGroups(after, grouped, routed) : walk ? alongWalkBeforeV14(after, walk) : alongLeg(before, after, moved)) : [];
     for (const at of leg) {
-      const area = at.templates[template.id];
+      const area = ownEntry(at.templates, template.id);
       if (!area) continue;
-      for (const id of inside(at, area, outside.map((t) => at.tokens[t.id]!), tx.env.opVersion)) entered.set(id, at);
+      for (const id of inside(at, area, outside.map((t) => ownEntry(at.tokens, t.id)!), tx.env.opVersion)) entered.set(id, at);
       outside = outside.filter((t) => !entered.has(t.id));
       if (outside.length === 0) break;
     }

@@ -30,6 +30,7 @@ import {
 } from "./movement.ts";
 import { followedHeight, seatShift, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "./route.ts";
 import { LegCheck, MAX_SETTLED, WalkSearch, WalkWorld, WorkBudget, worldUnits, type SettleResult, type Slice, type WalkInput, type WalkRoute } from "./walk.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Finding the way a creature walks on a hex scene (docs/design/design-v1-hex-grids.md
@@ -126,7 +127,7 @@ export class HexWalkWorld {
   constructor(input: WalkInput) {
     this.input = input;
     const { token, build } = input;
-    const scene = build.scenes[token.sceneId]!;
+    const scene = ownEntry(build.scenes, token.sceneId)!;
     const g = sceneGrid(scene);
     if (!isHex(g)) throw new Error("a hex walk on a square scene");
     this.g = g;
@@ -1065,7 +1066,7 @@ export type RouteLegCheck = LegCheck | HexLegCheck;
 
 /** Whether the walker's scene is hexes, so its walks are this file's. */
 export function walksOnHexes(input: Pick<WalkInput, "build" | "token">): boolean {
-  const scene = input.build.scenes[input.token.sceneId];
+  const scene = ownEntry(input.build.scenes, input.token.sceneId);
   return scene !== undefined && isHex(sceneGrid(scene));
 }
 

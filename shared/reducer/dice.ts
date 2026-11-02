@@ -11,6 +11,7 @@ import { hpRevertOf } from "./hpUndo.ts";
 import { answerOf, creatureOf, creatureRef, sameCreature, writeTarget } from "./rolls.ts";
 import { gone, invalid, type Tx } from "./tx.ts";
 import { checkPrompt, markOf, rechargeLabel, withSettled, withUses } from "./uses.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Dice rolled on the server (docs/design/design-v1-dice.md 4.1 and 5.1). The room
@@ -81,7 +82,7 @@ function diceLine(tx: Tx, op: Sys, asked: Asked<"dice.roll">): void {
  * `changed`, the pending ask clears, and `previous` keeps the old answer.
  */
 function rolledAnswer(tx: Tx, op: Sys, asked: Asked<"roll.dice">): void {
-  const request = tx.state.rolls[asked.rollId];
+  const request = ownEntry(tx.state.rolls, asked.rollId);
   if (!request) throw gone("roll request");
   const index = request.targets.findIndex((t) => sameCreature(t, asked.target));
   const current = request.targets[index];

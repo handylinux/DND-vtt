@@ -8,6 +8,7 @@ import type { Point } from "./geom.ts";
 import { isHex, sceneGrid, type Grid } from "./grid.ts";
 import { cornerAt, hexAt, hexCorners, hexInScene, hexKey, hexNeighbors, hexSubcells, parseHexKey, type Hex, type HexGrid } from "./hex.ts";
 import { seenFogBits } from "./vision.ts";
+import { ownEntry } from "../records.ts";
 
 /*
  * What a player holds of a scene's build (docs/design/design-v1-map-discovery.md
@@ -70,8 +71,8 @@ export type Ground = {
 
 /** Whether a member sees for themselves on a scene (docs/design/design-v1-per-player-vision.md 6.1). */
 export function holdsOwnSight(state: RoomState, sceneId: string, memberId: string): boolean {
-  if (state.scenes[sceneId]?.vision?.perPlayer !== true || state.members[memberId]?.kind !== "player") return false;
-  return state.holders?.[sceneId]?.entries.some((e) => e.on && e.memberId === memberId) === true;
+  if (ownEntry(state.scenes, sceneId)?.vision?.perPlayer !== true || ownEntry(state.members, memberId)?.kind !== "player") return false;
+  return ownEntry(state.holders, sceneId)?.entries.some((e) => e.on && e.memberId === memberId) === true;
 }
 
 /** A viewer's fog class on a scene (5.6): their own member id when they see for themselves there, else null, the shared class. */
@@ -200,7 +201,7 @@ export function classSight(state: RoomState, scene: Scene, holder: string | null
  * for the shared class (fogClassOf).
  */
 export function groundOf(state: RoomState, sceneId: string, holder: string | null): Ground | null {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene) return null;
   const own = ownClass(state, sceneId, holder);
   const sight = remembers(scene) ? classSight(state, scene, own) : null;
@@ -242,7 +243,7 @@ function remembers(scene: Scene): boolean {
  * the line then hold it. Never for a projection.
  */
 export function pendingGround(state: RoomState, sceneId: string, holder: string | null): Ground | null {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene) return null;
   const own = ownClass(state, sceneId, holder);
   return groundWith(state, scene, own, remembers(scene) ? classSight(state, scene, own) : null, false);
@@ -254,16 +255,16 @@ function groundWith(state: RoomState, scene: Scene, own: string | null, sight: P
   const { fogTiles, exploredTiles, exploredBy } = state;
   const held: Layer = cached((tx, ty) => {
     const key = tileKey(sceneId, tx, ty);
-    const parts = [fogTiles[key], exploredTiles?.[key], own === null ? undefined : exploredBy?.[holderTileKey(sceneId, own, tx, ty)]];
+    const parts = [ownEntry(fogTiles, key), ownEntry(exploredTiles, key), own === null ? undefined : ownEntry(exploredBy, holderTileKey(sceneId, own, tx, ty))];
     return unionOf(parts, (p) => fogBits(p as FogTile));
   });
-  const ownLayer: Layer = own === null ? NONE : cached((tx, ty) => fogBits(exploredBy?.[holderTileKey(sceneId, own, tx, ty)]));
+  const ownLayer: Layer = own === null ? NONE : cached((tx, ty) => fogBits(ownEntry(exploredBy, holderTileKey(sceneId, own, tx, ty))));
   let live: Layer;
   let asked: PointLive | undefined;
   if (!remembers(scene)) live = held;
   else {
     live = cached((tx, ty) => {
-      const dm = fogTiles[tileKey(sceneId, tx, ty)];
+      const dm = ownEntry(fogTiles, tileKey(sceneId, tx, ty));
       const seen = sight?.tiles.get(`${tx},${ty}`);
       return unionOf([dm, seen], (p) => (p === dm ? fogBits(p as FogTile) : sightBits(p as SightTile)));
     });
@@ -273,7 +274,7 @@ function groundWith(state: RoomState, scene: Scene, own: string | null, sight: P
      * a cell's sight costs its own sub-cells, not every holder's raster
      * drawn at every moment.
      */
-    if (!liveInsideHeld) asked = { dm: cached((tx, ty) => fogBits(fogTiles[tileKey(sceneId, tx, ty)])), sight };
+    if (!liveInsideHeld) asked = { dm: cached((tx, ty) => fogBits(ownEntry(fogTiles, tileKey(sceneId, tx, ty)))), sight };
   }
   return makeGround(scene, own, held, live, ownLayer, liveInsideHeld, asked);
 }
@@ -301,9 +302,9 @@ function hexProbe(grid: HexGrid, hx: Hex): SightProbe {
  * one, so a device can only predict too little of it.
  */
 export function deviceGround(view: RoomState & { sight?: Readonly<Record<string, SightTile>> }, sceneId: string): Ground | null {
-  const scene = view.scenes[sceneId];
+  const scene = ownEntry(view.scenes, sceneId);
   if (!scene) return null;
-  const held: Layer = cached((tx, ty) => fogBits(view.fogTiles[tileKey(sceneId, tx, ty)]));
+  const held: Layer = cached((tx, ty) => fogBits(ownEntry(view.fogTiles, tileKey(sceneId, tx, ty))));
   const remembers = scene.fogEnabled && scene.vision?.on === true;
   const sight = view.sight ?? {};
   const live: Layer = remembers ? cached((tx, ty) => sightBits(sight[tileKey(sceneId, tx, ty)])) : held;

@@ -8,6 +8,7 @@ import { setGridWithPhases, setMapWithPhases, withPhases } from "./phases.ts";
 import { forgetExplored, forgetHolder } from "./map.ts";
 import { invalid, gone, type Tx } from "./tx.ts";
 import { deleteToken, sortedById } from "./tokens.ts";
+import { ownEntry } from "../records.ts";
 
 export function roomUpdate(tx: Tx, op: OpOf<"room.update">): void {
   const meta = tx.state.meta;
@@ -50,7 +51,7 @@ export function roomSetPlayerScene(tx: Tx, op: OpOf<"room.setPlayerScene">): voi
 export function markPlayed(tx: Tx, before: RoomState): void {
   if (!discoversMap(tx.env.opVersion)) return;
   const id = tx.state.meta.playerSceneId;
-  if (id === null || id === before.meta.playerSceneId || !tx.state.scenes[id] || tx.state.playedScenes?.[id]) return;
+  if (id === null || id === before.meta.playerSceneId || !ownEntry(tx.state.scenes, id) || ownEntry(tx.state.playedScenes, id)) return;
   tx.writeBookkeeping(keys.played(id), { sceneId: id, rev: 0 });
 }
 
@@ -65,13 +66,13 @@ export function viewBlackout(tx: Tx, op: OpOf<"view.blackout">): void {
 }
 
 export function memberUpdate(tx: Tx, op: OpOf<"member.update">): void {
-  const member = tx.state.members[op.memberId];
+  const member = ownEntry(tx.state.members, op.memberId);
   if (!member) throw gone("member");
   tx.write(keys.member(member.id), { ...member, name: op.name ?? member.name, color: op.color ?? member.color });
 }
 
 export function sysMemberJoin(tx: Tx, op: OpOf<"sys.memberJoin">): void {
-  if (tx.state.members[op.member.id]) throw invalid("member already exists");
+  if (ownEntry(tx.state.members, op.member.id)) throw invalid("member already exists");
   tx.write(keys.member(op.member.id), { ...op.member, rev: 0 });
   tx.addEvent({ type: "member", memberId: op.member.id, action: "join" });
 }
@@ -84,7 +85,7 @@ export function sysMemberJoin(tx: Tx, op: OpOf<"sys.memberJoin">): void {
  * no pages, every room from before wave 5, change exactly as before.
  */
 export function sysMemberSetKind(tx: Tx, op: OpOf<"sys.memberSetKind">): void {
-  const member = tx.state.members[op.memberId];
+  const member = ownEntry(tx.state.members, op.memberId);
   if (!member) throw gone("member");
   if (member.kind === op.kind) return;
   tx.write(keys.member(member.id), { ...member, kind: op.kind });
@@ -113,7 +114,7 @@ function privatePagesToDm(tx: Tx, memberId: string): void {
  * same keys in the same order.
  */
 export function sysMemberRemove(tx: Tx, op: OpOf<"sys.memberRemove">): void {
-  if (!tx.state.members[op.memberId]) throw gone("member");
+  if (!ownEntry(tx.state.members, op.memberId)) throw gone("member");
   const byId = <T extends { id: string }>(items: Iterable<T>): T[] => [...items].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   for (const token of byId(Object.values(tx.state.tokens))) {
     if (token.ownerIds.includes(op.memberId)) tx.write(keys.token(token.id), { ...token, ownerIds: token.ownerIds.filter((m) => m !== op.memberId) });
@@ -156,7 +157,7 @@ export function sysMemberRemove(tx: Tx, op: OpOf<"sys.memberRemove">): void {
  */
 function scrubSight(tx: Tx, memberId: MemberId): void {
   for (const sceneId of Object.keys(tx.state.holders ?? {}).sort()) {
-    const list = tx.state.holders[sceneId]!;
+    const list = ownEntry(tx.state.holders, sceneId)!;
     if (!list.entries.some((e) => e.memberId === memberId)) continue;
     forgetHolder(tx, sceneId, memberId);
     const entries = list.entries.filter((e) => e.memberId !== memberId);
@@ -191,7 +192,7 @@ const DEFAULT_BACKGROUND = "#2b2b31";
 
 export function sceneCreate(tx: Tx, op: OpOf<"scene.create">): void {
   const input = op.scene;
-  if (tx.state.scenes[input.id]) throw invalid("scene already exists");
+  if (ownEntry(tx.state.scenes, input.id)) throw invalid("scene already exists");
   const order = Object.values(tx.state.scenes).reduce((max, s) => Math.max(max, s.order + 1), 0);
   const scene: Scene = {
     id: input.id,
@@ -291,7 +292,7 @@ export function sceneDelete(tx: Tx, op: OpOf<"scene.delete">): void {
   for (const c of Object.values(s.buildChunks)) if (c.sceneId === scene.id) tx.remove(keys.chunk(c.sceneId, c.cx, c.cy));
   for (const f of Object.values(s.fogTiles)) if (f.sceneId === scene.id) tx.remove(keys.fog(f.sceneId, f.tx, f.ty));
   forgetExplored(tx, scene.id);
-  if (s.fogDrafts[scene.id]) tx.remove(keys.fogDraft(scene.id));
+  if (ownEntry(s.fogDrafts, scene.id)) tx.remove(keys.fogDraft(scene.id));
   for (const st of Object.values(s.stamps)) if (st.sceneId === scene.id) tx.remove(keys.stamp(st.id));
   for (const l of Object.values(s.lights)) if (l.sceneId === scene.id) tx.remove(keys.light(l.id));
   for (const p of Object.values(s.pins)) if (p.sceneId === scene.id) tx.remove(keys.pin(p.id));

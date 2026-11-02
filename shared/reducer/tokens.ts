@@ -32,6 +32,7 @@ import { linkOf, relinked } from "./uses.ts";
 import { resourcesAfter } from "../rules/classResources.ts";
 import { applyPcStatsPatch, EMPTY_PC_STATS, pcNumbersFromBlock, pcStatsFits, pcStatsTooBig, WILD_SHAPE_ALONE, withPcActorNumbers, withUnshaped } from "../rules/pcStats.ts";
 import { gone, invalid, Refuse, type Env, type ResolvedActor, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 function tokenDefaults(kind: Token["kind"]): Pick<Token, "disposition" | "layer" | "hpVisibility"> {
   return {
@@ -69,7 +70,7 @@ function autoNumber(tx: Tx, token: Token): number | undefined {
 
 export function tokenCreate(tx: Tx, op: OpOf<"token.create">): void {
   const input = op.token;
-  if (tx.state.tokens[input.id]) throw invalid("token already exists");
+  if (ownEntry(tx.state.tokens, input.id)) throw invalid("token already exists");
   tx.scene(input.sceneId);
   if ("ref" in input.actor) tx.character(input.actor.ref);
   // An actor links one stat block, and one of its character's only on a companion (docs/design/design-v1-companion-stat-blocks.md 3.2).
@@ -431,7 +432,7 @@ function leftMount(tx: Tx, rider: Token, next: Token, judged: Judged): Token | u
   const link = rider.attached;
   if (link?.kind !== "ride" || next.sceneId !== rider.sceneId || !attaches(tx.env.opVersion)) return undefined;
   const mount = holderOf(tx.state.tokens, rider) as Token | undefined;
-  const there = judged.after().tokens[link.to];
+  const there = ownEntry(judged.after().tokens, link.to);
   if (!mount || !there || linkHolds(gridOfToken(tx.state, rider), tx.state.meta.settings, "ride", next, there)) return undefined;
   return mount;
 }
@@ -460,7 +461,7 @@ export function mountCost(tx: Tx, rider: Token, mount: Token): number | null {
 /** Whether every player sees a token as the op finds the room, by its envelope: what a walk off a holder reads (rules/attach.ts walkerFor). */
 function seenNow(tx: Tx): (t: { id: string }) => boolean {
   return (t) => {
-    const token = tx.state.tokens[t.id];
+    const token = ownEntry(tx.state.tokens, t.id);
     return token !== undefined && inSightOfNonOwners(tx.state, token, tx.env);
   };
 }
@@ -592,14 +593,14 @@ export function sharesTurn(state: RoomState, mountId: string, turn: TurnStart): 
   const mounts = turn.mounts;
   if (!mounts?.includes(mountId)) return false;
   const seen = new Set<string>();
-  let rider = state.tokens[turn.tokenId];
+  let rider = ownEntry(state.tokens, turn.tokenId);
   while (rider && !seen.has(rider.id)) {
     seen.add(rider.id);
     const link = rider.attached;
     const holder = link?.kind === "ride" && link.steer ? holderOf(state.tokens, rider) : undefined;
     if (!holder || !mounts.includes(holder.id)) return false;
     if (holder.id === mountId) return true;
-    rider = state.tokens[holder.id];
+    rider = ownEntry(state.tokens, holder.id);
   }
   return false;
 }
@@ -661,7 +662,7 @@ function pointsOf(trace: WalkTrace): RoutePoint[] {
 
 /** The speeds the token's actor holds: its own, or its character's. */
 export function speedsOf(state: RoomState, token: Token): Actor["speeds"] | undefined {
-  return "inline" in token.actor ? token.actor.inline.speeds : state.characters[token.actor.ref]?.actor.speeds;
+  return "inline" in token.actor ? token.actor.inline.speeds : ownEntry(state.characters, token.actor.ref)?.actor.speeds;
 }
 
 /** A path's first stop, where its turn began, with the turn start's marks of who saw it, its list included (docs/design/design-v1-per-player-vision.md 6.5). */
@@ -729,7 +730,7 @@ export function tokenCountLeg(tx: Tx, op: OpOf<"token.countLeg">): void {
 
 export function characterCreate(tx: Tx, op: OpOf<"character.create">): void {
   const input = op.character;
-  if (tx.state.characters[input.id]) throw invalid("character already exists");
+  if (ownEntry(tx.state.characters, input.id)) throw invalid("character already exists");
   if (input.actor.blockId !== undefined) throw invalid(BLOCK_OF_ITS_CHARACTER);
   if (input.actor.wildShape !== undefined && input.actor.srdId === undefined) throw invalid(WILD_SHAPE_ALONE);
   const character: Character = {
@@ -826,7 +827,7 @@ function syncRecord(next: Character, record: DdbSyncPatch | null | undefined, bl
  */
 export function stampedAt(op: Op, after: RoomState): string | undefined {
   if (op.t !== "character.update" || !op.patch.ddbSync || op.patch.ddbSync.at !== undefined) return undefined;
-  return after.characters[op.characterId]?.ddbSync?.at;
+  return ownEntry(after.characters, op.characterId)?.ddbSync?.at;
 }
 
 /**
@@ -864,7 +865,7 @@ function checkAttachment(tx: Tx, sceneId: string, tokenId: string): void {
 
 export function templateCreate(tx: Tx, op: OpOf<"template.create">): void {
   const input = op.template;
-  if (tx.state.templates[input.id]) throw invalid("template already exists");
+  if (ownEntry(tx.state.templates, input.id)) throw invalid("template already exists");
   tx.scene(input.sceneId);
   if (input.attachedTo !== undefined) checkAttachment(tx, input.sceneId, input.attachedTo);
   if (input.casterId !== undefined) tx.token(input.casterId);
@@ -873,7 +874,7 @@ export function templateCreate(tx: Tx, op: OpOf<"template.create">): void {
 }
 
 export function templateUpdate(tx: Tx, op: OpOf<"template.update">): void {
-  const template = tx.state.templates[op.templateId];
+  const template = ownEntry(tx.state.templates, op.templateId);
   if (!template) throw gone("template");
   const p = op.patch;
   const next: AreaTemplate = { ...template };
@@ -903,13 +904,13 @@ export function templateUpdate(tx: Tx, op: OpOf<"template.update">): void {
 }
 
 export function templateDelete(tx: Tx, op: OpOf<"template.delete">): void {
-  if (!tx.state.templates[op.templateId]) throw gone("template");
+  if (!ownEntry(tx.state.templates, op.templateId)) throw gone("template");
   tx.remove(keys.template(op.templateId));
 }
 
 export function drawingCreate(tx: Tx, op: OpOf<"drawing.create">): void {
   const input = op.drawing;
-  if (tx.state.drawings[input.id]) throw invalid("drawing already exists");
+  if (ownEntry(tx.state.drawings, input.id)) throw invalid("drawing already exists");
   tx.scene(input.sceneId);
   if (input.kind === "ruler") {
     const stops = input.points.length / 2;
@@ -932,7 +933,7 @@ export function drawingCreate(tx: Tx, op: OpOf<"drawing.create">): void {
 }
 
 export function drawingDelete(tx: Tx, op: OpOf<"drawing.delete">): void {
-  if (!tx.state.drawings[op.drawingId]) throw gone("drawing");
+  if (!ownEntry(tx.state.drawings, op.drawingId)) throw gone("drawing");
   tx.remove(keys.drawing(op.drawingId));
 }
 

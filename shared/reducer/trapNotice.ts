@@ -11,6 +11,7 @@ import type { Tx } from "./tx.ts";
 import { isHex, sceneGrid, SQUARES } from "../rules/grid.ts";
 import { placedOnHex } from "../rules/footprint.ts";
 import type { HexGrid } from "../rules/hex.ts";
+import { ownEntry } from "../records.ts";
 
 /** How near a creature must end its walk for the hint, in feet (docs/design/design-v1-traps.md 4.6). */
 export const NOTICE_FT = 10;
@@ -68,7 +69,7 @@ function movedPartyCreatures(op: Op, before: RoomState, tx: Tx): Token[] {
   const out: Token[] = [];
   for (const m of planMove(op, before, tx.actor, tx.env)) {
     if (m.how !== "walk" || !m.route.some((p) => p.x !== m.from.x || p.y !== m.from.y || p.elevation !== m.from.elevation)) continue;
-    const t = tx.state.tokens[m.tokenId];
+    const t = ownEntry(tx.state.tokens, m.tokenId);
     if (!t || t.sceneId !== m.from.sceneId || !isPlainId(t.id) || !trapCreature(tx.state, t) || !playersToken(tx.state, t)) continue;
     out.push(t);
   }
@@ -83,7 +84,7 @@ function perceptionDc(trap: Trap): number | null {
 }
 
 function passiveOf(state: RoomState, token: Token): number | null {
-  const actor = "inline" in token.actor ? token.actor.inline : state.characters[token.actor.ref]?.actor;
+  const actor = "inline" in token.actor ? token.actor.inline : ownEntry(state.characters, token.actor.ref)?.actor;
   return typeof actor?.passivePerception === "number" ? actor.passivePerception : null;
 }
 
@@ -91,7 +92,7 @@ function passiveOf(state: RoomState, token: Token): number | null {
 function near(state: RoomState, token: Token, trap: Trap): boolean {
   const settings = state.meta.settings;
   const fpc = settings.feetPerCell > 0 ? settings.feetPerCell : 5;
-  const scene = state.scenes[trap.sceneId];
+  const scene = ownEntry(state.scenes, trap.sceneId);
   const g = scene ? sceneGrid(scene) : SQUARES;
   if (isHex(g)) return nearHexes(state, token, trap, g, fpc);
   const from = tokenCellBox(SQUARES, token, fpc);
@@ -130,7 +131,7 @@ function nearHexes(state: RoomState, token: Token, trap: Trap, g: HexGrid, fpc: 
 
 /** Whether players can see any square of a trap's zone now: in the party's sight on a vision scene, not fully fogged on a scene with fog. */
 function zoneSeen(state: RoomState, sceneId: string): (trap: Trap) => boolean {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene) return () => false;
   const g = sceneGrid(scene);
   if (scene.vision?.on === true) {

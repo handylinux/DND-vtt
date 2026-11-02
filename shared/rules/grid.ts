@@ -1,5 +1,6 @@
 import type { BuildChunk, FogDraft, GridShape, RoomState, Scene, Token, Trap } from "../model.ts";
 import { hexInScene, hexKey, parseHexKey, sceneHexSpan, type HexGrid } from "./hex.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * A scene's grid (docs/design/design-v1-hex-grids.md section 7). Rule functions
@@ -160,7 +161,7 @@ export function switchHolds(state: Holds, scene: Pick<Scene, "id" | "gridShape">
     found.push(...chunkKeyed(chunk));
   }
   for (const trap of Object.values(state.traps ?? {})) if (trap.sceneId === scene.id) found.push("trap");
-  const draft = state.fogDrafts[scene.id];
+  const draft = ownEntry(state.fogDrafts, scene.id);
   if (draft && draftKeyed(draft)) found.push("roomFog");
   for (const token of sceneTokens(state, scene.id)) {
     if (token.squeeze === true) found.push("squeeze");
@@ -240,7 +241,7 @@ export function sceneHolds(state: Holds, scene: Pick<Scene, "id" | "gridShape">)
     const found = restoredHolds(state, "chunk", chunk, scene);
     if (found) return found;
   }
-  const draft = state.fogDrafts[scene.id];
+  const draft = ownEntry(state.fogDrafts, scene.id);
   if (draft) {
     const found = restoredHolds(state, "fogDraft", draft, scene);
     if (found) return found;

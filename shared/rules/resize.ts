@@ -5,6 +5,7 @@ import type { Point } from "./geom.ts";
 import { sceneGrid } from "./grid.ts";
 import { footprintHexes, hexDistance, hexInScene, hexKey, sameHex, type Hex, type HexGrid } from "./hex.ts";
 import { LEDGE_IN_THE_WAY, resizeLegStop, resizeStands, WALL_IN_THE_WAY, type MovingToken } from "./movement.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Where a resized creature stands (docs/design/design-v1-token-window.md 8.2 to
@@ -101,7 +102,7 @@ export function resizeBase(token: PlacedToken, next: NextSize, scene: Pick<Scene
  * middle now, with 8.3's ties.
  */
 export function resizeSpot(state: BuildState, token: MovingToken, next: NextSize, opts: { checked: boolean; remembered?: Point }): ResizeSpot {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   const change = sizeChange(token, next);
   if (change === "same" || !scene) return { x: token.x, y: token.y, shifted: false };
   const candidates = resizeCandidates(token, next, scene);
@@ -176,7 +177,7 @@ export function resizeCandidates(token: PlacedToken, next: NextSize, scene: Pick
 export function resizeRefusal(state: BuildState, token: MovingToken, next: NextSize & Point): string | null {
   const change = sizeChange(token, next);
   if (change === "same") return next.x === token.x && next.y === token.y ? null : RESIZE_KEEPS_PLACE;
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   const to = sized(next, next.x, next.y);
   if (!scene) return RESIZE_KEEPS_PLACE;
   const g = sceneGrid(scene);

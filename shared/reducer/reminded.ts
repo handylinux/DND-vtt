@@ -1,6 +1,7 @@
 import { LIMITS, utf8Bytes } from "../limits.ts";
 import type { AreaTrigger, Member, Reminded, RemindedPairs } from "../model.ts";
 import type { LineReach } from "../project.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Which reminders each audience read in the turn that is running
@@ -193,7 +194,7 @@ export class Book {
     if (shared) out.shared = shared;
     const players: Record<string, RemindedPairs> = {};
     for (const id of [...this.playerIds()].sort()) {
-      const pairs = members[id]?.kind === "player" ? this.player(id).get() : undefined;
+      const pairs = ownEntry(members, id)?.kind === "player" ? this.player(id).get() : undefined;
       if (pairs) players[id] = pairs;
     }
     if (Object.keys(players).length > 0) out.players = players;

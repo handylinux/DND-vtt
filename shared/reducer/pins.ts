@@ -2,6 +2,7 @@ import { keys } from "../keys.ts";
 import type { Pin } from "../model.ts";
 import type { OpOf } from "../protocol.ts";
 import { gone, invalid, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Map pins (docs/design/design-v1-dm-tools.md 3.8), the DM's. A put creates a pin
@@ -13,14 +14,14 @@ import { gone, invalid, type Tx } from "./tx.ts";
 export function pinPut(tx: Tx, op: OpOf<"pin.put">): void {
   const input = op.pin;
   const scene = tx.scene(input.sceneId);
-  const existing = tx.state.pins[input.id];
+  const existing = ownEntry(tx.state.pins, input.id);
   if (existing && existing.sceneId !== scene.id) throw invalid("pin belongs to another scene");
-  if (input.pageId !== undefined && !tx.state.journal[input.pageId]) throw gone("page");
+  if (input.pageId !== undefined && !ownEntry(tx.state.journal, input.pageId)) throw gone("page");
   const pin: Pin = { ...input, rev: existing?.rev ?? 0 };
   tx.write(keys.pin(pin.id), pin);
 }
 
 export function pinRemove(tx: Tx, op: OpOf<"pin.remove">): void {
-  if (!tx.state.pins[op.pinId]) throw gone("pin");
+  if (!ownEntry(tx.state.pins, op.pinId)) throw gone("pin");
   tx.remove(keys.pin(op.pinId));
 }

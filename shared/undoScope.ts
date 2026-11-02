@@ -1,6 +1,7 @@
 import type { Actor, RoomState } from "./model.ts";
 import type { ActorPatch, Op, TokenGroupPatch, TokenPatch } from "./protocol.ts";
 import type { UndoScope } from "./undoContract.ts";
+import { ownEntry } from "./records.ts";
 
 /** Field-sensitive entries are decided against the accepted operation's before-state below. */
 export const UNDO_SCOPE_BY_OP = {
@@ -175,8 +176,8 @@ export function undoScope(op: Op, before: RoomState): UndoScope {
     case "token.update": {
       if (!onlyFields(op.patch, PLAY_TOKEN_FIELDS)) return "setup";
       if (op.patch.actor === undefined) return "play";
-      const token = before.tokens[op.tokenId];
-      const character = token && "ref" in token.actor ? before.characters[token.actor.ref] : undefined;
+      const token = ownEntry(before.tokens, op.tokenId);
+      const character = token && "ref" in token.actor ? ownEntry(before.characters, token.actor.ref) : undefined;
       const actor = token && "inline" in token.actor ? token.actor.inline : character?.actor;
       return actorScope(op.patch.actor, actor, character !== undefined && onlyField(op.patch, "actor"));
     }
@@ -184,7 +185,7 @@ export function undoScope(op: Op, before: RoomState): UndoScope {
       return onlyFields(op.patch, PLAY_TOKEN_GROUP_FIELDS) ? "play" : "setup";
     case "character.update":
       return onlyField(op.patch, "actor") && op.patch.actor !== undefined
-        ? actorScope(op.patch.actor, before.characters[op.characterId]?.actor, before.characters[op.characterId] !== undefined)
+        ? actorScope(op.patch.actor, ownEntry(before.characters, op.characterId)?.actor, ownEntry(before.characters, op.characterId) !== undefined)
         : "setup";
     case "trap.update":
       return onlyFields(op.patch, TRAP_PLAY_FIELDS) ? "play" : "setup";
@@ -193,7 +194,7 @@ export function undoScope(op: Op, before: RoomState): UndoScope {
       if (onlyField(op.patch, "suggestedView")) return "play";
       const vision = op.patch.vision;
       if (!onlyField(op.patch, "vision") || vision === undefined || !onlyFields(vision, VISION_FIELDS)) return "setup";
-      const scene = before.scenes[op.sceneId];
+      const scene = ownEntry(before.scenes, op.sceneId);
       if (!scene || vision.on !== (scene.vision?.on === true)) return "setup";
       return vision.perPlayer === undefined || vision.perPlayer === (scene.vision?.perPlayer === true) ? "play" : "setup";
     }

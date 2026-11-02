@@ -6,6 +6,7 @@ import { findEntryFor, pausedAnchorForEntry } from "../rules/durations.ts";
 import { hpLabel } from "../rules/hp.ts";
 import { CHANGED_SINCE } from "./misc.ts";
 import { guardHash, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Taking an HP change back from the log (features section 10). Each HP
@@ -92,7 +93,7 @@ function restoredEffect(state: RoomState, effect: Effect, anchors: HpRevert["anc
   if (!d || !("entryId" in d.anchor)) return effect;
   const entryId = d.anchor.entryId;
   if (state.encounter?.entries.some((e) => e.id === entryId)) return effect;
-  const creature = anchors?.[entryId];
+  const creature = ownEntry(anchors, entryId);
   if (!creature) return effect;
   const row = findEntryFor(state, creature);
   return { ...effect, duration: { ...d, anchor: row ? { entryId: row.id } : creature } };
@@ -152,11 +153,11 @@ type Holder = { key: string; value: Record<string, unknown>; actor: Actor };
 
 function holderOf(state: RoomState, event: HpEvent): Holder | null {
   if (event.characterId !== undefined) {
-    const character = state.characters[event.characterId];
+    const character = ownEntry(state.characters, event.characterId);
     return character ? { key: keys.character(character.id), value: character, actor: character.actor } : null;
   }
   if (event.tokenId !== undefined) {
-    const token = state.tokens[event.tokenId];
+    const token = ownEntry(state.tokens, event.tokenId);
     if (!token || !("inline" in token.actor)) return null;
     return { key: keys.token(token.id), value: token, actor: token.actor.inline };
   }

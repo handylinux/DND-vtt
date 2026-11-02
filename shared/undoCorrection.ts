@@ -4,6 +4,7 @@ import { ownsCharacter, ownsToken, projectEntityForOp, stableStringify } from ".
 import type { Env } from "./reducer/tx.ts";
 import { unknownOnPass } from "./rules/pcStats.ts";
 import type { CorrectionLogEvent, HistoryDirection, HistoryScope } from "./undoContract.ts";
+import { ownEntry } from "./records.ts";
 
 const ACTOR_FIELDS = ["hp", "hpLabel", "hpBar", "life", "ac", "speeds", "initBonus", "initScore", "passivePerception", "senses", "creatureType", "cr", "xp", "srdId", "blockId", "wildShape", "effects", "deathSaves", "legendary", "uses", "hurt"];
 const POSE_FIELDS = ["sceneId", "x", "y", "elevation", "rotation", "size", "w", "h", "squeeze", "path", "attached"];
@@ -55,7 +56,7 @@ function ownerOf(state: RoomState, viewer: Viewer, key: string): boolean {
     case "token": return ownsToken(state, viewer, value as Token);
     case "character": return ownsCharacter(viewer, value as Character);
     case "companionBlock": {
-      const character = state.characters[object(value).characterId as string];
+      const character = ownEntry(state.characters, object(value).characterId as string);
       return character !== undefined && ownsCharacter(viewer, character);
     }
     default: return false;
@@ -79,7 +80,7 @@ export function correctionViews(before: RoomState, after: RoomState, touched: re
       const oldValue = readEntity(before, key);
       const newValue = readEntity(after, key);
       const characterId = parseKey(key)?.kind === "companionBlock" ? object(newValue ?? oldValue).characterId as string | undefined : undefined;
-      const characterOwner = characterId !== undefined && before.characters[characterId]?.ownerIds.includes(member.id) === true && after.characters[characterId]?.ownerIds.includes(member.id) === true;
+      const characterOwner = characterId !== undefined && ownEntry(before.characters, characterId)?.ownerIds.includes(member.id) === true && ownEntry(after.characters, characterId)?.ownerIds.includes(member.id) === true;
       // A reveal or loss of sight alone is not evidence of a mechanical correction. A missing definition still belongs to its character.
       if ((!was && oldValue !== null) || (!now && newValue !== null) || (!now && !characterOwner)) continue;
       const owner = characterOwner || ((oldValue === null || ownerOf(before, viewer, key)) && ownerOf(after, viewer, key));
@@ -108,7 +109,7 @@ export function projectCorrection(state: RoomState, viewer: Viewer, data: Correc
   const eligible = (witnesses ?? []).filter((w) => {
     const value = project(w.key);
     if (w.characterId !== undefined) {
-      const character = state.characters[w.characterId];
+      const character = ownEntry(state.characters, w.characterId);
       if (!character || !ownsCharacter(viewer, character)) return false;
       const current = readEntity(state, w.key);
       return current === null || (value !== null && object(current).characterId === w.characterId);

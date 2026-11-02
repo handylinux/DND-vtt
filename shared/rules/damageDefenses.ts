@@ -3,6 +3,7 @@ import type { Actor, Character, RoomState, StatBlock } from "../model.ts";
 import srdDefenses from "../srd/damage-defenses.json" with { type: "json" };
 import { monsterView } from "../statBlock.ts";
 import { pcDefenses } from "./pcStats.ts";
+import { ownEntry } from "../records.ts";
 
 const SRD = srdDefenses as Record<string, Defense[]>;
 const blocks = new WeakMap<StatBlock, Defense[]>();
@@ -23,9 +24,9 @@ export function damageDefenses(state: Pick<RoomState, "monsters" | "companionBlo
   const fromSrd = id !== undefined && Object.hasOwn(SRD, id) ? SRD[id]! : [];
   let block: readonly Defense[];
   if (character) block = fromSrd;
-  else if (actor.blockId !== undefined) block = fromBlock(state.companionBlocks[actor.blockId]);
+  else if (actor.blockId !== undefined) block = fromBlock(ownEntry(state.companionBlocks, actor.blockId));
   else if (actor.monsterId !== undefined) {
-    block = fromBlock(state.monsters[actor.monsterId]);
+    block = fromBlock(ownEntry(state.monsters, actor.monsterId));
   } else block = fromSrd;
   return [...(character ? pcDefenses(character).defenses : []), ...block, ...effectDefenses(actor.effects)];
 }

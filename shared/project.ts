@@ -79,6 +79,7 @@ import { zoneFogged, zoneRanges } from "./rules/traps.ts";
 import { clipFootprint, seesCreature, sightClipOf, sightRect } from "./rules/vision.ts";
 import type { SegmentIndex } from "./rules/segments.ts";
 import { deriveWalls, indexBuild, sceneWalls, type WallSet } from "./rules/walls.ts";
+import { ownEntry } from "./records.ts";
 
 /**
  * Per-viewer projection (design section 7.3): the security boundary that
@@ -203,7 +204,7 @@ function paused(state: RoomState, viewer: Viewer): boolean {
 }
 
 function characterOf(state: RoomState, token: Token): Character | undefined {
-  return "ref" in token.actor ? state.characters[token.actor.ref] : undefined;
+  return "ref" in token.actor ? ownEntry(state.characters, token.actor.ref) : undefined;
 }
 
 export function ownsToken(state: RoomState, viewer: Viewer, token: Token): boolean {
@@ -252,7 +253,7 @@ export function isPartyMember(state: RoomState, token: Token): boolean {
  */
 export function partySightOf(state: RoomState, sceneId: string): PartySight {
   const tiles = sightOf(state);
-  const perPlayer = perPlayerScene(state.scenes[sceneId]);
+  const perPlayer = perPlayerScene(ownEntry(state.scenes, sceneId));
   if (tiles !== undefined) return visionRules.sightFromTiles(perPlayer ? (viewMapsOf(state).sightAll ?? {}) : tiles, sceneId);
   return perPlayer ? visionRules.holderSight(state, sceneId, null) : visionRules.partySight(state, sceneId);
 }
@@ -276,13 +277,13 @@ export function unionSightOf(state: RoomState, sceneId: string): PartySight {
 function viewerSightOf(state: RoomState, viewer: Viewer, sceneId: string): PartySight {
   const tiles = sightOf(state);
   if (tiles !== undefined) return visionRules.sightFromTiles(tiles, sceneId);
-  if (viewer.role === "dm" || !perPlayerScene(state.scenes[sceneId])) return visionRules.partySight(state, sceneId);
+  if (viewer.role === "dm" || !perPlayerScene(ownEntry(state.scenes, sceneId))) return visionRules.partySight(state, sceneId);
   return visionRules.holderSight(state, sceneId, holdsSight(state, sceneId, viewer.memberId) ? viewer.memberId : null);
 }
 
 /** The grid of a scene, squares for a scene the state lacks. */
 export function gridOfScene(state: Pick<RoomState, "scenes">, sceneId: string): Grid {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   return scene ? sceneGrid(scene) : SQUARES;
 }
 
@@ -308,13 +309,13 @@ export function perPlayerScene(scene: Pick<Scene, "vision"> | undefined): boolea
  * so on a device this is always empty.
  */
 export function sightHolders(state: RoomState, sceneId: string): string[] {
-  const entries = state.holders?.[sceneId]?.entries ?? [];
-  return entries.flatMap((e) => (e.on && state.members[e.memberId]?.kind === "player" ? [e.memberId] : []));
+  const entries = ownEntry(state.holders, sceneId)?.entries ?? [];
+  return entries.flatMap((e) => (e.on && ownEntry(state.members, e.memberId)?.kind === "player" ? [e.memberId] : []));
 }
 
 function holdsSight(state: RoomState, sceneId: string, memberId: string): boolean {
-  if (state.members[memberId]?.kind !== "player") return false;
-  return state.holders?.[sceneId]?.entries.some((e) => e.on && e.memberId === memberId) === true;
+  if (ownEntry(state.members, memberId)?.kind !== "player") return false;
+  return ownEntry(state.holders, sceneId)?.entries.some((e) => e.on && e.memberId === memberId) === true;
 }
 
 /**
@@ -342,12 +343,12 @@ function fogReader(state: RoomState, memberId: string | null = null): FogReader 
   const own = (sceneId: string): string | null => {
     if (memberId === null) return null;
     let held = holder.get(sceneId);
-    if (held === undefined) holder.set(sceneId, (held = perPlayerScene(state.scenes[sceneId]) && holdsSight(state, sceneId, memberId)));
+    if (held === undefined) holder.set(sceneId, (held = perPlayerScene(ownEntry(state.scenes, sceneId)) && holdsSight(state, sceneId, memberId)));
     return held ? memberId : null;
   };
   return cellReader(cache, (sceneId, tx, ty) => {
     const by = own(sceneId);
-    return mergedBits(state, tileKey(sceneId, tx, ty), by === null ? undefined : state.exploredBy?.[holderTileKey(sceneId, by, tx, ty)]);
+    return mergedBits(state, tileKey(sceneId, tx, ty), by === null ? undefined : ownEntry(state.exploredBy, holderTileKey(sceneId, by, tx, ty)));
   });
 }
 
@@ -367,7 +368,7 @@ function sharedFogReader(state: RoomState): FogReader {
     const tile = fogAll[tileKey(sceneId, tx, ty)];
     return tile ? bitsOf(tile) : null;
   });
-  const which = (sceneId: string) => (perPlayerScene(state.scenes[sceneId]) ? shared : plain);
+  const which = (sceneId: string) => (perPlayerScene(ownEntry(state.scenes, sceneId)) ? shared : plain);
   return Object.assign((sceneId: string, cx: number, cy: number) => which(sceneId)(sceneId, cx, cy), { sub: (sceneId: string, sx: number, sy: number) => which(sceneId).sub(sceneId, sx, sy) });
 }
 
@@ -433,7 +434,7 @@ export function playersSeeGround(state: RoomState, sceneId: string): GroundReade
  */
 export function groundAnyPlayerSees(state: RoomState, sceneId: string): (x: number, y: number) => boolean {
   const shared = playersSeeGround(state, sceneId);
-  if (!perPlayerScene(state.scenes[sceneId])) return shared;
+  if (!perPlayerScene(ownEntry(state.scenes, sceneId))) return shared;
   if (sightOf(state) !== undefined) {
     const joined = viewMapsOf(state).exploredAny;
     if (!joined) return shared;
@@ -464,8 +465,8 @@ export function sharedGround(state: RoomState, sceneId: string): GroundReader {
  * holder's own (`own`) where one reads it.
  */
 function mergedBits(state: RoomState, key: string, own?: FogTile): Uint8Array | null {
-  const dm = state.fogTiles[key];
-  const explored = state.exploredTiles?.[key];
+  const dm = ownEntry(state.fogTiles, key);
+  const explored = ownEntry(state.exploredTiles, key);
   if (own) {
     const layers = [dm, explored, own].filter((t): t is FogTile => t !== undefined);
     return layers.length === 1 ? bitsOf(own) : mergedChain(layers).bits;
@@ -565,7 +566,7 @@ function anyFogTiles(state: RoomState): Record<string, FogTile> {
  */
 export function presenceOf(state: RoomState, memberId: string | null, sceneId: string): Record<string, FogTile> {
   const shared = anyFogTiles(state);
-  if (memberId === null || !perPlayerScene(state.scenes[sceneId]) || !holdsSight(state, sceneId, memberId)) return shared;
+  if (memberId === null || !perPlayerScene(ownEntry(state.scenes, sceneId)) || !holdsSight(state, sceneId, memberId)) return shared;
   const own = holderLayer(state, sceneId, memberId);
   // An op still writing into a layer (writable.ts) would change it under the kept map.
   if (isWritable(state.fogTiles) || isWritable(state.exploredTiles ?? {}) || isWritable(state.exploredBy ?? {})) return joinedPresence(own, shared);
@@ -692,7 +693,7 @@ type Screen = Pick<Ctx, "state" | "viewer" | "fogged" | "sight" | "held">;
 function withheldOnScreen(screen: Screen, token: Token, revealedSeen: boolean): boolean {
   const { state } = screen;
   if (!withheldFromPlayers(state, screen.fogged, screen.sight, token, revealedSeen, clipOfScreen(screen, token.sceneId))) return false;
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!screen.held || screen.viewer.role !== "player" || sightOf(state) !== undefined || !perPlayerScene(scene) || !scene || !isHex(sceneGrid(scene))) return true;
   if (fogClassOf(state, scene.id, screen.viewer.memberId) === null) return true;
   const shared = sharedOf(state);
@@ -732,7 +733,7 @@ function clipOfScreen(screen: Screen, sceneId: string): ClipBy {
  * other creatures.
  */
 function withheldFromPlayers(state: RoomState, fogged: FogReader, sight: (sceneId: string) => PartySight, token: Token, revealedSeen: boolean, clip: ClipBy): boolean {
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!scene) return false;
   if (!visionOn(scene) && !scene.fogEnabled) return false;
   if (isAboveFog(token, isPartyMember(state, token)) || (revealedSeen && token.fogExemptAuto)) return false;
@@ -991,7 +992,7 @@ export function seenAtEvery(state: RoomState, token: Token, spots: readonly { x:
   const placed = (p: (typeof spots)[number]): Token => ({ ...rest, x: p.x, y: p.y, elevation: p.elevation, ...(p.squeezed ? { squeeze: true as const } : {}) });
   const clip = sharedClip(env);
   if (!spots.every((p) => !withheldFromPlayers(state, shared.fogged, shared.sight, placed(p), revealed, clip))) return false;
-  const scene = state.scenes[token.sceneId];
+  const scene = ownEntry(state.scenes, token.sceneId);
   if (!perPlayerScene(scene) || !scene?.fogEnabled) return true;
   // Every cell of the footprint on shared ground, not wholly under the shared fog: on hexes every hex of it, by the sub-cells the wall clip keeps (HX-D10).
   const grid = sceneGrid(scene);
@@ -1006,10 +1007,10 @@ export function seenAtEvery(state: RoomState, token: Token, spots: readonly { x:
 export function rowSeenByNonOwners(state: RoomState, entry: InitEntry, env: Pick<Env, "opVersion">): boolean {
   if (entry.hidden || behindBlackout(state) || !orderShown(state, entry)) return false;
   if (entry.tokenId !== undefined) {
-    const token = state.tokens[entry.tokenId];
+    const token = ownEntry(state.tokens, entry.tokenId);
     if (!token || !seenByNonOwners(state, token, env)) return false;
   }
-  return entry.characterId === undefined || state.characters[entry.characterId] !== undefined;
+  return entry.characterId === undefined || ownEntry(state.characters, entry.characterId) !== undefined;
 }
 
 /**
@@ -1033,7 +1034,7 @@ export function seenMark(state: RoomState, token: Token, env: Pick<Env, "opVersi
   const revealed = revealSeenAnywhere(env.opVersion);
   const shared = sharedOf(state);
   if (!withheldFromPlayers(state, shared.fogged, shared.sight, token, revealed, sharedClip(env))) return { seen: true };
-  if (!perPlayerScene(state.scenes[token.sceneId]) || sightOf(state) !== undefined) return {};
+  if (!perPlayerScene(ownEntry(state.scenes, token.sceneId)) || sightOf(state) !== undefined) return {};
   if (!here) return { seenBy: [] };
   const held = clipsByHeldWalls(env.opVersion);
   return {
@@ -1057,10 +1058,10 @@ function holdersWho(state: RoomState, sceneId: string, test: (memberId: string) 
  */
 export function rowSeenMark(state: RoomState, entry: InitEntry, env: Pick<Env, "opVersion">): SeenMark {
   if (rowSeenByNonOwners(state, entry, env)) return { seen: true };
-  const token = entry.tokenId !== undefined ? state.tokens[entry.tokenId] : undefined;
+  const token = entry.tokenId !== undefined ? ownEntry(state.tokens, entry.tokenId) : undefined;
   const sceneId = state.meta.playerSceneId;
-  if (entry.hidden || behindBlackout(state) || !token || sceneId === null || token.sceneId !== sceneId || !perPlayerScene(state.scenes[sceneId]) || sightOf(state) !== undefined) return {};
-  const owners = new Set([...ownersOf(state, token), ...(entry.characterId !== undefined ? (state.characters[entry.characterId]?.ownerIds ?? []) : [])]);
+  if (entry.hidden || behindBlackout(state) || !token || sceneId === null || token.sceneId !== sceneId || !perPlayerScene(ownEntry(state.scenes, sceneId)) || sightOf(state) !== undefined) return {};
+  const owners = new Set([...ownersOf(state, token), ...(entry.characterId !== undefined ? (ownEntry(state.characters, entry.characterId)?.ownerIds ?? []) : [])]);
   const revealed = revealSeenAnywhere(env.opVersion);
   const held = clipsByHeldWalls(env.opVersion);
   return { seenBy: holdersWho(state, sceneId, (id) => !owners.has(id) && entryShown(ctxOf(state, { memberId: id, role: "player" }, { sceneId }, held), entry, revealed)) };
@@ -1081,9 +1082,9 @@ export function rowSeenMark(state: RoomState, entry: InitEntry, env: Pick<Env, "
  * (review PV1-ASTRA-3).
  */
 export function areaSeenMark(at: RoomState, template: AreaTemplate, token: Token, env: Pick<Env, "opVersion">): (SeenMark & { hidden?: true }) | null {
-  const scene = at.scenes[token.sceneId];
+  const scene = ownEntry(at.scenes, token.sceneId);
   if (!perPlayerScene(scene) || sightOf(at) !== undefined) return null;
-  const attached = template.attachedTo !== undefined ? at.tokens[template.attachedTo] : undefined;
+  const attached = template.attachedTo !== undefined ? ownEntry(at.tokens, template.attachedTo) : undefined;
   const seesAttached = attached === undefined || seenByNonOwners(at, attached, env) || (seenMark(at, attached, env, "here").seenBy ?? []).length > 0;
   if (template.visibility === "dm" || !seesAttached) return { hidden: true };
   if (behindBlackout(at) || token.sceneId !== at.meta.playerSceneId) return {};
@@ -1096,7 +1097,7 @@ export function areaSeenMark(at: RoomState, template: AreaTemplate, token: Token
 }
 
 function tokenVisibleById(ctx: Ctx, tokenId: string, revealedSeen = false): boolean {
-  const token = ctx.state.tokens[tokenId];
+  const token = ownEntry(ctx.state.tokens, tokenId);
   return token !== undefined && tokenVisibleTo(ctx, token, revealedSeen);
 }
 
@@ -1173,7 +1174,7 @@ function playerSave(e: Effect): Effect {
  * owner id alone does not make a creature a player's.
  */
 export function anyPlayer(state: Pick<RoomState, "members">, ids: readonly string[] | undefined): boolean {
-  return ids?.some((id) => state.members[id]?.kind === "player") ?? false;
+  return ids?.some((id) => ownEntry(state.members, id)?.kind === "player") ?? false;
 }
 
 /**
@@ -1198,7 +1199,7 @@ export function playerPlays(state: Pick<RoomState, "members" | "tokens">, holder
  */
 export function playersToken(state: Pick<RoomState, "members" | "characters">, token: Pick<Token, "ownerIds" | "actor">): boolean {
   if (anyPlayer(state, token.ownerIds)) return true;
-  const character = "ref" in token.actor ? state.characters[token.actor.ref] : undefined;
+  const character = "ref" in token.actor ? ownEntry(state.characters, token.actor.ref) : undefined;
   return character !== undefined && anyPlayer(state, character.ownerIds);
 }
 
@@ -1236,7 +1237,7 @@ export function projectToken(state: RoomState, viewer: Viewer, token: Token, opt
  */
 function projectTokenCtx(ctx: Ctx, token: Token): ProjectedToken | null {
   if (!tokenVisibleTo(ctx, token)) return null;
-  const marked = seenAllMarked(ctx.state.scenes[token.sceneId], ctx.viewer.role) && seenByAllCtx(ctx, token);
+  const marked = seenAllMarked(ownEntry(ctx.state.scenes, token.sceneId), ctx.viewer.role) && seenByAllCtx(ctx, token);
   if (ctx.viewer.role === "dm") return marked ? markedCopy(token) : token;
   const out = projectPlayerToken(ctx, token);
   if (marked) out.seenAll = true;
@@ -1383,7 +1384,7 @@ function projectPathCtx(ctx: Ctx, token: Token, owner: boolean): TokenPath | nul
  */
 function ownersStopsCtx(ctx: Ctx, token: Token, stops: readonly PathStop[]): PathStop[] {
   const out = stopsForOwners(stops);
-  const scene = ctx.state.scenes[token.sceneId];
+  const scene = ownEntry(ctx.state.scenes, token.sceneId);
   if (!scene?.fogEnabled) return out;
   const live = scene.vision?.on === true ? groundCtx(ctx, token.sceneId) : null;
   if (!live && !perPlayerScene(scene)) return out;
@@ -1419,7 +1420,7 @@ function projectTemplateCtx(ctx: Ctx, template: AreaTemplate): ProjectedTemplate
   if (template.visibility === "dm") return null;
   if (template.attachedTo !== undefined && !tokenVisibleById(ctx, template.attachedTo)) return null;
   if (template.ownerId !== ctx.viewer.memberId && !ctx.state.meta.settings.playersSeeAoeOfOthers) {
-    const owner = ctx.state.members[template.ownerId];
+    const owner = ownEntry(ctx.state.members, template.ownerId);
     if (owner === undefined || owner.kind !== "dm") return null;
   }
   if (template.casterId !== undefined && !tokenVisibleById(ctx, template.casterId)) {
@@ -1445,7 +1446,7 @@ function projectDrawingCtx(ctx: Ctx, drawing: Drawing): Drawing | null {
   const points = [...drawing.points];
   for (const [i, id] of drawing.anchors.entries()) {
     if (id === null) continue;
-    const token = ctx.state.tokens[id];
+    const token = ownEntry(ctx.state.tokens, id);
     if (!token || !tokenVisibleTo(ctx, token)) return null;
     const r = footprintRect(gridOfToken(ctx.state, token), token);
     points[2 * i] = r.x + r.w / 2;
@@ -1462,9 +1463,9 @@ function projectDrawingCtx(ctx: Ctx, drawing: Drawing): Drawing | null {
  */
 function projectChunkAtCtx(ctx: Ctx, sceneId: string, cx: number, cy: number): BuildChunk | null {
   if (sceneId !== ctx.sceneId) return null;
-  const chunk = ctx.state.buildChunks[chunkKey(sceneId, cx, cy)];
+  const chunk = ownEntry(ctx.state.buildChunks, chunkKey(sceneId, cx, cy));
   if (ctx.viewer.role === "dm") return chunk ?? null;
-  const scene = ctx.state.scenes[sceneId];
+  const scene = ownEntry(ctx.state.scenes, sceneId);
   if (scene?.fogEnabled) return playerChunk(ctx.state, { sceneId, cx, cy }, fogClassOf(ctx.state, sceneId, ctx.viewer.memberId));
   return chunk ? projectChunkForPlayer(ctx.state.buildChunks, chunk, scene?.autoWalls) : null;
 }
@@ -1472,7 +1473,7 @@ function projectChunkAtCtx(ctx: Ctx, sceneId: string, cx: number, cy: number): B
 /** The viewer's scene's chunks, by chunk key, as a snapshot holds them (projectChunkAtCtx). */
 function projectChunksCtx(ctx: Ctx): Record<string, BuildChunk> {
   const sceneId = ctx.sceneId;
-  const scene = sceneId === null ? undefined : ctx.state.scenes[sceneId];
+  const scene = sceneId === null ? undefined : ownEntry(ctx.state.scenes, sceneId);
   if (sceneId === null || !scene) return {};
   if (ctx.viewer.role !== "dm" && scene.fogEnabled) return heldChunks(ctx.state, sceneId, fogClassOf(ctx.state, sceneId, ctx.viewer.memberId));
   return projectMap(ctx.state.buildChunks, (c) => projectChunkAtCtx(ctx, c.sceneId, c.cx, c.cy));
@@ -1717,7 +1718,7 @@ export function shownUpDir(walls: WallSet, x: number, y: number): StairDir {
 
 /** One layer's memory chunk at a position, the party's for a null layer. */
 function memoryAt(state: RoomState, sceneId: string, layer: FogClass, cx: number, cy: number): MemoryChunk | undefined {
-  return layer === null ? state.memory?.[chunkKey(sceneId, cx, cy)] : state.memoryBy?.[holderChunkKey(sceneId, layer, cx, cy)];
+  return layer === null ? ownEntry(state.memory, chunkKey(sceneId, cx, cy)) : ownEntry(state.memoryBy, holderChunkKey(sceneId, layer, cx, cy));
 }
 
 /**
@@ -1756,7 +1757,7 @@ function chosen<T>(live: boolean, own: boolean, mine: Record<string, T> | undefi
  *   same are the same bytes on the socket, whatever order the DM drew in.
  */
 export function playerChunk(state: RoomState, at: { sceneId: string; cx: number; cy: number }, view: FogClass): PlayerChunk | null {
-  const scene = state.scenes[at.sceneId];
+  const scene = ownEntry(state.scenes, at.sceneId);
   if (!scene || !scene.fogEnabled || !inPositions(scene, at.cx, at.cy)) return null;
   const own = view !== null && holdsOwnSight(state, scene.id, view) ? view : null;
   const ground = groundOf(state, at.sceneId, own);
@@ -1782,7 +1783,7 @@ export function playerChunk(state: RoomState, at: { sceneId: string; cx: number;
  */
 export function playerChunkBatch(state: RoomState, sceneId: string, positions: readonly { cx: number; cy: number }[], view: FogClass): Map<string, PlayerChunk | null> {
   const out = new Map<string, PlayerChunk | null>();
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   const own = view !== null && holdsOwnSight(state, sceneId, view) ? view : null;
   const ground = scene?.fogEnabled ? groundOf(state, sceneId, own) : null;
   const missing: { cx: number; cy: number; key: string; memo: Memo | null; pieces: readonly FreeWall[] | undefined }[] = [];
@@ -1812,7 +1813,7 @@ export function playerChunkBatch(state: RoomState, sceneId: string, positions: r
 
 /** Every position's chunk of one scene with fog on for one class, by chunk key, as a snapshot holds them: the free walls cut once for the whole scene. */
 export function heldChunks(state: RoomState, sceneId: string, view: FogClass): Record<string, PlayerChunk> {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   const out: Record<string, PlayerChunk> = {};
   if (!scene || !scene.fogEnabled) return out;
   const own = view !== null && holdsOwnSight(state, sceneId, view) ? view : null;
@@ -1991,7 +1992,7 @@ function memoKey(state: RoomState, scene: Scene, own: FogClass, ground: Ground, 
     }
   }
   // A stair's direction reads the scene's whole stair map.
-  const here = state.buildChunks[chunkKey(sceneId, cx, cy)];
+  const here = ownEntry(state.buildChunks, chunkKey(sceneId, cx, cy));
   if (here && hasStairs(here)) parts.push(idOf(sceneWalls(scene, state.buildChunks)));
   const base = partsKey(parts);
   for (const [x, y] of positionTiles(scene, cx, cy)) {
@@ -2284,11 +2285,11 @@ function heldWallParts(ground: Ground, e: Pick<WallElement, "live" | "party" | "
  */
 export function heldFreeDoor(state: RoomState, ground: Ground, at: { cx: number; cy: number; id: string }): FreeWall | null {
   const key = chunkKey(ground.sceneId, at.cx, at.cy);
-  const wall = state.buildChunks[key]?.walls?.find((w) => w.id === at.id);
+  const wall = ownEntry(state.buildChunks, key)?.walls?.find((w) => w.id === at.id);
   return heldWallParts(ground, {
     live: wall ? shownFreeWall(wall) : undefined,
-    party: ground.remembers ? state.memory?.[key]?.walls?.[at.id] : undefined,
-    mine: ground.remembers && ground.holder !== null ? state.memoryBy?.[holderChunkKey(ground.sceneId, ground.holder, at.cx, at.cy)]?.walls?.[at.id] : undefined,
+    party: ground.remembers ? ownEntry(state.memory, key)?.walls?.[at.id] : undefined,
+    mine: ground.remembers && ground.holder !== null ? ownEntry(state.memoryBy, holderChunkKey(ground.sceneId, ground.holder, at.cx, at.cy))?.walls?.[at.id] : undefined,
   }).door;
 }
 
@@ -2452,16 +2453,16 @@ function sceneChunkList(all: Readonly<Record<string, BuildChunk>>, sceneId: stri
  */
 function projectFogCtx(ctx: Ctx, sceneId: string, tx: number, ty: number): FogTile | null {
   if (sceneId !== ctx.sceneId) return null;
-  if (ctx.viewer.role === "dm") return ctx.state.fogTiles[tileKey(sceneId, tx, ty)] ?? null;
-  const own = perPlayerScene(ctx.state.scenes[sceneId]) && holdsSight(ctx.state, sceneId, ctx.viewer.memberId) ? ctx.state.exploredBy?.[holderTileKey(sceneId, ctx.viewer.memberId, tx, ty)] : undefined;
+  if (ctx.viewer.role === "dm") return ownEntry(ctx.state.fogTiles, tileKey(sceneId, tx, ty)) ?? null;
+  const own = perPlayerScene(ownEntry(ctx.state.scenes, sceneId)) && holdsSight(ctx.state, sceneId, ctx.viewer.memberId) ? ownEntry(ctx.state.exploredBy, holderTileKey(sceneId, ctx.viewer.memberId, tx, ty)) : undefined;
   return own ? holderFogTile(ctx.state, sceneId, tx, ty, own) : sharedFogTile(ctx.state, sceneId, tx, ty);
 }
 
 /** A fog tile as every player shares it: the DM's and the party's layers merged (projectFogCtx). */
 function sharedFogTile(state: RoomState, sceneId: string, tx: number, ty: number): FogTile | null {
   const key = tileKey(sceneId, tx, ty);
-  const dm = state.fogTiles[key] ?? null;
-  const explored = state.exploredTiles?.[key];
+  const dm = ownEntry(state.fogTiles, key) ?? null;
+  const explored = ownEntry(state.exploredTiles, key);
   if (!explored) return dm && playerTile(dm, () => ({ ...dm, rev: 0 }));
   if (!dm) return playerTile(explored, () => ({ sceneId, tx, ty, rev: 0, bits: explored.bits }));
   const both = mergedOf(dm, explored);
@@ -2471,7 +2472,7 @@ function sharedFogTile(state: RoomState, sceneId: string, tx: number, ty: number
 /** A sight holder's fog tile where their own layer holds one: it merged with the DM's and the party's, kept per tile objects. */
 function holderFogTile(state: RoomState, sceneId: string, tx: number, ty: number, own: ExploredTile): FogTile {
   const key = tileKey(sceneId, tx, ty);
-  const layers = [state.fogTiles[key], state.exploredTiles?.[key], own].filter((t): t is FogTile => t !== undefined);
+  const layers = [ownEntry(state.fogTiles, key), ownEntry(state.exploredTiles, key), own].filter((t): t is FogTile => t !== undefined);
   if (layers.length === 1) return playerTile(own, () => ({ sceneId, tx, ty, rev: 0, bits: own.bits }));
   const all = mergedChain(layers);
   return (all.tile ??= { sceneId, tx, ty, rev: 0, bits: (all.text ??= encodeTile(all.bits)) });
@@ -2503,11 +2504,11 @@ function projectExploredCtx(ctx: Ctx, tile: FogTile): FogTile | null {
  * And for the DM every sight holder's layer joined, beside the party's.
  */
 function viewersPerPlayerScene(ctx: Ctx, sceneId: string): boolean {
-  return sceneId === ctx.sceneId && perPlayerScene(ctx.state.scenes[sceneId]);
+  return sceneId === ctx.sceneId && perPlayerScene(ownEntry(ctx.state.scenes, sceneId));
 }
 
 function projectSightAllCtx(ctx: Ctx, sceneId: string, tx: number, ty: number): SightTile | null {
-  if (!viewersPerPlayerScene(ctx, sceneId) || !visionOn(ctx.state.scenes[sceneId])) return null;
+  if (!viewersPerPlayerScene(ctx, sceneId) || !visionOn(ownEntry(ctx.state.scenes, sceneId))) return null;
   return visionRules.holderSight(ctx.state, sceneId, null).tiles.get(`${tx},${ty}`) ?? null;
 }
 
@@ -2534,8 +2535,8 @@ function exploredAnyTile(state: RoomState, sceneId: string, tx: number, ty: numb
 /** The tiles every entry of a scene's holder list holds at a place, in the list's order. */
 function holderTiles(state: RoomState, sceneId: string, tx: number, ty: number): ExploredTile[] {
   const out: ExploredTile[] = [];
-  for (const e of state.holders?.[sceneId]?.entries ?? []) {
-    const tile = state.exploredBy?.[holderTileKey(sceneId, e.memberId, tx, ty)];
+  for (const e of ownEntry(state.holders, sceneId)?.entries ?? []) {
+    const tile = ownEntry(state.exploredBy, holderTileKey(sceneId, e.memberId, tx, ty));
     if (tile) out.push(tile);
   }
   return out;
@@ -2548,7 +2549,7 @@ function holderTiles(state: RoomState, sceneId: string, tx: number, ty: number):
  * but a restored room might hold one (review PV1-O9).
  */
 function projectHoldersCtx(ctx: Ctx, list: SightHolders): SightHolders | null {
-  return ctx.viewer.role === "dm" && list.sceneId === ctx.sceneId && perPlayerScene(ctx.state.scenes[list.sceneId]) ? list : null;
+  return ctx.viewer.role === "dm" && list.sceneId === ctx.sceneId && perPlayerScene(ownEntry(ctx.state.scenes, list.sceneId)) ? list : null;
 }
 
 /**
@@ -2557,7 +2558,7 @@ function projectHoldersCtx(ctx: Ctx, list: SightHolders): SightHolders | null {
  * Sight is derived, never stored, and the same for every player.
  */
 function projectSightCtx(ctx: Ctx, sceneId: string, tx: number, ty: number): unknown {
-  if (sceneId !== ctx.sceneId || !visionOn(ctx.state.scenes[sceneId])) return null;
+  if (sceneId !== ctx.sceneId || !visionOn(ownEntry(ctx.state.scenes, sceneId))) return null;
   return ctx.sight(sceneId).tiles.get(`${tx},${ty}`) ?? null;
 }
 
@@ -2565,7 +2566,7 @@ function projectSightCtx(ctx: Ctx, sceneId: string, tx: number, ty: number): unk
 function sightTilesCtx(ctx: Ctx): SightMap {
   const out: SightMap = {};
   const sceneId = ctx.sceneId;
-  if (sceneId === null || !visionOn(ctx.state.scenes[sceneId])) return out;
+  if (sceneId === null || !visionOn(ownEntry(ctx.state.scenes, sceneId))) return out;
   for (const [at, tile] of ctx.sight(sceneId).tiles) out[`${sceneId}:${at}`] = tile;
   return out;
 }
@@ -2584,7 +2585,7 @@ function projectFogDraftCtx(ctx: Ctx, draft: FogDraft): FogDraft | null {
 function projectLabelCtx(ctx: Ctx, label: Label): Label | null {
   if (label.sceneId !== ctx.sceneId) return null;
   if (ctx.viewer.role === "dm") return label;
-  const scene = ctx.state.scenes[label.sceneId];
+  const scene = ownEntry(ctx.state.scenes, label.sceneId);
   if (!scene || !scene.fogEnabled) return label;
   return shownByMemory(ctx, "labels", label.id, label);
 }
@@ -2710,7 +2711,7 @@ function rememberedOnly(state: RoomState, sceneId: string, field: "labels" | "st
 /** A label or stamp by key for the viewer: the live one, or one only their memory holds. */
 function projectRememberedCtx(ctx: Ctx, field: "labels" | "stamps", id: string): Label | Stamp | null {
   if (ctx.viewer.role === "dm" || ctx.sceneId === null) return null;
-  const scene = ctx.state.scenes[ctx.sceneId];
+  const scene = ownEntry(ctx.state.scenes, ctx.sceneId);
   if (!scene || !scene.fogEnabled) return null;
   return shownByMemory<Label | Stamp>(ctx, field, id, null);
 }
@@ -2751,7 +2752,7 @@ function projectStampCtx(ctx: Ctx, stamp: Stamp): Stamp | null {
   if (stamp.sceneId !== ctx.sceneId) return null;
   if (ctx.viewer.role === "dm") return stamp;
   if (stamp.visibility === "dm") return null;
-  const scene = ctx.state.scenes[stamp.sceneId];
+  const scene = ownEntry(ctx.state.scenes, stamp.sceneId);
   if (!scene || !scene.fogEnabled) return stamp;
   return shownByMemory(ctx, "stamps", stamp.id, stamp);
 }
@@ -2772,11 +2773,11 @@ function projectTrapCtx(ctx: Ctx, trap: Trap): ProjectedTrap | null {
   const zone = trap.zone;
   if ("door" in zone) {
     const { cx, cy } = doorChunk(zone.door);
-    const chunk = ctx.state.buildChunks[chunkKey(trap.sceneId, cx, cy)];
+    const chunk = ownEntry(ctx.state.buildChunks, chunkKey(trap.sceneId, cx, cy));
     const feature = "edge" in zone.door ? chunk?.edges[zone.door.edge] : chunk?.walls?.find((w) => w.id === (zone.door as { id: string }).id)?.f;
     if (feature?.kind === "door" && feature.secret && !feature.discovered) return null;
   }
-  const scene = ctx.state.scenes[trap.sceneId];
+  const scene = ownEntry(ctx.state.scenes, trap.sceneId);
   if (scene?.fogEnabled) {
     const fogs = ctx.presence(trap.sceneId);
     const fogged = (r: CellRange) => isRangeFullyFogged(fogs, trap.sceneId, r, (x, y) => ctx.fogged(trap.sceneId, x, y));
@@ -2949,7 +2950,7 @@ function projectCastCtx(ctx: Ctx, ask: CastAsk): CastAsk | null {
   if (ask.roll !== undefined) out.roll = ask.roll;
   if (ask.slot !== undefined) out.slot = ask.slot;
   if (ask.area !== undefined) {
-    const area = ctx.state.templates[ask.area];
+    const area = ownEntry(ctx.state.templates, ask.area);
     if (area && projectTemplateCtx(ctx, area)) out.area = ask.area;
   }
   if (ask.targets !== undefined) out.targets = ask.targets.filter((id) => tokenVisibleById(ctx, id));
@@ -2970,7 +2971,7 @@ function projectCastCtx(ctx: Ctx, ask: CastAsk): CastAsk | null {
  */
 function projectCompanionBlockCtx(ctx: Ctx, block: CompanionBlock): CompanionBlock | null {
   if (ctx.viewer.role === "dm") return block;
-  const character = ctx.state.characters[block.characterId];
+  const character = ownEntry(ctx.state.characters, block.characterId);
   // Rev 0 for players, as on their characters (projectCharacter).
   return character !== undefined && ownsCharacter(ctx.viewer, character) ? { ...block, rev: 0 } : null;
 }
@@ -3029,10 +3030,10 @@ function projectPinCtx(ctx: Ctx, pin: Pin): Pin | null {
   if (ctx.viewer.role === "dm") return pin;
   if (pin.visibility === "dm") return null;
   if (pin.pageId !== undefined) {
-    const page = ctx.state.journal[pin.pageId];
+    const page = ownEntry(ctx.state.journal, pin.pageId);
     if (!page || !pageReadableBy(page, ctx.viewer.memberId)) return null;
   }
-  const scene = ctx.state.scenes[pin.sceneId];
+  const scene = ownEntry(ctx.state.scenes, pin.sceneId);
   if (!scene || !scene.fogEnabled) return pin;
   const fogged = isRangeFullyFogged(ctx.presence(pin.sceneId), pin.sceneId, pinCells(pin), (x, y) => ctx.fogged(pin.sceneId, x, y));
   return fogged ? null : pin;
@@ -3041,11 +3042,11 @@ function projectPinCtx(ctx: Ctx, pin: Pin): Pin | null {
 /** Whether the viewer owns the creature a roll target or a roll line names, now. A creature that is gone is no one's. */
 function ownsRollCreature(ctx: Ctx, ref: { tokenId?: string; characterId?: string }): boolean {
   if (ref.tokenId !== undefined) {
-    const token = ctx.state.tokens[ref.tokenId];
+    const token = ownEntry(ctx.state.tokens, ref.tokenId);
     return token !== undefined && ownsToken(ctx.state, ctx.viewer, token);
   }
   if (ref.characterId !== undefined) {
-    const character = ctx.state.characters[ref.characterId];
+    const character = ownEntry(ctx.state.characters, ref.characterId);
     return character !== undefined && ownsCharacter(ctx.viewer, character);
   }
   return false;
@@ -3144,9 +3145,9 @@ export function initiativeHidden(state: RoomState, creature: { tokenId: string }
  * 2026-10-17), or with `allies` one with the Ally ring.
  */
 function shownFromTheStart(state: RoomState, creature: { tokenId?: string; characterId?: string }, allies: boolean, viewer?: Viewer): boolean {
-  const token = creature.tokenId !== undefined ? state.tokens[creature.tokenId] : undefined;
+  const token = creature.tokenId !== undefined ? ownEntry(state.tokens, creature.tokenId) : undefined;
   if (token) return partysOwn(state, token) || (viewer !== undefined && ownsToken(state, viewer, token)) || (allies && token.disposition === "ally");
-  const character = creature.characterId !== undefined ? state.characters[creature.characterId] : undefined;
+  const character = creature.characterId !== undefined ? ownEntry(state.characters, creature.characterId) : undefined;
   return character !== undefined && anyPlayer(state, character.ownerIds);
 }
 
@@ -3165,7 +3166,7 @@ function partysOwn(state: RoomState, token: Token): boolean {
 function entryShown(ctx: Ctx, entry: InitEntry, revealedSeen = false): boolean {
   if (entry.hidden || !orderShown(ctx.state, entry, ctx.viewer)) return false;
   if (entry.tokenId !== undefined && !tokenVisibleById(ctx, entry.tokenId, revealedSeen)) return false;
-  return entry.characterId === undefined || ctx.state.characters[entry.characterId] !== undefined;
+  return entry.characterId === undefined || ownEntry(ctx.state.characters, entry.characterId) !== undefined;
 }
 
 /**
@@ -3222,7 +3223,7 @@ function projectEncounterCtx(ctx: Ctx): ProjectedEncounter | null {
  */
 function projectTurnStart(ctx: Ctx, start: TurnStart | undefined, activeEntryId: string | null): TurnStart | null {
   if (!start || activeEntryId === null || start.entryId !== activeEntryId) return null;
-  const token = ctx.state.tokens[start.tokenId];
+  const token = ownEntry(ctx.state.tokens, start.tokenId);
   if (!token || token.sceneId !== start.sceneId || !tokenVisibleTo(ctx, token)) return null;
   if (!start.seen && !start.seenBy?.includes(ctx.viewer.memberId) && !ownsToken(ctx.state, ctx.viewer, token)) return null;
   const out: TurnStart = { entryId: start.entryId, tokenId: start.tokenId, sceneId: start.sceneId, x: start.x, y: start.y, elevation: start.elevation };
@@ -3289,7 +3290,7 @@ export function eventReach(state: RoomState, data: LogEvent): Reach {
       return [];
     case "area":
       // On a per-player scene a reminder reaches exactly its witnesses, its creature's owners among them only as they saw the area (6.5).
-      if (data.seenBy !== undefined && !data.seen) return state.tokens[data.tokenId] ? data.seenBy : [];
+      if (data.seenBy !== undefined && !data.seen) return ownEntry(state.tokens, data.tokenId) ? data.seenBy : [];
       return creatureReach(state, data, false);
     case "hp":
     case "rest":
@@ -3304,15 +3305,15 @@ export function eventReach(state: RoomState, data: LogEvent): Reach {
       const row = state.encounter?.entries.find((e) => e.id === data.entryId);
       if (!row) return [];
       if (data.seen) return "all";
-      const token = row.tokenId !== undefined ? state.tokens[row.tokenId] : undefined;
-      const character = row.characterId !== undefined ? state.characters[row.characterId] : undefined;
+      const token = row.tokenId !== undefined ? ownEntry(state.tokens, row.tokenId) : undefined;
+      const character = row.characterId !== undefined ? ownEntry(state.characters, row.characterId) : undefined;
       return [...(token ? ownersOf(state, token) : []), ...(character?.ownerIds ?? []), ...(data.seenBy ?? [])];
     }
     case "encounter":
     case "member":
       return "all";
     case "handout": {
-      const handout = state.handouts[data.handoutId];
+      const handout = ownEntry(state.handouts, data.handoutId);
       if (!handout) return [];
       return handout.to === "all" ? "all" : handout.to;
     }
@@ -3342,10 +3343,10 @@ export function eventReach(state: RoomState, data: LogEvent): Reach {
 /** The players of the creature a roll line, a cast or a roll names. A creature that is gone is no one's. */
 function creaturePlayers(state: RoomState, ref: { tokenId?: string; characterId?: string }): string[] {
   if (ref.tokenId !== undefined) {
-    const token = state.tokens[ref.tokenId];
+    const token = ownEntry(state.tokens, ref.tokenId);
     return token ? ownersOf(state, token) : [];
   }
-  if (ref.characterId !== undefined) return state.characters[ref.characterId]?.ownerIds ?? [];
+  if (ref.characterId !== undefined) return ownEntry(state.characters, ref.characterId)?.ownerIds ?? [];
   return [];
 }
 
@@ -3358,9 +3359,9 @@ function creaturePlayers(state: RoomState, ref: { tokenId?: string; characterId?
  * was seen.
  */
 function creatureReach(state: RoomState, data: { tokenId?: string; characterId?: string; seen?: true; seenBy?: string[] }, lifeOnly: boolean): Reach {
-  if (data.characterId !== undefined && !state.characters[data.characterId]) return [];
+  if (data.characterId !== undefined && !ownEntry(state.characters, data.characterId)) return [];
   if (data.tokenId === undefined) return "all";
-  const token = state.tokens[data.tokenId];
+  const token = ownEntry(state.tokens, data.tokenId);
   if (!token) return [];
   const companionLife = lifeOnly && effectCompanion(token);
   if (data.seen && !companionLife) return "all";
@@ -3534,14 +3535,14 @@ function withinParts(data: LogEvent, parts: LineParts, memberId: string): LogEve
 function holderInSight(ctx: Ctx, data: { tokenId?: string; characterId?: string }): { token?: Token; character?: Character } | null {
   const holder: { token?: Token; character?: Character } = {};
   if (data.tokenId !== undefined) {
-    const token = ctx.state.tokens[data.tokenId];
+    const token = ownEntry(ctx.state.tokens, data.tokenId);
     if (!token || !tokenVisibleTo(ctx, token)) return null;
     holder.token = token;
     const character = characterOf(ctx.state, token);
     if (character) holder.character = character;
   }
   if (data.characterId !== undefined) {
-    const character = ctx.state.characters[data.characterId];
+    const character = ownEntry(ctx.state.characters, data.characterId);
     if (!character) return null;
     holder.character = character;
   }
@@ -3634,14 +3635,14 @@ function projectEventCtx(ctx: Ctx, data: LogEvent, copy = false): LogEvent | nul
     case "area": {
       // The area must have been in players' sight when it happened and be in this player's now, as must the creature.
       if (!holderInSight(ctx, data)) return null;
-      const template = ctx.state.templates[data.templateId];
+      const template = ownEntry(ctx.state.templates, data.templateId);
       return template && projectTemplateCtx(ctx, template) ? data : null;
     }
     case "encounter":
       // A fight started behind the pause screen is news when the game resumes.
       return ctx.paused ? null : data;
     case "handout": {
-      const handout = ctx.state.handouts[data.handoutId];
+      const handout = ownEntry(ctx.state.handouts, data.handoutId);
       return handout && projectHandoutCtx(ctx, handout) ? data : null;
     }
     case "member":
@@ -3731,9 +3732,9 @@ export function listsStripped(data: LogEvent): LogEvent {
 
 /** Whether the viewer owns the creature on an initiative row, so its turns are part of the viewer's own history. */
 function ownsRow(ctx: Ctx, row: ProjectedEntry): boolean {
-  const token = row.tokenId !== undefined ? ctx.state.tokens[row.tokenId] : undefined;
+  const token = row.tokenId !== undefined ? ownEntry(ctx.state.tokens, row.tokenId) : undefined;
   if (token && ownsToken(ctx.state, ctx.viewer, token)) return true;
-  const character = row.characterId !== undefined ? ctx.state.characters[row.characterId] : undefined;
+  const character = row.characterId !== undefined ? ownEntry(ctx.state.characters, row.characterId) : undefined;
   return character !== undefined && ownsCharacter(ctx.viewer, character);
 }
 
@@ -4085,7 +4086,7 @@ function projectStateCtx(ctx: Ctx): ProjectedState {
  */
 function perPlayerMapsCtx(ctx: Ctx): Pick<ProjectedState, "sightAll" | "fogAll" | "exploredAny" | "holders"> {
   const sceneId = ctx.sceneId;
-  const scene = sceneId === null ? undefined : ctx.state.scenes[sceneId];
+  const scene = sceneId === null ? undefined : ownEntry(ctx.state.scenes, sceneId);
   if (sceneId === null || !scene || !perPlayerScene(scene)) return {};
   const out: Pick<ProjectedState, "sightAll" | "fogAll" | "exploredAny" | "holders"> = {};
   if (visionOn(scene)) {
@@ -4109,7 +4110,7 @@ function perPlayerMapsCtx(ctx: Ctx): Pick<ProjectedState, "sightAll" | "fogAll" 
   if (ctx.viewer.role === "dm") {
     const exploredAny = tiles((tx, ty) => projectExploredAnyCtx(ctx, sceneId, tx, ty), Object.values(ctx.state.exploredBy ?? {}));
     if (Object.keys(exploredAny).length > 0) out.exploredAny = exploredAny;
-    const list = ctx.state.holders?.[sceneId];
+    const list = ownEntry(ctx.state.holders, sceneId);
     if (list) out.holders = { [sceneId]: list };
   }
   return out;
@@ -4151,7 +4152,7 @@ export function allKeys(state: RoomState): EntityKey[] {
   // A tile only the party explored is still a fog tile to players (projectFogCtx).
   for (const [key, t] of Object.entries(state.exploredTiles ?? {})) {
     out.push(keys.explored(t.sceneId, t.tx, t.ty));
-    if (!state.fogTiles[key]) out.push(keys.fog(t.sceneId, t.tx, t.ty));
+    if (!ownEntry(state.fogTiles, key)) out.push(keys.fog(t.sceneId, t.tx, t.ty));
   }
   out.push(...sightKeys(state));
   out.push(...perPlayerKeys(state));
@@ -4223,8 +4224,8 @@ function perPlayerKeys(state: RoomState): EntityKey[] {
     const key = tileKey(t.sceneId, t.tx, t.ty);
     if (own.has(key)) continue;
     own.add(key);
-    if (!state.fogTiles[key] && !state.exploredTiles?.[key]) out.push(keys.fog(t.sceneId, t.tx, t.ty));
-    if (perPlayerScene(state.scenes[t.sceneId])) out.push(keys.exploredAny(t.sceneId, t.tx, t.ty));
+    if (!ownEntry(state.fogTiles, key) && !ownEntry(state.exploredTiles, key)) out.push(keys.fog(t.sceneId, t.tx, t.ty));
+    if (perPlayerScene(ownEntry(state.scenes, t.sceneId))) out.push(keys.exploredAny(t.sceneId, t.tx, t.ty));
   }
   for (const scene of Object.values(state.scenes)) {
     if (!perPlayerScene(scene)) continue;
@@ -4310,10 +4311,10 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
    * and an edge reads the cells beside it (docs/design/design-v1-map-discovery.md
    * 5.6). Stubs count, so every position of the scene is a key.
    */
-  const fogScene = (sceneId: string) => state.scenes[sceneId]?.fogEnabled === true;
-  const visionScene = (sceneId: string) => fogScene(sceneId) && state.scenes[sceneId]?.vision?.on === true;
+  const fogScene = (sceneId: string) => ownEntry(state.scenes, sceneId)?.fogEnabled === true;
+  const visionScene = (sceneId: string) => fogScene(sceneId) && ownEntry(state.scenes, sceneId)?.vision?.on === true;
   const aroundChunk = (sceneId: string, cx: number, cy: number) => {
-    const scene = state.scenes[sceneId];
+    const scene = ownEntry(state.scenes, sceneId);
     if (!scene) return;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (inPositions(scene, cx + dx, cy + dy)) add(keys.chunk(sceneId, cx + dx, cy + dy));
   };
@@ -4326,7 +4327,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
     return out;
   };
   const aroundTile = (sceneId: string, tx: number, ty: number) => {
-    const scene = state.scenes[sceneId];
+    const scene = ownEntry(state.scenes, sceneId);
     if (scene) for (const { cx, cy } of readingTile(scene, tx, ty)) add(keys.chunk(sceneId, cx, cy));
   };
   const stairScenes = new Set<string>();
@@ -4338,7 +4339,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
     if (heldHex(sceneId)) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) wallChunks.push({ sceneId, cx: cx + dx, cy: cy + dy });
   };
   const copyOnTile = (sceneId: string, tx: number, ty: number) => {
-    const scene = state.scenes[sceneId];
+    const scene = ownEntry(state.scenes, sceneId);
     if (scene && heldHex(sceneId)) for (const { cx, cy } of readingTile(scene, tx, ty)) wallChunks.push({ sceneId, cx, cy });
   };
   for (const key of touched) {
@@ -4356,7 +4357,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
         [parsed.cx + 1, parsed.cy],
         [parsed.cx, parsed.cy + 1],
       ] as const) {
-        if (state.buildChunks[chunkKey(parsed.sceneId, cx, cy)]) add(keys.chunk(parsed.sceneId, cx, cy));
+        if (ownEntry(state.buildChunks, chunkKey(parsed.sceneId, cx, cy))) add(keys.chunk(parsed.sceneId, cx, cy));
       }
     } else if (parsed.kind === "memory" || parsed.kind === "memoryBy") {
       // What players remember shows in their chunks there and around, and in the labels and stamps it names (5.6).
@@ -4368,8 +4369,8 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
     } else if (parsed.kind === "scene") {
       // Comparing both sides avoids rebuilding a scene for a name or walls-version write.
       // Callers with one state keep the conservative dependency set.
-      const scene = state.scenes[parsed.id];
-      const was = other?.scenes[parsed.id];
+      const scene = ownEntry(state.scenes, parsed.id);
+      const was = ownEntry(other?.scenes, parsed.id);
       if (scene?.fogEnabled && (!was || sceneFields(scene) !== sceneFields(was) || stableStringify(scene.vision) !== stableStringify(was.vision))) {
         for (const { cx, cy } of chunkPositions(scene)) add(keys.chunk(scene.id, cx, cy));
       }
@@ -4389,8 +4390,8 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
       if (fogScene(parsed.sceneId)) aroundTile(parsed.sceneId, parsed.tx, parsed.ty);
       // Every player's fog reads the party's layer, and on a per-player scene so do the shared fog and every owner's
       // route corners (docs/design/design-v1-per-player-vision.md 7.5).
-      if (perPlayerScene(state.scenes[parsed.sceneId])) add(keys.fogAll(parsed.sceneId, parsed.tx, parsed.ty));
-      if (perPlayerScene(state.scenes[parsed.sceneId]) || visionScene(parsed.sceneId)) cornersOn(parsed.sceneId, null);
+      if (perPlayerScene(ownEntry(state.scenes, parsed.sceneId))) add(keys.fogAll(parsed.sceneId, parsed.tx, parsed.ty));
+      if (perPlayerScene(ownEntry(state.scenes, parsed.sceneId)) || visionScene(parsed.sceneId)) cornersOn(parsed.sceneId, null);
     } else if (parsed.kind === "exploredBy") {
       // A holder's layer reaches them merged into their fog, and the DM joined with the others' (7.5).
       add(keys.fog(parsed.sceneId, parsed.tx, parsed.ty));
@@ -4445,7 +4446,7 @@ export function dependents(state: RoomState, touched: EntityKey[], other?: RoomS
   // A character's Ready trigger reaches players while a player owns any token of it (playerPlays), so a token placed or
   // removed re-projects its character. A change of owners re-projects everything anyway (Tx global).
   for (const id of tokenIds) {
-    const token = state.tokens[id];
+    const token = ownEntry(state.tokens, id);
     if (token && "ref" in token.actor) add(keys.character(token.actor.ref));
   }
   // A carried token's link reaches a player while they see its holder (linkShown), so the holder's change re-projects it.
@@ -4582,7 +4583,7 @@ function wallDependents(state: RoomState, chunks: readonly { sceneId: string; cx
     list.push({ x0: (cx - 1) * CHUNK_CELLS, y0: (cy - 1) * CHUNK_CELLS, x1: (cx + 2) * CHUNK_CELLS, y1: (cy + 2) * CHUNK_CELLS });
     // On hexes the chunk's heights and stairs raise the sides of its hexes, whose world box lies elsewhere than its free walls' world chunk (HX-D22).
     const g = gridOfScene(state, sceneId);
-    const held = state.buildChunks[chunkKey(sceneId, cx, cy)];
+    const held = ownEntry(state.buildChunks, chunkKey(sceneId, cx, cy));
     if (isHex(g) && (held?.heights !== undefined || held?.up !== undefined)) list.push(hexChunkBox(g, cx, cy, CHUNK_CELLS));
   }
   for (const token of Object.values(state.tokens)) {
@@ -4630,13 +4631,13 @@ function stairChunkKeys(state: RoomState, sceneId: string): EntityKey[] {
 export function changedSightKeys(before: RoomState, after: RoomState, sceneIds: Iterable<string>): EntityKey[] {
   const out: EntityKey[] = [];
   for (const sceneId of new Set(sceneIds)) {
-    if (!visionOn(before.scenes[sceneId]) && !visionOn(after.scenes[sceneId])) continue;
+    if (!visionOn(ownEntry(before.scenes, sceneId)) && !visionOn(ownEntry(after.scenes, sceneId))) continue;
     const sight = new Set<string>();
     diffSight(unionSightOf(before, sceneId).tiles, unionSightOf(after, sceneId).tiles, sight);
     // On a per-player scene each viewer's `sight` is one raster of several (docs/design/design-v1-per-player-vision.md 7.5): a
     // tile any of them changed on is a candidate for every viewer, and the shared sight's are `sightAll` too. A switch
     // of mode or of the holder list re-projects everything anyway (Tx global).
-    if (perPlayerScene(before.scenes[sceneId]) && perPlayerScene(after.scenes[sceneId])) {
+    if (perPlayerScene(ownEntry(before.scenes, sceneId)) && perPlayerScene(ownEntry(after.scenes, sceneId))) {
       const shared = new Set<string>();
       diffSight(visionRules.holderSight(before, sceneId, null).tiles, visionRules.holderSight(after, sceneId, null).tiles, shared);
       for (const at of shared) {

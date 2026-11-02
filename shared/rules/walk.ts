@@ -8,6 +8,7 @@ import { crossesInnerLedges, groundUnder, legStop, offGridWallThrough, offKey, o
 import { fileOutOfReach, fileRoutes, fileShift, followedHeight, legSteps, routeFeet, routeLattice, seatedOn, seatShift, straightCost, trueLength, type FileEnd, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "./route.ts";
 import { SQUARES } from "./grid.ts";
 import { onHolder } from "./attach.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Finding the way a creature walks (docs/design/design-v1-movement.md section 5):
@@ -312,7 +313,7 @@ export class WalkWorld {
   constructor(input: WalkInput, pre?: WalkWorld) {
     this.input = input;
     const { token, build } = input;
-    const scene = build.scenes[token.sceneId];
+    const scene = ownEntry(build.scenes, token.sceneId);
     this.W = scene?.bounds.w ?? 0;
     this.H = scene?.bounds.h ?? 0;
     const chunks = build.buildChunks;

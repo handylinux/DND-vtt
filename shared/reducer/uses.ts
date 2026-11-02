@@ -9,6 +9,7 @@ import { DAMAGE_TYPES, type DamageType } from "../rules/damage.ts";
 import { applyHeal } from "../rules/hp.ts";
 import { hpRevertOf } from "./hpUndo.ts";
 import { invalid, type ResolvedActor, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * A creature's limited uses (docs/design/design-v1-combat-controls.md 2 and 3):
@@ -415,8 +416,8 @@ export function startTurnUses(tx: Tx, encounter: Encounter, landing: InitEntry, 
  * own, so it was converted and gets nothing back.
  */
 function holderNamed(tx: Tx, holderId: string): ResolvedActor | undefined {
-  if (tx.state.characters[holderId]) return tx.tryResolveActor({ characterId: holderId });
-  const token = tx.state.tokens[holderId];
+  if (ownEntry(tx.state.characters, holderId)) return tx.tryResolveActor({ characterId: holderId });
+  const token = ownEntry(tx.state.tokens, holderId);
   return token && "inline" in token.actor ? tx.tryResolveActor({ tokenId: holderId }) : undefined;
 }
 

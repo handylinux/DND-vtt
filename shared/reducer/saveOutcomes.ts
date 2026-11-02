@@ -15,6 +15,7 @@ import {
 } from "../saveOutcomeContract.ts";
 import { retainedSaveOutcome, tracksSaveOutcomes } from "../saveOutcomes.ts";
 import { invalid, Refuse, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 const UNAVAILABLE = "This save's outcome cannot be checked. Start a new group save to continue.";
 const CHANGED = "This save's outcome changed. Check the save before trying again.";
@@ -30,7 +31,7 @@ export function prepareSaveOutcome(tx: Tx, op: OpOf<"actor.outcome">): SaveOutco
   if (tx.actor.role !== "dm") throw new Refuse("forbidden", "only the DM can track a save outcome");
   if (!saveOutcomePageSchema.safeParse(op.page).success) throw invalid("the save outcome identity is invalid");
   const { id, expectRevision } = op.page;
-  const current = tx.state.saveOutcomes?.[id];
+  const current = ownEntry(tx.state.saveOutcomes, id);
   if (current) {
     if (!retainedSaveOutcome(tx.state, id, tx.env.at)) throw invalid(UNAVAILABLE);
     if (current.memberId !== tx.actor.memberId || current.revision !== expectRevision || current.state !== "undone" || current.plan === op.plan) throw invalid(CHANGED);

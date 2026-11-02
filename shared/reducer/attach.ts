@@ -12,6 +12,7 @@ import { renumber, sortEntries } from "../rules/initiative.ts";
 import { mountSeenByAll, rowLeadsMounts, sharedMounts, tokenRow, writeEncounter } from "./encounter.ts";
 import { carriedAlong, dismounted, hiddenTurnOf, judgedIn, mountCost, placeCarried, sharesTurn, sortedById, startStop, withPath } from "./tokens.ts";
 import { invalid, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Attaching and detaching tokens (docs/design/design-v1-attach.md 5 and 8.2), and
@@ -229,7 +230,7 @@ export function tokenDetach(tx: Tx, op: OpOf<"token.detach">): void {
 }
 
 function seenByAll(tx: Tx, tokenId: string): boolean {
-  const token = tx.state.tokens[tokenId];
+  const token = ownEntry(tx.state.tokens, tokenId);
   return token !== undefined && inSightOfNonOwners(tx.state, token, tx.env);
 }
 
@@ -260,7 +261,7 @@ export function linkPass(tx: Tx): void {
   const settings = tx.state.meta.settings;
   for (const token of sortedById(candidates)) {
     const link = token.attached!;
-    const holder = tx.state.tokens[link.to];
+    const holder = ownEntry(tx.state.tokens, link.to);
     if (holder && holder.id !== token.id && linkHolds(gridOfToken(tx.state, token), settings, link.kind, token, holder)) continue;
     const { attached: _gone, ...loose } = token;
     tx.write(keys.token(token.id), loose);

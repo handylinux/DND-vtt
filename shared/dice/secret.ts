@@ -1,6 +1,7 @@
 import type { RoomState } from "../model.ts";
 import { playerPlays, playersToken } from "../project.ts";
 import type { ActorTarget } from "../protocol.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Whether a player plays the creature a roll is for: a character a player
@@ -10,10 +11,10 @@ import type { ActorTarget } from "../protocol.ts";
  */
 export function playedCreature(state: Pick<RoomState, "members" | "characters" | "tokens">, target: ActorTarget): boolean {
   if ("characterId" in target) {
-    const character = state.characters[target.characterId];
+    const character = ownEntry(state.characters, target.characterId);
     return character !== undefined && playerPlays(state, { character });
   }
-  const token = state.tokens[target.tokenId];
+  const token = ownEntry(state.tokens, target.tokenId);
   return token !== undefined && playersToken(state, token);
 }
 

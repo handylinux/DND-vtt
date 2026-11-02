@@ -4,6 +4,7 @@ import { isWritable } from "../writable.ts";
 import { chunkHeights, chunkMarks, encodeHeights, groundAt, stepper } from "./heights.ts";
 import { gridOfShape, isHex } from "./grid.ts";
 import { hexInScene, type HexGrid } from "./hex.ts";
+import { ownEntry } from "../records.ts";
 
 /*
  * The pit border counted ahead (docs/design/design-v1-traps.md 6.7). A pit's walls
@@ -56,13 +57,13 @@ export function withPitsCounted(state: Counted, sceneId: SceneId): Pick<RoomStat
   const cacheable = state.traps !== undefined && !isWritable(state.traps) && !isWritable(state.buildChunks);
   const byTraps = cacheable ? (readCache.get(state.traps) ?? new WeakMap()) : null;
   const hit = byTraps?.get(state.buildChunks)?.get(sceneId);
-  if (hit && hit.scene === state.scenes[sceneId]) return { scenes: state.scenes, buildChunks: hit.chunks };
+  if (hit && hit.scene === ownEntry(state.scenes, sceneId)) return { scenes: state.scenes, buildChunks: hit.chunks };
   const chunks = countedChunks(state, sceneId);
   if (byTraps) {
     readCache.set(state.traps, byTraps);
     let scenes = byTraps.get(state.buildChunks);
     if (!scenes) byTraps.set(state.buildChunks, (scenes = new Map()));
-    scenes.set(sceneId, { scene: state.scenes[sceneId], chunks });
+    scenes.set(sceneId, { scene: ownEntry(state.scenes, sceneId), chunks });
   }
   return { scenes: state.scenes, buildChunks: chunks };
 }
@@ -93,7 +94,7 @@ function cellOf(at: string): [number, number] {
 
 function countedChunks(state: Counted, sceneId: SceneId): Readonly<Record<string, BuildChunk>> {
   const traps = pitTraps(state, sceneId);
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (traps.length === 0 || !scene) return state.buildChunks;
   const own = Object.values(state.buildChunks).filter((c) => c.sceneId === sceneId);
   const last = lastRead.get(sceneId);
@@ -175,7 +176,7 @@ function countedChunks(state: Counted, sceneId: SceneId): Readonly<Record<string
     const cx = Math.floor(x / CHUNK_CELLS);
     const cy = Math.floor(y / CHUNK_CELLS);
     const at = chunkKey(sceneId, cx, cy);
-    const chunk = out[at] ?? state.buildChunks[at] ?? { sceneId, cx, cy, rev: 0, cells: {}, edges: {} };
+    const chunk = out[at] ?? ownEntry(state.buildChunks, at) ?? { sceneId, cx, cy, rev: 0, cells: {}, edges: {} };
     const feature = chunk.edges[key];
     // A door is one piece that counts already. A window counts only once raised, so it is read as a door too.
     if (feature?.kind === "door") continue;
@@ -234,7 +235,7 @@ function hexCounted(state: Counted, sceneId: SceneId, g: HexGrid, traps: readonl
     const key = chunkKey(sceneId, cx, cy);
     let heights = feet.get(key);
     if (!heights) {
-      const stored = state.buildChunks[key];
+      const stored = ownEntry(state.buildChunks, key);
       feet.set(key, (heights = stored ? Int16Array.from(chunkHeights(stored) ?? new Int16Array(CHUNK_CELLS * CHUNK_CELLS)) : new Int16Array(CHUNK_CELLS * CHUNK_CELLS)));
       out[key] = stored ?? { sceneId, cx, cy, rev: 0, cells: {}, edges: {}, grid: g.orient === "rows" ? "hexRows" : "hexColumns" };
     }
@@ -277,8 +278,8 @@ function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
 export function pitsMoved(before: Pick<RoomState, "traps">, after: Pick<RoomState, "traps">, trapIds: Iterable<string>): string[] {
   const out = new Set<string>();
   for (const id of trapIds) {
-    const was = before.traps?.[id];
-    const now = after.traps?.[id];
+    const was = ownEntry(before.traps, id);
+    const now = ownEntry(after.traps, id);
     if (was === now) continue;
     const pitOf = (t: Trap | undefined) => (t?.rig?.pit && "cells" in t.zone ? t : undefined);
     const a = pitOf(was);

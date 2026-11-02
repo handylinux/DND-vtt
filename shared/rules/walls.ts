@@ -28,6 +28,7 @@ import {
   type Polygon,
   type SplitCount,
 } from "./segments.ts";
+import { ownEntry } from "../records.ts";
 
 export { crossingsAt, indexPolygon, insideCrossings, pointInPolygon, type Polygon, type PolygonIndex } from "./segments.ts";
 export type { WallFeature } from "../model.ts";
@@ -1550,7 +1551,7 @@ export function sceneWalls(scene: Pick<Scene, "id" | "autoWalls" | "bounds" | "g
  * walls has nothing to split, so its check costs one look at its chunks.
  */
 export function splitCheck(state: Pick<RoomState, "scenes" | "buildChunks">, sceneId: SceneId): LimitCheck {
-  const scene = state.scenes[sceneId];
+  const scene = ownEntry(state.scenes, sceneId);
   if (!scene) return { ok: true };
   const chunks = chunksOf(state.buildChunks, sceneId);
   if (!chunks.some((c) => Array.isArray(c.walls) && c.walls.length > 0)) return { ok: true };

@@ -1,6 +1,7 @@
 import { roomHandoutPages } from "./handouts.ts";
 import { isWritable } from "./writable.ts";
 import { CHUNK_CELLS, HEIGHTS_CHARS, type BuildChunk, type CompanionBlock, type CustomMonster, type JournalPage, type RoomState, type Token } from "./model.ts";
+import { ownEntry } from "./records.ts";
 
 /**
  * Room limits (design section 10.5). Open room creation means every room is
@@ -591,7 +592,7 @@ export function checkLimits(state: RoomState, sceneId?: string | null, before?: 
   if (drawings > LIMITS.drawingsPerScene) return sceneFull(`${n(LIMITS.drawingsPerScene)} drawings`);
   if (points > LIMITS.drawingPointValuesPerScene) return sceneFull(`${n(LIMITS.drawingPointValuesPerScene)} drawing point values`);
   if (labels > LIMITS.labelsPerScene) return sceneFull(`${n(LIMITS.labelsPerScene)} labels`);
-  const draft = state.fogDrafts[sceneId];
+  const draft = ownEntry(state.fogDrafts, sceneId);
   if (draft && draft.ops.length > LIMITS.fogDraftOpsPerScene) return sceneFull(`${n(LIMITS.fogDraftOpsPerScene)} fog changes in its draft`);
   return checkMapLimits(state, sceneId, before, by);
 }
@@ -618,7 +619,7 @@ export const SIGHT_HOLDERS_FULL = `At most ${LIMITS.sightHoldersPerScene} player
  * Without `before`, as for a room import, the cap is absolute.
  */
 function sightHoldersRaised(state: RoomState, before?: RoomState): boolean {
-  const on = (s: RoomState, sceneId: string) => (s.holders?.[sceneId]?.entries ?? []).filter((e) => e.on && s.members[e.memberId]?.kind === "player").length;
+  const on = (s: RoomState, sceneId: string) => (ownEntry(s.holders, sceneId)?.entries ?? []).filter((e) => e.on && ownEntry(s.members, e.memberId)?.kind === "player").length;
   for (const sceneId of Object.keys(state.holders ?? {})) {
     const now = on(state, sceneId);
     if (now > LIMITS.sightHoldersPerScene && (!before || on(before, sceneId) < now)) return true;
@@ -673,7 +674,7 @@ function checkMapLimits(state: RoomState, sceneId: string, before: RoomState | u
     return sceneFull(`${n(LIMITS.doorsAndWindowsPerScene)} doors and windows`);
   }
   if (counts.drawnEdges > LIMITS.drawnEdgesPerScene && raised("drawnEdges")) return sceneFull(`${n(LIMITS.drawnEdgesPerScene)} walls, doors, windows and No wall marks on the grid`);
-  const phases = state.scenes[sceneId]?.phases?.length ?? 0;
+  const phases = ownEntry(state.scenes, sceneId)?.phases?.length ?? 0;
   if (phases > LIMITS.phasesPerScene) return sceneFull(`${n(LIMITS.phasesPerScene)} map phases`);
   return { ok: true };
 }
@@ -890,7 +891,7 @@ function companionBlocksVerdict(state: RoomState): LimitCheck {
     perCharacter.set(block.characterId, held);
   }
   for (const [characterId, held] of perCharacter) {
-    const name = state.characters[characterId]?.name ?? "A character";
+    const name = ownEntry(state.characters, characterId)?.name ?? "A character";
     if (held.count > LIMITS.companionBlocksPerCharacter) return over(`${name} can keep at most ${n(LIMITS.companionBlocksPerCharacter)} stat blocks. Delete one first.`);
     if (held.bytes > LIMITS.companionBlockBytesPerCharacter) {
       return over(`${name}'s stat blocks can take at most ${n(LIMITS.companionBlockBytesPerCharacter / 1024)} KiB together. Delete one first.`);
@@ -923,7 +924,7 @@ const FULL_BITS = "A".repeat(HEIGHTS_CHARS);
  */
 export function exploringSceneId(state: Pick<RoomState, "meta" | "scenes">): string | null {
   const id = state.meta.playerSceneId;
-  const scene = id === null ? undefined : state.scenes[id];
+  const scene = id === null ? undefined : ownEntry(state.scenes, id);
   return scene && scene.vision?.on === true && scene.vision.perPlayer !== true && scene.fogEnabled ? scene.id : null;
 }
 
@@ -943,7 +944,7 @@ export function exploringSceneId(state: Pick<RoomState, "meta" | "scenes">): str
 export function exploredReserve(state: Pick<RoomState, "meta" | "scenes" | "exploredTiles">): number {
   const sceneId = exploringSceneId(state);
   if (sceneId === null) return 0;
-  const scene = state.scenes[sceneId]!;
+  const scene = ownEntry(state.scenes, sceneId)!;
   // Every op's size check adds this, so it is arithmetic on two measured lengths rather than a serialization per tile.
   const id = utf8Bytes(JSON.stringify(sceneId));
   const widest = serializedBytes({ sceneId, tx: 0, ty: 0, rev: WIDEST_REV, bits: FULL_BITS });
@@ -955,7 +956,7 @@ export function exploredReserve(state: Pick<RoomState, "meta" | "scenes" | "expl
       // The key is the scene's id with ":tx,ty" inside its quotes, and the value holds tx and ty once more.
       const digits = String(tx).length + String(ty).length;
       const most = id + 2 + digits + 1 + widest - 2 + digits + 1;
-      const held = state.exploredTiles[`${sceneId}:${tx},${ty}`];
+      const held = ownEntry(state.exploredTiles, `${sceneId}:${tx},${ty}`);
       reserve += held ? Math.max(0, most - heldEntryBytes(held)) : most;
     }
   }

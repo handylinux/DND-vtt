@@ -2,6 +2,7 @@ import { keys } from "../keys.ts";
 import type { CompanionBlock } from "../model.ts";
 import type { OpOf } from "../protocol.ts";
 import { gone, invalid, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * The stat blocks a character keeps for its companions
@@ -11,7 +12,7 @@ import { gone, invalid, type Tx } from "./tx.ts";
  * deleted until someone attaches another or detaches (section 3.2 rule 4).
  */
 export function companionBlockCreate(tx: Tx, op: OpOf<"companionBlock.create">): void {
-  if (tx.state.companionBlocks[op.block.id]) throw invalid("that stat block already exists");
+  if (ownEntry(tx.state.companionBlocks, op.block.id)) throw invalid("that stat block already exists");
   tx.character(op.block.characterId);
   const block: CompanionBlock = { ...op.block, rev: 0 };
   tx.write(keys.companionBlock(block.id), block);
@@ -19,7 +20,7 @@ export function companionBlockCreate(tx: Tx, op: OpOf<"companionBlock.create">):
 
 /** The changed lines, as a monster's edit applies them. Its character and its SRD source never change. */
 export function companionBlockUpdate(tx: Tx, op: OpOf<"companionBlock.update">): void {
-  const block = tx.state.companionBlocks[op.blockId];
+  const block = ownEntry(tx.state.companionBlocks, op.blockId);
   if (!block) throw gone("stat block");
   const next: CompanionBlock = { ...block };
   const { sizeAlt, xpInLair, defaultImage, ...lines } = op.patch;
@@ -36,7 +37,7 @@ export function companionBlockUpdate(tx: Tx, op: OpOf<"companionBlock.update">):
 }
 
 export function companionBlockDelete(tx: Tx, op: OpOf<"companionBlock.delete">): void {
-  if (!tx.state.companionBlocks[op.blockId]) throw gone("stat block");
+  if (!ownEntry(tx.state.companionBlocks, op.blockId)) throw gone("stat block");
   tx.remove(keys.companionBlock(op.blockId));
 }
 

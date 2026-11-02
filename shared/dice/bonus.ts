@@ -4,6 +4,7 @@ import type { DamageType } from "../rules/damage.ts";
 import { pcDerived, shapedInitiative, shapedNumbers } from "../rules/pcStats.ts";
 import { SKILLS } from "../rules/skills.ts";
 import { abilityMod } from "../statBlock.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * A creature's numbers and the d20 rolls they feed (docs/design/design-v1-dice.md
@@ -98,7 +99,7 @@ export function bonusFor(numbers: RollNumbers, test: D20Test): number | null {
 
 function inlineActor(sources: RollSources, token: Token): { actor: Actor; character?: Character } | null {
   if ("inline" in token.actor) return { actor: token.actor.inline };
-  const character = sources.characters[token.actor.ref];
+  const character = ownEntry(sources.characters, token.actor.ref);
   return character ? { actor: character.actor, character } : null;
 }
 
@@ -112,7 +113,7 @@ function inlineActor(sources: RollSources, token: Token): { actor: Actor; charac
 function characterNumbers(sources: RollSources, character: Character): RollNumbers | null {
   const shape = character.actor.srdId;
   if (shape === undefined) return pcRollNumbers(character);
-  const beast = sources.srd?.[shape];
+  const beast = ownEntry(sources.srd, shape);
   if (!beast) return null;
   return character.actor.wildShape && character.stats ? shapedNumbers(character, beast) : beast;
 }
@@ -127,7 +128,7 @@ function characterNumbers(sources: RollSources, character: Character): RollNumbe
 function characterInitiative(sources: RollSources, character: Character): number | null {
   const shape = character.actor.srdId;
   if (shape === undefined || !character.actor.wildShape || !character.stats) return character.actor.initBonus;
-  const beast = sources.srd?.[shape];
+  const beast = ownEntry(sources.srd, shape);
   return beast ? shapedInitiative(character, beast) : null;
 }
 
@@ -139,25 +140,25 @@ function characterInitiative(sources: RollSources, character: Character): number
  */
 export function creatureNumbers(sources: RollSources, creature: ActorTarget): RollNumbers | null {
   if ("characterId" in creature) {
-    const character = sources.characters[creature.characterId];
+    const character = ownEntry(sources.characters, creature.characterId);
     return character ? characterNumbers(sources, character) : null;
   }
-  const token = sources.tokens[creature.tokenId];
+  const token = ownEntry(sources.tokens, creature.tokenId);
   if (!token) return null;
   if ("ref" in token.actor) {
-    const character = sources.characters[token.actor.ref];
+    const character = ownEntry(sources.characters, token.actor.ref);
     return character ? characterNumbers(sources, character) : null;
   }
   const actor = token.actor.inline;
   if (actor.blockId !== undefined) {
-    const block = sources.companionBlocks[actor.blockId];
+    const block = ownEntry(sources.companionBlocks, actor.blockId);
     return block ? blockRollNumbers(block) : null;
   }
   if (actor.monsterId !== undefined) {
-    const monster = sources.monsters?.[actor.monsterId];
+    const monster = ownEntry(sources.monsters, actor.monsterId);
     return monster ? blockRollNumbers(monster) : null;
   }
-  if (actor.srdId !== undefined) return sources.srd?.[actor.srdId] ?? null;
+  if (actor.srdId !== undefined) return ownEntry(sources.srd, actor.srdId) ?? null;
   return null;
 }
 
@@ -171,10 +172,10 @@ export function creatureBonus(sources: RollSources, creature: ActorTarget, test:
   if (test.kind === "attack") return null;
   if (test.kind === "initiative") {
     if ("characterId" in creature) {
-      const character = sources.characters[creature.characterId];
+      const character = ownEntry(sources.characters, creature.characterId);
       return character ? characterInitiative(sources, character) : null;
     }
-    const token = sources.tokens[creature.tokenId];
+    const token = ownEntry(sources.tokens, creature.tokenId);
     const held = token ? inlineActor(sources, token) : null;
     if (!held) return null;
     return held.character ? characterInitiative(sources, held.character) : held.actor.initBonus;

@@ -15,19 +15,20 @@ import { Refuse, gone, invalid, type Tx } from "./tx.ts";
 import { SQUARES, holdsGridKeys, isHex, sceneGrid, shapeOfGrid } from "../rules/grid.ts";
 import { HEX_R, HEX_S, hexAt, hexCenter, hexInScene, hexKey, type HexGrid } from "../rules/hex.ts";
 import { forgetLayerMemory, forgetSceneMemory, forgetStamp, keepsMemory, memoryOwners, poolMemory, pruneLostGround, pruneMovedMarks, rememberLayer } from "./memory.ts";
+import { ownEntry } from "../records.ts";
 
 // Fog (design 13.2).
 
 export function fogDraft(tx: Tx, op: OpOf<"fog.draft">): void {
   const scene = tx.scene(op.sceneId);
-  const { grid: _stamp, ...draft }: FogDraft = tx.state.fogDrafts[op.sceneId] ?? { sceneId: op.sceneId, rev: 0, ops: [] };
+  const { grid: _stamp, ...draft }: FogDraft = ownEntry(tx.state.fogDrafts, op.sceneId) ?? { sceneId: op.sceneId, rev: 0, ops: [] };
   const removing = new Set(op.remove ?? []);
   const adding = new Map((op.add ?? []).map((o) => [o.id, o]));
   const ops: FogOp[] = draft.ops.filter((o) => !removing.has(o.id) && !adding.has(o.id));
   for (const o of adding.values()) ops.push(o);
   if (ops.length > MAX_FOG_DRAFT_OPS) throw new Refuse("quota", `this scene can hold at most ${MAX_FOG_DRAFT_OPS.toLocaleString("en-US")} fog changes in its draft`);
   if (ops.length === 0) {
-    if (tx.state.fogDrafts[op.sceneId]) tx.remove(keys.fogDraft(op.sceneId));
+    if (ownEntry(tx.state.fogDrafts, op.sceneId)) tx.remove(keys.fogDraft(op.sceneId));
     return;
   }
   // A draft holding Reveal room's hex keys carries its scene's shape (HX-D14), and drops it with the last of them.
@@ -89,7 +90,7 @@ function forgetUnderHides(tx: Tx, scene: Scene, ops: FogOp[]): void {
  */
 export function forgetExplored(tx: Tx, sceneId: string): void {
   for (const key of Object.keys(tx.state.exploredTiles).sort()) {
-    const tile = tx.state.exploredTiles[key]!;
+    const tile = ownEntry(tx.state.exploredTiles, key)!;
     if (tile.sceneId === sceneId) tx.writeBookkeeping(keys.explored(sceneId, tile.tx, tile.ty), null);
   }
   for (const memberId of layerOwners(tx.state, sceneId)) forgetHolder(tx, sceneId, memberId);
@@ -133,16 +134,16 @@ export function sysExplore(tx: Tx, op: OpOf<"sys.explore">): void {
   // Joins first, so a player who joins in this op may get their layer's first tiles in it (docs/design/design-v1-per-player-vision.md 6.1).
   if (op.join) joinHolders(tx, scene, op.join);
   for (const t of op.tiles) {
-    const held = tx.state.exploredTiles[tileKey(scene.id, t.tx, t.ty)];
+    const held = ownEntry(tx.state.exploredTiles, tileKey(scene.id, t.tx, t.ty));
     const next = joinedBits(scene, t, held);
     if (next !== null) tx.write(keys.explored(scene.id, t.tx, t.ty), { sceneId: scene.id, tx: t.tx, ty: t.ty, rev: held?.rev ?? 0, bits: next });
   }
-  const on = new Set(tx.state.holders?.[scene.id]?.entries.flatMap((e) => (e.on ? [e.memberId] : [])) ?? []);
+  const on = new Set(ownEntry(tx.state.holders, scene.id)?.entries.flatMap((e) => (e.on ? [e.memberId] : [])) ?? []);
   for (const m of op.members ?? []) {
     // Only a holder whose entry is on has a layer (6.1).
     if (!on.has(m.memberId)) throw invalid("only a player who sees for themselves explores for themselves");
     for (const t of m.tiles) {
-      const held = tx.state.exploredBy?.[holderTileKey(scene.id, m.memberId, t.tx, t.ty)];
+      const held = ownEntry(tx.state.exploredBy, holderTileKey(scene.id, m.memberId, t.tx, t.ty));
       const next = joinedBits(scene, t, held);
       if (next !== null) tx.write(keys.exploredBy(scene.id, m.memberId, t.tx, t.ty), { sceneId: scene.id, tx: t.tx, ty: t.ty, rev: held?.rev ?? 0, bits: next, memberId: m.memberId });
     }
@@ -173,7 +174,7 @@ export function sysRemember(tx: Tx, op: OpOf<"sys.remember">): void {
     if (owner !== null) holderLayer(tx, scene, owner);
     for (const t of f.tiles) {
       const key = owner === null ? keys.explored(scene.id, t.tx, t.ty) : keys.exploredBy(scene.id, owner, t.tx, t.ty);
-      const held: FogTile | undefined = owner === null ? tx.state.exploredTiles[tileKey(scene.id, t.tx, t.ty)] : tx.state.exploredBy?.[holderTileKey(scene.id, owner, t.tx, t.ty)];
+      const held: FogTile | undefined = owner === null ? ownEntry(tx.state.exploredTiles, tileKey(scene.id, t.tx, t.ty)) : ownEntry(tx.state.exploredBy, holderTileKey(scene.id, owner, t.tx, t.ty));
       if (!held) continue;
       const was = decodeTile(held.bits);
       const keep = t.keep === undefined ? null : decodeTile(t.keep);
@@ -208,13 +209,13 @@ function holderLayer(tx: Tx, scene: Scene, memberId: string): void {
 export function keepMemory(tx: Tx, before: RoomState): void {
   if (tx.state.scenes !== before.scenes) {
     for (const id of Object.keys(before.scenes).sort()) {
-      const was = before.scenes[id]!;
-      const now = tx.state.scenes[id];
+      const was = ownEntry(before.scenes, id)!;
+      const now = ownEntry(tx.state.scenes, id);
       if (now === was) continue;
       if (!now) {
         forgetSceneMemory(tx, id);
-        if (tx.state.playedScenes?.[id]) tx.writeBookkeeping(keys.played(id), null);
-        if (tx.state.memoryShared?.[id]) tx.writeBookkeeping(keys.memoryShared(id), null);
+        if (ownEntry(tx.state.playedScenes, id)) tx.writeBookkeeping(keys.played(id), null);
+        if (ownEntry(tx.state.memoryShared, id)) tx.writeBookkeeping(keys.memoryShared(id), null);
         continue;
       }
       if (now.gridShape !== was.gridShape) {
@@ -223,10 +224,10 @@ export function keepMemory(tx: Tx, before: RoomState): void {
       }
       if (!keepsMemory(now)) {
         forgetSceneMemory(tx, id);
-        if (tx.state.memoryShared?.[id]) tx.writeBookkeeping(keys.memoryShared(id), null);
+        if (ownEntry(tx.state.memoryShared, id)) tx.writeBookkeeping(keys.memoryShared(id), null);
       } else if (was.vision?.perPlayer === true && now.vision?.perPlayer !== true) {
         // A fold keeps the share for the party's layer alone (5.5): holders' layers a switch back brings take their whole caps.
-        const mark = tx.state.memoryShared?.[id];
+        const mark = ownEntry(tx.state.memoryShared, id);
         if (mark && mark.party !== true) tx.writeBookkeeping(keys.memoryShared(id), { ...mark, party: true });
       }
     }
@@ -236,7 +237,7 @@ export function keepMemory(tx: Tx, before: RoomState): void {
   if (tx.state.stamps === before.stamps) return;
   for (const key of tx.touched()) {
     if (!key.startsWith("stamp:")) continue;
-    const stamp = tx.state.stamps[key.slice("stamp:".length)];
+    const stamp = ownEntry(tx.state.stamps, key.slice("stamp:".length));
     if (stamp?.visibility === "dm") forgetStamp(tx, stamp.sceneId, stamp.id);
   }
 }
@@ -262,13 +263,13 @@ function joinedBits(scene: Scene, t: { tx: number; ty: number; bits: string }, h
  * the roster, is passed over, so the op replays to the same list.
  */
 function joinHolders(tx: Tx, scene: Scene, join: readonly { memberId: string; on: boolean }[]): void {
-  const list: SightHolders = tx.state.holders?.[scene.id] ?? { sceneId: scene.id, rev: 0, entries: [] };
+  const list: SightHolders = ownEntry(tx.state.holders, scene.id) ?? { sceneId: scene.id, rev: 0, entries: [] };
   const entries = [...list.entries];
   for (const j of join) {
-    if (entries.some((e) => e.memberId === j.memberId) || tx.state.members[j.memberId]?.kind !== "player") continue;
+    if (entries.some((e) => e.memberId === j.memberId) || ownEntry(tx.state.members, j.memberId)?.kind !== "player") continue;
     // As the step that wrote it decided, under the cap in force then: replay never clamps a join again (review
     // PV1-ASTRA-4). Only the design's most bounds it, and only players' entries hold a place (review PV1-O5).
-    entries.push({ memberId: j.memberId, on: j.on && entries.filter((e) => e.on && tx.state.members[e.memberId]?.kind === "player").length < MOST_SIGHT_HOLDERS });
+    entries.push({ memberId: j.memberId, on: j.on && entries.filter((e) => e.on && ownEntry(tx.state.members, e.memberId)?.kind === "player").length < MOST_SIGHT_HOLDERS });
   }
   if (entries.length !== list.entries.length) tx.write(keys.holders(scene.id), { ...list, entries });
 }
@@ -289,8 +290,8 @@ export function visionHolders(tx: Tx, op: OpOf<"vision.holders">): void {
   // The design's most, which never changes, so a pick stored under a higher cap than today's replays. The cap in force is
   // a live op's alone (limits.ts checkLimits, review PV1-ASTRA-4).
   if (op.on.length > MOST_SIGHT_HOLDERS) throw invalid(HOLDERS_FULL);
-  for (const id of op.on) if (tx.state.members[id]?.kind !== "player") throw invalid("only a player on the roster sees for themselves");
-  const list: SightHolders = tx.state.holders?.[scene.id] ?? { sceneId: scene.id, rev: 0, entries: [] };
+  for (const id of op.on) if (ownEntry(tx.state.members, id)?.kind !== "player") throw invalid("only a player on the roster sees for themselves");
+  const list: SightHolders = ownEntry(tx.state.holders, scene.id) ?? { sceneId: scene.id, rev: 0, entries: [] };
   const named = new Set(op.on);
   if (guardsHolderPick(tx.env.opVersion) && op.rev !== undefined && op.rev !== list.rev) throw invalid("The sight holder list changed. Try again.");
   const entries = list.entries.map((e) => ({ memberId: e.memberId, on: named.has(e.memberId) }));
@@ -326,10 +327,10 @@ export function visionHolders(tx: Tx, op: OpOf<"vision.holders">): void {
  */
 export function foldSight(tx: Tx, before: RoomState): void {
   for (const sceneId of Object.keys(before.scenes).sort()) {
-    const was = before.scenes[sceneId]!;
-    const now = tx.state.scenes[sceneId];
+    const was = ownEntry(before.scenes, sceneId)!;
+    const now = ownEntry(tx.state.scenes, sceneId);
     if (now === was || (now?.vision?.perPlayer === true && now !== undefined)) continue;
-    const list = tx.state.holders?.[sceneId];
+    const list = ownEntry(tx.state.holders, sceneId);
     const owners = layerOwners(tx.state, sceneId);
     if (!list && owners.length === 0) continue;
     // Memory first, while the party's layer is still its own (docs/design/design-v1-map-discovery.md 5.4).
@@ -339,17 +340,17 @@ export function foldSight(tx: Tx, before: RoomState): void {
     if (list) tx.writeBookkeeping(keys.holders(sceneId), null);
   }
   for (const sceneId of Object.keys(tx.state.scenes).sort()) {
-    const now = tx.state.scenes[sceneId]!;
-    const was = before.scenes[sceneId];
+    const now = ownEntry(tx.state.scenes, sceneId)!;
+    const was = ownEntry(before.scenes, sceneId);
     if (now === was || now.vision?.perPlayer !== true) continue;
     if (was?.vision?.perPlayer === true && tilesAcross(now.bounds.w) >= tilesAcross(was.bounds.w) && tilesAcross(now.bounds.h) >= tilesAcross(was.bounds.h)) continue;
     forgetPastBounds(tx, now);
   }
   if (tx.state.holders === before.holders && tx.state.members === before.members) return;
   for (const sceneId of Object.keys(tx.state.holders ?? {}).sort()) {
-    const list = tx.state.holders[sceneId]!;
-    if (!list.entries.some((e) => e.on && tx.state.members[e.memberId]?.kind !== "player")) continue;
-    tx.writeBookkeeping(keys.holders(sceneId), { ...list, entries: list.entries.map((e) => (e.on && tx.state.members[e.memberId]?.kind !== "player" ? { memberId: e.memberId, on: false } : e)) });
+    const list = ownEntry(tx.state.holders, sceneId)!;
+    if (!list.entries.some((e) => e.on && ownEntry(tx.state.members, e.memberId)?.kind !== "player")) continue;
+    tx.writeBookkeeping(keys.holders(sceneId), { ...list, entries: list.entries.map((e) => (e.on && ownEntry(tx.state.members, e.memberId)?.kind !== "player" ? { memberId: e.memberId, on: false } : e)) });
   }
   const scenes = new Set([...Object.values(tx.state.exploredBy ?? {}), ...Object.values(tx.state.memoryBy ?? {})].map((t) => t.sceneId));
   for (const sceneId of [...scenes].sort()) {
@@ -369,18 +370,18 @@ function forgetPastBounds(tx: Tx, scene: Scene): void {
   const down = tilesAcross(scene.bounds.h);
   const past = (t: { sceneId: string; tx: number; ty: number }) => t.sceneId === scene.id && (t.tx >= across || t.ty >= down);
   for (const key of Object.keys(tx.state.exploredTiles).sort()) {
-    const t = tx.state.exploredTiles[key]!;
+    const t = ownEntry(tx.state.exploredTiles, key)!;
     if (past(t)) tx.writeBookkeeping(keys.explored(t.sceneId, t.tx, t.ty), null);
   }
   for (const key of Object.keys(tx.state.exploredBy ?? {}).sort()) {
-    const t = tx.state.exploredBy[key]!;
+    const t = ownEntry(tx.state.exploredBy, key)!;
     if (past(t)) tx.writeBookkeeping(keys.exploredBy(t.sceneId, t.memberId, t.tx, t.ty), null);
   }
 }
 
 /** Whether a member holds sight on a scene: a player whose entry on its list is on (6.1). */
 function seesForThemselves(state: RoomState, sceneId: string, memberId: string): boolean {
-  return state.members[memberId]?.kind === "player" && state.holders?.[sceneId]?.entries.some((e) => e.on && e.memberId === memberId) === true;
+  return ownEntry(state.members, memberId)?.kind === "player" && ownEntry(state.holders, sceneId)?.entries.some((e) => e.on && e.memberId === memberId) === true;
 }
 
 /** ORs each holder's layer into the party's, a tile at a time in tile order, as bookkeeping. */
@@ -400,7 +401,7 @@ function pool(tx: Tx, scene: Scene, owners: readonly string[]): void {
   });
   for (const key of keysInOrder) {
     const tiles = byTile.get(key)!;
-    const held = tx.state.exploredTiles[key];
+    const held = ownEntry(tx.state.exploredTiles, key);
     const bits = held ? (decodeTile(held.bits) ?? new Uint8Array(0)) : null;
     let next: Uint8Array | null = bits && bits.length > 0 ? new Uint8Array(bits) : null;
     for (const tile of tiles) {
@@ -419,7 +420,7 @@ function pool(tx: Tx, scene: Scene, owners: readonly string[]): void {
 
 export function fogPublish(tx: Tx, op: OpOf<"fog.publish">): void {
   const scene = tx.scene(op.sceneId);
-  const draft = tx.state.fogDrafts[op.sceneId];
+  const draft = ownEntry(tx.state.fogDrafts, op.sceneId);
   if (!draft) throw invalid("nothing to publish");
   applyFogOps(tx, scene, draft.ops);
   tx.remove(keys.fogDraft(op.sceneId));
@@ -427,7 +428,7 @@ export function fogPublish(tx: Tx, op: OpOf<"fog.publish">): void {
 
 export function fogDiscard(tx: Tx, op: OpOf<"fog.discard">): void {
   tx.scene(op.sceneId);
-  if (tx.state.fogDrafts[op.sceneId]) tx.remove(keys.fogDraft(op.sceneId));
+  if (ownEntry(tx.state.fogDrafts, op.sceneId)) tx.remove(keys.fogDraft(op.sceneId));
 }
 
 export function fogLive(tx: Tx, op: OpOf<"fog.live">): void {
@@ -445,7 +446,7 @@ export function fogReset(tx: Tx, op: OpOf<"fog.reset">): void {
     return;
   }
   for (const tile of allRevealedTiles(scene.id, scene.bounds)) {
-    const existing = tx.state.fogTiles[tileKey(scene.id, tile.tx, tile.ty)];
+    const existing = ownEntry(tx.state.fogTiles, tileKey(scene.id, tile.tx, tile.ty));
     if (existing && existing.bits === tile.bits) continue;
     tx.write(keys.fog(scene.id, tile.tx, tile.ty), tile);
   }
@@ -554,7 +555,7 @@ function setCells(tx: Tx, scene: Scene, cells: Cell[], terrain: TerrainId | null
   const standing = terrain === null ? standingOn(tx, scene.id, new Set(cells.map((c) => `${c.x},${c.y}`))) : [];
   for (const key of [...byChunk.keys()].sort()) {
     const change = byChunk.get(key)!;
-    const chunk = tx.state.buildChunks[key] ?? emptyChunk(scene.id, change.cx, change.cy);
+    const chunk = ownEntry(tx.state.buildChunks, key) ?? emptyChunk(scene.id, change.cx, change.cy);
     const nextCells = { ...chunk.cells };
     for (const cell of change.cells) {
       const id = `${cell.x},${cell.y}`;
@@ -606,7 +607,7 @@ export function standingOn(tx: Tx, sceneId: string, cells: ReadonlySet<string> |
 
 /** Whether a token stands on any of these cell keys: its squares, or on a hex scene its hexes (H3). */
 function standsOnCells(tx: Tx, token: Token, cells: ReadonlySet<string>): boolean {
-  const scene = tx.state.scenes[token.sceneId];
+  const scene = ownEntry(tx.state.scenes, token.sceneId);
   const g = scene ? sceneGrid(scene) : SQUARES;
   if (isHex(g)) return occupiedHexes(g, token).some((h) => cells.has(hexKey(h)));
   return occupiedCells(SQUARES, token).some((c) => cells.has(`${c.x},${c.y}`));
@@ -750,7 +751,7 @@ function eraseHexes(tx: Tx, scene: Scene, g: HexGrid, cells: readonly Cell[]): v
   const standing = standingOn(tx, scene.id, erased);
   const touched = new Set([...byChunk.keys(), ...worldChunks.keys()]);
   for (const key of [...touched].sort()) {
-    const stored = tx.state.buildChunks[key];
+    const stored = ownEntry(tx.state.buildChunks, key);
     const group = byChunk.get(key);
     if (!stored) continue;
     let next = stored;
@@ -822,7 +823,7 @@ function boxTouchesHex(g: HexGrid, box: { x0: number; y0: number; x1: number; y1
  * stamp a hand-made backup put on one goes with its first write.
  */
 function stamped(tx: Tx, chunk: BuildChunk): BuildChunk {
-  return stampedOn(tx.state.scenes[chunk.sceneId], chunk);
+  return stampedOn(ownEntry(tx.state.scenes, chunk.sceneId), chunk);
 }
 
 /** A chunk with its scene's stamp while it holds grid-keyed content on a hex scene, and none otherwise (HX-D14), for a chunk worked out but not written too. */
@@ -845,7 +846,7 @@ export function writeChunk(tx: Tx, written: BuildChunk): void {
     chunk.up === undefined &&
     chunk.rough === undefined;
   if (empty) {
-    if (tx.state.buildChunks[chunkKey(chunk.sceneId, chunk.cx, chunk.cy)]) tx.remove(keys.chunk(chunk.sceneId, chunk.cx, chunk.cy));
+    if (ownEntry(tx.state.buildChunks, chunkKey(chunk.sceneId, chunk.cx, chunk.cy))) tx.remove(keys.chunk(chunk.sceneId, chunk.cx, chunk.cy));
     return;
   }
   tx.write(keys.chunk(chunk.sceneId, chunk.cx, chunk.cy), chunk);
@@ -917,7 +918,7 @@ export function buildEdge(tx: Tx, op: OpOf<"build.edge">): void {
     const first = parseCell(group[0]!.key);
     const cx = Math.floor(first.x / CHUNK_CELLS);
     const cy = Math.floor(first.y / CHUNK_CELLS);
-    const chunk = tx.state.buildChunks[key] ?? emptyChunk(scene.id, cx, cy);
+    const chunk = ownEntry(tx.state.buildChunks, key) ?? emptyChunk(scene.id, cx, cy);
     const edges = { ...chunk.edges };
     for (const edge of group) {
       if (edge.feature === null) delete edges[edge.key];
@@ -930,7 +931,7 @@ export function buildEdge(tx: Tx, op: OpOf<"build.edge">): void {
 
 export function buildLabel(tx: Tx, op: OpOf<"build.label">): void {
   tx.scene(op.sceneId);
-  const existing = tx.state.labels[op.labelId];
+  const existing = ownEntry(tx.state.labels, op.labelId);
   if (op.label === null) {
     if (existing) tx.remove(keys.label(op.labelId));
     return;
@@ -945,18 +946,18 @@ export function buildClear(tx: Tx, op: OpOf<"build.clear">): void {
   const scene = tx.scene(op.sceneId);
   const standing = standingOn(tx, scene.id, null);
   for (const key of Object.keys(tx.state.buildChunks).sort()) {
-    const chunk = tx.state.buildChunks[key]!;
+    const chunk = ownEntry(tx.state.buildChunks, key)!;
     if (chunk.sceneId === scene.id) tx.remove(keys.chunk(chunk.sceneId, chunk.cx, chunk.cy));
   }
   landOnGround(tx, standing);
   for (const id of Object.keys(tx.state.labels).sort()) {
-    if (tx.state.labels[id]!.sceneId === scene.id) tx.remove(keys.label(id));
+    if (ownEntry(tx.state.labels, id)!.sceneId === scene.id) tx.remove(keys.label(id));
   }
   for (const id of Object.keys(tx.state.stamps).sort()) {
-    if (tx.state.stamps[id]!.sceneId === scene.id) tx.remove(keys.stamp(id));
+    if (ownEntry(tx.state.stamps, id)!.sceneId === scene.id) tx.remove(keys.stamp(id));
   }
   for (const id of Object.keys(tx.state.lights).sort()) {
-    if (tx.state.lights[id]!.sceneId === scene.id) tx.remove(keys.light(id));
+    if (ownEntry(tx.state.lights, id)!.sceneId === scene.id) tx.remove(keys.light(id));
   }
   bumpWalls(tx, scene.id);
 }
@@ -975,11 +976,11 @@ export function buildWalls(tx: Tx, op: OpOf<"build.walls">): void {
   const listOf = (cx: number, cy: number) => {
     const key = chunkKey(scene.id, cx, cy);
     let entry = lists.get(key);
-    if (!entry) lists.set(key, (entry = { cx, cy, walls: [...(tx.state.buildChunks[key]?.walls ?? [])] }));
+    if (!entry) lists.set(key, (entry = { cx, cy, walls: [...(ownEntry(tx.state.buildChunks, key)?.walls ?? [])] }));
     return entry.walls;
   };
   for (const r of op.remove ?? []) {
-    if (!tx.state.buildChunks[chunkKey(scene.id, r.cx, r.cy)]?.walls?.some((w) => w.id === r.id)) continue;
+    if (!ownEntry(tx.state.buildChunks, chunkKey(scene.id, r.cx, r.cy))?.walls?.some((w) => w.id === r.id)) continue;
     const walls = listOf(r.cx, r.cy);
     const i = walls.findIndex((w) => w.id === r.id);
     if (i >= 0) walls.splice(i, 1);
@@ -1000,7 +1001,7 @@ export function buildWalls(tx: Tx, op: OpOf<"build.walls">): void {
   }
   for (const key of [...lists.keys()].sort()) {
     const { cx, cy, walls } = lists.get(key)!;
-    writeChunk(tx, withWalls(tx.state.buildChunks[key] ?? emptyChunk(scene.id, cx, cy), walls));
+    writeChunk(tx, withWalls(ownEntry(tx.state.buildChunks, key) ?? emptyChunk(scene.id, cx, cy), walls));
   }
   bumpWalls(tx, scene.id);
 }
@@ -1013,7 +1014,7 @@ export function buildWalls(tx: Tx, op: OpOf<"build.walls">): void {
 export function buildStamps(tx: Tx, op: OpOf<"build.stamps">): void {
   const scene = tx.scene(op.sceneId);
   for (const id of op.remove ?? []) {
-    const stamp = tx.state.stamps[id];
+    const stamp = ownEntry(tx.state.stamps, id);
     if (!stamp) continue;
     if (stamp.sceneId !== scene.id) throw invalid("stamp belongs to another scene");
     tx.remove(keys.stamp(id));
@@ -1022,7 +1023,7 @@ export function buildStamps(tx: Tx, op: OpOf<"build.stamps">): void {
   for (const input of op.put ?? []) {
     if (seen.has(input.id)) throw invalid("a stamp appears twice");
     seen.add(input.id);
-    const existing = tx.state.stamps[input.id];
+    const existing = ownEntry(tx.state.stamps, input.id);
     if (existing && existing.sceneId !== scene.id) throw invalid("stamp belongs to another scene");
     const stamp: Stamp = { ...input, rev: existing?.rev ?? 0, sceneId: scene.id };
     tx.write(keys.stamp(stamp.id), stamp);
@@ -1036,7 +1037,7 @@ export function buildStamps(tx: Tx, op: OpOf<"build.stamps">): void {
 export function buildLights(tx: Tx, op: OpOf<"build.lights">): void {
   const scene = tx.scene(op.sceneId);
   for (const id of op.remove ?? []) {
-    const light = tx.state.lights[id];
+    const light = ownEntry(tx.state.lights, id);
     if (!light) continue;
     if (light.sceneId !== scene.id) throw invalid("light belongs to another scene");
     tx.remove(keys.light(id));
@@ -1046,7 +1047,7 @@ export function buildLights(tx: Tx, op: OpOf<"build.lights">): void {
     if (seen.has(input.id)) throw invalid("a light appears twice");
     seen.add(input.id);
     if (input.x > scene.bounds.w || input.y > scene.bounds.h) throw invalid("light outside the scene");
-    const existing = tx.state.lights[input.id];
+    const existing = ownEntry(tx.state.lights, input.id);
     if (existing && existing.sceneId !== scene.id) throw invalid("light belongs to another scene");
     const light: Light = { ...input, rev: existing?.rev ?? 0, sceneId: scene.id };
     tx.write(keys.light(light.id), light);
@@ -1063,7 +1064,7 @@ export function buildLights(tx: Tx, op: OpOf<"build.lights">): void {
 export function doorSet(tx: Tx, op: OpOf<"door.set">): void {
   const scene = tx.scene(op.sceneId);
   const { cx, cy } = doorChunk(op.door);
-  const chunk = tx.state.buildChunks[chunkKey(scene.id, cx, cy)];
+  const chunk = ownEntry(tx.state.buildChunks, chunkKey(scene.id, cx, cy));
   const set = (f: WallFeature): WallFeature | null => {
     if (f.kind !== "door") return null;
     const next = { ...f, state: op.state, discovered: op.found ?? f.discovered };

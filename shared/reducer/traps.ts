@@ -11,6 +11,7 @@ import { sightPiecesCheck } from "../visionLimits.ts";
 import { buildHeight, heightsPainted } from "./heights.ts";
 import { doorSet } from "./map.ts";
 import { gone, invalid, Refuse, type Tx } from "./tx.ts";
+import { ownEntry } from "../records.ts";
 
 /**
  * Traps (docs/design/design-v1-traps.md 6), the DM's: making, changing and
@@ -114,17 +115,17 @@ function refProblem(tx: Tx, trap: Trap, zone: boolean, actions: boolean, had: re
     if (kept.has(stableStringify(a))) continue;
     if ("door" in a && !doorExists(tx.state, sceneId, a.door)) return "a door it sets is not on the trap's scene";
     if ("light" in a) {
-      const light = tx.state.lights[a.light];
+      const light = ownEntry(tx.state.lights, a.light);
       if (!light) return "a light it sets was deleted";
       if (light.sceneId !== sceneId) return `the light ${light.label ? `"${light.label}"` : "it sets"} is on another scene`;
     }
     if ("show" in a) {
       if ("tokenId" in a.show) {
-        const token = tx.state.tokens[a.show.tokenId];
+        const token = ownEntry(tx.state.tokens, a.show.tokenId);
         if (!token) return "a creature it shows was deleted";
         if (token.sceneId !== sceneId) return `${token.name} is on another scene`;
       } else {
-        const stamp = tx.state.stamps[a.show.stampId];
+        const stamp = ownEntry(tx.state.stamps, a.show.stampId);
         if (!stamp) return "a stamp it shows was deleted";
         if (stamp.sceneId !== sceneId) return "a stamp it shows is on another scene";
       }
@@ -136,7 +137,7 @@ function refProblem(tx: Tx, trap: Trap, zone: boolean, actions: boolean, had: re
 export function trapCreate(tx: Tx, op: OpOf<"trap.create">): void {
   const input = op.trap;
   tx.scene(input.sceneId);
-  if (tx.state.traps[input.id]) throw invalid("a trap with that id is already on the map");
+  if (ownEntry(tx.state.traps, input.id)) throw invalid("a trap with that id is already on the map");
   // A trap on a hex scene is stamped with its shape, which its keys are of (docs/design/design-v1-hex-grids.md HX-D14).
   const shape = shapeOfGrid(sceneGrid(tx.scene(input.sceneId)));
   const trap: Trap = { id: input.id, rev: 0, sceneId: input.sceneId, name: input.name, zone: input.zone, state: "armed", found: input.found ?? false, rig: { ...input.rig }, ...(shape ? { grid: shape } : {}) };
@@ -153,7 +154,7 @@ export function trapCreate(tx: Tx, op: OpOf<"trap.create">): void {
  * Arming a trap with no uses left needs uses in the same patch.
  */
 export function trapUpdate(tx: Tx, op: OpOf<"trap.update">): void {
-  const trap = tx.state.traps[op.trapId];
+  const trap = ownEntry(tx.state.traps, op.trapId);
   if (!trap) throw gone("trap");
   const p = op.patch;
   const next: Trap = { ...trap };
@@ -178,7 +179,7 @@ export function trapUpdate(tx: Tx, op: OpOf<"trap.update">): void {
 }
 
 export function trapDelete(tx: Tx, op: OpOf<"trap.delete">): void {
-  if (!tx.state.traps[op.trapId]) throw gone("trap");
+  if (!ownEntry(tx.state.traps, op.trapId)) throw gone("trap");
   tx.remove(keys.trap(op.trapId));
 }
 
@@ -195,16 +196,16 @@ function dueOf(trap: Trap | undefined, id: string): TrapDue | undefined {
  * damage stay waiting.
  */
 export function trapAct(tx: Tx, op: OpOf<"trap.act">): void {
-  const trap = tx.state.traps[op.trapId];
+  const trap = ownEntry(tx.state.traps, op.trapId);
   const due = dueOf(trap, op.due);
   if (!trap || !trap.rig || !due || due.acted) throw invalid(DONE_MEANWHILE);
   runActions(tx, trap);
   // Who every player sees now, as the DM's reveal shows them.
   playersLine(tx, trap, due.by.filter((id) => {
-    const token = tx.state.tokens[id];
+    const token = ownEntry(tx.state.tokens, id);
     return token !== undefined && seenByNonOwners(tx.state, token, tx.env);
   }));
-  const now = tx.state.traps[trap.id]!;
+  const now = ownEntry(tx.state.traps, trap.id)!;
   const rig = now.rig!;
   const next: Trap = { ...now, rig: { ...rig, due: (rig.due ?? []).map((d) => (d.id === due.id ? { ...d, acted: true as const } : d)) } };
   if (rig.foundOnSpring) next.found = true;
@@ -218,7 +219,7 @@ export function trapSettle(tx: Tx, op: OpOf<"trap.settle">): void {
 
 /** Settles a waiting occurrence, refused when it is not waiting: a second DM device's Apply or Dismiss, or a resend. */
 export function settleTrap(tx: Tx, trapId: string, dueId: string, sprung = false): void {
-  const trap = tx.state.traps[trapId];
+  const trap = ownEntry(tx.state.traps, trapId);
   if (!dueOf(trap, dueId)) throw invalid(SETTLED_MEANWHILE);
   writeSettled(tx, trap!, dueId, sprung);
 }
@@ -321,7 +322,7 @@ export function pitOpens(state: RoomState, trap: Trap): boolean {
  * a cap. Should one ever, the pit stays shut.
  */
 function openedFits(state: RoomState, op: OpOf<"build.height">): boolean {
-  const scene = state.scenes[op.sceneId];
+  const scene = ownEntry(state.scenes, op.sceneId);
   if (!scene) return false;
   try {
     const opened = { scenes: state.scenes, buildChunks: heightsPainted(state.buildChunks, scene, op) };
@@ -344,18 +345,18 @@ function runAction(tx: Tx, sceneId: string, action: TrapAction): boolean {
     }
   }
   if ("light" in action) {
-    const light = tx.state.lights[action.light];
+    const light = ownEntry(tx.state.lights, action.light);
     if (!light || light.sceneId !== sceneId) return false;
     if (light.on !== action.on) tx.write(keys.light(light.id), { ...light, on: action.on });
     return true;
   }
   if ("tokenId" in action.show) {
-    const token = tx.state.tokens[action.show.tokenId];
+    const token = ownEntry(tx.state.tokens, action.show.tokenId);
     if (!token || token.sceneId !== sceneId) return false;
     if (token.visibility !== "all") tx.write(keys.token(token.id), { ...token, visibility: "all" });
     return true;
   }
-  const stamp = tx.state.stamps[action.show.stampId];
+  const stamp = ownEntry(tx.state.stamps, action.show.stampId);
   if (!stamp || stamp.sceneId !== sceneId) return false;
   if (stamp.visibility !== "all") tx.write(keys.stamp(stamp.id), { ...stamp, visibility: "all" });
   return true;
@@ -439,7 +440,7 @@ export function dmLine(tx: Tx, trap: Trap, line: { how: TrapDue["how"]; by: read
  * another trap's card while it has its own to give up.
  */
 export function addDue(tx: Tx, trapId: string, due: TrapDue): void {
-  const trap = tx.state.traps[trapId]!;
+  const trap = ownEntry(tx.state.traps, trapId)!;
   const own = [...(trap.rig?.due ?? []), due];
   while (own.length > LIMITS.trapDuePerTrap) own.shift();
   tx.write(keys.trap(trap.id), { ...trap, rig: { ...trap.rig!, due: own } });
@@ -477,6 +478,6 @@ function compareIds(a: string, b: string): number {
 
 /** A token by id when it is a creature on the trap's scene, for the lists a springing keeps. */
 export function onScene(tx: Tx, trap: Trap, id: string): Token | undefined {
-  const token = tx.state.tokens[id];
+  const token = ownEntry(tx.state.tokens, id);
   return token && token.sceneId === trap.sceneId ? token : undefined;
 }
