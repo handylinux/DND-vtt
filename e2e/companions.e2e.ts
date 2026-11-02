@@ -163,23 +163,32 @@ async function openPanel(page: Page, title: string): Promise<void> {
   const toolsPanels = page.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ });
   // Just after a window turn across 900 px the layout is between its two forms: neither the tabs nor the Panels button is there yet.
   // Choosing a route on that frame clicked a button that never came.
-  // If none ever shows, say what the page does show, since this wait has timed out in a lane check before.
-  await tabs.or(sheet).or(picker).or(all).or(toolsPanels).filter({ visible: true }).first().waitFor({ timeout: 15_000 }).catch(async (err: unknown) => {
-    const seen = await page.locator("body").ariaSnapshot({ timeout: 5_000 }).catch(() => "(no snapshot)");
-    throw new Error(`no way to open ${title}: ${String(err)}\n${seen.slice(0, 2_000)}`);
-  });
-  if (await tabs.isVisible()) return openSideTab(page, title);
-  if (await sheet.isVisible()) return;
-  if (await picker.isVisible()) {
-    // The list is already open.
-  } else if (await all.isVisible()) await all.click();
-  else {
-    await toolsPanels.click();
-    // Add and place can hide the desktop panel. Panels restores its tabs, while a phone restores its sheet or picker.
-    await tabs.or(picker).or(sheet).or(all).filter({ visible: true }).first().waitFor();
+  // The route is chosen again when the layout moves on between the wait and the press: the tabs seen a moment ago can be
+  // gone by the next check, and the Panels button a press waits for can be replaced by the tabs (lp10-comp-b timed out on that).
+  for (let attempt = 1; ; attempt++) {
+    // If none ever shows, say what the page does show, since this wait has timed out in a lane check before.
+    await tabs.or(sheet).or(picker).or(all).or(toolsPanels).filter({ visible: true }).first().waitFor({ timeout: 15_000 }).catch(async (err: unknown) => {
+      const seen = await page.locator("body").ariaSnapshot({ timeout: 5_000 }).catch(() => "(no snapshot)");
+      throw new Error(`no way to open ${title}: ${String(err)}\n${seen.slice(0, 2_000)}`);
+    });
     if (await tabs.isVisible()) return openSideTab(page, title);
     if (await sheet.isVisible()) return;
-    if (!(await picker.isVisible())) await all.click();
+    try {
+      if (await picker.isVisible()) {
+        // The list is already open.
+      } else if (await all.isVisible()) await all.click({ timeout: 3_000 });
+      else {
+        await toolsPanels.click({ timeout: 3_000 });
+        // Add and place can hide the desktop panel. Panels restores its tabs, while a phone restores its sheet or picker.
+        await tabs.or(picker).or(sheet).or(all).filter({ visible: true }).first().waitFor({ timeout: 10_000 });
+        if (await tabs.isVisible()) return openSideTab(page, title);
+        if (await sheet.isVisible()) return;
+        if (!(await picker.isVisible())) await all.click({ timeout: 3_000 });
+      }
+      break;
+    } catch (err) {
+      if (attempt === 4) throw err;
+    }
   }
   await picker.getByRole("button", { name: new RegExp(`^${title}( ?\\d+ unread)?$`) }).click();
 }
