@@ -916,13 +916,44 @@ export class RoomActor {
       while (this.#inFlight === null && this.#stepRunning === null && this.#reading === null && !this.#closed) {
         const cmd = this.#queue.shift();
         if (!cmd) break;
-        this.#handle(cmd);
+        // Caught here and not by each caller: a drain also runs from a timer, a turn or a commit's end, where nothing else would catch it.
+        try {
+          this.#handle(cmd);
+        } catch (err) {
+          this.#commandFailed(cmd, err);
+        }
         if (this.#batch && this.#batch.ops.length >= this.#opts.maxBatchOps) this.#commitNow();
       }
     } finally {
       this.#draining = false;
     }
     this.#maybeIdle();
+  }
+
+  /**
+   * A command that threw costs only its sender: its socket closes with 1011
+   * as a fault on the message path closes it (ws.ts), a server command is
+   * refused, and the queue goes on. Nothing is undone, as on that path: the
+   * room's state took all of an op or none of it, since #reduce stages a
+   * state and its batch record together, and a staged op is stored with
+   * its batch.
+   */
+  #commandFailed(cmd: Command, err: unknown): void {
+    const conn = cmd.t === "op" || cmd.t === "hello" || cmd.t === "snapshot" ? cmd.conn : null;
+    this.#fault("room command failed", err, conn, cmd.t === "op" ? opKind(cmd.raw) : cmd.t === "sys" ? cmd.op.t : cmd.t);
+    if (cmd.t === "sys" || cmd.t === "step") cmd.reject(err instanceof Error ? err : new Error(String(err)));
+  }
+
+  /**
+   * Logs a fault at error level with the room, the member and the kind of
+   * work, never an op's contents, and closes the socket it came from. The
+   * message and stack are logged alone, since a logged error object would
+   * carry every field the thrower attached to it.
+   */
+  #fault(what: string, err: unknown, conn: Connection | null, kind?: string): void {
+    const error = err instanceof Error ? err : new Error(String(err));
+    this.#log.error({ roomId: this.roomId, memberId: conn?.memberId, kind, message: error.message, stack: error.stack }, what);
+    conn?.close(1011, "internal error");
   }
 
   #handle(cmd: Command): void {
@@ -1538,12 +1569,20 @@ export class RoomActor {
   /** The next turn of an ask being read, and its answer once read, after which the queue goes on. */
   #readOn(read: AskRead): void {
     if (this.#reading !== read || this.#closed) return;
-    if (!this.#readAsk(read)) {
-      setImmediate(() => this.#readOn(read));
-      return;
+    try {
+      if (!this.#readAsk(read)) {
+        setImmediate(() => this.#readOn(read));
+        return;
+      }
+      this.#reading = null;
+      this.#finishAsk(read);
+    } catch (err) {
+      // A command of its own, read outside the queue, so it fails as a queued one does. Its socket is still the client's
+      // current one, since a hello from a new socket waits behind the reading, and the gesture's later ops go with it.
+      this.#reading = null;
+      this.#asking.delete(read.key);
+      this.#fault("ask read failed", err, this.#clients.get(read.key) ?? null, "build.ask");
     }
-    this.#reading = null;
-    this.#finishAsk(read);
     this.#drain();
   }
 
@@ -1930,8 +1969,19 @@ export class RoomActor {
    * replay checks every stored op against it.
    */
   #explore(batch: Batch): void {
-    if (batch.ops.length > 0) this.#exploreNow(batch);
-    this.#remember(batch);
+    try {
+      if (batch.ops.length > 0) this.#exploreNow(batch);
+      this.#remember(batch);
+    } catch (err) {
+      // The batch commits all the same: its ops are staged, and a batch dropped here would leave the room ahead of what is
+      // stored. So the steps fail closed as the map step does (rule 9): the scenes the batch wrote on forget their ground.
+      this.#fault("explore or map step failed, forgetting the scenes the batch wrote on", err, null);
+      try {
+        for (const op of forgetAllOps({ before: batch.before, after: this.#staged.state, touched: batch.touched })) this.#appendServerOp(batch, op, "map step's forgetting");
+      } catch (again) {
+        this.#fault("map step's forgetting failed", again, null);
+      }
+    }
   }
 
   /** The explore step on the staged state now, inside the batch: before its end where an op wrote an area's reminder. */
@@ -2072,31 +2122,43 @@ export class RoomActor {
       if (wm && wm.committed < n) wm.committed = n;
     }
     if (batch.ops.length > 0) this.#opsSinceSnapshot += batch.ops.length;
-    publishBatch(
-      {
-        seq: batch.seq,
-        before: batch.before,
-        after: batch.state,
-        touched: batch.touched,
-        global: batch.global,
-        acks: batch.acks,
-        ackDetails: batch.ackDetails,
-        rejects: batch.rejects,
-        restored: batch.restored,
-        trapped: batch.trapped,
-        stamped: batch.stamped,
-        blocked: batch.blocked,
-      },
-      this.#connections,
-      (key) => this.#clients.get(key),
-      (conn, delivered) => this.#sendHistory(conn, delivered),
-    );
-    // A batch that re-projects everything can take away what a held drag or live ruler showed (docs/design/design-v1-per-player-vision.md 7.2).
-    if (batch.global) rejudgePreviews(batch.state, this.#connections);
-    for (const conn of this.#connections) this.#previewStands(conn, batch.state);
+    // Nothing from here on may throw out of the commit: no one awaits it, and the queue waits until its end.
+    try {
+      publishBatch(
+        {
+          seq: batch.seq,
+          before: batch.before,
+          after: batch.state,
+          touched: batch.touched,
+          global: batch.global,
+          acks: batch.acks,
+          ackDetails: batch.ackDetails,
+          rejects: batch.rejects,
+          restored: batch.restored,
+          trapped: batch.trapped,
+          stamped: batch.stamped,
+          blocked: batch.blocked,
+        },
+        this.#connections,
+        (key) => this.#clients.get(key),
+        (conn, delivered) => this.#sendHistory(conn, delivered),
+      );
+      // A batch that re-projects everything can take away what a held drag or live ruler showed (docs/design/design-v1-per-player-vision.md 7.2).
+      if (batch.global) rejudgePreviews(batch.state, this.#connections);
+      for (const conn of this.#connections) this.#previewStands(conn, batch.state);
+    } catch (err) {
+      // The batch is stored, but which sockets it reached is unknown: each one takes the committed room afresh as it reconnects.
+      this.#fault("batch publish failed, closing the room's sockets", err, null);
+      for (const conn of this.#connections) conn.close(1011, "internal error");
+    }
     for (const s of batch.sys) s.resolve();
     for (const h of batch.hellos) {
-      if (!h.conn.closed && this.#clients.get(h.key) === h.conn && h.conn.held === null) this.#snapshot(h.conn, h.key);
+      if (h.conn.closed || this.#clients.get(h.key) !== h.conn || h.conn.held !== null) continue;
+      try {
+        this.#snapshot(h.conn, h.key);
+      } catch (err) {
+        this.#fault("snapshot failed", err, h.conn, "hello");
+      }
     }
     this.#resyncOrphanedDms();
     if (batch.ops.length > 0) this.#scheduleSnapshot();
@@ -2402,6 +2464,12 @@ function checkServerOp(op: ServerOnlyOp): { ok: true; op: ServerOnlyOp } | { ok:
   const parsed = serverOnlyOpSchema.safeParse(op);
   if (parsed.success) return { ok: true, op: parsed.data };
   return { ok: false, message: `server op ${op.t} does not validate: ${parsed.error.issues[0]?.message ?? "invalid"}` };
+}
+
+/** An op's kind for the log, read from the op as its client sent it, so only a word shaped like a kind is kept. */
+function opKind(raw: unknown): string | undefined {
+  const t = raw !== null && typeof raw === "object" ? (raw as { t?: unknown }).t : undefined;
+  return typeof t === "string" && /^[a-z][A-Za-z]{0,30}(\.[a-z][A-Za-z]{0,30}){0,2}$/.test(t) ? t : undefined;
 }
 
 function sleep(ms: number): Promise<void> {
