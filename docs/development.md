@@ -47,6 +47,36 @@ checkout and runs it against the dev postgres, on http://127.0.0.1:9180, as
 the [Quick start](../README.md#quick-start) runs the published one. It is how to try a
 build before it goes to a server.
 
+### Property tests
+
+Some unit tests are property tests, written with
+[fast-check](https://fast-check.dev/) in files named `*.prop.test.ts`. Each
+states a rule that must hold for every input, such as "the dice parser never
+throws, and every formula it accepts is within the grammar's bounds", and
+checks it against thousands of generated inputs: any text in the Dice field
+and in a journal page, Universal VTT files and D&D Beyond characters with
+edits a broken exporter or a hostile sender could make, protocol messages
+past every bound, and random wall geometry. When a case breaks the rule,
+fast-check shrinks it to a small counterexample and prints it with the seed
+that found it.
+
+`pnpm test` runs them on a fixed seed, so every run tries the same cases and
+a failure in continuous integration fails the same way on your machine. Two
+environment variables widen the search when you work on one of these areas:
+
+| Variable | What it does |
+| --- | --- |
+| `FC_SEED` | another seed, for cases the default run never tries |
+| `FC_RUNS` | how many cases each property tries, in place of its own count |
+
+```bash
+FC_SEED=7 FC_RUNS=20000 node --test shared/dice/dice.prop.test.ts
+```
+
+To replay a failure, run its file again with the seed fast-check printed.
+The `*.random.test.ts` files are seeded random tests of the same idea, with
+generators of their own.
+
 ## Continuous integration
 
 GitHub Actions runs [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
