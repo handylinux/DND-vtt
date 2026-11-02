@@ -429,6 +429,18 @@ async function lineParts(line: Locator): Promise<{ label: LinePart; verdict: Lin
   });
 }
 
+/** The line's parts once two reads in a row agree: a resize or a new answer fits the line a frame or two after it lands (FL20-2-FLAKE). */
+async function steadyParts(line: Locator): Promise<Awaited<ReturnType<typeof lineParts>>> {
+  let last = "";
+  const settled = await waitFor("the result line's fit to settle", async () => {
+    const now = await lineParts(line);
+    const same = JSON.stringify(now) === last;
+    last = JSON.stringify(now);
+    return same ? { now } : null;
+  });
+  return settled.now;
+}
+
 /**
  * The blank room after a result line's label, in layout px: from its box's
  * end to the next part still on the row, a chip, a "+N" or a verdict. Null
@@ -1804,7 +1816,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await line.locator("[data-result-label]").waitFor();
       await showUnder(gridOf(view));
       await shots.take(pat, "fl20-2-sleight-of-hand-advantage-320-130");
-      let parts = await lineParts(line);
+      let parts = await steadyParts(line);
       assert.notEqual(parts.label, "hidden", `the label stays, ended in "…" at worst: ${JSON.stringify(parts)}`);
       assert.equal(parts.mode, "hidden", `the mode words go first: ${JSON.stringify(parts)}`);
 
@@ -1813,7 +1825,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await waitFor("the request on Pat's page", () => patSocket.state?.rolls[requestId] || null);
       await rollPicked(view, "Dexterity", /^Dexterity save/, "Roll with Advantage");
       await line.locator("[data-result-verdict]").waitFor();
-      parts = await lineParts(line);
+      parts = await steadyParts(line);
       assert.equal(parts.verdict, "shown", `the verdict stays: ${JSON.stringify(parts)}`);
       assert.ok(parts.label === "shown" || parts.label === "cut", `the answer's label, from its row, stays: ${JSON.stringify(parts)}`);
       assert.ok(parts.mode === "hidden" || parts.label !== "cut", `the words never cut the label: ${JSON.stringify(parts)}`);
@@ -1825,7 +1837,7 @@ describe("raccoon-vtt rolling from a stat block", { timeout: 900_000 }, () => {
       await rollPicked(view, "Strength", /^Strength check/, "Roll with Advantage");
       const wide = resultOf(view).first();
       await wide.locator("[data-result-label]").waitFor();
-      parts = await lineParts(wide);
+      parts = await steadyParts(wide);
       // A natural 1 or 20 adds a verdict, which shows too.
       assert.deepEqual({ ...parts, verdict: parts.verdict === "absent" ? "shown" : parts.verdict }, { label: "shown", verdict: "shown", mode: "shown" }, "at 390 x 844 the whole line shows");
     } finally {
