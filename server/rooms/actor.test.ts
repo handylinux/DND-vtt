@@ -3722,8 +3722,9 @@ describe("map discovery on the actor (docs/design/design-v1-map-discovery.md 5.3
       assert.ok(asked !== "stuck" && painted !== "stuck");
       assert.ok(asked.acks?.includes(1), "the bands fit");
       assert.ok(table.sent.indexOf(asked) <= table.sent.indexOf(painted) && (asked !== painted || asked.acks!.indexOf(1) < asked.acks!.indexOf(2)), "the paint was answered after the ask");
-      // About one turn for each band at 8 ms a turn, and a read that never let go would get at most one.
-      assert.ok(turnsWhileReading >= 4, `the timer got ${turnsWhileReading} turns while the ask was read`);
+      // A read that never let go would get at most one turn. How many more it gets depends on how many
+      // bands fit in an 8 ms turn, which a faster change scan raises, so only the yield is pinned.
+      assert.ok(turnsWhileReading >= 2, `the timer got ${turnsWhileReading} turns while the ask was read`);
       // A socket that spent most of its burst is told busy for an ask of 16, though one op would go.
       // The 60-op burst paid 16 for the ask and one for the paint, with no refill.
       assert.ok(table.conn.opRate.wouldAllow(43) && !table.conn.opRate.wouldAllow(44));
