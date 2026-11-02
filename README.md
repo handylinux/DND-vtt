@@ -139,8 +139,9 @@ it a server needs no copy of this repository and builds nothing: two files
 are the whole setup. You need a Linux server with Docker Engine 28 or later
 and the Docker Compose plugin 2.31 or later, and a hostname for the site.
 
-Pick a release from the repository's [tags](https://github.com/jwhitlow45/raccoon-vtt/tags), `vX.Y.Z`, and
-download its two files into a folder of their own:
+Pick a release from the repository's
+[tags](https://github.com/jwhitlow45/raccoon-vtt/tags), `vX.Y.Z`, and download
+its two files into a folder of their own:
 
 ```bash
 mkdir ~/raccoon-vtt && cd ~/raccoon-vtt
