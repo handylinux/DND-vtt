@@ -1045,12 +1045,14 @@ export const opMigrations: MigrationStep[] = [
     apply: (op) => op,
   },
   {
-    // RIDER-LED-HALF-SEAT: no op changes shape, so the step is the
-    // identity. From this version what sits on a holder whose walk on
-    // squares starts full size is carried by the holder's snapped box
-    // (`seatsFromSnappedFull`), so a rider keeps its square of a mount that
-    // stands off its grid and what the rider drags stays in reach. Older
-    // ops replay by the stored box, as they were written.
+    // RIDER-LED-HALF-SEAT and TRAP-STOP-STACK: no op changes shape, so the
+    // step is the identity. From this version what sits on a holder whose
+    // walk on squares starts full size is carried by the holder's snapped
+    // box (`seatsFromSnappedFull`), so a rider keeps its square of a mount
+    // that stands off its grid and what the rider drags stays in reach. A
+    // trap's stop between a walk's ends steps each creature in single file
+    // back off the ones ahead of it (`stopsFileApart`). Older ops replay
+    // as they were written.
     // Deploy: reload open pages, since an old page seats a rider by the
     // stored box and its drop preview would part from the landing.
     // Rollback needs the backup only for a room with version 41 ops after
@@ -1560,6 +1562,22 @@ export function seatsFromSnappedBox(opVersion: number | undefined): boolean {
  * and replay so. Live ops carry no stored version and take today's rule.
  */
 export function seatsFromSnappedFull(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 41);
+}
+
+/**
+ * Whether a trap's stop between a walk's ends steps each creature in single
+ * file back off the creatures ahead of it (TRAP-STOP-STACK, D-261101-399,
+ * traps.ts fileApart). Between corners the file walks its holder's own line
+ * at the same progress, so the stop stood each one on its holder's square,
+ * where a press takes the holder and later moves by place keep them
+ * stacked. Each now stops at the latest spot of its own walk where it may
+ * stop and its box clears those ahead, and the moments after the stop, the
+ * cut and the landing read that spot. Ops stored before version 41 left
+ * them on the stop's spot, and replay so. Live ops carry no stored version
+ * and take today's rule.
+ */
+export function stopsFileApart(opVersion: number | undefined): boolean {
   return !(opVersion !== undefined && opVersion < 41);
 }
 

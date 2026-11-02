@@ -2,16 +2,17 @@ import { CHUNK_CELLS, FOG_SUBCELLS, MIN_HEIGHT_FT, type BuildChunk, type CellRec
 import { chunkKey, wallMidpoint } from "../keys.ts";
 import { gridOfScene, playersToken, seenByNonOwners } from "../project.ts";
 import type { Op } from "../protocol.ts";
-import { stopsOnPublicGround, stopsOnTrap, stopsStandClear, stopsStandFullSize } from "../migrate.ts";
+import { stopsFileApart, stopsOnPublicGround, stopsOnTrap, stopsStandClear, stopsStandFullSize } from "../migrate.ts";
 import { isWritable } from "../writable.ts";
 import { creaturesInArea, type AreaToken } from "./aoe.ts";
-import { holderOf, insideHolder, onHolder, seatHolds, walkerFor } from "./attach.ts";
+import { holderOf, insideHolder, linkHolds, onHolder, seatHolds, walkerFor } from "./attach.ts";
+import type { Rect } from "./geom.ts";
 import { footprintRect, footprintSize, isSqueezed, occupiedHexes, occupiedRange, rangeAtInto, sizeCategory, type CellRange, type PlacedToken } from "./footprint.ts";
 import { footing, footprintGround, groundAt, sceneGround, standing } from "./heights.ts";
 import { pendingGround } from "./held.ts";
 import { planWalks, walkedIn, withTrapCut, type MovedToken } from "./moveLeg.ts";
 import { groundUnder, hexStandHexes, storedBuild, type HexWalls } from "./movement.ts";
-import { onTrace, routeLattice, routeStands, routeWalk, type PublicGround, type RoutePiece, type RoutePoint, type RouteSpot, type StandGroup, type StandRule, type WalkSpot } from "./route.ts";
+import { fileOrder, onTrace, routeLattice, routeStands, routeWalk, type PublicGround, type RoutePiece, type RoutePoint, type RouteSpot, type StandGroup, type StandRule, type WalkSpot } from "./route.ts";
 import { APART, contact, orient } from "./segments.ts";
 import { sceneWalls } from "./walls.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "./grid.ts";
@@ -1244,9 +1245,11 @@ export type MovePlan = { springings: Springing[]; op: Op };
  * Where a stopped group stops, as progress along its walk (`s`), and the
  * progress past which what it meets no longer counts and the moments read
  * it at its stop (`until`): the stop itself, or for an op stored before
- * version 17 the event that stopped it (migrate.ts stopsOnTrap).
+ * version 17 the event that stopped it (migrate.ts stopsOnTrap). `back`
+ * holds the spot each walk stepped back to off the creatures ahead of it
+ * in single file, and what rides on those (`fileApart`).
  */
-type Stop = { until: Progress; s: Progress };
+type Stop = { until: Progress; s: Progress; back?: ReadonlyMap<Walk, number> };
 
 /**
  * The trap step's plan of a move (13.2 step 1): both passes, their events,
@@ -1277,7 +1280,7 @@ export function trapLandings(op: Op, before: TrapRoom, actor: Viewer, env: { opV
   for (const walk of parts.walks.all) {
     if (!walk.isPublic) continue;
     const stop = parts.stops.get(walk.group.named);
-    pose(walk, stop ? latestIndex(walk.spots, stop.s) : walk.spots.length - 1);
+    pose(walk, stop ? stopIndex(walk, stop) : walk.spots.length - 1);
   }
   for (const walk of (parts.rest ?? parts.walks).all) if (!walk.isPublic) pose(walk, walk.spots.length - 1);
   return out;
@@ -1321,7 +1324,8 @@ function trapMoveParts(op: Op, before: TrapRoom, actor: Viewer, env: { opVersion
         const s = forward ? stopAt(walks, group, event.at, before, seen, pit ? { walk: hit.walk, over: pit } : null) : stopBefore(walks, group, event.at, before, seen);
         // A stop where the group was going anyway changes nothing, so it is no stop (6.5).
         if (compareProgress(s, endOf(group)) >= 0) continue;
-        stops.set(group.named, { until: forward ? s : event.at, s });
+        const back = fileApart(walks, group, s, before, seen);
+        stops.set(group.named, { until: forward ? s : event.at, s, ...(back ? { back } : {}) });
       }
     }
     springings.push(springingIn(trap, event.how, "public", together, momentAt(before, walks.byId, event.at, stops), env));
@@ -1617,7 +1621,7 @@ function momentAt(before: RoomState, walks: ReadonlyMap<string, Walk>, p: Progre
 /** The spot a walk is on at the moment. */
 function spotIn(m: Moment, walk: Walk): number {
   const stop = m.stops.get(walk.group.named);
-  return latestIndex(walk.spots, stop && compareProgress(m.p, stop.until) > 0 ? stop.s : m.p);
+  return stop && compareProgress(m.p, stop.until) > 0 ? stopIndex(walk, stop) : latestIndex(walk.spots, m.p);
 }
 
 function tokenAt(m: Moment, id: string): Token | undefined {
@@ -1754,7 +1758,7 @@ function cutWalks(walks: Walks, named: string, stop: Stop, points: number, befor
     const riders = seated.get(walk.token.id);
     if (walk.isPublic || !riders) continue;
     const on = riders.flatMap((t) => (landed.has(t.id) ? [{ token: t, at: landed.get(t.id)!.at(-1)! }] : []));
-    const route = seatingWalk(walk, latestIndex(walk.spots, stop.s), on);
+    const route = seatingWalk(walk, stopIndex(walk, stop), on);
     routes.set(walk, route);
     (inSingleFile(walk) ? file : kept).set(walk.token.id, route);
     landed.set(walk.token.id, route);
@@ -1766,9 +1770,119 @@ function cutWalks(walks: Walks, named: string, stop: Stop, points: number, befor
   return { file: file.size > 0 ? file : null, own: kept.size > 0 ? kept : null };
 }
 
-/** A walk's own route to its latest spot at or before the stop, that spot at the height the trap step had it at there. */
+/** A walk's own route to its spot at the stop (`stopIndex`), that spot at the height the trap step had it at there. */
 function walkToStop(walk: Walk, stop: Stop): RoutePoint[] {
-  return walkTo(walk, latestIndex(walk.spots, stop.s));
+  return walkTo(walk, stopIndex(walk, stop));
+}
+
+/** A walk's spot at its group's stop: its latest at or before it, or the one it stepped back to (`fileApart`). */
+function stopIndex(walk: Walk, stop: Stop): number {
+  return stop.back?.get(walk) ?? latestIndex(walk.spots, stop.s);
+}
+
+/**
+ * Where a stop between a walk's ends leaves each creature in single file
+ * (TRAP-STOP-STACK, D-261101-399, migrate.ts stopsFileApart). Between
+ * corners the file walks its holder's own line at the same progress, so at
+ * the stop each stood on its holder's square. From op version 41 each, in
+ * the file's order (route.ts fileOrder), steps back along its own walk,
+ * whose spots the trap step already walked, to the latest one where it may
+ * stop (`standsAt`, the stop's own test) and its box clears the boxes of
+ * the stopped holder and of those ahead of it. With none, it keeps the
+ * stop's spot. What rides on one comes back with it, at the same progress.
+ *
+ * Each class of the file is worked out by itself, those every player sees
+ * first, so none of their spots reads a walk they cannot see. Where its
+ * steps leave a drag of the class out of reach (attach.ts linkHolds), none
+ * of the class steps back, as before. Each one players cannot see then
+ * takes the latest spot it may stop at in its holder's reach instead, since
+ * a public holder ahead of it may have stepped back, and lets go only where
+ * none is. One players cannot see that seats a creature they see then
+ * stops where that seat holds (`seatingWalk`), as at any stop.
+ *
+ * The moments after the stop, the cut and the landing read these spots,
+ * and the private pass walks the cut, so it finds a hidden one there too.
+ * What one met on the way up to the stop still counts, since it walked
+ * there before it stepped back. Undefined where nothing steps back.
+ */
+function fileApart(walks: Walks, group: Group, s: Progress, before: RoomState, seen: (id: string) => boolean): Map<Walk, number> | undefined {
+  if (!stopsFileApart(walks.opVersion)) return undefined;
+  const lead = walks.byId.get(group.named);
+  const file = walks.all.filter((w) => w.group === group && inSingleFile(w));
+  if (!lead || file.length === 0) return undefined;
+  const byId = new Map(file.map((w) => [w.token.id, w]));
+  const classes = [file.filter((w) => w.entry.pass === "public"), file.filter((w) => w.entry.pass !== "public")].map((c) => fileOrder(lead.token, c.map((w) => w.token)).map((t) => byId.get(t.id)!));
+  const back = new Map<Walk, number>();
+  const latest = (w: Walk) => latestIndex(w.spots, s);
+  const rides = (w: Walk) => {
+    const kind = w.token.attached?.kind;
+    return w.holder !== undefined && !inSingleFile(w) && !keepsOwn(w) && kind !== undefined && onHolder(kind);
+  };
+  // The spot a walk stands on at the stop: what rides on one that stepped back comes with it, at the same progress.
+  const indexOf = (w: Walk): number => {
+    const own = back.get(w);
+    if (own !== undefined) return own;
+    if (rides(w)) {
+      const h = indexOf(w.holder!);
+      if (h !== latest(w.holder!)) return latestIndex(w.spots, w.holder!.spots[h]!.progress);
+    }
+    return latest(w);
+  };
+  const settings = before.meta.settings;
+  const drags = (w: Walk) => !w.holder || linkHolds(w.grid, settings, "drag", placedAt(w, indexOf(w)), placedAt(w.holder, indexOf(w.holder)));
+  // The latest spot of its walk at or before the stop that it may stop at in its holder's reach, the stop's spot without one.
+  const inReach = (w: Walk) => {
+    const stands = standSpots(walks, w, before, seen);
+    for (let i = latest(w); i >= 0; i--) {
+      back.set(w, i);
+      if (standsAt(stands, w.spots[i]!.progress) && drags(w)) break;
+    }
+    if (!drags(w) || back.get(w) === latest(w)) back.delete(w);
+  };
+  const boxAt = (walk: Walk, j: number) => footprintRect(walk.grid, placedAt(walk, j));
+  const ahead: Rect[] = [boxAt(lead, latest(lead))];
+  // A class at a time, those every player sees first, so a hidden one never decides where a public one stands.
+  for (const order of classes) {
+    const was = ahead.length;
+    for (const walk of order) {
+      const j = latest(walk);
+      let k = j;
+      const stands = standSpots(walks, walk, before, seen);
+      for (let i = j; i >= 0; i--) {
+        const box = boxAt(walk, i);
+        if (standsAt(stands, walk.spots[i]!.progress) && ahead.every((a) => !boxesOverlap(a, box))) {
+          k = i;
+          break;
+        }
+      }
+      if (k !== j) back.set(walk, k);
+      ahead.push(boxAt(walk, k));
+    }
+    // A step back can leave a drag of the class out of reach, its holder's or one that found no spot of its own behind it: then none
+    // of the class steps back, as before. Those players cannot see come after a public holder that may have, so each of them then
+    // takes, holders first, the latest spot it may stop at in its holder's reach, clear or not, and lets go unread only with none.
+    if (order.some((w) => !drags(w))) {
+      ahead.length = was;
+      for (const w of order) {
+        back.delete(w);
+        ahead.push(boxAt(w, latest(w)));
+      }
+      if (order === classes[1]) for (const w of walks.all) if (order.includes(w)) inReach(w);
+    }
+  }
+  if (back.size === 0) return undefined;
+  for (const walk of walks.all) {
+    if (walk.group !== group || !rides(walk)) continue;
+    const at = indexOf(walk);
+    if (at !== latest(walk)) back.set(walk, at);
+  }
+  return back;
+}
+
+/** Whether two boxes share more than an edge. */
+function boxesOverlap(a: Rect, b: Rect): boolean {
+  const e = 1e-9;
+  return a.x < b.x + b.w - e && b.x < a.x + a.w - e && a.y < b.y + b.h - e && b.y < a.y + a.h - e;
 }
 
 /** A walk's own route to its spot `j`, that spot at the height the trap step had it at there. */

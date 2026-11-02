@@ -34,6 +34,7 @@ import {
   keepsLairTick,
   boundsRollChanges,
   seatsFromSnappedFull,
+  stopsFileApart,
   seatsApart,
   hiddenTowStands,
   stopsStandClear,
@@ -1640,7 +1641,7 @@ describe("batch 47: op version 40, Lucky and an added die held to the dice gramm
   });
 });
 
-describe("op version 41, seats on a full-size walk carried by the holder's snapped box (RIDER-LED-HALF-SEAT)", () => {
+describe("op version 41, seats on a full-size walk carried by the holder's snapped box (RIDER-LED-HALF-SEAT) and a stopped file stepped apart (TRAP-STOP-STACK)", () => {
   test("keeps stored operations unchanged through the identity step, and gates the seats at 41 with the snapshot at 31", () => {
     assert.ok(OP_VERSION >= 41);
     assert.equal(SNAPSHOT_VERSION, 31, "no snapshot field changes");
@@ -1649,6 +1650,7 @@ describe("op version 41, seats on a full-size walk carried by the holder's snapp
     assert.equal(migrateOp(op, 40), op);
     assert.throws(() => runMigrations(op, 41, 40, opMigrations), /down/);
     assert.deepEqual([seatsFromSnappedFull(1), seatsFromSnappedFull(40), seatsFromSnappedFull(41), seatsFromSnappedFull(undefined)], [false, false, true, true]);
+    assert.deepEqual([stopsFileApart(1), stopsFileApart(40), stopsFileApart(41), stopsFileApart(undefined)], [false, false, true, true]);
   });
 });
 

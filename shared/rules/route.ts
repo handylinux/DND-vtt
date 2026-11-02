@@ -250,7 +250,6 @@ export function fileRoutes(lead: PlacedToken, points: readonly Point[], classes:
   const ux = (end.x - from.x) / len;
   const uy = (end.y - from.y) / len;
   const full = footprintSize(lead);
-  const start = storedCenter(lead);
   // The squeezed box each one lines up behind, centered in its full box: the holder's first, then the one before it.
   const squeezedAt = (token: PlacedToken, at: Point): Rect => {
     const side = footprintSize(token);
@@ -259,11 +258,7 @@ export function fileRoutes(lead: PlacedToken, points: readonly Point[], classes:
   };
   let ahead = squeezedAt(lead, end);
   for (const members of classes) {
-    const near = (m: PlacedToken) => {
-      const c = storedCenter(m);
-      return (c.x - start.x) ** 2 + (c.y - start.y) ** 2;
-    };
-    for (const member of [...members].sort((a, b) => near(a) - near(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
+    for (const member of fileOrder(lead, members)) {
       const { w, h } = footprintSize(member);
       const small = squeezedAt(member, { x: 0, y: 0 });
       // How far back along the last piece its middle goes for its squeezed box to touch the one ahead, along whichever axis meets first.
@@ -281,6 +276,21 @@ export function fileRoutes(lead: PlacedToken, points: readonly Point[], classes:
     }
   }
   return out;
+}
+
+/**
+ * A class of the creatures in single file (`fileRoutes`) in the order they
+ * line up behind `lead`, as it stands where the walk starts: nearest it
+ * first by their middles, then by token id. A trap's stop between the
+ * walk's ends reads the same order (traps.ts fileApart).
+ */
+export function fileOrder<T extends PlacedToken & { id: string }>(lead: PlacedToken, members: readonly T[]): T[] {
+  const start = storedCenter(lead);
+  const near = (m: PlacedToken) => {
+    const c = storedCenter(m);
+    return (c.x - start.x) ** 2 + (c.y - start.y) ** 2;
+  };
+  return [...members].sort((a, b) => near(a) - near(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
 /** Where a member of a walk in single file stands where the walk ends, as `fileOutOfReach` reads it. */
