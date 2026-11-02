@@ -450,6 +450,17 @@ describe("a trap's text in the protocol", () => {
     assert.equal(parses({ t: "trap.create", trap: { ...base, zone: { cells: [...rects(1), ...rects(1)] } } }), true);
   });
 
+  test("a square past its own bounds is refused at once, its cells never counted", () => {
+    const base = input("t");
+    const cells = (rect: { x: number; y: number; w: number; h: number }) => parses({ t: "trap.create", trap: { ...base, zone: { cells: [rect] } } });
+    const started = performance.now();
+    assert.equal(cells({ x: 0, y: 0, w: 1e300, h: 1 }), false);
+    // Past 2^53 a step of one adds nothing, so a count that walked these cells would never end.
+    assert.equal(cells({ x: 1e300, y: 0, w: 1e290, h: 1 }), false);
+    assert.equal(cells({ x: 0, y: 0, w: 2.5, h: 1 }), false);
+    assert.ok(performance.now() - started < 1_000, "refused without walking the cells");
+  });
+
   test("a wire is 0.5 to 20 cells, its ends on the 1/64 lattice, and a square scene keeps them on corners and edge midpoints", () => {
     const base = input("t");
     const wire = (a: [number, number], b: [number, number]) => parses({ t: "trap.create", trap: { ...base, zone: { wire: { a, b } }, rig: { ...base.rig, on: [] } } });

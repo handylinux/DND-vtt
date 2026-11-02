@@ -1749,7 +1749,10 @@ const cellRects = z
   .array(cellRect)
   .min(1)
   .max(LIMITS.trapRects)
-  .refine((rects) => rectCells(rects) <= LIMITS.trapCells, { message: `squares are at most ${LIMITS.trapCells} cells` });
+  // zod runs this refine even when a rectangle failed its own bounds, so it counts only rectangles within them. A side of 1e300 cells, or one at x 1e300 where a step adds nothing, would never finish.
+  .refine((rects) => rects.length > LIMITS.trapRects || !rects.every((r) => cellRect.safeParse(r).success) || rectCells(rects) <= LIMITS.trapCells, {
+    message: `squares are at most ${LIMITS.trapCells} cells`,
+  });
 /**
  * A wire's end, on the free walls' 1/64 lattice, where hex corners lie
  * (docs/design/design-v1-hex-grids.md H2). Every end stored before is a half cell,
