@@ -84,12 +84,29 @@ on every push to `main` or to a branch under `ci/`, on pull requests to
 `main`, and by hand from the Actions tab. It needs no secrets and deploys
 nothing.
 
+A pull request from one of this repository's own `ci/` branches skips
+every job, since the push run on the same commit already runs them all. A
+pull request from anywhere else, such as Dependabot's, runs everything.
+
+The **CI passed** job is the one status check `main`'s ruleset requires.
+It runs after every other job, however they ended, and fails unless each
+one passed or was skipped by the workflow's own design: **e2e-macos**
+while its list is empty or on a docs-only push, and every job in a pull
+request from one of this repository's `ci/` branches. In that pull request
+it is named **Tested by the push run** instead, so the only **CI passed**
+on the commit is the push run's, which ran the jobs. GitHub counts a skipped job as passed for a
+required check, and two checks with one name on a commit leave the result
+ambiguous.
+
 [CodeQL](../.github/workflows/codeql.yml) scans code on main and pull requests.
 [OpenSSF Scorecard](../.github/workflows/scorecard.yml) checks repository security
 on main. Both also run weekly. [Dependabot](../.github/dependabot.yml) proposes
 weekly grouped updates after a 14-day cooldown. The Image workflow's Release
 step publishes a GitHub Release only after its signed image and tags have
-been published successfully.
+been published successfully, and
+[Release assets](../.github/workflows/release-assets.yml) then attaches the
+signed source archive, SBOM and build provenance
+([docs/releasing.md](releasing.md#release-assets)).
 
 These jobs run on Ubuntu:
 
@@ -100,6 +117,7 @@ These jobs run on Ubuntu:
 - **e2e**, 14 shards at once: each shard installs, downloads the build,
   gets a postgres service container of its own and runs its share of
   `e2e/*.e2e.ts`, one file at a time, in Google Chrome.
+- **CI passed**: every other job's result, as one check (above).
 
 A push to a `ci/` branch whose merge base is `main`'s tip, and that
 changes only docs against it, runs just the typecheck, the unit tests, the
@@ -143,7 +161,7 @@ lands, rewrite the list from a few green runs with
 `node scripts/e2e-durations.ts <run id> ...`, which reads those times
 through `gh`. The list holds CI seconds, the largest of the runs given, and
 the shard count is chosen so the longest shard plans about 8 minutes. A run
-is 17 jobs and peaks at 16 at once, of the account's 20 Linux jobs, so a
+is 18 jobs and peaks at 16 at once, of the account's 20 Linux jobs, so a
 second run that overlaps it queues part of its shards.
 
 A file that takes much over 5 minutes in CI holds its shard up, so a long

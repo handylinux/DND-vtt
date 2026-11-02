@@ -1,8 +1,8 @@
 # Releasing
 
 How a maintainer cuts a release: the version bump, the changelog, the tag,
-the Image workflow that builds, signs and publishes the image, and the
-Docker Hub overview.
+the Image workflow that builds, signs and publishes the image, the signed
+assets on the GitHub Release, and the Docker Hub overview.
 
 ## Releasing
 
@@ -53,7 +53,9 @@ multi-architecture digest with Cosign, retrying up to three times, before
 tagging `X.Y.Z` or moving `X.Y` and `latest`. After publication succeeds,
 a read-only job generates the release notes, and a separate job creates the
 GitHub Release.
-An existing GitHub Release is left unchanged on a rerun.
+An existing GitHub Release is left unchanged on a rerun. Last, the
+[Release assets](#release-assets) workflow signs the source archive and
+the SBOM and attaches them to the release with their provenance.
 
 Tags only move forward, by what Docker Hub holds. A release always tags
 `X.Y.Z`. It moves `X.Y` and `latest` only when that tag does not exist yet
@@ -82,6 +84,81 @@ access token, with the permission that
 there publishes under another namespace than the username. A push to a
 `ci/` branch that changes the image or `selfhost/`, and a run of Image
 started by hand from the Actions tab, build and smoke-test without pushing.
+
+### Release assets
+
+Every GitHub Release carries its source and an SBOM, each signed, and their
+build provenance, from
+[`.github/workflows/release-assets.yml`](../.github/workflows/release-assets.yml):
+
+| Asset | What it is |
+| --- | --- |
+| `raccoon-vtt-X.Y.Z.tar.gz` | The tag's files, from `git archive`, in a folder `raccoon-vtt-X.Y.Z/` |
+| `raccoon-vtt-X.Y.Z.cdx.json` | A CycloneDX SBOM of every package in the tag's `pnpm-lock.yaml`, from `pnpm sbom`. It includes devDependencies, since the client bundle ships some of them |
+| `raccoon-vtt-X.Y.Z.tar.gz.sigstore.json` | The archive's keyless Cosign signature, as a Sigstore bundle |
+| `raccoon-vtt-X.Y.Z.cdx.json.sigstore.json` | The SBOM's keyless Cosign signature, as a Sigstore bundle |
+| `raccoon-vtt-X.Y.Z.intoto.jsonl` | SLSA build provenance for the archive and the SBOM: an in-toto statement signed by GitHub's artifact attestations, as a Sigstore bundle |
+
+The Image workflow runs Release assets once it has created the release, so
+the assets never hold up Docker Hub. For a release that lacks them, such as
+one made before the workflow existed or one whose run failed to sign, run it
+by hand:
+
+1. In the Actions tab, open Release assets and choose Run workflow.
+2. Leave "Use workflow from" on `main`, enter the release's tag (`vX.Y.Z`)
+   and run it.
+
+It needs no approval, has no Docker Hub secrets and never touches Docker
+Hub. It only adds to a release: one that has all five assets is left as it
+is, and one that has only some of them is refused, so an asset is never
+replaced. To redo a release's assets, delete them on the release's page
+first.
+
+The provenance comes from GitHub's artifact attestations
+(`actions/attest-build-provenance`) rather than the SLSA project's
+`slsa-github-generator`, since that generator works only when a workflow
+refers to it by tag, and OpenSSF Scorecard counts such a reference as an
+unpinned dependency. So `slsa-verifier`, which checks the generator's
+format, cannot check it. Use the GitHub CLI.
+
+#### Verify a release's assets
+
+With [Cosign v3 or later](https://docs.sigstore.dev/cosign/verifying/verify/),
+check each file against its signature and the workflow that signed it.
+Replace `X.Y.Z` with the release version:
+
+```sh
+cosign verify-blob raccoon-vtt-X.Y.Z.tar.gz \
+  --bundle raccoon-vtt-X.Y.Z.tar.gz.sigstore.json \
+  --certificate-identity 'https://github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml@refs/tags/vX.Y.Z' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+cosign verify-blob raccoon-vtt-X.Y.Z.cdx.json \
+  --bundle raccoon-vtt-X.Y.Z.cdx.json.sigstore.json \
+  --certificate-identity 'https://github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml@refs/tags/vX.Y.Z' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Assets added by hand were signed by the run from `main`, so for them the
+identity ends in `@refs/heads/main` instead. That is the case for v0.1.0
+and v0.2.0.
+
+With the [GitHub CLI](https://cli.github.com/manual/gh_attestation_verify),
+check the provenance of each file. It reads the attestation from the
+release's `.intoto.jsonl`, or from GitHub when `--bundle` is left out.
+
+Run it from a clone of the repository, so `gh` names the repository itself:
+
+```sh
+repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+gh attestation verify raccoon-vtt-X.Y.Z.tar.gz \
+  --bundle raccoon-vtt-X.Y.Z.intoto.jsonl \
+  --repo "$repo" \
+  --signer-workflow github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml
+gh attestation verify raccoon-vtt-X.Y.Z.cdx.json \
+  --bundle raccoon-vtt-X.Y.Z.intoto.jsonl \
+  --repo "$repo" \
+  --signer-workflow github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml
+```
 
 ### The Docker Hub overview
 
