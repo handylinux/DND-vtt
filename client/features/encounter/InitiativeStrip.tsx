@@ -810,11 +810,7 @@ function FightAlerts() {
   }, [overlay]);
   useEffect(() => {
     if (!overlay) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || e.defaultPrevented) return;
-      e.stopPropagation();
-      closeOverlay();
-    };
+    const onKey = overlayEscape(closeOverlay);
     document.addEventListener("keydown", onKey, true);
     return () => document.removeEventListener("keydown", onKey, true);
   }, [overlay, closeOverlay]);
@@ -1226,6 +1222,15 @@ export function columnMeasure(a: {
 
 /** The cards the column holds on one render, and where its top stands. */
 export type HeldTop = { key: string; top: number | null } | null;
+
+/** Closes the alerts overlay on an Escape no popover has used, and keeps the room's own Escape listener from also seeing it. */
+export function overlayEscape(close: () => void): (e: KeyboardEvent) => void {
+  return (e) => {
+    if (e.key !== "Escape" || e.defaultPrevented) return;
+    e.stopPropagation();
+    close();
+  };
+}
 
 /**
  * Where the alerts column's top stands, and the cards it draws. Only the same
