@@ -1,6 +1,6 @@
 import { createContext, useContext, useLayoutEffect, useMemo, useRef } from "react";
 import { useStore } from "zustand";
-import { createStore } from "zustand/vanilla";
+import { createStore, type StoreApi } from "zustand/vanilla";
 import type { PillProps } from "../features/measure/Pill.tsx";
 import type { Box } from "../lib/boardText.ts";
 import { NO_INSETS, screenToView, type Camera, type Insets, type Size } from "../lib/camera.ts";
@@ -55,41 +55,51 @@ export const boardPillsSlot = scopeSlot(() => createStore<{ pills: Readonly<Reco
 const NONE: readonly PillSpec[] = [];
 const pillOwnersSlot = scopeSlot(() => new Map<string, Map<symbol, readonly PillSpec[]>>());
 
+type PillStore = StoreApi<{ pills: Readonly<Record<string, readonly PillSpec[]>> }>;
+type PillOwners = Map<string, Map<symbol, readonly PillSpec[]>>;
+type PillClaim = { store: PillStore; owners: PillOwners; key: string; owner: symbol; shown: boolean };
+
+/** The publishing half of usePublishPills, a plain function so the ordering rules can be driven without React. */
+export function publishPillsEffect(c: PillClaim, pills: readonly PillSpec[]): void {
+  if (!c.shown) return;
+  // Claim equal geometry too, so the previous tree's cleanup cannot
+  // delete the newly shown tree's publication.
+  const publishers = c.owners.get(c.key) ?? new Map<symbol, readonly PillSpec[]>();
+  publishers.delete(c.owner);
+  publishers.set(c.owner, pills);
+  c.owners.set(c.key, publishers);
+  const current = c.store.getState().pills[c.key] ?? NONE;
+  if (JSON.stringify(current) === JSON.stringify(pills)) return;
+  c.store.setState((s) => ({ pills: { ...s.pills, [c.key]: pills } }));
+}
+
+/** The cleanup half: returns what runs when the tree stops being the one shown or unmounts. */
+export function retractPillsEffect(c: PillClaim): (() => void) | undefined {
+  if (!c.shown) return undefined;
+  return () => {
+    const publishers = c.owners.get(c.key);
+    if (!publishers?.delete(c.owner)) return;
+    const remaining = [...publishers.values()].at(-1);
+    if (remaining) {
+      // Isometric ground and upright layers can publish the same key.
+      // Removing either leaves the other layer's current publication.
+      if (JSON.stringify(c.store.getState().pills[c.key] ?? NONE) !== JSON.stringify(remaining)) c.store.setState((s) => ({ pills: { ...s.pills, [c.key]: remaining } }));
+    } else {
+      c.owners.delete(c.key);
+      const { [c.key]: _gone, ...rest } = c.store.getState().pills;
+      c.store.setState({ pills: rest });
+    }
+  };
+}
+
 /** Only the shown tree publishes. A view switch republishes even an unchanged spec. */
 export function usePublishPills(key: string, pills: readonly PillSpec[]): void {
   const store = useScoped(boardPillsSlot);
   const owners = useScoped(pillOwnersSlot);
   const owner = useRef(Symbol());
   const shown = useTreeShown();
-  useLayoutEffect(() => {
-    if (!shown) return;
-    // Claim equal geometry too, so the previous tree's cleanup cannot
-    // delete the newly shown tree's publication.
-    const publishers = owners.get(key) ?? new Map<symbol, readonly PillSpec[]>();
-    publishers.delete(owner.current);
-    publishers.set(owner.current, pills);
-    owners.set(key, publishers);
-    const current = store.getState().pills[key] ?? NONE;
-    if (JSON.stringify(current) === JSON.stringify(pills)) return;
-    store.setState((s) => ({ pills: { ...s.pills, [key]: pills } }));
-  }, [store, owners, key, pills, shown]);
-  useLayoutEffect(() => {
-    if (!shown) return;
-    return () => {
-      const publishers = owners.get(key);
-      if (!publishers?.delete(owner.current)) return;
-      const remaining = [...publishers.values()].at(-1);
-      if (remaining) {
-        // Isometric ground and upright layers can publish the same key.
-        // Removing either leaves the other layer's current publication.
-        if (JSON.stringify(store.getState().pills[key] ?? NONE) !== JSON.stringify(remaining)) store.setState((s) => ({ pills: { ...s.pills, [key]: remaining } }));
-      } else {
-        owners.delete(key);
-        const { [key]: _gone, ...rest } = store.getState().pills;
-        store.setState({ pills: rest });
-      }
-    };
-  }, [store, owners, key, shown]);
+  useLayoutEffect(() => publishPillsEffect({ store, owners, key, owner: owner.current, shown }, pills), [store, owners, key, pills, shown]);
+  useLayoutEffect(() => retractPillsEffect({ store, owners, key, owner: owner.current, shown }), [store, owners, key, shown]);
 }
 
 /** Every published pill. */

@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readFileSync } from "node:fs";
-import { stripTypeScriptTypes } from "node:module";
 import { token } from "#shared/testutil.ts";
 import { areaLabelSpot, tokenBoxes } from "../features/areas/labelSpot.ts";
 import { pillReach } from "../features/measure/pillPlace.ts";
 import { RoomScope } from "../state/scope.ts";
-import { boardPillsSlot, boardViewsOf, pillsExcept, type PillSpec } from "./boardView.ts";
+import { boardPillsSlot, boardViewsOf, pillsExcept, publishPillsEffect, retractPillsEffect, type PillSpec } from "./boardView.ts";
 
 test("an area's name keeps off every other layer's pill, never off another area's, so the two never chase each other", () => {
   const marker = { x: 2, y: 3, value: "Moved 20 ft\n10 ft left", size: "screen" as const, small: true, below: true };
@@ -23,40 +21,31 @@ test("the board's two views: the clear part leaves out the bars, the canvas hold
   assert.deepEqual(views.clear, { x0: 0, y0: (52 - 100) / 20, x1: 19.5, y1: (844 - 113 - 100) / 20 });
 });
 
-/** Run the real publication hook with React's dependency and cleanup order. */
+/** Drive the real publication effects with React's dependency and cleanup order. */
 function publicationRoom() {
   const store = new RoomScope().get(boardPillsSlot);
-  const owners = new Map<string, Map<symbol, readonly PillSpec[]>>();
-  const source = readFileSync(new URL("./boardView.ts", import.meta.url), "utf8");
-  const start = source.indexOf("export function usePublishPills(");
-  const end = source.indexOf("/** Every published pill. */", start);
-  assert.ok(start >= 0 && end > start);
-  const body = stripTypeScriptTypes(source.slice(start, end)).replace("export function", "function");
+  const owners: Parameters<typeof publishPillsEffect>[0]["owners"] = new Map();
   type Effect = { deps: readonly unknown[]; cleanup?: (() => void) | void };
   const tree = (key: string) => {
     const effects: Effect[] = [];
-    const refs: { current: unknown }[] = [];
+    const owner = Symbol();
     let shown = false;
     let cursor = 0;
-    let refCursor = 0;
     let pending: { before?: (() => void) | void; after: () => void }[] = [];
-    const hook = new Function("useScoped", "boardPillsSlot", "pillOwnersSlot", "useTreeShown", "useRef", "useLayoutEffect", "NONE", `${body}\nreturn usePublishPills;`)(
-      (slot: unknown) => slot === boardPillsSlot ? store : owners, boardPillsSlot, {}, () => shown,
-      (value: unknown) => refs[refCursor++] ?? (refs[refCursor - 1] = { current: value }),
-      (run: () => (() => void) | void, deps: readonly unknown[]) => {
-        const i = cursor++;
-        const before = effects[i];
-        if (before && before.deps.length === deps.length && deps.every((value, j) => Object.is(value, before.deps[j]))) return;
-        pending.push({ before: before?.cleanup, after: () => { effects[i] = { deps, cleanup: run() }; } });
-      }, [],
-    ) as (key: string, pills: readonly PillSpec[]) => void;
+    const layoutEffect = (run: () => (() => void) | void, deps: readonly unknown[]) => {
+      const i = cursor++;
+      const before = effects[i];
+      if (before && before.deps.length === deps.length && deps.every((value, j) => Object.is(value, before.deps[j]))) return;
+      pending.push({ before: before?.cleanup, after: () => { effects[i] = { deps, cleanup: run() }; } });
+    };
     return {
       render(visible: boolean, pills: readonly PillSpec[]) {
         shown = visible;
         cursor = 0;
-        refCursor = 0;
         pending = [];
-        hook(key, pills);
+        const claim = { store, owners, key, owner, shown };
+        layoutEffect(() => publishPillsEffect(claim, pills), [store, owners, key, pills, shown]);
+        layoutEffect(() => retractPillsEffect(claim), [store, owners, key, shown]);
       },
       cleanup() { for (const effect of pending) effect.before?.(); },
       publish() { for (const effect of pending) effect.after(); },
@@ -147,4 +136,20 @@ test("FU40B-OPUS-1: an isometric sibling keeps publishing after the latest owner
   assert.deepEqual(p.store.getState().pills["area:a1"], groundPills, "removing one visible publisher must preserve its still-mounted sibling");
   ground.unmount();
   assert.equal(p.store.getState().pills["area:a1"], undefined);
+});
+
+test("FU40B-OPUS-1: the tree that published last is the one a remaining publication falls back to", () => {
+  const p = publicationRoom();
+  const [a, b, c] = [p.tree("area:a1"), p.tree("area:a1"), p.tree("area:a1")] as const;
+  const first = [areaPill([])];
+  const second = [{ ...first[0]!, x: 6 }];
+  const third = [{ ...first[0]!, x: 7 }];
+  const again = [{ ...first[0]!, x: 8 }];
+  a.render(true, first); b.render(true, second); c.render(true, third);
+  p.commit(a, b, c);
+  a.render(true, again);
+  p.commit(a);
+  assert.deepEqual(p.store.getState().pills["area:a1"], again);
+  c.unmount();
+  assert.deepEqual(p.store.getState().pills["area:a1"], again, "a republish moves its tree to the back of the line");
 });
