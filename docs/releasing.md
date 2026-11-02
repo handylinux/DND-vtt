@@ -121,6 +121,12 @@ refers to it by tag, and OpenSSF Scorecard counts such a reference as an
 unpinned dependency. So `slsa-verifier`, which checks the generator's
 format, cannot check it. Use the GitHub CLI.
 
+The provenance's SLSA predicate is the one GitHub writes for a workflow
+run, with one addition. GitHub's lists the run's own ref and commit as the
+build's source, and for assets added by hand that is `main`, not the tag
+whose files the archive holds. So where the tag's commit is not the run's,
+the predicate lists it too, as a second source in `resolvedDependencies`.
+
 #### Verify a release's assets
 
 With [Cosign v3 or later](https://docs.sigstore.dev/cosign/verifying/verify/),
@@ -159,6 +165,27 @@ gh attestation verify raccoon-vtt-X.Y.Z.cdx.json \
   --repo "$repo" \
   --signer-workflow github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml
 ```
+
+To see which commit the archive and the SBOM were made from, print the
+sources the provenance lists and compare the last one's `gitCommit` with
+the tag's commit:
+
+```sh
+gh attestation verify raccoon-vtt-X.Y.Z.tar.gz \
+  --bundle raccoon-vtt-X.Y.Z.intoto.jsonl \
+  --repo "$repo" \
+  --signer-workflow github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml \
+  --format json \
+  --jq '.[].verificationResult.statement.predicate.buildDefinition.resolvedDependencies'
+git rev-parse 'vX.Y.Z^{commit}'
+```
+
+A release's own run lists one source, the tag. Assets added by hand list
+two: `main`, whose workflow ran, then the tag. The signing certificate, and
+`gh`'s `--source-ref` and `--source-digest` checks, which read it, name the
+run's ref and commit, so for those assets they name `main`. The predicate
+is written by the signing workflow itself, and the certificate ties it to
+that workflow, so it can be trusted as far as that workflow can.
 
 ### The Docker Hub overview
 
