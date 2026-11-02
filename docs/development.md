@@ -1,8 +1,8 @@
 # Development
 
 How to run RaccoonVTT from a copy of the repository, the checks a change
-must pass, and how continuous integration runs them. To run it on a server
-instead, see [self-hosting.md](self-hosting.md).
+must pass, the coding standards, and how continuous integration runs them.
+To run it on a server instead, see [self-hosting.md](self-hosting.md).
 
 ## Local development
 
@@ -81,6 +81,51 @@ FC_SEED=7 FC_RUNS=20000 node --test shared/dice/dice.prop.test.ts
 To replay a failure, run its file again with the seed fast-check printed.
 The `*.random.test.ts` files are seeded random tests of the same idea, with
 generators of their own.
+
+## Coding standards
+
+The code is TypeScript throughout: the server, the shared rules, the
+scripts and the React client. Contributions are expected to follow these
+standards, and most of them are checked for you.
+
+These are checked on every change, by `pnpm typecheck`, by the tests and
+by CodeQL, so a change that breaks one fails CI:
+
+- **Strict TypeScript.** `strict`, `noUncheckedIndexedAccess` and
+  `noFallthroughCasesInSwitch` are on in
+  [`tsconfig.base.json`](../tsconfig.base.json), and any type error fails
+  the build.
+- **Erasable syntax only.** Node runs the server's `.ts` files directly by
+  stripping their types, so the code uses no enums, no namespaces that hold
+  code, no parameter properties and no decorators. `erasableSyntaxOnly`
+  turns each of these into a type error.
+- **Explicit imports.** A relative import names its file with its
+  extension, or uses the `#shared/` and `#server/` paths from
+  `package.json`. The server's typecheck refuses one without, for every
+  file outside `client/`, and the client follows the same rule. A type-only
+  import is written `import type` (`verbatimModuleSyntax`).
+- **Parameterized SQL.** Queries take their values as parameters (`$1`,
+  `$2`), never as text pasted into the SQL. CodeQL's injection queries look
+  for the second kind.
+- **Straight apostrophes** in the client's words, checked by
+  `client/lib/straightApostrophes.test.ts`.
+
+These are conventions that review looks for:
+
+- **Layout** follows [`.editorconfig`](../.editorconfig): UTF-8, LF line
+  endings, two-space indents, a final newline and no trailing spaces.
+  Editors that read `.editorconfig` apply it as you type. Otherwise, match
+  the code around your change.
+- **Validate at the edge.** Anything that comes from outside the server is
+  checked by a zod schema with explicit bounds, in
+  [`shared/protocol.ts`](../shared/protocol.ts) for messages and ops,
+  before it is used.
+- **Comments say why.** Name things so the code says what it does, and
+  keep comments for the reasons, the limits and the surprises.
+- **Client styling** is inline, from the tokens in
+  [`client/lib/theme.ts`](../client/lib/theme.ts).
+- **Words** in comments, docs and the app are plain American English, with
+  no em dashes and as few semicolons as you can manage.
 
 ## Continuous integration
 
