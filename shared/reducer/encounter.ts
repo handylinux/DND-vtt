@@ -27,7 +27,7 @@ import {
   unbindFromEntry,
   type StoredDuration,
 } from "../rules/durations.ts";
-import { attaches, combatUses, hiddenRowsShareNoMount, logsByAudience, marksHadTurn, mountsOnPlayerScene, revealsRowAnew, takesBackTurnOnly } from "../migrate.ts";
+import { attaches, combatUses, hiddenRowsShareNoMount, keepsLairTick, logsByAudience, marksHadTurn, mountsOnPlayerScene, revealsRowAnew, takesBackTurnOnly } from "../migrate.ts";
 import { LIMITS } from "../limits.ts";
 import { holderOf } from "../rules/attach.ts";
 import { activeRowShownTo, inSightOfNonOwners, rowSeenByNonOwners, rowSeenMark, seenByNonOwners, seenMark, stableStringify } from "../project.ts";
@@ -364,6 +364,20 @@ export function encounterUpdate(tx: Tx, op: OpOf<"encounter.update">): void {
   entries[index] = next;
   writeEncounter(tx, { ...encounter, entries });
   if (op.counts) lairCounts(tx, entry, op.counts);
+  if (p.inLair !== undefined && keepsLairTick(tx.env.opVersion)) lairTick(tx, entry, p.inLair);
+}
+
+/**
+ * The row's In lair kept on its token (`Actor.inLair`), so the creature
+ * joins a later fight as the DM left it here (encounters/drop.ts
+ * joinEntry). Only a token's own actor carries it, since a join reads no
+ * other. A switch that changes nothing on the token writes nothing.
+ */
+function lairTick(tx: Tx, entry: InitEntry, on: boolean): void {
+  const resolved = entry.tokenId !== undefined ? tx.tryResolveActor({ tokenId: entry.tokenId }) : undefined;
+  if (resolved?.holder !== "token" || (resolved.actor.inLair === true) === on) return;
+  const { inLair: _was, ...actor } = resolved.actor;
+  tx.putActor(resolved, on ? { ...actor, inLair: true } : actor);
 }
 
 /**

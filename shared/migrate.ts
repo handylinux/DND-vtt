@@ -11,7 +11,7 @@ import type { Op } from "./protocol.ts";
  * no old ops at all. The op pipeline is here for the crash case.
  */
 export const SNAPSHOT_VERSION = 31;
-export const OP_VERSION = 38;
+export const OP_VERSION = 39;
 
 export type MigrationStep = {
   from: number;
@@ -1008,6 +1008,24 @@ export const opMigrations: MigrationStep[] = [
     to: 38,
     apply: (op) => op,
   },
+  {
+    // Follow-up batch 46 (LAIR-TICK-CARRY): no op changes shape, so the
+    // step is the identity. A token's actor may now carry `inLair`, which a
+    // monster placed in its lair takes at creation, and from this version a
+    // row's In lair switch keeps it in step on the row's token
+    // (`keepsLairTick`), so a fight it joins later starts it in its lair.
+    // Older ops replay as they were written: their In lair switch wrote no
+    // actor, so a stored restore's hash guards still match. The snapshot
+    // keeps version 31, since a snapshot without the field is still whole.
+    // Deploy: reload open pages, since an old page joins a creature with a
+    // lair tick from its counts alone. Rollback needs the backup for a room
+    // with version 39 ops after its last snapshot, which an older build
+    // refuses to migrate down, and for one whose snapshot holds the field,
+    // which an older build would send to the token's owners.
+    from: 38,
+    to: 39,
+    apply: (op) => op,
+  },
 ];
 
 /** Historical restores keep their original log entries and numbering. */
@@ -1448,6 +1466,17 @@ export function hiddenTowStands(opVersion: number | undefined): boolean {
  */
 export function stopsStandClear(opVersion: number | undefined): boolean {
   return !(opVersion !== undefined && opVersion < 38);
+}
+
+/**
+ * Whether a row's In lair switch writes its token's lair tick
+ * (`Actor.inLair`, docs/design/design-v1-combat-controls.md 13.4), so the
+ * creature joins its next fight in or out of its lair as the DM last left
+ * it. Ops stored before version 39 wrote the row and its counts alone, and
+ * replay so.
+ */
+export function keepsLairTick(opVersion: number | undefined): boolean {
+  return !(opVersion !== undefined && opVersion < 39);
 }
 
 /**

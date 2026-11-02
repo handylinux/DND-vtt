@@ -309,6 +309,29 @@ describe("tokens", () => {
     assert.equal((projectState(state, DM, ON_S1).tokens.wolf!.actor as { inline: { monsterId?: string } }).inline.monsterId, "monster-77");
   });
 
+  test("lair46: the DM's lair tick never reaches a player, the owner included, and the switch that writes it sends an owner nothing new", () => {
+    const state = room();
+    state.tokens.wolf = token("wolf", { ownerIds: ["p1"], actor: { inline: actor({ srdId: "wolf", inLair: true }) } });
+    state.tokens.keeper = token("keeper", { actor: { inline: actor({ inLair: true }) } });
+    for (const viewer of [P1, P2, DISPLAY]) {
+      const p = projectState(state, viewer, ON_S1);
+      for (const id of ["wolf", "keeper"]) {
+        const t = p.tokens[id];
+        assert.ok(t, `${viewer.memberId} sees ${id}`);
+        assert.equal("inLair" in (t.actor as { inline: object }).inline, false, `${viewer.memberId}'s ${id}`);
+      }
+    }
+    assert.equal((projectState(state, DM, ON_S1).tokens.wolf!.actor as { inline: { inLair?: true } }).inline.inLair, true);
+
+    // The row's In lair switch writes the token, and its owner's copy of the token stays the same.
+    state.encounter = { rev: 0, round: 1, activeEntryId: null, entries: [{ id: "ew", tokenId: "wolf", value: 10, tieOrder: 0, hidden: false, reactionUsed: false, inLair: true }] };
+    const before = projectEntity(keys.token("wolf"), state, P1, ON_S1);
+    const r = applyOp(state, { t: "encounter.update", entryId: "ew", patch: { inLair: false } }, DM, env(1));
+    assert.ok(r.ok);
+    assert.equal("inLair" in (r.state.tokens.wolf!.actor as { inline: object }).inline, false, "the switch took the tick off");
+    assert.deepEqual(projectEntity(keys.token("wolf"), r.state, P1, ON_S1), before);
+  });
+
   test("party marks a token a member of kind player owns, directly or through its character, on every player-class projection", () => {
     const state = room();
     state.members.dm2 = member("dm2", "dm");

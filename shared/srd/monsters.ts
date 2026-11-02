@@ -115,7 +115,9 @@ export function tokenUses(uses: number): number {
 /**
  * A fresh actor for a token made from a stat block: full average HP (or the
  * DM's number), AC, speeds, initiative and senses. `inLair` picks the lair
- * values for legendary actions, Legendary Resistance and XP.
+ * values for legendary actions, Legendary Resistance and XP, and keeps the
+ * tick on the actor (`Actor.inLair`), so a fight started later joins it in
+ * its lair whatever its counts say.
  *
  * Every field fits the actor schema whatever a valid custom monster holds,
  * so a monster the DM could save can always be placed: long lines are cut
@@ -140,6 +142,7 @@ export function monsterActor(m: StatBlockMonster, options: { hp?: number; inLair
     cr: m.cr,
     xp: options.inLair ? (m.xpInLair ?? m.xp) : m.xp,
     ...(m.srdId !== undefined ? { srdId: m.srdId } : {}),
+    ...(options.inLair ? { inLair: true as const } : {}),
     effects: [],
     deathSaves: { ok: 0, fail: 0 },
     ...(actionsMax > 0 || resistMax > 0 ? { legendary: { actionsMax, actionsUsed: 0, resistMax, resistUsed: 0 } } : {}),

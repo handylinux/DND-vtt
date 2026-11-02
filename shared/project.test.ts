@@ -506,8 +506,8 @@ function ownsCreature(state: RoomState, viewer: Viewer, ref: { tokenId?: string;
  * Wave 5's state (docs/design/design-v1-dm-tools.md 2.1): no DM-only page, no page
  * private to another player, no unrevealed secret block or a revealed one's
  * flag, no pin on a page the player cannot read or under the fog, no other
- * player's roll target, hidden DC or hidden result, no `monsterId`, and the
- * `party` flag exactly where a player owns the token.
+ * player's roll target, hidden DC or hidden result, no `monsterId` or lair
+ * tick, and the `party` flag exactly where a player owns the token.
  */
 function assertNoWave5Leaks(state: RoomState, viewer: Viewer, p: ProjectedState, label: string): void {
   const text = JSON.stringify(p);
@@ -546,6 +546,7 @@ function assertNoWave5Leaks(state: RoomState, viewer: Viewer, p: ProjectedState,
     }
   }
   assert.ok(!text.includes('"monsterId"'), `${label}: a room monster link leaked`);
+  for (const t of Object.values(p.tokens)) if ("inline" in t.actor) assert.ok(!("inLair" in t.actor.inline), `${label}: the lair tick of ${t.id} leaked`);
   for (const [id, t] of Object.entries(p.tokens)) assert.equal(t.party === true, playersToken(state, state.tokens[id]!), `${label}: party flag of ${id}`);
 }
 
@@ -572,6 +573,8 @@ describe("projection properties over random rooms", () => {
   test("no player projection leaks, and projectEntity agrees with projectState", () => {
     for (let seed = 1; seed <= 250; seed++) {
       const state = randomState(rng(seed));
+      // Every room monster's token placed in its lair, the DM's alone as its link is (Actor.inLair). Set here, so the shared generators and their golden fixtures stay as they are.
+      for (const t of Object.values(state.tokens)) if ("inline" in t.actor && t.actor.inline.monsterId !== undefined) t.actor.inline.inLair = true;
       // A table display is a player who owns nothing (docs/design/design-v1-dm-tools.md 3.1), whose projection no ownership widens.
       assert.equal(stableStringify(projectState(state, DISPLAY, { sceneId: "s2" })), stableStringify(projectState(state, { memberId: "p-nobody", role: "player" }, { sceneId: "s2" })), `seed ${seed} display`);
       for (const viewer of [P1, P2, DISPLAY]) {

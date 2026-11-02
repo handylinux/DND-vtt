@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { uuidv7 } from "#shared/ids.ts";
+import { OP_VERSION } from "#shared/migrate.ts";
 import type { LogEntry } from "#shared/model.ts";
 import type { ProjectedState } from "#shared/project.ts";
 import type { Op, ServerMessage } from "#shared/protocol.ts";
@@ -101,5 +102,61 @@ describe("combat uses on the server", () => {
     const sent = await send(pip, { t: "actor.deathRoll", tag: uuidv7(), target: { tokenId: id }, record });
     assert.deepEqual([sent.ok, sent.message], [false, "Thorn is no longer dying."]);
     assert.equal(stats.draws, before);
+  });
+
+  test("lair46: a token's lair tick stays the DM's, its row's In lair keeps it in step, and a restart replays it", async () => {
+    const dmClient = t.client();
+    const { roomId } = await dmClient.createRoom("Lair tick");
+    const pipClient = t.client();
+    const pipId = await pipClient.join(roomId, "Pip");
+    const dm = await t.connect(roomId, dmClient);
+    const snap = await dm.snapshot(uuidv7());
+    const sceneId = (snap.state as ProjectedState).meta.playerSceneId ?? "";
+    const pip = await t.connect(roomId, pipClient);
+    await pip.snapshot(uuidv7());
+    const id = uuidv7();
+    const tick = (state: unknown) => ((state as ProjectedState).tokens[id]?.actor as { inline: { inLair?: true } } | undefined)?.inline.inLair;
+    const touches = (m: Ev) => m.changes.some((c) => c.key === `token:${id}`);
+    const tokenIn = (m: Ev): unknown => {
+      const change = m.changes.find((c) => c.key === `token:${id}`);
+      return change && "value" in change ? change.value : undefined;
+    };
+    // Pip plays the creature the DM placed in its lair, which Pip's copy never says.
+    const placed = await dm.apply({ t: "token.create", token: { id, sceneId, kind: "monster", name: "Crypt Keeper", size: "medium", x: 2, y: 2, ownerIds: [pipId], actor: { inline: { ...inline, inLair: true } } } } as Op);
+    assert.ok(!placed.rejects?.length, placed.rejects?.[0]?.message);
+    const seen = await pip.next("ev", touches);
+    assert.ok(tokenIn(seen));
+    assert.equal(tick({ tokens: { [id]: tokenIn(seen) } }), undefined, "the owner's copy holds no tick");
+    const fight = (m: Ev) => m.changes.some((c) => c.key === "encounter");
+    await dm.apply({ t: "encounter.start", entries: [{ id: "ek", tokenId: id, value: 12, inLair: true }] });
+    await pip.next("ev", fight);
+
+    const off = await send(dm, { t: "encounter.update", entryId: "ek", patch: { inLair: false } });
+    assert.ok(off.ok, off.message);
+    const written = tokenIn(off.ev);
+    assert.ok(written, "the switch writes the token");
+    assert.equal(tick({ tokens: { [id]: written } }), undefined, "out of its lair, the tick goes");
+    // Pip sees the row's Lair tag go, and nothing of the token, whose copy is the same.
+    const row = await pip.next("ev", fight);
+    assert.equal(touches(row), false, "the owner's copy is the same, so Pip hears nothing of the token");
+    await dm.apply({ t: "encounter.end" });
+    const { rows } = await t.pool.query<{ op_version: number }>("select op_version from room_ops where room_id = $1 and op->>'t' = 'encounter.update'", [roomId]);
+    assert.deepEqual(rows.map((r) => r.op_version), [OP_VERSION], "stored at today's version, which writes the tick on replay");
+
+    await t.restart();
+    const again = await t.connect(roomId, dmClient);
+    const reloaded = await again.snapshot(uuidv7());
+    assert.equal(tick(reloaded.state), undefined, "replay takes it off as the switch did");
+    assert.equal((reloaded.state as ProjectedState).encounter, null);
+    const back = await send(again, { t: "encounter.start", entries: [{ id: "ek2", tokenId: id, value: 12 }] });
+    assert.ok(back.ok, back.message);
+    const on = await send(again, { t: "encounter.update", entryId: "ek2", patch: { inLair: true } });
+    assert.ok(on.ok, on.message);
+    const pipAgain = await t.connect(roomId, pipClient);
+    const pipSnap = await pipAgain.snapshot(uuidv7());
+    assert.equal(tick(pipSnap.state), undefined, "Pip's snapshot holds no tick either");
+    await t.restart();
+    const third = await t.connect(roomId, dmClient);
+    assert.equal(tick((await third.snapshot(uuidv7())).state), true, "replay puts it back on as the switch did");
   });
 });

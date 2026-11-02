@@ -272,6 +272,12 @@ const actorSchema = z.strictObject({
   blockId: id.optional(),
   /** The SRD link is a character's Wild Shape (docs/design/design-v1-pc-stats.md 3.6). */
   wildShape: z.literal(true).optional(),
+  /**
+   * Placed in its lair (docs/design/design-v1-combat-controls.md 13.4). DM
+   * only, which permissions hold to. No patch names it: a row's In lair
+   * switch keeps it in step (reducer/encounter.ts).
+   */
+  inLair: z.literal(true).optional(),
   sheetUrl: sheetUrl.optional(),
   effects: z.array(effectStored).max(MAX_EFFECTS),
   deathSaves: z.strictObject({ ok: z.number().int().min(0).max(3), fail: z.number().int().min(0).max(3) }),

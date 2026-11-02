@@ -2780,7 +2780,7 @@ function createCharacterCheck(c: Check, input: Extract<Op, { t: "character.creat
   }
   const a = input.actor;
   const unhurt = a.hp.cur === a.hp.max && a.hp.cur > 0 && a.hp.temp === 0 && a.life === "alive" && a.deathSaves.ok === 0 && a.deathSaves.fail === 0;
-  const plain = a.effects.length === 0 && a.dmNotes === "" && a.legendary === undefined && a.monsterId === undefined;
+  const plain = a.effects.length === 0 && a.dmNotes === "" && a.legendary === undefined && a.monsterId === undefined && a.inLair === undefined;
   if (!unhurt || !plain) return refuse("forbidden", "a new character starts unhurt, with no conditions or DM notes");
   if (!imageUsable(c, input.defaultImage)) return GONE;
   return OK;
@@ -2976,7 +2976,8 @@ function companionCheck(c: Check, input: TokenInput, link: NonNullable<TokenInpu
     a.effects.length === 0 &&
     a.dmNotes === "" &&
     a.legendary === undefined &&
-    a.monsterId === undefined;
+    a.monsterId === undefined &&
+    a.inLair === undefined;
   if (!bare) return refuse("forbidden", "a new companion starts unhurt, with no conditions or DM notes");
   // Only what its player could change afterwards (docs/design/design-v1-companion-stat-blocks.md 4.1): a link, never the DM's fields.
   if (a.initScore !== undefined || a.creatureType !== undefined || a.cr !== undefined || a.xp !== undefined) {

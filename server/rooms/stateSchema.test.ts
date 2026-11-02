@@ -239,6 +239,17 @@ describe("roomStateSchema", () => {
     }
   });
 
+  test("lair46: a token's lair tick imports as true alone, and a backup without it still imports", () => {
+    const state = room({ tokens: { keeper: token("keeper", { actor: { inline: actor({ inLair: true }) } }), goblin: token("goblin") } });
+    const parsed = parseRoomState(JSON.parse(JSON.stringify(state)));
+    assert.ok(parsed.ok, parsed.ok ? "" : parsed.message);
+    assert.equal((parsed.state.tokens.keeper!.actor as { inline: { inLair?: true } }).inline.inLair, true);
+    assert.equal("inLair" in (parsed.state.tokens.goblin!.actor as { inline: object }).inline, false);
+    const bad = JSON.parse(JSON.stringify(state));
+    bad.tokens.keeper.actor.inline.inLair = false;
+    assert.equal(parseRoomState(bad).ok, false);
+  });
+
   test("custom monsters parse with the create op's bounds, and a backup from before them still imports", () => {
     const fresh = createInitialState({ roomName: "R", dm: { id: "m1", rev: 1, name: "DM", color: "#f38400", kind: "dm", createdAt: new Date().toISOString() } });
     const withMonster = JSON.parse(JSON.stringify({ ...fresh, monsters: { x1: customMonster("x1", { sizeAlt: "small", xpInLair: 700 }) } }));

@@ -1211,13 +1211,14 @@ function projectActorPublic(actor: Actor, access: HpAccess, triggers: () => bool
 }
 
 /**
- * Owners get the whole actor except the DM's notes and the room monster it
+ * Owners get the whole actor except the DM's notes, the room monster it
  * was placed from, whose block may be text from a book the group owns
- * (docs/design/design-v1-dm-tools.md 3.6). A condition hidden from players stays
- * hidden from its owner too.
+ * (docs/design/design-v1-dm-tools.md 3.6), and whether the DM placed it in its
+ * lair, which its row shows only once it joins a fight. A condition hidden
+ * from players stays hidden from its owner too.
  */
 function projectActorOwner(actor: Actor): ProjectedActor {
-  const { dmNotes: _dmNotes, monsterId: _monsterId, ...rest } = actor;
+  const { dmNotes: _dmNotes, monsterId: _monsterId, inLair: _inLair, ...rest } = actor;
   return { ...rest, effects: publicEffects(actor.effects, () => true) };
 }
 

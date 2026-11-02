@@ -154,6 +154,8 @@ describe("a companion's stat block link", () => {
       assert.match(decide(spirit(field), P1, state), /^forbidden: a new companion leaves/, JSON.stringify(field));
     }
     assert.match(decide(spirit({ monsterId: "m1" }), P1, state), /^forbidden: a new companion starts/);
+    assert.match(decide(spirit({ inLair: true }), P1, state), /^forbidden: a new companion starts/, "lair46: the DM's lair tick");
+    assert.equal(decide(spirit({ inLair: true }), DM, state), "ok");
   });
 
   test("a player who owns a token of the character but not the character may not link its companion's block", () => {

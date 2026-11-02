@@ -220,6 +220,7 @@ describe("icons and images", () => {
     const plain = { id: "c2", name: "Vex", size: "medium" as const, ownerIds: ["p1"], actor: actor({ dmNotes: "" }) };
     assert.equal(decide(state, { t: "character.create", character: plain }).ok, true);
     assert.equal(decide(state, { t: "character.create", character: { ...plain, actor: actor({ dmNotes: "", monsterId: "m1" }) } }).code, "forbidden");
+    assert.equal(decide(state, { t: "character.create", character: { ...plain, actor: actor({ dmNotes: "", inLair: true }) } }).code, "forbidden", "lair46: nor the DM's lair tick");
     assert.equal(decide(state, { t: "character.update", characterId: "c1", patch: { actor: { monsterId: "m1" } } }).code, "forbidden");
     assert.equal(decide(state, { t: "character.update", characterId: "c1", patch: { actor: { monsterId: "m1" } } }, DM).ok, true);
   });

@@ -31,6 +31,7 @@ import {
   holderLedgesOnHexes,
   draggedWalkFull,
   followsInSingleFile,
+  keepsLairTick,
   seatsApart,
   hiddenTowStands,
   stopsStandClear,
@@ -1610,6 +1611,18 @@ describe("follow-up batch 45: op version 38, single file behind a squeezing hold
     for (const gate of [followsInSingleFile, seatsApart, hiddenTowStands, stopsStandClear]) {
       assert.deepEqual([gate(1), gate(37), gate(38), gate(undefined)], [false, false, true, true]);
     }
+  });
+});
+
+describe("follow-up batch 46: op version 39, a row's In lair kept on its token (LAIR-TICK-CARRY)", () => {
+  test("keeps stored operations unchanged through the identity step, and gates the tick at 39 with the snapshot at 31", () => {
+    assert.ok(OP_VERSION >= 39);
+    assert.equal(SNAPSHOT_VERSION, 31, "a snapshot without the tick is still whole");
+    const op = { t: "encounter.update", entryId: "e1", patch: { inLair: true } };
+    assert.equal(runMigrations(op, 38, 39, opMigrations), op);
+    assert.equal(migrateOp(op, 38), op);
+    assert.throws(() => runMigrations(op, 39, 38, opMigrations), /down/);
+    assert.deepEqual([keepsLairTick(1), keepsLairTick(38), keepsLairTick(39), keepsLairTick(undefined)], [false, false, true, true]);
   });
 });
 

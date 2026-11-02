@@ -195,6 +195,10 @@ describe("monsterActor", () => {
     assert.deepEqual(lair.hp, { cur: 300, max: 300, temp: 0 });
     assert.deepEqual(lair.legendary, { actionsMax: 4, actionsUsed: 0, resistMax: 4, resistUsed: 0 });
     assert.equal(lair.xp, 20000);
+    // LAIR-TICK-CARRY: the tick stays on the actor, so a fight started later can read it without the block.
+    assert.equal(lair.inLair, true);
+    assert.equal("inLair" in outside, false);
+    assert.equal("inLair" in monsterActor(dragon, { inLair: false }), false);
   });
 
   test("copies speeds, so editing a token never edits the shared data", () => {

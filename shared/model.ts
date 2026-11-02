@@ -1132,6 +1132,15 @@ export type Actor = {
    */
   wildShape?: true;
   /**
+   * On a token's own actor only: the DM placed it in its lair, or last put
+   * its row in or out of its lair (docs/design/design-v1-combat-controls.md
+   * 13.4). A fight it joins later starts its row with In lair on, which its
+   * counts alone cannot say for a block with lair actions alone. DM only,
+   * in every projection, owners included, as `monsterId` is. Absent in
+   * rooms from before op version 39.
+   */
+  inLair?: true;
+  /**
    * On a character's own actor only, while it is in a shape: its own AC and
    * speeds from before the shape, which the creature's replace while it
    * lasts (W7B-P-9). The reducer keeps it: the patch that takes a shape
