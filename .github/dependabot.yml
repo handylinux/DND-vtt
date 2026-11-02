@@ -11,6 +11,10 @@ updates:
       day: monday
       time: "02:00"
       timezone: Etc/UTC
+    # The runtime is Node 24, so @types/node follows the Node major and never jumps ahead of it.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 2
     groups:
       npm-minor-patch:
