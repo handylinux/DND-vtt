@@ -162,4 +162,16 @@ describe("an allowed change applied to the stored result (5.4)", () => {
     const base = { ...roll("1d20+3", [9]), fails: "stunned" as const };
     assert.deepEqual(withDie(base, 8, scripted([5])), { ok: true, result: { formula: "1d20+3+1d8", faces: [9, 5], total: 17, fails: "stunned" } });
   });
+
+  test("Lucky and an added die refuse a roll they would take past the grammar's bounds, drawing nothing, so a result always reads back", () => {
+    const hundred = roll("1d20+99d2", [7, ...Array<number>(99).fill(1)]);
+    assert.deepEqual(withLucky(hundred, scripted([])), { ok: false, error: FORMULA_ERRORS.dice });
+    assert.deepEqual(withDie(hundred, 4, scripted([])), { ok: false, error: FORMULA_ERRORS.dice });
+    // 98 characters in 11 parts, so the added "+1d4" would make 102.
+    const long = roll(`1d20${"+1d1000kh1".repeat(9)}+100`, [7, ...Array<number>(9).fill(1)]);
+    assert.equal(long.formula.length, 98);
+    assert.deepEqual(withDie(long, 4, scripted([])), { ok: false, error: FORMULA_ERRORS.long });
+    const twenty = roll(`1d20${"+1".repeat(19)}`, [7]);
+    assert.deepEqual(withDie(twenty, 4, scripted([])), { ok: false, error: FORMULA_ERRORS.terms });
+  });
 });

@@ -201,6 +201,18 @@ export const LUCKY_CHANGES_NOTHING = "Lucky changes nothing on this roll.";
 
 export type Changed = { ok: true; result: DiceResult } | { ok: false; error: string };
 
+/**
+ * Why a changed formula is past the grammar's bounds, or null. Lucky's d20
+ * and an added die each grow the roll, and a stored result whose text no
+ * longer parses shows only its text and total (rolledTerms), its dice and
+ * its natural 20 lost. The same refusal as a typed roll's: its dice, its
+ * parts or its length.
+ */
+function unreadableAs(formula: Formula): FormulaError | null {
+  const parsed = parseFormula(formatFormula(formula));
+  return parsed.ok ? null : parsed.error;
+}
+
 function withFaces(result: DiceResult, formula: Formula, faces: number[], mode: AdvantageMode | undefined, cancelled: boolean): DiceResult {
   const out: DiceResult = { formula: formatFormula(formula), faces, total: totalOf(formula, faces) };
   if (mode) out.mode = mode;
@@ -243,8 +255,10 @@ export function withLucky(result: DiceResult, draw: Draw): Changed {
     formula[at] = { kind: "dice", sign: 1, count: 1, sides: 20 };
     return { ok: true, result: withFaces(result, formula, faces, undefined, true) };
   }
-  faces.splice(d20.first + 1, 0, draw(20));
   formula[at] = { kind: "dice", sign: 1, count: 2, sides: 20, keep: { high: true, n: 1 } };
+  const unreadable = unreadableAs(formula);
+  if (unreadable) return { ok: false, error: unreadable };
+  faces.splice(d20.first + 1, 0, draw(20));
   return { ok: true, result: withFaces(result, formula, faces, "adv", false) };
 }
 
@@ -253,6 +267,7 @@ export function withDie(result: DiceResult, sides: number, draw: Draw): Changed 
   const parsed = parseFormula(result.formula);
   if (!parsed.ok) return { ok: false, error: FORMULA_ERRORS.other };
   const formula: Formula = [...parsed.formula, { kind: "dice", sign: 1, count: 1, sides }];
-  if (formula.length > 20) return { ok: false, error: FORMULA_ERRORS.terms };
+  const unreadable = unreadableAs(formula);
+  if (unreadable) return { ok: false, error: unreadable };
   return { ok: true, result: withFaces(result, formula, [...result.faces, draw(sides)], result.mode, result.cancelled === true) };
 }
