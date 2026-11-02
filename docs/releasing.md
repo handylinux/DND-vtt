@@ -161,15 +161,14 @@ the tag. It reads the attestation from the release's `.intoto.jsonl`, or
 from GitHub when `--bundle` is left out:
 
 ```sh
-repo=github.com/jwhitlow45/raccoon-vtt
 gh attestation verify raccoon-vtt-X.Y.Z.tar.gz \
   --bundle raccoon-vtt-X.Y.Z.intoto.jsonl \
-  --repo "${repo#github.com/}" \
-  --cert-identity "https://$repo/.github/workflows/release-assets.yml@refs/tags/vX.Y.Z"
+  --repo jwhitlow45/raccoon-vtt \
+  --cert-identity 'https://github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml@refs/tags/vX.Y.Z'
 gh attestation verify raccoon-vtt-X.Y.Z.cdx.json \
   --bundle raccoon-vtt-X.Y.Z.intoto.jsonl \
-  --repo "${repo#github.com/}" \
-  --cert-identity "https://$repo/.github/workflows/release-assets.yml@refs/tags/vX.Y.Z"
+  --repo jwhitlow45/raccoon-vtt \
+  --cert-identity 'https://github.com/jwhitlow45/raccoon-vtt/.github/workflows/release-assets.yml@refs/tags/vX.Y.Z'
 ```
 
 As with Cosign, for assets added by hand the identity ends in

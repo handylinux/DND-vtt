@@ -139,15 +139,14 @@ it a server needs no copy of this repository and builds nothing: two files
 are the whole setup. You need a Linux server with Docker Engine 28 or later
 and the Docker Compose plugin 2.31 or later, and a hostname for the site.
 
-Pick a release from the repository's tags, `vX.Y.Z`, and download its two
-files into a folder of their own. Replace `<this repository's URL>` with
-the GitHub address of this repository:
+Pick a release from the repository's [tags](https://github.com/jwhitlow45/raccoon-vtt/tags), `vX.Y.Z`, and
+download its two files into a folder of their own:
 
 ```bash
 mkdir ~/raccoon-vtt && cd ~/raccoon-vtt
 tag=vX.Y.Z
-curl -fsSLo compose.yml "<this repository's URL>/raw/$tag/selfhost/compose.yml"
-curl -fsSLo .env "<this repository's URL>/raw/$tag/selfhost/env.example"
+curl -fsSLo compose.yml "https://github.com/jwhitlow45/raccoon-vtt/raw/$tag/selfhost/compose.yml"
+curl -fsSLo .env "https://github.com/jwhitlow45/raccoon-vtt/raw/$tag/selfhost/env.example"
 chmod 600 .env
 sed -i "s/^POSTGRES_PASSWORD=$/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" .env
 sed -i "s|^ROOM_SECRET_KEY=$|ROOM_SECRET_KEY=$(openssl rand -base64 32)|" .env

@@ -427,12 +427,12 @@ describe("the Docker Hub overview", () => {
     assert.ok(links.includes(`${TOKEN}/issues`), "no link to the issue tracker");
   });
 
-  test("downloads the release's files with the commands of README.md and docs/self-hosting.md, the address aside", () => {
+  test("downloads the release's files with the commands of README.md and docs/self-hosting.md", () => {
     const curls = (text: string) => text.split("\n").filter((l) => l.startsWith("curl -fsSLo "));
     assert.equal(curls(full).length, 2);
-    // The README and the self-hosting guide leave the address to the reader, and the overview gets it filled in.
+    // The README and the self-hosting guide write this repository's address, and the overview gets the address of the repository the workflow runs in.
     for (const doc of ["README.md", "docs/self-hosting.md"])
-      assert.deepEqual(curls(full).map((l) => l.replaceAll(TOKEN, "<this repository's URL>")), curls(read(doc)), doc);
+      assert.deepEqual(curls(full).map((l) => l.replaceAll(TOKEN, "https://github.com/jwhitlow45/raccoon-vtt")), curls(read(doc)), doc);
     for (const line of curls(full)) assert.ok(line.includes(`"${TOKEN}/raw/$tag/selfhost/`), line);
   });
 });

@@ -64,7 +64,7 @@ name them. If they clash with networks on your host, change them in
 ### 1. Get the code
 
 ```bash
-git clone <this repository's URL> ~/raccoon-vtt
+git clone https://github.com/jwhitlow45/raccoon-vtt.git ~/raccoon-vtt
 cd ~/raccoon-vtt
 ```
 
@@ -367,15 +367,14 @@ subnets, so they need no change.
 
 ### 1. Download the files
 
-Pick a release from the repository's tags, `vX.Y.Z`, and download its two
-files into a folder of their own. Replace `<this repository's URL>` with
-the GitHub address of this repository:
+Pick a release from the repository's [tags](https://github.com/jwhitlow45/raccoon-vtt/tags), `vX.Y.Z`, and
+download its two files into a folder of their own:
 
 ```bash
 mkdir ~/raccoon-vtt && cd ~/raccoon-vtt
 tag=vX.Y.Z
-curl -fsSLo compose.yml "<this repository's URL>/raw/$tag/selfhost/compose.yml"
-curl -fsSLo .env "<this repository's URL>/raw/$tag/selfhost/env.example"
+curl -fsSLo compose.yml "https://github.com/jwhitlow45/raccoon-vtt/raw/$tag/selfhost/compose.yml"
+curl -fsSLo .env "https://github.com/jwhitlow45/raccoon-vtt/raw/$tag/selfhost/env.example"
 chmod 600 .env
 ```
 
