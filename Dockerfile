@@ -15,6 +15,11 @@
 #
 # Debian rather than Alpine because sharp's prebuilt libvips and Node itself
 # are both better supported on glibc than on musl (design section 3).
+#
+# Two builds of one commit make the same image when both pass the commit's
+# time as SOURCE_DATE_EPOCH and export with rewrite-timestamp=true, as
+# .github/workflows/image.yml does. BuildKit then dates the image and every
+# file the build wrote at that time, rather than when each build ran.
 ARG NODE_IMAGE=node:24-trixie-slim@sha256:173f125896c3b47ddf056734c7ea789d04595a6a08769a8f78e0df642781fb66
 
 # ---------------------------------------------------------------- deps
@@ -60,13 +65,18 @@ RUN pnpm build
 # the CPU and libc it runs on, so sharp's @img/sharp-linux-* and argon2's
 # @node-rs/argon2-linux-*-gnu come out for the image's architecture. A cross
 # build (`--platform linux/amd64` on an arm64 Mac) runs this under emulation.
+#
+# pnpm's own records of the install are deleted: they hold the time it ran,
+# which would make each build's node_modules differ, and nothing in the
+# runtime image reads them.
 FROM ${NODE_IMAGE} AS prod-deps
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN corepack enable pnpm
 RUN --mount=type=cache,id=raccoon-pnpm-store,target=/pnpm/store,sharing=locked \
-    pnpm install --prod --frozen-lockfile --store-dir /pnpm/store
+    pnpm install --prod --frozen-lockfile --store-dir /pnpm/store \
+ && rm node_modules/.modules.yaml node_modules/.pnpm-workspace-state-v1.json
 
 # ------------------------------------------------------------- runtime
 FROM ${NODE_IMAGE} AS runtime
