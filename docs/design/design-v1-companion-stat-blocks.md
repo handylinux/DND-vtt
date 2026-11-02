@@ -206,7 +206,7 @@ The checklist every new collection follows (docs/design/design-v1-dm-tools.md 2.
 | Viewer | Blocks | A companion's actor |
 | --- | --- | --- |
 | DM | all | whole |
-| The character's owners, co-owners included | the character's, with `rev` 0 as their characters have | whole but `dmNotes` and `monsterId`, so with `srdId` and `blockId` |
+| The character's owners, co-owners included | the character's, with `rev` 0 as their characters have | whole but `dmNotes`, `monsterId` and `inLair`, so with `srdId` and `blockId` |
 | A player who owns a token of the character but not the character | none | as any other player |
 | Other players | none | life, effects and the HP the DM allows, as today |
 | The table display, a player who owns nothing | none | as other players |
