@@ -10,9 +10,10 @@ import { chromium, type Browser, type BrowserContext, type CDPSession, type Loca
 import { limitedUses } from "#shared/dice/uses.ts";
 import type { Actor, LogEvent, RoomState } from "#shared/model.ts";
 import { loadMonsters, monsterActor, type SrdMonster } from "#shared/srd/monsters.ts";
+import { blockOf, customMonster } from "#shared/testutil.ts";
 import { wrappedButtons } from "./helpers/wraps.ts";
 import { alignmentLines, measureAlignment, toastsUnderCards } from "./helpers/alignment.ts";
-import { barControl, ConsoleWatch, expandBar, OpSocket, openPage, Shots, SocketWatch, startServer, tapCell, untilReady, waitFor, type Server } from "./harness.ts";
+import { barControl, ConsoleWatch, expandBar, OpSocket, openPage, openSideTab, Shots, sideTabName, SocketWatch, startServer, tapCell, untilReady, waitFor, type Server } from "./harness.ts";
 
 /**
  * Combat uses (docs/design/design-v1-combat-controls.md 4 to 6 and 11), on the
@@ -41,6 +42,10 @@ import { barControl, ConsoleWatch, expandBar, OpSocket, openPage, Shots, SocketW
  * - The Dice panel's X/Day Use with none left says so on a tap.
  * - Where the SRD's stat blocks did not load, In lair and every join
  *   stay off beside the failure's reload.
+ * - A saved encounter's line ticked In its lair for a block with lair
+ *   actions alone, placed with no fight on, joins the fight the tracker's
+ *   Start a fight begins with In lair on, and the Monsters place card
+ *   offers the box for it too (lair46).
  * - Each count shows as pips on its row's title line, to read only
  *   (docs/design/design-v1-monster-uses.md): Restore corrects it, off while full,
  *   Undo takes back exactly a mis-tap, Pat lent an Aboleth reads the same
@@ -1570,12 +1575,115 @@ describe("raccoon-vtt: combat uses", { timeout: 900_000 }, () => {
     assert.deepEqual(sweep, [], "out of line by more than 1 px");
   });
 
+  test("lair46-a. a line ticked In its lair for a block with lair actions alone, placed with no fight on, joins the fight the tracker's Start a fight begins with In lair on, and the Monsters place card offers the box too, each in line at every size (LAIR-TICK-CARRY)", async () => {
+    const keeper = randomUUID();
+    const from = sweep.length;
+    await ops.send({ t: "monster.create", monster: { id: keeper, ...blockOf(customMonster(keeper, { name: "Crypt Keeper", traits: [{ name: "Lair Actions", text: "On initiative count 20, the dead stir." }] })) } });
+    await waitFor("the room's monster", () => deskSocket.state?.monsters?.[keeper] ?? null);
+    await ops.send({ t: "encounter.end" });
+    await waitFor("no fight", () => (deskSocket.state?.encounter ? null : true));
+    await setUp(desk, deskCdp, DESK);
+    await closeSheets(desk);
+    await deselect(desk);
+
+    // The place card offers In its lair for lair actions alone, saying what it does.
+    const card = await keeperCard(desk);
+    assert.equal(await described(card.getByRole("checkbox", { name: "In its lair", exact: true })), LAIR_ACTIONS_HELP);
+    await desk.getByRole("button", { name: "Back to Monsters", exact: true }).click();
+
+    // A new encounter's line offers it too: ticked, saved and placed with no fight on.
+    const encounters = await panelOf(desk, "Encounters");
+    await encounters.getByRole("button", { name: "New encounter", exact: true }).click();
+    await encounters.getByRole("textbox", { name: "Encounter name" }).fill("Crypt");
+    await encounters.getByRole("button", { name: "Add one Crypt Keeper" }).click();
+    const tick = encounters.getByRole("checkbox", { name: "In its lair", exact: true });
+    assert.equal(await described(tick), LAIR_ACTIONS_HELP);
+    await tick.check();
+    await encounters.getByRole("button", { name: "Save encounter", exact: true }).click();
+    await waitFor("the encounter saved in its lair", () => (Object.values(deskSocket.state?.savedEncounters ?? {}).find((e) => e.name === "Crypt")?.monsters[0]?.inLair === true ? true : null));
+    await shots.take(desk, "lair46-a-line");
+    await encounters.getByRole("button", { name: "Place in the middle of the view", exact: true }).click();
+    const placed = await waitFor("the keeper placed", () => Object.values(deskSocket.state?.tokens ?? {}).find((t) => t.name === "Crypt Keeper") ?? null);
+    assert.equal(actorOf(deskSocket.state, placed.id)?.inLair, true, "the token keeps the tick");
+    assert.equal(deskSocket.state?.encounter, null, "no fight to join yet");
+    assert.equal(patSocket.state?.tokens[placed.id] !== undefined && "inLair" in ((patSocket.state.tokens[placed.id]!.actor as { inline?: object }).inline ?? {}), false, "Pat's copy holds no tick");
+
+    // The tracker's Start a fight with the selected keeper: its row has In lair on, though its block's counts say nothing of a lair.
+    await (await trackerSection(desk, "Start a fight with")).getByRole("button", { name: "Crypt Keeper", exact: true }).click();
+    await waitFor("the keeper's row in its lair", () => (deskSocket.state?.encounter?.entries.find((e) => e.tokenId === placed.id)?.inLair === true ? true : null));
+    await shots.take(desk, "lair46-a-row");
+
+    // The place card and the line, each with its box, in line at every size.
+    for (const view of [DESK, PHONE, SMALL]) {
+      for (const scale of [1, 1.3]) {
+        const at = `${view.width} x ${view.height} at ${Math.round(scale * 100)}%`;
+        await setUp(desk, deskCdp, { ...view, scale });
+        await closeSheets(desk);
+        await deselect(desk);
+        const shown = await keeperCard(desk);
+        const box = shown.getByRole("checkbox", { name: "In its lair", exact: true });
+        await box.scrollIntoViewIfNeeded();
+        // The card itself, from its CR line to Place on the map, as the sweep measures a place card's rows.
+        await measure(desk, box.locator("xpath=ancestor::div[.//button[starts-with(normalize-space(.), 'Place')]][1]"), `lair46 place card at ${at}`);
+        await desk.getByRole("button", { name: "Back to Monsters", exact: true }).click();
+        const panel = await panelOf(desk, "Encounters");
+        await panel.getByRole("button", { name: /^Crypt/ }).first().click();
+        const line = panel.getByRole("checkbox", { name: "In its lair", exact: true }).locator("xpath=ancestor::div[.//button[starts-with(@aria-label, 'Remove')]][1]");
+        await line.scrollIntoViewIfNeeded();
+        await measure(desk, line, `lair46 encounter line at ${at}`);
+        await shots.take(desk, `lair46-a-line-${view.width}-${Math.round(scale * 100)}`);
+        await desk.getByRole("button", { name: "Back to Encounters", exact: true }).click();
+        await closeSheets(desk);
+      }
+    }
+    await setUp(desk, deskCdp, DESK);
+    assert.deepEqual(sweep.slice(from), [], "out of line by more than 1 px");
+  });
+
   test("s2-cu-z. no console errors after the s2 steps", () => {
     assert.deepEqual(deskConsole.errors, [], "the desk");
     assert.deepEqual(phoneConsole.errors, [], "the DM's phone");
     assert.deepEqual(patConsole.errors, [], "Pat's page");
   });
 });
+
+/** The help under In its lair for a block with lair actions alone (tokens/factory.ts lairHelp). */
+const LAIR_ACTIONS_HELP = "Joins a fight with In lair on, a reminder that its lair acts.";
+
+/** A control's description, the text its aria-describedby names. */
+async function described(control: Locator): Promise<string> {
+  const ids = (await control.getAttribute("aria-describedby")) ?? "";
+  const parts: string[] = [];
+  for (const id of ids.split(/\s+/).filter(Boolean)) parts.push(((await control.page().locator(`[id="${id}"]`).textContent()) ?? "").trim());
+  return parts.join(" ");
+}
+
+/** A panel: the side panel's tab where the page has tabs, else its sheet from the Panels picker (alignmentRoom.ts openPanelOf). */
+async function panelOf(page: Page, title: string): Promise<Locator> {
+  const tabs = page.getByRole("tablist", { name: "Panels" });
+  if (await tabs.isVisible()) {
+    await openSideTab(page, title);
+    return page.getByRole("tabpanel", { name: sideTabName(title) });
+  }
+  const sheet = page.locator(`dialog[data-rvtt-sheet][aria-label="${title}"]`);
+  if (await sheet.isVisible()) return sheet;
+  await closeSheets(page);
+  await page.getByRole("navigation", { name: "Tools" }).getByRole("button", { name: /^Panels/ }).click();
+  await page.getByRole("region", { name: "Panels" }).getByRole("button", { name: new RegExp(`^${title}`) }).click();
+  await sheet.waitFor();
+  return sheet;
+}
+
+/** The Crypt Keeper's place card in the Monsters panel. */
+async function keeperCard(page: Page): Promise<Locator> {
+  const monsters = await panelOf(page, "Monsters");
+  const back = page.getByRole("button", { name: "Back to Monsters", exact: true });
+  if (await back.isVisible()) await back.click();
+  await monsters.getByRole("searchbox", { name: "Search monsters" }).fill("Crypt Keeper");
+  await monsters.getByRole("button", { name: /^Crypt Keeper/ }).first().click();
+  await monsters.getByRole("checkbox", { name: "In its lair", exact: true }).waitFor();
+  return monsters;
+}
 
 /** The counts mu-d must see a title line for: words past 6 on a monster and on a character, and a pool's at any size. */
 const EXPECTED_TITLES: Record<string, string[]> = {
