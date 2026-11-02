@@ -6,6 +6,8 @@ Describe the change and the problem it solves.
 
 Describe how you checked it, including any checks you could not run.
 
+- [ ] Tests cover the new behavior or the fixed bug, and fail without the change.
+
 ## Screenshots
 
 Include before and after screenshots for visible changes. Remove this section

@@ -19,6 +19,10 @@ The integration and browser tests need the development database described in
 docs/development.md. Run them separately. Browser tests also need Google Chrome.
 For container or backup changes, run `pnpm test:backup` too.
 
+Every new feature and bug fix comes with tests: at least one that fails
+without the change, in the unit, integration or browser (e2e) suite that
+suits it.
+
 Use Conventional Commits, as in `git log`: one line, lowercase after the
 colon, with an optional lowercase scope. For example,
 `fix(ui): keep the menu in view`. Every change is reviewed before it merges.
