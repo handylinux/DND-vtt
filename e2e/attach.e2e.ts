@@ -1110,6 +1110,49 @@ describe("raccoon-vtt attached tokens", { timeout: 600_000 }, () => {
     await ops.send({ t: "scene.delete", sceneId: keep.scene });
   });
 
+  test("fu48m-1. Pat drags Brom on the warhorse, which drags a goblin, toward a corridor one square wide over a net at its mouth: the net stops the warhorse squeezed at the mouth, and the goblin stops on the square behind it, not on the warhorse's (TRAP-STOP-STACK)", async () => {
+    if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
+    const field = { w: 20, h: 12 };
+    const keep = { scene: randomUUID(), horse: randomUUID(), brom: randomUUID(), gob: randomUUID(), net: randomUUID() };
+    await ops.send({ t: "scene.create", scene: { id: keep.scene, name: "FU48M squares", bounds: field, fogEnabled: false } });
+    await ops.send({ t: "scene.update", sceneId: keep.scene, patch: { blockMovement: true } });
+    // Rock from x 6 to 14 but for a corridor along row 6, in runs of at most 8 cells.
+    const walls = ([[6, 0, 6, 6], [6, 7, 6, 12], [14, 0, 14, 6], [14, 7, 14, 12], [6, 6, 14, 6], [6, 7, 14, 7]] as const).map(([ax, ay, bx, by], i) => ({ id: `fu48mq${String(i).padStart(6, "0")}`, a: [ax, ay] as [number, number], b: [bx, by] as [number, number], f: { kind: "wall" as const } }));
+    await ops.send({ t: "build.walls", sceneId: keep.scene, put: walls });
+    const at = { x: 2, y: 5 };
+    await ops.send({ t: "token.create", token: { id: keep.horse, sceneId: keep.scene, kind: "npc", name: "Warhorse", size: "large", ...at, disposition: "ally", visibility: "all", ownerIds: [run.patId], actor: { inline: actor({ speeds: { walk: 60 } }) } } });
+    await ops.send({ t: "token.create", token: { id: keep.brom, sceneId: keep.scene, kind: "pc", name: "Brom", size: "medium", ...at, disposition: "ally", visibility: "all", ownerIds: [run.patId], actor: { inline: actor() } } });
+    await ops.send({ t: "token.attach", tokenId: keep.brom, to: keep.horse, kind: "ride", steer: true, ...at, elevation: 0 });
+    await ops.send({ t: "token.create", token: { id: keep.gob, sceneId: keep.scene, kind: "monster", name: "Goblin", size: "medium", x: 1, y: 6, disposition: "hostile", visibility: "all", actor: { inline: actor() } } });
+    await ops.send({ t: "token.attach", tokenId: keep.gob, to: keep.horse, kind: "drag", x: 1, y: 6, elevation: 0 });
+    const rig = { on: ["enter"], who: "any", floor: true, resets: "never", stops: true, foundOnSpring: true, hits: "trigger", actions: [], find: [], notice: false };
+    await ops.send({ t: "trap.create", trap: { id: keep.net, sceneId: keep.scene, name: "Net", zone: { cells: [{ x: 4, y: 5, w: 1, h: 2 }] }, rig } });
+    await ops.send({ t: "room.setPlayerScene", sceneId: keep.scene });
+    await waitFor("Brom and the goblin in Pat's copy", () => (token(patSocket, keep.brom)?.attached && token(patSocket, keep.gob)?.attached ? true : null));
+    await waitFor("the corridor's walls in Pat's copy", () => (Object.values((patSocket.state as RoomState | null)?.buildChunks ?? {}).reduce((n, c) => n + (c?.sceneId === keep.scene ? (c.walls?.length ?? 0) : 0), 0) === walls.length ? true : null));
+    await pat.locator(".konvajs-content").first().waitFor();
+    const from = await pagePoint(pat, field, { x: at.x + 0.5, y: at.y + 0.5 });
+    const to = await pagePoint(pat, field, { x: 10.2, y: 6.2 });
+    await touchSwipe(patCdp, from, to, { steps: 16, everyMs: 20 });
+    const horse = await waitFor("the warhorse stopped squeezed at the corridor's mouth", () => {
+      const t = token(patSocket, keep.horse);
+      return t && t.x !== at.x ? t : null;
+    });
+    assert.deepEqual([horse.x, horse.y, horse.squeeze], [4.5, 5.5, true], "squeezed at the mouth, on its one square at 5, 6");
+    const gob = await waitFor("the goblin behind it", () => {
+      const t = token(patSocket, keep.gob);
+      return t && t.x !== 1 ? t : null;
+    });
+    // From op version 41 it steps back along its own walk off the warhorse's square, to the square right behind it.
+    assert.deepEqual([gob.x, gob.y, gob.attached?.to], [4, 6, keep.horse], "behind it, still in tow");
+    await shots.take(pat, "fu48m-net-stops-the-file-apart");
+    await ops.send({ t: "room.setPlayerScene", sceneId: run.sceneId });
+    await waitFor("Pat back on the party's scene", () => ((patSocket.state as RoomState | null)?.meta.playerSceneId === run.sceneId ? true : null));
+    await ops.send({ t: "trap.delete", trapId: keep.net });
+    for (const id of [keep.gob, keep.brom, keep.horse]) await ops.send({ t: "token.delete", tokenId: id });
+    await ops.send({ t: "scene.delete", sceneId: keep.scene });
+  });
+
   test("fu44b-1. Pat drags Brom on the warhorse, which drags a goblin that cannot fall in behind it, into a corridor one square wide: the warhorse stops at 4, 5 clear of the rock, the note names the goblin, and the server refuses Pat's move to 4.5, 5 across the wall (LP28-B-RIDE-1)", async () => {
     if (dmSocket.state?.encounter) await ops.send({ t: "encounter.end" });
     const field = { w: 20, h: 12 };
