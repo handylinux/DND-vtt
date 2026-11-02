@@ -1772,6 +1772,22 @@ describe("computations drawn when read", () => {
     assert.ok(most > VISION_CACHE_BYTES / 2, `the drawings reached ${most} bytes`);
   });
 
+  test("point queries on cold scenes at the cap trim the cache and keep its count exact", () => {
+    clearVisionCache();
+    // The last scenes made stay cached at the cap, undrawn, so a point query's rows are what pushes it over.
+    const sights: PartySight[] = [];
+    for (let i = 0; i < 400; i++) sights.push(partySight(darkScene(`g${i}`), `g${i}`, world));
+    for (const sight of sights.slice(0, 240)) void sight.tiles;
+    const full = visionCacheReport();
+    assert.ok(full.bytes > VISION_CACHE_BYTES * 0.9, `${full.bytes} bytes before the queries`);
+    for (const [i, sight] of sights.entries()) {
+      for (let y = 0; y < 200; y += 7) sight.seesToken({ size: "medium", x: 100, y }, SQUARES);
+      const report = visionCacheReport();
+      assert.ok(report.bytes <= VISION_CACHE_BYTES, `${report.bytes} bytes after the queries on scene ${i}`);
+      assert.equal(report.bytes, report.recount, `scene ${i}`);
+    }
+  });
+
   test("a light that moves works out only the rows it lights, before and after", () => {
     clearVisionCache();
     const s0 = visionRoom({ w: 40, h: 40, light: "dark", tokens: [pc("a", 20, 20, { senses: "darkvision 150 ft" })], lights: [light("small", 20, 22, 0, 10), light("big", 5, 5, 60, 120, { walls: false })] });
