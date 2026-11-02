@@ -35,6 +35,7 @@ follows `PORT`.
 | `pnpm test:int` | integration tests against the dev postgres (`*.itest.ts`). Run `pnpm db:up` first |
 | `pnpm test:e2e` | builds the client, then runs the browser tests (`e2e/*.e2e.ts`) against a server on port 3100 (`E2E_PORT`) and the dev postgres, one file at a time as a single shard of [continuous integration](#continuous-integration): the join limits' counts are cleared before each file, and a failing file runs once more. Needs Google Chrome installed. Screenshots go to `test-results/e2e-screenshots` (gitignored), or to the folder in `E2E_SCREENSHOT_DIR`, and `E2E_SCREENSHOT_DIR=0` takes none. Run it alone, not beside `pnpm test:int`, since both use the same database |
 | `pnpm test:e2e:shard <index> <count>` | one shard of the browser tests, as [continuous integration](#continuous-integration) runs them. Run `pnpm build` first |
+| `pnpm coverage` | line coverage of the unit and integration tests, with no new dependency. See [Coverage](#coverage). Needs `DATABASE_URL` set to a database the integration tests may use |
 | `pnpm build` | the client into `dist/` |
 | `pnpm db:psql` | a psql shell in the dev postgres |
 | `pnpm db:down` | stop the dev postgres, keeping its data |
@@ -46,6 +47,10 @@ follows `PORT`.
 checkout and runs it against the dev postgres, on http://127.0.0.1:9180, as
 the [Quick start](../README.md#quick-start) runs the published one. It is how to try a
 build before it goes to a server.
+
+### Coverage
+
+`pnpm coverage` runs the unit tests, then the integration tests, with Node's built-in coverage (`--experimental-test-coverage`) and prints the share of lines run for `server`, `shared`, `client` and `scripts`, and one figure for the shipped code. Shipped code is `server`, `shared` and `client`, which is what runs in the image or the browser. `scripts` is build and release tooling that does not ship, so it is reported on its own and left out of that figure. Test files and test helpers are not counted, and the browser tests are not measured.
 
 ### Property tests
 
