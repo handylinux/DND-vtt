@@ -2,16 +2,17 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { heights, wall } from "#shared/discoveryTestutil.ts";
 import type { RoomState, Token } from "#shared/model.ts";
+import type { Op } from "#shared/protocol.ts";
 import { canApply } from "#shared/permissions.ts";
-import { footprintRect, occupiedHexes } from "#shared/rules/footprint.ts";
+import { footprintRect, occupiedHexes, placedOnHex } from "#shared/rules/footprint.ts";
 import { SQUARES } from "#shared/rules/grid.ts";
-import { hexAt, hexCenter, hexKey, type Hex, type HexGrid } from "#shared/rules/hex.ts";
+import { hexAt, hexCenter, hexKey, sceneHexes, type Hex, type HexGrid } from "#shared/rules/hex.ts";
 import { findRouteOn } from "#shared/rules/hexWalk.ts";
 import { COLUMNS, hexWallRoom, onHex, ROWS, wallsRound } from "#shared/rules/hexWalls.testkit.ts";
 import { ownWalk } from "#shared/rules/movement.ts";
 import { groupWalkWorld } from "#shared/rules/walkWorld.ts";
 import { applyOp } from "#shared/reducer.ts";
-import { env, P1, room, scene, token } from "#shared/testutil.ts";
+import { apply, env, P1, room, scene, token } from "#shared/testutil.ts";
 import { WorkBudget } from "#shared/rules/walk.ts";
 import { RoomScope } from "../../state/scope.ts";
 import { measureWalk } from "../measure/walkRuler.ts";
@@ -187,9 +188,9 @@ function dragCorridor(): RoomState {
 const takes = (s: RoomState, plan: DropPlan) => moveOpsOf(plan.moves).every((op) => canApply(op, P1, s, { canUseAsset: () => true }).ok);
 
 /** The drag of the mount, pressed on `pressed` or on the mount, dropped with its box at `box`, as the board plans it, and whether the picture held it before the drop. */
-function dropOf(s: RoomState, box: { x: number; y: number }, pressed?: Token): { plan: DropPlan | null; held: boolean } {
+function dropOf(s: RoomState, box: { x: number; y: number }, pressed?: Token, role: DragDeps["role"] = "player"): { plan: DropPlan | null; held: boolean } {
   const node = { x: () => box.x, y: () => box.y, position: () => {} };
-  const b = board(s);
+  const b = board(s, role);
   const horse = s.tokens.horse!;
   b.stops.start(horse.id, pressed);
   for (let i = 0; i < 50; i++) {
@@ -451,6 +452,119 @@ for (const [name, g] of [
   });
 }
 
+/**
+ * A rider's drag where the mount's box at the finger's offset lies across a
+ * ledge (guide pass 6, RIDER-DRAG-LEDGE): walls pick the stand that keeps
+ * the rider's middle on the mount, never a ledge, so on open ground the
+ * mount goes as that box goes. The DM's drop lands it across the rise's
+ * edge, and a player's walk is held at the ledge and says so, as a drag of
+ * the mount itself does. The seat rule read the ledge as a wall and took
+ * the next stand clear of it: a square short on the DM's screen, and on a
+ * player's with no word of the ledge. Where ledges make a real narrow
+ * space, as along a ridge, the mount still squeezes under the rider.
+ */
+describe("a rider's drag where the mount's box lies across a ledge (RIDER-DRAG-LEDGE)", () => {
+  /** The watchtower's field in the guide's mounted turn: a rise 10 ft up from x 14, the warhorse at 7, 13, Mara riding it, Controlled, on `seat`. */
+  function field(seat: readonly [number, number]): RoomState {
+    const s = room({ scenes: { s1: scene("s1", { bounds: { w: 30, h: 20 }, blockMovement: true, autoWalls: "off" }) } });
+    s.buildChunks = {};
+    heights(s, { x: 14, y: 4, w: 11, h: 11 }, 10);
+    s.tokens.horse = token("horse", { size: "large", x: 7, y: 13, name: "Warhorse", kind: "npc", ownerIds: ["p1"] });
+    s.tokens.mara = token("mara", { x: seat[0], y: seat[1], name: "Mara", kind: "pc", ownerIds: ["p1"], attached: { to: "horse", kind: "ride", steer: true } });
+    return s;
+  }
+
+  /** Where a plan moves each token, its height and squeeze, and the note after it. */
+  const lands = (plan: DropPlan | null) => [plan?.moves.map((m) => [m.tokenId, m.x, m.y, m.elevation ?? null, m.squeeze ?? null]), plan?.stop ? stopText(plan.stop) : null];
+
+  test("squares: from every seat, the DM's drop and a player's walk land the warhorse as a drag of the warhorse itself does", () => {
+    for (const seat of SQUARE_SEATS.map(([x, y]) => [x + 4, y + 4] as const)) {
+      const s = field(seat);
+      for (const role of ["dm", "player"] as const) {
+        // The box across the rise's edge at x 14, so Mara's middle is on the low ground or on the rise by her seat.
+        for (const box of [{ x: 13, y: 13 }, { x: 13.2, y: 12.9 }, { x: 12.8, y: 13.3 }]) {
+          const at = `seat ${seat}, ${role}, box ${box.x}, ${box.y}`;
+          const aimed = dropOf(s, box, s.tokens.mara, role).plan;
+          assert.deepEqual(lands(aimed), lands(dropOf(s, box, undefined, role).plan), at);
+          const expected = role === "dm" ? [[["horse", 13, 13, 10, null]], null] : [[["horse", 12, 13, null, null]], "Ledge in the way. No stairs you have seen lead there."];
+          assert.deepEqual(lands(aimed), expected, `${at}: ${role === "dm" ? "across the rise's edge, 10 ft up" : "held at the ledge, which the note names"}`);
+        }
+      }
+    }
+  });
+
+  test("squares: the walking ruler from Mara reads the landing the drag makes", () => {
+    for (const role of ["dm", "player"] as const) {
+      const s = field([7, 14]);
+      const m = measureWalk({ view: s, sceneId: "s1", stops: [{ x: 0, y: 0, tokenId: "mara" }, { x: 13.5, y: 14.5 }], viewer: { role }, everything: role === "dm" })!;
+      assert.deepEqual([m.legs[0]!.to.x, m.legs[0]!.to.y], role === "dm" ? [13, 14] : [12, 14], `${role}: Mara on her seat where the warhorse lands`);
+    }
+  });
+
+  test("squares: along a ridge one square wide, 10 ft up, its ledges still make a narrow space, so from every seat the warhorse squeezes onto the square under Mara's middle", () => {
+    for (const seat of SQUARE_SEATS) {
+      const s = room({ scenes: { s1: scene("s1", { bounds: { w: 30, h: 20 }, blockMovement: true, autoWalls: "off" }) } });
+      s.buildChunks = {};
+      // A plateau west of x 8 and the ridge along row 10 from it, both 10 ft up.
+      heights(s, { x: 0, y: 0, w: 8, h: 20 }, 10);
+      heights(s, { x: 8, y: 10, w: 8, h: 1 }, 10);
+      const horse = (s.tokens.horse = token("horse", { size: "large", x: 3, y: 9, elevation: 10, name: "Warhorse", kind: "npc", ownerIds: ["p1"] }));
+      const mara = (s.tokens.mara = token("mara", { x: seat[0], y: seat[1], elevation: 10, name: "Mara", kind: "pc", ownerIds: ["p1"], attached: { to: "horse", kind: "ride", steer: true } }));
+      for (const role of ["dm", "player"] as const) {
+        for (const fx of offsets) {
+          for (const fy of offsets) {
+            const middle = { x: 12 + fx, y: 10 + fy };
+            const view = seenRoom(s, role);
+            const aim = pressedAim(view, horse, mara, { x: middle.x - 0.5 + horse.x - seat[0], y: middle.y - 0.5 + horse.y - seat[1] });
+            const target = routeTarget(view, horse, aim);
+            assert.equal(target.squeeze, true, `seat ${seat}, ${role}, middle ${middle.x}, ${middle.y}: squeezed`);
+            assert.deepEqual(footprintRect(SQUARES, { ...horse, x: target.x, y: target.y, squeeze: true }), { x: 12, y: 10, w: 1, h: 1 }, `seat ${seat}, ${role}, middle ${middle.x}, ${middle.y}: on Mara's square`);
+          }
+        }
+      }
+    }
+  });
+
+  test("hex rows: from every hex of the warhorse, the DM's drop and a player's walk land it as a drag of the warhorse itself does", () => {
+    let base: RoomState = room({ scenes: { s1: scene("s1", { gridShape: "hexRows", bounds: { w: 20, h: 14 }, blockMovement: true }) } });
+    const rise = sceneHexes(ROWS, { w: 20, h: 14 }).filter((h) => h.col >= 10).map(hexKey);
+    for (let i = 0; i < rise.length; i += 50) base = apply(base, { t: "build.height", sceneId: "s1", cells: rise.slice(i, i + 50), height: 10 } as Op);
+    const horse = onHex(ROWS, "horse", "large", { col: 3, row: 6 }, { name: "Warhorse", kind: "npc", ownerIds: ["p1"] });
+    // Its stand from 10, 6 takes 10, 6 and 10, 7 on the rise and 9, 7 below it.
+    const box = placedOnHex(ROWS, horse, { col: 10, row: 6 });
+    for (const seatHex of occupiedHexes(ROWS, horse)) {
+      const s: RoomState = { ...base, tokens: { horse, mara: onHex(ROWS, "mara", "medium", seatHex, { name: "Mara", kind: "pc", ownerIds: ["p1"], attached: { to: "horse", kind: "ride", steer: true } }) } };
+      for (const role of ["dm", "player"] as const) {
+        const aimed = dropOf(s, box, s.tokens.mara, role).plan;
+        assert.deepEqual(lands(aimed), lands(dropOf(s, box, undefined, role).plan), `seat ${hexKey(seatHex)}, ${role}`);
+        if (role === "dm") assert.deepEqual(occupiedHexes(ROWS, { ...horse, ...aimed!.moves[0]! }).map(hexKey), ["10,6", "10,7", "9,7"], `seat ${hexKey(seatHex)}: across the rise's edge`);
+      }
+    }
+  });
+
+  test("hex rows: along a ridge one hex wide, 10 ft up, from every hex of the warhorse it squeezes onto the hex under Mara's middle", () => {
+    let base: RoomState = room({ scenes: { s1: scene("s1", { gridShape: "hexRows", bounds: { w: 22, h: 16 }, blockMovement: true }) } });
+    // A plateau west of column 6 and the ridge along row 6 from it to column 12, both 10 ft up.
+    const raised = sceneHexes(ROWS, { w: 22, h: 16 }).filter((h) => h.col <= 5 || (h.row === 6 && h.col <= 12)).map(hexKey);
+    for (let i = 0; i < raised.length; i += 50) base = apply(base, { t: "build.height", sceneId: "s1", cells: raised.slice(i, i + 50), height: 10 } as Op);
+    const horse = onHex(ROWS, "horse", "large", { col: 2, row: 5 }, { elevation: 10, name: "Warhorse", kind: "npc", ownerIds: ["p1"] });
+    for (const seatHex of occupiedHexes(ROWS, horse)) {
+      const mara = onHex(ROWS, "mara", "medium", seatHex, { elevation: 10, name: "Mara", kind: "pc", ownerIds: ["p1"], attached: { to: "horse", kind: "ride", steer: true } });
+      const s: RoomState = { ...base, tokens: { horse, mara } };
+      for (const role of ["dm", "player"] as const) {
+        for (const [dx, dy] of [[0, 0], [0.2, 0.15], [-0.25, 0.1], [0.1, -0.3]] as const) {
+          const c = hexCenter(ROWS, { col: 9, row: 6 });
+          const view = seenRoom(s, role);
+          const aim = pressedAim(view, horse, mara, { x: c.x + dx - 0.5 + horse.x - mara.x, y: c.y + dy - 0.5 + horse.y - mara.y });
+          const target = routeTarget(view, horse, aim);
+          assert.equal(target.squeeze, true, `seat ${hexKey(seatHex)}, ${role}: squeezed`);
+          assert.deepEqual(occupiedHexes(ROWS, { ...horse, x: target.x, y: target.y, squeeze: true }).map(hexKey), ["9,6"], `seat ${hexKey(seatHex)}, ${role}, ${dx}, ${dy}: on Mara's hex`);
+        }
+      }
+    }
+  });
+});
+
 /** Frames by hand, as dragStops.test.ts drives them. */
 class Hand implements Frames {
   queue: (() => void)[] = [];
@@ -467,7 +581,7 @@ class Hand implements Frames {
   }
 }
 
-function board(view: RoomState) {
+function board(view: RoomState, role: DragDeps["role"] = "player") {
   const frames = new Hand();
   const work = new RouteWork(frames, () => new WorkBudget({ limit: 100000 }));
   const deps: DragDeps = {
@@ -475,7 +589,7 @@ function board(view: RoomState) {
     actions: { dispatch: () => 1, newId: () => "id" } as unknown as DragDeps["actions"],
     ui: { notify: () => {}, showActions: () => {} } as unknown as DragDeps["ui"],
     scope: new RoomScope(),
-    role: "player",
+    role,
     work,
   };
   return { frames, stops: dragStops(deps), hold: () => deps.scope.get(holdSlot).getState().hold };

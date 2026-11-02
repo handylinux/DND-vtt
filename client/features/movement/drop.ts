@@ -4,12 +4,12 @@ import { SOMETHING_BLOCKS, stopWords, WALL_IN_THE_WAY } from "#shared/permission
 import type { Blocker, BuildState, LegEnd } from "#shared/ruleHooks.ts";
 import type { DistanceSettings } from "#shared/rules/distance.ts";
 import { holderOf, linkHolds, onHolder, publicMembers, walkerFor, type SeenByAll } from "#shared/rules/attach.ts";
-import { anchorOfHex, canSqueeze, footprintSize, hexSqueezedSize, sizeCategory, snapStep, squeezedSize } from "#shared/rules/footprint.ts";
+import { anchorOfHex, canSqueeze, footprintSize, hexSqueezedSize, sizeCategory, snapStep, squeezedSize, type SizeCategory } from "#shared/rules/footprint.ts";
 import { isHex, sceneGrid, SQUARES, type Grid } from "#shared/rules/grid.ts";
 import { hexAt, hexKey, hexNeighbors, type Hex } from "#shared/rules/hex.ts";
 import { deviceGround } from "#shared/rules/held.ts";
 import { footing } from "#shared/rules/heights.ts";
-import { coreBlocked, groundUnder, hexEndStand, hexFitWall, hexLegOf, hexLegStand, hexNarrow, hexStandHexes, hexStandInside, hexStandPlace, hexStartStand, hexWallsOf, landedElevation, landing, legSpots, legStop, offGridWallThrough, onSqueezedLattice, ownWalk, previewChunks, previewSqueezed, squeezeFits, walkEnd, walkFrom, type DropMode, type HexStand, type Walker } from "#shared/rules/movement.ts";
+import { coreBlocked, coreWalled, groundUnder, hexEndStand, hexFitWall, hexLegOf, hexLegStand, hexNarrow, hexStandHexes, hexStandInside, hexStandPlace, hexStartStand, hexWallsOf, landedElevation, landing, legSpots, legStop, offGridWallThrough, onSqueezedLattice, ownWalk, previewChunks, previewSqueezed, squeezeFits, walkEnd, walkFrom, type DropMode, type HexStand, type HexWalls, type Walker } from "#shared/rules/movement.ts";
 import { fileOutOfReach, fileRoutes, fileShift, followedHeight, followerTrace, routeLattice, routePoints, routeStop, routeWalkers, seatShift, walkSqueezes, walkTrace, type FileEnd, type FollowLead, type Follower, type RoutePiece, type RoutePoint } from "#shared/rules/route.ts";
 import { followsInSingleFile } from "#shared/migrate.ts";
 import { checkSetReach } from "#shared/rules/moveLeg.ts";
@@ -293,16 +293,20 @@ function sitsOn(state: DropView, id: string, leadId: string): boolean {
 /**
  * The stand a drag led by a mount aims the mount at when it was pressed on
  * a token sitting on it (D-261029-57): of the mount's stands whose squares
- * or hexes hold that token's dropped middle `seat`, full size first and
- * then squeezed, the nearest the box the pointer's offset drops it at
- * (`raw`) that it can stand on. A full stand stands where its core touches
- * no wall on squares and where its hexes fit on hexes, a squeezed one only
- * in a real narrow space (movement.ts squeezeFits). So from any seat a
- * rider dragged into a corridor one wide takes its mount in, where the
- * mount's box at the offset lay across the corridor's wall or on the rock
- * beside it, and on open ground the mount stands where it was dropped.
- * Null where no stand holds the middle, and the drop goes as the mount's
- * box dropped at `raw`.
+ * or hexes hold that token's dropped middle `seat`, the nearest the box the
+ * pointer's offset drops it at (`raw`) that it can stand on. Walls pick the
+ * full stand: its core touches no wall, door, window or pillar on squares,
+ * and no wall parts its hexes on hexes (movement.ts coreWalled). Clear of
+ * every ledge too, it is the answer. Where a ledge runs through it, a
+ * squeezed stand in a real narrow space (movement.ts squeezeFits), which
+ * ledges make as walls do, comes first, as along a ridge, and else that
+ * full stand, whose ledge the drop's own landing judges as it judges the
+ * mount's box (RIDER-DRAG-LEDGE, D-261101-470). So from any seat a rider
+ * dragged into a corridor one wide takes its mount in, where the mount's
+ * box at the offset lay across the corridor's wall or on the rock beside
+ * it, and on open ground the mount stands where it was dropped, across the
+ * edge of a rise as well. Null where no stand holds the middle, and the
+ * drop goes as the mount's box dropped at `raw`.
  */
 function seatedStand(state: DropView, token: DropToken, raw: Point, seat: Point): Point | null {
   const g = dropGrid(state, token);
@@ -313,31 +317,32 @@ function seatedStand(state: DropView, token: DropToken, raw: Point, seat: Point)
     spots.sort((a, b) => (a.mid.x - middle.x) ** 2 + (a.mid.y - middle.y) ** 2 - ((b.mid.x - middle.x) ** 2 + (b.mid.y - middle.y) ** 2) || a.at.y - b.at.y || a.at.x - b.at.x);
   if (isHex(g)) {
     const t = hexWallsOf(state, walker);
+    // The walls alone, as movement.ts coreWalled reads a stand on hexes.
+    const walled = t && { ...t, floor: Infinity };
     const on = hexAt(g, seat);
     const refs = new Map<string, Hex>();
     for (const h of [on, ...hexNeighbors(g, on), ...hexNeighbors(g, on).flatMap((n) => hexNeighbors(g, n))]) refs.set(hexKey(h), h);
-    const full = sizeCategory(token);
-    const small = canSqueeze(token) ? hexSqueezedSize(full) : null;
-    for (const [size, squeezed] of [[full, false], ...(small ? [[small, true] as const] : [])] as const) {
-      const stands = [...refs.values()].map((ref): HexStand => ({ size, ref, squeezed })).filter((s) => hexStandHexes(g, s).some((h) => h.col === on.col && h.row === on.row));
-      const ok = (s: HexStand) => !t || (squeezed ? hexNarrow(t, token, s) : hexStandInside(t, s) && hexFitWall(t, s) < 0);
-      const best = nearest(stands.map((s) => ({ at: hexStandPlace(g, token, s), mid: anchorOfHex(g, s.size, s.ref), s }))).find((c) => ok(c.s));
-      if (best) return best.at;
-    }
-    return null;
+    const holding = (size: SizeCategory, squeezed: boolean) =>
+      nearest([...refs.values()].map((ref): HexStand => ({ size, ref, squeezed })).filter((s) => hexStandHexes(g, s).some((h) => h.col === on.col && h.row === on.row)).map((s) => ({ at: hexStandPlace(g, token, s), mid: anchorOfHex(g, s.size, s.ref), s })));
+    const fits = (s: HexStand, by: HexWalls | null) => !by || (hexStandInside(by, s) && hexFitWall(by, s) < 0);
+    const full = holding(sizeCategory(token), false).find((c) => fits(c.s, walled));
+    if (full && fits(full.s, t)) return full.at;
+    const small = canSqueeze(token) ? hexSqueezedSize(sizeCategory(token)) : null;
+    const squeezed = small ? holding(small, true).find((c) => !t || hexNarrow(t, token, c.s)) : undefined;
+    return squeezed?.at ?? full?.at ?? null;
   }
   const step = snapStep(token);
   const fullSpots: { at: Point; mid: Point }[] = [];
   for (const x of holdingStarts(seat.x, size.w, step)) for (const y of holdingStarts(seat.y, size.h, step)) fullSpots.push({ at: { x, y }, mid: { x: x + size.w / 2, y: y + size.h / 2 } });
-  const full = nearest(fullSpots).find((c) => !coreBlocked(state, walkEnd(state, walker, c.at)));
-  if (full) return full.at;
-  if (!canSqueeze(token)) return null;
+  const full = nearest(fullSpots).find((c) => !coreWalled(state, walkEnd(state, walker, c.at)));
+  if (full && !coreBlocked(state, walkEnd(state, walker, full.at))) return full.at;
   // A squeeze stands on whole squares, its sides one shorter where they reach two, centered in the full footprint.
   const small = squeezedSize(token);
-  if (!Number.isInteger(small.w) || !Number.isInteger(small.h)) return null;
   const squeezedSpots: { at: Point; mid: Point }[] = [];
-  for (const x0 of holdingStarts(seat.x, small.w, 1)) for (const y0 of holdingStarts(seat.y, small.h, 1)) squeezedSpots.push({ at: { x: x0 - (size.w - small.w) / 2, y: y0 - (size.h - small.h) / 2 }, mid: { x: x0 + small.w / 2, y: y0 + small.h / 2 } });
-  return nearest(squeezedSpots).find((c) => squeezeFits(state, walkEnd(state, walker, c.at)))?.at ?? null;
+  if (canSqueeze(token) && Number.isInteger(small.w) && Number.isInteger(small.h)) {
+    for (const x0 of holdingStarts(seat.x, small.w, 1)) for (const y0 of holdingStarts(seat.y, small.h, 1)) squeezedSpots.push({ at: { x: x0 - (size.w - small.w) / 2, y: y0 - (size.h - small.h) / 2 }, mid: { x: x0 + small.w / 2, y: y0 + small.h / 2 } });
+  }
+  return nearest(squeezedSpots).find((c) => squeezeFits(state, walkEnd(state, walker, c.at)))?.at ?? full?.at ?? null;
 }
 
 /** The multiples of `step` a side of `length` can start at and still hold `p`, its far end open. */

@@ -1008,6 +1008,22 @@ export function coreBlocked(state: BuildState, end: WalkEnd): boolean {
 }
 
 /**
+ * `coreBlocked` by walls, doors, windows and pillars alone, every ledge
+ * left out. A rider's drag picks its mount's full stand by it (client
+ * drop.ts seatedStand), so a ledge never moves the mount off the box the
+ * finger drops, and stays the drop's own landing's to judge.
+ */
+export function coreWalled(state: BuildState, end: WalkEnd): boolean {
+  const { walker: token, at } = end;
+  const scene = state.scenes[token.sceneId];
+  if (!scene) return false;
+  const hex = hexWallsOf(state, token);
+  if (hex) return hexFitWall({ ...hex, floor: Infinity }, hexEndStand(hex.g, token, at)) >= 0;
+  const walls = sceneWalls(scene, state.buildChunks);
+  return coreTouchesAt(wallsAt(walls, token, at), token, at, Infinity, pieceTestOf(state.buildChunks));
+}
+
+/**
  * Whether a wall passes through the full footprint of a creature that
  * stands full size off its own snap grid at the walk's end, outside a real
  * narrow space (live play LP28-B-RIDE-1). The core rule alone judges a
