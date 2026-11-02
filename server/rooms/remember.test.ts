@@ -651,6 +651,28 @@ describe("the estimate for the ask (5.3)", () => {
     assertGrowthCoversStep(before, { t: "build.paint", sceneId: "s1", terrain: "stone", cells: ["16,4"] });
   });
 
+  // The step reads only the edges a batch can change (BUILD-RECT-PERF): an edge past the chunk it painted reads that chunk's cell too.
+  for (const [where, painted, kept, key] of [
+    ["north", "4,15", { x: 4, y: 16 }, "4,16,n"],
+    ["west", "15,4", { x: 16, y: 4 }, "16,4,w"],
+  ] as const) {
+    test(`a paint on a chunk's edge row remembers the automatic wall it raises on the held edge just ${where} of the next chunk`, () => {
+      const before = fogRoom({ vision: true, perPlayer: true });
+      before.holders = { s1: { sceneId: "s1", rev: 0, entries: [{ memberId: "p1", on: true }] } };
+      lift(before, "party", { ...kept, w: 1, h: 1 });
+      lift(before, { holder: "p1" }, { ...kept, w: 1, h: 1 });
+      const result = applyOp(before, { t: "build.paint", sceneId: "s1", terrain: "stone", cells: [painted] }, DM, env(9));
+      assert.ok(result.ok);
+      const [remember] = mapStepOps({ before, after: result.state, touched: result.touched, cap: () => Infinity });
+      const at = { cx: Math.floor(kept.x / 16), cy: Math.floor(kept.y / 16) };
+      for (const layer of [undefined, "p1"]) {
+        const chunk = remember?.layers.find((l) => l.memberId === layer)?.chunks.find((c) => c.cx === at.cx && c.cy === at.cy);
+        assert.ok(chunk && Object.hasOwn(chunk.set?.edges ?? {}, key), `${layer ?? "the party"} remembers ${key} as it was`);
+        assert.equal(chunk.set?.edges?.[key], null);
+      }
+    });
+  }
+
   test("an unheld stair edit still counts changed directions in distant held chunks", () => {
     const before = fogRoom({ vision: true, perPlayer: true });
     before.holders = { s1: { sceneId: "s1", rev: 0, entries: [{ memberId: "p1", on: true }] } };

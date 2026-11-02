@@ -3,7 +3,7 @@ import { CHUNK_CELLS, type BuildChunk, type FreeWall, type Label, type MemoryChu
 import { chunkPositions, shownEdge, shownFreeWall, shownUpDir, sightHolders, stableStringify, stampCells } from "#shared/project.ts";
 import type { OpOf } from "#shared/protocol.ts";
 import { keepsMemory, layerHeld, type Layer } from "#shared/reducer/memory.ts";
-import { autoWallsOf } from "#shared/rules/autoWalls.ts";
+import { autoWallsOf, paintedCell } from "#shared/rules/autoWalls.ts";
 import { encodeTile, labelCells, TILE_CELLS, TILE_SUB } from "#shared/rules/fog.ts";
 import type { CellRange } from "#shared/rules/footprint.ts";
 import { isHex, sceneGrid, type Grid } from "#shared/rules/grid.ts";
@@ -303,10 +303,12 @@ function changedOn(before: RoomState, after: RoomState, scene: Scene, touch: Sce
     if (cb !== ca) cellsChanged(out, grid, cx, cy, cb, ca, held);
     const edgesHeld = !held || held.range({ x0: cx * CHUNK_CELLS - 1, y0: cy * CHUNK_CELLS - 1, x1: (cx + 1) * CHUNK_CELLS, y1: (cy + 1) * CHUNK_CELLS });
     if (!hex && edgesHeld && edgesMayDiffer(before, after, sceneId, cx, cy, ruleB !== ruleA)) {
+      const read = was && ruleB === ruleA ? edgesToRead(before, after, sceneId, cx, cy) : null;
       for (let k = 0; k < CELLS; k++) {
         const x = cx * CHUNK_CELLS + (k % CHUNK_CELLS);
         const y = cy * CHUNK_CELLS + Math.floor(k / CHUNK_CELLS);
         for (const side of ["n", "w"] as const) {
+          if (read && read[2 * k + (side === "w" ? 1 : 0)] === 0) continue;
           const key = `${x},${y},${side}`;
           if (held && !edgeCells(key).some((cell) => held.key(cell))) continue;
           const b = was ? shownEdge(before.buildChunks, sceneId, ruleB, key) : null;
@@ -350,6 +352,71 @@ function edgesMayDiffer(before: RoomState, after: RoomState, sceneId: string, cx
     if (nb?.cells !== na?.cells || nb?.up !== na?.up) return true;
   }
   return false;
+}
+
+/**
+ * Which of a position's north and west edges can read differently under an
+ * unchanged rule, edge 2k north and 2k + 1 west of cell k. An edge reads
+ * only its drawn feature and the two cells beside it (shownEdge), so one
+ * whose feature is the same object and whose cells paint the same reads
+ * the same. Reading every edge of every position cost most of a wide
+ * build edit's step (BUILD-RECT-PERF).
+ */
+function edgesToRead(before: RoomState, after: RoomState, sceneId: string, cx: number, cy: number): Uint8Array {
+  const out = new Uint8Array(2 * CELLS);
+  const x0 = cx * CHUNK_CELLS;
+  const y0 = cy * CHUNK_CELLS;
+  /*
+   * Whether a cell of the chunk at (dx, dy) from the position paints
+   * otherwise after the batch, by rules/autoWalls.ts paintedAt read from
+   * that chunk's own cells and stair marks, which a chunk whose cells and
+   * marks are the same objects keeps (edgesMayDiffer). Null for none.
+   */
+  const repaint = (dx: number, dy: number): ((x: number, y: number) => boolean) | null => {
+    const was = before.buildChunks[chunkKey(sceneId, cx + dx, cy + dy)];
+    const now = after.buildChunks[chunkKey(sceneId, cx + dx, cy + dy)];
+    if (was?.cells === now?.cells && was?.up === now?.up) return null;
+    const read = (chunk: BuildChunk | undefined) => {
+      const marks = chunk ? chunkMarks(chunk) : null;
+      return (x: number, y: number) => (x < 0 || y < 0 || !chunk ? "empty" : paintedCell(chunk.cells[`${x},${y}`], marks === null ? "." : marks[(y - chunk.cy * CHUNK_CELLS) * CHUNK_CELLS + (x - chunk.cx * CHUNK_CELLS)]!));
+    };
+    const paintedB = read(was);
+    const paintedA = read(now);
+    return (x, y) => paintedB(x, y) !== paintedA(x, y);
+  };
+  const b = before.buildChunks[chunkKey(sceneId, cx, cy)];
+  const a = after.buildChunks[chunkKey(sceneId, cx, cy)];
+  if (b?.edges !== a?.edges) {
+    const drawnB = b?.edges ?? {};
+    const drawnA = a?.edges ?? {};
+    for (const key of new Set([...Object.keys(drawnB), ...Object.keys(drawnA)])) {
+      if (drawnB[key] === drawnA[key]) continue;
+      const [xs, ys, side] = key.split(",");
+      const x = Number(xs);
+      const y = Number(ys);
+      // Edges are read by the keys they are filed under, so a key in no form the loop builds, or of another position's cell, is never read here.
+      if ((side !== "n" && side !== "w") || `${x},${y},${side}` !== key || x < x0 || x >= x0 + CHUNK_CELLS || y < y0 || y >= y0 + CHUNK_CELLS) continue;
+      out[2 * ((y - y0) * CHUNK_CELLS + (x - x0)) + (side === "w" ? 1 : 0)] = 1;
+    }
+  }
+  const own = repaint(0, 0);
+  if (own) {
+    for (let k = 0; k < CELLS; k++) {
+      const i = k % CHUNK_CELLS;
+      if (!own(x0 + i, y0 + Math.floor(k / CHUNK_CELLS))) continue;
+      out[2 * k] = 1;
+      out[2 * k + 1] = 1;
+      // The edges this cell is the far side of: north of the cell below it, west of the cell east of it.
+      if (k + CHUNK_CELLS < CELLS) out[2 * (k + CHUNK_CELLS)] = 1;
+      if (i + 1 < CHUNK_CELLS) out[2 * (k + 1) + 1] = 1;
+    }
+  }
+  // The cells past the position that its top row's north edges and its left column's west edges read.
+  const north = repaint(0, -1);
+  if (north) for (let i = 0; i < CHUNK_CELLS; i++) if (north(x0 + i, y0 - 1)) out[2 * i] = 1;
+  const west = repaint(-1, 0);
+  if (west) for (let j = 0; j < CHUNK_CELLS; j++) if (west(x0 - 1, y0 + j)) out[2 * j * CHUNK_CELLS + 1] = 1;
+  return out;
 }
 
 /** The cell-keyed elements and the free walls of one position whose chunk the batch replaced. */
