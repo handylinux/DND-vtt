@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { armAudioUnlock, countsAsActivation, UNLOCK_EVENTS, type UnlockableContext } from "./audioUnlock.ts";
+import { armAudioUnlock, countsAsActivation, onActivation, UNLOCK_EVENTS, type UnlockableContext } from "./activation.ts";
 
 /** A window that says which event types still have a listener. */
 class FakeWindow extends EventTarget {
@@ -132,20 +132,43 @@ test("it listens again when the context is suspended or interrupted later", asyn
     ctx.becomes = "running";
     win.gesture("touchend");
     assert.equal(ctx.state, "running");
+    await tick();
     assert.equal(win.armedForGestures(), false);
   }
 });
 
-test("a page shown again from the cache listens again when the context is not running", async () => {
+test("a page shown again from the cache listens again, and a context still running costs one check", async () => {
   const { win, ctx } = rig();
   win.gesture("click");
   await tick();
   assert.equal(win.armedForGestures(), false);
   win.gesture("pageshow");
-  assert.equal(win.armedForGestures(), false, "a running context needs nothing");
+  assert.equal(win.armedForGestures(), true);
+  win.gesture("click");
+  assert.equal(ctx.resumes, 1, "it was still running, so there was nothing to resume");
+  assert.equal(win.armedForGestures(), false);
   ctx.state = "interrupted";
   win.gesture("pageshow");
+  win.gesture("click");
+  assert.equal(ctx.resumes, 2);
+});
+
+test("onActivation: a true answer stops it, false or a rejection keeps it, a late true stops it", async () => {
+  const win = new FakeWindow();
+  const answers: (() => boolean | Promise<boolean>)[] = [() => false, () => Promise.reject(new Error("no")), () => Promise.resolve(false), () => Promise.resolve(true)];
+  let calls = 0;
+  const handle = onActivation(() => answers[calls++]!(), win);
+  for (let i = 0; i < 4; i++) {
+    assert.equal(win.armedForGestures(), true, `still listening before call ${i + 1}`);
+    win.gesture("click");
+    await tick();
+  }
+  assert.equal(calls, 4);
+  assert.equal(win.armedForGestures(), false);
+  handle.rearm();
   assert.equal(win.armedForGestures(), true);
+  handle.stop();
+  assert.equal(win.live.size, 0);
 });
 
 test("while unwanted it makes no context and keeps listening", () => {

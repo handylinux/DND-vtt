@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { armAudioUnlock } from "../../lib/audioUnlock.ts";
+import { armAudioUnlock } from "../../lib/activation.ts";
 
 /**
  * What a ping sounds and feels like (features section 12): a short rising
@@ -84,7 +84,7 @@ function audioContext(): AudioContext | null {
 
 /**
  * Browsers start audio only from a gesture they count as a user activation
- * (lib/audioUnlock.ts), so the first such tap anywhere on the page creates
+ * (lib/activation.ts), so the first such tap anywhere on the page creates
  * and resumes the context. Pings from other people that arrive later can
  * then be heard. Returns the cleanup for an effect.
  */
