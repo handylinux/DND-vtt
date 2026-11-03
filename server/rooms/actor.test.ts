@@ -3870,6 +3870,41 @@ describe("map discovery on the actor (docs/design/design-v1-map-discovery.md 5.3
     }
   });
 
+  test("a command that throws logs its room, member, kind, message and stack, each capped, and never the op or the error", async () => {
+    const dm = member("DM", "dm");
+    const db = new FakeDb({ state: createInitialState({ roomName: "Fault line", dm }), dmGrants: [dm.id] });
+    const base = deps(db);
+    const tag = uuidv7();
+    const errors: { fields: Record<string, unknown>; what: string }[] = [];
+    const log = { ...quiet, error: (fields: Record<string, unknown>, what: string) => errors.push({ fields, what }) };
+    // Fields a thrower attached, which a logged error object would carry along.
+    const draw = () => {
+      throw Object.assign(new Error("x".repeat(3_000)), { op: { tag }, detail: tag });
+    };
+    const actor = await RoomActor.load({ ...base, log: log as unknown as ActorDeps["log"], options: { ...base.options, draw } });
+    assert.ok(actor);
+    try {
+      const table = connect(actor, dm);
+      await actor.hello(table.conn, { clientId: "c1", resumeFrom: 1 });
+      await actor.op(table.conn, 1, { t: "dice.roll", tag, to: "all", rolls: [{ formula: "1d20" }] });
+      assert.ok(table.conn.closed, "the sender's socket closes");
+      assert.equal(errors.length, 1);
+      const [line] = errors;
+      assert.equal(line!.what, "room command failed");
+      assert.deepEqual(Object.keys(line!.fields).sort(), ["kind", "memberId", "message", "roomId", "stack"]);
+      assert.equal(line!.fields.roomId, ROOM);
+      assert.equal(line!.fields.memberId, dm.id);
+      assert.equal(line!.fields.kind, "dice.roll");
+      assert.equal(line!.fields.message, "x".repeat(300));
+      assert.equal((line!.fields.stack as string).length, 2_000);
+      assert.ok((line!.fields.stack as string).startsWith("Error: xxx"));
+      assert.ok(!JSON.stringify(line!.fields).includes(tag), "nothing of the op or the error's own fields is logged");
+    } finally {
+      db.freeze();
+      void actor.shutdown({ code: 1012, snapshot: false });
+    }
+  });
+
   test("ground a reminder rests on is explored, though a later op in its batch looks away (MD2's review, pendingGround)", async () => {
     const dm = member("DM", "dm");
     const player = member("Ayla", "player");

@@ -194,6 +194,10 @@ export const ASK_CHAIN_MS = 30_000;
  */
 const ASK_TURN_MS = 8;
 
+/** The most of a fault's message and stack one log line keeps (#fault). */
+const FAULT_MESSAGE_CHARS = 300;
+const FAULT_STACK_CHARS = 2_000;
+
 /**
  * An asset lookup that has started and whose op has not been processed yet
  * (docs/design/design-v1-dm-tools.md 3.19): the room's deletion generation when it
@@ -981,7 +985,8 @@ export class RoomActor {
    */
   #fault(what: string, err: unknown, conn: Connection | null, kind?: string): void {
     const error = err instanceof Error ? err : new Error(String(err));
-    this.#log.error({ roomId: this.roomId, memberId: conn?.memberId, kind, message: error.message, stack: error.stack }, what);
+    // Capped, since a message can quote what a sender wrote, such as an id, and a fault repeated per op must not flood the log.
+    this.#log.error({ roomId: this.roomId, memberId: conn?.memberId, kind, message: error.message.slice(0, FAULT_MESSAGE_CHARS), stack: error.stack?.slice(0, FAULT_STACK_CHARS) }, what);
     conn?.close(1011, "internal error");
   }
 
