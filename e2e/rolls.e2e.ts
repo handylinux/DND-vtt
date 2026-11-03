@@ -76,7 +76,14 @@ type Ability = "str" | "dex" | "con" | "int" | "wis" | "cha";
 
 /** The few DOM members these steps read in the page. The e2e files compile without the DOM's types. */
 type El = { tagName: string; textContent: string | null; getAttribute(name: string): string | null; closest(selector: string): El | null };
-type PageGlobals = { document: { activeElement: El | null; body: El }; __rvttVibrations?: number; navigator: object };
+type PageGlobals = {
+  document: { activeElement: El | null; body: El };
+  __rvttVibrations?: number;
+  /** Every AudioContext the page made, in order, recorded by the init script below. */
+  __rvttAudio?: { state: string }[];
+  navigator: object;
+  localStorage: { setItem(key: string, value: string): void };
+};
 
 function actor() {
   return {
@@ -196,6 +203,44 @@ describe("raccoon-vtt roll requests on phones", { timeout: 300_000 }, () => {
           return true;
         },
       });
+      // Records each AudioContext so the audio-unlock step can read its state. The page still gets a real one.
+      // Chrome counts a touch pointerdown as a user activation, but the HTML spec and Safari count only
+      // pointerup and touchend for touch. So here a context reads "suspended" until a resume() runs inside an
+      // event the spec counts, and a resume() outside one stays pending, as on an iPhone. That is what
+      // an unlock that waits for pointerdown meets there.
+      const Real = (globalThis as unknown as { AudioContext: { new (): { state: string; resume(): Promise<void> }; prototype: object } }).AudioContext;
+      type Gesture = { type: string; pointerType?: string; key?: string };
+      let counted = false;
+      for (const type of ["pointerdown", "pointerup", "touchend", "click", "keydown"]) {
+        (globalThis as unknown as { addEventListener(type: string, fn: (g: Gesture) => void, capture: boolean): void }).addEventListener(
+          type,
+          (g) => {
+            const spec = g.type === "pointerdown" ? g.pointerType === "mouse" : g.type === "pointerup" ? g.pointerType !== "mouse" : g.type === "keydown" ? g.key !== "Escape" : true;
+            if (!spec) return;
+            counted = true;
+            setTimeout(() => (counted = false), 0);
+          },
+          true,
+        );
+      }
+      // The browser's own state getter lives on a base class of AudioContext.
+      let owner: object | null = Real.prototype;
+      while (owner && !Object.getOwnPropertyDescriptor(owner, "state")) owner = Object.getPrototypeOf(owner);
+      const realState = Object.getOwnPropertyDescriptor(owner ?? {}, "state")?.get as () => string;
+      w.__rvttAudio = [];
+      (globalThis as unknown as { AudioContext: unknown }).AudioContext = class extends Real {
+        unlocked = counted;
+        constructor() {
+          super();
+          Object.defineProperty(this, "state", { get: () => (this.unlocked ? realState.call(this) : "suspended") });
+          w.__rvttAudio?.push(this);
+        }
+        override resume(): Promise<void> {
+          if (!counted) return new Promise<void>(() => {});
+          this.unlocked = true;
+          return super.resume();
+        }
+      };
     });
     dm = await dmContext.newPage();
     player = await playerContext.newPage();
@@ -717,6 +762,20 @@ describe("raccoon-vtt roll requests on phones", { timeout: 300_000 }, () => {
     assert.ok(dmSocket.state!.log.some((line) => line.data?.type === "roll" && line.data.characterId === bob && line.data.total === 18));
     await shots.take(player, "undo-scope-replacement-one-card");
     await closeAll();
+  });
+
+  test("au-1. after a reload with sound on, one tap on a touch phone unlocks both the turn chime's audio and the ping sound's (AUDIO-UNLOCK-TOUCH)", async () => {
+    await player.evaluate(() => (globalThis as unknown as PageGlobals).localStorage.setItem("rvtt.sound", "on"));
+    await player.reload();
+    await player.getByRole("status", { name: "Connected" }).first().waitFor();
+    const states = () => player.evaluate(() => ((globalThis as unknown as PageGlobals).__rvttAudio ?? []).map((c) => c.state));
+    assert.deepEqual(await states(), [], "no audio context before the person taps");
+    // A touch tap fires pointerdown first, which is no user activation for touch. Only pointerup and touchend are.
+    await player.getByRole("status", { name: "Connected" }).first().tap();
+    await waitFor("both audio contexts running", async () => {
+      const now = await states();
+      return now.length >= 2 && now.every((state) => state === "running") || null;
+    });
   });
 
   test("15. nothing went wrong in the browsers", () => {
