@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { TrapSound } from "#shared/model.ts";
+import { armAudioUnlock } from "../../lib/audioUnlock.ts";
 
 /**
  * How a turn banner gets attention beyond the screen (design section 14.4).
@@ -82,18 +83,12 @@ function context(): AudioContext | null {
 }
 
 /**
- * Resumes the audio on the first tap after the page opens, when sound is
- * on. Returns the cleanup for an effect.
+ * Resumes the audio on the first tap the browser counts as a gesture after
+ * the page opens, when sound is on (lib/audioUnlock.ts). Returns the cleanup
+ * for an effect.
  */
 export function unlockAudioOnTap(): () => void {
-  const unlock = () => {
-    if (!soundOn) return;
-    const ctx = context();
-    if (ctx && ctx.state !== "running") void ctx.resume().catch(() => {});
-    window.removeEventListener("pointerdown", unlock, true);
-  };
-  window.addEventListener("pointerdown", unlock, true);
-  return () => window.removeEventListener("pointerdown", unlock, true);
+  return armAudioUnlock({ context, wanted: () => soundOn });
 }
 
 /** Two rising notes for your turn, one soft note to confirm sound is on. */

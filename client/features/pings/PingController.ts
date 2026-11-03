@@ -9,7 +9,7 @@ import { useRoomScope } from "../../state/scope.ts";
 import { useRoomActions, useRoomView } from "../../state/view.ts";
 import { useLowPower } from "../device/settings.ts";
 import type { ControllerProps } from "../layers.ts";
-import { playPing, unlockAudio, vibrate } from "./feedback.ts";
+import { playPing, unlockAudioOnGesture, vibrate } from "./feedback.ts";
 import { frameClockSlot, useRunFrameClock } from "./frameClock.ts";
 import { reportHoldPing } from "./hold.ts";
 
@@ -79,10 +79,7 @@ function useFeedback(pings: readonly Ping[], focusId: number | null): void {
     vibrate(120);
   }, [focusId]);
 
-  useEffect(() => {
-    document.addEventListener("pointerdown", unlockAudio, { capture: true });
-    return () => document.removeEventListener("pointerdown", unlockAudio, { capture: true });
-  }, []);
+  useEffect(() => unlockAudioOnGesture(), []);
 }
 
 /**
