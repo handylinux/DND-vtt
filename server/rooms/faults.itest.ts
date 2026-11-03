@@ -10,10 +10,12 @@ import { failCommits, startEngine, type Engine, type Socket, type TestClient } f
 /**
  * A fault while the room engine works, on the real server and Postgres:
  * an op that throws after waiting behind a commit or behind an ask read in
- * turns, an ask whose reading throws, a delayed snapshot that throws, and
- * the steps around a commit (the map step, publishing, the snapshots a
- * commit owed). An op or a snapshot that throws costs the socket it came
- * from alone, which closes with 1011, and a server command is refused. A
+ * turns, or after it was staged, an ask whose reading throws, a delayed
+ * snapshot that throws, and the steps around a commit (the map step,
+ * publishing, the snapshots a commit owed). An
+ * op or a snapshot that throws costs the socket it came from alone, which
+ * closes with 1011, and a server command is refused. An op staged before
+ * it threw is stored once, and what a throw left staged still commits. A
  * batch that cannot be published is kept, and its room's sockets close to
  * take it afresh. The room's queue goes on, other rooms never notice, and
  * nothing reaches the process.
@@ -26,10 +28,12 @@ import { failCommits, startEngine, type Engine, type Socket, type TestClient } f
 /** The scripted faults. Each but the slow scan is cleared once it fires. */
 const faults: {
   draw: boolean;
-  growth: "none" | "slow" | "throw";
+  /** `unreadable` names a layer the estimate cannot read, so it throws after its batch is begun. */
+  growth: "none" | "slow" | "throw" | "unreadable";
   mapStep: boolean;
+  staged: boolean;
   send: ((conn: Connection, msg: ServerMessage) => boolean) | null;
-} = { draw: false, growth: "none", mapStep: false, send: null };
+} = { draw: false, growth: "none", mapStep: false, staged: false, send: null };
 
 /** Whatever reached the process: an uncaught exception or an unhandled rejection. */
 const escaped: unknown[] = [];
@@ -56,6 +60,10 @@ const actorOptions = {
       faults.growth = "none";
       throw scriptedFault("scan");
     }
+    if (faults.growth === "unreadable") {
+      faults.growth = "none";
+      return new Map([["not a layer", 1]]);
+    }
     // Slower than a turn of an ask's reading, so a long ask is read over many turns.
     if (faults.growth === "slow") for (const until = performance.now() + 40; performance.now() < until; );
     return memoryGrowth(...args);
@@ -65,6 +73,14 @@ const actorOptions = {
     faults.mapStep = false;
     // A result the step cannot read, which fails past the step's own catch.
     return null as unknown as ReturnType<typeof mapStepOps>;
+  },
+  now: () => {
+    // The actor's #reduce reads the clock only once it has staged an op, so this throws past staging.
+    if (faults.staged && /\bat (?:\w+\.)?#reduce \(/.test(new Error().stack ?? "")) {
+      faults.staged = false;
+      throw scriptedFault("staged op");
+    }
+    return Date.now();
   },
 };
 
@@ -90,6 +106,7 @@ beforeEach(() => {
   faults.draw = false;
   faults.growth = "none";
   faults.mapStep = false;
+  faults.staged = false;
   faults.send = null;
   escaped.length = 0;
 });
@@ -146,6 +163,18 @@ async function goesOn(socket: Socket, watcher: Socket, text: string): Promise<vo
   const n = socket.op({ t: "log.chat", text });
   await taken(socket, n);
   await watcher.next("ev", (m) => m.changes.some((c) => "value" in c && JSON.stringify(c.value).includes(text)));
+}
+
+/** How many log lines of the room hold `text`. */
+function copies(state: unknown, text: string): number {
+  return JSON.stringify(state).split(text).length - 1;
+}
+
+/** The room unloads once its sockets close, which it does only with nothing left staged in it. */
+async function unloads(t: Engine, r: Room): Promise<void> {
+  r.dm.close();
+  r.player.close();
+  await until(() => t.manager.get(r.roomId) === null, "the room to unload");
 }
 
 /** The process heard of no fault, and another room never noticed. */
@@ -287,6 +316,61 @@ describe("a fault in the room engine", () => {
     await goesOn(r.dm, r.player, "first");
     assert.equal(faults.mapStep, false, "the map step ran");
     await goesOn(r.player, r.dm, "later");
+    await contained(other);
+  });
+  test("an op that throws after it is staged is stored once, and its resend is answered from the watermark, before and after a reload", async () => {
+    const dmClient = t.client();
+    const { roomId } = await dmClient.createRoom("Staged");
+    const playerClient = t.client();
+    await playerClient.join(roomId, "Ayla");
+    const dm = await t.connect(roomId, dmClient);
+    await dm.snapshot(uuidv7());
+    const clientId = uuidv7();
+    const player = await t.connect(roomId, playerClient);
+    await player.snapshot(clientId);
+    const text = `once ${uuidv7()}`;
+    faults.staged = true;
+    const n = player.op({ t: "log.chat", text });
+    assert.equal((await player.waitClosed()).code, 1011);
+    assert.equal(faults.staged, false, "the op threw past staging");
+    // Committed with no later command to set it off.
+    await until(() => copies(t.manager.get(roomId)?.committed.state, text) === 1, "the staged op to commit");
+    // The device resends what it never heard answered, as it does on reconnect, and goes on numbering after it.
+    const resend = async (): Promise<void> => {
+      const socket = await t.connect(roomId, playerClient);
+      socket.n = n - 1;
+      await socket.snapshot(clientId, n);
+      await taken(socket, socket.op({ t: "log.chat", text }));
+      await taken(socket, socket.op({ t: "log.chat", text: `after ${uuidv7()}` }));
+      assert.equal(copies(t.manager.get(roomId)?.committed.state, text), 1, "the op is stored once");
+      socket.close();
+    };
+    await resend();
+    dm.close();
+    await t.restart();
+    await resend();
+    assert.deepEqual(escaped, [], "nothing reached the process");
+  });
+
+  test("an op that throws after its batch is begun leaves nothing staged, so the room unloads", async () => {
+    const r = await room(t, "Begun");
+    const other = await room(t, "Elsewhere");
+    faults.growth = "unreadable";
+    r.dm.op({ t: "build.paint", sceneId: r.sceneId, terrain: "wood", cells: ["1,1"] });
+    assert.equal((await r.dm.waitClosed()).code, 1011);
+    assert.equal(faults.growth, "none", "the estimate ran");
+    await unloads(t, r);
+    await contained(other);
+  });
+
+  test("an ask whose reading throws after its batch is begun leaves nothing staged, so the room unloads", async () => {
+    const r = await room(t, "Ask begun");
+    const other = await room(t, "Elsewhere");
+    faults.growth = "unreadable";
+    r.dm.send({ t: "op", n: r.dm.nextN(), op: { t: "build.ask", sceneId: r.sceneId, ops: [{ t: "build.paint", sceneId: r.sceneId, terrain: "wood", cells: ["1,1"] }], part: 0 }, g: uuidv7() });
+    assert.equal((await r.dm.waitClosed()).code, 1011);
+    assert.equal(faults.growth, "none", "the estimate ran");
+    await unloads(t, r);
     await contained(other);
   });
 });

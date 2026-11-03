@@ -917,10 +917,12 @@ export class RoomActor {
         const cmd = this.#queue.shift();
         if (!cmd) break;
         // Caught here and not by each caller: a drain also runs from a timer, a turn or a commit's end, where nothing else would catch it.
+        const batch = this.#batch;
+        const records = batch?.ops.length ?? 0;
         try {
           this.#handle(cmd);
         } catch (err) {
-          this.#commandFailed(cmd, err);
+          this.#commandFailed(cmd, err, batch, records);
         }
         if (this.#batch && this.#batch.ops.length >= this.#opts.maxBatchOps) this.#commitNow();
       }
@@ -933,15 +935,42 @@ export class RoomActor {
   /**
    * A command that threw costs only its sender: its socket closes with 1011
    * as a fault on the message path closes it (ws.ts), a server command is
-   * refused, and the queue goes on. Nothing is undone, as on that path: the
-   * room's state took all of an op or none of it, since #reduce stages a
-   * state and its batch record together, and a staged op is stored with
-   * its batch.
+   * refused, and the queue goes on. Nothing is undone, as on that path.
+   *
+   * What stays whole: the room's state took all of an op or none of it,
+   * since #reduce stages a state and its batch record together, and a
+   * staged op is stored with its batch. Its number is settled here with it,
+   * so the device's resend is answered from the watermark and never applied
+   * twice. The batch gets its commit timer, so what was staged is stored
+   * and the room can still unload.
+   *
+   * What may not be: an op that threw after it was staged can lack its ack
+   * details, its receipt and its undo step, so it is not on its sender's
+   * stack. A deletion step is not refused here: its own failure is answered
+   * in #runStep, and its flush first (#commitNow) does not throw.
    */
-  #commandFailed(cmd: Command, err: unknown): void {
+  #commandFailed(cmd: Command, err: unknown, before: Batch | null, records: number): void {
+    if (cmd.t === "op") this.#settleStaged(cmd, before, records);
     const conn = cmd.t === "op" || cmd.t === "hello" || cmd.t === "snapshot" ? cmd.conn : null;
     this.#fault("room command failed", err, conn, cmd.t === "op" ? opKind(cmd.raw) : cmd.t === "sys" ? cmd.op.t : cmd.t);
-    if (cmd.t === "sys" || cmd.t === "step") cmd.reject(err instanceof Error ? err : new Error(String(err)));
+    if (cmd.t === "sys") cmd.reject(err instanceof Error ? err : new Error(String(err)));
+    this.#scheduleCommit();
+  }
+
+  /**
+   * Settles an op's number when its record joined the batch before it threw.
+   * Read from the batch and not from the staged seq, which a walk's flush
+   * moves before the op goes back to the queue unapplied (#processOp).
+   */
+  #settleStaged(cmd: Extract<Command, { t: "op" }>, before: Batch | null, records: number): void {
+    const key = cmd.conn.key;
+    const wm = key === null ? undefined : this.#watermarks.get(key);
+    const batch = this.#batch;
+    if (key === null || !wm || !batch) return;
+    const joined = batch === before ? batch.ops.slice(records) : batch.ops;
+    if (!joined.some((record) => record.actor !== SERVER_ACTOR)) return;
+    if (wm.staged < cmd.n) wm.staged = cmd.n;
+    batch.watermarks.set(key, Math.max(batch.watermarks.get(key) ?? 0, cmd.n));
   }
 
   /**
@@ -1582,6 +1611,8 @@ export class RoomActor {
       this.#reading = null;
       this.#asking.delete(read.key);
       this.#fault("ask read failed", err, this.#clients.get(read.key) ?? null, "build.ask");
+      // A batch the reading began (#memoryEstimate) would otherwise wait for another command to commit it.
+      this.#scheduleCommit();
     }
     this.#drain();
   }
