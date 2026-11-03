@@ -6,13 +6,14 @@ import type { Op, ServerMessage, ServerOnlyOp } from "#shared/protocol.ts";
 import { Connection } from "./connection.ts";
 import { mapStepOps, memoryGrowth } from "./remember.ts";
 import { failCommits, startEngine, type Engine, type Socket, type TestClient } from "./testing.ts";
+import { UndoStacks } from "./undo.ts";
 
 /**
  * A fault while the room engine works, on the real server and Postgres:
  * an op that throws after waiting behind a commit or behind an ask read in
  * turns, or after it was staged, an ask whose reading throws, a delayed
- * snapshot that throws, and the steps around a commit (the map step,
- * publishing, the snapshots a commit owed). An
+ * snapshot that throws, and the steps around a commit (the map step, the
+ * undo summaries, publishing, the snapshots and resyncs a commit owed). An
  * op or a snapshot that throws costs the socket it came from alone, which
  * closes with 1011, and a server command is refused. An op staged before
  * it threw is stored once, and what a throw left staged still commits. A
@@ -32,13 +33,15 @@ const faults: {
   growth: "none" | "slow" | "throw" | "unreadable";
   mapStep: boolean;
   staged: boolean;
+  summaries: boolean;
   send: ((conn: Connection, msg: ServerMessage) => boolean) | null;
-} = { draw: false, growth: "none", mapStep: false, staged: false, send: null };
+} = { draw: false, growth: "none", mapStep: false, staged: false, summaries: false, send: null };
 
 /** Whatever reached the process: an uncaught exception or an unhandled rejection. */
 const escaped: unknown[] = [];
 const record = (err: unknown) => escaped.push(err);
 const realSend = Connection.prototype.send;
+const realSummaries = UndoStacks.prototype.summaries;
 
 function scriptedFault(what: string): Error {
   return new Error(`scripted ${what} fault`);
@@ -94,12 +97,20 @@ before(() => {
     }
     return realSend.call(this, msg);
   };
+  UndoStacks.prototype.summaries = function (this: UndoStacks) {
+    if (faults.summaries) {
+      faults.summaries = false;
+      throw scriptedFault("summaries");
+    }
+    return realSummaries.call(this);
+  };
 });
 
 after(() => {
   process.off("uncaughtException", record);
   process.off("unhandledRejection", record);
   Connection.prototype.send = realSend;
+  UndoStacks.prototype.summaries = realSummaries;
 });
 
 beforeEach(() => {
@@ -107,11 +118,12 @@ beforeEach(() => {
   faults.growth = "none";
   faults.mapStep = false;
   faults.staged = false;
+  faults.summaries = false;
   faults.send = null;
   escaped.length = 0;
 });
 
-type Room = { roomId: string; sceneId: string; dm: Socket; dmId: string; player: Socket; playerId: string; playerClient: TestClient };
+type Room = { roomId: string; sceneId: string; dm: Socket; dmId: string; dmClient: TestClient; player: Socket; playerId: string; playerClient: TestClient };
 
 async function room(t: Engine, name: string): Promise<Room> {
   const dmClient = t.client();
@@ -123,7 +135,7 @@ async function room(t: Engine, name: string): Promise<Room> {
   const player = await t.connect(roomId, playerClient);
   await player.snapshot(uuidv7());
   const sceneId = (snap.state as { meta: { playerSceneId: string } }).meta.playerSceneId;
-  return { roomId, sceneId, dm, dmId: snap.you.memberId, player, playerId, playerClient };
+  return { roomId, sceneId, dm, dmId: snap.you.memberId, dmClient, player, playerId, playerClient };
 }
 
 function roll(): Op {
@@ -371,6 +383,32 @@ describe("a fault in the room engine", () => {
     assert.equal((await r.dm.waitClosed()).code, 1011);
     assert.equal(faults.growth, "none", "the estimate ran");
     await unloads(t, r);
+    await contained(other);
+  });
+
+  test("a batch whose undo summaries throw still commits, and the room goes on", async () => {
+    const r = await room(t, "Summaries");
+    const other = await room(t, "Elsewhere");
+    faults.summaries = true;
+    await goesOn(r.dm, r.player, "first");
+    assert.equal(faults.summaries, false, "the summaries ran");
+    await goesOn(r.player, r.dm, "later");
+    await contained(other);
+  });
+
+  test("a resync owed at a commit's end that throws closes only its socket, and the room goes on", async () => {
+    const r = await room(t, "Owed a resync");
+    const other = await room(t, "Elsewhere");
+    const prep = uuidv7();
+    await taken(r.dm, r.dm.op({ t: "scene.create", scene: { id: prep, name: "Prep", bounds: { w: 10, h: 10 } } }));
+    const onPrep = await t.connect(r.roomId, r.dmClient);
+    await onPrep.snapshot(uuidv7(), undefined, prep);
+    faults.send = (conn, msg) => msg.t === "resync" && conn.sceneId === null && conn.role === "dm";
+    await taken(r.dm, r.dm.op({ t: "scene.delete", sceneId: prep }));
+    assert.equal((await onPrep.waitClosed()).code, 1011);
+    assert.equal(faults.send, null, "the resync was sent");
+    assert.equal(r.dm.closeCode, null, "the DM's other device stays");
+    await goesOn(r.dm, r.player, "later");
     await contained(other);
   });
 });

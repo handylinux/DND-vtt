@@ -1978,7 +1978,14 @@ export class RoomActor {
     if (batch.ops.length > 0 || batch.doors.length > 0) this.#explore(batch);
     batch.state = this.#staged.state;
     batch.seq = this.#staged.seq;
-    batch.history = this.#undo.summaries();
+    try {
+      batch.history = this.#undo.summaries();
+    } catch (err) {
+      // The batch goes on with the last heads stored: dropped here, it would leave the room ahead of what is stored. A
+      // stale head only makes the next Undo say that history changed.
+      this.#fault("undo summaries failed", err, null);
+      batch.history = this.#committedHistory;
+    }
     this.#inFlight = batch;
     this.#inFlightDone = this.#runCommit(batch);
   }
@@ -2153,7 +2160,9 @@ export class RoomActor {
       if (wm && wm.committed < n) wm.committed = n;
     }
     if (batch.ops.length > 0) this.#opsSinceSnapshot += batch.ops.length;
-    // Nothing from here on may throw out of the commit: no one awaits it, and the queue waits until its end.
+    // Nothing from here on throws out of the commit: no one awaits it, and the queue waits until its end. The publish is
+    // caught here, each owed snapshot and resync on its own socket, and the rest sets timers or drains the queue, which
+    // catches per command (#drain) and whose flush cannot throw (#commitNow).
     try {
       publishBatch(
         {
@@ -2191,6 +2200,7 @@ export class RoomActor {
         this.#fault("snapshot failed", err, h.conn, "hello");
       }
     }
+    // After the owed snapshots, so a device that just took one on a scene this batch deleted is sent back too.
     this.#resyncOrphanedDms();
     if (batch.ops.length > 0) this.#scheduleSnapshot();
     // The queue waited for this commit and resumes now.
@@ -2231,7 +2241,12 @@ export class RoomActor {
     for (const conn of this.#connections) {
       if (conn.role === "dm" && conn.held !== null && conn.sceneId !== null && !this.#committed.state.scenes[conn.sceneId]) {
         conn.sceneId = null;
-        this.#resync(conn, "scene deleted");
+        // Caught per socket, as an owed snapshot is: it runs at a commit's end, which nothing awaits.
+        try {
+          this.#resync(conn, "scene deleted");
+        } catch (err) {
+          this.#fault("resync failed", err, conn, "resync");
+        }
       }
     }
   }
